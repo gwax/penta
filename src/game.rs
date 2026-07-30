@@ -347,6 +347,44 @@ impl Game {
         self.result
     }
 
+    /// Returns the player expected to make the engine's next decision.
+    ///
+    /// This may differ from the player with priority during pregame choices,
+    /// turn-based actions such as declaring blockers, and other mandatory
+    /// choices. Bot runners should observe this player and submit one of that
+    /// observation's legal actions.
+    #[must_use]
+    pub fn decision_player(&self) -> Option<PlayerId> {
+        if self.result.is_some() {
+            return None;
+        }
+        if let Some(choice) = self.pending_choices.first() {
+            return Some(match choice {
+                PendingChoice::IronStar { player }
+                | PendingChoice::ChainLightning { player, .. }
+                | PendingChoice::Fork { player, .. } => *player,
+            });
+        }
+        if !self.pending_combat_attackers.is_empty() {
+            return Some(self.active_player);
+        }
+        if let Some(pregame) = self.pregame {
+            return Some(match pregame {
+                Pregame::Mulligan(player) | Pregame::Bottom(player) => player,
+            });
+        }
+        if self.cleanup_pending || self.untap_pending {
+            return Some(self.active_player);
+        }
+        if self.step == Step::DeclareAttackers && !self.attackers_declared {
+            return Some(self.active_player);
+        }
+        if self.step == Step::DeclareBlockers && !self.blockers_declared {
+            return Some(self.active_player.opponent());
+        }
+        Some(self.priority)
+    }
+
     #[must_use]
     /// Returns the omniscient event trace.
     ///

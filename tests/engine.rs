@@ -71,6 +71,33 @@ fn keep_both(game: &mut Game) {
     game.apply(PlayerId::Two, Action::KeepHand).unwrap();
 }
 
+#[test]
+fn decision_player_tracks_pregame_priority_and_turn_based_choices() {
+    let mut game = Game::new(catalog(), [valid_deck(), valid_deck()], 0).unwrap();
+    assert_eq!(game.decision_player(), Some(PlayerId::One));
+
+    game.apply(PlayerId::One, Action::KeepHand).unwrap();
+    assert_eq!(game.decision_player(), Some(PlayerId::Two));
+    game.apply(PlayerId::Two, Action::KeepHand).unwrap();
+    assert_eq!(game.decision_player(), Some(PlayerId::One));
+
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut game);
+    assert_eq!(game.observe(PlayerId::One).step, Step::DeclareAttackers);
+    assert_eq!(game.decision_player(), Some(PlayerId::One));
+
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .unwrap();
+    pass_priority_pair(&mut game);
+    assert_eq!(game.observe(PlayerId::One).step, Step::DeclareBlockers);
+    assert_eq!(game.decision_player(), Some(PlayerId::Two));
+
+    game.apply(PlayerId::Two, Action::Concede).unwrap();
+    assert_eq!(game.decision_player(), None);
+}
+
 fn pass_priority_pair(game: &mut Game) {
     let first = game.observe(PlayerId::One).priority;
     game.apply(first, Action::PassPriority).unwrap();

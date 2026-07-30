@@ -11,6 +11,21 @@ Bots receive `PlayerObservation`, which contains that player's hand and only
 counts for an opponent's hidden zones. `GameEvent` is an omniscient debugging
 and replay stream; it is not a bot observation.
 
+A bot runner asks `decision_player()` who must act, observes that player, and
+submits one of the observation's legal actions:
+
+```rust
+while let Some(player) = game.decision_player() {
+    let observation = game.observe(player);
+    let action = bots[player.index()].choose_action(&observation);
+    game.apply(player, action)?;
+}
+```
+
+The decision player is normally the player with priority, but differs during
+mulligans, blocker declaration, restricted untaps, cleanup discards, and
+triggered or combat-damage choices.
+
 ## Identities and zones
 
 A `CardDefinitionId` identifies a kind of card in the catalog. A
