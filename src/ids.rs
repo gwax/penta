@@ -8,6 +8,10 @@ pub struct CardDefinitionId(pub u16);
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CardInstanceId(pub u32);
 
+/// Identity of a spell or ability while it is on the stack.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct StackObjectId(pub u32);
+
 /// One of the two players in a game.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum PlayerId {

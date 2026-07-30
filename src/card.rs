@@ -32,9 +32,190 @@ pub struct CardDefinition {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CardBehavior {
+    AnkhOfMishra,
+    Atog,
+    BallLightning,
+    BlackVise,
+    BloodMoon,
+    ChainLightning,
+    CopperTablet,
+    Detonate,
+    Fireball,
+    Fork,
+    GlassesOfUrza,
+    IronStar,
     Mountain,
     LightningBolt,
+    RedElementalBlast,
+    Shatter,
+    Smoke,
+    StoneGiant,
+    SuChi,
+    WinterOrb,
     Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum CardKind {
+    Land,
+    Creature,
+    Artifact,
+    ArtifactCreature,
+    Enchantment,
+    Instant,
+    Sorcery,
+}
+
+impl CardKind {
+    #[must_use]
+    pub const fn is_creature(self) -> bool {
+        matches!(self, Self::Creature | Self::ArtifactCreature)
+    }
+
+    #[must_use]
+    pub const fn is_artifact(self) -> bool {
+        matches!(self, Self::Artifact | Self::ArtifactCreature)
+    }
+
+    #[must_use]
+    pub const fn is_permanent(self) -> bool {
+        matches!(
+            self,
+            Self::Land
+                | Self::Creature
+                | Self::Artifact
+                | Self::ArtifactCreature
+                | Self::Enchantment
+        )
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct ManaCost {
+    pub generic: u16,
+    pub red: u16,
+    pub variable_x: bool,
+}
+
+impl ManaCost {
+    #[must_use]
+    pub const fn new(generic: u16, red: u16) -> Self {
+        Self {
+            generic,
+            red,
+            variable_x: false,
+        }
+    }
+
+    #[must_use]
+    pub const fn with_x(red: u16) -> Self {
+        Self {
+            generic: 0,
+            red,
+            variable_x: true,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct CreatureStats {
+    pub power: i16,
+    pub toughness: i16,
+    pub haste: bool,
+    pub trample: bool,
+}
+
+impl CardBehavior {
+    #[must_use]
+    pub const fn kind(self) -> CardKind {
+        match self {
+            Self::Mountain => CardKind::Land,
+            Self::Atog | Self::BallLightning | Self::StoneGiant => CardKind::Creature,
+            Self::SuChi => CardKind::ArtifactCreature,
+            Self::AnkhOfMishra
+            | Self::BlackVise
+            | Self::CopperTablet
+            | Self::GlassesOfUrza
+            | Self::IronStar
+            | Self::WinterOrb
+            | Self::Unsupported => CardKind::Artifact,
+            Self::BloodMoon | Self::Smoke => CardKind::Enchantment,
+            Self::Fork | Self::LightningBolt | Self::RedElementalBlast | Self::Shatter => {
+                CardKind::Instant
+            }
+            Self::ChainLightning | Self::Detonate | Self::Fireball => CardKind::Sorcery,
+        }
+    }
+
+    #[must_use]
+    pub const fn mana_cost(self) -> ManaCost {
+        match self {
+            Self::Mountain => ManaCost::new(0, 0),
+            Self::AnkhOfMishra | Self::CopperTablet | Self::WinterOrb => ManaCost::new(2, 0),
+            Self::Smoke | Self::Fork => ManaCost::new(0, 2),
+            Self::Atog | Self::Shatter => ManaCost::new(1, 1),
+            Self::BallLightning => ManaCost::new(0, 3),
+            Self::BlackVise | Self::GlassesOfUrza | Self::IronStar => ManaCost::new(1, 0),
+            Self::BloodMoon => ManaCost::new(2, 1),
+            Self::ChainLightning | Self::LightningBolt | Self::RedElementalBlast => {
+                ManaCost::new(0, 1)
+            }
+            Self::Detonate | Self::Fireball => ManaCost::with_x(1),
+            Self::StoneGiant => ManaCost::new(2, 2),
+            Self::SuChi => ManaCost::new(4, 0),
+            Self::Unsupported => ManaCost::new(u16::MAX, u16::MAX),
+        }
+    }
+
+    #[must_use]
+    pub const fn creature_stats(self) -> Option<CreatureStats> {
+        match self {
+            Self::Atog => Some(CreatureStats {
+                power: 1,
+                toughness: 2,
+                haste: false,
+                trample: false,
+            }),
+            Self::BallLightning => Some(CreatureStats {
+                power: 6,
+                toughness: 1,
+                haste: true,
+                trample: true,
+            }),
+            Self::StoneGiant => Some(CreatureStats {
+                power: 3,
+                toughness: 4,
+                haste: false,
+                trample: false,
+            }),
+            Self::SuChi => Some(CreatureStats {
+                power: 4,
+                toughness: 4,
+                haste: false,
+                trample: false,
+            }),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn is_red(self) -> bool {
+        matches!(
+            self,
+            Self::Atog
+                | Self::BallLightning
+                | Self::BloodMoon
+                | Self::ChainLightning
+                | Self::Detonate
+                | Self::Fireball
+                | Self::Fork
+                | Self::LightningBolt
+                | Self::RedElementalBlast
+                | Self::Shatter
+                | Self::Smoke
+                | Self::StoneGiant
+        )
+    }
 }
 
 #[derive(Clone, Debug, Default)]

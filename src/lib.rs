@@ -10,9 +10,12 @@ mod rng;
 pub mod rules;
 
 pub use action::{Action, ActionError, Target};
-pub use card::{CardBehavior, CardCatalog, CardDefinition, CardSet, CatalogError};
+pub use card::{
+    CardBehavior, CardCatalog, CardDefinition, CardKind, CardSet, CatalogError, CreatureStats,
+    ManaCost,
+};
 pub use deck::{Deck, DeckError, ValidatedDeck};
 pub use game::{
     Game, GameError, GameEvent, GameResult, ManaPool, PlayerObservation, Step, WinReason,
 };
-pub use ids::{CardDefinitionId, CardInstanceId, PlayerId};
+pub use ids::{CardDefinitionId, CardInstanceId, PlayerId, StackObjectId};

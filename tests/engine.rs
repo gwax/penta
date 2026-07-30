@@ -50,7 +50,7 @@ fn valid_deck() -> Deck {
 fn game_with_mountain_and_bolt() -> Game {
     let catalog = catalog();
     for seed in 0..1_000 {
-        let game = Game::new(catalog.clone(), [valid_deck(), valid_deck()], seed).unwrap();
+        let mut game = Game::new(catalog.clone(), [valid_deck(), valid_deck()], seed).unwrap();
         let hand = &game.observe(PlayerId::One).hand;
         let has_mountain = hand
             .iter()
@@ -59,10 +59,16 @@ fn game_with_mountain_and_bolt() -> Game {
             .iter()
             .any(|(_, definition)| *definition == CardDefinitionId(2));
         if has_mountain && has_bolt {
+            keep_both(&mut game);
             return game;
         }
     }
     panic!("expected to find a deterministic seed with Mountain and Lightning Bolt");
+}
+
+fn keep_both(game: &mut Game) {
+    game.apply(PlayerId::One, Action::KeepHand).unwrap();
+    game.apply(PlayerId::Two, Action::KeepHand).unwrap();
 }
 
 fn pass_priority_pair(game: &mut Game) {
@@ -173,6 +179,30 @@ fn first_player_skips_the_first_draw() {
 }
 
 #[test]
+fn london_mulligan_redraws_seven_then_bottoms_one() {
+    let catalog = catalog();
+    let mut game = Game::new(catalog, [valid_deck(), valid_deck()], 77).unwrap();
+
+    game.apply(PlayerId::One, Action::TakeMulligan).unwrap();
+    assert_eq!(game.observe(PlayerId::One).hand.len(), 7);
+    game.apply(PlayerId::One, Action::KeepHand).unwrap();
+
+    let bottom = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::BottomCards { .. }))
+        .unwrap();
+    game.apply(PlayerId::One, bottom).unwrap();
+    assert_eq!(game.observe(PlayerId::One).hand.len(), 6);
+
+    game.apply(PlayerId::Two, Action::KeepHand).unwrap();
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&Action::PassPriority)
+    );
+}
+
+#[test]
 fn mountain_casts_and_resolves_lightning_bolt() {
     let mut game = game_with_mountain_and_bolt();
     advance_to_first_main(&mut game);
@@ -202,7 +232,8 @@ fn mountain_casts_and_resolves_lightning_bolt() {
         PlayerId::One,
         Action::CastSpell {
             card: bolt,
-            target: Target::Player(PlayerId::Two),
+            target: Some(Target::Player(PlayerId::Two)),
+            x: 0,
         },
     )
     .unwrap();
@@ -276,13 +307,22 @@ fn game_validates_decks_against_its_own_catalog() {
 fn drawing_from_an_empty_library_loses_the_game() {
     let catalog = catalog();
     let mut game = Game::new(catalog, [valid_deck(), valid_deck()], 0).unwrap();
+    keep_both(&mut game);
 
     for _ in 0..3_000 {
         if game.result().is_some() {
             break;
         }
-        let priority = game.observe(PlayerId::One).priority;
-        game.apply(priority, Action::PassPriority).unwrap();
+        let (actor, action) = [PlayerId::One, PlayerId::Two]
+            .into_iter()
+            .find_map(|actor| {
+                game.legal_actions(actor)
+                    .into_iter()
+                    .find(|action| !matches!(action, Action::Concede))
+                    .map(|action| (actor, action))
+            })
+            .unwrap();
+        game.apply(actor, action).unwrap();
     }
 
     assert_eq!(
@@ -292,4 +332,73 @@ fn drawing_from_an_empty_library_loses_the_game() {
             reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
         })
     );
+}
+
+#[test]
+fn poc_mirror_completes_under_deterministic_greedy_bots() {
+    let catalog = osarena::poc::catalog().unwrap();
+    let mut game = Game::new(
+        catalog,
+        [osarena::poc::mono_red_atog(), osarena::poc::mono_red_atog()],
+        2_026,
+    )
+    .unwrap();
+
+    for _ in 0..50_000 {
+        if game.result().is_some() {
+            break;
+        }
+        let (player, action) = [PlayerId::One, PlayerId::Two]
+            .into_iter()
+            .find_map(|player| choose_greedy_action(&game, player).map(|action| (player, action)))
+            .unwrap();
+        game.apply(player, action).unwrap();
+    }
+
+    assert!(game.result().is_some(), "POC mirror did not terminate");
+}
+
+fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {
+    let actions = game.legal_actions(player);
+    let choose = |predicate: &dyn Fn(&Action) -> bool| {
+        actions.iter().find(|action| predicate(action)).cloned()
+    };
+
+    choose(&|action| matches!(action, Action::KeepHand))
+        .or_else(|| choose(&|action| matches!(action, Action::BottomCards { .. })))
+        .or_else(|| choose(&|action| matches!(action, Action::DiscardCards { .. })))
+        .or_else(|| {
+            choose(&|action| matches!(action, Action::ChooseTriggeredAbility { pay: false, .. }))
+        })
+        .or_else(|| {
+            actions
+                .iter()
+                .filter_map(|action| match action {
+                    Action::ChooseUntap { permanents } => Some((permanents.len(), action.clone())),
+                    _ => None,
+                })
+                .max_by_key(|(count, _)| *count)
+                .map(|(_, action)| action)
+        })
+        .or_else(|| choose(&|action| matches!(action, Action::PlayLand { .. })))
+        .or_else(|| choose(&|action| matches!(action, Action::ActivateManaAbility { .. })))
+        .or_else(|| {
+            actions
+                .iter()
+                .filter_map(|action| match action {
+                    Action::CastSpell { x, target, .. } => {
+                        let attacks_opponent = *target == Some(Target::Player(player.opponent()));
+                        Some((attacks_opponent, *x, action.clone()))
+                    }
+                    _ => None,
+                })
+                .max_by_key(|(attacks_opponent, x, _)| (*attacks_opponent, *x))
+                .map(|(_, _, action)| action)
+        })
+        .or_else(|| choose(&|action| matches!(action, Action::ActivateAbility { .. })))
+        .or_else(|| choose(&|action| matches!(action, Action::DeclareAttacker { .. })))
+        .or_else(|| choose(&|action| matches!(action, Action::FinishDeclaringAttackers)))
+        .or_else(|| choose(&|action| matches!(action, Action::DeclareBlocker { .. })))
+        .or_else(|| choose(&|action| matches!(action, Action::FinishDeclaringBlockers)))
+        .or_else(|| choose(&|action| matches!(action, Action::PassPriority)))
 }

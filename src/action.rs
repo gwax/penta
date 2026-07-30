@@ -1,15 +1,32 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::{CardInstanceId, PlayerId};
+use crate::{CardInstanceId, PlayerId, StackObjectId};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Target {
     Player(PlayerId),
+    Permanent(CardInstanceId),
+    Spell(StackObjectId),
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Action {
+    KeepHand,
+    TakeMulligan,
+    BottomCards {
+        cards: Vec<CardInstanceId>,
+    },
+    DiscardCards {
+        cards: Vec<CardInstanceId>,
+    },
+    ChooseTriggeredAbility {
+        pay: bool,
+        new_target: Option<Target>,
+    },
+    ChooseUntap {
+        permanents: Vec<CardInstanceId>,
+    },
     PassPriority,
     PlayLand {
         card: CardInstanceId,
@@ -19,8 +36,23 @@ pub enum Action {
     },
     CastSpell {
         card: CardInstanceId,
-        target: Target,
+        target: Option<Target>,
+        x: u16,
     },
+    ActivateAbility {
+        source: CardInstanceId,
+        target: Option<Target>,
+        sacrifice: Option<CardInstanceId>,
+    },
+    DeclareAttacker {
+        attacker: CardInstanceId,
+    },
+    FinishDeclaringAttackers,
+    DeclareBlocker {
+        blocker: CardInstanceId,
+        attacker: CardInstanceId,
+    },
+    FinishDeclaringBlockers,
     Concede,
 }
 

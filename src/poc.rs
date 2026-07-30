@@ -47,18 +47,63 @@ pub fn catalog() -> Result<CardCatalog, CatalogError> {
     };
 
     CardCatalog::new([
-        card(ANKH_OF_MISHRA, "Ankh of Mishra", CardSet::Alpha),
-        card(ATOG, "Atog", CardSet::Antiquities),
-        card(BALL_LIGHTNING, "Ball Lightning", CardSet::TheDark),
-        card(BLACK_VISE, "Black Vise", CardSet::Alpha),
-        card(BLOOD_MOON, "Blood Moon", CardSet::TheDark),
-        card(CHAIN_LIGHTNING, "Chain Lightning", CardSet::Legends),
-        card(COPPER_TABLET, "Copper Tablet", CardSet::Alpha),
-        card(DETONATE, "Detonate", CardSet::Antiquities),
-        card(FIREBALL, "Fireball", CardSet::Alpha),
-        card(FORK, "Fork", CardSet::Alpha),
-        card(GLASSES_OF_URZA, "Glasses of Urza", CardSet::Alpha),
-        card(IRON_STAR, "Iron Star", CardSet::Alpha),
+        card(
+            ANKH_OF_MISHRA,
+            "Ankh of Mishra",
+            CardSet::Alpha,
+            CardBehavior::AnkhOfMishra,
+        ),
+        card(ATOG, "Atog", CardSet::Antiquities, CardBehavior::Atog),
+        card(
+            BALL_LIGHTNING,
+            "Ball Lightning",
+            CardSet::TheDark,
+            CardBehavior::BallLightning,
+        ),
+        card(
+            BLACK_VISE,
+            "Black Vise",
+            CardSet::Alpha,
+            CardBehavior::BlackVise,
+        ),
+        card(
+            BLOOD_MOON,
+            "Blood Moon",
+            CardSet::TheDark,
+            CardBehavior::BloodMoon,
+        ),
+        card(
+            CHAIN_LIGHTNING,
+            "Chain Lightning",
+            CardSet::Legends,
+            CardBehavior::ChainLightning,
+        ),
+        card(
+            COPPER_TABLET,
+            "Copper Tablet",
+            CardSet::Alpha,
+            CardBehavior::CopperTablet,
+        ),
+        card(
+            DETONATE,
+            "Detonate",
+            CardSet::Antiquities,
+            CardBehavior::Detonate,
+        ),
+        card(FIREBALL, "Fireball", CardSet::Alpha, CardBehavior::Fireball),
+        card(FORK, "Fork", CardSet::Alpha, CardBehavior::Fork),
+        card(
+            GLASSES_OF_URZA,
+            "Glasses of Urza",
+            CardSet::Alpha,
+            CardBehavior::GlassesOfUrza,
+        ),
+        card(
+            IRON_STAR,
+            "Iron Star",
+            CardSet::Alpha,
+            CardBehavior::IronStar,
+        ),
         card_with_behavior(
             LIGHTNING_BOLT,
             "Lightning Bolt",
@@ -73,12 +118,27 @@ pub fn catalog() -> Result<CardCatalog, CatalogError> {
             true,
             CardBehavior::Mountain,
         ),
-        card(RED_ELEMENTAL_BLAST, "Red Elemental Blast", CardSet::Alpha),
-        card(SHATTER, "Shatter", CardSet::Alpha),
-        card(SMOKE, "Smoke", CardSet::Alpha),
-        card(STONE_GIANT, "Stone Giant", CardSet::Alpha),
-        card(SU_CHI, "Su-Chi", CardSet::Antiquities),
-        card(WINTER_ORB, "Winter Orb", CardSet::Alpha),
+        card(
+            RED_ELEMENTAL_BLAST,
+            "Red Elemental Blast",
+            CardSet::Alpha,
+            CardBehavior::RedElementalBlast,
+        ),
+        card(SHATTER, "Shatter", CardSet::Alpha, CardBehavior::Shatter),
+        card(SMOKE, "Smoke", CardSet::Alpha, CardBehavior::Smoke),
+        card(
+            STONE_GIANT,
+            "Stone Giant",
+            CardSet::Alpha,
+            CardBehavior::StoneGiant,
+        ),
+        card(SU_CHI, "Su-Chi", CardSet::Antiquities, CardBehavior::SuChi),
+        card(
+            WINTER_ORB,
+            "Winter Orb",
+            CardSet::Alpha,
+            CardBehavior::WinterOrb,
+        ),
     ])
 }
 
@@ -118,8 +178,8 @@ pub fn mono_red_atog() -> Deck {
     }
 }
 
-fn card(id: CardDefinitionId, name: &str, set: CardSet) -> CardDefinition {
-    card_with_behavior(id, name, set, false, CardBehavior::Unsupported)
+fn card(id: CardDefinitionId, name: &str, set: CardSet, behavior: CardBehavior) -> CardDefinition {
+    card_with_behavior(id, name, set, false, behavior)
 }
 
 fn card_with_behavior(
@@ -146,6 +206,7 @@ fn copies(id: CardDefinitionId, count: usize) -> impl Iterator<Item = CardDefini
 mod tests {
     use super::{catalog, mono_red_atog};
     use crate::rules;
+    use crate::{CardBehavior, CardDefinitionId};
 
     #[test]
     fn built_in_deck_has_tournament_sizes() {
@@ -157,5 +218,14 @@ mod tests {
     #[test]
     fn built_in_deck_is_valid() {
         mono_red_atog().validate(&catalog().unwrap()).unwrap();
+    }
+
+    #[test]
+    fn every_poc_card_has_engine_behavior() {
+        let catalog = catalog().unwrap();
+        for raw_id in 1..=20 {
+            let card = catalog.get(CardDefinitionId(raw_id)).unwrap();
+            assert_ne!(card.behavior, CardBehavior::Unsupported, "{}", card.name);
+        }
     }
 }

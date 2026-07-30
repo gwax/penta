@@ -34,6 +34,10 @@ casting API requires mana to be floated before casting; integrating mana
 activation into a compound casting choice can be added without changing spell
 resolution.
 
+Attacker and blocker declaration are staged to keep legal-action generation
+linear rather than enumerating exponential subsets. No player receives
+priority until the declaring player submits the corresponding finish action.
+
 ## Determinism and replay
 
 All random choices use the engine-owned, versioned PRNG. A dependency upgrade
@@ -44,9 +48,11 @@ sequence. Events provide a convenient derived trace for debugging and UI use.
 ## Card behavior
 
 Card metadata lives in `CardCatalog`; executable behavior is selected by the
-closed `CardBehavior` enum. Unsupported cards can exist in decks and hidden
-zones but do not generate cast actions. This makes partial card coverage
-explicit and keeps arbitrary card code out of serialized game state.
+closed `CardBehavior` enum. Every card in the POC catalog has a behavior,
+kind, mana cost, color, and creature characteristics where applicable.
+Unsupported cards can exist in other catalogs and hidden zones but do not
+generate cast actions. This makes partial coverage explicit and keeps
+arbitrary card code out of serialized game state.
 
 As the corpus grows, behavior should be factored into reusable primitives
 (damage, draw, destroy, continuous restrictions, triggers) rather than one
@@ -55,6 +61,13 @@ large bespoke function per printed card.
 ## Rules boundary
 
 The format is Eternal Central 93/94: current Magic rules plus the EC
-exceptions, notably phase-boundary mana burn. The engine already models the
-priority-bearing turn skeleton and all combat step names, but combat turn-based
-actions, mulligans, cleanup, and most card behaviors are not implemented yet.
+exceptions, notably phase-boundary mana burn. The POC implements London
+mulligans, priority-bearing turn steps, cleanup, combat, and its twenty-card
+red/artifact corpus.
+
+It deliberately remains narrower than the full Comprehensive Rules. Fireball
+has a single-target casting mode, Fork retains copied targets, blockers use
+deterministic damage order, and simple non-mana abilities and triggers resolve
+atomically. Blood Moon and Red Elemental Blast have no observable legal work
+inside the Mountain/red/artifact-only corpus because it contains neither
+nonbasic lands nor blue objects.
