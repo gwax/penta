@@ -43,9 +43,30 @@ draws opening hands, exposes player-safe observations, and handles concession.
 The stack, priority, turn progression, combat, mana, and card effects are the
 next engine layers.
 
+## Proof-of-concept card corpus
+
+The first playable target is a representative unpowered Mono-Red Atog deck
+playing a mirror match. Its only non-red, non-artifact card is Mountain. The
+list is adapted from the [Atog Unpowered Compendium][atog-list], replacing one
+Strip Mine with a sixteenth Mountain. The main deck and sideboard together
+require 20 distinct cards:
+
+- Mountain
+- Atog, Ball Lightning, and Stone Giant
+- Lightning Bolt, Chain Lightning, Fireball, Fork, Detonate, Shatter, and Red
+  Elemental Blast
+- Blood Moon and Smoke
+- Ankh of Mishra, Black Vise, Copper Tablet, Glasses of Urza, Iron Star,
+  Su-Chi, and Winter Orb
+
+This corpus is intentionally based on cards in an actual archetype rather than
+all legal red cards. A card joins the implementation target when a deck we
+want to simulate requires it.
+
 ```sh
 cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
 [ec-rules]: https://www.eternalcentral.com/9394rules/
+[atog-list]: https://tappedout.net/mtg-decks/os9394-atog-unpowered-compendium/

@@ -5,6 +5,7 @@ pub mod card;
 pub mod deck;
 pub mod game;
 pub mod ids;
+pub mod poc;
 mod rng;
 pub mod rules;
 
