@@ -46,6 +46,7 @@ pub enum Action {
     CastSpell {
         card: CardInstanceId,
         targets: Vec<Target>,
+        sacrifices: Vec<CardInstanceId>,
         x: u16,
     },
     ActivateAbility {

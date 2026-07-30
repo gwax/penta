@@ -47,7 +47,8 @@ The engine currently supports:
 - hidden-information-safe observations and deterministic legal actions
 - the priority-bearing turn skeleton, active player, and priority passing
 - the stack and last-in-first-out spell resolution
-- land plays, tapped Mountain mana, and EC phase-boundary mana burn
+- basic and nonbasic land plays, red and colorless mana sources, and EC
+  phase-boundary mana burn
 - player damage, concession, and empty-library loss conditions
 - public battlefield, graveyard, and stack observations
 - an authoritative event log for replay and debugging consumers
@@ -58,7 +59,9 @@ The engine currently supports:
 - red and colorless mana, generic and variable-X costs, and mana burn
 - multi-target spells, copy retargeting, activated and triggered choices, and
   restricted untaps
-- functional behavior metadata and execution for all 20 POC cards
+- functional behavior metadata and execution for all 40 catalog cards
+- fixed 60-card `Goblins`, `Sligh`, and `Artifacts` decks with 15-card
+  sideboards
 
 The event log is intentionally omniscient and must not be passed directly to a
 bot; bots consume `PlayerObservation`.
@@ -71,21 +74,31 @@ abilities and simple upkeep/entry triggers still resolve atomically. These
 constraints are explicit extension points rather than silent support for
 cards outside the POC.
 
-## Proof-of-concept card corpus
+## Built-in decks
 
-The first playable target is a representative unpowered Mono-Red Atog deck
-playing a mirror match. Its only non-red, non-artifact card is Mountain. The
-list is adapted from the [Atog Unpowered Compendium][atog-list], replacing one
-Strip Mine with a sixteenth Mountain. The main deck and sideboard together
-require 20 distinct cards:
+The proof of concept contains three powered, mono-red EC archetypes:
 
-- Mountain
-- Atog, Ball Lightning, and Stone Giant
-- Lightning Bolt, Chain Lightning, Fireball, Fork, Detonate, Shatter, and Red
-  Elemental Blast
-- Blood Moon and Smoke
-- Ankh of Mishra, Black Vise, Copper Tablet, Glasses of Urza, Iron Star,
-  Su-Chi, and Winter Orb
+- `poc::goblins()` is a tribal aggro deck built around Goblin King, Goblin
+  Grenade, Goblin Balloon Brigade, and Goblins of the Flarg.
+- `poc::sligh()` is a curve-based aggro/burn deck with Ironclaw Orcs, Ball
+  Lightning, Granite Gargoyle, Dragon Whelp, and direct damage.
+- `poc::artifacts()` is Atog Smash, using Atog, Orcish Mechanics, Black Vise,
+  Ankh of Mishra, Copper Tablet, and fast artifact mana.
+
+Their cores are based on the [TC Decks Goblins aggregate][goblins-data], the
+[Wak-Wak Sligh archetype guide][sligh-guide], and a representative
+[EC Atog Smash list][atog-list].
+
+All three use some combination of Mishra's Factory, Strip Mine, Black Lotus,
+Mox Ruby, Wheel of Fortune, Chaos Orb, and Sol Ring. The artifact deck also
+uses the off-color Moxen as generic-mana sources. In this red-only corpus their
+colored output is represented as colorless mana, which is strategically
+equivalent for every implemented cost.
+
+EC Chaos Orb normally uses a physical dexterity flip. The headless simulator
+instead treats an activated Orb as a deterministic successful flip against
+the chosen permanent. This keeps seeded games reproducible and makes the
+format playable without modeling a human motor skill.
 
 This corpus is intentionally based on cards in an actual archetype rather than
 all legal red cards. A card joins the implementation target when a deck we
@@ -97,4 +110,6 @@ cargo clippy --all-targets --all-features -- -D warnings
 ```
 
 [ec-rules]: https://www.eternalcentral.com/9394rules/
-[atog-list]: https://tappedout.net/mtg-decks/os9394-atog-unpowered-compendium/
+[goblins-data]: https://www.tcdecks.net/archetype.php?archetype=Goblins&format=Old+School&src=all
+[sligh-guide]: https://www.wak-wak.se/9394decks/sligh
+[atog-list]: https://tappedout.net/mtg-decks/atog-smash-9394-1/

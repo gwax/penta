@@ -260,6 +260,7 @@ fn mountain_casts_and_resolves_lightning_bolt() {
         Action::CastSpell {
             card: bolt,
             targets: vec![Target::Player(PlayerId::Two)],
+            sacrifices: Vec::new(),
             x: 0,
         },
     )
@@ -362,27 +363,33 @@ fn drawing_from_an_empty_library_loses_the_game() {
 }
 
 #[test]
-fn poc_mirror_completes_under_deterministic_greedy_bots() {
-    let catalog = osarena::poc::catalog().unwrap();
-    let mut game = Game::new(
-        catalog,
-        [osarena::poc::mono_red_atog(), osarena::poc::mono_red_atog()],
-        2_026,
-    )
-    .unwrap();
-
-    for _ in 0..50_000 {
-        if game.result().is_some() {
-            break;
-        }
-        let (player, action) = [PlayerId::One, PlayerId::Two]
-            .into_iter()
-            .find_map(|player| choose_greedy_action(&game, player).map(|action| (player, action)))
+fn all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
+    let decks = [
+        ("Goblins", osarena::poc::goblins()),
+        ("Sligh", osarena::poc::sligh()),
+        ("Artifacts", osarena::poc::artifacts()),
+    ];
+    for (first_name, first_deck) in &decks {
+        for (second_name, second_deck) in &decks {
+            let mut game = Game::new(
+                osarena::poc::catalog().unwrap(),
+                [first_deck.clone(), second_deck.clone()],
+                2_026,
+            )
             .unwrap();
-        game.apply(player, action).unwrap();
+            for _ in 0..50_000 {
+                let Some(player) = game.decision_player() else {
+                    break;
+                };
+                let action = choose_greedy_action(&game, player).unwrap();
+                game.apply(player, action).unwrap();
+            }
+            assert!(
+                game.result().is_some(),
+                "{first_name} versus {second_name} did not terminate"
+            );
+        }
     }
-
-    assert!(game.result().is_some(), "POC mirror did not terminate");
 }
 
 fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {

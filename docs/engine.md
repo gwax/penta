@@ -62,7 +62,8 @@ Spell actions carry a list of targets. Fireball enumerates affordable,
 distinct target combinations, charges one additional generic mana for each
 target beyond the first, and divides X evenly on resolution. After Fork
 resolves, its controller chooses legal targets for the copy or keeps the
-original targets.
+original targets. Spell actions also carry explicit sacrifices for additional
+costs such as Goblin Grenade.
 
 ## Determinism and replay
 
@@ -88,14 +89,16 @@ large bespoke function per printed card.
 
 The format is Eternal Central 93/94: current Magic rules plus the EC
 exceptions, notably phase-boundary mana burn. The POC implements London
-mulligans, priority-bearing turn steps, cleanup, combat, and its twenty-card
-red/artifact corpus.
+mulligans, priority-bearing turn steps, cleanup, combat, three fixed powered
+red decks, and its forty-card red/artifact corpus.
 
 It deliberately remains narrower than the full Comprehensive Rules. Fireball
 and Fork expose their full targeting decisions, and attackers expose current
 combat damage assignment decisions. Simple non-mana abilities and triggers
-still resolve atomically. Blood Moon and Red Elemental Blast have no observable
-legal work inside the Mountain/red/artifact-only corpus because it contains
-neither nonbasic lands nor blue objects.
+still resolve atomically. Chaos Orb deterministically destroys its chosen
+permanent rather than simulating EC's physical card flip. Off-color Moxen
+produce colorless mana because the corpus contains no non-red colored costs.
+Red Elemental Blast has no observable legal work because the corpus contains
+no blue objects.
 
 [foundations-update]: https://magic.wizards.com/en/news/announcements/foundations-update-bulletin

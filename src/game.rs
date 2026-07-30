@@ -33,6 +33,8 @@ struct Permanent {
     chosen_player: Option<PlayerId>,
     destroy_at_end: bool,
     flying_until_end: bool,
+    factory_animated: bool,
+    dragon_whelp_activations: u8,
     combat_damage_assignment: Vec<CombatDamageAssignment>,
 }
 
@@ -573,8 +575,13 @@ impl Game {
             Action::ChooseUntap { permanents } => self.choose_untap(player, &permanents),
             Action::PassPriority => self.pass_priority(player),
             Action::PlayLand { card } => self.play_land(player, card),
-            Action::ActivateManaAbility { source } => self.activate_mountain(player, source),
-            Action::CastSpell { card, targets, x } => self.cast_spell(player, card, targets, x),
+            Action::ActivateManaAbility { source } => self.activate_mana_source(player, source),
+            Action::CastSpell {
+                card,
+                targets,
+                sacrifices,
+                x,
+            } => self.cast_spell(player, card, targets, &sacrifices, x),
             Action::ActivateAbility {
                 source,
                 target,
@@ -635,7 +642,7 @@ impl Game {
                     damage: permanent.damage,
                     attacking: permanent.attacking,
                     blocking: permanent.blocking,
-                    flying: permanent.flying_until_end,
+                    flying: self.has_flying(permanent),
                 })
                 .collect(),
             stack: self
@@ -660,9 +667,8 @@ impl Game {
             self.battlefield
                 .iter()
                 .filter(|permanent| permanent.controller == player && !permanent.tapped)
-                .filter(|permanent| {
-                    self.behavior(permanent.card.definition) == Some(CardBehavior::Mountain)
-                })
+                .filter(|permanent| self.mana_production(permanent).is_some())
+                .filter(|permanent| self.can_use_tap_ability(permanent))
                 .map(|permanent| Action::ActivateManaAbility {
                     source: permanent.card.id,
                 }),
@@ -762,7 +768,7 @@ impl Game {
             state
                 .hand
                 .iter()
-                .filter(|card| self.behavior(card.definition) == Some(CardBehavior::Mountain))
+                .filter(|card| self.kind(card.definition) == Some(CardKind::Land))
                 .map(|card| Action::PlayLand { card: card.id }),
         );
     }
@@ -809,11 +815,28 @@ impl Game {
                         if !can_pay(state.mana_pool, add_generic(cost, extra), x) {
                             continue;
                         }
-                        actions.push(Action::CastSpell {
-                            card: card.id,
-                            targets,
-                            x,
-                        });
+                        let sacrifice_choices = if behavior == CardBehavior::GoblinGrenade {
+                            self.battlefield
+                                .iter()
+                                .filter(|permanent| {
+                                    permanent.controller == player
+                                        && self
+                                            .behavior(permanent.card.definition)
+                                            .is_some_and(CardBehavior::is_goblin)
+                                })
+                                .map(|permanent| vec![permanent.card.id])
+                                .collect()
+                        } else {
+                            vec![Vec::new()]
+                        };
+                        for sacrifices in sacrifice_choices {
+                            actions.push(Action::CastSpell {
+                                card: card.id,
+                                targets: targets.clone(),
+                                sacrifices,
+                                x,
+                            });
+                        }
                     }
                 }
             }
@@ -828,7 +851,9 @@ impl Game {
         exact_count: Option<usize>,
     ) -> Vec<Vec<Target>> {
         match behavior {
-            CardBehavior::LightningBolt | CardBehavior::ChainLightning => self
+            CardBehavior::LightningBolt
+            | CardBehavior::ChainLightning
+            | CardBehavior::GoblinGrenade => self
                 .damage_targets()
                 .into_iter()
                 .map(|target| vec![target])
@@ -878,13 +903,14 @@ impl Game {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn add_ability_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
         for permanent in self
             .battlefield
             .iter()
             .filter(|permanent| permanent.controller == player)
         {
-            match self.behavior(permanent.card.definition) {
+            match self.effective_behavior(permanent) {
                 Some(CardBehavior::Atog) => {
                     actions.extend(
                         self.battlefield
@@ -929,6 +955,111 @@ impl Game {
                             }),
                     );
                 }
+                Some(
+                    CardBehavior::GoblinBalloonBrigade
+                    | CardBehavior::GraniteGargoyle
+                    | CardBehavior::DragonWhelp,
+                ) if self.players[player.index()].mana_pool.red > 0 => {
+                    actions.push(Action::ActivateAbility {
+                        source: permanent.card.id,
+                        target: None,
+                        sacrifice: None,
+                    });
+                }
+                Some(CardBehavior::MishrasFactory)
+                    if self.players[player.index()].mana_pool.total() > 0 =>
+                {
+                    actions.push(Action::ActivateAbility {
+                        source: permanent.card.id,
+                        target: None,
+                        sacrifice: None,
+                    });
+                    if !permanent.tapped && self.can_use_tap_ability(permanent) {
+                        actions.extend(
+                            self.battlefield
+                                .iter()
+                                .filter(|candidate| {
+                                    candidate.controller == player
+                                        && candidate.factory_animated
+                                        && self.effective_behavior(candidate)
+                                            == Some(CardBehavior::MishrasFactory)
+                                })
+                                .map(|candidate| Action::ActivateAbility {
+                                    source: permanent.card.id,
+                                    target: Some(Target::Permanent(candidate.card.id)),
+                                    sacrifice: None,
+                                }),
+                        );
+                    }
+                }
+                Some(CardBehavior::MishrasFactory)
+                    if !permanent.tapped && self.can_use_tap_ability(permanent) =>
+                {
+                    actions.extend(
+                        self.battlefield
+                            .iter()
+                            .filter(|candidate| {
+                                candidate.controller == player
+                                    && candidate.factory_animated
+                                    && self.effective_behavior(candidate)
+                                        == Some(CardBehavior::MishrasFactory)
+                            })
+                            .map(|candidate| Action::ActivateAbility {
+                                source: permanent.card.id,
+                                target: Some(Target::Permanent(candidate.card.id)),
+                                sacrifice: None,
+                            }),
+                    );
+                }
+                Some(CardBehavior::StripMine)
+                    if !permanent.tapped && self.can_use_tap_ability(permanent) =>
+                {
+                    actions.extend(
+                        self.battlefield
+                            .iter()
+                            .filter(|candidate| {
+                                self.kind(candidate.card.definition) == Some(CardKind::Land)
+                            })
+                            .map(|candidate| Action::ActivateAbility {
+                                source: permanent.card.id,
+                                target: Some(Target::Permanent(candidate.card.id)),
+                                sacrifice: Some(permanent.card.id),
+                            }),
+                    );
+                }
+                Some(CardBehavior::ChaosOrb)
+                    if !permanent.tapped && self.players[player.index()].mana_pool.total() > 0 =>
+                {
+                    actions.extend(
+                        self.battlefield
+                            .iter()
+                            .filter(|candidate| candidate.card.id != permanent.card.id)
+                            .map(|candidate| Action::ActivateAbility {
+                                source: permanent.card.id,
+                                target: Some(Target::Permanent(candidate.card.id)),
+                                sacrifice: None,
+                            }),
+                    );
+                }
+                Some(CardBehavior::OrcishMechanics)
+                    if !permanent.tapped && self.can_use_tap_ability(permanent) =>
+                {
+                    for sacrificed in self.battlefield.iter().filter(|candidate| {
+                        candidate.controller == player
+                            && candidate.card.id != permanent.card.id
+                            && self
+                                .kind(candidate.card.definition)
+                                .is_some_and(CardKind::is_artifact)
+                    }) {
+                        actions.extend(self.damage_targets().into_iter().map(|target| {
+                            Action::ActivateAbility {
+                                source: permanent.card.id,
+                                target: Some(target),
+                                sacrifice: Some(sacrificed.card.id),
+                            }
+                        }));
+                    }
+                }
                 _ => {}
             }
         }
@@ -965,6 +1096,8 @@ impl Game {
             chosen_player: None,
             destroy_at_end: false,
             flying_until_end: false,
+            factory_animated: false,
+            dragon_whelp_activations: 0,
             combat_damage_assignment: Vec::new(),
         });
         self.consecutive_passes = 0;
@@ -979,14 +1112,31 @@ impl Game {
         }
     }
 
-    fn activate_mountain(&mut self, player: PlayerId, source: CardInstanceId) {
-        let permanent = self
+    fn activate_mana_source(&mut self, player: PlayerId, source: CardInstanceId) {
+        let production = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+            .and_then(|permanent| self.mana_production(permanent))
+            .expect("legal mana action references a mana source");
+        let is_lotus = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+            .is_some_and(|permanent| {
+                self.behavior(permanent.card.definition) == Some(CardBehavior::BlackLotus)
+            });
+        if is_lotus {
+            self.destroy_permanent(source);
+        } else if let Some(permanent) = self
             .battlefield
             .iter_mut()
             .find(|permanent| permanent.card.id == source)
-            .expect("legal mana action references a permanent");
-        permanent.tapped = true;
-        self.players[player.index()].mana_pool.red += 1;
+        {
+            permanent.tapped = true;
+        }
+        self.players[player.index()].mana_pool.red += production.red;
+        self.players[player.index()].mana_pool.colorless += production.colorless;
         self.consecutive_passes = 0;
         self.events.push(GameEvent::ManaAdded { player, source });
     }
@@ -996,6 +1146,7 @@ impl Game {
         player: PlayerId,
         card_id: CardInstanceId,
         targets: Vec<Target>,
+        sacrifices: &[CardInstanceId],
         x: u16,
     ) {
         let card = remove_card(&mut self.players[player.index()].hand, card_id)
@@ -1009,6 +1160,9 @@ impl Game {
             ),
             x,
         );
+        for sacrificed in sacrifices {
+            self.destroy_permanent(*sacrificed);
+        }
         let stack_id = StackObjectId(self.next_stack_id);
         self.next_stack_id += 1;
         self.stack.push(StackObject {
@@ -1080,6 +1234,8 @@ impl Game {
                 chosen_player,
                 destroy_at_end: false,
                 flying_until_end: false,
+                factory_animated: false,
+                dragon_whelp_activations: 0,
                 combat_damage_assignment: Vec::new(),
             });
         } else {
@@ -1099,6 +1255,9 @@ impl Game {
         match behavior {
             CardBehavior::LightningBolt => {
                 self.damage_target(object.targets.first().copied(), 3);
+            }
+            CardBehavior::GoblinGrenade => {
+                self.damage_target(object.targets.first().copied(), 5);
             }
             CardBehavior::ChainLightning => {
                 let deciding = match object.targets.first() {
@@ -1145,7 +1304,54 @@ impl Game {
                     });
                 }
             }
+            CardBehavior::WheelOfFortune => self.resolve_wheel_of_fortune(),
             _ => {}
+        }
+    }
+
+    fn resolve_wheel_of_fortune(&mut self) {
+        for player in [PlayerId::One, PlayerId::Two] {
+            let state = &mut self.players[player.index()];
+            state.graveyard.append(&mut state.hand);
+        }
+        let can_draw = [
+            self.players[0].library.len() >= 7,
+            self.players[1].library.len() >= 7,
+        ];
+        match can_draw {
+            [false, false] => {
+                self.finish(GameResult::Draw);
+                return;
+            }
+            [false, true] => {
+                self.finish(GameResult::Winner {
+                    winner: PlayerId::Two,
+                    reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+                });
+                return;
+            }
+            [true, false] => {
+                self.finish(GameResult::Winner {
+                    winner: PlayerId::One,
+                    reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+                });
+                return;
+            }
+            [true, true] => {}
+        }
+        for player in [PlayerId::One, PlayerId::Two] {
+            for _ in 0..7 {
+                let card = self.players[player.index()]
+                    .library
+                    .pop()
+                    .expect("library size was checked");
+                let card_id = card.id;
+                self.players[player.index()].hand.push(card);
+                self.events.push(GameEvent::CardDrawn {
+                    player,
+                    card: card_id,
+                });
+            }
         }
     }
 
@@ -1186,24 +1392,133 @@ impl Game {
         .unwrap_or(u16::MAX)
     }
 
+    fn blood_moon_active(&self) -> bool {
+        self.count_behavior(CardBehavior::BloodMoon) > 0
+    }
+
+    fn is_nonbasic_land(&self, permanent: &Permanent) -> bool {
+        self.kind(permanent.card.definition) == Some(CardKind::Land)
+            && self
+                .catalog
+                .get(permanent.card.definition)
+                .is_some_and(|card| !card.is_basic_land)
+    }
+
+    fn effective_behavior(&self, permanent: &Permanent) -> Option<CardBehavior> {
+        if self.blood_moon_active() && self.is_nonbasic_land(permanent) {
+            Some(CardBehavior::Mountain)
+        } else {
+            self.behavior(permanent.card.definition)
+        }
+    }
+
+    fn mana_production(&self, permanent: &Permanent) -> Option<ManaPool> {
+        match self.effective_behavior(permanent)? {
+            CardBehavior::Mountain | CardBehavior::MoxRuby => Some(ManaPool {
+                red: 1,
+                colorless: 0,
+            }),
+            CardBehavior::MishrasFactory
+            | CardBehavior::MoxEmerald
+            | CardBehavior::MoxJet
+            | CardBehavior::MoxPearl
+            | CardBehavior::MoxSapphire
+            | CardBehavior::StripMine => Some(ManaPool {
+                red: 0,
+                colorless: 1,
+            }),
+            CardBehavior::SolRing => Some(ManaPool {
+                red: 0,
+                colorless: 2,
+            }),
+            CardBehavior::BlackLotus => Some(ManaPool {
+                red: 3,
+                colorless: 0,
+            }),
+            _ => None,
+        }
+    }
+
+    fn base_stats(&self, permanent: &Permanent) -> Option<crate::CreatureStats> {
+        if self.effective_behavior(permanent) == Some(CardBehavior::MishrasFactory)
+            && permanent.factory_animated
+        {
+            Some(crate::CreatureStats {
+                power: 2,
+                toughness: 2,
+                haste: false,
+                trample: false,
+            })
+        } else {
+            self.effective_behavior(permanent)
+                .and_then(CardBehavior::creature_stats)
+        }
+    }
+
+    fn goblin_bonus(&self, permanent: &Permanent) -> i16 {
+        let Some(behavior) = self.effective_behavior(permanent) else {
+            return 0;
+        };
+        if !behavior.is_goblin() {
+            return 0;
+        }
+        let kings = self
+            .battlefield
+            .iter()
+            .filter(|candidate| {
+                candidate.controller == permanent.controller
+                    && candidate.card.id != permanent.card.id
+                    && self.effective_behavior(candidate) == Some(CardBehavior::GoblinKing)
+            })
+            .count();
+        i16::try_from(kings).unwrap_or(i16::MAX)
+    }
+
     fn power(&self, permanent: &Permanent) -> Option<i16> {
-        self.behavior(permanent.card.definition)
-            .and_then(CardBehavior::creature_stats)
-            .map(|stats| stats.power + permanent.power_bonus)
+        self.base_stats(permanent)
+            .map(|stats| stats.power + permanent.power_bonus + self.goblin_bonus(permanent))
     }
 
     fn toughness(&self, permanent: &Permanent) -> Option<i16> {
-        self.behavior(permanent.card.definition)
-            .and_then(CardBehavior::creature_stats)
-            .map(|stats| stats.toughness + permanent.toughness_bonus)
+        self.base_stats(permanent)
+            .map(|stats| stats.toughness + permanent.toughness_bonus + self.goblin_bonus(permanent))
+    }
+
+    fn has_flying(&self, permanent: &Permanent) -> bool {
+        permanent.flying_until_end
+            || self
+                .effective_behavior(permanent)
+                .is_some_and(CardBehavior::has_flying)
+    }
+
+    fn has_mountainwalk(&self, permanent: &Permanent) -> bool {
+        let printed = self
+            .effective_behavior(permanent)
+            .is_some_and(CardBehavior::has_mountainwalk);
+        let king = self
+            .effective_behavior(permanent)
+            .is_some_and(CardBehavior::is_goblin)
+            && self.battlefield.iter().any(|candidate| {
+                candidate.controller == permanent.controller
+                    && candidate.card.id != permanent.card.id
+                    && self.effective_behavior(candidate) == Some(CardBehavior::GoblinKing)
+            });
+        printed || king
+    }
+
+    fn controls_mountain(&self, player: PlayerId) -> bool {
+        self.battlefield.iter().any(|permanent| {
+            permanent.controller == player
+                && self.effective_behavior(permanent) == Some(CardBehavior::Mountain)
+        })
     }
 
     fn can_use_tap_ability(&self, permanent: &Permanent) -> bool {
-        self.behavior(permanent.card.definition)
-            .and_then(CardBehavior::creature_stats)
+        self.base_stats(permanent)
             .is_none_or(|stats| stats.haste || permanent.entered_turn < self.turn)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn activate_ability(
         &mut self,
         player: PlayerId,
@@ -1215,7 +1530,7 @@ impl Game {
             .battlefield
             .iter()
             .find(|permanent| permanent.card.id == source)
-            .and_then(|permanent| self.behavior(permanent.card.definition));
+            .and_then(|permanent| self.effective_behavior(permanent));
         match behavior {
             Some(CardBehavior::Atog) => {
                 if let Some(sacrificed) = sacrifice {
@@ -1261,6 +1576,95 @@ impl Game {
                     creature.destroy_at_end = true;
                 }
             }
+            Some(CardBehavior::GoblinBalloonBrigade) => {
+                self.players[player.index()].mana_pool.red -= 1;
+                if let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == source)
+                {
+                    permanent.flying_until_end = true;
+                }
+            }
+            Some(CardBehavior::GraniteGargoyle) => {
+                self.players[player.index()].mana_pool.red -= 1;
+                if let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == source)
+                {
+                    permanent.toughness_bonus += 1;
+                }
+            }
+            Some(CardBehavior::DragonWhelp) => {
+                self.players[player.index()].mana_pool.red -= 1;
+                if let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == source)
+                {
+                    permanent.power_bonus += 1;
+                    permanent.dragon_whelp_activations =
+                        permanent.dragon_whelp_activations.saturating_add(1);
+                    if permanent.dragon_whelp_activations >= 4 {
+                        permanent.destroy_at_end = true;
+                    }
+                }
+            }
+            Some(CardBehavior::MishrasFactory) => {
+                if let Some(Target::Permanent(target)) = target {
+                    if let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == source)
+                    {
+                        permanent.tapped = true;
+                    }
+                    if let Some(worker) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == target)
+                    {
+                        worker.power_bonus += 1;
+                        worker.toughness_bonus += 1;
+                    }
+                } else {
+                    pay_generic(&mut self.players[player.index()].mana_pool, 1);
+                    if let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == source)
+                    {
+                        permanent.factory_animated = true;
+                    }
+                }
+            }
+            Some(CardBehavior::StripMine) => {
+                if let Some(Target::Permanent(target)) = target {
+                    self.destroy_permanent(source);
+                    self.destroy_permanent(target);
+                }
+            }
+            Some(CardBehavior::ChaosOrb) => {
+                pay_generic(&mut self.players[player.index()].mana_pool, 1);
+                if let Some(Target::Permanent(target)) = target {
+                    self.destroy_permanent(target);
+                }
+                self.destroy_permanent(source);
+            }
+            Some(CardBehavior::OrcishMechanics) => {
+                if let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == source)
+                {
+                    permanent.tapped = true;
+                }
+                if let Some(sacrificed) = sacrifice {
+                    self.destroy_permanent(sacrificed);
+                }
+                self.damage_target(target, 2);
+            }
             _ => {}
         }
         self.consecutive_passes = 0;
@@ -1284,8 +1688,7 @@ impl Game {
     }
 
     fn can_attack(&self, permanent: &Permanent) -> bool {
-        self.behavior(permanent.card.definition)
-            .and_then(CardBehavior::creature_stats)
+        self.base_stats(permanent)
             .is_some_and(|stats| stats.haste || permanent.entered_turn < self.turn)
     }
 
@@ -1322,17 +1725,38 @@ impl Game {
             .battlefield
             .iter()
             .filter(|permanent| permanent.attacking)
-            .map(|permanent| (permanent.card.id, permanent.flying_until_end))
+            .map(|permanent| {
+                (
+                    permanent.card.id,
+                    self.has_flying(permanent),
+                    self.has_mountainwalk(permanent)
+                        && self.controls_mountain(permanent.controller.opponent()),
+                    self.power(permanent).unwrap_or(0),
+                )
+            })
             .collect();
         blockers
             .into_iter()
             .flat_map(|blocker| {
-                attackers.iter().filter_map(move |(attacker, flying)| {
-                    (!flying).then_some(Action::DeclareBlocker {
-                        blocker,
-                        attacker: *attacker,
+                let blocker_permanent = self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == blocker)
+                    .expect("blocker is on the battlefield");
+                let blocker_flying = self.has_flying(blocker_permanent);
+                let ironclaw =
+                    self.effective_behavior(blocker_permanent) == Some(CardBehavior::IronclawOrcs);
+                attackers
+                    .iter()
+                    .filter_map(move |(attacker, flying, unblockable, power)| {
+                        let can_block = !(*unblockable
+                            || *flying && !blocker_flying
+                            || ironclaw && *power >= 2);
+                        can_block.then_some(Action::DeclareBlocker {
+                            blocker,
+                            attacker: *attacker,
+                        })
                     })
-                })
             })
             .collect()
     }
@@ -1364,10 +1788,7 @@ impl Game {
                     .iter()
                     .filter(|blocker| blocker.blocking == Some(attacker.card.id))
                     .count();
-                let trample = self
-                    .behavior(attacker.card.definition)
-                    .and_then(CardBehavior::creature_stats)
-                    .is_some_and(|stats| stats.trample);
+                let trample = self.base_stats(attacker).is_some_and(|stats| stats.trample);
                 blocker_count > 1 || (trample && blocker_count > 0)
             })
             .map(|attacker| attacker.card.id)
@@ -1386,10 +1807,7 @@ impl Game {
             return Vec::new();
         };
         let power = self.power(attacker).unwrap_or(0).max(0).cast_unsigned();
-        let trample = self
-            .behavior(attacker.card.definition)
-            .and_then(CardBehavior::creature_stats)
-            .is_some_and(|stats| stats.trample);
+        let trample = self.base_stats(attacker).is_some_and(|stats| stats.trample);
         let mut recipients: Vec<_> = self
             .battlefield
             .iter()
@@ -1680,15 +2098,23 @@ impl Game {
         self.players[self.active_player.index()].land_played_this_turn = false;
         let winter_orb = self.winter_orb_active();
         let smoke = self.count_behavior(CardBehavior::Smoke) > 0;
+        let restricted_lands: Vec<_> = self
+            .battlefield
+            .iter()
+            .filter(|permanent| self.kind(permanent.card.definition) == Some(CardKind::Land))
+            .map(|permanent| permanent.card.id)
+            .collect();
+        let restricted_creatures: Vec<_> = self
+            .battlefield
+            .iter()
+            .filter(|permanent| self.power(permanent).is_some())
+            .map(|permanent| permanent.card.id)
+            .collect();
         self.untap_pending = false;
         for permanent in &mut self.battlefield {
             if permanent.controller == self.active_player {
-                let behavior = self
-                    .catalog
-                    .get(permanent.card.definition)
-                    .map(|card| card.behavior);
-                let restricted = (winter_orb && behavior == Some(CardBehavior::Mountain))
-                    || (smoke && behavior.and_then(CardBehavior::creature_stats).is_some());
+                let restricted = (winter_orb && restricted_lands.contains(&permanent.card.id))
+                    || (smoke && restricted_creatures.contains(&permanent.card.id));
                 if restricted && permanent.tapped {
                     self.untap_pending = true;
                 } else {
@@ -1755,6 +2181,8 @@ impl Game {
             permanent.toughness_bonus = 0;
             permanent.flying_until_end = false;
             permanent.destroy_at_end = false;
+            permanent.factory_animated = false;
+            permanent.dragon_whelp_activations = 0;
         }
     }
 
@@ -2012,6 +2440,8 @@ mod tests {
             chosen_player: None,
             destroy_at_end: false,
             flying_until_end: false,
+            factory_animated: false,
+            dragon_whelp_activations: 0,
             combat_damage_assignment: Vec::new(),
         }
     }
@@ -2038,6 +2468,7 @@ mod tests {
                 Target::Player(PlayerId::Two),
                 Target::Permanent(creature_id),
             ],
+            sacrifices: Vec::new(),
             x: 4,
         };
         assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -2077,6 +2508,7 @@ mod tests {
             Action::CastSpell {
                 card: fork.id,
                 targets: vec![Target::Spell(StackObjectId(77))],
+                sacrifices: Vec::new(),
                 x: 0,
             },
         )
@@ -2117,6 +2549,184 @@ mod tests {
                 .contains(&Action::ChooseCopyTargets {
                     targets: vec![stale_target],
                 })
+        );
+    }
+
+    #[test]
+    fn black_lotus_sacrifices_for_three_red_mana() {
+        let mut game = ready_game();
+        let lotus = creature(10_000, cards::BLACK_LOTUS, PlayerId::One);
+        let lotus_id = lotus.card.id;
+        game.battlefield.push(lotus);
+        let action = Action::ActivateManaAbility { source: lotus_id };
+        assert!(game.legal_actions(PlayerId::One).contains(&action));
+
+        game.apply(PlayerId::One, action).unwrap();
+
+        assert_eq!(game.players[0].mana_pool.red, 3);
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != lotus_id)
+        );
+        assert_eq!(game.players[0].graveyard.last().unwrap().id, lotus_id);
+    }
+
+    #[test]
+    fn goblin_grenade_requires_and_sacrifices_a_goblin() {
+        let mut game = ready_game();
+        let grenade = card(10_000, cards::GOBLIN_GRENADE, PlayerId::One);
+        let goblin = creature(10_001, cards::GOBLIN_BALLOON_BRIGADE, PlayerId::One);
+        let goblin_id = goblin.card.id;
+        game.players[0].hand.push(grenade.clone());
+        game.players[0].mana_pool.red = 1;
+        game.battlefield.push(goblin);
+        let action = Action::CastSpell {
+            card: grenade.id,
+            targets: vec![Target::Player(PlayerId::Two)],
+            sacrifices: vec![goblin_id],
+            x: 0,
+        };
+        assert!(game.legal_actions(PlayerId::One).contains(&action));
+
+        game.apply(PlayerId::One, action).unwrap();
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != goblin_id)
+        );
+        pass_priority_pair(&mut game);
+        assert_eq!(game.players[1].life, 15);
+    }
+
+    #[test]
+    fn factory_animates_and_strip_mine_destroys_lands() {
+        let mut game = ready_game();
+        let factory = creature(10_000, cards::MISHRA_S_FACTORY, PlayerId::One);
+        let strip = creature(10_001, cards::STRIP_MINE, PlayerId::One);
+        let opposing_factory = creature(10_002, cards::MISHRA_S_FACTORY, PlayerId::Two);
+        let factory_id = factory.card.id;
+        let strip_id = strip.card.id;
+        let opposing_id = opposing_factory.card.id;
+        game.battlefield = vec![factory, strip, opposing_factory];
+        game.players[0].mana_pool.colorless = 1;
+
+        game.apply(
+            PlayerId::One,
+            Action::ActivateAbility {
+                source: factory_id,
+                target: None,
+                sacrifice: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == factory_id)
+                .and_then(|permanent| game.power(permanent)),
+            Some(2)
+        );
+
+        game.apply(
+            PlayerId::One,
+            Action::ActivateAbility {
+                source: strip_id,
+                target: Some(Target::Permanent(opposing_id)),
+                sacrifice: Some(strip_id),
+            },
+        )
+        .unwrap();
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| ![strip_id, opposing_id].contains(&permanent.card.id))
+        );
+    }
+
+    #[test]
+    fn chaos_orb_uses_the_documented_deterministic_success_rule() {
+        let mut game = ready_game();
+        let orb = creature(10_000, cards::CHAOS_ORB, PlayerId::One);
+        let target = creature(10_001, cards::BLACK_VISE, PlayerId::Two);
+        let orb_id = orb.card.id;
+        let target_id = target.card.id;
+        game.battlefield = vec![orb, target];
+        game.players[0].mana_pool.colorless = 1;
+        let action = Action::ActivateAbility {
+            source: orb_id,
+            target: Some(Target::Permanent(target_id)),
+            sacrifice: None,
+        };
+        assert!(game.legal_actions(PlayerId::One).contains(&action));
+
+        game.apply(PlayerId::One, action).unwrap();
+
+        assert!(game.battlefield.is_empty());
+        assert_eq!(game.players[0].mana_pool.total(), 0);
+    }
+
+    #[test]
+    fn goblin_king_buffs_other_goblins_and_grants_mountainwalk() {
+        let mut game = ready_game();
+        let king = creature(10_000, cards::GOBLIN_KING, PlayerId::One);
+        let mut flarg = creature(10_001, cards::GOBLINS_OF_THE_FLARG, PlayerId::One);
+        flarg.attacking = true;
+        let mountain = creature(10_002, cards::MOUNTAIN, PlayerId::Two);
+        let blocker = creature(10_003, cards::IRONCLAW_ORCS, PlayerId::Two);
+        let flarg_id = flarg.card.id;
+        game.battlefield = vec![king, flarg, mountain, blocker];
+        game.step = Step::DeclareBlockers;
+        game.blockers_declared = false;
+
+        let flarg = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == flarg_id)
+            .unwrap();
+        assert_eq!(game.power(flarg), Some(2));
+        assert!(
+            game.legal_actions(PlayerId::Two)
+                .iter()
+                .all(|action| !matches!(
+                    action,
+                    Action::DeclareBlocker { attacker, .. } if *attacker == flarg_id
+                ))
+        );
+    }
+
+    #[test]
+    fn wheel_discards_both_hands_and_draws_seven() {
+        let mut game = ready_game();
+        let wheel = card(10_000, cards::WHEEL_OF_FORTUNE, PlayerId::One);
+        game.players[0].hand.push(wheel.clone());
+        game.players[0]
+            .hand
+            .push(card(10_001, cards::MOUNTAIN, PlayerId::One));
+        game.players[1]
+            .hand
+            .push(card(10_002, cards::MOUNTAIN, PlayerId::Two));
+        game.players[0].mana_pool.red = 3;
+
+        game.apply(
+            PlayerId::One,
+            Action::CastSpell {
+                card: wheel.id,
+                targets: Vec::new(),
+                sacrifices: Vec::new(),
+                x: 0,
+            },
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+
+        assert_eq!(game.players[0].hand.len(), 7);
+        assert_eq!(game.players[1].hand.len(), 7);
+        assert!(
+            game.players[0]
+                .graveyard
+                .iter()
+                .any(|card| card.id == CardInstanceId(10_001))
         );
     }
 

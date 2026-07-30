@@ -35,22 +35,42 @@ pub enum CardBehavior {
     AnkhOfMishra,
     Atog,
     BallLightning,
+    BlackLotus,
     BlackVise,
     BloodMoon,
     ChainLightning,
+    ChaosOrb,
     CopperTablet,
     Detonate,
+    DragonWhelp,
     Fireball,
     Fork,
     GlassesOfUrza,
+    GoblinBalloonBrigade,
+    GoblinDiggingTeam,
+    GoblinGrenade,
+    GoblinKing,
+    GoblinsOfTheFlarg,
+    GraniteGargoyle,
     IronStar,
+    IronclawOrcs,
     Mountain,
     LightningBolt,
+    MishrasFactory,
+    MoxEmerald,
+    MoxJet,
+    MoxPearl,
+    MoxRuby,
+    MoxSapphire,
+    OrcishMechanics,
     RedElementalBlast,
     Shatter,
     Smoke,
+    SolRing,
     StoneGiant,
+    StripMine,
     SuChi,
+    WheelOfFortune,
     WinterOrb,
     Unsupported,
 }
@@ -129,39 +149,80 @@ impl CardBehavior {
     #[must_use]
     pub const fn kind(self) -> CardKind {
         match self {
-            Self::Mountain => CardKind::Land,
-            Self::Atog | Self::BallLightning | Self::StoneGiant => CardKind::Creature,
+            Self::Mountain | Self::MishrasFactory | Self::StripMine => CardKind::Land,
+            Self::Atog
+            | Self::BallLightning
+            | Self::DragonWhelp
+            | Self::GoblinBalloonBrigade
+            | Self::GoblinDiggingTeam
+            | Self::GoblinKing
+            | Self::GoblinsOfTheFlarg
+            | Self::GraniteGargoyle
+            | Self::IronclawOrcs
+            | Self::OrcishMechanics
+            | Self::StoneGiant => CardKind::Creature,
             Self::SuChi => CardKind::ArtifactCreature,
             Self::AnkhOfMishra
+            | Self::BlackLotus
             | Self::BlackVise
+            | Self::ChaosOrb
             | Self::CopperTablet
             | Self::GlassesOfUrza
             | Self::IronStar
+            | Self::MoxEmerald
+            | Self::MoxJet
+            | Self::MoxPearl
+            | Self::MoxRuby
+            | Self::MoxSapphire
+            | Self::SolRing
             | Self::WinterOrb
             | Self::Unsupported => CardKind::Artifact,
             Self::BloodMoon | Self::Smoke => CardKind::Enchantment,
             Self::Fork | Self::LightningBolt | Self::RedElementalBlast | Self::Shatter => {
                 CardKind::Instant
             }
-            Self::ChainLightning | Self::Detonate | Self::Fireball => CardKind::Sorcery,
+            Self::ChainLightning
+            | Self::Detonate
+            | Self::Fireball
+            | Self::GoblinGrenade
+            | Self::WheelOfFortune => CardKind::Sorcery,
         }
     }
 
     #[must_use]
     pub const fn mana_cost(self) -> ManaCost {
         match self {
-            Self::Mountain => ManaCost::new(0, 0),
-            Self::AnkhOfMishra | Self::CopperTablet | Self::WinterOrb => ManaCost::new(2, 0),
-            Self::Smoke | Self::Fork => ManaCost::new(0, 2),
-            Self::Atog | Self::Shatter => ManaCost::new(1, 1),
-            Self::BallLightning => ManaCost::new(0, 3),
-            Self::BlackVise | Self::GlassesOfUrza | Self::IronStar => ManaCost::new(1, 0),
-            Self::BloodMoon => ManaCost::new(2, 1),
-            Self::ChainLightning | Self::LightningBolt | Self::RedElementalBlast => {
-                ManaCost::new(0, 1)
+            Self::Mountain
+            | Self::MishrasFactory
+            | Self::StripMine
+            | Self::BlackLotus
+            | Self::MoxEmerald
+            | Self::MoxJet
+            | Self::MoxPearl
+            | Self::MoxRuby
+            | Self::MoxSapphire => ManaCost::new(0, 0),
+            Self::SolRing | Self::BlackVise | Self::GlassesOfUrza | Self::IronStar => {
+                ManaCost::new(1, 0)
             }
+            Self::AnkhOfMishra | Self::ChaosOrb | Self::CopperTablet | Self::WinterOrb => {
+                ManaCost::new(2, 0)
+            }
+            Self::Smoke | Self::Fork => ManaCost::new(0, 2),
+            Self::Atog | Self::IronclawOrcs | Self::OrcishMechanics | Self::Shatter => {
+                ManaCost::new(1, 1)
+            }
+            Self::GoblinKing => ManaCost::new(1, 2),
+            Self::GraniteGargoyle | Self::BloodMoon | Self::WheelOfFortune => ManaCost::new(2, 1),
+            Self::DragonWhelp | Self::StoneGiant => ManaCost::new(2, 2),
+            Self::BallLightning => ManaCost::new(0, 3),
+            Self::ChainLightning
+            | Self::GoblinBalloonBrigade
+            | Self::GoblinDiggingTeam
+            | Self::GoblinGrenade
+            | Self::GoblinsOfTheFlarg
+            | Self::LightningBolt
+            | Self::RedElementalBlast => ManaCost::new(0, 1),
             Self::Detonate | Self::Fireball => ManaCost::with_x(1),
-            Self::StoneGiant => ManaCost::new(2, 2),
             Self::SuChi => ManaCost::new(4, 0),
             Self::Unsupported => ManaCost::new(u16::MAX, u16::MAX),
         }
@@ -182,6 +243,27 @@ impl CardBehavior {
                 haste: true,
                 trample: true,
             }),
+            Self::DragonWhelp => Some(CreatureStats {
+                power: 2,
+                toughness: 3,
+                haste: false,
+                trample: false,
+            }),
+            Self::GoblinBalloonBrigade
+            | Self::GoblinDiggingTeam
+            | Self::GoblinsOfTheFlarg
+            | Self::OrcishMechanics => Some(CreatureStats {
+                power: 1,
+                toughness: 1,
+                haste: false,
+                trample: false,
+            }),
+            Self::GoblinKing | Self::GraniteGargoyle | Self::IronclawOrcs => Some(CreatureStats {
+                power: 2,
+                toughness: 2,
+                haste: false,
+                trample: false,
+            }),
             Self::StoneGiant => Some(CreatureStats {
                 power: 3,
                 toughness: 4,
@@ -199,6 +281,27 @@ impl CardBehavior {
     }
 
     #[must_use]
+    pub const fn is_goblin(self) -> bool {
+        matches!(
+            self,
+            Self::GoblinBalloonBrigade
+                | Self::GoblinDiggingTeam
+                | Self::GoblinKing
+                | Self::GoblinsOfTheFlarg
+        )
+    }
+
+    #[must_use]
+    pub const fn has_flying(self) -> bool {
+        matches!(self, Self::DragonWhelp | Self::GraniteGargoyle)
+    }
+
+    #[must_use]
+    pub const fn has_mountainwalk(self) -> bool {
+        matches!(self, Self::GoblinsOfTheFlarg)
+    }
+
+    #[must_use]
     pub const fn is_red(self) -> bool {
         matches!(
             self,
@@ -207,13 +310,23 @@ impl CardBehavior {
                 | Self::BloodMoon
                 | Self::ChainLightning
                 | Self::Detonate
+                | Self::DragonWhelp
                 | Self::Fireball
                 | Self::Fork
+                | Self::GoblinBalloonBrigade
+                | Self::GoblinDiggingTeam
+                | Self::GoblinGrenade
+                | Self::GoblinKing
+                | Self::GoblinsOfTheFlarg
+                | Self::GraniteGargoyle
+                | Self::IronclawOrcs
                 | Self::LightningBolt
+                | Self::OrcishMechanics
                 | Self::RedElementalBlast
                 | Self::Shatter
                 | Self::Smoke
                 | Self::StoneGiant
+                | Self::WheelOfFortune
         )
     }
 }
