@@ -70,9 +70,10 @@ The POC is playable end to end, but it is not yet a general implementation of
 the Comprehensive Rules. Fireball supports its multi-target additional cost
 and even damage division, Fork can choose new targets for its copy, and combat
 damage uses the current player-selected assignment rules. Non-mana activated
-abilities and simple upkeep/entry triggers still resolve atomically. These
-constraints are explicit extension points rather than silent support for
-cards outside the POC.
+abilities generally resolve atomically, while Chaos Orb uses the stack so its
+source can be removed in response. Simple upkeep/entry triggers still resolve
+atomically. These constraints are explicit extension points rather than silent
+support for cards outside the POC.
 
 ## Built-in decks
 
@@ -96,9 +97,10 @@ colored output is represented as colorless mana, which is strategically
 equivalent for every implemented cost.
 
 EC Chaos Orb normally uses a physical dexterity flip. The headless simulator
-instead treats an activated Orb as a deterministic successful flip against
-the chosen permanent. This keeps seeded games reproducible and makes the
-format playable without modeling a human motor skill.
+instead treats a resolving Orb activation as a deterministic successful flip
+against the chosen permanent. The activation uses the stack, and removing the
+Orb before resolution nullifies the flip. This keeps seeded games reproducible
+and makes the format playable without modeling a human motor skill.
 
 This corpus is intentionally based on cards in an actual archetype rather than
 all legal red cards. A card joins the implementation target when a deck we

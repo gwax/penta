@@ -47,7 +47,9 @@ legal; other actions are generated only for the priority player.
 Mana abilities resolve immediately and do not use the stack. The current
 casting API requires mana to be floated before casting; integrating mana
 activation into a compound casting choice can be added without changing spell
-resolution.
+resolution. Chaos Orb's non-mana activated ability uses the stack and is
+identified separately from spells in `StackObservation`; its chosen permanent
+is exposed as a choice rather than a target.
 
 Attacker and blocker declaration are staged to keep legal-action generation
 linear rather than enumerating exponential subsets. No player receives
@@ -95,10 +97,11 @@ red decks, and its forty-card red/artifact corpus.
 It deliberately remains narrower than the full Comprehensive Rules. Fireball
 and Fork expose their full targeting decisions, and attackers expose current
 combat damage assignment decisions. Simple non-mana abilities and triggers
-still resolve atomically. Chaos Orb deterministically destroys its chosen
-permanent rather than simulating EC's physical card flip. Off-color Moxen
-produce colorless mana because the corpus contains no non-red colored costs.
-Red Elemental Blast has no observable legal work because the corpus contains
-no blue objects.
+generally resolve atomically. Chaos Orb's activation uses the stack and
+deterministically destroys its chosen permanent rather than simulating EC's
+physical card flip; removing the Orb before resolution nullifies the ability.
+Off-color Moxen produce colorless mana because the corpus contains no non-red
+colored costs. Red Elemental Blast has no observable legal work because the
+corpus contains no blue objects.
 
 [foundations-update]: https://magic.wizards.com/en/news/announcements/foundations-update-bulletin

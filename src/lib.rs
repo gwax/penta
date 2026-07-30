@@ -16,6 +16,7 @@ pub use card::{
 };
 pub use deck::{Deck, DeckError, ValidatedDeck};
 pub use game::{
-    Game, GameError, GameEvent, GameResult, ManaPool, PlayerObservation, Step, WinReason,
+    Game, GameError, GameEvent, GameResult, ManaPool, PlayerObservation, StackObjectKind, Step,
+    WinReason,
 };
 pub use ids::{CardDefinitionId, CardInstanceId, PlayerId, StackObjectId};

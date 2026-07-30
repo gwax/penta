@@ -41,9 +41,11 @@ struct Permanent {
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct StackObject {
     id: StackObjectId,
+    kind: StackObjectKind,
     card: CardInstance,
     controller: PlayerId,
     targets: Vec<Target>,
+    chosen_permanents: Vec<CardInstanceId>,
     x: u16,
     is_copy: bool,
 }
@@ -137,6 +139,12 @@ pub enum WinReason {
     OpponentTriedToDrawFromEmptyLibrary,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StackObjectKind {
+    Spell,
+    ActivatedAbility,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GameEvent {
     GameStarted {
@@ -161,6 +169,14 @@ pub enum GameEvent {
     },
     SpellResolved {
         card: CardInstanceId,
+    },
+    AbilityActivated {
+        player: PlayerId,
+        source: CardInstanceId,
+        chosen_permanents: Vec<CardInstanceId>,
+    },
+    AbilityResolved {
+        source: CardInstanceId,
     },
     DamageDealt {
         player: PlayerId,
@@ -197,10 +213,12 @@ pub struct PermanentObservation {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StackObservation {
     pub id: StackObjectId,
+    pub kind: StackObjectKind,
     pub card: CardInstanceId,
     pub definition: CardDefinitionId,
     pub controller: PlayerId,
     pub targets: Vec<Target>,
+    pub chosen_permanents: Vec<CardInstanceId>,
     pub x: u16,
 }
 
@@ -650,10 +668,12 @@ impl Game {
                 .iter()
                 .map(|object| StackObservation {
                     id: object.id,
+                    kind: object.kind,
                     card: object.card.id,
                     definition: object.card.definition,
                     controller: object.controller,
                     targets: object.targets.clone(),
+                    chosen_permanents: object.chosen_permanents.clone(),
                     x: object.x,
                 })
                 .collect(),
@@ -890,10 +910,11 @@ impl Game {
                 .stack
                 .iter()
                 .filter(|object| {
-                    matches!(
-                        self.kind(object.card.definition),
-                        Some(CardKind::Instant | CardKind::Sorcery)
-                    )
+                    object.kind == StackObjectKind::Spell
+                        && matches!(
+                            self.kind(object.card.definition),
+                            Some(CardKind::Instant | CardKind::Sorcery)
+                        )
                 })
                 .map(|object| vec![Target::Spell(object.id)])
                 .collect(),
@@ -1167,9 +1188,11 @@ impl Game {
         self.next_stack_id += 1;
         self.stack.push(StackObject {
             id: stack_id,
+            kind: StackObjectKind::Spell,
             card,
             controller: player,
             targets: targets.clone(),
+            chosen_permanents: Vec::new(),
             x,
             is_copy: false,
         });
@@ -1213,6 +1236,14 @@ impl Game {
             .stack
             .pop()
             .expect("resolution is requested only for a nonempty stack");
+        if object.kind == StackObjectKind::ActivatedAbility {
+            self.resolve_activated_ability(&object);
+            self.events.push(GameEvent::AbilityResolved {
+                source: object.card.id,
+            });
+            self.check_state_based_actions();
+            return;
+        }
         let behavior = self
             .behavior(object.card.definition)
             .expect("stack cards are cataloged");
@@ -1249,6 +1280,21 @@ impl Game {
         }
         self.events.push(GameEvent::SpellResolved { card: card_id });
         self.check_state_based_actions();
+    }
+
+    fn resolve_activated_ability(&mut self, object: &StackObject) {
+        if self.behavior(object.card.definition) != Some(CardBehavior::ChaosOrb)
+            || !self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == object.card.id)
+        {
+            return;
+        }
+        if let Some(chosen) = object.chosen_permanents.first().copied() {
+            self.destroy_permanent(chosen);
+        }
+        self.destroy_permanent(object.card.id);
     }
 
     fn resolve_spell_effect(&mut self, object: &StackObject, behavior: CardBehavior) {
@@ -1647,10 +1693,36 @@ impl Game {
             }
             Some(CardBehavior::ChaosOrb) => {
                 pay_generic(&mut self.players[player.index()].mana_pool, 1);
-                if let Some(Target::Permanent(target)) = target {
-                    self.destroy_permanent(target);
-                }
-                self.destroy_permanent(source);
+                let card = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == source)
+                    .map(|permanent| {
+                        permanent.tapped = true;
+                        permanent.card.clone()
+                    })
+                    .expect("legal Chaos Orb activation has a source");
+                let chosen_permanents = match target {
+                    Some(Target::Permanent(chosen)) => vec![chosen],
+                    Some(Target::Player(_) | Target::Spell(_)) | None => Vec::new(),
+                };
+                let stack_id = StackObjectId(self.next_stack_id);
+                self.next_stack_id += 1;
+                self.stack.push(StackObject {
+                    id: stack_id,
+                    kind: StackObjectKind::ActivatedAbility,
+                    card,
+                    controller: player,
+                    targets: Vec::new(),
+                    chosen_permanents: chosen_permanents.clone(),
+                    x: 0,
+                    is_copy: false,
+                });
+                self.events.push(GameEvent::AbilityActivated {
+                    player,
+                    source,
+                    chosen_permanents,
+                });
             }
             Some(CardBehavior::OrcishMechanics) => {
                 if let Some(permanent) = self
@@ -2496,9 +2568,11 @@ mod tests {
         game.players[0].mana_pool.red = 2;
         game.stack.push(StackObject {
             id: StackObjectId(77),
+            kind: StackObjectKind::Spell,
             card: card(10_001, cards::LIGHTNING_BOLT, PlayerId::Two),
             controller: PlayerId::Two,
             targets: vec![Target::Player(PlayerId::One)],
+            chosen_permanents: Vec::new(),
             x: 0,
             is_copy: false,
         });
@@ -2536,9 +2610,11 @@ mod tests {
             player: PlayerId::One,
             spell: StackObject {
                 id: StackObjectId(77),
+                kind: StackObjectKind::Spell,
                 card: card(10_001, cards::SHATTER, PlayerId::Two),
                 controller: PlayerId::Two,
                 targets: vec![stale_target],
+                chosen_permanents: Vec::new(),
                 x: 0,
                 is_copy: false,
             },
@@ -2662,8 +2738,74 @@ mod tests {
 
         game.apply(PlayerId::One, action).unwrap();
 
+        assert_eq!(game.stack.len(), 1);
+        assert_eq!(game.stack[0].kind, StackObjectKind::ActivatedAbility);
+        assert_eq!(game.stack[0].chosen_permanents, vec![target_id]);
+        assert!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == orb_id)
+                .is_some_and(|permanent| permanent.tapped)
+        );
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == target_id)
+        );
+        pass_priority_pair(&mut game);
         assert!(game.battlefield.is_empty());
         assert_eq!(game.players[0].mana_pool.total(), 0);
+    }
+
+    #[test]
+    fn removing_chaos_orb_in_response_nullifies_its_flip() {
+        let mut game = ready_game();
+        let orb = creature(10_000, cards::CHAOS_ORB, PlayerId::One);
+        let target = creature(10_001, cards::BLACK_VISE, PlayerId::Two);
+        let shatter = card(10_002, cards::SHATTER, PlayerId::Two);
+        let orb_id = orb.card.id;
+        let target_id = target.card.id;
+        game.battlefield = vec![orb, target];
+        game.players[0].mana_pool.colorless = 1;
+        game.players[1].hand.push(shatter.clone());
+        game.players[1].mana_pool.red = 2;
+
+        game.apply(
+            PlayerId::One,
+            Action::ActivateAbility {
+                source: orb_id,
+                target: Some(Target::Permanent(target_id)),
+                sacrifice: None,
+            },
+        )
+        .unwrap();
+        game.apply(PlayerId::One, Action::PassPriority).unwrap();
+        game.apply(
+            PlayerId::Two,
+            Action::CastSpell {
+                card: shatter.id,
+                targets: vec![Target::Permanent(orb_id)],
+                sacrifices: Vec::new(),
+                x: 0,
+            },
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+        assert_eq!(game.stack.len(), 1);
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != orb_id)
+        );
+
+        pass_priority_pair(&mut game);
+
+        assert!(game.stack.is_empty());
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == target_id)
+        );
     }
 
     #[test]
