@@ -3,11 +3,17 @@ use std::fmt;
 
 use crate::{CardInstanceId, PlayerId, StackObjectId};
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Target {
     Player(PlayerId),
     Permanent(CardInstanceId),
     Spell(StackObjectId),
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct CombatDamageAssignment {
+    pub recipient: Target,
+    pub amount: u16,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22,7 +28,10 @@ pub enum Action {
     },
     ChooseTriggeredAbility {
         pay: bool,
-        new_target: Option<Target>,
+        new_targets: Vec<Target>,
+    },
+    ChooseCopyTargets {
+        targets: Vec<Target>,
     },
     ChooseUntap {
         permanents: Vec<CardInstanceId>,
@@ -36,7 +45,7 @@ pub enum Action {
     },
     CastSpell {
         card: CardInstanceId,
-        target: Option<Target>,
+        targets: Vec<Target>,
         x: u16,
     },
     ActivateAbility {
@@ -53,6 +62,10 @@ pub enum Action {
         attacker: CardInstanceId,
     },
     FinishDeclaringBlockers,
+    AssignCombatDamage {
+        attacker: CardInstanceId,
+        assignments: Vec<CombatDamageAssignment>,
+    },
     Concede,
 }
 

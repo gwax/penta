@@ -232,7 +232,7 @@ fn mountain_casts_and_resolves_lightning_bolt() {
         PlayerId::One,
         Action::CastSpell {
             card: bolt,
-            target: Some(Target::Player(PlayerId::Two)),
+            targets: vec![Target::Player(PlayerId::Two)],
             x: 0,
         },
     )
@@ -386,8 +386,8 @@ fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {
             actions
                 .iter()
                 .filter_map(|action| match action {
-                    Action::CastSpell { x, target, .. } => {
-                        let attacks_opponent = *target == Some(Target::Player(player.opponent()));
+                    Action::CastSpell { x, targets, .. } => {
+                        let attacks_opponent = targets.contains(&Target::Player(player.opponent()));
                         Some((attacks_opponent, *x, action.clone()))
                     }
                     _ => None,
@@ -400,5 +400,7 @@ fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {
         .or_else(|| choose(&|action| matches!(action, Action::FinishDeclaringAttackers)))
         .or_else(|| choose(&|action| matches!(action, Action::DeclareBlocker { .. })))
         .or_else(|| choose(&|action| matches!(action, Action::FinishDeclaringBlockers)))
+        .or_else(|| choose(&|action| matches!(action, Action::AssignCombatDamage { .. })))
+        .or_else(|| choose(&|action| matches!(action, Action::ChooseCopyTargets { .. })))
         .or_else(|| choose(&|action| matches!(action, Action::PassPriority)))
 }

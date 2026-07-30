@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::action::{Action, ActionError, Target};
+use crate::action::{Action, ActionError, CombatDamageAssignment, Target};
 use crate::card::{CardBehavior, CardCatalog, CardKind, ManaCost};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
 use crate::ids::{CardDefinitionId, CardInstanceId, PlayerId, StackObjectId};
@@ -33,6 +33,7 @@ struct Permanent {
     chosen_player: Option<PlayerId>,
     destroy_at_end: bool,
     flying_until_end: bool,
+    combat_damage_assignment: Vec<CombatDamageAssignment>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -40,7 +41,7 @@ struct StackObject {
     id: StackObjectId,
     card: CardInstance,
     controller: PlayerId,
-    target: Option<Target>,
+    targets: Vec<Target>,
     x: u16,
     is_copy: bool,
 }
@@ -67,6 +68,10 @@ enum PendingChoice {
         player: PlayerId,
     },
     ChainLightning {
+        player: PlayerId,
+        spell: StackObject,
+    },
+    Fork {
         player: PlayerId,
         spell: StackObject,
     },
@@ -150,7 +155,7 @@ pub enum GameEvent {
     SpellCast {
         player: PlayerId,
         card: CardInstanceId,
-        target: Option<Target>,
+        targets: Vec<Target>,
     },
     SpellResolved {
         card: CardInstanceId,
@@ -193,7 +198,7 @@ pub struct StackObservation {
     pub card: CardInstanceId,
     pub definition: CardDefinitionId,
     pub controller: PlayerId,
-    pub target: Option<Target>,
+    pub targets: Vec<Target>,
     pub x: u16,
 }
 
@@ -240,6 +245,7 @@ pub struct Game {
     cleanup_pending: bool,
     pending_choices: Vec<PendingChoice>,
     last_seen_hands: [LastSeenHand; 2],
+    pending_combat_attackers: Vec<CardInstanceId>,
     result: Option<GameResult>,
     events: Vec<GameEvent>,
 }
@@ -325,6 +331,7 @@ impl Game {
             cleanup_pending: false,
             pending_choices: Vec::new(),
             last_seen_hands: [None, None],
+            pending_combat_attackers: Vec::new(),
             result: None,
             events: vec![GameEvent::GameStarted { seed }],
         })
@@ -362,32 +369,70 @@ impl Game {
                 PendingChoice::IronStar { player: deciding } if *deciding == player => {
                     actions.push(Action::ChooseTriggeredAbility {
                         pay: false,
-                        new_target: None,
+                        new_targets: Vec::new(),
                     });
                     if self.players[player.index()].mana_pool.total() > 0 {
                         actions.push(Action::ChooseTriggeredAbility {
                             pay: true,
-                            new_target: None,
+                            new_targets: Vec::new(),
                         });
                     }
                 }
                 PendingChoice::ChainLightning {
-                    player: deciding, ..
+                    player: deciding,
+                    spell,
                 } if *deciding == player => {
                     actions.push(Action::ChooseTriggeredAbility {
                         pay: false,
-                        new_target: None,
+                        new_targets: Vec::new(),
                     });
                     if self.players[player.index()].mana_pool.red >= 2 {
-                        for target in self.damage_targets() {
+                        let mut targets = self.damage_targets();
+                        if let Some(target) = spell.targets.first()
+                            && !targets.contains(target)
+                        {
+                            targets.push(*target);
+                        }
+                        for target in targets {
                             actions.push(Action::ChooseTriggeredAbility {
                                 pay: true,
-                                new_target: Some(target),
+                                new_targets: vec![target],
                             });
                         }
                     }
                 }
-                PendingChoice::IronStar { .. } | PendingChoice::ChainLightning { .. } => {}
+                PendingChoice::Fork {
+                    player: deciding,
+                    spell,
+                } if *deciding == player => {
+                    let mut target_lists =
+                        self.behavior(spell.card.definition)
+                            .map_or_else(Vec::new, |behavior| {
+                                self.legal_target_lists(
+                                    behavior,
+                                    spell.x,
+                                    player,
+                                    Some(spell.targets.len()),
+                                )
+                            });
+                    target_lists.push(spell.targets.clone());
+                    target_lists.sort_unstable();
+                    target_lists.dedup();
+                    actions.extend(
+                        target_lists
+                            .into_iter()
+                            .map(|targets| Action::ChooseCopyTargets { targets }),
+                    );
+                }
+                PendingChoice::IronStar { .. }
+                | PendingChoice::ChainLightning { .. }
+                | PendingChoice::Fork { .. } => {}
+            }
+            return actions;
+        }
+        if let Some(attacker) = self.pending_combat_attackers.first().copied() {
+            if player == self.active_player {
+                actions.extend(self.combat_assignment_actions(attacker));
             }
             return actions;
         }
@@ -483,14 +528,15 @@ impl Game {
             Action::TakeMulligan => self.take_mulligan(player),
             Action::BottomCards { cards } => self.bottom_cards(player, &cards),
             Action::DiscardCards { cards } => self.discard_cards(player, &cards),
-            Action::ChooseTriggeredAbility { pay, new_target } => {
-                self.choose_triggered_ability(player, pay, new_target);
+            Action::ChooseTriggeredAbility { pay, new_targets } => {
+                self.choose_triggered_ability(player, pay, &new_targets);
             }
+            Action::ChooseCopyTargets { targets } => self.choose_copy_targets(player, targets),
             Action::ChooseUntap { permanents } => self.choose_untap(player, &permanents),
             Action::PassPriority => self.pass_priority(player),
             Action::PlayLand { card } => self.play_land(player, card),
             Action::ActivateManaAbility { source } => self.activate_mountain(player, source),
-            Action::CastSpell { card, target, x } => self.cast_spell(player, card, target, x),
+            Action::CastSpell { card, targets, x } => self.cast_spell(player, card, targets, x),
             Action::ActivateAbility {
                 source,
                 target,
@@ -502,6 +548,10 @@ impl Game {
                 self.declare_blocker(blocker, attacker);
             }
             Action::FinishDeclaringBlockers => self.finish_declaring_blockers(),
+            Action::AssignCombatDamage {
+                attacker,
+                assignments,
+            } => self.assign_combat_damage(attacker, assignments),
             Action::Concede => self.finish(GameResult::Winner {
                 winner: player.opponent(),
                 reason: WinReason::OpponentConceded,
@@ -558,7 +608,7 @@ impl Game {
                     card: object.card.id,
                     definition: object.card.definition,
                     controller: object.controller,
-                    target: object.target,
+                    targets: object.targets.clone(),
                     x: object.x,
                 })
                 .collect(),
@@ -627,12 +677,7 @@ impl Game {
         self.finish_cleanup();
     }
 
-    fn choose_triggered_ability(
-        &mut self,
-        player: PlayerId,
-        pay: bool,
-        new_target: Option<Target>,
-    ) {
+    fn choose_triggered_ability(&mut self, player: PlayerId, pay: bool, new_targets: &[Target]) {
         let choice = self.pending_choices.remove(0);
         match choice {
             PendingChoice::IronStar { .. } if pay => {
@@ -644,12 +689,26 @@ impl Game {
                 spell.id = StackObjectId(self.next_stack_id);
                 self.next_stack_id += 1;
                 spell.controller = player;
-                spell.target = new_target;
+                spell.targets = new_targets.to_vec();
                 spell.is_copy = true;
                 self.stack.push(spell);
             }
-            PendingChoice::IronStar { .. } | PendingChoice::ChainLightning { .. } => {}
+            PendingChoice::IronStar { .. }
+            | PendingChoice::ChainLightning { .. }
+            | PendingChoice::Fork { .. } => {}
         }
+    }
+
+    fn choose_copy_targets(&mut self, player: PlayerId, targets: Vec<Target>) {
+        let PendingChoice::Fork { mut spell, .. } = self.pending_choices.remove(0) else {
+            return;
+        };
+        spell.id = StackObjectId(self.next_stack_id);
+        self.next_stack_id += 1;
+        spell.controller = player;
+        spell.targets = targets;
+        spell.is_copy = true;
+        self.stack.push(spell);
     }
 
     fn add_land_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
@@ -687,47 +746,63 @@ impl Game {
             }
             let cost = behavior.mana_cost();
             let max_x = if cost.variable_x {
-                state
-                    .mana_pool
-                    .total()
-                    .saturating_sub(cost.red + cost.generic)
+                state.mana_pool.total()
             } else {
                 0
             };
             for x in 0..=max_x {
-                if !can_pay(state.mana_pool, cost, x) {
-                    continue;
-                }
-                for target in self.spell_targets(behavior, x, player) {
-                    actions.push(Action::CastSpell {
-                        card: card.id,
-                        target,
-                        x,
-                    });
+                let target_counts: Vec<_> = if behavior == CardBehavior::Fireball {
+                    (1..=self.damage_targets().len())
+                        .filter(|count| {
+                            can_pay(
+                                state.mana_pool,
+                                add_generic(cost, fireball_extra_cost(behavior, *count)),
+                                x,
+                            )
+                        })
+                        .map(Some)
+                        .collect()
+                } else {
+                    vec![None]
+                };
+                for target_count in target_counts {
+                    for targets in self.legal_target_lists(behavior, x, player, target_count) {
+                        let extra = fireball_extra_cost(behavior, targets.len());
+                        if !can_pay(state.mana_pool, add_generic(cost, extra), x) {
+                            continue;
+                        }
+                        actions.push(Action::CastSpell {
+                            card: card.id,
+                            targets,
+                            x,
+                        });
+                    }
                 }
             }
         }
     }
 
-    fn spell_targets(
+    fn legal_target_lists(
         &self,
         behavior: CardBehavior,
         x: u16,
         player: PlayerId,
-    ) -> Vec<Option<Target>> {
+        exact_count: Option<usize>,
+    ) -> Vec<Vec<Target>> {
         match behavior {
-            CardBehavior::LightningBolt | CardBehavior::ChainLightning | CardBehavior::Fireball => {
-                let mut targets = vec![
-                    Some(Target::Player(PlayerId::One)),
-                    Some(Target::Player(PlayerId::Two)),
-                ];
-                targets.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|permanent| self.power(permanent).is_some())
-                        .map(|permanent| Some(Target::Permanent(permanent.card.id))),
-                );
-                targets
+            CardBehavior::LightningBolt | CardBehavior::ChainLightning => self
+                .damage_targets()
+                .into_iter()
+                .map(|target| vec![target])
+                .collect(),
+            CardBehavior::Fireball => {
+                let targets = self.damage_targets();
+                let counts: Vec<_> =
+                    exact_count.map_or_else(|| (1..=targets.len()).collect(), |count| vec![count]);
+                counts
+                    .into_iter()
+                    .flat_map(|count| target_combinations(&targets, count))
+                    .collect()
             }
             CardBehavior::Shatter => self
                 .battlefield
@@ -736,7 +811,7 @@ impl Game {
                     self.kind(permanent.card.definition)
                         .is_some_and(CardKind::is_artifact)
                 })
-                .map(|permanent| Some(Target::Permanent(permanent.card.id)))
+                .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
             CardBehavior::Detonate => self
                 .battlefield
@@ -746,7 +821,7 @@ impl Game {
                         .is_some_and(CardKind::is_artifact)
                         && self.mana_value(permanent.card.definition) == x
                 })
-                .map(|permanent| Some(Target::Permanent(permanent.card.id)))
+                .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
             CardBehavior::Fork => self
                 .stack
@@ -757,11 +832,11 @@ impl Game {
                         Some(CardKind::Instant | CardKind::Sorcery)
                     )
                 })
-                .map(|object| Some(Target::Spell(object.id)))
+                .map(|object| vec![Target::Spell(object.id)])
                 .collect(),
             CardBehavior::RedElementalBlast => Vec::new(),
-            CardBehavior::BlackVise => vec![Some(Target::Player(player.opponent()))],
-            _ => vec![None],
+            CardBehavior::BlackVise => vec![vec![Target::Player(player.opponent())]],
+            _ => vec![Vec::new()],
         }
     }
 
@@ -852,6 +927,7 @@ impl Game {
             chosen_player: None,
             destroy_at_end: false,
             flying_until_end: false,
+            combat_damage_assignment: Vec::new(),
         });
         self.consecutive_passes = 0;
         self.events.push(GameEvent::LandPlayed {
@@ -881,7 +957,7 @@ impl Game {
         &mut self,
         player: PlayerId,
         card_id: CardInstanceId,
-        target: Option<Target>,
+        targets: Vec<Target>,
         x: u16,
     ) {
         let card = remove_card(&mut self.players[player.index()].hand, card_id)
@@ -889,7 +965,10 @@ impl Game {
         let behavior = self.behavior(card.definition).expect("cataloged card");
         pay_cost(
             &mut self.players[player.index()].mana_pool,
-            behavior.mana_cost(),
+            add_generic(
+                behavior.mana_cost(),
+                fireball_extra_cost(behavior, targets.len()),
+            ),
             x,
         );
         let stack_id = StackObjectId(self.next_stack_id);
@@ -898,7 +977,7 @@ impl Game {
             id: stack_id,
             card,
             controller: player,
-            target,
+            targets: targets.clone(),
             x,
             is_copy: false,
         });
@@ -906,7 +985,7 @@ impl Game {
         self.events.push(GameEvent::SpellCast {
             player,
             card: card_id,
-            target,
+            targets,
         });
         if behavior.is_red() {
             for permanent in &self.battlefield {
@@ -946,8 +1025,8 @@ impl Game {
             .behavior(object.card.definition)
             .expect("stack cards are cataloged");
         if behavior.kind().is_permanent() {
-            let chosen_player = match object.target {
-                Some(Target::Player(player)) => Some(player),
+            let chosen_player = match object.targets.first() {
+                Some(Target::Player(player)) => Some(*player),
                 _ => None,
             };
             self.battlefield.push(Permanent {
@@ -963,6 +1042,7 @@ impl Game {
                 chosen_player,
                 destroy_at_end: false,
                 flying_until_end: false,
+                combat_damage_assignment: Vec::new(),
             });
         } else {
             self.resolve_spell_effect(&object, behavior);
@@ -980,15 +1060,15 @@ impl Game {
     fn resolve_spell_effect(&mut self, object: &StackObject, behavior: CardBehavior) {
         match behavior {
             CardBehavior::LightningBolt => {
-                self.damage_target(object.target, 3);
+                self.damage_target(object.targets.first().copied(), 3);
             }
             CardBehavior::ChainLightning => {
-                let deciding = match object.target {
-                    Some(Target::Player(player)) => Some(player),
-                    Some(Target::Permanent(id)) => self.permanent_controller(id),
+                let deciding = match object.targets.first() {
+                    Some(Target::Player(player)) => Some(*player),
+                    Some(Target::Permanent(id)) => self.permanent_controller(*id),
                     Some(Target::Spell(_)) | None => None,
                 };
-                self.damage_target(object.target, 3);
+                self.damage_target(object.targets.first().copied(), 3);
                 if let Some(player) = deciding {
                     self.pending_choices.push(PendingChoice::ChainLightning {
                         player,
@@ -996,31 +1076,35 @@ impl Game {
                     });
                 }
             }
-            CardBehavior::Fireball => self.damage_target(object.target, object.x),
+            CardBehavior::Fireball => {
+                let divisor = u16::try_from(object.targets.len()).unwrap_or(u16::MAX);
+                let amount = object.x.checked_div(divisor).unwrap_or(0);
+                for target in &object.targets {
+                    self.damage_target(Some(*target), amount);
+                }
+            }
             CardBehavior::Shatter => {
-                if let Some(Target::Permanent(target)) = object.target {
-                    self.destroy_permanent(target);
+                if let Some(Target::Permanent(target)) = object.targets.first() {
+                    self.destroy_permanent(*target);
                 }
             }
             CardBehavior::Detonate => {
-                if let Some(Target::Permanent(target)) = object.target
-                    && let Some(controller) = self.permanent_controller(target)
+                if let Some(Target::Permanent(target)) = object.targets.first()
+                    && let Some(controller) = self.permanent_controller(*target)
                 {
-                    self.destroy_permanent(target);
+                    self.destroy_permanent(*target);
                     self.deal_damage(controller, object.x);
                 }
             }
             CardBehavior::Fork => {
-                if let Some(Target::Spell(target)) = object.target
+                if let Some(Target::Spell(target)) = object.targets.first()
                     && let Some(original) =
-                        self.stack.iter().find(|item| item.id == target).cloned()
+                        self.stack.iter().find(|item| item.id == *target).cloned()
                 {
-                    let mut copy = original;
-                    copy.id = StackObjectId(self.next_stack_id);
-                    self.next_stack_id += 1;
-                    copy.controller = object.controller;
-                    copy.is_copy = true;
-                    self.stack.push(copy);
+                    self.pending_choices.push(PendingChoice::Fork {
+                        player: object.controller,
+                        spell: original,
+                    });
                 }
             }
             _ => {}
@@ -1231,6 +1315,112 @@ impl Game {
         self.consecutive_passes = 0;
     }
 
+    fn begin_combat_damage_assignment(&mut self) {
+        self.pending_combat_attackers = self
+            .battlefield
+            .iter()
+            .filter(|attacker| attacker.attacking)
+            .filter(|attacker| {
+                let blocker_count = self
+                    .battlefield
+                    .iter()
+                    .filter(|blocker| blocker.blocking == Some(attacker.card.id))
+                    .count();
+                let trample = self
+                    .behavior(attacker.card.definition)
+                    .and_then(CardBehavior::creature_stats)
+                    .is_some_and(|stats| stats.trample);
+                blocker_count > 1 || (trample && blocker_count > 0)
+            })
+            .map(|attacker| attacker.card.id)
+            .collect();
+        if self.pending_combat_attackers.is_empty() {
+            self.deal_combat_damage();
+        }
+    }
+
+    fn combat_assignment_actions(&self, attacker_id: CardInstanceId) -> Vec<Action> {
+        let Some(attacker) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker_id)
+        else {
+            return Vec::new();
+        };
+        let power = self.power(attacker).unwrap_or(0).max(0).cast_unsigned();
+        let trample = self
+            .behavior(attacker.card.definition)
+            .and_then(CardBehavior::creature_stats)
+            .is_some_and(|stats| stats.trample);
+        let mut recipients: Vec<_> = self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.blocking == Some(attacker_id))
+            .map(|permanent| Target::Permanent(permanent.card.id))
+            .collect();
+        recipients.sort_unstable();
+        if trample {
+            recipients.push(Target::Player(self.active_player.opponent()));
+        }
+
+        damage_distributions(recipients.len(), power)
+            .into_iter()
+            .filter(|amounts| {
+                if !trample || amounts.last().copied().unwrap_or(0) == 0 {
+                    return true;
+                }
+                recipients
+                    .iter()
+                    .zip(amounts)
+                    .filter_map(|(target, amount)| match target {
+                        Target::Permanent(id) => Some((*id, *amount)),
+                        Target::Player(_) | Target::Spell(_) => None,
+                    })
+                    .all(|(id, amount)| amount >= self.lethal_damage(id))
+            })
+            .map(|amounts| Action::AssignCombatDamage {
+                attacker: attacker_id,
+                assignments: recipients
+                    .iter()
+                    .copied()
+                    .zip(amounts)
+                    .map(|(recipient, amount)| CombatDamageAssignment { recipient, amount })
+                    .collect(),
+            })
+            .collect()
+    }
+
+    fn lethal_damage(&self, permanent_id: CardInstanceId) -> u16 {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == permanent_id)
+            .map_or(0, |permanent| {
+                self.toughness(permanent)
+                    .unwrap_or(0)
+                    .max(0)
+                    .cast_unsigned()
+                    .saturating_sub(permanent.damage)
+            })
+    }
+
+    fn assign_combat_damage(
+        &mut self,
+        attacker: CardInstanceId,
+        assignments: Vec<CombatDamageAssignment>,
+    ) {
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == attacker)
+        {
+            permanent.combat_damage_assignment = assignments;
+        }
+        self.pending_combat_attackers.remove(0);
+        if self.pending_combat_attackers.is_empty() {
+            self.deal_combat_damage();
+        }
+    }
+
     fn deal_combat_damage(&mut self) {
         let attackers: Vec<_> = self
             .battlefield
@@ -1251,47 +1441,24 @@ impl Game {
                 .unwrap_or(0)
                 .max(0)
                 .cast_unsigned();
-            let trample = self
-                .behavior(self.battlefield[attacker_index].card.definition)
-                .and_then(CardBehavior::creature_stats)
-                .is_some_and(|stats| stats.trample);
-            let mut blockers: Vec<_> = self
+            let blockers: Vec<_> = self
                 .battlefield
                 .iter()
                 .filter(|permanent| permanent.blocking == Some(attacker_id))
                 .map(|permanent| permanent.card.id)
                 .collect();
-            blockers.sort_unstable();
             if blockers.is_empty() {
                 self.deal_damage(self.active_player.opponent(), power);
             } else {
-                let mut remaining = power;
-                for (index, blocker) in blockers.iter().enumerate() {
-                    let existing_damage = self
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == *blocker)
-                        .map_or(0, |permanent| permanent.damage);
-                    let lethal = self
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == *blocker)
-                        .and_then(|permanent| self.toughness(permanent))
-                        .unwrap_or(0)
-                        .max(0)
-                        .cast_unsigned()
-                        .saturating_sub(existing_damage);
-                    let is_last = index + 1 == blockers.len();
-                    let assigned = if is_last && !trample {
-                        remaining
-                    } else {
-                        remaining.min(lethal)
-                    };
-                    self.damage_target(Some(Target::Permanent(*blocker)), assigned);
-                    remaining -= assigned;
-                }
-                if trample && remaining > 0 {
-                    self.deal_damage(self.active_player.opponent(), remaining);
+                let assignments = self.battlefield[attacker_index]
+                    .combat_damage_assignment
+                    .clone();
+                if assignments.is_empty() {
+                    self.damage_target(Some(Target::Permanent(blockers[0])), power);
+                } else {
+                    for assignment in assignments {
+                        self.damage_target(Some(assignment.recipient), assignment.amount);
+                    }
                 }
                 let return_damage: u16 = blockers
                     .iter()
@@ -1440,7 +1607,7 @@ impl Game {
             }
             Step::DeclareBlockers => {
                 self.step = Step::CombatDamage;
-                self.deal_combat_damage();
+                self.begin_combat_damage_assignment();
             }
             Step::CombatDamage => self.step = Step::EndOfCombat,
             Step::EndOfCombat => {
@@ -1557,6 +1724,7 @@ impl Game {
         for permanent in &mut self.battlefield {
             permanent.attacking = false;
             permanent.blocking = None;
+            permanent.combat_damage_assignment.clear();
         }
     }
 
@@ -1683,6 +1851,19 @@ fn pay_cost(pool: &mut ManaPool, cost: ManaCost, x: u16) {
     pool.red -= generic - colorless;
 }
 
+fn add_generic(mut cost: ManaCost, additional: u16) -> ManaCost {
+    cost.generic = cost.generic.saturating_add(additional);
+    cost
+}
+
+fn fireball_extra_cost(behavior: CardBehavior, target_count: usize) -> u16 {
+    if behavior == CardBehavior::Fireball {
+        u16::try_from(target_count.saturating_sub(1)).unwrap_or(u16::MAX)
+    } else {
+        0
+    }
+}
+
 fn pay_generic(pool: &mut ManaPool, amount: u16) {
     let colorless = pool.colorless.min(amount);
     pool.colorless -= colorless;
@@ -1711,4 +1892,273 @@ fn combinations(values: &[CardInstanceId], count: usize) -> Vec<Vec<CardInstance
         }
     }
     result
+}
+
+fn target_combinations(values: &[Target], count: usize) -> Vec<Vec<Target>> {
+    if count == 0 {
+        return vec![Vec::new()];
+    }
+    if values.len() < count {
+        return Vec::new();
+    }
+    let mut result = Vec::new();
+    for (index, value) in values.iter().enumerate() {
+        for mut tail in target_combinations(&values[index + 1..], count - 1) {
+            let mut choice = vec![*value];
+            choice.append(&mut tail);
+            result.push(choice);
+        }
+    }
+    result
+}
+
+fn damage_distributions(recipient_count: usize, total: u16) -> Vec<Vec<u16>> {
+    if recipient_count == 0 {
+        return (total == 0).then_some(Vec::new()).into_iter().collect();
+    }
+    let mut result = Vec::new();
+    for amount in 0..=total {
+        for mut tail in damage_distributions(recipient_count - 1, total - amount) {
+            let mut distribution = vec![amount];
+            distribution.append(&mut tail);
+            result.push(distribution);
+        }
+    }
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::poc::{self, cards};
+
+    fn ready_game() -> Game {
+        let deck = poc::mono_red_atog();
+        let mut game = Game::new(poc::catalog().unwrap(), [deck.clone(), deck], 0).unwrap();
+        game.pregame = None;
+        game.step = Step::PrecombatMain;
+        game.active_player = PlayerId::One;
+        game.priority = PlayerId::One;
+        game.battlefield.clear();
+        game.stack.clear();
+        game.pending_choices.clear();
+        game.pending_combat_attackers.clear();
+        for player in &mut game.players {
+            player.hand.clear();
+            player.graveyard.clear();
+            player.life = i16::from(rules::STARTING_LIFE);
+            player.mana_pool = ManaPool::default();
+        }
+        game
+    }
+
+    fn card(id: u32, definition: CardDefinitionId, owner: PlayerId) -> CardInstance {
+        CardInstance {
+            id: CardInstanceId(id),
+            definition,
+            owner,
+        }
+    }
+
+    fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Permanent {
+        Permanent {
+            card: card(id, definition, controller),
+            controller,
+            tapped: false,
+            entered_turn: 0,
+            damage: 0,
+            power_bonus: 0,
+            toughness_bonus: 0,
+            attacking: false,
+            blocking: None,
+            chosen_player: None,
+            destroy_at_end: false,
+            flying_until_end: false,
+            combat_damage_assignment: Vec::new(),
+        }
+    }
+
+    fn pass_priority_pair(game: &mut Game) {
+        let first = game.priority;
+        game.apply(first, Action::PassPriority).unwrap();
+        game.apply(first.opponent(), Action::PassPriority).unwrap();
+    }
+
+    #[test]
+    fn fireball_pays_for_multiple_targets_and_divides_x_evenly() {
+        let mut game = ready_game();
+        let fireball = card(10_000, cards::FIREBALL, PlayerId::One);
+        let creature = creature(10_001, cards::SU_CHI, PlayerId::Two);
+        let creature_id = creature.card.id;
+        game.players[0].hand.push(fireball.clone());
+        game.players[0].mana_pool.red = 6;
+        game.battlefield.push(creature);
+
+        let action = Action::CastSpell {
+            card: fireball.id,
+            targets: vec![
+                Target::Player(PlayerId::Two),
+                Target::Permanent(creature_id),
+            ],
+            x: 4,
+        };
+        assert!(game.legal_actions(PlayerId::One).contains(&action));
+
+        game.apply(PlayerId::One, action).unwrap();
+        assert_eq!(game.players[0].mana_pool.total(), 0);
+        pass_priority_pair(&mut game);
+
+        assert_eq!(game.players[1].life, 18);
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == creature_id)
+                .unwrap()
+                .damage,
+            2
+        );
+    }
+
+    #[test]
+    fn fork_controller_can_retarget_the_copied_spell() {
+        let mut game = ready_game();
+        let fork = card(10_000, cards::FORK, PlayerId::One);
+        game.players[0].hand.push(fork.clone());
+        game.players[0].mana_pool.red = 2;
+        game.stack.push(StackObject {
+            id: StackObjectId(77),
+            card: card(10_001, cards::LIGHTNING_BOLT, PlayerId::Two),
+            controller: PlayerId::Two,
+            targets: vec![Target::Player(PlayerId::One)],
+            x: 0,
+            is_copy: false,
+        });
+
+        game.apply(
+            PlayerId::One,
+            Action::CastSpell {
+                card: fork.id,
+                targets: vec![Target::Spell(StackObjectId(77))],
+                x: 0,
+            },
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+
+        let retarget = Action::ChooseCopyTargets {
+            targets: vec![Target::Player(PlayerId::Two)],
+        };
+        assert!(game.legal_actions(PlayerId::One).contains(&retarget));
+        game.apply(PlayerId::One, retarget).unwrap();
+        pass_priority_pair(&mut game);
+
+        assert_eq!(game.players[0].life, 20);
+        assert_eq!(game.players[1].life, 17);
+        assert_eq!(game.stack.len(), 1);
+        assert_eq!(game.stack[0].targets, vec![Target::Player(PlayerId::One)]);
+    }
+
+    #[test]
+    fn fork_can_keep_an_original_target_that_has_become_illegal() {
+        let mut game = ready_game();
+        let stale_target = Target::Permanent(CardInstanceId(99_999));
+        game.pending_choices.push(PendingChoice::Fork {
+            player: PlayerId::One,
+            spell: StackObject {
+                id: StackObjectId(77),
+                card: card(10_001, cards::SHATTER, PlayerId::Two),
+                controller: PlayerId::Two,
+                targets: vec![stale_target],
+                x: 0,
+                is_copy: false,
+            },
+        });
+
+        assert!(
+            game.legal_actions(PlayerId::One)
+                .contains(&Action::ChooseCopyTargets {
+                    targets: vec![stale_target],
+                })
+        );
+    }
+
+    #[test]
+    fn attacker_controller_assigns_damage_freely_across_multiple_blockers() {
+        let mut game = ready_game();
+        let mut attacker = creature(10_000, cards::SU_CHI, PlayerId::One);
+        attacker.attacking = true;
+        let mut first_blocker = creature(10_001, cards::ATOG, PlayerId::Two);
+        first_blocker.blocking = Some(attacker.card.id);
+        let mut second_blocker = creature(10_002, cards::ATOG, PlayerId::Two);
+        second_blocker.blocking = Some(attacker.card.id);
+        let attacker_id = attacker.card.id;
+        let first_id = first_blocker.card.id;
+        let second_id = second_blocker.card.id;
+        game.battlefield = vec![attacker, first_blocker, second_blocker];
+        game.begin_combat_damage_assignment();
+
+        let assignment = Action::AssignCombatDamage {
+            attacker: attacker_id,
+            assignments: vec![
+                CombatDamageAssignment {
+                    recipient: Target::Permanent(first_id),
+                    amount: 1,
+                },
+                CombatDamageAssignment {
+                    recipient: Target::Permanent(second_id),
+                    amount: 3,
+                },
+            ],
+        };
+        assert!(game.legal_actions(PlayerId::One).contains(&assignment));
+        game.apply(PlayerId::One, assignment).unwrap();
+
+        let first = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == first_id)
+            .unwrap();
+        assert_eq!(first.damage, 1);
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != second_id)
+        );
+        let attacker = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker_id)
+            .unwrap();
+        assert_eq!(attacker.damage, 2);
+    }
+
+    #[test]
+    fn trample_requires_lethal_assignment_before_player_damage() {
+        let mut game = ready_game();
+        let mut attacker = creature(10_000, cards::BALL_LIGHTNING, PlayerId::One);
+        attacker.attacking = true;
+        let mut blocker = creature(10_001, cards::ATOG, PlayerId::Two);
+        blocker.blocking = Some(attacker.card.id);
+        let attacker_id = attacker.card.id;
+        let blocker_id = blocker.card.id;
+        game.battlefield = vec![attacker, blocker];
+        game.begin_combat_damage_assignment();
+
+        let assignment = |to_blocker, to_player| Action::AssignCombatDamage {
+            attacker: attacker_id,
+            assignments: vec![
+                CombatDamageAssignment {
+                    recipient: Target::Permanent(blocker_id),
+                    amount: to_blocker,
+                },
+                CombatDamageAssignment {
+                    recipient: Target::Player(PlayerId::Two),
+                    amount: to_player,
+                },
+            ],
+        };
+        let actions = game.legal_actions(PlayerId::One);
+        assert!(!actions.contains(&assignment(1, 5)));
+        assert!(actions.contains(&assignment(2, 4)));
+    }
 }

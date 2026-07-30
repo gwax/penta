@@ -9,7 +9,7 @@ pub mod poc;
 mod rng;
 pub mod rules;
 
-pub use action::{Action, ActionError, Target};
+pub use action::{Action, ActionError, CombatDamageAssignment, Target};
 pub use card::{
     CardBehavior, CardCatalog, CardDefinition, CardKind, CardSet, CatalogError, CreatureStats,
     ManaCost,

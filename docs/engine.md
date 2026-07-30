@@ -37,6 +37,17 @@ resolution.
 Attacker and blocker declaration are staged to keep legal-action generation
 linear rather than enumerating exponential subsets. No player receives
 priority until the declaring player submits the corresponding finish action.
+When an attacker is blocked by multiple creatures, its controller explicitly
+divides its damage among them. A trampling attacker can also assign damage to
+the defending player once lethal damage has been assigned to every blocker.
+This follows the current rules, which removed combat damage assignment order
+in the [Foundations rules update][foundations-update].
+
+Spell actions carry a list of targets. Fireball enumerates affordable,
+distinct target combinations, charges one additional generic mana for each
+target beyond the first, and divides X evenly on resolution. After Fork
+resolves, its controller chooses legal targets for the copy or keeps the
+original targets.
 
 ## Determinism and replay
 
@@ -66,8 +77,10 @@ mulligans, priority-bearing turn steps, cleanup, combat, and its twenty-card
 red/artifact corpus.
 
 It deliberately remains narrower than the full Comprehensive Rules. Fireball
-has a single-target casting mode, Fork retains copied targets, blockers use
-deterministic damage order, and simple non-mana abilities and triggers resolve
-atomically. Blood Moon and Red Elemental Blast have no observable legal work
-inside the Mountain/red/artifact-only corpus because it contains neither
-nonbasic lands nor blue objects.
+and Fork expose their full targeting decisions, and attackers expose current
+combat damage assignment decisions. Simple non-mana abilities and triggers
+still resolve atomically. Blood Moon and Red Elemental Blast have no observable
+legal work inside the Mountain/red/artifact-only corpus because it contains
+neither nonbasic lands nor blue objects.
+
+[foundations-update]: https://magic.wizards.com/en/news/announcements/foundations-update-bulletin

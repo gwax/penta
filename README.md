@@ -52,21 +52,24 @@ The engine currently supports:
 - public battlefield, graveyard, and stack observations
 - an authoritative event log for replay and debugging consumers
 - London mulligans and player-selected cleanup discards
-- staged attacker and blocker declaration with creature combat and trample
+- staged attacker and blocker declaration, player-selected combat damage
+  assignment, and trample
 - summoning sickness, haste, temporary modifiers, marked damage, and death
 - red and colorless mana, generic and variable-X costs, and mana burn
-- activated abilities, triggered choices, spell copying, and restricted untaps
+- multi-target spells, copy retargeting, activated and triggered choices, and
+  restricted untaps
 - functional behavior metadata and execution for all 20 POC cards
 
 The event log is intentionally omniscient and must not be passed directly to a
 bot; bots consume `PlayerObservation`.
 
 The POC is playable end to end, but it is not yet a general implementation of
-the Comprehensive Rules. Fireball currently supports one target, Fork retains
-the copied spell's targets, combat damage order is deterministic, and
-non-mana activated abilities and simple upkeep/entry triggers resolve
-atomically. These constraints are explicit extension points rather than
-silent support for cards outside the POC.
+the Comprehensive Rules. Fireball supports its multi-target additional cost
+and even damage division, Fork can choose new targets for its copy, and combat
+damage uses the current player-selected assignment rules. Non-mana activated
+abilities and simple upkeep/entry triggers still resolve atomically. These
+constraints are explicit extension points rather than silent support for
+cards outside the POC.
 
 ## Proof-of-concept card corpus
 
