@@ -10,5 +10,5 @@ cargo build \
 
 wasm-bindgen \
   "$repo_root/wasm/target/wasm32-unknown-unknown/release/osarena_wasm.wasm" \
-  --out-dir "$repo_root/web/public/wasm" \
+  --out-dir "$repo_root/web/app/wasm" \
   --target web

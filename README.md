@@ -130,8 +130,10 @@ quality from deck strength.
 ## Web interface
 
 The `web/` application runs the same Rust engine in the browser through the
-small `wasm/` adapter. The browser submits an index from the engine's current
-legal-action list; it never reconstructs or mutates game rules in TypeScript.
+small `wasm/` adapter. Generated bindings live under `web/app/wasm` so Vite can
+bundle the module and its binary together. The browser submits an index from
+the engine's current legal-action list; it never reconstructs or mutates game
+rules in TypeScript.
 
 Build fresh browser bindings after changing the Rust API:
 

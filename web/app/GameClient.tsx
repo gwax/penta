@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import initWasm, { WebGame as RustWebGame } from "./wasm/osarena_wasm.js";
 
 type Owner = "human" | "opponent";
 type Card = {
@@ -42,23 +43,6 @@ type GameState = {
   result: null | { outcome: "win" | "loss" | "draw"; message: string };
   events: string[];
 };
-type WebGame = {
-  act(index: number): void;
-  state_json(): string;
-  free(): void;
-};
-type WebGameConstructor = new (
-  humanDeck: string,
-  botDeck: string,
-  policy: string,
-  humanFirst: boolean,
-  seed: number,
-) => WebGame;
-type WasmModule = {
-  default(): Promise<unknown>;
-  WebGame: WebGameConstructor;
-};
-
 const deckNotes: Record<string, string> = {
   Goblins: "Tribal pressure · Grenade finish",
   Sligh: "Clean curve · Burn reach",
@@ -74,8 +58,8 @@ const cleanEvent = (event: string) =>
     .replaceAll(",", " ·");
 
 export function GameClient() {
-  const game = useRef<WebGame | null>(null);
-  const wasm = useRef<WasmModule | null>(null);
+  const game = useRef<RustWebGame | null>(null);
+  const wasmReady = useRef(false);
   const [state, setState] = useState<GameState | null>(null);
   const [humanDeck, setHumanDeck] = useState("Goblins");
   const [botDeck, setBotDeck] = useState("Sligh");
@@ -100,10 +84,10 @@ export function GameClient() {
       nextPolicy = policy,
       nextHumanFirst = humanFirst,
     ) => {
-      if (!wasm.current) return;
+      if (!wasmReady.current) return;
       try {
         game.current?.free();
-        game.current = new wasm.current.WebGame(
+        game.current = new RustWebGame(
           nextHumanDeck,
           nextBotDeck,
           nextPolicy,
@@ -123,14 +107,10 @@ export function GameClient() {
     let alive = true;
     const load = async () => {
       try {
-        const wasmUrl = "/wasm/osarena_wasm.js";
-        const wasmBindings = (await import(
-          /* @vite-ignore */ wasmUrl
-        )) as WasmModule;
-        await wasmBindings.default();
+        await initWasm();
         if (!alive) return;
-        wasm.current = wasmBindings;
-        game.current = new wasmBindings.WebGame(
+        wasmReady.current = true;
+        game.current = new RustWebGame(
           "Goblins",
           "Sligh",
           "Handcrafted",

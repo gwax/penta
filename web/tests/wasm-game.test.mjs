@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import init, { WebGame } from "../public/wasm/osarena_wasm.js";
+import init, { WebGame } from "../app/wasm/osarena_wasm.js";
 
 test("the packaged Rust engine plays through browser actions", async () => {
   const bytes = await readFile(
-    new URL("../public/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 

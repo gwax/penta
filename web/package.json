@@ -11,7 +11,7 @@
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "pnpm run build && node --test tests/*.test.mjs",
     "wasm:build": "../scripts/build-wasm.sh",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern public/wasm",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern app/wasm",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
