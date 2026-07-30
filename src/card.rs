@@ -27,6 +27,14 @@ pub struct CardDefinition {
     pub name: String,
     pub set: CardSet,
     pub is_basic_land: bool,
+    pub behavior: CardBehavior,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum CardBehavior {
+    Mountain,
+    LightningBolt,
+    Unsupported,
 }
 
 #[derive(Clone, Debug, Default)]

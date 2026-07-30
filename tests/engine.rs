@@ -1,7 +1,7 @@
-use osarena::card::{CardCatalog, CardDefinition, CardSet};
+use osarena::card::{CardBehavior, CardCatalog, CardDefinition, CardSet};
 use osarena::deck::{Deck, DeckError};
 use osarena::game::{GameResult, WinReason};
-use osarena::{Action, CardDefinitionId, Game, PlayerId};
+use osarena::{Action, CardDefinitionId, Game, GameError, GameEvent, PlayerId, Step, Target};
 
 fn catalog() -> CardCatalog {
     CardCatalog::new([
@@ -10,30 +10,34 @@ fn catalog() -> CardCatalog {
             name: "Mountain".into(),
             set: CardSet::Alpha,
             is_basic_land: true,
+            behavior: CardBehavior::Mountain,
         },
         CardDefinition {
             id: CardDefinitionId(2),
             name: "Lightning Bolt".into(),
             set: CardSet::Alpha,
             is_basic_land: false,
+            behavior: CardBehavior::LightningBolt,
         },
         CardDefinition {
             id: CardDefinitionId(3),
             name: "Black Lotus".into(),
             set: CardSet::Alpha,
             is_basic_land: false,
+            behavior: CardBehavior::Unsupported,
         },
         CardDefinition {
             id: CardDefinitionId(4),
             name: "Contract from Below".into(),
             set: CardSet::Alpha,
             is_basic_land: false,
+            behavior: CardBehavior::Unsupported,
         },
     ])
     .unwrap()
 }
 
-fn valid_deck(catalog: &CardCatalog) -> osarena::ValidatedDeck {
+fn valid_deck() -> Deck {
     let mut main = vec![CardDefinitionId(1); 55];
     main.extend([CardDefinitionId(2); 4]);
     main.push(CardDefinitionId(3));
@@ -41,8 +45,38 @@ fn valid_deck(catalog: &CardCatalog) -> osarena::ValidatedDeck {
         main,
         sideboard: Vec::new(),
     }
-    .validate(catalog)
-    .unwrap()
+}
+
+fn game_with_mountain_and_bolt() -> Game {
+    let catalog = catalog();
+    for seed in 0..1_000 {
+        let game = Game::new(catalog.clone(), [valid_deck(), valid_deck()], seed).unwrap();
+        let hand = &game.observe(PlayerId::One).hand;
+        let has_mountain = hand
+            .iter()
+            .any(|(_, definition)| *definition == CardDefinitionId(1));
+        let has_bolt = hand
+            .iter()
+            .any(|(_, definition)| *definition == CardDefinitionId(2));
+        if has_mountain && has_bolt {
+            return game;
+        }
+    }
+    panic!("expected to find a deterministic seed with Mountain and Lightning Bolt");
+}
+
+fn pass_priority_pair(game: &mut Game) {
+    let first = game.observe(PlayerId::One).priority;
+    game.apply(first, Action::PassPriority).unwrap();
+    game.apply(first.opponent(), Action::PassPriority).unwrap();
+}
+
+fn advance_to_first_main(game: &mut Game) {
+    assert_eq!(game.observe(PlayerId::One).step, Step::Upkeep);
+    pass_priority_pair(game);
+    assert_eq!(game.observe(PlayerId::One).step, Step::Draw);
+    pass_priority_pair(game);
+    assert_eq!(game.observe(PlayerId::One).step, Step::PrecombatMain);
 }
 
 #[test]
@@ -87,8 +121,8 @@ fn banned_cards_are_rejected() {
 #[test]
 fn setup_is_deterministic_and_hides_the_opponents_hand() {
     let catalog = catalog();
-    let game_a = Game::new([valid_deck(&catalog), valid_deck(&catalog)], 0xdeca_fbad).unwrap();
-    let game_b = Game::new([valid_deck(&catalog), valid_deck(&catalog)], 0xdeca_fbad).unwrap();
+    let game_a = Game::new(catalog.clone(), [valid_deck(), valid_deck()], 0xdeca_fbad).unwrap();
+    let game_b = Game::new(catalog.clone(), [valid_deck(), valid_deck()], 0xdeca_fbad).unwrap();
 
     assert_eq!(game_a.observe(PlayerId::One), game_b.observe(PlayerId::One));
     let observation = game_a.observe(PlayerId::One);
@@ -100,7 +134,7 @@ fn setup_is_deterministic_and_hides_the_opponents_hand() {
 #[test]
 fn concession_ends_the_game() {
     let catalog = catalog();
-    let mut game = Game::new([valid_deck(&catalog), valid_deck(&catalog)], 123).unwrap();
+    let mut game = Game::new(catalog.clone(), [valid_deck(), valid_deck()], 123).unwrap();
 
     game.apply(PlayerId::One, Action::Concede).unwrap();
 
@@ -113,4 +147,149 @@ fn concession_ends_the_game() {
         })
     );
     assert!(observation.legal_actions.is_empty());
+}
+
+#[test]
+fn only_the_priority_player_can_take_game_actions() {
+    let game = game_with_mountain_and_bolt();
+
+    assert_eq!(game.legal_actions(PlayerId::Two), vec![Action::Concede]);
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&Action::PassPriority)
+    );
+}
+
+#[test]
+fn first_player_skips_the_first_draw() {
+    let mut game = game_with_mountain_and_bolt();
+    let initial_hand_size = game.observe(PlayerId::One).hand.len();
+
+    pass_priority_pair(&mut game);
+
+    let observation = game.observe(PlayerId::One);
+    assert_eq!(observation.step, Step::Draw);
+    assert_eq!(observation.hand.len(), initial_hand_size);
+}
+
+#[test]
+fn mountain_casts_and_resolves_lightning_bolt() {
+    let mut game = game_with_mountain_and_bolt();
+    advance_to_first_main(&mut game);
+
+    let observation = game.observe(PlayerId::One);
+    let mountain = observation
+        .hand
+        .iter()
+        .find(|(_, definition)| *definition == CardDefinitionId(1))
+        .unwrap()
+        .0;
+    let bolt = observation
+        .hand
+        .iter()
+        .find(|(_, definition)| *definition == CardDefinitionId(2))
+        .unwrap()
+        .0;
+
+    game.apply(PlayerId::One, Action::PlayLand { card: mountain })
+        .unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility { source: mountain },
+    )
+    .unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::CastSpell {
+            card: bolt,
+            target: Target::Player(PlayerId::Two),
+        },
+    )
+    .unwrap();
+
+    let on_stack = game.observe(PlayerId::One);
+    assert_eq!(on_stack.stack.len(), 1);
+    assert_eq!(on_stack.life_totals, [20, 20]);
+    assert_eq!(on_stack.mana_pools[0].red, 0);
+
+    pass_priority_pair(&mut game);
+
+    let resolved = game.observe(PlayerId::One);
+    assert!(resolved.stack.is_empty());
+    assert_eq!(resolved.life_totals, [20, 17]);
+    assert_eq!(resolved.graveyards[0], vec![(bolt, CardDefinitionId(2))]);
+    assert!(game.events().contains(&GameEvent::DamageDealt {
+        player: PlayerId::Two,
+        amount: 3,
+    }));
+}
+
+#[test]
+fn unspent_mana_burns_at_the_end_of_a_phase() {
+    let mut game = game_with_mountain_and_bolt();
+    advance_to_first_main(&mut game);
+    let mountain = game
+        .observe(PlayerId::One)
+        .hand
+        .iter()
+        .find(|(_, definition)| *definition == CardDefinitionId(1))
+        .unwrap()
+        .0;
+
+    game.apply(PlayerId::One, Action::PlayLand { card: mountain })
+        .unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility { source: mountain },
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let observation = game.observe(PlayerId::One);
+    assert_eq!(observation.step, Step::BeginningOfCombat);
+    assert_eq!(observation.life_totals, [19, 20]);
+    assert_eq!(observation.mana_pools[0].red, 0);
+    assert!(game.events().contains(&GameEvent::ManaBurn {
+        player: PlayerId::One,
+        amount: 1,
+    }));
+}
+
+#[test]
+fn game_validates_decks_against_its_own_catalog() {
+    let catalog = catalog();
+    let short_deck = Deck {
+        main: vec![CardDefinitionId(1); 59],
+        sideboard: Vec::new(),
+    };
+
+    assert!(matches!(
+        Game::new(catalog, [short_deck, valid_deck()], 0),
+        Err(GameError::InvalidDeck {
+            player: PlayerId::One,
+            error: DeckError::MainDeckTooSmall { actual: 59 },
+        })
+    ));
+}
+
+#[test]
+fn drawing_from_an_empty_library_loses_the_game() {
+    let catalog = catalog();
+    let mut game = Game::new(catalog, [valid_deck(), valid_deck()], 0).unwrap();
+
+    for _ in 0..3_000 {
+        if game.result().is_some() {
+            break;
+        }
+        let priority = game.observe(PlayerId::One).priority;
+        game.apply(priority, Action::PassPriority).unwrap();
+    }
+
+    assert_eq!(
+        game.result(),
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+        })
+    );
 }

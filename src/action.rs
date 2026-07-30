@@ -1,10 +1,26 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::PlayerId;
+use crate::{CardInstanceId, PlayerId};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum Target {
+    Player(PlayerId),
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Action {
+    PassPriority,
+    PlayLand {
+        card: CardInstanceId,
+    },
+    ActivateManaAbility {
+        source: CardInstanceId,
+    },
+    CastSpell {
+        card: CardInstanceId,
+        target: Target,
+    },
     Concede,
 }
 

@@ -36,12 +36,26 @@ bag of switches spread throughout the engine.
 - Legal actions are enumerated by the engine.
 - The core crate has no UI, network, async runtime, or training dependencies.
 
+See [the engine design notes](docs/engine.md) for state-machine invariants and
+extension boundaries.
+
 ## Current scope
 
-The initial slice validates decks, creates deterministically shuffled games,
-draws opening hands, exposes player-safe observations, and handles concession.
-The stack, priority, turn progression, combat, mana, and card effects are the
-next engine layers.
+The engine currently supports:
+
+- deck validation and seeded, reproducible setup
+- hidden-information-safe observations and deterministic legal actions
+- the priority-bearing turn skeleton, active player, and priority passing
+- the stack and last-in-first-out spell resolution
+- land plays, tapped Mountain mana, and EC phase-boundary mana burn
+- player damage, concession, and empty-library loss conditions
+- public battlefield, graveyard, and stack observations
+- an authoritative event log for replay and debugging consumers
+- functional Mountain and Lightning Bolt card behavior
+
+The event log is intentionally omniscient and must not be passed directly to a
+bot; bots consume `PlayerObservation`. Mulligans, combat declarations and
+damage, and the other proof-of-concept card behaviors remain to be added.
 
 ## Proof-of-concept card corpus
 

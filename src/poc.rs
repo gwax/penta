@@ -5,7 +5,7 @@
 //! or a basic Mountain.
 
 use crate::CardDefinitionId;
-use crate::card::{CardCatalog, CardDefinition, CardSet, CatalogError};
+use crate::card::{CardBehavior, CardCatalog, CardDefinition, CardSet, CatalogError};
 use crate::deck::Deck;
 
 pub mod cards {
@@ -47,31 +47,38 @@ pub fn catalog() -> Result<CardCatalog, CatalogError> {
     };
 
     CardCatalog::new([
-        card(ANKH_OF_MISHRA, "Ankh of Mishra", CardSet::Alpha, false),
-        card(ATOG, "Atog", CardSet::Antiquities, false),
-        card(BALL_LIGHTNING, "Ball Lightning", CardSet::TheDark, false),
-        card(BLACK_VISE, "Black Vise", CardSet::Alpha, false),
-        card(BLOOD_MOON, "Blood Moon", CardSet::TheDark, false),
-        card(CHAIN_LIGHTNING, "Chain Lightning", CardSet::Legends, false),
-        card(COPPER_TABLET, "Copper Tablet", CardSet::Alpha, false),
-        card(DETONATE, "Detonate", CardSet::Antiquities, false),
-        card(FIREBALL, "Fireball", CardSet::Alpha, false),
-        card(FORK, "Fork", CardSet::Alpha, false),
-        card(GLASSES_OF_URZA, "Glasses of Urza", CardSet::Alpha, false),
-        card(IRON_STAR, "Iron Star", CardSet::Alpha, false),
-        card(LIGHTNING_BOLT, "Lightning Bolt", CardSet::Alpha, false),
-        card(MOUNTAIN, "Mountain", CardSet::Alpha, true),
-        card(
-            RED_ELEMENTAL_BLAST,
-            "Red Elemental Blast",
+        card(ANKH_OF_MISHRA, "Ankh of Mishra", CardSet::Alpha),
+        card(ATOG, "Atog", CardSet::Antiquities),
+        card(BALL_LIGHTNING, "Ball Lightning", CardSet::TheDark),
+        card(BLACK_VISE, "Black Vise", CardSet::Alpha),
+        card(BLOOD_MOON, "Blood Moon", CardSet::TheDark),
+        card(CHAIN_LIGHTNING, "Chain Lightning", CardSet::Legends),
+        card(COPPER_TABLET, "Copper Tablet", CardSet::Alpha),
+        card(DETONATE, "Detonate", CardSet::Antiquities),
+        card(FIREBALL, "Fireball", CardSet::Alpha),
+        card(FORK, "Fork", CardSet::Alpha),
+        card(GLASSES_OF_URZA, "Glasses of Urza", CardSet::Alpha),
+        card(IRON_STAR, "Iron Star", CardSet::Alpha),
+        card_with_behavior(
+            LIGHTNING_BOLT,
+            "Lightning Bolt",
             CardSet::Alpha,
             false,
+            CardBehavior::LightningBolt,
         ),
-        card(SHATTER, "Shatter", CardSet::Alpha, false),
-        card(SMOKE, "Smoke", CardSet::Alpha, false),
-        card(STONE_GIANT, "Stone Giant", CardSet::Alpha, false),
-        card(SU_CHI, "Su-Chi", CardSet::Antiquities, false),
-        card(WINTER_ORB, "Winter Orb", CardSet::Alpha, false),
+        card_with_behavior(
+            MOUNTAIN,
+            "Mountain",
+            CardSet::Alpha,
+            true,
+            CardBehavior::Mountain,
+        ),
+        card(RED_ELEMENTAL_BLAST, "Red Elemental Blast", CardSet::Alpha),
+        card(SHATTER, "Shatter", CardSet::Alpha),
+        card(SMOKE, "Smoke", CardSet::Alpha),
+        card(STONE_GIANT, "Stone Giant", CardSet::Alpha),
+        card(SU_CHI, "Su-Chi", CardSet::Antiquities),
+        card(WINTER_ORB, "Winter Orb", CardSet::Alpha),
     ])
 }
 
@@ -111,12 +118,23 @@ pub fn mono_red_atog() -> Deck {
     }
 }
 
-fn card(id: CardDefinitionId, name: &str, set: CardSet, is_basic_land: bool) -> CardDefinition {
+fn card(id: CardDefinitionId, name: &str, set: CardSet) -> CardDefinition {
+    card_with_behavior(id, name, set, false, CardBehavior::Unsupported)
+}
+
+fn card_with_behavior(
+    id: CardDefinitionId,
+    name: &str,
+    set: CardSet,
+    is_basic_land: bool,
+    behavior: CardBehavior,
+) -> CardDefinition {
     CardDefinition {
         id,
         name: name.into(),
         set,
         is_basic_land,
+        behavior,
     }
 }
 
