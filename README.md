@@ -127,6 +127,28 @@ cargo run --release --bin policy_sanity
 The gauntlet uses mirror matches for all three built-in decks, isolating policy
 quality from deck strength.
 
+## Web interface
+
+The `web/` application runs the same Rust engine in the browser through the
+small `wasm/` adapter. The browser submits an index from the engine's current
+legal-action list; it never reconstructs or mutates game rules in TypeScript.
+
+Build fresh browser bindings after changing the Rust API:
+
+```sh
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli
+./scripts/build-wasm.sh
+```
+
+Then start the interface:
+
+```sh
+cd web
+pnpm install
+pnpm dev
+```
+
 ```sh
 cargo test
 cargo clippy --all-targets --all-features -- -D warnings
