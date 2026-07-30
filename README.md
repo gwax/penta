@@ -62,6 +62,7 @@ The engine currently supports:
 - functional behavior metadata and execution for all 40 catalog cards
 - fixed 60-card `Goblins`, `Sligh`, and `Artifacts` decks with 15-card
   sideboards
+- a small bot API with seeded random and card-aware handcrafted policies
 
 The event log is intentionally omniscient and must not be passed directly to a
 bot; bots consume `PlayerObservation`.
@@ -105,6 +106,26 @@ and makes the format playable without modeling a human motor skill.
 This corpus is intentionally based on cards in an actual archetype rather than
 all legal red cards. A card joins the implementation target when a deck we
 want to simulate requires it.
+
+## Bot policies
+
+Bots implement the `Policy` trait by choosing one of the legal actions in a
+hidden-information-safe `PlayerObservation`. `play_game` drives two policies
+until the game ends or a caller-provided action limit is reached.
+
+The built-in `RandomPolicy` samples uniformly from non-concession actions with
+a seeded PRNG. `HandcraftedPolicy` is a deterministic baseline with simple
+mulligan, casting, targeting, combat, mana, and card-specific heuristics. It is
+deliberately inspectable rather than sophisticated.
+
+Run the reproducible, seat-swapped sanity gauntlet with:
+
+```sh
+cargo run --release --bin policy_sanity
+```
+
+The gauntlet uses mirror matches for all three built-in decks, isolating policy
+quality from deck strength.
 
 ```sh
 cargo test

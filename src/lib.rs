@@ -6,6 +6,7 @@ pub mod deck;
 pub mod game;
 pub mod ids;
 pub mod poc;
+pub mod policy;
 mod rng;
 pub mod rules;
 
@@ -20,3 +21,4 @@ pub use game::{
     WinReason,
 };
 pub use ids::{CardDefinitionId, CardInstanceId, PlayerId, StackObjectId};
+pub use policy::{HandcraftedPolicy, PlayError, Policy, RandomPolicy, play_game};
