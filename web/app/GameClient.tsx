@@ -293,8 +293,12 @@ export function GameClient() {
               <span>{state.priority.toUpperCase()} HAS PRIORITY</span>
             </div>
 
-            {state.stack.length > 0 && (
-              <div className="stack-zone">
+            <div
+              className={`stack-zone ${state.stack.length === 0 ? "stack-zone-empty" : ""}`}
+              aria-label="Stack"
+            >
+              {state.stack.length > 0 && (
+                <>
                 <span>STACK</span>
                 {state.stack.map((item) => (
                   <div key={item.id} className="stack-card">
@@ -302,8 +306,9 @@ export function GameClient() {
                     <small>{item.owner === "human" ? "YOU" : "OPPONENT"}</small>
                   </div>
                 ))}
-              </div>
-            )}
+                </>
+              )}
+            </div>
 
             <Zone
               cards={humanPermanents}

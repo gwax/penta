@@ -193,7 +193,7 @@ button {
 .table {
   min-width: 0;
   display: grid;
-  grid-template-rows: 52px 30px minmax(112px, 1fr) 34px auto minmax(112px, 1fr) 52px 164px;
+  grid-template-rows: 52px 30px minmax(100px, 1fr) 34px auto minmax(100px, 1fr) 52px 184px;
   gap: 7px;
   padding: 9px 14px 12px;
   overflow: hidden;
@@ -337,7 +337,7 @@ button {
 .hand-zone {
   min-width: 0;
   display: flex;
-  justify-content: center;
+  justify-content: safe center;
   align-items: center;
   gap: 9px;
   padding: 6px;
@@ -400,6 +400,10 @@ button {
   gap: 6px;
 }
 
+.stack-zone-empty {
+  min-height: 0;
+}
+
 .stack-zone > span {
   color: #b0a590;
   font-size: 10px;
@@ -450,9 +454,9 @@ button {
 }
 
 .game-card-compact {
-  width: 110px;
-  min-width: 110px;
-  height: 146px;
+  width: 104px;
+  min-width: 104px;
+  height: 106px;
   border-width: 4px;
 }
 
@@ -487,7 +491,7 @@ button {
 }
 
 .game-card-compact .card-title {
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .card-cost {
@@ -513,9 +517,21 @@ button {
 }
 
 .game-card-compact .card-cost i {
-  width: 14px;
-  height: 14px;
-  font-size: 9px;
+  width: 13px;
+  height: 13px;
+  font-size: 8px;
+}
+
+.game-card-compact .card-art {
+  min-height: 24px;
+}
+
+.game-card-compact .card-art i {
+  font-size: 17px;
+}
+
+.game-card-compact .card-text {
+  display: none;
 }
 
 .mana-generic {
@@ -909,7 +925,7 @@ button {
   .table {
     min-height: 710px;
     padding-inline: 7px;
-    grid-template-rows: 52px 28px 110px 32px auto 110px 52px 145px;
+    grid-template-rows: 52px 28px 110px 32px auto 110px 52px 158px;
   }
 
   .player-name {
@@ -941,9 +957,9 @@ button {
   }
 
   .game-card-compact {
-    width: 94px;
-    min-width: 94px;
-    height: 124px;
+    width: 90px;
+    min-width: 90px;
+    height: 104px;
   }
 }
 
