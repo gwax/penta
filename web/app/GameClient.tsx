@@ -34,7 +34,9 @@ type OpponentAction = {
   label: string;
   kind: "land" | "spell" | "ability" | "combat" | "choice";
   card?: string | null;
+  cardId?: number | null;
   manaSources?: string[];
+  state: GameState;
 };
 type PlayerState = {
   life: number;
@@ -103,6 +105,7 @@ const initialSeed = () => {
 export function GameClient() {
   const game = useRef<RustWebGame | null>(null);
   const wasmReady = useRef(false);
+  const finalStateAfterOpponentActions = useRef<GameState | null>(null);
   const [state, setState] = useState<GameState | null>(null);
   const [humanDeck, setHumanDeck] = useState("Goblins");
   const [botDeck, setBotDeck] = useState("Sligh");
@@ -116,19 +119,25 @@ export function GameClient() {
   const currentOpponentAction = opponentActionQueue[0] ?? null;
   const watchingOpponent = currentOpponentAction !== null;
 
+  const presentSnapshot = useCallback((snapshot: GameState) => {
+    const opponentActions = snapshot.opponentActions ?? [];
+    if (opponentActions.length > 0) {
+      finalStateAfterOpponentActions.current = snapshot;
+      setOpponentActionQueue(opponentActions);
+      setState(opponentActions[0].state);
+    } else {
+      finalStateAfterOpponentActions.current = null;
+      setOpponentActionQueue([]);
+      setState(snapshot);
+    }
+  }, []);
+
   const refresh = useCallback(() => {
     if (!game.current) return;
     const snapshot = JSON.parse(game.current.state_json()) as GameState;
-    setState(snapshot);
-    const opponentActions = snapshot.opponentActions ?? [];
-    if (opponentActions.length > 0) {
-      setOpponentActionQueue((current) => [
-        ...current,
-        ...opponentActions,
-      ]);
-    }
+    presentSnapshot(snapshot);
     setSelectedCard(null);
-  }, []);
+  }, [presentSnapshot]);
 
   const newGame = useCallback(
     (
@@ -142,6 +151,7 @@ export function GameClient() {
       try {
         setSeed(nextSeed);
         setOpponentActionQueue([]);
+        finalStateAfterOpponentActions.current = null;
         game.current?.free();
         game.current = new RustWebGame(
           nextHumanDeck,
@@ -176,8 +186,7 @@ export function GameClient() {
           startingSeed,
         );
         const snapshot = JSON.parse(game.current.state_json()) as GameState;
-        setState(snapshot);
-        setOpponentActionQueue(snapshot.opponentActions ?? []);
+        presentSnapshot(snapshot);
       } catch (cause) {
         if (alive) setError(`Could not start the Rust engine: ${String(cause)}`);
       } finally {
@@ -189,16 +198,30 @@ export function GameClient() {
       alive = false;
       game.current?.free();
     };
-  }, []);
+  }, [presentSnapshot]);
 
   useEffect(() => {
     if (currentOpponentAction === null) return;
-    const timer = window.setTimeout(
-      () => setOpponentActionQueue((current) => current.slice(1)),
-      1200,
-    );
+    const timer = window.setTimeout(() => {
+      const remaining = opponentActionQueue.slice(1);
+      if (remaining.length > 0) {
+        setState(remaining[0].state);
+      } else if (finalStateAfterOpponentActions.current) {
+        setState(finalStateAfterOpponentActions.current);
+        finalStateAfterOpponentActions.current = null;
+      }
+      setOpponentActionQueue(remaining);
+    }, 1200);
     return () => window.clearTimeout(timer);
-  }, [currentOpponentAction]);
+  }, [currentOpponentAction, opponentActionQueue]);
+
+  const skipOpponentActions = () => {
+    if (finalStateAfterOpponentActions.current) {
+      setState(finalStateAfterOpponentActions.current);
+      finalStateAfterOpponentActions.current = null;
+    }
+    setOpponentActionQueue([]);
+  };
 
   const act = (action: Action) => {
     try {
@@ -413,7 +436,7 @@ export function GameClient() {
                     +{opponentActionQueue.length - 1}
                   </span>
                 )}
-                <button onClick={() => setOpponentActionQueue([])}>
+                <button onClick={skipOpponentActions}>
                   Skip
                 </button>
               </div>
@@ -426,6 +449,7 @@ export function GameClient() {
               isTargetable={isTargetable}
               onSelect={selectCard}
               selectedCard={selectedCard}
+              animatedCardId={currentOpponentAction?.cardId ?? null}
               opponent
             />
 
@@ -474,6 +498,7 @@ export function GameClient() {
               isTargetable={isTargetable}
               onSelect={selectCard}
               selectedCard={selectedCard}
+              animatedCardId={currentOpponentAction?.cardId ?? null}
             />
 
             <PlayerBar
@@ -628,6 +653,7 @@ function Zone({
   isTargetable,
   onSelect,
   selectedCard,
+  animatedCardId,
   opponent = false,
 }: {
   cards: Card[];
@@ -636,6 +662,7 @@ function Zone({
   isTargetable(id: number): boolean;
   onSelect(id: number): void;
   selectedCard: number | null;
+  animatedCardId: number | null;
   opponent?: boolean;
 }) {
   const lands = cards.filter((card) => card.kind === "land");
@@ -648,6 +675,7 @@ function Zone({
         actionable={actionCount(card.id) > 0}
         targetable={isTargetable(card.id)}
         selected={selectedCard === card.id}
+        animating={animatedCardId === card.id}
         onSelect={onSelect}
         compact
       />
@@ -673,6 +701,7 @@ function GameCard({
   actionable,
   targetable = false,
   selected,
+  animating = false,
   onSelect,
   compact = false,
 }: {
@@ -680,6 +709,7 @@ function GameCard({
   actionable: boolean;
   targetable?: boolean;
   selected: boolean;
+  animating?: boolean;
   onSelect(id: number): void;
   compact?: boolean;
 }) {
@@ -736,6 +766,7 @@ function GameCard({
           actionable ? "is-actionable" : "",
           targetable ? "is-targetable" : "",
           selected ? "is-selected" : "",
+          animating ? "is-opponent-action-card" : "",
         ].join(" ")}
         aria-label={
           targetable

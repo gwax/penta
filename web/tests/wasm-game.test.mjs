@@ -19,7 +19,9 @@ test("the packaged Rust engine plays through browser actions", async () => {
     "cards expose their casting costs to the interface",
   );
   assert.ok(
-    opening.human.hand.every((card) => typeof card.rulesText === "string" && card.rulesText.length > 0),
+    opening.human.hand.every(
+      (card) => typeof card.rulesText === "string" && card.rulesText.length > 0,
+    ),
     "cards expose their rules text to the interface",
   );
   const openingCreature = opening.human.hand.find((card) =>
@@ -42,6 +44,15 @@ test("the packaged Rust engine plays through browser actions", async () => {
   assert.ok(
     afterKeep.opponentActions.every((action) => action.kind !== "mana"),
     "mana taps stay out of the standalone animation queue",
+  );
+  assert.ok(
+    afterKeep.opponentActions.every(
+      (action) =>
+        action.state &&
+        Array.isArray(action.state.battlefield) &&
+        action.state.opponentActions.length === 0,
+    ),
+    "each opponent animation carries a non-recursive board snapshot",
   );
   assert.ok(
     afterKeep.actions.some(
@@ -77,6 +88,24 @@ test("opponent mana taps are grouped with the spell they pay for", async () => {
     afterKeep.opponentActions.every((action) => action.kind !== "mana"),
     "there is no separate mana animation",
   );
+  assert.ok(
+    afterKeep.opponentActions.length > 1,
+    "the deterministic turn provides a multi-action animation sequence",
+  );
+  assert.notDeepEqual(
+    afterKeep.opponentActions[0].state.battlefield,
+    afterKeep.battlefield,
+    "the first animation does not expose the final battlefield",
+  );
+  for (const source of paidAction.manaSources) {
+    assert.equal(
+      paidAction.state.battlefield.find(
+        (card) => card.owner === "opponent" && card.name === source,
+      )?.tapped,
+      true,
+      `${source} taps in the same snapshot as the paid action`,
+    );
+  }
 
   game.free();
 });

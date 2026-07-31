@@ -646,6 +646,32 @@ button {
   opacity: 1;
 }
 
+.game-card.is-opponent-action-card {
+  z-index: 5;
+  animation: opponent-card-action 1200ms ease both;
+}
+
+@keyframes opponent-card-action {
+  0% {
+    border-color: #f4d58b;
+    filter: brightness(1.5);
+    box-shadow:
+      0 0 0 4px rgba(244, 213, 139, 0.85),
+      0 0 28px rgba(244, 213, 139, 0.8);
+  }
+  28%,
+  72% {
+    border-color: #dba84e;
+    filter: brightness(1.12);
+    box-shadow:
+      0 0 0 3px rgba(219, 168, 78, 0.65),
+      0 0 20px rgba(219, 168, 78, 0.55);
+  }
+  100% {
+    filter: none;
+  }
+}
+
 .game-card-compact {
   width: 96px;
   min-width: 96px;

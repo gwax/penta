@@ -110,13 +110,16 @@ impl WebGame {
     }
 
     fn advance_until_human_choice(&mut self) -> Result<(), JsValue> {
+        let mut pending_animation = None;
         for _ in 0..BOT_ACTION_LIMIT {
             let Some(player) = self.game.decision_player() else {
+                self.finish_opponent_animation(&mut pending_animation);
                 return Ok(());
             };
             let observation = self.game.observe(player);
             let action = if player == self.human {
                 let Some(action) = automatic_human_action(&observation.legal_actions) else {
+                    self.finish_opponent_animation(&mut pending_animation);
                     return Ok(());
                 };
                 action
@@ -127,9 +130,11 @@ impl WebGame {
             };
             if player != self.human {
                 if let Action::ActivateManaAbility { source } = &action {
+                    self.finish_opponent_animation(&mut pending_animation);
                     self.pending_opponent_mana
                         .push(self.instance_name(&observation, *source));
                 } else if should_animate_action(&action) {
+                    self.finish_opponent_animation(&mut pending_animation);
                     let mana_sources = if matches!(
                         action,
                         Action::CastSpell { .. } | Action::ActivateAbility { .. }
@@ -140,11 +145,13 @@ impl WebGame {
                     };
                     let label = self.action_label(&observation, &action);
                     let kind = animated_action_kind(&action);
-                    let card = action_card(&action).map(|id| self.instance_name(&observation, id));
-                    self.opponent_actions.push(json!({
+                    let card_id = action_card(&action);
+                    let card = card_id.map(|id| self.instance_name(&observation, id));
+                    pending_animation = Some(json!({
                         "label": label,
                         "kind": kind,
                         "card": card,
+                        "cardId": card_id.map(|id| id.0),
                         "manaSources": mana_sources,
                     }));
                 } else {
@@ -158,8 +165,20 @@ impl WebGame {
         ))
     }
 
+    fn finish_opponent_animation(&mut self, pending: &mut Option<Value>) {
+        if let Some(mut animation) = pending.take() {
+            animation["state"] = self.snapshot_value(false);
+            self.opponent_actions.push(animation);
+        }
+    }
+
     #[allow(clippy::too_many_lines)]
     fn snapshot(&self) -> Value {
+        self.snapshot_value(true)
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn snapshot_value(&self, include_opponent_actions: bool) -> Value {
         let observation = self.game.observe(self.human);
         let opponent = self.human.opponent();
         let actions = observation
@@ -268,6 +287,11 @@ impl WebGame {
             .take(12)
             .map(|event| format!("{event:?}"))
             .collect::<Vec<_>>();
+        let opponent_actions = if include_opponent_actions {
+            self.opponent_actions.clone()
+        } else {
+            Vec::new()
+        };
 
         json!({
             "turn": observation.turn,
@@ -297,7 +321,7 @@ impl WebGame {
             "battlefield": battlefield,
             "stack": stack,
             "actions": actions,
-            "opponentActions": self.opponent_actions,
+            "opponentActions": opponent_actions,
             "result": result,
             "events": events,
         })
