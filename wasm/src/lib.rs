@@ -210,6 +210,7 @@ impl WebGame {
             .map(|(id, definition)| {
                 let card = self.catalog.get(*definition);
                 let mana_cost = card.map(|card| card.behavior.mana_cost());
+                let creature_stats = card.and_then(|card| card.behavior.creature_stats());
                 json!({
                     "id": id.0,
                     "name": self.card_name(*definition),
@@ -221,6 +222,8 @@ impl WebGame {
                         "red": cost.red,
                         "x": cost.variable_x,
                     })),
+                    "power": creature_stats.map(|stats| stats.power),
+                    "toughness": creature_stats.map(|stats| stats.toughness),
                 })
             })
             .collect::<Vec<_>>();

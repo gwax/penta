@@ -18,6 +18,12 @@ test("the packaged Rust engine plays through browser actions", async () => {
     opening.human.hand.every((card) => card.manaCost !== undefined),
     "cards expose their casting costs to the interface",
   );
+  const openingCreature = opening.human.hand.find((card) =>
+    card.kind.includes("creature"),
+  );
+  assert.ok(openingCreature, "the deterministic opening hand includes a creature");
+  assert.equal(typeof openingCreature.power, "number");
+  assert.equal(typeof openingCreature.toughness, "number");
   assert.ok(opening.actions.some((action) => action.label === "Keep this hand"));
 
   const keep = opening.actions.find((action) => action.label === "Keep this hand");

@@ -688,6 +688,13 @@ function GameCard({
     card.manaCost?.generic === 0 &&
     card.manaCost.red === 0 &&
     !card.manaCost.x;
+  const manaCost = formatManaCost(card);
+  const battlefieldState = [
+    card.owner ? (card.tapped ? "Tapped" : "Untapped") : null,
+    card.attacking ? "Attacking" : null,
+    card.flying ? "Flying" : null,
+    card.damage ? `${card.damage} damage marked` : null,
+  ].filter(Boolean);
   return (
     <button
       className={[
@@ -701,8 +708,10 @@ function GameCard({
         targetable ? "is-targetable" : "",
         selected ? "is-selected" : "",
       ].join(" ")}
-      disabled={!actionable}
-      onClick={() => onSelect(card.id)}
+      aria-disabled={!actionable}
+      onClick={() => {
+        if (actionable) onSelect(card.id);
+      }}
       title={
         targetable
           ? `Target ${card.name}`
@@ -739,6 +748,32 @@ function GameCard({
           {card.damage ? <small> · {card.damage} marked</small> : null}
         </strong>
       )}
+      <span className="card-hover-stats" aria-hidden="true">
+        <strong>{card.name}</strong>
+        <span className="card-hover-type">{type}</span>
+        <span>
+          <b>Cost</b> {manaCost}
+        </span>
+        {card.power !== null && card.power !== undefined && (
+          <span>
+            <b>Power / toughness</b> {card.power} / {card.toughness}
+          </span>
+        )}
+        {battlefieldState.length > 0 && (
+          <span className="card-hover-state">{battlefieldState.join(" · ")}</span>
+        )}
+      </span>
     </button>
   );
+}
+
+function formatManaCost(card: Card) {
+  if (card.kind.includes("land")) return "—";
+  if (!card.manaCost) return "Unknown";
+  const parts = [
+    card.manaCost.x ? "X" : "",
+    card.manaCost.generic > 0 ? String(card.manaCost.generic) : "",
+    "R".repeat(card.manaCost.red),
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : "0";
 }
