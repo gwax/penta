@@ -766,7 +766,6 @@ button {
 
 .is-actionable:hover,
 .is-selected {
-  transform: translateY(-6px);
   box-shadow:
     0 0 0 3px #f2c978,
     0 10px 18px rgba(0, 0, 0, 0.55);
@@ -778,7 +777,7 @@ button {
 
 .is-tapped.is-actionable:hover,
 .is-tapped.is-selected {
-  transform: rotate(7deg) translateY(-5px);
+  transform: rotate(7deg);
 }
 
 .is-attacking::after {
