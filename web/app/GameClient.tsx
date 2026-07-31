@@ -369,6 +369,7 @@ export function GameClient() {
               actionCount={cardActions}
               onSelect={selectCard}
               selectedCard={selectedCard}
+              opponent
             />
 
             <div className="center-line">
@@ -558,25 +559,39 @@ function Zone({
   actionCount,
   onSelect,
   selectedCard,
+  opponent = false,
 }: {
   cards: Card[];
   empty: string;
   actionCount(id: number): number;
   onSelect(id: number): void;
   selectedCard: number | null;
+  opponent?: boolean;
 }) {
+  const lands = cards.filter((card) => card.kind === "land");
+  const nonlands = cards.filter((card) => card.kind !== "land");
+  const renderCards = (laneCards: Card[]) =>
+    laneCards.map((card) => (
+      <GameCard
+        key={card.id}
+        card={card}
+        actionable={actionCount(card.id) > 0}
+        selected={selectedCard === card.id}
+        onSelect={onSelect}
+        compact
+      />
+    ));
+
   return (
-    <div className="battlefield-zone">
-      {cards.map((card) => (
-        <GameCard
-          key={card.id}
-          card={card}
-          actionable={actionCount(card.id) > 0}
-          selected={selectedCard === card.id}
-          onSelect={onSelect}
-          compact
-        />
-      ))}
+    <div
+      className={`battlefield-zone ${opponent ? "battlefield-opponent" : "battlefield-human"}`}
+    >
+      <div className="battlefield-row battlefield-nonlands" aria-label="Nonland permanents">
+        {renderCards(nonlands)}
+      </div>
+      <div className="battlefield-row battlefield-lands" aria-label="Lands">
+        {renderCards(lands)}
+      </div>
       {cards.length === 0 && <span className="zone-empty">{empty}</span>}
     </div>
   );

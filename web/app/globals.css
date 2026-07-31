@@ -194,8 +194,8 @@ button {
   position: relative;
   min-width: 0;
   display: grid;
-  grid-template-rows: 52px 30px minmax(100px, 1fr) 50px auto minmax(100px, 1fr) 52px 184px;
-  gap: 7px;
+  grid-template-rows: 52px 30px minmax(110px, 1fr) 50px auto minmax(110px, 1fr) 52px 184px;
+  gap: 6px;
   padding: 9px 14px 12px;
   overflow: hidden;
   background:
@@ -456,6 +456,49 @@ button {
   scrollbar-width: thin;
 }
 
+.battlefield-zone {
+  position: relative;
+  display: block;
+  padding: 0 6px;
+}
+
+.battlefield-row {
+  position: absolute;
+  right: 6px;
+  left: 6px;
+  min-width: max-content;
+  display: flex;
+  justify-content: safe center;
+  gap: 7px;
+}
+
+.battlefield-nonlands {
+  z-index: 2;
+  padding-right: 52px;
+}
+
+.battlefield-lands {
+  z-index: 1;
+  padding-left: 52px;
+}
+
+.battlefield-human .battlefield-nonlands,
+.battlefield-opponent .battlefield-lands {
+  top: 0;
+}
+
+.battlefield-human .battlefield-lands,
+.battlefield-opponent .battlefield-nonlands {
+  bottom: 0;
+}
+
+.battlefield-zone > .zone-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
 .hand-zone {
   align-items: end;
   padding: 8px 18px 0;
@@ -614,10 +657,12 @@ button {
 }
 
 .game-card-compact {
-  width: 104px;
-  min-width: 104px;
-  height: 94px;
-  border-width: 4px;
+  width: 96px;
+  min-width: 96px;
+  height: 80px;
+  padding: 5px;
+  gap: 2px;
+  border-width: 3px;
 }
 
 .card-red {
@@ -651,7 +696,7 @@ button {
 }
 
 .game-card-compact .card-title {
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .card-cost {
@@ -677,17 +722,21 @@ button {
 }
 
 .game-card-compact .card-cost i {
-  width: 13px;
-  height: 13px;
-  font-size: 8px;
+  width: 11px;
+  height: 11px;
+  font-size: 7px;
 }
 
 .game-card-compact .card-art {
-  min-height: 24px;
+  min-height: 18px;
 }
 
 .game-card-compact .card-art i {
-  font-size: 17px;
+  font-size: 14px;
+}
+
+.game-card-compact .card-type {
+  font-size: 8px;
 }
 
 .game-card-compact .card-text {
@@ -1153,9 +1202,9 @@ button {
   }
 
   .game-card-compact {
-    width: 90px;
-    min-width: 90px;
-    height: 94px;
+    width: 86px;
+    min-width: 86px;
+    height: 72px;
   }
 }
 
