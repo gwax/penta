@@ -795,6 +795,7 @@ impl Game {
 
     fn add_spell_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
         let state = &self.players[player.index()];
+        let available_mana = self.available_mana(player);
         for card in &state.hand {
             let Some(behavior) = self.behavior(card.definition) else {
                 continue;
@@ -810,7 +811,7 @@ impl Game {
             }
             let cost = behavior.mana_cost();
             let max_x = if cost.variable_x {
-                state.mana_pool.total()
+                available_mana.total()
             } else {
                 0
             };
@@ -819,7 +820,7 @@ impl Game {
                     (1..=self.damage_targets().len())
                         .filter(|count| {
                             can_pay(
-                                state.mana_pool,
+                                available_mana,
                                 add_generic(cost, fireball_extra_cost(behavior, *count)),
                                 x,
                             )
@@ -832,7 +833,7 @@ impl Game {
                 for target_count in target_counts {
                     for targets in self.legal_target_lists(behavior, x, player, target_count) {
                         let extra = fireball_extra_cost(behavior, targets.len());
-                        if !can_pay(state.mana_pool, add_generic(cost, extra), x) {
+                        if !can_pay(available_mana, add_generic(cost, extra), x) {
                             continue;
                         }
                         let sacrifice_choices = if behavior == CardBehavior::GoblinGrenade {
@@ -1173,14 +1174,12 @@ impl Game {
         let card = remove_card(&mut self.players[player.index()].hand, card_id)
             .expect("legal cast action references a card in hand");
         let behavior = self.behavior(card.definition).expect("cataloged card");
-        pay_cost(
-            &mut self.players[player.index()].mana_pool,
-            add_generic(
-                behavior.mana_cost(),
-                fireball_extra_cost(behavior, targets.len()),
-            ),
-            x,
+        let cost = add_generic(
+            behavior.mana_cost(),
+            fireball_extra_cost(behavior, targets.len()),
         );
+        self.activate_mana_for_cost(player, cost, x);
+        pay_cost(&mut self.players[player.index()].mana_pool, cost, x);
         for sacrificed in sacrifices {
             self.destroy_permanent(*sacrificed);
         }
@@ -1482,6 +1481,61 @@ impl Game {
                 colorless: 0,
             }),
             _ => None,
+        }
+    }
+
+    fn available_mana(&self, player: PlayerId) -> ManaPool {
+        self.battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == player && !permanent.tapped)
+            .filter(|permanent| self.can_use_tap_ability(permanent))
+            .filter_map(|permanent| self.mana_production(permanent))
+            .fold(
+                self.players[player.index()].mana_pool,
+                |mut pool, production| {
+                    pool.red = pool.red.saturating_add(production.red);
+                    pool.colorless = pool.colorless.saturating_add(production.colorless);
+                    pool
+                },
+            )
+    }
+
+    fn activate_mana_for_cost(&mut self, player: PlayerId, cost: ManaCost, x: u16) {
+        while self.players[player.index()].mana_pool.red < cost.red {
+            let source = self
+                .battlefield
+                .iter()
+                .find(|permanent| {
+                    permanent.controller == player
+                        && !permanent.tapped
+                        && self.can_use_tap_ability(permanent)
+                        && self
+                            .mana_production(permanent)
+                            .is_some_and(|production| production.red > 0)
+                })
+                .map(|permanent| permanent.card.id)
+                .expect("legal spell has enough red mana sources");
+            self.activate_mana_source(player, source);
+        }
+
+        let required_total = cost.red.saturating_add(cost.generic).saturating_add(x);
+        while self.players[player.index()].mana_pool.total() < required_total {
+            let source = self
+                .battlefield
+                .iter()
+                .filter(|permanent| {
+                    permanent.controller == player
+                        && !permanent.tapped
+                        && self.can_use_tap_ability(permanent)
+                })
+                .filter_map(|permanent| {
+                    self.mana_production(permanent)
+                        .map(|production| (permanent.card.id, production))
+                })
+                .min_by_key(|(_, production)| (production.red > 0, production.total()))
+                .map(|(source, _)| source)
+                .expect("legal spell has enough mana sources");
+            self.activate_mana_source(player, source);
         }
     }
 
@@ -2646,6 +2700,32 @@ mod tests {
                 .all(|permanent| permanent.card.id != lotus_id)
         );
         assert_eq!(game.players[0].graveyard.last().unwrap().id, lotus_id);
+    }
+
+    #[test]
+    fn mox_ruby_can_pay_black_vises_generic_cost() {
+        let mut game = ready_game();
+        let mox = creature(10_000, cards::MOX_RUBY, PlayerId::One);
+        let vise = card(10_001, cards::BLACK_VISE, PlayerId::One);
+        let mox_id = mox.card.id;
+        game.battlefield.push(mox);
+        game.players[0].hand.push(vise.clone());
+
+        let cast_vise = Action::CastSpell {
+            card: vise.id,
+            targets: vec![Target::Player(PlayerId::Two)],
+            sacrifices: Vec::new(),
+            x: 0,
+        };
+        assert!(game.legal_actions(PlayerId::One).contains(&cast_vise));
+        game.apply(PlayerId::One, cast_vise).unwrap();
+        assert_eq!(game.players[0].mana_pool, ManaPool::default());
+        assert!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == mox_id)
+                .is_some_and(|permanent| permanent.tapped)
+        );
     }
 
     #[test]

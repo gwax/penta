@@ -44,12 +44,14 @@ legal; other actions are generated only for the priority player.
 - Two passes with an empty stack advance the turn step.
 - After a resolution or step change, the active player receives priority.
 
-Mana abilities resolve immediately and do not use the stack. The current
-casting API requires mana to be floated before casting; integrating mana
-activation into a compound casting choice can be added without changing spell
-resolution. Chaos Orb's non-mana activated ability uses the stack and is
-identified separately from spells in `StackObservation`; its chosen permanent
-is exposed as a choice rather than a target.
+Mana abilities resolve immediately and do not use the stack. Spell actions
+consider both floating mana and usable untapped mana sources. Applying a spell
+action deterministically activates only the additional sources needed to pay
+its cost, preferring colorless sources for generic costs and avoiding excess
+production where possible. Explicit mana actions remain legal for callers that
+intentionally want to float mana. Chaos Orb's non-mana activated ability uses
+the stack and is identified separately from spells in `StackObservation`; its
+chosen permanent is exposed as a choice rather than a target.
 
 Attacker and blocker declaration are staged to keep legal-action generation
 linear rather than enumerating exponential subsets. No player receives

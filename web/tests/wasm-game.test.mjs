@@ -70,3 +70,33 @@ test("opponent mana taps are grouped with the spell they pay for", async () => {
 
   game.free();
 });
+
+test("casting a spell automatically taps available mana sources", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Artifacts", "Sligh", "Handcrafted", true, 16);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Cast Mox Ruby").index);
+
+  state = JSON.parse(game.state_json());
+  const castVise = state.actions.find((action) =>
+    action.label.startsWith("Cast Black Vise"),
+  );
+  assert.ok(castVise, "Black Vise is castable before manually tapping Mox Ruby");
+  game.act(castVise.index);
+
+  state = JSON.parse(game.state_json());
+  const mox = state.battlefield.find(
+    (card) => card.owner === "human" && card.name === "Mox Ruby",
+  );
+  assert.equal(mox?.tapped, true);
+  assert.equal(state.human.mana.red, 0);
+
+  game.free();
+});
