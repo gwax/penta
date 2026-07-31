@@ -51,7 +51,7 @@ type GameState = {
   battlefield: Card[];
   stack: Array<{ id: number; name: string; owner: Owner; kind: string }>;
   actions: Action[];
-  opponentActions: OpponentAction[];
+  opponentActions?: OpponentAction[];
   result: null | { outcome: "win" | "loss" | "draw"; message: string };
   events: string[];
 };
@@ -106,10 +106,11 @@ export function GameClient() {
     if (!game.current) return;
     const snapshot = JSON.parse(game.current.state_json()) as GameState;
     setState(snapshot);
-    if (snapshot.opponentActions.length > 0) {
+    const opponentActions = snapshot.opponentActions ?? [];
+    if (opponentActions.length > 0) {
       setOpponentActionQueue((current) => [
         ...current,
-        ...snapshot.opponentActions,
+        ...opponentActions,
       ]);
     }
     setSelectedCard(null);
@@ -159,7 +160,7 @@ export function GameClient() {
         );
         const snapshot = JSON.parse(game.current.state_json()) as GameState;
         setState(snapshot);
-        setOpponentActionQueue(snapshot.opponentActions);
+        setOpponentActionQueue(snapshot.opponentActions ?? []);
       } catch (cause) {
         if (alive) setError(`Could not start the Rust engine: ${String(cause)}`);
       } finally {
