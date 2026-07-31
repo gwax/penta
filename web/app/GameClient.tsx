@@ -102,6 +102,14 @@ const initialSeed = () => {
   return randomSeed();
 };
 
+const initialDeck = () => {
+  const requested = new URLSearchParams(window.location.search).get("deck");
+  return requested && requested in deckNotes ? requested : "Goblins";
+};
+
+const initialHumanFirst = () =>
+  new URLSearchParams(window.location.search).get("first") !== "false";
+
 export function GameClient() {
   const game = useRef<RustWebGame | null>(null);
   const wasmReady = useRef(false);
@@ -113,6 +121,7 @@ export function GameClient() {
   const [humanFirst, setHumanFirst] = useState(true);
   const [seed, setSeed] = useState(9394);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
+  const [selectedTargetCard, setSelectedTargetCard] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [opponentActionQueue, setOpponentActionQueue] = useState<OpponentAction[]>([]);
@@ -137,6 +146,7 @@ export function GameClient() {
     const snapshot = JSON.parse(game.current.state_json()) as GameState;
     presentSnapshot(snapshot);
     setSelectedCard(null);
+    setSelectedTargetCard(null);
   }, [presentSnapshot]);
 
   const newGame = useCallback(
@@ -176,13 +186,17 @@ export function GameClient() {
         await initWasm();
         if (!alive) return;
         const startingSeed = initialSeed();
+        const startingHumanDeck = initialDeck();
+        const startingHumanFirst = initialHumanFirst();
         setSeed(startingSeed);
+        setHumanDeck(startingHumanDeck);
+        setHumanFirst(startingHumanFirst);
         wasmReady.current = true;
         game.current = new RustWebGame(
-          "Goblins",
+          startingHumanDeck,
           "Sligh",
           "Handcrafted",
-          true,
+          startingHumanFirst,
           startingSeed,
         );
         const snapshot = JSON.parse(game.current.state_json()) as GameState;
@@ -243,10 +257,15 @@ export function GameClient() {
               action.kind === "pass" ||
               action.kind === "danger",
           )
-    ).filter((action) => action.targetCardId == null);
+    ).filter((action) => {
+      if (action.kind === "pass" || action.kind === "danger") return true;
+      return selectedTargetCard === null
+        ? action.targetCardId == null
+        : action.targetCardId === selectedTargetCard;
+    });
     const order = { combat: 0, primary: 1, pass: 2, danger: 3 };
     return [...actions].sort((a, b) => order[a.kind] - order[b.kind]);
-  }, [selectedCard, state]);
+  }, [selectedCard, selectedTargetCard, state]);
   const moveCount = filteredActions.filter(
     (action) => action.kind !== "danger",
   ).length;
@@ -278,10 +297,20 @@ export function GameClient() {
     .find((card) => card.id === selectedCard);
   const choosingTarget =
     selectedCard !== null &&
+    selectedTargetCard === null &&
     (state?.actions.some(
       (action) =>
         action.cardId === selectedCard && action.targetCardId != null,
     ) ?? false);
+  const selectedTarget = state?.battlefield.find(
+    (card) => card.id === selectedTargetCard,
+  );
+  const choosingSacrifice = selectedCard !== null && selectedTargetCard !== null;
+
+  const clearCardSelection = () => {
+    setSelectedCard(null);
+    setSelectedTargetCard(null);
+  };
 
   const selectCard = (id: number) => {
     if (selectedCard !== null) {
@@ -294,8 +323,12 @@ export function GameClient() {
         act(targeted[0]);
         return;
       }
+      if (targeted.length > 1) {
+        setSelectedTargetCard(id);
+        return;
+      }
       if (id === selectedCard) {
-        setSelectedCard(null);
+        clearCardSelection();
         return;
       }
     }
@@ -304,12 +337,18 @@ export function GameClient() {
       state?.actions.filter((action) => action.cardId === id) ?? [];
     if (matching.some((action) => action.targetCardId != null)) {
       setSelectedCard(id);
+      setSelectedTargetCard(null);
       return;
     }
     if (matching.length === 1) {
       act(matching[0]);
     } else if (matching.length > 1) {
-      setSelectedCard((current) => (current === id ? null : id));
+      if (selectedCard === id) {
+        clearCardSelection();
+      } else {
+        setSelectedCard(id);
+        setSelectedTargetCard(null);
+      }
     }
   };
 
@@ -448,7 +487,7 @@ export function GameClient() {
               actionCount={cardActions}
               isTargetable={isTargetable}
               onSelect={selectCard}
-              selectedCard={selectedCard}
+              selectedCard={selectedTargetCard ?? selectedCard}
               animatedCardId={currentOpponentAction?.cardId ?? null}
               opponent
             />
@@ -497,7 +536,7 @@ export function GameClient() {
               actionCount={cardActions}
               isTargetable={isTargetable}
               onSelect={selectCard}
-              selectedCard={selectedCard}
+              selectedCard={selectedTargetCard ?? selectedCard}
               animatedCardId={currentOpponentAction?.cardId ?? null}
             />
 
@@ -539,7 +578,7 @@ export function GameClient() {
                 </strong>
               </div>
               {selectedCard !== null && (
-                <button onClick={() => setSelectedCard(null)}>Clear filter</button>
+                <button onClick={clearCardSelection}>Clear filter</button>
               )}
             </div>
             <div className="action-list">
@@ -549,6 +588,15 @@ export function GameClient() {
                   <span>
                     Click a highlighted permanent for{" "}
                     {selectedSource?.name ?? "this action"}.
+                  </span>
+                </div>
+              )}
+              {choosingSacrifice && (
+                <div className="target-prompt" role="status">
+                  <strong>Choose an artifact to sacrifice</strong>
+                  <span>
+                    Select a cost below to deal 2 damage to{" "}
+                    {selectedTarget?.name ?? "that creature"}.
                   </span>
                 </div>
               )}

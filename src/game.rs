@@ -1299,6 +1299,9 @@ impl Game {
                 }
                 self.destroy_permanent(object.card.id);
             }
+            Some(CardBehavior::OrcishMechanics) => {
+                self.damage_target(object.targets.first().copied(), 2);
+            }
             _ => {}
         }
     }
@@ -1813,17 +1816,37 @@ impl Game {
                 });
             }
             Some(CardBehavior::OrcishMechanics) => {
-                if let Some(permanent) = self
+                let card = self
                     .battlefield
                     .iter_mut()
                     .find(|permanent| permanent.card.id == source)
-                {
-                    permanent.tapped = true;
-                }
+                    .map(|permanent| {
+                        permanent.tapped = true;
+                        permanent.card.clone()
+                    })
+                    .expect("legal Orcish Mechanics activation has a source");
                 if let Some(sacrificed) = sacrifice {
                     self.destroy_permanent(sacrificed);
                 }
-                self.damage_target(target, 2);
+                let targets = target.into_iter().collect();
+                let chosen_permanents: Vec<_> = sacrifice.into_iter().collect();
+                let stack_id = StackObjectId(self.next_stack_id);
+                self.next_stack_id += 1;
+                self.stack.push(StackObject {
+                    id: stack_id,
+                    kind: StackObjectKind::ActivatedAbility,
+                    card,
+                    controller: player,
+                    targets,
+                    chosen_permanents: chosen_permanents.clone(),
+                    x: 0,
+                    is_copy: false,
+                });
+                self.events.push(GameEvent::AbilityActivated {
+                    player,
+                    source,
+                    chosen_permanents,
+                });
             }
             _ => {}
         }
@@ -2759,6 +2782,58 @@ mod tests {
                 .iter()
                 .find(|permanent| permanent.card.id == mox_id)
                 .is_some_and(|permanent| permanent.tapped)
+        );
+    }
+
+    #[test]
+    fn orcish_mechanics_can_sacrifice_an_artifact_to_damage_a_creature() {
+        let mut game = ready_game();
+        let mechanics = creature(10_000, cards::ORCISH_MECHANICS, PlayerId::One);
+        let artifact = creature(10_001, cards::MOX_RUBY, PlayerId::One);
+        let target = creature(10_002, cards::SU_CHI, PlayerId::Two);
+        let mechanics_id = mechanics.card.id;
+        let artifact_id = artifact.card.id;
+        let target_id = target.card.id;
+        game.battlefield = vec![mechanics, artifact, target];
+
+        let action = Action::ActivateAbility {
+            source: mechanics_id,
+            target: Some(Target::Permanent(target_id)),
+            sacrifice: Some(artifact_id),
+        };
+        assert!(game.legal_actions(PlayerId::One).contains(&action));
+
+        game.apply(PlayerId::One, action).unwrap();
+        assert!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == mechanics_id)
+                .is_some_and(|permanent| permanent.tapped)
+        );
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != artifact_id)
+        );
+        assert_eq!(game.stack.len(), 1);
+        assert_eq!(game.stack[0].targets, vec![Target::Permanent(target_id)]);
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == target_id)
+                .unwrap()
+                .damage,
+            0
+        );
+
+        pass_priority_pair(&mut game);
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == target_id)
+                .unwrap()
+                .damage,
+            2
         );
     }
 

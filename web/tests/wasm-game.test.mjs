@@ -192,3 +192,73 @@ test("targeted permanent actions identify their clickable battlefield target", a
 
   game.free();
 });
+
+test("Orcish Mechanics exposes creature targets and distinct artifact costs", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Artifacts", "Sligh", "Handcrafted", true, 5);
+  let state;
+  let mechanics;
+  let creatureTargets;
+  for (let step = 0; step < 160; step += 1) {
+    state = JSON.parse(game.state_json());
+    mechanics = state.battlefield.find(
+      (card) =>
+        card.owner === "human" &&
+        card.name === "Orcish Mechanics" &&
+        !card.tapped,
+    );
+    creatureTargets = mechanics
+      ? state.actions.filter(
+          (action) =>
+            action.cardId === mechanics.id &&
+            action.targetCardId != null &&
+            state.battlefield.some(
+              (card) =>
+                card.id === action.targetCardId &&
+                card.owner === "opponent" &&
+                card.kind.includes("creature"),
+            ),
+        )
+      : [];
+    if (creatureTargets.length >= 2) break;
+
+    const actions = state.actions;
+    const next =
+      actions.find((action) => action.label === "Keep this hand") ??
+      actions.find((action) => action.label.startsWith("Cast Mox ")) ??
+      actions.find((action) => action.label === "Cast Black Lotus") ??
+      actions.find((action) => action.label === "Play Mountain") ??
+      actions.find((action) => action.label.startsWith("Play Mishra")) ??
+      actions.find((action) => action.label.startsWith("Play Strip")) ??
+      actions.find((action) => action.label.startsWith("Cast Orcish Mechanics")) ??
+      actions.find((action) => action.label.startsWith("Cast Sol Ring")) ??
+      actions.find((action) => action.label.startsWith("Cast Black Vise")) ??
+      actions.find((action) => action.label.startsWith("Cast Copper Tablet")) ??
+      actions.find((action) => action.label.startsWith("Cast Ankh")) ??
+      actions.find((action) => action.label === "Decline") ??
+      actions.find((action) => action.kind === "pass");
+    assert.ok(next, `seed 5 can advance from turn ${state.turn} ${state.step}`);
+    game.act(next.index);
+  }
+
+  assert.ok(mechanics, "Orcish Mechanics reaches the battlefield");
+  assert.equal(
+    new Set(creatureTargets.map((action) => action.targetCardId)).size,
+    1,
+    "the opposing creature is a legal target",
+  );
+  assert.ok(
+    new Set(creatureTargets.map((action) => action.label)).size >= 2,
+    "each sacrifice choice has a distinct action label",
+  );
+  assert.ok(
+    creatureTargets.every((action) => action.label.includes("sacrifice")),
+    "the interface can name the artifact paid for each action",
+  );
+
+  game.free();
+});

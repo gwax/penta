@@ -430,20 +430,44 @@ impl WebGame {
             Action::CastSpell {
                 card,
                 targets: values,
+                sacrifices,
                 x,
-                ..
             } => {
                 let mut label = format!("Cast {}", self.instance_name(observation, *card));
                 if *x > 0 {
                     let _ = write!(label, " (X={x})");
+                }
+                if !sacrifices.is_empty() {
+                    let _ = write!(
+                        label,
+                        " (sacrifice {})",
+                        sacrifices
+                            .iter()
+                            .map(|id| self.instance_name(observation, *id))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    );
                 }
                 if !values.is_empty() {
                     let _ = write!(label, " → {}", targets(values));
                 }
                 label
             }
-            Action::ActivateAbility { source, target, .. } => {
+            Action::ActivateAbility {
+                source,
+                target,
+                sacrifice,
+            } => {
                 let mut label = format!("Activate {}", self.instance_name(observation, *source));
+                if let Some(sacrifice) = sacrifice
+                    && sacrifice != source
+                {
+                    let _ = write!(
+                        label,
+                        " (sacrifice {})",
+                        self.instance_name(observation, *sacrifice)
+                    );
+                }
                 if let Some(target) = target {
                     let _ = write!(label, " → {}", self.target_name(observation, *target));
                 }
