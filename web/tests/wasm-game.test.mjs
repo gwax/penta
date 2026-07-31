@@ -18,6 +18,10 @@ test("the packaged Rust engine plays through browser actions", async () => {
     opening.human.hand.every((card) => card.manaCost !== undefined),
     "cards expose their casting costs to the interface",
   );
+  assert.ok(
+    opening.human.hand.every((card) => typeof card.rulesText === "string" && card.rulesText.length > 0),
+    "cards expose their rules text to the interface",
+  );
   const openingCreature = opening.human.hand.find((card) =>
     card.kind.includes("creature"),
   );

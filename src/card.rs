@@ -146,6 +146,83 @@ pub struct CreatureStats {
 }
 
 impl CardBehavior {
+    /// Returns concise rules text for the behavior implemented by the simulator.
+    #[must_use]
+    pub const fn rules_text(self) -> &'static str {
+        match self {
+            Self::AnkhOfMishra => {
+                "Whenever a land enters, Ankh of Mishra deals 2 damage to its controller."
+            }
+            Self::Atog => "Sacrifice an artifact: Atog gets +2/+2 until end of turn.",
+            Self::BallLightning => {
+                "Trample, haste. Sacrifice Ball Lightning at the beginning of the end step."
+            }
+            Self::BlackLotus => "Tap, sacrifice Black Lotus: Add RRR.",
+            Self::BlackVise => {
+                "As Black Vise enters, choose an opponent. At their upkeep, it deals 1 damage for each card in their hand beyond four."
+            }
+            Self::BloodMoon => "Nonbasic lands are Mountains.",
+            Self::ChainLightning => {
+                "Deal 3 damage to any target. That target's controller may pay RR to copy it and choose a new target."
+            }
+            Self::ChaosOrb => {
+                "1, Tap: Choose a permanent. On resolution, destroy it and Chaos Orb if Chaos Orb is still on the battlefield."
+            }
+            Self::CopperTablet => {
+                "At the beginning of each player's upkeep, Copper Tablet deals 1 damage to that player."
+            }
+            Self::Detonate => {
+                "Destroy target artifact with mana value X. Its controller takes X damage."
+            }
+            Self::DragonWhelp => {
+                "Flying. R: +1/+0 until end of turn. If activated four or more times this turn, destroy it at the end step."
+            }
+            Self::Fireball => {
+                "Deal X damage divided evenly among the chosen targets. Each target beyond the first costs 1 more."
+            }
+            Self::Fork => {
+                "Copy target instant or sorcery. You may choose new targets for the copy."
+            }
+            Self::GlassesOfUrza => "Tap: Look at target player's hand.",
+            Self::GoblinBalloonBrigade => "R: Gains flying until end of turn.",
+            Self::GoblinDiggingTeam => "Sacrifice Goblin Digging Team: Destroy target Wall.",
+            Self::GoblinGrenade => {
+                "As an additional cost, sacrifice a Goblin. Deal 5 damage to any target."
+            }
+            Self::GoblinKing => "Other Goblins get +1/+1 and have mountainwalk.",
+            Self::GoblinsOfTheFlarg => "Mountainwalk.",
+            Self::GraniteGargoyle => "Flying. R: Gets +0/+1 until end of turn.",
+            Self::IronStar => {
+                "Whenever a red spell is cast, you may pay 1. If you do, gain 1 life."
+            }
+            Self::IronclawOrcs => "Can't block creatures with power 2 or greater.",
+            Self::Mountain => "Tap: Add R.",
+            Self::LightningBolt => "Deal 3 damage to any target.",
+            Self::MishrasFactory => {
+                "Tap: Add 1. 1: Becomes a 2/2 Assembly-Worker artifact creature until end of turn. Tap: Target Assembly-Worker gets +1/+1 until end of turn."
+            }
+            Self::MoxRuby => "Tap: Add R.",
+            Self::MoxEmerald | Self::MoxJet | Self::MoxPearl | Self::MoxSapphire => "Tap: Add 1.",
+            Self::OrcishMechanics => "Tap, sacrifice an artifact: Deal 2 damage to any target.",
+            Self::RedElementalBlast => {
+                "Counter target blue spell or destroy target blue permanent."
+            }
+            Self::Shatter => "Destroy target artifact.",
+            Self::Smoke => "Players can't untap more than one creature during their untap steps.",
+            Self::SolRing => "Tap: Add 2.",
+            Self::StoneGiant => {
+                "Tap: A smaller creature you control gains flying until end of turn. Destroy it at the end step."
+            }
+            Self::StripMine => "Tap, sacrifice Strip Mine: Destroy target land.",
+            Self::SuChi => "When Su-Chi dies, add 4.",
+            Self::WheelOfFortune => "Each player discards their hand, then draws seven cards.",
+            Self::WinterOrb => {
+                "While untapped, players can't untap more than one land during their untap steps."
+            }
+            Self::Unsupported => "Rules text is not implemented.",
+        }
+    }
+
     #[must_use]
     pub const fn kind(self) -> CardKind {
         match self {

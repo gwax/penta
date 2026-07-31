@@ -641,7 +641,7 @@ button {
   transition: transform 130ms ease, box-shadow 130ms ease;
 }
 
-.game-card[aria-disabled="true"] {
+.game-card:not(.is-actionable) {
   cursor: default;
   opacity: 1;
 }
@@ -798,44 +798,34 @@ button {
 }
 
 .card-hover-stats {
-  position: absolute;
-  z-index: 6;
-  inset: 4px;
-  padding: 9px;
+  position: fixed;
+  z-index: 100;
+  width: 260px;
+  min-height: 150px;
+  padding: 15px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  overflow: hidden;
-  border: 1px solid rgba(74, 59, 43, 0.72);
-  border-radius: 3px;
-  opacity: 0;
+  gap: 8px;
+  border: 2px solid rgba(74, 59, 43, 0.82);
+  border-radius: 6px;
   color: #241d16;
-  background: rgba(242, 232, 207, 0.98);
-  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.42);
+  background: #f2e8cf;
+  box-shadow: 0 9px 28px rgba(0, 0, 0, 0.55);
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 10px;
-  line-height: 1.2;
+  font-size: 12px;
+  line-height: 1.3;
   pointer-events: none;
-  transform: translateY(3px);
-  transition: opacity 90ms ease, transform 90ms ease;
-}
-
-.game-card:hover .card-hover-stats,
-.game-card:focus-visible .card-hover-stats {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 .card-hover-stats > strong {
   font-family: Georgia, serif;
-  font-size: 13px;
+  font-size: 18px;
   line-height: 1.05;
 }
 
 .card-hover-stats b {
   color: #6f5540;
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -847,31 +837,29 @@ button {
   text-transform: capitalize;
 }
 
+.card-hover-rules {
+  min-height: 48px;
+  color: #30271e;
+  font-family: Georgia, serif;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.card-hover-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 14px;
+}
+
+.card-hover-details > span {
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+}
+
 .card-hover-state {
   color: #8a382a;
   font-weight: 700;
-}
-
-.game-card-compact .card-hover-stats {
-  inset: 1px;
-  padding: 4px 5px;
-  gap: 2px;
-  font-size: 7px;
-  line-height: 1.05;
-}
-
-.game-card-compact .card-hover-stats > strong {
-  max-height: 19px;
-  overflow: hidden;
-  font-size: 9px;
-}
-
-.game-card-compact .card-hover-stats b {
-  font-size: 6px;
-}
-
-.game-card-compact .card-hover-type {
-  padding-bottom: 2px;
 }
 
 .is-actionable {

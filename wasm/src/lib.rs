@@ -193,6 +193,7 @@ impl WebGame {
                         "red": cost.red,
                         "x": cost.variable_x,
                     })),
+                    "rulesText": card.map_or("", |card| card.behavior.rules_text()),
                     "owner": if permanent.controller == self.human { "human" } else { "opponent" },
                     "tapped": permanent.tapped,
                     "power": permanent.power,
@@ -222,6 +223,7 @@ impl WebGame {
                         "red": cost.red,
                         "x": cost.variable_x,
                     })),
+                    "rulesText": card.map_or("", |card| card.behavior.rules_text()),
                     "power": creature_stats.map(|stats| stats.power),
                     "toughness": creature_stats.map(|stats| stats.toughness),
                 })

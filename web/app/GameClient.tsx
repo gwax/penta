@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import initWasm, { WebGame as RustWebGame } from "./wasm/osarena_wasm.js";
 
 type Owner = "human" | "opponent";
@@ -8,6 +9,7 @@ type Card = {
   id: number;
   name: string;
   kind: string;
+  rulesText: string;
   manaCost?: {
     generic: number;
     red: number;
@@ -681,6 +683,10 @@ function GameCard({
   onSelect(id: number): void;
   compact?: boolean;
 }) {
+  const [previewPosition, setPreviewPosition] = useState<{
+    left: number;
+    top: number;
+  } | null>(null);
   const type = card.kind.replace("artifactcreature", "artifact creature");
   const isRed = !card.kind.includes("artifact") && !card.kind.includes("land");
   const showZeroCost =
@@ -695,75 +701,111 @@ function GameCard({
     card.flying ? "Flying" : null,
     card.damage ? `${card.damage} damage marked` : null,
   ].filter(Boolean);
+
+  const showPreview = (element: HTMLButtonElement) => {
+    const bounds = element.getBoundingClientRect();
+    const previewWidth = 260;
+    const previewHeight = 220;
+    const gutter = 10;
+    let left = bounds.right + gutter;
+    if (left + previewWidth > window.innerWidth - gutter) {
+      left = bounds.left - previewWidth - gutter;
+    }
+    left = Math.max(gutter, Math.min(left, window.innerWidth - previewWidth - gutter));
+    const top = Math.max(
+      gutter,
+      Math.min(
+        bounds.top + (bounds.height - previewHeight) / 2,
+        window.innerHeight - previewHeight - gutter,
+      ),
+    );
+    setPreviewPosition({ left, top });
+  };
+
+  const previewId = `card-rules-${card.id}`;
   return (
-    <button
-      className={[
-        "game-card",
-        compact ? "game-card-compact" : "",
-        `card-${card.kind}`,
-        isRed ? "card-red" : "",
-        card.tapped ? "is-tapped" : "",
-        card.attacking ? "is-attacking" : "",
-        actionable ? "is-actionable" : "",
-        targetable ? "is-targetable" : "",
-        selected ? "is-selected" : "",
-      ].join(" ")}
-      aria-disabled={!actionable}
-      onClick={() => {
-        if (actionable) onSelect(card.id);
-      }}
-      title={
-        targetable
-          ? `Target ${card.name}`
-          : actionable
-            ? `Choose an action for ${card.name}`
-            : card.name
-      }
-    >
-      <span className="card-header">
-        <span className="card-title">{card.name}</span>
-        {card.manaCost && !card.kind.includes("land") && (
-          <span className="card-cost" aria-label={`Casting cost for ${card.name}`}>
-            {card.manaCost.x && <i className="mana-generic">X</i>}
-            {card.manaCost.generic > 0 && (
-              <i className="mana-generic">{card.manaCost.generic}</i>
-            )}
-            {showZeroCost && <i className="mana-generic">0</i>}
-            {Array.from({ length: card.manaCost.red }, (_, index) => (
-              <i className="mana-red-symbol" key={index}>R</i>
-            ))}
-          </span>
-        )}
-      </span>
-      <span className="card-art" aria-hidden="true">
-        <i>{card.kind.includes("land") ? "▲" : card.kind.includes("artifact") ? "◇" : "●"}</i>
-      </span>
-      <span className="card-type">{type}</span>
-      <span className="card-text">
-        {card.attacking ? "Attacking" : card.flying ? "Flying" : "Old School 93/94"}
-      </span>
-      {card.power !== null && card.power !== undefined && (
-        <strong className="card-stats">
-          {card.power}/{card.toughness}
-          {card.damage ? <small> · {card.damage} marked</small> : null}
-        </strong>
-      )}
-      <span className="card-hover-stats" aria-hidden="true">
-        <strong>{card.name}</strong>
-        <span className="card-hover-type">{type}</span>
-        <span>
-          <b>Cost</b> {manaCost}
+    <>
+      <button
+        className={[
+          "game-card",
+          compact ? "game-card-compact" : "",
+          `card-${card.kind}`,
+          isRed ? "card-red" : "",
+          card.tapped ? "is-tapped" : "",
+          card.attacking ? "is-attacking" : "",
+          actionable ? "is-actionable" : "",
+          targetable ? "is-targetable" : "",
+          selected ? "is-selected" : "",
+        ].join(" ")}
+        aria-label={
+          targetable
+            ? `Target ${card.name}`
+            : actionable
+              ? `Choose an action for ${card.name}`
+              : `Inspect ${card.name}`
+        }
+        aria-describedby={previewPosition ? previewId : undefined}
+        onMouseEnter={(event) => showPreview(event.currentTarget)}
+        onMouseLeave={() => setPreviewPosition(null)}
+        onFocus={(event) => showPreview(event.currentTarget)}
+        onBlur={() => setPreviewPosition(null)}
+        onClick={() => {
+          if (actionable) onSelect(card.id);
+        }}
+      >
+        <span className="card-header">
+          <span className="card-title">{card.name}</span>
+          {card.manaCost && !card.kind.includes("land") && (
+            <span className="card-cost" aria-label={`Casting cost for ${card.name}`}>
+              {card.manaCost.x && <i className="mana-generic">X</i>}
+              {card.manaCost.generic > 0 && (
+                <i className="mana-generic">{card.manaCost.generic}</i>
+              )}
+              {showZeroCost && <i className="mana-generic">0</i>}
+              {Array.from({ length: card.manaCost.red }, (_, index) => (
+                <i className="mana-red-symbol" key={index}>R</i>
+              ))}
+            </span>
+          )}
+        </span>
+        <span className="card-art" aria-hidden="true">
+          <i>{card.kind.includes("land") ? "▲" : card.kind.includes("artifact") ? "◇" : "●"}</i>
+        </span>
+        <span className="card-type">{type}</span>
+        <span className="card-text">
+          {card.attacking ? "Attacking" : card.flying ? "Flying" : "Old School 93/94"}
         </span>
         {card.power !== null && card.power !== undefined && (
-          <span>
-            <b>Power / toughness</b> {card.power} / {card.toughness}
-          </span>
+          <strong className="card-stats">
+            {card.power}/{card.toughness}
+            {card.damage ? <small> · {card.damage} marked</small> : null}
+          </strong>
         )}
-        {battlefieldState.length > 0 && (
-          <span className="card-hover-state">{battlefieldState.join(" · ")}</span>
+      </button>
+      {previewPosition &&
+        createPortal(
+          <span
+            className="card-hover-stats"
+            id={previewId}
+            role="tooltip"
+            style={previewPosition}
+          >
+            <strong>{card.name}</strong>
+            <span className="card-hover-type">{type}</span>
+            <span className="card-hover-rules">{card.rulesText}</span>
+            <span className="card-hover-details">
+              <span><b>Cost</b> {manaCost}</span>
+              {card.power !== null && card.power !== undefined && (
+                <span><b>Power / toughness</b> {card.power} / {card.toughness}</span>
+              )}
+            </span>
+            {battlefieldState.length > 0 && (
+              <span className="card-hover-state">{battlefieldState.join(" · ")}</span>
+            )}
+          </span>,
+          document.body,
         )}
-      </span>
-    </button>
+    </>
   );
 }
 

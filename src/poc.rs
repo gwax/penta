@@ -450,6 +450,11 @@ mod tests {
         for raw_id in 1..=40 {
             let card = catalog.get(CardDefinitionId(raw_id)).unwrap();
             assert_ne!(card.behavior, CardBehavior::Unsupported, "{}", card.name);
+            assert!(
+                !card.behavior.rules_text().is_empty(),
+                "{} is missing rules text",
+                card.name
+            );
         }
     }
 }
