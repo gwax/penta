@@ -185,7 +185,7 @@ button {
 }
 
 .game-layout {
-  height: calc(100vh - 74px);
+  height: calc(100vh - 81px);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 310px;
 }
@@ -194,9 +194,9 @@ button {
   position: relative;
   min-width: 0;
   display: grid;
-  grid-template-rows: 52px 30px minmax(110px, 1fr) 50px auto minmax(110px, 1fr) 52px 184px;
-  gap: 6px;
-  padding: 9px 14px 12px;
+  grid-template-rows: 48px 30px minmax(130px, 1fr) 48px auto minmax(130px, 1fr) 48px 174px;
+  gap: 2px;
+  padding: 6px 14px 8px;
   overflow: hidden;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent 25%, transparent 75%, rgba(0, 0, 0, 0.12)),
@@ -457,39 +457,29 @@ button {
 }
 
 .battlefield-zone {
-  position: relative;
-  display: block;
+  display: grid;
+  grid-template-rows: repeat(2, 62px);
+  align-content: center;
+  gap: 4px;
   padding: 0 6px;
 }
 
 .battlefield-row {
-  position: absolute;
-  right: 6px;
-  left: 6px;
-  min-width: max-content;
+  width: max-content;
+  min-width: 100%;
   display: flex;
   justify-content: safe center;
   gap: 7px;
 }
 
-.battlefield-nonlands {
-  z-index: 2;
-  padding-right: 52px;
-}
-
-.battlefield-lands {
-  z-index: 1;
-  padding-left: 52px;
-}
-
 .battlefield-human .battlefield-nonlands,
 .battlefield-opponent .battlefield-lands {
-  top: 0;
+  grid-row: 1;
 }
 
 .battlefield-human .battlefield-lands,
 .battlefield-opponent .battlefield-nonlands {
-  bottom: 0;
+  grid-row: 2;
 }
 
 .battlefield-zone > .zone-empty {
@@ -659,7 +649,7 @@ button {
 .game-card-compact {
   width: 96px;
   min-width: 96px;
-  height: 80px;
+  height: 62px;
   padding: 5px;
   gap: 2px;
   border-width: 3px;
@@ -1183,9 +1173,9 @@ button {
   }
 
   .table {
-    min-height: 710px;
+    min-height: 750px;
     padding-inline: 7px;
-    grid-template-rows: 52px 28px 110px 58px auto 110px 52px 158px;
+    grid-template-rows: 52px 28px 130px 58px auto 130px 52px 158px;
   }
 
   .player-name {
@@ -1234,7 +1224,7 @@ button {
   .game-card-compact {
     width: 86px;
     min-width: 86px;
-    height: 72px;
+    height: 62px;
   }
 }
 
