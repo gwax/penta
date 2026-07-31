@@ -800,7 +800,7 @@ impl Game {
                 continue;
             };
             let kind = behavior.kind();
-            if matches!(behavior, CardBehavior::Unsupported | CardBehavior::Mountain) {
+            if behavior == CardBehavior::Unsupported || kind == CardKind::Land {
                 continue;
             }
             if !matches!(kind, CardKind::Instant)

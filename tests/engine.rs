@@ -1,6 +1,7 @@
 use osarena::card::{CardBehavior, CardCatalog, CardDefinition, CardSet};
 use osarena::deck::{Deck, DeckError};
 use osarena::game::{GameResult, WinReason};
+use osarena::poc;
 use osarena::{Action, CardDefinitionId, Game, GameError, GameEvent, PlayerId, Step, Target};
 
 fn catalog() -> CardCatalog {
@@ -281,6 +282,47 @@ fn mountain_casts_and_resolves_lightning_bolt() {
         player: PlayerId::Two,
         amount: 3,
     }));
+}
+
+#[test]
+fn nonbasic_lands_cannot_be_cast_as_spells() {
+    use poc::cards::{MISHRA_S_FACTORY, STRIP_MINE};
+
+    let catalog = poc::catalog().unwrap();
+    for definition in [MISHRA_S_FACTORY, STRIP_MINE] {
+        let mut checked = false;
+        for seed in 0..1_000 {
+            let deck = poc::artifacts();
+            let mut game = Game::new(catalog.clone(), [deck.clone(), deck], seed).unwrap();
+            if !game
+                .observe(PlayerId::One)
+                .hand
+                .iter()
+                .any(|(_, card)| *card == definition)
+            {
+                continue;
+            }
+
+            keep_both(&mut game);
+            advance_to_first_main(&mut game);
+            let observation = game.observe(PlayerId::One);
+            let card = observation
+                .hand
+                .iter()
+                .find(|(_, card)| *card == definition)
+                .unwrap()
+                .0;
+            let actions = game.legal_actions(PlayerId::One);
+
+            assert!(actions.contains(&Action::PlayLand { card }));
+            assert!(!actions.iter().any(
+                |action| matches!(action, Action::CastSpell { card: cast, .. } if *cast == card)
+            ));
+            checked = true;
+            break;
+        }
+        assert!(checked, "expected a seed with nonbasic land {definition:?}");
+    }
 }
 
 #[test]
