@@ -54,6 +54,23 @@ const deckNotes: Record<string, string> = {
   Artifacts: "Fast mana · Atog engine",
 };
 
+const turnPhases = [
+  { label: "Beginning", steps: ["Upkeep", "Draw"] },
+  { label: "Main 1", steps: ["Precombat Main"] },
+  {
+    label: "Combat",
+    steps: [
+      "Beginning Of Combat",
+      "Declare Attackers",
+      "Declare Blockers",
+      "Combat Damage",
+      "End Of Combat",
+    ],
+  },
+  { label: "Main 2", steps: ["Postcombat Main"] },
+  { label: "Ending", steps: ["End", "Cleanup"] },
+];
+
 const cleanEvent = (event: string) =>
   event
     .replaceAll(/CardInstanceId\((\d+)\)/g, "card #$1")
@@ -286,11 +303,24 @@ export function GameClient() {
             />
 
             <div className="center-line">
-              <span>
-                TURN {state.turn} <b>·</b> {state.active.toUpperCase()} ACTIVE
+              <div className="turn-status">
+                <strong>{state.active === "You" ? "Your turn" : "Opponent’s turn"}</strong>
+                <span>Turn {state.turn}</span>
+              </div>
+              <ol className="phase-track" aria-label={`Current step: ${state.step}`}>
+                {turnPhases.map((phase) => {
+                  const current = phase.steps.includes(state.step);
+                  return (
+                    <li className={current ? "phase-current" : ""} key={phase.label}>
+                      <span>{phase.label}</span>
+                      {current && <small>{state.step}</small>}
+                    </li>
+                  );
+                })}
+              </ol>
+              <span className="priority-status">
+                {state.priority === "You" ? "You have priority" : "Opponent has priority"}
               </span>
-              <strong>{state.step}</strong>
-              <span>{state.priority.toUpperCase()} HAS PRIORITY</span>
             </div>
 
             <div
@@ -299,13 +329,13 @@ export function GameClient() {
             >
               {state.stack.length > 0 && (
                 <>
-                <span>STACK</span>
-                {state.stack.map((item) => (
-                  <div key={item.id} className="stack-card">
-                    {item.name}
-                    <small>{item.owner === "human" ? "YOU" : "OPPONENT"}</small>
-                  </div>
-                ))}
+                  <span>STACK</span>
+                  {state.stack.map((item) => (
+                    <div key={item.id} className="stack-card">
+                      {item.name}
+                      <small>{item.owner === "human" ? "YOU" : "OPPONENT"}</small>
+                    </div>
+                  ))}
                 </>
               )}
             </div>

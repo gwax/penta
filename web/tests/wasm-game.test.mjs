@@ -24,7 +24,12 @@ test("the packaged Rust engine plays through browser actions", async () => {
   game.act(keep.index);
   const afterKeep = JSON.parse(game.state_json());
   assert.equal(afterKeep.turn, 1);
-  assert.ok(afterKeep.actions.length > 0);
+  assert.ok(
+    afterKeep.actions.some(
+      (action) => action.kind === "primary" || action.kind === "combat",
+    ),
+    "choice-free priority windows are passed automatically",
+  );
   assert.ok(
     !afterKeep.actions.some((action) => action.label === "Keep this hand"),
   );

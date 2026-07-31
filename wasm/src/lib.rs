@@ -73,7 +73,7 @@ impl WebGame {
             human,
             bot,
         };
-        web_game.advance_bot()?;
+        web_game.advance_until_human_choice()?;
         Ok(web_game)
     }
 
@@ -94,7 +94,7 @@ impl WebGame {
             .cloned()
             .ok_or_else(|| JsValue::from_str("unknown legal action"))?;
         self.game.apply(self.human, action).map_err(js_error)?;
-        self.advance_bot()
+        self.advance_until_human_choice()
     }
 
     /// Returns the human-visible game state as JSON.
@@ -103,22 +103,25 @@ impl WebGame {
         self.snapshot().to_string()
     }
 
-    fn advance_bot(&mut self) -> Result<(), JsValue> {
+    fn advance_until_human_choice(&mut self) -> Result<(), JsValue> {
         for _ in 0..BOT_ACTION_LIMIT {
             let Some(player) = self.game.decision_player() else {
                 return Ok(());
             };
-            if player == self.human {
-                return Ok(());
-            }
             let observation = self.game.observe(player);
-            let action = self
-                .bot
-                .choose_action(&observation)
-                .ok_or_else(|| JsValue::from_str("bot returned no action"))?;
+            let action = if player == self.human {
+                let Some(action) = automatic_human_action(&observation.legal_actions) else {
+                    return Ok(());
+                };
+                action
+            } else {
+                self.bot
+                    .choose_action(&observation)
+                    .ok_or_else(|| JsValue::from_str("bot returned no action"))?
+            };
             self.game.apply(player, action).map_err(js_error)?;
         }
-        Err(JsValue::from_str("bot exceeded its action limit"))
+        Err(JsValue::from_str("game exceeded its automatic action limit"))
     }
 
     #[allow(clippy::too_many_lines)]
@@ -432,6 +435,32 @@ fn action_kind(action: &Action) -> &'static str {
         | Action::AssignCombatDamage { .. } => "combat",
         _ => "primary",
     }
+}
+
+fn automatic_human_action(actions: &[Action]) -> Option<Action> {
+    let has_meaningful_choice = actions.iter().any(|action| {
+        !matches!(
+            action,
+            Action::Concede
+                | Action::PassPriority
+                | Action::FinishDeclaringAttackers
+                | Action::FinishDeclaringBlockers
+        )
+    });
+    if has_meaningful_choice {
+        return None;
+    }
+    actions
+        .iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::PassPriority
+                    | Action::FinishDeclaringAttackers
+                    | Action::FinishDeclaringBlockers
+            )
+        })
+        .cloned()
 }
 
 fn action_card(action: &Action) -> Option<CardInstanceId> {
