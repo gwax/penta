@@ -89,6 +89,15 @@ const cleanEvent = (event: string) =>
 
 const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
 
+const initialSeed = () => {
+  const requested = new URLSearchParams(window.location.search).get("seed");
+  if (requested !== null && /^\d+$/.test(requested)) {
+    const parsed = Number(requested);
+    if (Number.isSafeInteger(parsed) && parsed <= 0xffff_ffff) return parsed;
+  }
+  return randomSeed();
+};
+
 export function GameClient() {
   const game = useRef<RustWebGame | null>(null);
   const wasmReady = useRef(false);
@@ -154,15 +163,15 @@ export function GameClient() {
       try {
         await initWasm();
         if (!alive) return;
-        const initialSeed = randomSeed();
-        setSeed(initialSeed);
+        const startingSeed = initialSeed();
+        setSeed(startingSeed);
         wasmReady.current = true;
         game.current = new RustWebGame(
           "Goblins",
           "Sligh",
           "Handcrafted",
           true,
-          initialSeed,
+          startingSeed,
         );
         const snapshot = JSON.parse(game.current.state_json()) as GameState;
         setState(snapshot);

@@ -1282,18 +1282,25 @@ impl Game {
     }
 
     fn resolve_activated_ability(&mut self, object: &StackObject) {
-        if self.behavior(object.card.definition) != Some(CardBehavior::ChaosOrb)
-            || !self
-                .battlefield
-                .iter()
-                .any(|permanent| permanent.card.id == object.card.id)
-        {
-            return;
+        match self.behavior(object.card.definition) {
+            Some(CardBehavior::StripMine) => {
+                if let Some(Target::Permanent(target)) = object.targets.first().copied() {
+                    self.destroy_permanent(target);
+                }
+            }
+            Some(CardBehavior::ChaosOrb)
+                if self
+                    .battlefield
+                    .iter()
+                    .any(|permanent| permanent.card.id == object.card.id) =>
+            {
+                if let Some(chosen) = object.chosen_permanents.first().copied() {
+                    self.destroy_permanent(chosen);
+                }
+                self.destroy_permanent(object.card.id);
+            }
+            _ => {}
         }
-        if let Some(chosen) = object.chosen_permanents.first().copied() {
-            self.destroy_permanent(chosen);
-        }
-        self.destroy_permanent(object.card.id);
     }
 
     fn resolve_spell_effect(&mut self, object: &StackObject, behavior: CardBehavior) {
@@ -1741,8 +1748,35 @@ impl Game {
             }
             Some(CardBehavior::StripMine) => {
                 if let Some(Target::Permanent(target)) = target {
+                    let card = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == source)
+                        .map(|permanent| {
+                            permanent.tapped = true;
+                            permanent.card.clone()
+                        })
+                        .expect("legal Strip Mine activation has a source");
                     self.destroy_permanent(source);
-                    self.destroy_permanent(target);
+                    let chosen_permanents = vec![target];
+                    let targets = vec![Target::Permanent(target)];
+                    let stack_id = StackObjectId(self.next_stack_id);
+                    self.next_stack_id += 1;
+                    self.stack.push(StackObject {
+                        id: stack_id,
+                        kind: StackObjectKind::ActivatedAbility,
+                        card,
+                        controller: player,
+                        targets,
+                        chosen_permanents: Vec::new(),
+                        x: 0,
+                        is_copy: false,
+                    });
+                    self.events.push(GameEvent::AbilityActivated {
+                        player,
+                        source,
+                        chosen_permanents,
+                    });
                 }
             }
             Some(CardBehavior::ChaosOrb) => {
@@ -2793,10 +2827,74 @@ mod tests {
             },
         )
         .unwrap();
+        assert_eq!(game.stack.len(), 1);
+        assert_eq!(game.stack[0].kind, StackObjectKind::ActivatedAbility);
+        assert_eq!(game.stack[0].targets, vec![Target::Permanent(opposing_id)]);
         assert!(
             game.battlefield
                 .iter()
-                .all(|permanent| ![strip_id, opposing_id].contains(&permanent.card.id))
+                .all(|permanent| permanent.card.id != strip_id)
+        );
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == opposing_id)
+        );
+
+        pass_priority_pair(&mut game);
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != opposing_id)
+        );
+    }
+
+    #[test]
+    fn strip_mine_can_be_activated_in_response_to_strip_mine() {
+        let mut game = ready_game();
+        let first_strip = creature(10_000, cards::STRIP_MINE, PlayerId::One);
+        let second_strip = creature(10_001, cards::STRIP_MINE, PlayerId::Two);
+        let other_land = creature(10_002, cards::MOUNTAIN, PlayerId::Two);
+        let first_strip_id = first_strip.card.id;
+        let second_strip_id = second_strip.card.id;
+        let other_land_id = other_land.card.id;
+        game.battlefield = vec![first_strip, second_strip, other_land];
+        game.priority = PlayerId::Two;
+
+        game.apply(
+            PlayerId::Two,
+            Action::ActivateAbility {
+                source: second_strip_id,
+                target: Some(Target::Permanent(first_strip_id)),
+                sacrifice: Some(second_strip_id),
+            },
+        )
+        .unwrap();
+        game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+
+        let response = Action::ActivateAbility {
+            source: first_strip_id,
+            target: Some(Target::Permanent(other_land_id)),
+            sacrifice: Some(first_strip_id),
+        };
+        assert!(game.legal_actions(PlayerId::One).contains(&response));
+        game.apply(PlayerId::One, response).unwrap();
+        assert_eq!(game.stack.len(), 2);
+
+        pass_priority_pair(&mut game);
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != other_land_id)
+        );
+        assert_eq!(game.stack.len(), 1);
+
+        pass_priority_pair(&mut game);
+        assert!(game.stack.is_empty());
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| ![first_strip_id, second_strip_id].contains(&permanent.card.id))
         );
     }
 
