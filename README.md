@@ -127,6 +127,20 @@ cargo run --release --bin policy_sanity
 The gauntlet uses mirror matches for all three built-in decks, isolating policy
 quality from deck strength.
 
+Run the broader rules audit with:
+
+```sh
+cargo run --release --bin rules_audit
+```
+
+This plays Random/Random and both seatings of Handcrafted/Random across every
+built-in deck matchup and 100 seeds. After every action it checks that both
+players agree on public state, hidden hand sizes remain consistent, legal
+actions are unique, the correct player owns the decision, and completed games
+expose no further actions. Pass a different seed count as the final argument
+when doing a longer soak run, for example
+`cargo run --release --bin rules_audit -- 1000`.
+
 ## Web interface
 
 The `web/` application runs the same Rust engine in the browser through the

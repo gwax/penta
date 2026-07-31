@@ -429,7 +429,7 @@ impl Game {
                         pay: false,
                         new_targets: Vec::new(),
                     });
-                    if self.players[player.index()].mana_pool.total() > 0 {
+                    if can_pay(self.available_mana(player), ManaCost::new(1, 0), 0) {
                         actions.push(Action::ChooseTriggeredAbility {
                             pay: true,
                             new_targets: Vec::new(),
@@ -444,7 +444,7 @@ impl Game {
                         pay: false,
                         new_targets: Vec::new(),
                     });
-                    if self.players[player.index()].mana_pool.red >= 2 {
+                    if can_pay(self.available_mana(player), ManaCost::new(0, 2), 0) {
                         let mut targets = self.damage_targets();
                         if let Some(target) = spell.targets.first()
                             && !targets.contains(target)
@@ -745,11 +745,15 @@ impl Game {
         let choice = self.pending_choices.remove(0);
         match choice {
             PendingChoice::IronStar { .. } if pay => {
-                pay_generic(&mut self.players[player.index()].mana_pool, 1);
+                let cost = ManaCost::new(1, 0);
+                self.activate_mana_for_cost(player, cost, 0);
+                pay_cost(&mut self.players[player.index()].mana_pool, cost, 0);
                 self.players[player.index()].life += 1;
             }
             PendingChoice::ChainLightning { mut spell, .. } if pay => {
-                self.players[player.index()].mana_pool.red -= 2;
+                let cost = ManaCost::new(0, 2);
+                self.activate_mana_for_cost(player, cost, 0);
+                pay_cost(&mut self.players[player.index()].mana_pool, cost, 0);
                 spell.id = StackObjectId(self.next_stack_id);
                 self.next_stack_id += 1;
                 spell.controller = player;
@@ -2835,6 +2839,76 @@ mod tests {
                 .damage,
             2
         );
+    }
+
+    #[test]
+    fn iron_star_payment_can_use_untapped_mana_sources() {
+        let mut game = ready_game();
+        let mountain = creature(10_000, cards::MOUNTAIN, PlayerId::One);
+        let mountain_id = mountain.card.id;
+        game.battlefield.push(mountain);
+        game.pending_choices.push(PendingChoice::IronStar {
+            player: PlayerId::One,
+        });
+
+        let pay = Action::ChooseTriggeredAbility {
+            pay: true,
+            new_targets: Vec::new(),
+        };
+        assert!(game.legal_actions(PlayerId::One).contains(&pay));
+
+        game.apply(PlayerId::One, pay).unwrap();
+
+        assert_eq!(game.players[0].life, 21);
+        assert_eq!(game.players[0].mana_pool, ManaPool::default());
+        assert!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == mountain_id)
+                .is_some_and(|permanent| permanent.tapped)
+        );
+    }
+
+    #[test]
+    fn chain_lightning_copy_payment_can_use_untapped_mountains() {
+        let mut game = ready_game();
+        let first = creature(10_000, cards::MOUNTAIN, PlayerId::Two);
+        let second = creature(10_001, cards::MOUNTAIN, PlayerId::Two);
+        let first_id = first.card.id;
+        let second_id = second.card.id;
+        game.battlefield = vec![first, second];
+        game.pending_choices.push(PendingChoice::ChainLightning {
+            player: PlayerId::Two,
+            spell: StackObject {
+                id: StackObjectId(77),
+                kind: StackObjectKind::Spell,
+                card: card(10_002, cards::CHAIN_LIGHTNING, PlayerId::One),
+                controller: PlayerId::One,
+                targets: vec![Target::Player(PlayerId::Two)],
+                chosen_permanents: Vec::new(),
+                x: 0,
+                is_copy: false,
+            },
+        });
+
+        let copy = Action::ChooseTriggeredAbility {
+            pay: true,
+            new_targets: vec![Target::Player(PlayerId::One)],
+        };
+        assert!(game.legal_actions(PlayerId::Two).contains(&copy));
+
+        game.apply(PlayerId::Two, copy).unwrap();
+
+        assert_eq!(game.players[1].mana_pool, ManaPool::default());
+        assert!(
+            game.battlefield
+                .iter()
+                .filter(|permanent| [first_id, second_id].contains(&permanent.card.id))
+                .all(|permanent| permanent.tapped)
+        );
+        assert_eq!(game.stack.len(), 1);
+        assert_eq!(game.stack[0].targets, vec![Target::Player(PlayerId::One)]);
+        assert!(game.stack[0].is_copy);
     }
 
     #[test]

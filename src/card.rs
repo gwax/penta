@@ -196,12 +196,11 @@ impl CardBehavior {
                 "Whenever a red spell is cast, you may pay 1. If you do, gain 1 life."
             }
             Self::IronclawOrcs => "Can't block creatures with power 2 or greater.",
-            Self::Mountain => "Tap: Add R.",
+            Self::Mountain | Self::MoxRuby => "Tap: Add R.",
             Self::LightningBolt => "Deal 3 damage to any target.",
             Self::MishrasFactory => {
                 "Tap: Add 1. 1: Becomes a 2/2 Assembly-Worker artifact creature until end of turn. Tap: Target Assembly-Worker gets +1/+1 until end of turn."
             }
-            Self::MoxRuby => "Tap: Add R.",
             Self::MoxEmerald | Self::MoxJet | Self::MoxPearl | Self::MoxSapphire => "Tap: Add 1.",
             Self::OrcishMechanics => "Tap, sacrifice an artifact: Deal 2 damage to any target.",
             Self::RedElementalBlast => {
