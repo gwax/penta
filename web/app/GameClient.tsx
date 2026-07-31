@@ -206,6 +206,9 @@ export function GameClient() {
     const order = { combat: 0, primary: 1, pass: 2, danger: 3 };
     return [...actions].sort((a, b) => order[a.kind] - order[b.kind]);
   }, [selectedCard, state]);
+  const moveCount = filteredActions.filter(
+    (action) => action.kind !== "danger",
+  ).length;
 
   const opponentPermanents =
     state?.battlefield.filter((card) => card.owner === "opponent") ?? [];
@@ -444,7 +447,7 @@ export function GameClient() {
                 <strong>
                   {watchingOpponent
                     ? `${opponentActionQueue.length} action${opponentActionQueue.length === 1 ? "" : "s"}`
-                    : `${filteredActions.length} legal moves`}
+                    : `${moveCount} move${moveCount === 1 ? "" : "s"}`}
                 </strong>
               </div>
               {selectedCard !== null && (
