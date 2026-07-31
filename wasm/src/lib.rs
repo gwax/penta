@@ -31,6 +31,7 @@ pub struct WebGame {
     catalog: CardCatalog,
     human: PlayerId,
     bot: BotPolicy,
+    opponent_actions: Vec<Value>,
 }
 
 #[wasm_bindgen]
@@ -72,6 +73,7 @@ impl WebGame {
             catalog,
             human,
             bot,
+            opponent_actions: Vec::new(),
         };
         web_game.advance_until_human_choice()?;
         Ok(web_game)
@@ -93,6 +95,7 @@ impl WebGame {
             .get(action_index)
             .cloned()
             .ok_or_else(|| JsValue::from_str("unknown legal action"))?;
+        self.opponent_actions.clear();
         self.game.apply(self.human, action).map_err(js_error)?;
         self.advance_until_human_choice()
     }
@@ -119,6 +122,14 @@ impl WebGame {
                     .choose_action(&observation)
                     .ok_or_else(|| JsValue::from_str("bot returned no action"))?
             };
+            if player != self.human && should_animate_action(&action) {
+                self.opponent_actions.push(json!({
+                    "label": self.action_label(&observation, &action),
+                    "kind": animated_action_kind(&action),
+                    "card": action_card(&action)
+                        .map(|id| self.instance_name(&observation, id)),
+                }));
+            }
             self.game.apply(player, action).map_err(js_error)?;
         }
         Err(JsValue::from_str("game exceeded its automatic action limit"))
@@ -257,6 +268,7 @@ impl WebGame {
             "battlefield": battlefield,
             "stack": stack,
             "actions": actions,
+            "opponentActions": self.opponent_actions,
             "result": result,
             "events": events,
         })
@@ -474,6 +486,39 @@ fn action_card(action: &Action) -> Option<CardInstanceId> {
         }
         Action::DeclareBlocker { blocker, .. } => Some(*blocker),
         _ => None,
+    }
+}
+
+fn should_animate_action(action: &Action) -> bool {
+    !matches!(
+        action,
+        Action::Concede
+            | Action::PassPriority
+            | Action::FinishDeclaringAttackers
+            | Action::FinishDeclaringBlockers
+    )
+}
+
+fn animated_action_kind(action: &Action) -> &'static str {
+    match action {
+        Action::PlayLand { .. } => "land",
+        Action::CastSpell { .. } => "spell",
+        Action::ActivateManaAbility { .. } => "mana",
+        Action::ActivateAbility { .. } => "ability",
+        Action::DeclareAttacker { .. }
+        | Action::DeclareBlocker { .. }
+        | Action::AssignCombatDamage { .. } => "combat",
+        Action::KeepHand
+        | Action::TakeMulligan
+        | Action::BottomCards { .. }
+        | Action::DiscardCards { .. }
+        | Action::ChooseTriggeredAbility { .. }
+        | Action::ChooseCopyTargets { .. }
+        | Action::ChooseUntap { .. } => "choice",
+        Action::Concede
+        | Action::PassPriority
+        | Action::FinishDeclaringAttackers
+        | Action::FinishDeclaringBlockers => "quiet",
     }
 }
 

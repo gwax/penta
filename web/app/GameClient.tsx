@@ -27,6 +27,11 @@ type Action = {
   kind: "primary" | "combat" | "pass" | "danger";
   cardId?: number | null;
 };
+type OpponentAction = {
+  label: string;
+  kind: "land" | "spell" | "mana" | "ability" | "combat" | "choice";
+  card?: string | null;
+};
 type PlayerState = {
   life: number;
   library: number;
@@ -45,6 +50,7 @@ type GameState = {
   battlefield: Card[];
   stack: Array<{ id: number; name: string; owner: Owner; kind: string }>;
   actions: Action[];
+  opponentActions: OpponentAction[];
   result: null | { outcome: "win" | "loss" | "draw"; message: string };
   events: string[];
 };
@@ -91,10 +97,20 @@ export function GameClient() {
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [opponentActionQueue, setOpponentActionQueue] = useState<OpponentAction[]>([]);
+  const currentOpponentAction = opponentActionQueue[0] ?? null;
+  const watchingOpponent = currentOpponentAction !== null;
 
   const refresh = useCallback(() => {
     if (!game.current) return;
-    setState(JSON.parse(game.current.state_json()) as GameState);
+    const snapshot = JSON.parse(game.current.state_json()) as GameState;
+    setState(snapshot);
+    if (snapshot.opponentActions.length > 0) {
+      setOpponentActionQueue((current) => [
+        ...current,
+        ...snapshot.opponentActions,
+      ]);
+    }
     setSelectedCard(null);
   }, []);
 
@@ -108,6 +124,7 @@ export function GameClient() {
     ) => {
       if (!wasmReady.current) return;
       try {
+        setOpponentActionQueue([]);
         game.current?.free();
         game.current = new RustWebGame(
           nextHumanDeck,
@@ -139,7 +156,9 @@ export function GameClient() {
           true,
           9394,
         );
-        setState(JSON.parse(game.current.state_json()) as GameState);
+        const snapshot = JSON.parse(game.current.state_json()) as GameState;
+        setState(snapshot);
+        setOpponentActionQueue(snapshot.opponentActions);
       } catch (cause) {
         if (alive) setError(`Could not start the Rust engine: ${String(cause)}`);
       } finally {
@@ -152,6 +171,15 @@ export function GameClient() {
       game.current?.free();
     };
   }, []);
+
+  useEffect(() => {
+    if (currentOpponentAction === null) return;
+    const timer = window.setTimeout(
+      () => setOpponentActionQueue((current) => current.slice(1)),
+      1200,
+    );
+    return () => window.clearTimeout(timer);
+  }, [currentOpponentAction]);
 
   const act = (action: Action) => {
     try {
@@ -183,7 +211,9 @@ export function GameClient() {
     state?.battlefield.filter((card) => card.owner === "human") ?? [];
 
   const cardActions = (id: number) =>
-    state?.actions.filter((action) => action.cardId === id).length ?? 0;
+    watchingOpponent
+      ? 0
+      : state?.actions.filter((action) => action.cardId === id).length ?? 0;
 
   const selectCard = (id: number) => {
     const matching = state?.actions.filter((action) => action.cardId === id) ?? [];
@@ -294,6 +324,33 @@ export function GameClient() {
               ))}
             </div>
 
+            {currentOpponentAction && (
+              <div
+                className={`opponent-action opponent-action-${currentOpponentAction.kind}`}
+                key={`${currentOpponentAction.label}-${opponentActionQueue.length}`}
+                role="status"
+                aria-live="polite"
+              >
+                <span className="opponent-action-icon" aria-hidden="true">
+                  {opponentActionSymbol(currentOpponentAction.kind)}
+                </span>
+                <div>
+                  <small>Opponent</small>
+                  <strong>{currentOpponentAction.label}</strong>
+                </div>
+                {opponentActionQueue.length > 1 && (
+                  <span className="opponent-action-count">
+                    +{opponentActionQueue.length - 1}
+                  </span>
+                )}
+                <button
+                  onClick={() => setOpponentActionQueue([])}
+                >
+                  Skip
+                </button>
+              </div>
+            )}
+
             <Zone
               cards={opponentPermanents}
               empty="Opponent battlefield"
@@ -370,11 +427,19 @@ export function GameClient() {
             </div>
           </section>
 
-          <aside className="decision-panel" aria-label="Legal actions">
+          <aside
+            className={`decision-panel ${watchingOpponent ? "is-watching-opponent" : ""}`}
+            aria-label="Legal actions"
+            aria-busy={watchingOpponent}
+          >
             <div className="decision-heading">
               <div>
-                <span>YOUR DECISION</span>
-                <strong>{filteredActions.length} legal moves</strong>
+                <span>{watchingOpponent ? "OPPONENT ACTING" : "YOUR DECISION"}</span>
+                <strong>
+                  {watchingOpponent
+                    ? `${opponentActionQueue.length} action${opponentActionQueue.length === 1 ? "" : "s"}`
+                    : `${filteredActions.length} legal moves`}
+                </strong>
               </div>
               {selectedCard !== null && (
                 <button onClick={() => setSelectedCard(null)}>Clear filter</button>
@@ -386,6 +451,7 @@ export function GameClient() {
                   className={`action action-${action.kind}`}
                   key={action.index}
                   onClick={() => act(action)}
+                  disabled={watchingOpponent}
                 >
                   <span>{action.label}</span>
                   <i aria-hidden="true">→</i>
@@ -423,6 +489,23 @@ export function GameClient() {
       )}
     </main>
   );
+}
+
+function opponentActionSymbol(kind: OpponentAction["kind"]) {
+  switch (kind) {
+    case "land":
+      return "▲";
+    case "spell":
+      return "✦";
+    case "mana":
+      return "●";
+    case "ability":
+      return "◇";
+    case "combat":
+      return "⚔";
+    case "choice":
+      return "…";
+  }
 }
 
 function PlayerBar({
