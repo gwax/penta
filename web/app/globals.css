@@ -194,7 +194,7 @@ button {
   position: relative;
   min-width: 0;
   display: grid;
-  grid-template-rows: 52px 30px minmax(100px, 1fr) 50px auto minmax(100px, 1fr) 52px 176px;
+  grid-template-rows: 52px 30px minmax(100px, 1fr) 50px auto minmax(100px, 1fr) 52px 184px;
   gap: 7px;
   padding: 9px 14px 12px;
   overflow: hidden;
@@ -759,16 +759,14 @@ button {
 }
 
 .is-actionable {
-  box-shadow:
-    0 0 0 2px var(--gold),
-    0 5px 13px rgba(0, 0, 0, 0.55);
+  border-color: var(--gold);
+  box-shadow: 0 5px 13px rgba(0, 0, 0, 0.55);
 }
 
 .is-actionable:hover,
 .is-selected {
-  box-shadow:
-    0 0 0 3px #f2c978,
-    0 10px 18px rgba(0, 0, 0, 0.55);
+  border-color: #f2c978;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.55);
 }
 
 .is-tapped {
