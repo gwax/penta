@@ -32,6 +32,7 @@ pub struct WebGame {
     human: PlayerId,
     bot: BotPolicy,
     opponent_actions: Vec<Value>,
+    pending_opponent_mana: Vec<String>,
 }
 
 #[wasm_bindgen]
@@ -74,6 +75,7 @@ impl WebGame {
             human,
             bot,
             opponent_actions: Vec::new(),
+            pending_opponent_mana: Vec::new(),
         };
         web_game.advance_until_human_choice()?;
         Ok(web_game)
@@ -96,6 +98,7 @@ impl WebGame {
             .cloned()
             .ok_or_else(|| JsValue::from_str("unknown legal action"))?;
         self.opponent_actions.clear();
+        self.pending_opponent_mana.clear();
         self.game.apply(self.human, action).map_err(js_error)?;
         self.advance_until_human_choice()
     }
@@ -122,13 +125,32 @@ impl WebGame {
                     .choose_action(&observation)
                     .ok_or_else(|| JsValue::from_str("bot returned no action"))?
             };
-            if player != self.human && should_animate_action(&action) {
-                self.opponent_actions.push(json!({
-                    "label": self.action_label(&observation, &action),
-                    "kind": animated_action_kind(&action),
-                    "card": action_card(&action)
-                        .map(|id| self.instance_name(&observation, id)),
-                }));
+            if player != self.human {
+                if let Action::ActivateManaAbility { source } = &action {
+                    self.pending_opponent_mana
+                        .push(self.instance_name(&observation, *source));
+                } else if should_animate_action(&action) {
+                    let mana_sources = if matches!(
+                        action,
+                        Action::CastSpell { .. } | Action::ActivateAbility { .. }
+                    ) {
+                        std::mem::take(&mut self.pending_opponent_mana)
+                    } else {
+                        Vec::new()
+                    };
+                    let label = self.action_label(&observation, &action);
+                    let kind = animated_action_kind(&action);
+                    let card = action_card(&action)
+                        .map(|id| self.instance_name(&observation, id));
+                    self.opponent_actions.push(json!({
+                        "label": label,
+                        "kind": kind,
+                        "card": card,
+                        "manaSources": mana_sources,
+                    }));
+                } else {
+                    self.pending_opponent_mana.clear();
+                }
             }
             self.game.apply(player, action).map_err(js_error)?;
         }
@@ -494,6 +516,7 @@ fn should_animate_action(action: &Action) -> bool {
         action,
         Action::Concede
             | Action::PassPriority
+            | Action::ActivateManaAbility { .. }
             | Action::FinishDeclaringAttackers
             | Action::FinishDeclaringBlockers
     )
@@ -503,7 +526,6 @@ fn animated_action_kind(action: &Action) -> &'static str {
     match action {
         Action::PlayLand { .. } => "land",
         Action::CastSpell { .. } => "spell",
-        Action::ActivateManaAbility { .. } => "mana",
         Action::ActivateAbility { .. } => "ability",
         Action::DeclareAttacker { .. }
         | Action::DeclareBlocker { .. }
@@ -517,6 +539,7 @@ fn animated_action_kind(action: &Action) -> &'static str {
         | Action::ChooseUntap { .. } => "choice",
         Action::Concede
         | Action::PassPriority
+        | Action::ActivateManaAbility { .. }
         | Action::FinishDeclaringAttackers
         | Action::FinishDeclaringBlockers => "quiet",
     }

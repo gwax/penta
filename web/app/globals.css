@@ -264,6 +264,18 @@ button {
   white-space: nowrap;
 }
 
+.opponent-action-mana-used {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: #746753;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .opponent-action-count {
   color: #746753;
   font-size: 11px;
@@ -278,11 +290,6 @@ button {
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
-}
-
-.opponent-action-mana .opponent-action-icon {
-  color: #28251e;
-  background: #c8bea6;
 }
 
 .opponent-action-combat .opponent-action-icon {

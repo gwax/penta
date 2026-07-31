@@ -29,8 +29,9 @@ type Action = {
 };
 type OpponentAction = {
   label: string;
-  kind: "land" | "spell" | "mana" | "ability" | "combat" | "choice";
+  kind: "land" | "spell" | "ability" | "combat" | "choice";
   card?: string | null;
+  manaSources?: string[];
 };
 type PlayerState = {
   life: number;
@@ -337,15 +338,19 @@ export function GameClient() {
                 <div>
                   <small>Opponent</small>
                   <strong>{currentOpponentAction.label}</strong>
+                  {currentOpponentAction.manaSources &&
+                    currentOpponentAction.manaSources.length > 0 && (
+                      <span className="opponent-action-mana-used">
+                        Tapped {currentOpponentAction.manaSources.join(", ")}
+                      </span>
+                    )}
                 </div>
                 {opponentActionQueue.length > 1 && (
                   <span className="opponent-action-count">
                     +{opponentActionQueue.length - 1}
                   </span>
                 )}
-                <button
-                  onClick={() => setOpponentActionQueue([])}
-                >
+                <button onClick={() => setOpponentActionQueue([])}>
                   Skip
                 </button>
               </div>
@@ -497,8 +502,6 @@ function opponentActionSymbol(kind: OpponentAction["kind"]) {
       return "▲";
     case "spell":
       return "✦";
-    case "mana":
-      return "●";
     case "ability":
       return "◇";
     case "combat":
