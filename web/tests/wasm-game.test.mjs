@@ -100,3 +100,56 @@ test("casting a spell automatically taps available mana sources", async () => {
 
   game.free();
 });
+
+test("targeted permanent actions identify their clickable battlefield target", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Goblins", "Sligh", "Handcrafted", true, 1138831559);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Play Mountain").index);
+
+  for (let step = 0; step < 30; step += 1) {
+    state = JSON.parse(game.state_json());
+    if (state.actions.some((action) => action.label === "Play Strip Mine")) {
+      break;
+    }
+    const pass =
+      state.actions.find((action) => action.kind === "pass") ??
+      state.actions.find((action) => action.label === "Decline");
+    assert.ok(
+      pass,
+      `the human can yield each intervening priority window: ${JSON.stringify({
+        turn: state.turn,
+        step: state.step,
+        actions: state.actions,
+      })}`,
+    );
+    game.act(pass.index);
+  }
+
+  state = JSON.parse(game.state_json());
+  const playStrip = state.actions.find((action) => action.label === "Play Strip Mine");
+  assert.ok(playStrip, "the deterministic hand can play Strip Mine on turn two");
+  game.act(playStrip.index);
+
+  state = JSON.parse(game.state_json());
+  const stripAction = state.actions.find((action) => {
+    if (!action.label.startsWith("Activate Strip Mine →")) return false;
+    return state.battlefield.some(
+      (card) => card.id === action.targetCardId && card.owner === "opponent",
+    );
+  });
+  assert.ok(stripAction, "Strip Mine exposes a targeted activation");
+  const target = state.battlefield.find(
+    (card) => card.id === stripAction.targetCardId,
+  );
+  assert.equal(target?.owner, "opponent");
+  assert.equal(target?.kind, "land");
+
+  game.free();
+});

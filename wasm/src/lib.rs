@@ -172,6 +172,7 @@ impl WebGame {
                     "label": self.action_label(&observation, action),
                     "kind": action_kind(action),
                     "cardId": action_card(action).map(|id| id.0),
+                    "targetCardId": action_target_card(action).map(|id| id.0),
                 })
             })
             .collect::<Vec<_>>();
@@ -509,6 +510,20 @@ fn action_card(action: &Action) -> Option<CardInstanceId> {
             Some(*attacker)
         }
         Action::DeclareBlocker { blocker, .. } => Some(*blocker),
+        _ => None,
+    }
+}
+
+fn action_target_card(action: &Action) -> Option<CardInstanceId> {
+    match action {
+        Action::CastSpell { targets, .. } => targets.iter().find_map(|target| match target {
+            Target::Permanent(id) => Some(*id),
+            Target::Player(_) | Target::Spell(_) => None,
+        }),
+        Action::ActivateAbility {
+            target: Some(Target::Permanent(id)),
+            ..
+        } => Some(*id),
         _ => None,
     }
 }

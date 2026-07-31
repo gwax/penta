@@ -26,6 +26,7 @@ type Action = {
   label: string;
   kind: "primary" | "combat" | "pass" | "danger";
   cardId?: number | null;
+  targetCardId?: number | null;
 };
 type OpponentAction = {
   label: string;
@@ -199,7 +200,7 @@ export function GameClient() {
 
   const filteredActions = useMemo(() => {
     if (!state) return [];
-    const actions =
+    const actions = (
       selectedCard === null
         ? state.actions
         : state.actions.filter(
@@ -207,7 +208,8 @@ export function GameClient() {
               action.cardId === selectedCard ||
               action.kind === "pass" ||
               action.kind === "danger",
-          );
+          )
+    ).filter((action) => action.targetCardId == null);
     const order = { combat: 0, primary: 1, pass: 2, danger: 3 };
     return [...actions].sort((a, b) => order[a.kind] - order[b.kind]);
   }, [selectedCard, state]);
@@ -223,10 +225,53 @@ export function GameClient() {
   const cardActions = (id: number) =>
     watchingOpponent
       ? 0
-      : state?.actions.filter((action) => action.cardId === id).length ?? 0;
+      : state?.actions.filter(
+          (action) =>
+            action.cardId === id ||
+            (action.cardId === selectedCard && action.targetCardId === id),
+        ).length ?? 0;
+
+  const isTargetable = (id: number) =>
+    !watchingOpponent &&
+    selectedCard !== null &&
+    (state?.actions.some(
+      (action) =>
+        action.cardId === selectedCard && action.targetCardId === id,
+    ) ?? false);
+
+  const selectedSource = state?.battlefield
+    .concat(state.human.hand)
+    .find((card) => card.id === selectedCard);
+  const choosingTarget =
+    selectedCard !== null &&
+    (state?.actions.some(
+      (action) =>
+        action.cardId === selectedCard && action.targetCardId != null,
+    ) ?? false);
 
   const selectCard = (id: number) => {
-    const matching = state?.actions.filter((action) => action.cardId === id) ?? [];
+    if (selectedCard !== null) {
+      const targeted =
+        state?.actions.filter(
+          (action) =>
+            action.cardId === selectedCard && action.targetCardId === id,
+        ) ?? [];
+      if (targeted.length === 1) {
+        act(targeted[0]);
+        return;
+      }
+      if (id === selectedCard) {
+        setSelectedCard(null);
+        return;
+      }
+    }
+
+    const matching =
+      state?.actions.filter((action) => action.cardId === id) ?? [];
+    if (matching.some((action) => action.targetCardId != null)) {
+      setSelectedCard(id);
+      return;
+    }
     if (matching.length === 1) {
       act(matching[0]);
     } else if (matching.length > 1) {
@@ -367,6 +412,7 @@ export function GameClient() {
               cards={opponentPermanents}
               empty="Opponent battlefield"
               actionCount={cardActions}
+              isTargetable={isTargetable}
               onSelect={selectCard}
               selectedCard={selectedCard}
               opponent
@@ -414,6 +460,7 @@ export function GameClient() {
               cards={humanPermanents}
               empty="Your battlefield"
               actionCount={cardActions}
+              isTargetable={isTargetable}
               onSelect={selectCard}
               selectedCard={selectedCard}
             />
@@ -430,6 +477,7 @@ export function GameClient() {
                   key={card.id}
                   card={card}
                   actionable={cardActions(card.id) > 0}
+                  targetable={isTargetable(card.id)}
                   selected={selectedCard === card.id}
                   onSelect={selectCard}
                 />
@@ -459,6 +507,15 @@ export function GameClient() {
               )}
             </div>
             <div className="action-list">
+              {choosingTarget && (
+                <div className="target-prompt" role="status">
+                  <strong>Choose a battlefield target</strong>
+                  <span>
+                    Click a highlighted permanent for{" "}
+                    {selectedSource?.name ?? "this action"}.
+                  </span>
+                </div>
+              )}
               {filteredActions.map((action) => (
                 <button
                   className={`action action-${action.kind}`}
@@ -557,6 +614,7 @@ function Zone({
   cards,
   empty,
   actionCount,
+  isTargetable,
   onSelect,
   selectedCard,
   opponent = false,
@@ -564,6 +622,7 @@ function Zone({
   cards: Card[];
   empty: string;
   actionCount(id: number): number;
+  isTargetable(id: number): boolean;
   onSelect(id: number): void;
   selectedCard: number | null;
   opponent?: boolean;
@@ -576,6 +635,7 @@ function Zone({
         key={card.id}
         card={card}
         actionable={actionCount(card.id) > 0}
+        targetable={isTargetable(card.id)}
         selected={selectedCard === card.id}
         onSelect={onSelect}
         compact
@@ -600,12 +660,14 @@ function Zone({
 function GameCard({
   card,
   actionable,
+  targetable = false,
   selected,
   onSelect,
   compact = false,
 }: {
   card: Card;
   actionable: boolean;
+  targetable?: boolean;
   selected: boolean;
   onSelect(id: number): void;
   compact?: boolean;
@@ -627,11 +689,18 @@ function GameCard({
         card.tapped ? "is-tapped" : "",
         card.attacking ? "is-attacking" : "",
         actionable ? "is-actionable" : "",
+        targetable ? "is-targetable" : "",
         selected ? "is-selected" : "",
       ].join(" ")}
       disabled={!actionable}
       onClick={() => onSelect(card.id)}
-      title={actionable ? `Choose an action for ${card.name}` : card.name}
+      title={
+        targetable
+          ? `Target ${card.name}`
+          : actionable
+            ? `Choose an action for ${card.name}`
+            : card.name
+      }
     >
       <span className="card-header">
         <span className="card-title">{card.name}</span>
