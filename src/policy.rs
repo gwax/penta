@@ -98,7 +98,7 @@ impl HandcraftedPolicy {
     fn target_score(observation: &PlayerObservation, target: Target) -> i32 {
         match target {
             Target::Player(player) if player == observation.viewer.opponent() => 500,
-            Target::Player(_) => -1_000,
+            Target::Player(_) => -10_000,
             Target::Permanent(id) => observation
                 .battlefield
                 .iter()
@@ -111,6 +111,40 @@ impl HandcraftedPolicy {
                     }
                 }),
             Target::Spell(_) => 100,
+        }
+    }
+
+    fn damage_target_score(observation: &PlayerObservation, target: Target, amount: u16) -> i32 {
+        match target {
+            Target::Player(player) if player == observation.viewer.opponent() => {
+                if observation.life_totals[player.index()]
+                    <= i16::try_from(amount).unwrap_or(i16::MAX)
+                {
+                    10_000
+                } else {
+                    -2_000
+                }
+            }
+            Target::Player(_) => -10_000,
+            Target::Permanent(id) => observation
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.id == id)
+                .map_or(-500, |permanent| {
+                    if permanent.controller == observation.viewer {
+                        return -10_000;
+                    }
+                    let remaining = permanent
+                        .toughness
+                        .unwrap_or(0)
+                        .saturating_sub(i16::try_from(permanent.damage).unwrap_or(i16::MAX));
+                    if i16::try_from(amount).unwrap_or(i16::MAX) >= remaining {
+                        700 + i32::from(permanent.power.unwrap_or(0).max(0)) * 25
+                    } else {
+                        100
+                    }
+                }),
+            Target::Spell(_) => -500,
         }
     }
 
@@ -143,9 +177,23 @@ impl HandcraftedPolicy {
         x: u16,
     ) -> i32 {
         let behavior = Self::hand_definition(observation, card).and_then(|id| self.behavior(id));
+        let damage = match behavior {
+            Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => Some(3),
+            Some(CardBehavior::GoblinGrenade) => Some(5),
+            Some(CardBehavior::Fireball) => Some(
+                x.checked_div(u16::try_from(targets.len()).unwrap_or(u16::MAX))
+                    .unwrap_or(0),
+            ),
+            _ => None,
+        };
         let target_score: i32 = targets
             .iter()
-            .map(|target| Self::target_score(observation, *target))
+            .map(|target| {
+                damage.map_or_else(
+                    || Self::target_score(observation, *target),
+                    |amount| Self::damage_target_score(observation, *target, amount),
+                )
+            })
             .sum();
         let base = match behavior {
             Some(CardBehavior::GoblinGrenade) => 8_500,
@@ -166,11 +214,22 @@ impl HandcraftedPolicy {
         observation: &PlayerObservation,
         source: CardInstanceId,
         target: Option<Target>,
+        sacrifice: Option<CardInstanceId>,
     ) -> i32 {
         let behavior =
             Self::permanent_definition(observation, source).and_then(|id| self.behavior(id));
-        let target_score = target.map_or(0, |value| Self::target_score(observation, value));
-        match behavior {
+        let target_score = target.map_or(0, |value| {
+            if behavior == Some(CardBehavior::OrcishMechanics) {
+                Self::damage_target_score(observation, value, 2)
+            } else {
+                Self::target_score(observation, value)
+            }
+        });
+        let sacrifice_cost = sacrifice
+            .filter(|card| *card != source)
+            .and_then(|card| Self::permanent_definition(observation, card))
+            .map_or(0, |definition| self.card_value(definition));
+        let score = match behavior {
             Some(
                 CardBehavior::ChaosOrb | CardBehavior::StripMine | CardBehavior::OrcishMechanics,
             ) => 7_200 + target_score,
@@ -180,13 +239,101 @@ impl HandcraftedPolicy {
                 | CardBehavior::GraniteGargoyle
                 | CardBehavior::DragonWhelp,
             ) => 5_200,
-            // Blindly eating every artifact is much worse than preserving a
-            // board. A future tactical policy can sacrifice only for lethal
-            // damage or to save an Atog in combat.
+            Some(CardBehavior::Atog) if self.atog_can_attack_for_lethal(observation, source) => {
+                10_000
+            }
             Some(CardBehavior::Atog) => -100,
             Some(_) => 4_500 + target_score,
             None => -10_000,
+        };
+        if behavior == Some(CardBehavior::OrcishMechanics)
+            && matches!(target, Some(Target::Player(player)) if player == observation.viewer.opponent())
+            && observation.life_totals[observation.viewer.opponent().index()] > 2
+        {
+            return -1_000;
         }
+        score - sacrifice_cost
+    }
+
+    fn atog_can_attack_for_lethal(
+        &self,
+        observation: &PlayerObservation,
+        source: CardInstanceId,
+    ) -> bool {
+        let Some(atog) = observation
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.id == source)
+        else {
+            return false;
+        };
+        if !atog.attacking
+            || observation
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.blocking == Some(source))
+        {
+            return false;
+        }
+        let artifacts = observation
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == observation.viewer
+                    && self
+                        .behavior(permanent.definition)
+                        .is_some_and(|behavior| behavior.kind().is_artifact())
+            })
+            .count();
+        let potential_power = atog
+            .power
+            .unwrap_or(0)
+            .saturating_add(i16::try_from(artifacts.saturating_mul(2)).unwrap_or(i16::MAX));
+        potential_power >= observation.life_totals[observation.viewer.opponent().index()]
+    }
+
+    fn score_attack(&self, observation: &PlayerObservation, attacker: CardInstanceId) -> i32 {
+        let Some(attacker) = observation
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.id == attacker)
+        else {
+            return -1_000;
+        };
+        let attacker_power = attacker.power.unwrap_or(0).max(0);
+        let attacker_toughness = attacker
+            .toughness
+            .unwrap_or(0)
+            .saturating_sub(i16::try_from(attacker.damage).unwrap_or(i16::MAX));
+        let already_attacking = observation
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == observation.viewer && permanent.attacking)
+            .count();
+        let blockers: Vec<_> = observation
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == observation.viewer.opponent()
+                    && !permanent.tapped
+                    && permanent.power.is_some()
+                    && (!attacker.flying || permanent.flying)
+                    && !(self.behavior(permanent.definition) == Some(CardBehavior::IronclawOrcs)
+                        && attacker_power >= 2)
+            })
+            .collect();
+        if already_attacking >= blockers.len() {
+            return 7_000;
+        }
+        let gets_eaten = blockers.iter().any(|blocker| {
+            let blocker_power = blocker.power.unwrap_or(0).max(0);
+            let blocker_toughness = blocker
+                .toughness
+                .unwrap_or(0)
+                .saturating_sub(i16::try_from(blocker.damage).unwrap_or(i16::MAX));
+            blocker_power >= attacker_toughness && blocker_toughness > attacker_power
+        });
+        if gets_eaten { 500 } else { 7_000 }
     }
 
     fn score_block(
@@ -211,7 +358,16 @@ impl HandcraftedPolicy {
         let attacker_power = attacker.power.unwrap_or(0);
         let attacker_toughness =
             attacker.toughness.unwrap_or(0) - i16::try_from(attacker.damage).unwrap_or(i16::MAX);
-        let kills = blocker_power >= attacker_toughness;
+        let existing_power: i16 = observation
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.blocking == Some(attacker.id))
+            .filter_map(|permanent| permanent.power)
+            .fold(0, i16::saturating_add);
+        if existing_power >= attacker_toughness {
+            return 0;
+        }
+        let kills = existing_power.saturating_add(blocker_power) >= attacker_toughness;
         let survives = blocker_toughness > attacker_power;
         match (kills, survives) {
             (true, true) => 7_000,
@@ -279,12 +435,6 @@ impl HandcraftedPolicy {
     }
 
     fn mana_action_score(&self, observation: &PlayerObservation, source: CardInstanceId) -> i32 {
-        let own_main = observation.active_player == observation.viewer
-            && matches!(observation.step, Step::PrecombatMain | Step::PostcombatMain);
-        if own_main || !observation.stack.is_empty() {
-            return 8_800;
-        }
-
         let needs_factory_mana = observation.active_player == observation.viewer
             && matches!(
                 observation.step,
@@ -306,6 +456,33 @@ impl HandcraftedPolicy {
         } else {
             -100
         }
+    }
+
+    fn score_land(&self, observation: &PlayerObservation, card: CardInstanceId) -> i32 {
+        match Self::hand_definition(observation, card).and_then(|id| self.behavior(id)) {
+            Some(CardBehavior::Mountain) => 9_300,
+            Some(CardBehavior::MishrasFactory) => 9_200,
+            Some(CardBehavior::StripMine) => 9_100,
+            Some(_) | None => 9_000,
+        }
+    }
+
+    fn score_untap(&self, observation: &PlayerObservation, permanents: &[CardInstanceId]) -> i32 {
+        8_000
+            + permanents
+                .iter()
+                .filter_map(|id| {
+                    observation
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.id == *id)
+                })
+                .map(|permanent| {
+                    let card = self.card_value(permanent.definition);
+                    let power = i32::from(permanent.power.unwrap_or(0).max(0));
+                    card + power * 10
+                })
+                .sum::<i32>()
     }
 
     fn score_action(&self, observation: &PlayerObservation, action: &Action) -> i32 {
@@ -339,18 +516,18 @@ impl HandcraftedPolicy {
                         .map(|target| Self::target_score(observation, *target))
                         .sum::<i32>()
             }
-            Action::ChooseUntap { permanents } => {
-                8_000 + i32::try_from(permanents.len()).unwrap_or(i32::MAX)
-            }
-            Action::PlayLand { .. } => 9_000,
+            Action::ChooseUntap { permanents } => self.score_untap(observation, permanents),
+            Action::PlayLand { card } => self.score_land(observation, *card),
             Action::ActivateManaAbility { source } => self.mana_action_score(observation, *source),
             Action::CastSpell {
                 card, targets, x, ..
             } => self.score_cast(observation, *card, targets, *x),
-            Action::ActivateAbility { source, target, .. } => {
-                self.score_ability(observation, *source, *target)
-            }
-            Action::DeclareAttacker { .. } => 7_000,
+            Action::ActivateAbility {
+                source,
+                target,
+                sacrifice,
+            } => self.score_ability(observation, *source, *target, *sacrifice),
+            Action::DeclareAttacker { attacker } => self.score_attack(observation, *attacker),
             Action::DeclareBlocker { blocker, attacker } => {
                 Self::score_block(observation, *blocker, *attacker)
             }

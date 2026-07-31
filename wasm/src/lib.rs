@@ -1,7 +1,7 @@
 use osarena::poc;
 use osarena::{
-    Action, CardCatalog, CardDefinitionId, CardInstanceId, Game, GameResult, HandcraftedPolicy,
-    PlayerId, PlayerObservation, Policy, RandomPolicy, Target,
+    Action, CardCatalog, CardDefinitionId, CardInstanceId, Game, GameEvent, GameResult,
+    HandcraftedPolicy, PlayerId, PlayerObservation, Policy, RandomPolicy, Target,
 };
 use serde_json::{Value, json};
 use std::fmt::Write as _;
@@ -158,7 +158,26 @@ impl WebGame {
                     self.pending_opponent_mana.clear();
                 }
             }
+            let event_start = self.game.events().len();
             self.game.apply(player, action).map_err(js_error)?;
+            if player != self.human
+                && let Some(animation) = pending_animation.as_mut()
+            {
+                let mana_sources = self.game.events()[event_start..]
+                    .iter()
+                    .filter_map(|event| match event {
+                        GameEvent::ManaAdded {
+                            player: producer,
+                            source,
+                        } if *producer == player => Some(*source),
+                        _ => None,
+                    })
+                    .map(|source| json!(self.instance_name(&observation, source)))
+                    .collect::<Vec<_>>();
+                if let Some(existing) = animation["manaSources"].as_array_mut() {
+                    existing.extend(mana_sources);
+                }
+            }
         }
         Err(JsValue::from_str(
             "game exceeded its automatic action limit",

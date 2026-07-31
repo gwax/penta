@@ -738,7 +738,15 @@ impl Game {
             }
         }
         self.cleanup_pending = false;
-        self.finish_cleanup();
+        self.complete_cleanup();
+        if self.result.is_none() {
+            self.priority = self.active_player;
+            self.events.push(GameEvent::StepChanged {
+                turn: self.turn,
+                active_player: self.active_player,
+                step: self.step,
+            });
+        }
     }
 
     fn choose_triggered_ability(&mut self, player: PlayerId, pay: bool, new_targets: &[Target]) {
@@ -2357,7 +2365,15 @@ impl Game {
         if self.players[self.active_player.index()].hand.len() > 7 {
             self.cleanup_pending = true;
         } else {
-            self.finish_cleanup();
+            self.complete_cleanup();
+        }
+    }
+
+    fn complete_cleanup(&mut self) {
+        self.finish_cleanup();
+        self.apply_mana_burn();
+        if self.result.is_none() {
+            self.start_next_turn();
         }
     }
 
@@ -3197,6 +3213,45 @@ mod tests {
                 .iter()
                 .any(|card| card.id == CardInstanceId(10_001))
         );
+    }
+
+    #[test]
+    fn cleanup_without_a_discard_advances_without_priority() {
+        let mut game = ready_game();
+        game.step = Step::End;
+        let first_turn = game.turn;
+
+        pass_priority_pair(&mut game);
+
+        assert_eq!(game.turn, first_turn + 1);
+        assert_eq!(game.step, Step::Upkeep);
+        assert_eq!(game.active_player, PlayerId::Two);
+        assert_eq!(game.decision_player(), Some(PlayerId::Two));
+    }
+
+    #[test]
+    fn cleanup_discard_advances_directly_to_the_next_upkeep() {
+        let mut game = ready_game();
+        game.step = Step::End;
+        for id in 10_000..10_008 {
+            game.players[0]
+                .hand
+                .push(card(id, cards::MOUNTAIN, PlayerId::One));
+        }
+
+        pass_priority_pair(&mut game);
+        assert_eq!(game.step, Step::Cleanup);
+        let discard = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::DiscardCards { .. }))
+            .unwrap();
+        game.apply(PlayerId::One, discard).unwrap();
+
+        assert_eq!(game.turn, 2);
+        assert_eq!(game.step, Step::Upkeep);
+        assert_eq!(game.active_player, PlayerId::Two);
+        assert_eq!(game.decision_player(), Some(PlayerId::Two));
     }
 
     #[test]
