@@ -140,8 +140,7 @@ impl WebGame {
                     };
                     let label = self.action_label(&observation, &action);
                     let kind = animated_action_kind(&action);
-                    let card = action_card(&action)
-                        .map(|id| self.instance_name(&observation, id));
+                    let card = action_card(&action).map(|id| self.instance_name(&observation, id));
                     self.opponent_actions.push(json!({
                         "label": label,
                         "kind": kind,
@@ -154,7 +153,9 @@ impl WebGame {
             }
             self.game.apply(player, action).map_err(js_error)?;
         }
-        Err(JsValue::from_str("game exceeded its automatic action limit"))
+        Err(JsValue::from_str(
+            "game exceeded its automatic action limit",
+        ))
     }
 
     #[allow(clippy::too_many_lines)]
@@ -477,6 +478,7 @@ fn automatic_human_action(actions: &[Action]) -> Option<Action> {
             action,
             Action::Concede
                 | Action::PassPriority
+                | Action::ActivateManaAbility { .. }
                 | Action::FinishDeclaringAttackers
                 | Action::FinishDeclaringBlockers
         )
@@ -559,4 +561,35 @@ fn readable_debug(value: impl std::fmt::Debug) -> String {
 
 fn js_error(error: impl std::fmt::Display) -> JsValue {
     JsValue::from_str(&error.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mana_taps_do_not_stop_an_automatic_priority_pass() {
+        let actions = [
+            Action::Concede,
+            Action::ActivateManaAbility {
+                source: CardInstanceId(7),
+            },
+            Action::PassPriority,
+        ];
+
+        assert_eq!(automatic_human_action(&actions), Some(Action::PassPriority));
+    }
+
+    #[test]
+    fn a_real_game_action_still_stops_auto_pass() {
+        let actions = [
+            Action::Concede,
+            Action::PlayLand {
+                card: CardInstanceId(7),
+            },
+            Action::PassPriority,
+        ];
+
+        assert_eq!(automatic_human_action(&actions), None);
+    }
 }
