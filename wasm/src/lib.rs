@@ -143,12 +143,18 @@ impl WebGame {
             .iter()
             .map(|permanent| {
                 let card = self.catalog.get(permanent.definition);
+                let mana_cost = card.map(|card| card.behavior.mana_cost());
                 json!({
                     "id": permanent.id.0,
                     "name": self.card_name(permanent.definition),
                     "kind": card.map_or("unknown".into(), |card| {
                         format!("{:?}", card.behavior.kind()).to_ascii_lowercase()
                     }),
+                    "manaCost": mana_cost.map(|cost| json!({
+                        "generic": cost.generic,
+                        "red": cost.red,
+                        "x": cost.variable_x,
+                    })),
                     "owner": if permanent.controller == self.human { "human" } else { "opponent" },
                     "tapped": permanent.tapped,
                     "power": permanent.power,
@@ -165,12 +171,18 @@ impl WebGame {
             .iter()
             .map(|(id, definition)| {
                 let card = self.catalog.get(*definition);
+                let mana_cost = card.map(|card| card.behavior.mana_cost());
                 json!({
                     "id": id.0,
                     "name": self.card_name(*definition),
                     "kind": card.map_or("unknown".into(), |card| {
                         format!("{:?}", card.behavior.kind()).to_ascii_lowercase()
                     }),
+                    "manaCost": mana_cost.map(|cost| json!({
+                        "generic": cost.generic,
+                        "red": cost.red,
+                        "x": cost.variable_x,
+                    })),
                 })
             })
             .collect::<Vec<_>>();

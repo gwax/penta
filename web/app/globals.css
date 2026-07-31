@@ -112,7 +112,7 @@ button {
 .match-controls label > span,
 .seed-control > span {
   color: #91897a;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -125,6 +125,7 @@ button {
   border-radius: 2px;
   color: #e9dfce;
   background: #211e1a;
+  font-size: 14px;
 }
 
 .versus {
@@ -146,7 +147,7 @@ button {
 
 .seat-toggle span {
   color: #d7cdbb !important;
-  font-size: 10px !important;
+  font-size: 12px !important;
 }
 
 .seat-toggle input {
@@ -160,7 +161,7 @@ button {
   color: white;
   background: var(--red);
   font-weight: 800;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -180,7 +181,7 @@ button {
   color: #d4c9b6;
   background: transparent;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .game-layout {
@@ -239,13 +240,13 @@ button {
 
 .player-name strong {
   font-family: Georgia, serif;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .player-name span {
   margin-top: 2px;
   color: #a9a191;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .zone-counts {
@@ -254,7 +255,7 @@ button {
   gap: 8px;
   color: #aaa18f;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .mana-pool {
@@ -269,7 +270,7 @@ button {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -296,7 +297,7 @@ button {
 
 .life-total small {
   color: #9c9384;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .life-total strong {
@@ -357,7 +358,7 @@ button {
 .zone-empty {
   color: rgba(226, 216, 193, 0.25);
   font-family: Georgia, serif;
-  font-size: 12px;
+  font-size: 14px;
   font-style: italic;
 }
 
@@ -371,7 +372,7 @@ button {
   border-block: 1px solid rgba(213, 193, 154, 0.2);
   color: #9e9685;
   background: rgba(13, 20, 17, 0.7);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.09em;
 }
 
@@ -380,7 +381,7 @@ button {
   border-inline: 1px solid rgba(213, 193, 154, 0.2);
   color: #ead8b6;
   font-family: Georgia, serif;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0;
 }
 
@@ -401,7 +402,7 @@ button {
 
 .stack-zone > span {
   color: #b0a590;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.15em;
 }
 
@@ -411,7 +412,7 @@ button {
   color: #28231c;
   background: var(--paper);
   font-family: Georgia, serif;
-  font-size: 10px;
+  font-size: 13px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
 }
 
@@ -419,15 +420,15 @@ button {
   margin-left: 7px;
   color: #6b6253;
   font-family: Arial, sans-serif;
-  font-size: 7px;
+  font-size: 9px;
 }
 
 .game-card {
   position: relative;
-  width: 112px;
-  min-width: 112px;
-  height: 150px;
-  padding: 7px;
+  width: 132px;
+  min-width: 132px;
+  height: 176px;
+  padding: 8px;
   display: grid;
   grid-template-rows: auto 1fr auto auto;
   gap: 4px;
@@ -449,9 +450,9 @@ button {
 }
 
 .game-card-compact {
-  width: 92px;
-  min-width: 92px;
-  height: 122px;
+  width: 110px;
+  min-width: 110px;
+  height: 146px;
   border-width: 4px;
 }
 
@@ -468,18 +469,61 @@ button {
   background: #d6c39d;
 }
 
+.card-header {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 5px;
+}
+
 .card-title {
+  min-width: 0;
   overflow: hidden;
   font-family: Georgia, serif;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
-  line-height: 1.05;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  line-height: 1.08;
 }
 
 .game-card-compact .card-title {
-  font-size: 8px;
+  font-size: 11px;
+}
+
+.card-cost {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.card-cost i {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(44, 34, 25, 0.55);
+  border-radius: 50%;
+  color: #231c16;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.game-card-compact .card-cost i {
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+}
+
+.mana-generic {
+  background: #d8d2c5;
+}
+
+.mana-red-symbol {
+  background: #e26b4f;
 }
 
 .card-art {
@@ -512,14 +556,14 @@ button {
   padding-bottom: 2px;
   border-bottom: 1px solid rgba(48, 38, 28, 0.4);
   font-family: Georgia, serif;
-  font-size: 7px;
+  font-size: 10px;
   text-transform: capitalize;
 }
 
 .card-text {
-  min-height: 16px;
+  min-height: 20px;
   font-family: Georgia, serif;
-  font-size: 6px;
+  font-size: 9px;
   line-height: 1.2;
 }
 
@@ -531,11 +575,11 @@ button {
   border: 1px solid #4e4335;
   background: rgba(245, 236, 213, 0.8);
   font-family: Georgia, serif;
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .card-stats small {
-  font-size: 6px;
+  font-size: 9px;
 }
 
 .is-actionable {
@@ -597,14 +641,14 @@ button {
 .decision-heading span {
   margin-bottom: 5px;
   color: var(--red);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.15em;
 }
 
 .decision-heading strong {
   font-family: Georgia, serif;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 500;
 }
 
@@ -612,7 +656,7 @@ button {
   padding: 0;
   color: #b7ac98;
   background: transparent;
-  font-size: 9px;
+  font-size: 11px;
   text-decoration: underline;
 }
 
@@ -636,7 +680,7 @@ button {
   color: #e8decb;
   background: #29241e;
   text-align: left;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.25;
 }
 
@@ -665,7 +709,7 @@ button {
   border-left-color: #54231f;
   color: #84796b;
   background: transparent;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .game-log {
@@ -675,14 +719,14 @@ button {
   border-top: 1px solid #39322b;
   color: #8f877a;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 8px;
+  font-size: 11px;
 }
 
 .game-log summary {
   color: #b9ae9c;
   cursor: pointer;
   font-family: Arial, sans-serif;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -891,15 +935,15 @@ button {
   }
 
   .game-card {
-    width: 96px;
-    min-width: 96px;
-    height: 132px;
+    width: 112px;
+    min-width: 112px;
+    height: 150px;
   }
 
   .game-card-compact {
-    width: 78px;
-    min-width: 78px;
-    height: 104px;
+    width: 94px;
+    min-width: 94px;
+    height: 124px;
   }
 }
 

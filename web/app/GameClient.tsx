@@ -8,6 +8,11 @@ type Card = {
   id: number;
   name: string;
   kind: string;
+  manaCost?: {
+    generic: number;
+    red: number;
+    x: boolean;
+  } | null;
   owner?: Owner;
   tapped?: boolean;
   power?: number | null;
@@ -464,6 +469,11 @@ function GameCard({
 }) {
   const type = card.kind.replace("artifactcreature", "artifact creature");
   const isRed = !card.kind.includes("artifact") && !card.kind.includes("land");
+  const showZeroCost =
+    !card.kind.includes("land") &&
+    card.manaCost?.generic === 0 &&
+    card.manaCost.red === 0 &&
+    !card.manaCost.x;
   return (
     <button
       className={[
@@ -480,7 +490,21 @@ function GameCard({
       onClick={() => onSelect(card.id)}
       title={actionable ? `Choose an action for ${card.name}` : card.name}
     >
-      <span className="card-title">{card.name}</span>
+      <span className="card-header">
+        <span className="card-title">{card.name}</span>
+        {card.manaCost && !card.kind.includes("land") && (
+          <span className="card-cost" aria-label={`Casting cost for ${card.name}`}>
+            {card.manaCost.x && <i className="mana-generic">X</i>}
+            {card.manaCost.generic > 0 && (
+              <i className="mana-generic">{card.manaCost.generic}</i>
+            )}
+            {showZeroCost && <i className="mana-generic">0</i>}
+            {Array.from({ length: card.manaCost.red }, (_, index) => (
+              <i className="mana-red-symbol" key={index}>R</i>
+            ))}
+          </span>
+        )}
+      </span>
       <span className="card-art" aria-hidden="true">
         <i>{card.kind.includes("land") ? "▲" : card.kind.includes("artifact") ? "◇" : "●"}</i>
       </span>

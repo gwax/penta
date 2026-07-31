@@ -14,6 +14,10 @@ test("the packaged Rust engine plays through browser actions", async () => {
   const opening = JSON.parse(game.state_json());
   assert.equal(opening.human.hand.length, 7);
   assert.equal(opening.opponent.handSize, 7);
+  assert.ok(
+    opening.human.hand.every((card) => card.manaCost !== undefined),
+    "cards expose their casting costs to the interface",
+  );
   assert.ok(opening.actions.some((action) => action.label === "Keep this hand"));
 
   const keep = opening.actions.find((action) => action.label === "Keep this hand");
