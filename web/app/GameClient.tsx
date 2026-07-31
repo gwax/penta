@@ -86,6 +86,8 @@ const cleanEvent = (event: string) =>
     .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
     .replaceAll(",", " ·");
 
+const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
+
 export function GameClient() {
   const game = useRef<RustWebGame | null>(null);
   const wasmReady = useRef(false);
@@ -118,7 +120,7 @@ export function GameClient() {
 
   const newGame = useCallback(
     (
-      nextSeed = seed,
+      nextSeed = randomSeed(),
       nextHumanDeck = humanDeck,
       nextBotDeck = botDeck,
       nextPolicy = policy,
@@ -126,6 +128,7 @@ export function GameClient() {
     ) => {
       if (!wasmReady.current) return;
       try {
+        setSeed(nextSeed);
         setOpponentActionQueue([]);
         game.current?.free();
         game.current = new RustWebGame(
@@ -141,7 +144,7 @@ export function GameClient() {
         setError(String(cause));
       }
     },
-    [botDeck, humanDeck, humanFirst, policy, refresh, seed],
+    [botDeck, humanDeck, humanFirst, policy, refresh],
   );
 
   useEffect(() => {
@@ -150,13 +153,15 @@ export function GameClient() {
       try {
         await initWasm();
         if (!alive) return;
+        const initialSeed = randomSeed();
+        setSeed(initialSeed);
         wasmReady.current = true;
         game.current = new RustWebGame(
           "Goblins",
           "Sligh",
           "Handcrafted",
           true,
-          9394,
+          initialSeed,
         );
         const snapshot = JSON.parse(game.current.state_json()) as GameState;
         setState(snapshot);
@@ -230,9 +235,7 @@ export function GameClient() {
   };
 
   const chooseRandomSeed = () => {
-    const next = crypto.getRandomValues(new Uint32Array(1))[0];
-    setSeed(next);
-    newGame(next);
+    newGame(randomSeed());
   };
 
   return (
@@ -488,7 +491,7 @@ export function GameClient() {
               Turn {state.turn} · {humanDeck} vs {botDeck}
             </p>
             <div>
-              <button onClick={() => newGame()}>Replay seed</button>
+              <button onClick={() => newGame(seed)}>Replay seed</button>
               <button className="result-primary" onClick={chooseRandomSeed}>
                 New shuffled game
               </button>
