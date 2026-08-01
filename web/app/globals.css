@@ -825,7 +825,7 @@ button {
 .hand-card-slot {
   position: absolute;
   left: calc(50% - 66px);
-  bottom: 0;
+  bottom: 14px;
   width: 132px;
   height: 176px;
   transform-origin: 50% 110%;
