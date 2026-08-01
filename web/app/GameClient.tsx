@@ -113,6 +113,7 @@ const turnPhases = [
   { label: "Main 2", steps: ["Postcombat Main"] },
   { label: "Ending", steps: ["End", "Cleanup"] },
 ];
+const opponentActionDurationMs = 3200;
 
 const cleanEvent = (event: string) =>
   event
@@ -299,7 +300,7 @@ export function GameClient() {
         finalStateAfterOpponentActions.current = null;
       }
       setOpponentActionQueue(remaining);
-    }, 1200);
+    }, opponentActionDurationMs);
     return () => window.clearTimeout(timer);
   }, [currentOpponentAction, opponentActionQueue]);
 
