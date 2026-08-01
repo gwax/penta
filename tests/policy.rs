@@ -14,6 +14,7 @@ fn policy_observation(
     PlayerObservation {
         viewer: PlayerId::One,
         turn: 3,
+        active_turn: 2,
         active_player: PlayerId::One,
         priority: PlayerId::One,
         step: Step::PrecombatMain,
@@ -24,6 +25,7 @@ fn policy_observation(
         last_seen_hand: None,
         library_sizes: [50, 50],
         graveyards: [Vec::new(), Vec::new()],
+        exiles: [Vec::new(), Vec::new()],
         battlefield,
         stack: Vec::new(),
         result: None,
@@ -78,6 +80,7 @@ fn handcrafted_does_not_float_unneeded_mana_in_its_main_phase() {
             Action::PassPriority,
             Action::ActivateManaAbility {
                 source: CardInstanceId(1),
+                color: osarena::ManaColor::Red,
             },
         ],
     );
@@ -321,7 +324,13 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
 #[test]
 fn handcrafted_policy_decisively_beats_random_across_builtin_decks_and_seats() {
     let catalog = poc::catalog().unwrap();
-    let decks = [poc::goblins(), poc::sligh(), poc::artifacts()];
+    let decks = [
+        poc::goblins(),
+        poc::sligh(),
+        poc::artifacts(),
+        poc::robots(),
+        poc::the_deck(),
+    ];
     let mut wins = 0;
     let mut decided_games = 0;
 
@@ -350,9 +359,9 @@ fn handcrafted_policy_decisively_beats_random_across_builtin_decks_and_seats() {
         }
     }
 
-    assert_eq!(decided_games, 60);
+    assert_eq!(decided_games, 100);
     assert!(
-        wins >= 54,
+        wins >= 90,
         "handcrafted policy won only {wins} of {decided_games} games"
     );
 }

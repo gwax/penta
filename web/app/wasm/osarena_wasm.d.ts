@@ -18,6 +18,27 @@ export class WebGame {
      */
     act(action_index: number): void;
     /**
+     * Declares every currently legal attacker, then finishes attacker declaration.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error unless the human is declaring attackers or
+     * the engine rejects one of the otherwise-legal actions.
+     */
+    attack_all(): void;
+    /**
+     * Commits a complete set of blocker assignments selected by the browser UI.
+     *
+     * Assignments are encoded as JSON pairs of `[blocker_id, attacker_id]` so
+     * the UI can rearrange arrows freely before making one atomic submission.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error unless the human is declaring blockers or an
+     * assignment is duplicated, malformed, or no longer legal.
+     */
+    finalize_blocks(assignments_json: string): void;
+    /**
      * Creates a mirror-format game and advances until the human must decide.
      *
      * # Errors
@@ -27,9 +48,26 @@ export class WebGame {
      */
     constructor(human_deck: string, bot_deck: string, bot_policy: string, human_first: boolean, seed: number);
     /**
+     * Enables or disables the browser's smooth automatic priority yields.
+     */
+    set_autopass(enabled: boolean): void;
+    /**
+     * Enables or disables a human-interface stop for one displayed phase.
+     * The rules engine still exposes every individual step.
+     */
+    set_phase_stop(phase: string, enabled: boolean): void;
+    /**
      * Returns the human-visible game state as JSON.
      */
     state_json(): string;
+    /**
+     * Rewinds the most recent manual mana ability while it is still safe to do so.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error when there is no reversible mana activation.
+     */
+    undo_mana(): void;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -38,8 +76,13 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_webgame_free: (a: number, b: number) => void;
     readonly webgame_act: (a: number, b: number) => [number, number];
+    readonly webgame_attack_all: (a: number) => [number, number];
+    readonly webgame_finalize_blocks: (a: number, b: number, c: number) => [number, number];
     readonly webgame_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number, number];
+    readonly webgame_set_autopass: (a: number, b: number) => [number, number];
+    readonly webgame_set_phase_stop: (a: number, b: number, c: number, d: number) => [number, number];
     readonly webgame_state_json: (a: number) => [number, number];
+    readonly webgame_undo_mana: (a: number) => [number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __externref_table_dealloc: (a: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;

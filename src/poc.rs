@@ -47,6 +47,23 @@ pub mod cards {
     pub const SOL_RING: CardDefinitionId = CardDefinitionId(38);
     pub const STRIP_MINE: CardDefinitionId = CardDefinitionId(39);
     pub const WHEEL_OF_FORTUNE: CardDefinitionId = CardDefinitionId(40);
+    pub const JUGGERNAUT: CardDefinitionId = CardDefinitionId(41);
+    pub const MANA_VAULT: CardDefinitionId = CardDefinitionId(42);
+    pub const TRISKELION: CardDefinitionId = CardDefinitionId(43);
+    pub const ANCESTRAL_RECALL: CardDefinitionId = CardDefinitionId(44);
+    pub const BRAINGEYSER: CardDefinitionId = CardDefinitionId(45);
+    pub const COUNTERSPELL: CardDefinitionId = CardDefinitionId(46);
+    pub const DISENCHANT: CardDefinitionId = CardDefinitionId(47);
+    pub const FELLWAR_STONE: CardDefinitionId = CardDefinitionId(48);
+    pub const ISLAND: CardDefinitionId = CardDefinitionId(49);
+    pub const IVORY_TOWER: CardDefinitionId = CardDefinitionId(50);
+    pub const JAYEMDAE_TOME: CardDefinitionId = CardDefinitionId(51);
+    pub const PLAINS: CardDefinitionId = CardDefinitionId(52);
+    pub const SERRA_ANGEL: CardDefinitionId = CardDefinitionId(53);
+    pub const SWORDS_TO_PLOWSHARES: CardDefinitionId = CardDefinitionId(54);
+    pub const TIME_WALK: CardDefinitionId = CardDefinitionId(55);
+    pub const TUNDRA: CardDefinitionId = CardDefinitionId(56);
+    pub const VOLCANIC_ISLAND: CardDefinitionId = CardDefinitionId(57);
 }
 
 /// Builds the complete card catalog required by the built-in decks.
@@ -58,6 +75,11 @@ pub mod cards {
 #[allow(clippy::too_many_lines)]
 pub fn catalog() -> Result<CardCatalog, CatalogError> {
     use cards::{
+        ANCESTRAL_RECALL, BRAINGEYSER, COUNTERSPELL, DISENCHANT, FELLWAR_STONE, ISLAND,
+        IVORY_TOWER, JAYEMDAE_TOME, PLAINS, SERRA_ANGEL, SWORDS_TO_PLOWSHARES, TIME_WALK, TUNDRA,
+        VOLCANIC_ISLAND,
+    };
+    use cards::{
         ANKH_OF_MISHRA, ATOG, BALL_LIGHTNING, BLACK_VISE, BLOOD_MOON, CHAIN_LIGHTNING,
         COPPER_TABLET, DETONATE, FIREBALL, FORK, GLASSES_OF_URZA, IRON_STAR, LIGHTNING_BOLT,
         MOUNTAIN, RED_ELEMENTAL_BLAST, SHATTER, SMOKE, STONE_GIANT, SU_CHI, WINTER_ORB,
@@ -68,6 +90,7 @@ pub fn catalog() -> Result<CardCatalog, CatalogError> {
         MISHRA_S_FACTORY, MOX_EMERALD, MOX_JET, MOX_PEARL, MOX_RUBY, MOX_SAPPHIRE,
         ORCISH_MECHANICS, SOL_RING, STRIP_MINE, WHEEL_OF_FORTUNE,
     };
+    use cards::{JUGGERNAUT, MANA_VAULT, TRISKELION};
 
     CardCatalog::new([
         card(
@@ -267,6 +290,93 @@ pub fn catalog() -> Result<CardCatalog, CatalogError> {
             CardSet::Alpha,
             CardBehavior::WheelOfFortune,
         ),
+        card(
+            JUGGERNAUT,
+            "Juggernaut",
+            CardSet::Alpha,
+            CardBehavior::Juggernaut,
+        ),
+        card(
+            MANA_VAULT,
+            "Mana Vault",
+            CardSet::Alpha,
+            CardBehavior::ManaVault,
+        ),
+        card(
+            TRISKELION,
+            "Triskelion",
+            CardSet::Antiquities,
+            CardBehavior::Triskelion,
+        ),
+        card(
+            ANCESTRAL_RECALL,
+            "Ancestral Recall",
+            CardSet::Alpha,
+            CardBehavior::AncestralRecall,
+        ),
+        card(
+            BRAINGEYSER,
+            "Braingeyser",
+            CardSet::Alpha,
+            CardBehavior::Braingeyser,
+        ),
+        card(
+            COUNTERSPELL,
+            "Counterspell",
+            CardSet::Alpha,
+            CardBehavior::Counterspell,
+        ),
+        card(
+            DISENCHANT,
+            "Disenchant",
+            CardSet::Alpha,
+            CardBehavior::Disenchant,
+        ),
+        card(
+            FELLWAR_STONE,
+            "Fellwar Stone",
+            CardSet::TheDark,
+            CardBehavior::FellwarStone,
+        ),
+        card_with_behavior(ISLAND, "Island", CardSet::Alpha, true, CardBehavior::Island),
+        card(
+            IVORY_TOWER,
+            "Ivory Tower",
+            CardSet::Antiquities,
+            CardBehavior::IvoryTower,
+        ),
+        card(
+            JAYEMDAE_TOME,
+            "Jayemdae Tome",
+            CardSet::Alpha,
+            CardBehavior::JayemdaeTome,
+        ),
+        card_with_behavior(PLAINS, "Plains", CardSet::Alpha, true, CardBehavior::Plains),
+        card(
+            SERRA_ANGEL,
+            "Serra Angel",
+            CardSet::Alpha,
+            CardBehavior::SerraAngel,
+        ),
+        card(
+            SWORDS_TO_PLOWSHARES,
+            "Swords to Plowshares",
+            CardSet::Alpha,
+            CardBehavior::SwordsToPlowshares,
+        ),
+        card(
+            TIME_WALK,
+            "Time Walk",
+            CardSet::Alpha,
+            CardBehavior::TimeWalk,
+        ),
+        card(TUNDRA, "Tundra", CardSet::Alpha, CardBehavior::Tundra),
+        card(
+            VOLCANIC_ISLAND,
+            "Volcanic Island",
+            CardSet::Alpha,
+            CardBehavior::VolcanicIsland,
+        ),
     ])
 }
 
@@ -392,6 +502,93 @@ pub fn artifacts() -> Deck {
     }
 }
 
+/// Returns a representative powered EC mono-red Robots deck.
+#[must_use]
+pub fn robots() -> Deck {
+    use cards::{
+        ATOG, BLACK_LOTUS, BLACK_VISE, BLOOD_MOON, CHAOS_ORB, DETONATE, FIREBALL, JUGGERNAUT,
+        LIGHTNING_BOLT, MANA_VAULT, MISHRA_S_FACTORY, MOUNTAIN, MOX_RUBY, RED_ELEMENTAL_BLAST,
+        SHATTER, SOL_RING, STRIP_MINE, SU_CHI, TRISKELION, WHEEL_OF_FORTUNE,
+    };
+
+    Deck {
+        main: copies(MOUNTAIN, 15)
+            .chain(copies(MISHRA_S_FACTORY, 4))
+            .chain(copies(STRIP_MINE, 4))
+            .chain(copies(BLACK_LOTUS, 1))
+            .chain(copies(MOX_RUBY, 1))
+            .chain(copies(SOL_RING, 1))
+            .chain(copies(MANA_VAULT, 4))
+            .chain(copies(ATOG, 4))
+            .chain(copies(SU_CHI, 4))
+            .chain(copies(JUGGERNAUT, 4))
+            .chain(copies(TRISKELION, 4))
+            .chain(copies(BLACK_VISE, 4))
+            .chain(copies(LIGHTNING_BOLT, 4))
+            .chain(copies(FIREBALL, 2))
+            .chain(copies(WHEEL_OF_FORTUNE, 1))
+            .chain(copies(CHAOS_ORB, 1))
+            .chain(copies(BLOOD_MOON, 2))
+            .collect(),
+        sideboard: copies(RED_ELEMENTAL_BLAST, 4)
+            .chain(copies(SHATTER, 4))
+            .chain(copies(DETONATE, 4))
+            .chain(copies(BLOOD_MOON, 2))
+            .chain(copies(FIREBALL, 1))
+            .collect(),
+    }
+}
+
+/// Returns a representative powered EC control deck known as "The Deck."
+#[must_use]
+pub fn the_deck() -> Deck {
+    use cards::{
+        ANCESTRAL_RECALL, BLACK_LOTUS, BRAINGEYSER, CHAOS_ORB, COUNTERSPELL, DISENCHANT,
+        FELLWAR_STONE, FIREBALL, ISLAND, IVORY_TOWER, JAYEMDAE_TOME, LIGHTNING_BOLT,
+        MISHRA_S_FACTORY, MOX_EMERALD, MOX_JET, MOX_PEARL, MOX_RUBY, MOX_SAPPHIRE, PLAINS,
+        RED_ELEMENTAL_BLAST, SERRA_ANGEL, SHATTER, SOL_RING, STRIP_MINE, SWORDS_TO_PLOWSHARES,
+        TIME_WALK, TUNDRA, VOLCANIC_ISLAND, WHEEL_OF_FORTUNE,
+    };
+
+    Deck {
+        main: copies(ISLAND, 5)
+            .chain(copies(PLAINS, 4))
+            .chain(copies(TUNDRA, 4))
+            .chain(copies(VOLCANIC_ISLAND, 2))
+            .chain(copies(MISHRA_S_FACTORY, 4))
+            .chain(copies(STRIP_MINE, 4))
+            .chain(copies(BLACK_LOTUS, 1))
+            .chain(copies(MOX_EMERALD, 1))
+            .chain(copies(MOX_JET, 1))
+            .chain(copies(MOX_PEARL, 1))
+            .chain(copies(MOX_RUBY, 1))
+            .chain(copies(MOX_SAPPHIRE, 1))
+            .chain(copies(SOL_RING, 1))
+            .chain(copies(COUNTERSPELL, 4))
+            .chain(copies(SWORDS_TO_PLOWSHARES, 4))
+            .chain(copies(DISENCHANT, 4))
+            .chain(copies(JAYEMDAE_TOME, 3))
+            .chain(copies(SERRA_ANGEL, 2))
+            .chain(copies(ANCESTRAL_RECALL, 1))
+            .chain(copies(TIME_WALK, 1))
+            .chain(copies(BRAINGEYSER, 1))
+            .chain(copies(WHEEL_OF_FORTUNE, 1))
+            .chain(copies(FIREBALL, 1))
+            .chain(copies(LIGHTNING_BOLT, 3))
+            .chain(copies(CHAOS_ORB, 1))
+            .chain(copies(IVORY_TOWER, 2))
+            .chain(copies(FELLWAR_STONE, 2))
+            .collect(),
+        sideboard: copies(RED_ELEMENTAL_BLAST, 4)
+            .chain(copies(SHATTER, 4))
+            .chain(copies(SERRA_ANGEL, 2))
+            .chain(copies(IVORY_TOWER, 2))
+            .chain(copies(JAYEMDAE_TOME, 1))
+            .chain(copies(FIREBALL, 2))
+            .collect(),
+    }
+}
+
 /// Backwards-compatible name for the built-in artifact deck.
 #[must_use]
 pub fn mono_red_atog() -> Deck {
@@ -424,13 +621,13 @@ fn copies(id: CardDefinitionId, count: usize) -> impl Iterator<Item = CardDefini
 
 #[cfg(test)]
 mod tests {
-    use super::{artifacts, catalog, goblins, sligh};
+    use super::{artifacts, catalog, goblins, robots, sligh, the_deck};
     use crate::rules;
     use crate::{CardBehavior, CardDefinitionId};
 
     #[test]
     fn built_in_decks_have_tournament_sizes() {
-        for deck in [goblins(), sligh(), artifacts()] {
+        for deck in [goblins(), sligh(), artifacts(), robots(), the_deck()] {
             assert_eq!(deck.main.len(), rules::MINIMUM_MAIN_DECK_SIZE);
             assert_eq!(deck.sideboard.len(), rules::MAXIMUM_SIDEBOARD_SIZE);
         }
@@ -439,7 +636,7 @@ mod tests {
     #[test]
     fn built_in_decks_are_valid() {
         let catalog = catalog().unwrap();
-        for deck in [goblins(), sligh(), artifacts()] {
+        for deck in [goblins(), sligh(), artifacts(), robots(), the_deck()] {
             deck.validate(&catalog).unwrap();
         }
     }
@@ -447,7 +644,7 @@ mod tests {
     #[test]
     fn every_poc_card_has_engine_behavior() {
         let catalog = catalog().unwrap();
-        for raw_id in 1..=40 {
+        for raw_id in 1..=57 {
             let card = catalog.get(CardDefinitionId(raw_id)).unwrap();
             assert_ne!(card.behavior, CardBehavior::Unsupported, "{}", card.name);
             assert!(

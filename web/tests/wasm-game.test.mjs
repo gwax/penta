@@ -4,6 +4,77 @@ import test from "node:test";
 
 import init, { WebGame } from "../app/wasm/osarena_wasm.js";
 
+test("The Deck exposes colored costs and control rules to the browser", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("The Deck", "The Deck", "Handcrafted", true, 0);
+  const opening = JSON.parse(game.state_json());
+  const swords = opening.human.hand.find(
+    (card) => card.name === "Swords to Plowshares",
+  );
+  const serra = opening.human.hand.find((card) => card.name === "Serra Angel");
+  assert.ok(swords);
+  assert.equal(swords.manaCost.white, 1);
+  assert.match(swords.rulesText, /exile target creature/i);
+  assert.ok(serra);
+  assert.equal(serra.manaCost.white, 2);
+  assert.equal(serra.power, 4);
+  assert.equal(serra.toughness, 4);
+
+  game.free();
+});
+
+test("opponent mulligan bottoms reveal a count but not card identities", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("The Deck", "Sligh", "Handcrafted", true, 0);
+  const opening = JSON.parse(game.state_json());
+  const keep = opening.actions.find((action) => action.label === "Keep this hand");
+  game.act(keep.index);
+
+  const afterKeep = JSON.parse(game.state_json());
+  const bottom = afterKeep.opponentActions.find((action) =>
+    action.label.startsWith("Bottom "),
+  );
+  assert.ok(bottom, "the deterministic opponent takes mulligans and bottoms cards");
+  assert.equal(bottom.label, "Bottom 2 cards");
+  assert.equal(bottom.card, null);
+  assert.equal(bottom.cardId, null);
+
+  game.free();
+});
+
+test("the Robots deck and its new card rules are packaged for the browser", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame(
+    "Robots",
+    "Robots",
+    "Handcrafted",
+    true,
+    823380616,
+  );
+  const opening = JSON.parse(game.state_json());
+  const juggernaut = opening.human.hand.find(
+    (card) => card.name === "Juggernaut",
+  );
+  assert.ok(juggernaut, "the deterministic Robots hand includes Juggernaut");
+  assert.equal(juggernaut.power, 5);
+  assert.equal(juggernaut.toughness, 3);
+  assert.match(juggernaut.rulesText, /attacks each combat if able/i);
+
+  game.free();
+});
+
 test("the packaged Rust engine plays through browser actions", async () => {
   const bytes = await readFile(
     new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
@@ -36,6 +107,11 @@ test("the packaged Rust engine plays through browser actions", async () => {
   game.act(keep.index);
   const afterKeep = JSON.parse(game.state_json());
   assert.equal(afterKeep.turn, 1);
+  assert.equal(
+    afterKeep.step,
+    "Precombat Main",
+    "the web facade passes through an uneventful opening upkeep",
+  );
   assert.ok(Array.isArray(afterKeep.opponentActions));
   assert.ok(
     afterKeep.opponentActions.every((action) => action.label !== "Pass priority"),
@@ -64,6 +140,101 @@ test("the packaged Rust engine plays through browser actions", async () => {
     !afterKeep.actions.some((action) => action.label === "Keep this hand"),
   );
 
+  game.free();
+});
+
+test("player-targeted spells identify a clickable player target", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Goblins", "Sligh", "Handcrafted", true, 5);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Play Mountain").index);
+  state = JSON.parse(game.state_json());
+
+  const bolt = state.actions.find(
+    (action) =>
+      action.label.startsWith("Cast Lightning Bolt") &&
+      action.targetPlayer === "opponent",
+  );
+  assert.ok(bolt, "Lightning Bolt exposes the opponent as its board target");
+  assert.equal(bolt.targetCardId, null);
+  assert.equal(bolt.targetStackId, null);
+
+  game.free();
+});
+
+test("the web facade skips combat when no attackers exist", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Goblins", "Sligh", "Handcrafted", true, 5);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Play Mountain").index);
+  state = JSON.parse(game.state_json());
+  game.set_phase_stop("Combat", true);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.kind === "pass").index);
+  state = JSON.parse(game.state_json());
+
+  assert.equal(state.step, "Beginning Of Combat");
+  game.act(state.actions.find((action) => action.kind === "pass").index);
+  state = JSON.parse(game.state_json());
+
+  assert.equal(state.step, "Postcombat Main");
+
+  game.free();
+});
+
+test("attack all declares every currently legal attacker", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Goblins", "Goblins", "Random", true, 5);
+  let state;
+  for (let step = 0; step < 20; step += 1) {
+    state = JSON.parse(game.state_json());
+    if (
+      state.step === "Declare Attackers" &&
+      state.actions.some((action) => action.label.startsWith("Attack with "))
+    ) {
+      break;
+    }
+    const next =
+      state.actions.find((action) => action.label === "Keep this hand") ??
+      state.actions.find((action) => action.label === "Play Mountain") ??
+      state.actions.find((action) => action.label.startsWith("Cast Goblins of the Flarg")) ??
+      state.actions.find((action) => action.kind === "pass") ??
+      state.actions.find((action) => /^(Don't|Leave) /.test(action.label));
+    assert.ok(next, `the attack-all fixture can advance from ${state.step}`);
+    game.act(next.index);
+  }
+
+  const attackOptions = state.actions.filter((action) =>
+    action.label.startsWith("Attack with "),
+  );
+  assert.ok(attackOptions.length > 0);
+  game.set_phase_stop("Combat", true);
+  game.attack_all();
+  state = JSON.parse(game.state_json());
+  assert.equal(
+    state.battlefield.filter((card) => card.owner === "human" && card.attacking).length,
+    attackOptions.length,
+  );
+  assert.ok(
+    !state.actions.some((action) => action.label.startsWith("Attack with ")),
+    "attacker declaration is finished by the bulk action",
+  );
   game.free();
 });
 
@@ -128,6 +299,12 @@ test("casting a spell automatically taps available mana sources", async () => {
     action.label.startsWith("Cast Black Vise"),
   );
   assert.ok(castVise, "Black Vise is castable before manually tapping Mox Ruby");
+  assert.equal(castVise.paymentAction, true);
+  assert.deepEqual(
+    castVise.manaSourceIds,
+    [state.battlefield.find((card) => card.name === "Mox Ruby").id],
+    "the browser can preview the exact automatic mana tap before committing",
+  );
   game.act(castVise.index);
 
   state = JSON.parse(game.state_json());
@@ -136,7 +313,40 @@ test("casting a spell automatically taps available mana sources", async () => {
   );
   assert.equal(mox?.tapped, true);
   assert.equal(state.human.mana.red, 0);
+  assert.equal(state.autopassEnabled, true);
+  assert.equal(state.stack.length, 0, "your spell resolves without another UI priority prompt");
 
+  game.free();
+});
+
+test("turning auto-pass off exposes priority over your own spell", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Artifacts", "Goblins", "Handcrafted", true, 16);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Cast Mox Ruby").index);
+  state = JSON.parse(game.state_json());
+  game.set_autopass(false);
+  state = JSON.parse(game.state_json());
+  game.act(
+    state.actions.find((action) => action.label.startsWith("Cast Black Vise")).index,
+  );
+
+  state = JSON.parse(game.state_json());
+  assert.equal(state.autopassEnabled, false);
+  assert.equal(state.stack[0]?.name, "Black Vise");
+  assert.ok(state.actions.some((action) => action.label === "Pass priority"));
+
+  game.set_autopass(true);
+  state = JSON.parse(game.state_json());
+  assert.equal(state.autopassEnabled, true);
+  assert.equal(state.stack.length, 0);
+  assert.ok(state.battlefield.some((card) => card.name === "Black Vise"));
   game.free();
 });
 
@@ -159,7 +369,9 @@ test("targeted permanent actions identify their clickable battlefield target", a
     }
     const pass =
       state.actions.find((action) => action.kind === "pass") ??
-      state.actions.find((action) => action.label === "Decline");
+      state.actions.find((action) =>
+        /^(Don't|Leave) /.test(action.label),
+      );
     assert.ok(
       pass,
       `the human can yield each intervening priority window: ${JSON.stringify({
@@ -177,6 +389,11 @@ test("targeted permanent actions identify their clickable battlefield target", a
   game.act(playStrip.index);
 
   state = JSON.parse(game.state_json());
+  const stripMana = state.actions.find(
+    (action) => action.label === "Tap Strip Mine for Colorless mana",
+  );
+  assert.ok(stripMana, "Strip Mine remains available as a colorless mana source");
+  assert.equal(stripMana.manaAbility, true);
   const stripAction = state.actions.find((action) => {
     if (!action.label.startsWith("Activate Strip Mine →")) return false;
     return state.battlefield.some(
@@ -193,13 +410,156 @@ test("targeted permanent actions identify their clickable battlefield target", a
   game.free();
 });
 
+test("Mishra's Factory offers both modes and manual mana can be undone", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Artifacts", "Sligh", "Handcrafted", true, 0);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  game.act(
+    state.actions.find((action) => action.label === "Cast Mox Sapphire").index,
+  );
+  state = JSON.parse(game.state_json());
+  game.act(
+    state.actions.find((action) => action.label.startsWith("Play Mishra's Factory"))
+      .index,
+  );
+  state = JSON.parse(game.state_json());
+
+  const factory = state.battlefield.find(
+    (card) => card.owner === "human" && card.name === "Mishra's Factory",
+  );
+  const factoryActions = state.actions.filter(
+    (action) => action.cardId === factory.id,
+  );
+  const mox = state.battlefield.find(
+    (card) => card.owner === "human" && card.name === "Mox Sapphire",
+  );
+  assert.deepEqual(
+    factoryActions.map((action) => action.label),
+    [
+      "Tap Mishra's Factory for Colorless mana",
+      "Make Mishra's Factory a 2/2 creature",
+    ],
+  );
+  assert.deepEqual(
+    factoryActions.find((action) => !action.manaAbility).manaSourceIds,
+    [mox.id],
+    "auto-pay preserves the Factory when another source can animate it",
+  );
+
+  game.act(factoryActions.find((action) => action.manaAbility).index);
+  state = JSON.parse(game.state_json());
+  assert.equal(state.canUndoMana, true);
+  assert.equal(
+    state.battlefield.find((card) => card.id === factory.id).tapped,
+    true,
+  );
+  assert.equal(state.human.mana.colorless, 1);
+
+  game.undo_mana();
+  state = JSON.parse(game.state_json());
+  assert.equal(state.canUndoMana, false);
+  assert.equal(
+    state.battlefield.find((card) => card.id === factory.id).tapped,
+    false,
+  );
+  assert.equal(state.human.mana.colorless, 0);
+
+  const animate = state.actions.find(
+    (action) => action.label === "Make Mishra's Factory a 2/2 creature",
+  );
+  game.set_phase_stop("Main 1", true);
+  game.act(animate.index);
+  state = JSON.parse(game.state_json());
+  const animatedFactory = state.battlefield.find(
+    (card) => card.id === factory.id,
+  );
+  assert.equal(animatedFactory.kind, "artifactcreature");
+  assert.equal(animatedFactory.isLand, true);
+  assert.equal(animatedFactory.power, 2);
+  assert.equal(animatedFactory.toughness, 2);
+
+  game.free();
+});
+
+test("X spells expose explicit affordable values to the browser", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("The Deck", "Goblins", "Random", true, 0);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  game.act(
+    state.actions.find((action) => action.label === "Play Mishra's Factory").index,
+  );
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Cast Black Lotus").index);
+  state = JSON.parse(game.state_json());
+
+  const fireballs = state.actions.filter(
+    (action) => action.spellAction && action.label.startsWith("Cast Fireball"),
+  );
+  assert.deepEqual(
+    [...new Set(fireballs.map((action) => action.x))],
+    [0, 1, 2, 3],
+    "the UI can present every affordable value of X",
+  );
+  const twoTargetFireball = fireballs.find(
+    (action) =>
+      action.x === 2 &&
+      action.targetCount === 2 &&
+      action.targetPlayers.includes("human") &&
+      action.targetPlayers.includes("opponent"),
+  );
+  assert.ok(twoTargetFireball, "the UI receives complete multi-target Fireball actions");
+  assert.deepEqual(twoTargetFireball.targetCardIds, []);
+  const fireballForThree = fireballs.find(
+    (action) => action.x === 3 && action.targetPlayer === "opponent",
+  );
+  assert.ok(fireballForThree);
+  game.act(fireballForThree.index);
+  state = JSON.parse(game.state_json());
+  assert.equal(state.opponent.life, 17);
+
+  game.free();
+});
+
+test("phase stops override smooth UI auto-passing without changing engine steps", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Goblins", "Sligh", "Handcrafted", true, 5);
+  game.set_phase_stop("Beginning", true);
+  let state = JSON.parse(game.state_json());
+  assert.deepEqual(state.phaseStops, ["Beginning"]);
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  assert.equal(state.step, "Upkeep");
+  assert.ok(state.actions.some((action) => action.label === "Pass priority"));
+
+  game.set_phase_stop("Beginning", false);
+  state = JSON.parse(game.state_json());
+  assert.deepEqual(state.phaseStops, []);
+  game.free();
+});
+
 test("Orcish Mechanics exposes creature targets and distinct artifact costs", async () => {
   const bytes = await readFile(
     new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
-  const game = new WebGame("Artifacts", "Sligh", "Handcrafted", true, 5);
+  const game = new WebGame("Artifacts", "Sligh", "Handcrafted", true, 7);
   let state;
   let mechanics;
   let creatureTargets;
@@ -239,9 +599,9 @@ test("Orcish Mechanics exposes creature targets and distinct artifact costs", as
       actions.find((action) => action.label.startsWith("Cast Black Vise")) ??
       actions.find((action) => action.label.startsWith("Cast Copper Tablet")) ??
       actions.find((action) => action.label.startsWith("Cast Ankh")) ??
-      actions.find((action) => action.label === "Decline") ??
+      actions.find((action) => /^(Don't|Leave) /.test(action.label)) ??
       actions.find((action) => action.kind === "pass");
-    assert.ok(next, `seed 5 can advance from turn ${state.turn} ${state.step}`);
+    assert.ok(next, `seed 7 can advance from turn ${state.turn} ${state.step}`);
     game.act(next.index);
   }
 

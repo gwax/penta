@@ -253,7 +253,10 @@ fn mountain_casts_and_resolves_lightning_bolt() {
         .unwrap();
     game.apply(
         PlayerId::One,
-        Action::ActivateManaAbility { source: mountain },
+        Action::ActivateManaAbility {
+            source: mountain,
+            color: osarena::ManaColor::Red,
+        },
     )
     .unwrap();
     game.apply(
@@ -341,7 +344,10 @@ fn unspent_mana_burns_at_the_end_of_a_phase() {
         .unwrap();
     game.apply(
         PlayerId::One,
-        Action::ActivateManaAbility { source: mountain },
+        Action::ActivateManaAbility {
+            source: mountain,
+            color: osarena::ManaColor::Red,
+        },
     )
     .unwrap();
     pass_priority_pair(&mut game);
@@ -410,6 +416,8 @@ fn all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
         ("Goblins", osarena::poc::goblins()),
         ("Sligh", osarena::poc::sligh()),
         ("Artifacts", osarena::poc::artifacts()),
+        ("Robots", osarena::poc::robots()),
+        ("The Deck", osarena::poc::the_deck()),
     ];
     for (first_name, first_deck) in &decks {
         for (second_name, second_deck) in &decks {

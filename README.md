@@ -47,7 +47,7 @@ The engine currently supports:
 - hidden-information-safe observations and deterministic legal actions
 - the priority-bearing turn skeleton, active player, and priority passing
 - the stack and last-in-first-out spell resolution
-- basic and nonbasic land plays, red and colorless mana sources, and EC
+- basic and nonbasic land plays, five-color and colorless mana sources, and EC
   phase-boundary mana burn
 - player damage, concession, and empty-library loss conditions
 - public battlefield, graveyard, and stack observations
@@ -56,12 +56,12 @@ The engine currently supports:
 - staged attacker and blocker declaration, player-selected combat damage
   assignment, and trample
 - summoning sickness, haste, temporary modifiers, marked damage, and death
-- red and colorless mana, generic and variable-X costs, and mana burn
+- colored and colorless mana, generic and variable-X costs, and mana burn
 - multi-target spells, copy retargeting, activated and triggered choices, and
   restricted untaps
-- functional behavior metadata and execution for all 40 catalog cards
-- fixed 60-card `Goblins`, `Sligh`, and `Artifacts` decks with 15-card
-  sideboards
+- functional behavior metadata and execution for all 57 catalog cards
+- fixed 60-card `Goblins`, `Sligh`, `Artifacts`, `Robots`, and `The Deck` decks
+  with 15-card sideboards
 - a small bot API with seeded random and card-aware handcrafted policies
 
 The event log is intentionally omniscient and must not be passed directly to a
@@ -78,7 +78,8 @@ support for cards outside the POC.
 
 ## Built-in decks
 
-The proof of concept contains three powered, mono-red EC archetypes:
+The proof of concept contains four powered red EC archetypes and one
+five-color control deck:
 
 - `poc::goblins()` is a tribal aggro deck built around Goblin King, Goblin
   Grenade, Goblin Balloon Brigade, and Goblins of the Flarg.
@@ -86,16 +87,24 @@ The proof of concept contains three powered, mono-red EC archetypes:
   Lightning, Granite Gargoyle, Dragon Whelp, and direct damage.
 - `poc::artifacts()` is Atog Smash, using Atog, Orcish Mechanics, Black Vise,
   Ankh of Mishra, Copper Tablet, and fast artifact mana.
+- `poc::robots()` uses Mana Vault to accelerate Juggernaut, Su-Chi, and
+  Triskelion, backed by Atog and red removal.
+- `poc::the_deck()` is the format's namesake control strategy: Counterspell,
+  Swords to Plowshares, Disenchant, Jayemdae Tome, and Serra Angel, backed by
+  dual lands and restricted blue power.
 
 Their cores are based on the [TC Decks Goblins aggregate][goblins-data], the
-[Wak-Wak Sligh archetype guide][sligh-guide], and a representative
-[EC Atog Smash list][atog-list].
+[Wak-Wak Sligh archetype guide][sligh-guide], a representative
+[EC Atog Smash list][atog-list], and the [TC Decks Artifact Aggro
+aggregate][robots-data]. The Robots list stays mono-red for this implementation
+slice while preserving the archetype's fast-mana and large-artifact core.
+The control shell follows the recurring core in the [TC Decks The Deck
+aggregate][the-deck-data]. Its many historical one-of tutor and recursion
+packages are the next natural expansion rather than being approximated here.
 
-All three use some combination of Mishra's Factory, Strip Mine, Black Lotus,
+All five use some combination of Mishra's Factory, Strip Mine, Black Lotus,
 Mox Ruby, Wheel of Fortune, Chaos Orb, and Sol Ring. The artifact deck also
-uses the off-color Moxen as generic-mana sources. In this red-only corpus their
-colored output is represented as colorless mana, which is strategically
-equivalent for every implemented cost.
+uses the off-color Moxen; every Mox now produces its printed color.
 
 EC Chaos Orb normally uses a physical dexterity flip. The headless simulator
 instead treats a resolving Orb activation as a deterministic successful flip
@@ -124,7 +133,7 @@ Run the reproducible, seat-swapped sanity gauntlet with:
 cargo run --release --bin policy_sanity
 ```
 
-The gauntlet uses mirror matches for all three built-in decks, isolating policy
+The gauntlet uses mirror matches for all five built-in decks, isolating policy
 quality from deck strength.
 
 Run the broader rules audit with:
@@ -174,3 +183,5 @@ cargo clippy --all-targets --all-features -- -D warnings
 [goblins-data]: https://www.tcdecks.net/archetype.php?archetype=Goblins&format=Old+School&src=all
 [sligh-guide]: https://www.wak-wak.se/9394decks/sligh
 [atog-list]: https://tappedout.net/mtg-decks/atog-smash-9394-1/
+[robots-data]: https://www.tcdecks.net/archetype.php?archetype=Artifact+Aggro&format=Old+School&src=all
+[the-deck-data]: https://www.tcdecks.net/archetype.php?archetype=The+Deck&format=Old+School&src=all

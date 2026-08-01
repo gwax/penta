@@ -25,6 +25,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         ("Goblins", poc::goblins()),
         ("Sligh", poc::sligh()),
         ("Artifacts", poc::artifacts()),
+        ("Robots", poc::robots()),
+        ("The Deck", poc::the_deck()),
     ];
     let mut totals = AuditTotals::default();
 

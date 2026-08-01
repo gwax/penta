@@ -31,6 +31,40 @@ export class WebGame {
         }
     }
     /**
+     * Declares every currently legal attacker, then finishes attacker declaration.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error unless the human is declaring attackers or
+     * the engine rejects one of the otherwise-legal actions.
+     */
+    attack_all() {
+        const ret = wasm.webgame_attack_all(this.__wbg_ptr);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
+        }
+    }
+    /**
+     * Commits a complete set of blocker assignments selected by the browser UI.
+     *
+     * Assignments are encoded as JSON pairs of `[blocker_id, attacker_id]` so
+     * the UI can rearrange arrows freely before making one atomic submission.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error unless the human is declaring blockers or an
+     * assignment is duplicated, malformed, or no longer legal.
+     * @param {string} assignments_json
+     */
+    finalize_blocks(assignments_json) {
+        const ptr0 = passStringToWasm0(assignments_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.webgame_finalize_blocks(this.__wbg_ptr, ptr0, len0);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
+        }
+    }
+    /**
      * Creates a mirror-format game and advances until the human must decide.
      *
      * # Errors
@@ -59,6 +93,30 @@ export class WebGame {
         return this;
     }
     /**
+     * Enables or disables the browser's smooth automatic priority yields.
+     * @param {boolean} enabled
+     */
+    set_autopass(enabled) {
+        const ret = wasm.webgame_set_autopass(this.__wbg_ptr, enabled);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
+        }
+    }
+    /**
+     * Enables or disables a human-interface stop for one displayed phase.
+     * The rules engine still exposes every individual step.
+     * @param {string} phase
+     * @param {boolean} enabled
+     */
+    set_phase_stop(phase, enabled) {
+        const ptr0 = passStringToWasm0(phase, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.webgame_set_phase_stop(this.__wbg_ptr, ptr0, len0, enabled);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
+        }
+    }
+    /**
      * Returns the human-visible game state as JSON.
      * @returns {string}
      */
@@ -72,6 +130,19 @@ export class WebGame {
             return getStringFromWasm0(ret[0], ret[1]);
         } finally {
             wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * Rewinds the most recent manual mana ability while it is still safe to do so.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error when there is no reversible mana activation.
+     */
+    undo_mana() {
+        const ret = wasm.webgame_undo_mana(this.__wbg_ptr);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
         }
     }
 }

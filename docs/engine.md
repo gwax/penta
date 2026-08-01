@@ -93,8 +93,8 @@ large bespoke function per printed card.
 
 The format is Eternal Central 93/94: current Magic rules plus the EC
 exceptions, notably phase-boundary mana burn. The POC implements London
-mulligans, priority-bearing turn steps, cleanup, combat, three fixed powered
-red decks, and its forty-card red/artifact corpus.
+mulligans, priority-bearing turn steps, cleanup, combat, five fixed powered
+decks, and its 57-card corpus.
 
 It deliberately remains narrower than the full Comprehensive Rules. Fireball
 and Fork expose their full targeting decisions, and attackers expose current
@@ -102,8 +102,9 @@ combat damage assignment decisions. Simple non-mana abilities and triggers
 generally resolve atomically. Chaos Orb's activation uses the stack and
 deterministically destroys its chosen permanent rather than simulating EC's
 physical card flip; removing the Orb before resolution nullifies the ability.
-Off-color Moxen produce colorless mana because the corpus contains no non-red
-colored costs. Red Elemental Blast has no observable legal work because the
-corpus contains no blue objects.
+Colored sources pay their printed colors, dual lands expose both choices, and
+flexible sources such as Black Lotus and Fellwar Stone are considered when the
+engine checks or automatically pays a cost. Red Elemental Blast can counter
+blue spells or destroy blue permanents.
 
 [foundations-update]: https://magic.wizards.com/en/news/announcements/foundations-update-bulletin

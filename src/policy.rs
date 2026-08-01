@@ -157,10 +157,17 @@ impl HandcraftedPolicy {
                 | CardBehavior::MoxJet
                 | CardBehavior::MoxPearl
                 | CardBehavior::MoxSapphire
+                | CardBehavior::ManaVault
                 | CardBehavior::SolRing,
             ) => 90,
             Some(
-                CardBehavior::Mountain | CardBehavior::MishrasFactory | CardBehavior::StripMine,
+                CardBehavior::Island
+                | CardBehavior::Mountain
+                | CardBehavior::MishrasFactory
+                | CardBehavior::Plains
+                | CardBehavior::StripMine
+                | CardBehavior::Tundra
+                | CardBehavior::VolcanicIsland,
             ) => 80,
             Some(CardBehavior::LightningBolt | CardBehavior::GoblinGrenade) => 75,
             Some(behavior) if behavior.kind().is_creature() => 65,
@@ -189,13 +196,77 @@ impl HandcraftedPolicy {
         let target_score: i32 = targets
             .iter()
             .map(|target| {
-                damage.map_or_else(
-                    || Self::target_score(observation, *target),
-                    |amount| Self::damage_target_score(observation, *target, amount),
-                )
+                if matches!(
+                    behavior,
+                    Some(CardBehavior::AncestralRecall | CardBehavior::Braingeyser)
+                ) {
+                    let cards_drawn = if behavior == Some(CardBehavior::AncestralRecall) {
+                        3
+                    } else {
+                        x
+                    };
+                    match target {
+                        Target::Player(player) if *player == observation.viewer => {
+                            if usize::from(cards_drawn) > observation.library_sizes[player.index()]
+                            {
+                                -20_000
+                            } else {
+                                1_000 + i32::from(cards_drawn) * 100
+                            }
+                        }
+                        Target::Player(player) => {
+                            if usize::from(cards_drawn) > observation.library_sizes[player.index()]
+                            {
+                                20_000
+                            } else {
+                                -10_000
+                            }
+                        }
+                        Target::Permanent(_) | Target::Spell(_) => -10_000,
+                    }
+                } else if matches!(
+                    behavior,
+                    Some(CardBehavior::Counterspell | CardBehavior::RedElementalBlast)
+                ) {
+                    match target {
+                        Target::Spell(id) => observation
+                            .stack
+                            .iter()
+                            .find(|object| object.id == *id)
+                            .map_or(-10_000, |object| {
+                                if object.controller == observation.viewer {
+                                    -10_000
+                                } else {
+                                    2_000
+                                }
+                            }),
+                        Target::Permanent(id) => observation
+                            .battlefield
+                            .iter()
+                            .find(|permanent| permanent.id == *id)
+                            .map_or(-10_000, |permanent| {
+                                if permanent.controller == observation.viewer {
+                                    -10_000
+                                } else {
+                                    1_000
+                                }
+                            }),
+                        Target::Player(_) => -10_000,
+                    }
+                } else {
+                    damage.map_or_else(
+                        || Self::target_score(observation, *target),
+                        |amount| Self::damage_target_score(observation, *target, amount),
+                    )
+                }
             })
             .sum();
         let base = match behavior {
+            Some(CardBehavior::AncestralRecall) => 9_200,
+            Some(CardBehavior::Counterspell | CardBehavior::RedElementalBlast) => 8_900,
+            Some(CardBehavior::SwordsToPlowshares | CardBehavior::Disenchant) => 8_400,
+            Some(CardBehavior::TimeWalk) => 8_300,
+            Some(CardBehavior::Braingeyser) => 7_500 + i32::from(x) * 30,
             Some(CardBehavior::GoblinGrenade) => 8_500,
             Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => 8_000,
             Some(CardBehavior::Fireball) => 7_900 + i32::from(x) * 20,
@@ -221,6 +292,8 @@ impl HandcraftedPolicy {
         let target_score = target.map_or(0, |value| {
             if behavior == Some(CardBehavior::OrcishMechanics) {
                 Self::damage_target_score(observation, value, 2)
+            } else if behavior == Some(CardBehavior::Triskelion) {
+                Self::damage_target_score(observation, value, 1)
             } else {
                 Self::target_score(observation, value)
             }
@@ -426,7 +499,13 @@ impl HandcraftedPolicy {
                             | CardBehavior::MoxPearl
                             | CardBehavior::MoxRuby
                             | CardBehavior::MoxSapphire
+                            | CardBehavior::ManaVault
                             | CardBehavior::BlackLotus
+                            | CardBehavior::Island
+                            | CardBehavior::Plains
+                            | CardBehavior::Tundra
+                            | CardBehavior::VolcanicIsland
+                            | CardBehavior::FellwarStone
                     )
                 )
             })
@@ -460,7 +539,8 @@ impl HandcraftedPolicy {
 
     fn score_land(&self, observation: &PlayerObservation, card: CardInstanceId) -> i32 {
         match Self::hand_definition(observation, card).and_then(|id| self.behavior(id)) {
-            Some(CardBehavior::Mountain) => 9_300,
+            Some(CardBehavior::Tundra | CardBehavior::VolcanicIsland) => 9_400,
+            Some(CardBehavior::Island | CardBehavior::Mountain | CardBehavior::Plains) => 9_300,
             Some(CardBehavior::MishrasFactory) => 9_200,
             Some(CardBehavior::StripMine) => 9_100,
             Some(_) | None => 9_000,
@@ -518,7 +598,9 @@ impl HandcraftedPolicy {
             }
             Action::ChooseUntap { permanents } => self.score_untap(observation, permanents),
             Action::PlayLand { card } => self.score_land(observation, *card),
-            Action::ActivateManaAbility { source } => self.mana_action_score(observation, *source),
+            Action::ActivateManaAbility { source, .. } => {
+                self.mana_action_score(observation, *source)
+            }
             Action::CastSpell {
                 card, targets, x, ..
             } => self.score_cast(observation, *card, targets, *x),

@@ -4,6 +4,16 @@ use std::fmt;
 use crate::{CardInstanceId, PlayerId, StackObjectId};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ManaColor {
+    White,
+    Blue,
+    Black,
+    Red,
+    Green,
+    Colorless,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Target {
     Player(PlayerId),
     Permanent(CardInstanceId),
@@ -42,6 +52,7 @@ pub enum Action {
     },
     ActivateManaAbility {
         source: CardInstanceId,
+        color: ManaColor,
     },
     CastSpell {
         card: CardInstanceId,

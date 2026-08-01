@@ -10,6 +10,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("Goblins", poc::goblins()),
         ("Sligh", poc::sligh()),
         ("Artifacts", poc::artifacts()),
+        ("Robots", poc::robots()),
+        ("The Deck", poc::the_deck()),
     ];
     let mut wins = 0_u64;
     let mut losses = 0_u64;

@@ -1,7 +1,7 @@
 use osarena::poc;
 use osarena::{
     Action, CardCatalog, CardDefinitionId, CardInstanceId, Game, GameEvent, GameResult,
-    HandcraftedPolicy, PlayerId, PlayerObservation, Policy, RandomPolicy, Target,
+    HandcraftedPolicy, PlayerId, PlayerObservation, Policy, RandomPolicy, Step, Target,
 };
 use serde_json::{Value, json};
 use std::fmt::Write as _;
@@ -33,6 +33,9 @@ pub struct WebGame {
     bot: BotPolicy,
     opponent_actions: Vec<Value>,
     pending_opponent_mana: Vec<String>,
+    mana_undo_history: Vec<Game>,
+    phase_stops: Vec<String>,
+    autopass_enabled: bool,
 }
 
 #[wasm_bindgen]
@@ -76,6 +79,9 @@ impl WebGame {
             bot,
             opponent_actions: Vec::new(),
             pending_opponent_mana: Vec::new(),
+            mana_undo_history: Vec::new(),
+            phase_stops: Vec::new(),
+            autopass_enabled: true,
         };
         web_game.advance_until_human_choice()?;
         Ok(web_game)
@@ -97,10 +103,160 @@ impl WebGame {
             .get(action_index)
             .cloned()
             .ok_or_else(|| JsValue::from_str("unknown legal action"))?;
+        let mana_checkpoint = matches!(action, Action::ActivateManaAbility { .. })
+            .then(|| self.game.clone());
+        if mana_checkpoint.is_none() {
+            self.mana_undo_history.clear();
+        }
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
         self.game.apply(self.human, action).map_err(js_error)?;
+        self.advance_until_human_choice()?;
+        if let Some(checkpoint) = mana_checkpoint {
+            let before = checkpoint.observe(self.human);
+            let after = self.game.observe(self.human);
+            if self.game.decision_player() == Some(self.human)
+                && before.turn == after.turn
+                && before.step == after.step
+                && before.active_player == after.active_player
+                && before.stack == after.stack
+            {
+                self.mana_undo_history.push(checkpoint);
+            } else {
+                self.mana_undo_history.clear();
+            }
+        }
+        Ok(())
+    }
+
+    /// Declares every currently legal attacker, then finishes attacker declaration.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error unless the human is declaring attackers or
+    /// the engine rejects one of the otherwise-legal actions.
+    pub fn attack_all(&mut self) -> Result<(), JsValue> {
+        if self.game.decision_player() != Some(self.human)
+            || self.game.observe(self.human).step != Step::DeclareAttackers
+        {
+            return Err(JsValue::from_str("the human is not declaring attackers"));
+        }
+        self.mana_undo_history.clear();
+        self.opponent_actions.clear();
+        self.pending_opponent_mana.clear();
+        loop {
+            let action = self
+                .game
+                .observe(self.human)
+                .legal_actions
+                .into_iter()
+                .find(|action| matches!(action, Action::DeclareAttacker { .. }));
+            let Some(action) = action else {
+                break;
+            };
+            self.game.apply(self.human, action).map_err(js_error)?;
+        }
+        if let Some(finish) = self
+            .game
+            .observe(self.human)
+            .legal_actions
+            .into_iter()
+            .find(|action| matches!(action, Action::FinishDeclaringAttackers))
+        {
+            self.game.apply(self.human, finish).map_err(js_error)?;
+        }
         self.advance_until_human_choice()
+    }
+
+    /// Commits a complete set of blocker assignments selected by the browser UI.
+    ///
+    /// Assignments are encoded as JSON pairs of `[blocker_id, attacker_id]` so
+    /// the UI can rearrange arrows freely before making one atomic submission.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error unless the human is declaring blockers or an
+    /// assignment is duplicated, malformed, or no longer legal.
+    pub fn finalize_blocks(&mut self, assignments_json: &str) -> Result<(), JsValue> {
+        if self.game.decision_player() != Some(self.human)
+            || self.game.observe(self.human).step != Step::DeclareBlockers
+        {
+            return Err(JsValue::from_str("the human is not declaring blockers"));
+        }
+        let assignments: Vec<[u32; 2]> =
+            serde_json::from_str(assignments_json).map_err(js_error)?;
+        let mut used_blockers = Vec::with_capacity(assignments.len());
+        let legal_actions = self.game.observe(self.human).legal_actions;
+        let mut block_actions = Vec::with_capacity(assignments.len());
+        for [blocker, attacker] in assignments {
+            let blocker = CardInstanceId(blocker);
+            if used_blockers.contains(&blocker) {
+                return Err(JsValue::from_str("a blocker can only block one attacker"));
+            }
+            used_blockers.push(blocker);
+            let action = Action::DeclareBlocker {
+                blocker,
+                attacker: CardInstanceId(attacker),
+            };
+            if !legal_actions.contains(&action) {
+                return Err(JsValue::from_str("a blocker assignment is no longer legal"));
+            }
+            block_actions.push(action);
+        }
+        self.mana_undo_history.clear();
+        self.opponent_actions.clear();
+        self.pending_opponent_mana.clear();
+        for action in block_actions {
+            self.game
+                .apply(self.human, action)
+                .map_err(js_error)?;
+        }
+        self.game
+            .apply(self.human, Action::FinishDeclaringBlockers)
+            .map_err(js_error)?;
+        self.advance_until_human_choice()
+    }
+
+    /// Rewinds the most recent manual mana ability while it is still safe to do so.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error when there is no reversible mana activation.
+    pub fn undo_mana(&mut self) -> Result<(), JsValue> {
+        let previous = self
+            .mana_undo_history
+            .pop()
+            .ok_or_else(|| JsValue::from_str("there is no mana ability to undo"))?;
+        self.game = previous;
+        self.opponent_actions.clear();
+        self.pending_opponent_mana.clear();
+        Ok(())
+    }
+
+    /// Enables or disables a human-interface stop for one displayed phase.
+    /// The rules engine still exposes every individual step.
+    pub fn set_phase_stop(&mut self, phase: &str, enabled: bool) -> Result<(), JsValue> {
+        if !matches!(phase, "Beginning" | "Main 1" | "Combat" | "Main 2" | "Ending") {
+            return Err(JsValue::from_str("unknown displayed phase"));
+        }
+        self.phase_stops.retain(|candidate| candidate != phase);
+        if enabled {
+            self.phase_stops.push(phase.into());
+        }
+        self.opponent_actions.clear();
+        self.pending_opponent_mana.clear();
+        Ok(())
+    }
+
+    /// Enables or disables the browser's smooth automatic priority yields.
+    pub fn set_autopass(&mut self, enabled: bool) -> Result<(), JsValue> {
+        self.autopass_enabled = enabled;
+        self.opponent_actions.clear();
+        self.pending_opponent_mana.clear();
+        if enabled {
+            self.advance_until_human_choice()?;
+        }
+        Ok(())
     }
 
     /// Returns the human-visible game state as JSON.
@@ -118,7 +274,28 @@ impl WebGame {
             };
             let observation = self.game.observe(player);
             let action = if player == self.human {
-                let Some(action) = automatic_human_action(&observation.legal_actions) else {
+                let Some(action) = automatic_human_action_with_blockers(
+                    observation.step,
+                    observation.active_player == self.human,
+                    observation.stack.is_empty(),
+                    observation
+                        .battlefield
+                        .iter()
+                        .any(|permanent| permanent.attacking),
+                    observation
+                        .battlefield
+                        .iter()
+                        .any(|permanent| permanent.blocking.is_some()),
+                    self.should_stop(observation.step),
+                    self.autopass_enabled,
+                    !observation.stack.is_empty()
+                        && observation
+                            .stack
+                            .iter()
+                            .all(|object| object.controller == self.human),
+                    observation.mana_pools[self.human.index()].total() > 0,
+                    &observation.legal_actions,
+                ) else {
                     self.finish_opponent_animation(&mut pending_animation);
                     return Ok(());
                 };
@@ -129,7 +306,7 @@ impl WebGame {
                     .ok_or_else(|| JsValue::from_str("bot returned no action"))?
             };
             if player != self.human {
-                if let Action::ActivateManaAbility { source } = &action {
+                if let Action::ActivateManaAbility { source, .. } = &action {
                     self.finish_opponent_animation(&mut pending_animation);
                     self.pending_opponent_mana
                         .push(self.instance_name(&observation, *source));
@@ -143,7 +320,7 @@ impl WebGame {
                     } else {
                         Vec::new()
                     };
-                    let label = self.action_label(&observation, &action);
+                    let label = self.opponent_action_label(&observation, &action);
                     let kind = animated_action_kind(&action);
                     let card_id = action_card(&action);
                     let card = card_id.map(|id| self.instance_name(&observation, id));
@@ -196,6 +373,39 @@ impl WebGame {
         self.snapshot_value(true)
     }
 
+    fn should_stop(&self, step: Step) -> bool {
+        let phase = match step {
+            Step::Upkeep | Step::Draw => "Beginning",
+            Step::PrecombatMain => "Main 1",
+            Step::BeginningOfCombat
+            | Step::DeclareAttackers
+            | Step::DeclareBlockers
+            | Step::CombatDamage
+            | Step::EndOfCombat => "Combat",
+            Step::PostcombatMain => "Main 2",
+            Step::End | Step::Cleanup => "Ending",
+        };
+        self.phase_stops.iter().any(|candidate| candidate == phase)
+    }
+
+    fn automatic_mana_sources(&self, action: &Action) -> Vec<u32> {
+        if !matches!(action, Action::CastSpell { .. } | Action::ActivateAbility { .. }) {
+            return Vec::new();
+        }
+        let mut preview = self.game.clone();
+        let event_start = preview.events().len();
+        if preview.apply(self.human, action.clone()).is_err() {
+            return Vec::new();
+        }
+        preview.events()[event_start..]
+            .iter()
+            .filter_map(|event| match event {
+                GameEvent::ManaAdded { player, source } if *player == self.human => Some(source.0),
+                _ => None,
+            })
+            .collect()
+    }
+
     #[allow(clippy::too_many_lines)]
     fn snapshot_value(&self, include_opponent_actions: bool) -> Value {
         let observation = self.game.observe(self.human);
@@ -211,6 +421,20 @@ impl WebGame {
                     "kind": action_kind(action),
                     "cardId": action_card(action).map(|id| id.0),
                     "targetCardId": action_target_card(action).map(|id| id.0),
+                    "targetPlayer": action_target_player(action, self.human),
+                    "targetStackId": action_target_stack(action),
+                    "targetCardIds": action_target_cards(action),
+                    "targetPlayers": action_target_players(action, self.human),
+                    "targetStackIds": action_target_stacks(action),
+                    "targetCount": action_targets(action).len(),
+                    "manaAbility": matches!(action, Action::ActivateManaAbility { .. }),
+                    "spellAction": matches!(action, Action::CastSpell { .. }),
+                    "x": match action {
+                        Action::CastSpell { x, .. } => Some(*x),
+                        _ => None,
+                    },
+                    "paymentAction": matches!(action, Action::CastSpell { .. } | Action::ActivateAbility { .. }),
+                    "manaSourceIds": self.automatic_mana_sources(action),
                 })
             })
             .collect::<Vec<_>>();
@@ -220,15 +444,27 @@ impl WebGame {
             .map(|permanent| {
                 let card = self.catalog.get(permanent.definition);
                 let mana_cost = card.map(|card| card.behavior.mana_cost());
+                let current_kind = card.map_or("unknown".into(), |card| {
+                    if card.behavior == osarena::CardBehavior::MishrasFactory
+                        && permanent.power.is_some()
+                    {
+                        "artifactcreature".into()
+                    } else {
+                        format!("{:?}", card.behavior.kind()).to_ascii_lowercase()
+                    }
+                });
                 json!({
                     "id": permanent.id.0,
                     "name": self.card_name(permanent.definition),
-                    "kind": card.map_or("unknown".into(), |card| {
-                        format!("{:?}", card.behavior.kind()).to_ascii_lowercase()
-                    }),
+                    "kind": current_kind,
+                    "isLand": card.is_some_and(|card| card.behavior.kind() == osarena::CardKind::Land),
                     "manaCost": mana_cost.map(|cost| json!({
                         "generic": cost.generic,
+                        "white": cost.white,
+                        "blue": cost.blue,
+                        "black": cost.black,
                         "red": cost.red,
+                        "green": cost.green,
                         "x": cost.variable_x,
                     })),
                     "rulesText": card.map_or("", |card| card.behavior.rules_text()),
@@ -256,9 +492,14 @@ impl WebGame {
                     "kind": card.map_or("unknown".into(), |card| {
                         format!("{:?}", card.behavior.kind()).to_ascii_lowercase()
                     }),
+                    "isLand": card.is_some_and(|card| card.behavior.kind() == osarena::CardKind::Land),
                     "manaCost": mana_cost.map(|cost| json!({
                         "generic": cost.generic,
+                        "white": cost.white,
+                        "blue": cost.blue,
+                        "black": cost.black,
                         "red": cost.red,
+                        "green": cost.green,
                         "x": cost.variable_x,
                     })),
                     "rulesText": card.map_or("", |card| card.behavior.rules_text()),
@@ -313,7 +554,8 @@ impl WebGame {
         };
 
         json!({
-            "turn": observation.turn,
+            "turn": observation.active_turn,
+            "gameTurn": observation.turn,
             "step": readable_debug(observation.step),
             "active": if observation.active_player == self.human { "You" } else { "Opponent" },
             "priority": if observation.priority == self.human { "You" } else { "Opponent" },
@@ -321,7 +563,11 @@ impl WebGame {
                 "life": observation.life_totals[self.human.index()],
                 "library": observation.library_sizes[self.human.index()],
                 "mana": {
+                    "white": observation.mana_pools[self.human.index()].white,
+                    "blue": observation.mana_pools[self.human.index()].blue,
+                    "black": observation.mana_pools[self.human.index()].black,
                     "red": observation.mana_pools[self.human.index()].red,
+                    "green": observation.mana_pools[self.human.index()].green,
                     "colorless": observation.mana_pools[self.human.index()].colorless,
                 },
                 "hand": hand,
@@ -332,7 +578,11 @@ impl WebGame {
                 "library": observation.library_sizes[opponent.index()],
                 "handSize": observation.opponent_hand_size,
                 "mana": {
+                    "white": observation.mana_pools[opponent.index()].white,
+                    "blue": observation.mana_pools[opponent.index()].blue,
+                    "black": observation.mana_pools[opponent.index()].black,
                     "red": observation.mana_pools[opponent.index()].red,
+                    "green": observation.mana_pools[opponent.index()].green,
                     "colorless": observation.mana_pools[opponent.index()].colorless,
                 },
                 "graveyard": graveyard(opponent),
@@ -340,6 +590,9 @@ impl WebGame {
             "battlefield": battlefield,
             "stack": stack,
             "actions": actions,
+            "canUndoMana": !self.mana_undo_history.is_empty(),
+            "phaseStops": self.phase_stops,
+            "autopassEnabled": self.autopass_enabled,
             "opponentActions": opponent_actions,
             "result": result,
             "events": events,
@@ -421,11 +674,28 @@ impl WebGame {
                     .join(", ")
             ),
             Action::ChooseTriggeredAbility { pay, new_targets } => {
-                let choice = if *pay { "Pay" } else { "Decline" };
-                if new_targets.is_empty() {
-                    choice.into()
+                let chain_lightning = !new_targets.is_empty()
+                    || matches!(
+                        self.game.events().last(),
+                        Some(GameEvent::SpellResolved { card })
+                            if self.instance_name(observation, *card) == "Chain Lightning"
+                    );
+                if chain_lightning {
+                    if *pay {
+                        format!("Pay RR to copy Chain Lightning → {}", targets(new_targets))
+                    } else {
+                        "Don't copy Chain Lightning".into()
+                    }
+                } else if observation.step == Step::Upkeep {
+                    if *pay {
+                        "Pay 4 to untap Mana Vault".into()
+                    } else {
+                        "Leave Mana Vault tapped".into()
+                    }
+                } else if *pay {
+                    "Pay 1 to gain 1 life with Iron Star".into()
                 } else {
-                    format!("{choice} → {}", targets(new_targets))
+                    "Don't use Iron Star".into()
                 }
             }
             Action::ChooseCopyTargets { targets: values } => {
@@ -443,8 +713,12 @@ impl WebGame {
             Action::PlayLand { card } => {
                 format!("Play {}", self.instance_name(observation, *card))
             }
-            Action::ActivateManaAbility { source } => {
-                format!("Tap {} for mana", self.instance_name(observation, *source))
+            Action::ActivateManaAbility { source, color } => {
+                format!(
+                    "Tap {} for {} mana",
+                    self.instance_name(observation, *source),
+                    readable_debug(*color)
+                )
             }
             Action::CastSpell {
                 card,
@@ -477,7 +751,19 @@ impl WebGame {
                 target,
                 sacrifice,
             } => {
-                let mut label = format!("Activate {}", self.instance_name(observation, *source));
+                let source_name = self.instance_name(observation, *source);
+                if source_name == "Mishra's Factory" {
+                    return target.map_or_else(
+                        || "Make Mishra's Factory a 2/2 creature".into(),
+                        |target| {
+                            format!(
+                                "Give {} +1/+1 with Mishra's Factory",
+                                self.target_name(observation, target)
+                            )
+                        },
+                    );
+                }
+                let mut label = format!("Activate {source_name}");
                 if let Some(sacrifice) = sacrifice
                     && sacrifice != source
                 {
@@ -521,6 +807,21 @@ impl WebGame {
             Action::Concede => "Concede game".into(),
         }
     }
+
+    fn opponent_action_label(
+        &self,
+        observation: &PlayerObservation,
+        action: &Action,
+    ) -> String {
+        match action {
+            Action::BottomCards { cards } => format!(
+                "Bottom {} {}",
+                cards.len(),
+                if cards.len() == 1 { "card" } else { "cards" }
+            ),
+            _ => self.action_label(observation, action),
+        }
+    }
 }
 
 fn deck_by_name(name: &str) -> Result<osarena::Deck, JsValue> {
@@ -528,6 +829,8 @@ fn deck_by_name(name: &str) -> Result<osarena::Deck, JsValue> {
         "goblins" => Ok(poc::goblins()),
         "sligh" => Ok(poc::sligh()),
         "artifacts" => Ok(poc::artifacts()),
+        "robots" => Ok(poc::robots()),
+        "the deck" => Ok(poc::the_deck()),
         _ => Err(JsValue::from_str("unknown deck")),
     }
 }
@@ -545,7 +848,81 @@ fn action_kind(action: &Action) -> &'static str {
     }
 }
 
-fn automatic_human_action(actions: &[Action]) -> Option<Action> {
+fn automatic_human_action_with_blockers(
+    step: Step,
+    human_is_active: bool,
+    stack_is_empty: bool,
+    has_attacker: bool,
+    has_blocker: bool,
+    stop_here: bool,
+    autopass_enabled: bool,
+    only_human_objects_on_stack: bool,
+    human_has_floating_mana: bool,
+    actions: &[Action],
+) -> Option<Action> {
+    if !autopass_enabled {
+        return None;
+    }
+    let has_attack_option = actions
+        .iter()
+        .any(|action| matches!(action, Action::DeclareAttacker { .. }));
+    let empty_combat_after_attackers = !has_attacker
+        && (matches!(
+            step,
+            Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
+        ) || (step == Step::DeclareAttackers && !has_attack_option));
+    if stop_here && !empty_combat_after_attackers {
+        return None;
+    }
+    if only_human_objects_on_stack
+        && let Some(pass) = actions
+            .iter()
+            .find(|action| matches!(action, Action::PassPriority))
+    {
+        return Some(pass.clone());
+    }
+    // Never fast-forward through the human's entire turn. Even with no card
+    // actions available, Main 1 is the stable point where the player can see
+    // the draw and deliberately advance into combat.
+    if human_is_active && step == Step::PrecombatMain && stack_is_empty {
+        return None;
+    }
+    // Arena normally hides routine beginning-phase priority windows on either
+    // turn. Stops restore them; floating mana in the end step is a
+    // smart-priority case.
+    let routine_beginning_step = matches!(step, Step::Upkeep | Step::Draw);
+    let routine_own_turn_step = human_is_active
+        && (step == Step::BeginningOfCombat
+            || (step == Step::End && !human_has_floating_mana));
+    let smooth_unblocked_attack = human_is_active
+        && has_attacker
+        && !has_blocker
+        && matches!(
+            step,
+            Step::DeclareAttackers
+                | Step::DeclareBlockers
+                | Step::CombatDamage
+                | Step::EndOfCombat
+        );
+    let auto_yield_step = routine_beginning_step
+        || routine_own_turn_step
+        || smooth_unblocked_attack
+        || (!has_attacker
+            && matches!(
+                step,
+                Step::DeclareAttackers
+                    | Step::DeclareBlockers
+                    | Step::CombatDamage
+                    | Step::EndOfCombat
+            ));
+    if auto_yield_step
+        && stack_is_empty
+        && let Some(pass) = actions
+            .iter()
+            .find(|action| matches!(action, Action::PassPriority))
+    {
+        return Some(pass.clone());
+    }
     let has_meaningful_choice = actions.iter().any(|action| {
         !matches!(
             action,
@@ -572,10 +949,36 @@ fn automatic_human_action(actions: &[Action]) -> Option<Action> {
         .cloned()
 }
 
+#[cfg(test)]
+fn automatic_human_action(
+    step: Step,
+    human_is_active: bool,
+    stack_is_empty: bool,
+    has_attacker: bool,
+    stop_here: bool,
+    autopass_enabled: bool,
+    only_human_objects_on_stack: bool,
+    human_has_floating_mana: bool,
+    actions: &[Action],
+) -> Option<Action> {
+    automatic_human_action_with_blockers(
+        step,
+        human_is_active,
+        stack_is_empty,
+        has_attacker,
+        false,
+        stop_here,
+        autopass_enabled,
+        only_human_objects_on_stack,
+        human_has_floating_mana,
+        actions,
+    )
+}
+
 fn action_card(action: &Action) -> Option<CardInstanceId> {
     match action {
         Action::PlayLand { card } | Action::CastSpell { card, .. } => Some(*card),
-        Action::ActivateManaAbility { source } | Action::ActivateAbility { source, .. } => {
+        Action::ActivateManaAbility { source, .. } | Action::ActivateAbility { source, .. } => {
             Some(*source)
         }
         Action::DeclareAttacker { attacker } | Action::AssignCombatDamage { attacker, .. } => {
@@ -587,17 +990,70 @@ fn action_card(action: &Action) -> Option<CardInstanceId> {
 }
 
 fn action_target_card(action: &Action) -> Option<CardInstanceId> {
-    match action {
-        Action::CastSpell { targets, .. } => targets.iter().find_map(|target| match target {
+    if let Action::DeclareBlocker { attacker, .. } = action {
+        return Some(*attacker);
+    }
+    action_targets(action).iter().find_map(|target| match target {
             Target::Permanent(id) => Some(*id),
             Target::Player(_) | Target::Spell(_) => None,
-        }),
+        })
+}
+
+fn action_target_player(action: &Action, human: PlayerId) -> Option<&'static str> {
+    action_targets(action).iter().find_map(|target| match target {
+        Target::Player(player) => Some(if *player == human { "human" } else { "opponent" }),
+        Target::Permanent(_) | Target::Spell(_) => None,
+    })
+}
+
+fn action_target_stack(action: &Action) -> Option<u32> {
+    action_targets(action).iter().find_map(|target| match target {
+        Target::Spell(id) => Some(id.0),
+        Target::Player(_) | Target::Permanent(_) => None,
+    })
+}
+
+fn action_targets(action: &Action) -> &[Target] {
+    match action {
+        Action::CastSpell { targets, .. } => targets.as_slice(),
         Action::ActivateAbility {
-            target: Some(Target::Permanent(id)),
+            target: Some(target),
             ..
-        } => Some(*id),
-        _ => None,
+        } => std::slice::from_ref(target),
+        _ => &[],
     }
+}
+
+fn action_target_cards(action: &Action) -> Vec<u32> {
+    action_targets(action)
+        .iter()
+        .filter_map(|target| match target {
+            Target::Permanent(id) => Some(id.0),
+            Target::Player(_) | Target::Spell(_) => None,
+        })
+        .collect()
+}
+
+fn action_target_players(action: &Action, human: PlayerId) -> Vec<&'static str> {
+    action_targets(action)
+        .iter()
+        .filter_map(|target| match target {
+            Target::Player(player) => {
+                Some(if *player == human { "human" } else { "opponent" })
+            }
+            Target::Permanent(_) | Target::Spell(_) => None,
+        })
+        .collect()
+}
+
+fn action_target_stacks(action: &Action) -> Vec<u32> {
+    action_targets(action)
+        .iter()
+        .filter_map(|target| match target {
+            Target::Spell(id) => Some(id.0),
+            Target::Player(_) | Target::Permanent(_) => None,
+        })
+        .collect()
 }
 
 fn should_animate_action(action: &Action) -> bool {
@@ -655,16 +1111,54 @@ mod tests {
     use super::*;
 
     #[test]
-    fn mana_taps_do_not_stop_an_automatic_priority_pass() {
+    fn blocker_actions_expose_the_attacker_as_their_board_target() {
+        let attacker = CardInstanceId(7);
+        let blocker = CardInstanceId(8);
+        let action = Action::DeclareBlocker { blocker, attacker };
+        assert_eq!(action_card(&action), Some(blocker));
+        assert_eq!(action_target_card(&action), Some(attacker));
+    }
+
+    #[test]
+    fn human_main_one_stops_even_when_only_mana_actions_are_available() {
         let actions = [
             Action::Concede,
             Action::ActivateManaAbility {
                 source: CardInstanceId(7),
+                color: osarena::ManaColor::Red,
             },
             Action::PassPriority,
         ];
 
-        assert_eq!(automatic_human_action(&actions), Some(Action::PassPriority));
+        assert_eq!(
+            automatic_human_action(
+                Step::PrecombatMain,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            None
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::PrecombatMain,
+                false,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority),
+            "an actionless opponent main phase can still auto-yield",
+        );
     }
 
     #[test]
@@ -677,6 +1171,310 @@ mod tests {
             Action::PassPriority,
         ];
 
-        assert_eq!(automatic_human_action(&actions), None);
+        assert_eq!(
+            automatic_human_action(
+                Step::PrecombatMain,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn routine_beginning_windows_auto_pass_on_either_turn() {
+        let actions = [
+            Action::Concede,
+            Action::CastSpell {
+                card: CardInstanceId(7),
+                targets: vec![Target::Player(PlayerId::Two)],
+                sacrifices: Vec::new(),
+                x: 0,
+            },
+            Action::PassPriority,
+        ];
+
+        assert_eq!(
+            automatic_human_action(
+                Step::Upkeep,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority)
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::Draw,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority)
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::End,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority)
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::Upkeep,
+                false,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority),
+            "routine opponent upkeep priority is hidden unless the player sets a stop",
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::Draw,
+                false,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority),
+            "routine opponent draw-step priority is hidden unless the player sets a stop",
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::End,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+                true,
+                &actions,
+            ),
+            None,
+            "smart priority preserves floating mana in the human's end step",
+        );
+    }
+
+    #[test]
+    fn empty_and_unblocked_combat_steps_auto_pass() {
+        let actions = [
+            Action::Concede,
+            Action::CastSpell {
+                card: CardInstanceId(7),
+                targets: vec![Target::Player(PlayerId::Two)],
+                sacrifices: Vec::new(),
+                x: 0,
+            },
+            Action::PassPriority,
+        ];
+
+        assert_eq!(
+            automatic_human_action(
+                Step::BeginningOfCombat,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority)
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::CombatDamage,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority)
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::CombatDamage,
+                true,
+                true,
+                true,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority),
+            "an unblocked attack runs through combat damage without extra clicks",
+        );
+        assert_eq!(
+            automatic_human_action_with_blockers(
+                Step::DeclareBlockers,
+                true,
+                true,
+                true,
+                true,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            None,
+            "a declared blocker interrupts smooth combat",
+        );
+    }
+
+    #[test]
+    fn a_combat_stop_interrupts_an_unblocked_attack() {
+        let actions = [Action::Concede, Action::PassPriority];
+        assert_eq!(
+            automatic_human_action_with_blockers(
+                Step::CombatDamage,
+                true,
+                true,
+                true,
+                false,
+                true,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn a_phase_stop_blocks_the_ui_auto_pass() {
+        let actions = [Action::Concede, Action::PassPriority];
+        assert_eq!(
+            automatic_human_action(
+                Step::Upkeep,
+                true,
+                true,
+                false,
+                true,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn no_attackers_skip_the_rest_of_combat_even_with_a_combat_stop() {
+        let actions = [Action::Concede, Action::PassPriority];
+        assert_eq!(
+            automatic_human_action(
+                Step::CombatDamage,
+                true,
+                true,
+                false,
+                true,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority)
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::CombatDamage,
+                true,
+                true,
+                false,
+                true,
+                false,
+                false,
+                false,
+                &actions,
+            ),
+            None,
+            "turning auto-pass off still exposes the empty combat window",
+        );
+    }
+
+    #[test]
+    fn autopass_yields_when_only_human_objects_are_on_the_stack() {
+        let actions = [
+            Action::Concede,
+            Action::CastSpell {
+                card: CardInstanceId(7),
+                targets: vec![Target::Player(PlayerId::Two)],
+                sacrifices: Vec::new(),
+                x: 0,
+            },
+            Action::PassPriority,
+        ];
+        assert_eq!(
+            automatic_human_action(
+                Step::PrecombatMain,
+                true,
+                false,
+                false,
+                false,
+                true,
+                true,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority)
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::PrecombatMain,
+                true,
+                false,
+                false,
+                false,
+                false,
+                true,
+                false,
+                &actions,
+            ),
+            None
+        );
     }
 }
