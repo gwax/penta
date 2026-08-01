@@ -1838,6 +1838,15 @@ function GameCard({
     card.manaCost.red === 0 &&
     card.manaCost.green === 0 &&
     !card.manaCost.x;
+  const manaSymbolCount = card.manaCost
+    ? (card.manaCost.x ? 1 : 0) +
+      (card.manaCost.generic > 0 || showZeroCost ? 1 : 0) +
+      card.manaCost.white +
+      card.manaCost.blue +
+      card.manaCost.black +
+      card.manaCost.red +
+      card.manaCost.green
+    : 0;
   const manaCost = formatManaCost(card);
   const battlefieldState = [
     card.owner ? (card.tapped ? "Tapped" : "Untapped") : null,
@@ -1929,7 +1938,7 @@ function GameCard({
           if (actionable) onSelect(card.id);
         }}
       >
-        <span className="card-header">
+        <span className={`card-header ${manaSymbolCount >= 3 ? "card-header-dense" : ""}`}>
           <span className="card-title">{card.name}</span>
           {card.manaCost && !card.isLand && (
             <span className="card-cost" aria-label={`Casting cost for ${card.name}`}>

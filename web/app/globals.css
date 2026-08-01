@@ -1189,6 +1189,10 @@ button {
   font-size: 9px;
 }
 
+.game-card:not(.game-card-compact) .card-header-dense .card-title {
+  font-size: 12px;
+}
+
 .card-cost {
   flex: none;
   display: flex;
@@ -1215,6 +1219,12 @@ button {
   width: 11px;
   height: 11px;
   font-size: 7px;
+}
+
+.game-card:not(.game-card-compact) .card-header-dense .card-cost i {
+  width: 12px;
+  height: 12px;
+  font-size: 8px;
 }
 
 .game-card-compact .card-art {
