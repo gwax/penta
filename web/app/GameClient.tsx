@@ -1850,10 +1850,15 @@ function GameCard({
       left = bounds.left - previewWidth - gutter;
     }
     left = Math.max(gutter, Math.min(left, window.innerWidth - previewWidth - gutter));
+    const centeredTop = bounds.top + (bounds.height - previewHeight) / 2;
+    const battlefieldTop =
+      bounds.top + bounds.height / 2 < window.innerHeight / 2
+        ? bounds.top - previewHeight - gutter
+        : bounds.bottom + gutter;
     const top = Math.max(
       gutter,
       Math.min(
-        bounds.top + (bounds.height - previewHeight) / 2,
+        compact ? battlefieldTop : centeredTop,
         window.innerHeight - previewHeight - gutter,
       ),
     );
