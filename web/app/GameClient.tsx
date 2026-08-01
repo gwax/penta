@@ -1672,13 +1672,22 @@ function CardPile({
   onDragEndCard(): void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const spacing = expanded ? 72 : 7;
-  const visibleOffsetCount = expanded ? cards.length - 1 : Math.min(cards.length - 1, 3);
+  const previewedCards = cards.filter((card) => previewManaSourceIds.includes(card.id)).length;
+  const paymentExpanded = previewedCards > 0 && previewedCards < cards.length;
+  const visuallyExpanded = expanded || paymentExpanded;
+  const spacing = visuallyExpanded ? 72 : 7;
+  const visibleOffsetCount = visuallyExpanded
+    ? cards.length - 1
+    : Math.min(cards.length - 1, 3);
   const width = 96 + visibleOffsetCount * spacing;
 
   return (
     <div
-      className={`card-pile ${expanded ? "is-expanded" : ""}`}
+      className={[
+        "card-pile",
+        visuallyExpanded ? "is-expanded" : "",
+        paymentExpanded ? "is-payment-expanded" : "",
+      ].filter(Boolean).join(" ")}
       style={{ width }}
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}
@@ -1689,7 +1698,7 @@ function CardPile({
       aria-label={cards.length > 1 ? `${cards.length} ${cards[0].name} cards` : undefined}
     >
       {cards.map((card, index) => {
-        const offset = expanded ? index * spacing : Math.min(index, 3) * spacing;
+        const offset = visuallyExpanded ? index * spacing : Math.min(index, 3) * spacing;
         return (
           <div
             className="battlefield-card-slot"
@@ -1712,7 +1721,7 @@ function CardPile({
           </div>
         );
       })}
-      {cards.length > 1 && !expanded && (
+      {cards.length > 1 && !visuallyExpanded && (
         <span className="card-pile-count" aria-hidden="true">{cards.length}</span>
       )}
     </div>
