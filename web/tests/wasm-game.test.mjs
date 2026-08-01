@@ -27,7 +27,7 @@ test("The Deck exposes colored costs and control rules to the browser", async ()
   game.free();
 });
 
-test("opponent mulligan bottoms reveal a count but not card identities", async () => {
+test("opponent pregame choices do not block the game with animations", async () => {
   const bytes = await readFile(
     new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
   );
@@ -39,13 +39,15 @@ test("opponent mulligan bottoms reveal a count but not card identities", async (
   game.act(keep.index);
 
   const afterKeep = JSON.parse(game.state_json());
-  const bottom = afterKeep.opponentActions.find((action) =>
-    action.label.startsWith("Bottom "),
+  assert.ok(
+    afterKeep.opponentActions.every(
+      (action) =>
+        action.label !== "Keep this hand" &&
+        action.label !== "Take a mulligan" &&
+        !action.label.startsWith("Bottom "),
+    ),
+    "keep, mulligan, and bottom choices stay out of the opponent animation queue",
   );
-  assert.ok(bottom, "the deterministic opponent takes mulligans and bottoms cards");
-  assert.equal(bottom.label, "Bottom 2 cards");
-  assert.equal(bottom.card, null);
-  assert.equal(bottom.cardId, null);
 
   game.free();
 });
@@ -139,6 +141,50 @@ test("the packaged Rust engine plays through browser actions", async () => {
   assert.ok(
     !afterKeep.actions.some((action) => action.label === "Keep this hand"),
   );
+  assert.ok(
+    afterKeep.events.every(
+      (event) =>
+        !event.includes("CardInstanceId") &&
+        !event.includes("active_player") &&
+        !event.includes("card #"),
+    ),
+    "the game log contains player-facing descriptions rather than engine diagnostics",
+  );
+
+  game.free();
+});
+
+test("auto-pass declines an unavailable Chain Lightning copy", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Goblins", "Goblins", "Handcrafted", true, 5);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Play Mountain").index);
+  state = JSON.parse(game.state_json());
+  game.act(
+    state.actions.find(
+      (action) => action.label === "Cast Goblins of the Flarg",
+    ).index,
+  );
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Pass priority").index);
+  state = JSON.parse(game.state_json());
+
+  assert.equal(state.turn, 2);
+  assert.equal(state.step, "Precombat Main");
+  assert.ok(
+    !state.actions.some((action) => action.label === "Don't copy Chain Lightning"),
+    "an impossible copy choice does not interrupt the player",
+  );
+  assert.ok(
+    state.events.some((event) => event.includes("Opponent cast Chain Lightning")),
+  );
+  assert.ok(state.events.some((event) => event === "Turn 2 · your turn"));
 
   game.free();
 });

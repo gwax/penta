@@ -544,8 +544,8 @@ impl WebGame {
             .events()
             .iter()
             .rev()
-            .take(12)
-            .map(|event| format!("{event:?}"))
+            .filter_map(|event| self.event_label(&observation, event))
+            .take(16)
             .collect::<Vec<_>>();
         let opponent_actions = if include_opponent_actions {
             self.opponent_actions.clone()
@@ -642,6 +642,81 @@ impl WebGame {
                     || format!("spell #{}", id.0),
                     |object| self.card_name(object.definition),
                 ),
+        }
+    }
+
+    fn player_name(&self, player: PlayerId) -> &'static str {
+        if player == self.human { "You" } else { "Opponent" }
+    }
+
+    fn event_label(&self, observation: &PlayerObservation, event: &GameEvent) -> Option<String> {
+        match event {
+            GameEvent::GameStarted { seed } => Some(format!("Game started · seed {seed}")),
+            GameEvent::CardDrawn { player, card } if *player == self.human => Some(format!(
+                "You drew {}",
+                self.instance_name(observation, *card)
+            )),
+            GameEvent::CardDrawn { .. } => Some("Opponent drew a card".into()),
+            GameEvent::LandPlayed { player, card } => Some(format!(
+                "{} played {}",
+                self.player_name(*player),
+                self.instance_name(observation, *card)
+            )),
+            GameEvent::SpellCast {
+                player,
+                card,
+                targets,
+            } => {
+                let mut label = format!(
+                    "{} cast {}",
+                    self.player_name(*player),
+                    self.instance_name(observation, *card)
+                );
+                if !targets.is_empty() {
+                    let target_names = targets
+                        .iter()
+                        .map(|target| self.target_name(observation, *target))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    let _ = write!(label, " → {target_names}");
+                }
+                Some(label)
+            }
+            GameEvent::AbilityActivated { player, source, .. } => Some(format!(
+                "{} activated {}",
+                self.player_name(*player),
+                self.instance_name(observation, *source)
+            )),
+            GameEvent::DamageDealt { player, amount } => Some(format!(
+                "{} took {amount} damage",
+                self.player_name(*player)
+            )),
+            GameEvent::ManaBurn { player, amount } => Some(format!(
+                "{} took {amount} mana burn",
+                self.player_name(*player)
+            )),
+            GameEvent::StepChanged {
+                turn,
+                active_player,
+                step: Step::PrecombatMain,
+            } => Some(format!(
+                "Turn {} · {} turn",
+                (turn + 1) / 2,
+                if *active_player == self.human {
+                    "your"
+                } else {
+                    "opponent’s"
+                }
+            )),
+            GameEvent::GameEnded { result } => Some(match result {
+                GameResult::Winner { winner, .. } if *winner == self.human => "You won".into(),
+                GameResult::Winner { .. } => "Opponent won".into(),
+                GameResult::Draw => "Game ended in a draw".into(),
+            }),
+            GameEvent::ManaAdded { .. }
+            | GameEvent::SpellResolved { .. }
+            | GameEvent::AbilityResolved { .. }
+            | GameEvent::StepChanged { .. } => None,
         }
     }
 
@@ -863,6 +938,29 @@ fn automatic_human_action_with_blockers(
     if !autopass_enabled {
         return None;
     }
+    let mut triggered_choices = actions.iter().filter(|action| {
+        matches!(
+            action,
+            Action::ChooseTriggeredAbility {
+                pay: false,
+                new_targets,
+            } if new_targets.is_empty()
+        )
+    });
+    if let Some(decline) = triggered_choices.next()
+        && triggered_choices.next().is_none()
+        && !actions.iter().any(|action| {
+            matches!(
+                action,
+                Action::ChooseTriggeredAbility {
+                    pay: true,
+                    ..
+                }
+            )
+        })
+    {
+        return Some(decline.clone());
+    }
     let has_attack_option = actions
         .iter()
         .any(|action| matches!(action, Action::DeclareAttacker { .. }));
@@ -1059,7 +1157,10 @@ fn action_target_stacks(action: &Action) -> Vec<u32> {
 fn should_animate_action(action: &Action) -> bool {
     !matches!(
         action,
-        Action::Concede
+        Action::KeepHand
+            | Action::TakeMulligan
+            | Action::BottomCards { .. }
+            | Action::Concede
             | Action::PassPriority
             | Action::ActivateManaAbility { .. }
             | Action::FinishDeclaringAttackers
@@ -1185,6 +1286,77 @@ mod tests {
             ),
             None
         );
+    }
+
+    #[test]
+    fn an_unpayable_triggered_option_auto_declines() {
+        let actions = [
+            Action::Concede,
+            Action::ChooseTriggeredAbility {
+                pay: false,
+                new_targets: Vec::new(),
+            },
+        ];
+
+        assert_eq!(
+            automatic_human_action(
+                Step::PrecombatMain,
+                false,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::ChooseTriggeredAbility {
+                pay: false,
+                new_targets: Vec::new(),
+            })
+        );
+    }
+
+    #[test]
+    fn a_payable_triggered_option_still_asks_the_player() {
+        let actions = [
+            Action::Concede,
+            Action::ChooseTriggeredAbility {
+                pay: false,
+                new_targets: Vec::new(),
+            },
+            Action::ChooseTriggeredAbility {
+                pay: true,
+                new_targets: vec![Target::Player(PlayerId::Two)],
+            },
+        ];
+
+        assert_eq!(
+            automatic_human_action(
+                Step::PrecombatMain,
+                false,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn pregame_choices_do_not_enter_the_animation_queue() {
+        assert!(!should_animate_action(&Action::KeepHand));
+        assert!(!should_animate_action(&Action::TakeMulligan));
+        assert!(!should_animate_action(&Action::BottomCards {
+            cards: vec![CardInstanceId(4)],
+        }));
+        assert!(should_animate_action(&Action::PlayLand {
+            card: CardInstanceId(4),
+        }));
     }
 
     #[test]

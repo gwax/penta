@@ -478,7 +478,7 @@ button {
   min-height: 64px;
   padding: 9px 10px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto auto;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   border: 1px solid var(--gold);
@@ -544,16 +544,6 @@ button {
   color: #746753;
   font-size: 11px;
   font-weight: 800;
-}
-
-.opponent-action button {
-  padding: 6px 7px;
-  border: 1px solid #9b8b70;
-  color: #5b4f3d;
-  background: transparent;
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
 }
 
 .opponent-action-combat .opponent-action-icon {
@@ -1028,11 +1018,16 @@ button {
 
 .phase-track li i {
   position: absolute;
-  top: 3px;
-  right: 4px;
-  color: #ef644d;
-  font-size: 8px;
+  top: 2px;
+  right: 3px;
+  padding: 1px 3px;
+  border-radius: 2px;
+  color: #fff2e9;
+  background: #b13d31;
+  font-size: 6px;
+  font-weight: 900;
   font-style: normal;
+  letter-spacing: 0.05em;
   text-shadow: 0 0 7px rgba(239, 100, 77, 0.8);
 }
 
@@ -1681,6 +1676,17 @@ button {
   text-decoration: underline;
 }
 
+.decision-heading .skip-opponent-queue {
+  padding: 7px 8px;
+  border: 1px solid rgba(220, 179, 94, 0.55);
+  color: #e3c880;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
 .action-list {
   min-height: 0;
   padding: 10px;
@@ -1773,8 +1779,9 @@ button {
   overflow: auto;
   border-top: 1px solid #39322b;
   color: #8f877a;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .game-log summary {
@@ -1792,7 +1799,7 @@ button {
 }
 
 .game-log li {
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 
 .engine-loading,

@@ -115,14 +115,6 @@ const turnPhases = [
 ];
 const opponentActionDurationMs = 3200;
 
-const cleanEvent = (event: string) =>
-  event
-    .replaceAll(/CardInstanceId\((\d+)\)/g, "card #$1")
-    .replaceAll(/CardDefinitionId\((\d+)\)/g, "definition #$1")
-    .replaceAll(/[{}]/g, "")
-    .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
-    .replaceAll(",", " ·");
-
 const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
 
 const initialSeed = () => {
@@ -1076,9 +1068,6 @@ export function GameClient() {
                     +{opponentActionQueue.length - 1}
                   </span>
                 )}
-                <button onClick={skipOpponentActions}>
-                  Skip
-                </button>
               </div>
             )}
 
@@ -1105,7 +1094,10 @@ export function GameClient() {
                 <strong>{state.active === "You" ? "Your turn" : "Opponent’s turn"}</strong>
                 <span>Turn {state.turn}</span>
               </div>
-              <ol className="phase-track" aria-label={`Current step: ${state.step}`}>
+              <ol
+                className="phase-track"
+                aria-label={`Current step: ${state.step}. Click a phase to set or remove a stop.`}
+              >
                 {turnPhases.map((phase) => {
                   const current = phase.steps.includes(state.step);
                   const stopped = state.phaseStops.includes(phase.label);
@@ -1122,7 +1114,7 @@ export function GameClient() {
                       >
                         <span>{phase.label}</span>
                         {current && <small>{state.step}</small>}
-                        {stopped && <i aria-label="Stop set">●</i>}
+                        {stopped && <i aria-label="Stop set">STOP</i>}
                       </button>
                     </li>
                   );
@@ -1227,7 +1219,11 @@ export function GameClient() {
                         : "Choose a card or pass"}
                 </strong>
               </div>
-              {selectedCard !== null && (
+              {watchingOpponent ? (
+                <button className="skip-opponent-queue" onClick={skipOpponentActions}>
+                  Skip animations
+                </button>
+              ) : selectedCard !== null && (
                 <button onClick={clearCardSelection}>
                   {choosingTarget || choosingFireballTargets || choosingSacrifice
                     ? "Cancel"
@@ -1367,7 +1363,7 @@ export function GameClient() {
               <summary>Game log</summary>
               <ol>
                 {state.events.map((event, index) => (
-                  <li key={`${event}-${index}`}>{cleanEvent(event)}</li>
+                  <li key={`${event}-${index}`}>{event}</li>
                 ))}
               </ol>
             </details>
