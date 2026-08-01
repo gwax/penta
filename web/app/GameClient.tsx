@@ -754,7 +754,7 @@ export function GameClient() {
         action.targetStackId != null,
     );
     if (untargeted.length > 1 || (untargeted.length > 0 && hasTargetedAction)) {
-      setSelectedCard(id);
+      setSelectedCard(null);
       setSelectedTargetCard(null);
       setSelectedTargetPlayer(null);
       setSelectedTargetStackId(null);
@@ -980,7 +980,12 @@ export function GameClient() {
                 </button>
               ))}
               {actionMenuHasTargets && (
-                <button onClick={() => setCardActionMenu(null)}>
+                <button
+                  onClick={() => {
+                    setSelectedCard(cardActionMenu);
+                    setCardActionMenu(null);
+                  }}
+                >
                   <strong>Choose a target on the battlefield</strong>
                   <i aria-hidden="true">→</i>
                 </button>
