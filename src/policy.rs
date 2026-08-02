@@ -4,7 +4,9 @@ use std::error::Error;
 use std::fmt;
 
 use crate::card::{CardBehavior, CardCatalog};
-use crate::game::{Game, GameResult, PlayerObservation, Step};
+use crate::game::{
+    DecisionObservation, DecisionPreference, Game, GameResult, PlayerObservation, Step,
+};
 use crate::{Action, ActionError, CardDefinitionId, CardInstanceId, PlayerId, Target};
 
 /// Chooses one of the actions in a player's current observation.
@@ -35,6 +37,34 @@ impl RandomPolicy {
 
 impl Policy for RandomPolicy {
     fn choose_action(&mut self, observation: &PlayerObservation) -> Option<Action> {
+        if let Some(decision) = observation.decision.as_ref() {
+            let mut options = decision
+                .options
+                .iter()
+                .map(|option| option.id)
+                .collect::<Vec<_>>();
+            if options.len() < decision.minimum {
+                return None;
+            }
+            for index in (1..options.len()).rev() {
+                let index_u64 = u64::try_from(index + 1).unwrap_or(u64::MAX);
+                let offset = usize::try_from(self.next_u64() % index_u64).unwrap_or(0);
+                options.swap(index, offset);
+            }
+            let count = if decision.minimum == decision.maximum {
+                decision.minimum
+            } else {
+                let span = decision.maximum - decision.minimum + 1;
+                let offset =
+                    usize::try_from(self.next_u64() % u64::try_from(span).unwrap_or(u64::MAX))
+                        .unwrap_or(0);
+                decision.minimum + offset
+            };
+            return Some(Action::ChooseDecision {
+                decision: decision.id,
+                options: options.into_iter().take(count).collect(),
+            });
+        }
         let choices: Vec<_> = observation
             .legal_actions
             .iter()
@@ -162,11 +192,22 @@ impl HandcraftedPolicy {
             ) => 90,
             Some(
                 CardBehavior::Island
+                | CardBehavior::Forest
+                | CardBehavior::Pendelhaven
                 | CardBehavior::Mountain
                 | CardBehavior::MishrasFactory
+                | CardBehavior::Badlands
+                | CardBehavior::Bayou
+                | CardBehavior::CityOfBrass
+                | CardBehavior::Plateau
                 | CardBehavior::Plains
+                | CardBehavior::Savannah
+                | CardBehavior::Scrubland
                 | CardBehavior::StripMine
+                | CardBehavior::Taiga
+                | CardBehavior::TropicalIsland
                 | CardBehavior::Tundra
+                | CardBehavior::UndergroundSea
                 | CardBehavior::VolcanicIsland,
             ) => 80,
             Some(CardBehavior::LightningBolt | CardBehavior::GoblinGrenade) => 75,
@@ -502,10 +543,22 @@ impl HandcraftedPolicy {
                             | CardBehavior::ManaVault
                             | CardBehavior::BlackLotus
                             | CardBehavior::Island
+                            | CardBehavior::Forest
+                            | CardBehavior::Pendelhaven
+                            | CardBehavior::Badlands
+                            | CardBehavior::Bayou
+                            | CardBehavior::CityOfBrass
+                            | CardBehavior::Plateau
                             | CardBehavior::Plains
+                            | CardBehavior::Savannah
+                            | CardBehavior::Scrubland
+                            | CardBehavior::Taiga
                             | CardBehavior::Tundra
+                            | CardBehavior::TropicalIsland
+                            | CardBehavior::UndergroundSea
                             | CardBehavior::VolcanicIsland
                             | CardBehavior::FellwarStone
+                            | CardBehavior::LlanowarElves
                     )
                 )
             })
@@ -578,29 +631,33 @@ impl HandcraftedPolicy {
                         .map(|definition| self.card_value(definition))
                         .sum::<i32>()
             }
-            Action::ChooseTriggeredAbility { pay, new_targets } => {
-                if *pay {
-                    7_000
-                        + new_targets
-                            .iter()
-                            .map(|target| Self::target_score(observation, *target))
-                            .sum::<i32>()
-                } else {
-                    6_000
+            Action::ChooseDecision { options, .. } => {
+                let selected_value = observation.decision.as_ref().map_or(0, |decision| {
+                    decision
+                        .options
+                        .iter()
+                        .filter(|option| options.contains(&option.id))
+                        .filter_map(|option| option.card)
+                        .map(|(_, definition)| self.card_value(definition))
+                        .sum::<i32>()
+                });
+                match observation
+                    .decision
+                    .as_ref()
+                    .map(|decision| decision.preference)
+                {
+                    Some(crate::DecisionPreference::HigherCardValue) => 8_000 + selected_value,
+                    Some(crate::DecisionPreference::LowerCardValue) => 8_000 - selected_value,
+                    Some(crate::DecisionPreference::Neutral) | None => 8_000,
                 }
             }
-            Action::ChooseCopyTargets { targets } => {
-                7_500
-                    + targets
-                        .iter()
-                        .map(|target| Self::target_score(observation, *target))
-                        .sum::<i32>()
-            }
+            Action::CancelDecision { .. } => -1_000,
             Action::ChooseUntap { permanents } => self.score_untap(observation, permanents),
             Action::PlayLand { card } => self.score_land(observation, *card),
             Action::ActivateManaAbility { source, .. } => {
                 self.mana_action_score(observation, *source)
             }
+            Action::PayLifeForMana => 5,
             Action::CastSpell {
                 card, targets, x, ..
             } => self.score_cast(observation, *card, targets, *x),
@@ -621,10 +678,38 @@ impl HandcraftedPolicy {
             Action::Concede => i32::MIN,
         }
     }
+
+    fn choose_decision(&self, decision: &DecisionObservation) -> Option<Action> {
+        if decision.options.len() < decision.minimum {
+            return None;
+        }
+        let mut options = decision.options.iter().collect::<Vec<_>>();
+        options.sort_by_key(|option| {
+            let value = option
+                .card
+                .map_or(0, |(_, definition)| self.card_value(definition));
+            match decision.preference {
+                DecisionPreference::HigherCardValue => -value,
+                DecisionPreference::LowerCardValue => value,
+                DecisionPreference::Neutral => 0,
+            }
+        });
+        Some(Action::ChooseDecision {
+            decision: decision.id,
+            options: options
+                .into_iter()
+                .take(decision.minimum)
+                .map(|option| option.id)
+                .collect(),
+        })
+    }
 }
 
 impl Policy for HandcraftedPolicy {
     fn choose_action(&mut self, observation: &PlayerObservation) -> Option<Action> {
+        if let Some(decision) = observation.decision.as_ref() {
+            return self.choose_decision(decision);
+        }
         let action = observation
             .legal_actions
             .iter()

@@ -10,7 +10,7 @@ test("The Deck exposes colored costs and control rules to the browser", async ()
   );
   await init({ module_or_path: bytes });
 
-  const game = new WebGame("The Deck", "The Deck", "Handcrafted", true, 0);
+  const game = new WebGame("The Deck", "The Deck", "Handcrafted", true, 3);
   const opening = JSON.parse(game.state_json());
   const swords = opening.human.hand.find(
     (card) => card.name === "Swords to Plowshares",
@@ -23,6 +23,32 @@ test("The Deck exposes colored costs and control rules to the browser", async ()
   assert.equal(serra.manaCost.white, 2);
   assert.equal(serra.power, 4);
   assert.equal(serra.toughness, 4);
+
+  game.free();
+});
+
+test("staged engine decisions are serialized as generic private choices", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("The Deck", "Goblins", "Random", true, 214);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Cast Black Lotus").index);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Cast Demonic Tutor").index);
+  state = JSON.parse(game.state_json());
+
+  assert.equal(state.decision.visibility, "Private");
+  assert.equal(state.decision.minimum, 1);
+  assert.equal(state.decision.maximum, 1);
+  assert.ok(state.decision.options.length > 40);
+  const choice = state.decision.options[0];
+  game.choose_decision(state.decision.id, JSON.stringify([choice.id]));
+  assert.equal(JSON.parse(game.state_json()).decision, null);
 
   game.free();
 });
@@ -539,7 +565,7 @@ test("X spells expose explicit affordable values to the browser", async () => {
   );
   await init({ module_or_path: bytes });
 
-  const game = new WebGame("The Deck", "Goblins", "Random", true, 0);
+  const game = new WebGame("The Deck", "Goblins", "Random", true, 654);
   let state = JSON.parse(game.state_json());
   game.act(state.actions.find((action) => action.label === "Keep this hand").index);
   state = JSON.parse(game.state_json());

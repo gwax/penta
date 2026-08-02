@@ -47,10 +47,18 @@ export default defineConfig(async () => {
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
+    // The generated WASM declarations are TypeScript-only and are not valid
+    // dependency-scan entry points. This app has a small, fixed dependency
+    // graph, so discovery adds noise without improving startup.
+    optimizeDeps: { noDiscovery: true },
     plugins: [
       vinext(),
       sites(),
       cloudflare({
+        // The local client does not need the Miniflare inspector. Disabling
+        // its extra listener keeps `pnpm dev` usable in locked-down sandboxes
+        // and leaves port 3000 as the only development server endpoint.
+        inspectorPort: false,
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         config: localBindingConfig,
       }),

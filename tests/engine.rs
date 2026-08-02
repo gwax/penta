@@ -418,6 +418,11 @@ fn all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
         ("Artifacts", osarena::poc::artifacts()),
         ("Robots", osarena::poc::robots()),
         ("The Deck", osarena::poc::the_deck()),
+        ("Mono Black", osarena::poc::mono_black()),
+        ("White Weenie", osarena::poc::white_weenie()),
+        ("Erhnamgeddon", osarena::poc::erhnamgeddon()),
+        ("Counterburn", osarena::poc::counterburn()),
+        ("Lions/Dib", osarena::poc::lions_dib()),
     ];
     for (first_name, first_deck) in &decks {
         for (second_name, second_deck) in &decks {
@@ -443,6 +448,17 @@ fn all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
 }
 
 fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {
+    if let Some(decision) = game.observe(player).decision {
+        return Some(Action::ChooseDecision {
+            decision: decision.id,
+            options: decision
+                .options
+                .iter()
+                .take(decision.minimum)
+                .map(|option| option.id)
+                .collect(),
+        });
+    }
     let actions = game.legal_actions(player);
     let choose = |predicate: &dyn Fn(&Action) -> bool| {
         actions.iter().find(|action| predicate(action)).cloned()
@@ -451,9 +467,6 @@ fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {
     choose(&|action| matches!(action, Action::KeepHand))
         .or_else(|| choose(&|action| matches!(action, Action::BottomCards { .. })))
         .or_else(|| choose(&|action| matches!(action, Action::DiscardCards { .. })))
-        .or_else(|| {
-            choose(&|action| matches!(action, Action::ChooseTriggeredAbility { pay: false, .. }))
-        })
         .or_else(|| {
             actions
                 .iter()
@@ -485,6 +498,5 @@ fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {
         .or_else(|| choose(&|action| matches!(action, Action::DeclareBlocker { .. })))
         .or_else(|| choose(&|action| matches!(action, Action::FinishDeclaringBlockers)))
         .or_else(|| choose(&|action| matches!(action, Action::AssignCombatDamage { .. })))
-        .or_else(|| choose(&|action| matches!(action, Action::ChooseCopyTargets { .. })))
         .or_else(|| choose(&|action| matches!(action, Action::PassPriority)))
 }

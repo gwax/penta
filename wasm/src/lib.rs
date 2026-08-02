@@ -103,8 +103,29 @@ impl WebGame {
             .get(action_index)
             .cloned()
             .ok_or_else(|| JsValue::from_str("unknown legal action"))?;
-        let mana_checkpoint = matches!(action, Action::ActivateManaAbility { .. })
-            .then(|| self.game.clone());
+        self.apply_human_action(action)
+    }
+
+    /// Submits the selected option IDs for the current generic decision.
+    ///
+    /// The selection is validated by the engine, so the browser does not need
+    /// to receive an eagerly-expanded action for every possible combination.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error when the game is not waiting for the human,
+    /// the JSON is malformed, or the engine rejects the selection.
+    pub fn choose_decision(&mut self, decision: u32, options_json: &str) -> Result<(), JsValue> {
+        if self.game.decision_player() != Some(self.human) {
+            return Err(JsValue::from_str("the game is not waiting for the human"));
+        }
+        let options: Vec<u32> = serde_json::from_str(options_json).map_err(js_error)?;
+        self.apply_human_action(Action::ChooseDecision { decision, options })
+    }
+
+    fn apply_human_action(&mut self, action: Action) -> Result<(), JsValue> {
+        let mana_checkpoint =
+            matches!(action, Action::ActivateManaAbility { .. }).then(|| self.game.clone());
         if mana_checkpoint.is_none() {
             self.mana_undo_history.clear();
         }
@@ -207,9 +228,7 @@ impl WebGame {
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
         for action in block_actions {
-            self.game
-                .apply(self.human, action)
-                .map_err(js_error)?;
+            self.game.apply(self.human, action).map_err(js_error)?;
         }
         self.game
             .apply(self.human, Action::FinishDeclaringBlockers)
@@ -235,8 +254,16 @@ impl WebGame {
 
     /// Enables or disables a human-interface stop for one displayed phase.
     /// The rules engine still exposes every individual step.
+    /// Sets or clears a UI phase stop.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if advancing the facade encounters an invalid engine action.
     pub fn set_phase_stop(&mut self, phase: &str, enabled: bool) -> Result<(), JsValue> {
-        if !matches!(phase, "Beginning" | "Main 1" | "Combat" | "Main 2" | "Ending") {
+        if !matches!(
+            phase,
+            "Beginning" | "Main 1" | "Combat" | "Main 2" | "Ending"
+        ) {
             return Err(JsValue::from_str("unknown displayed phase"));
         }
         self.phase_stops.retain(|candidate| candidate != phase);
@@ -249,6 +276,11 @@ impl WebGame {
     }
 
     /// Enables or disables the browser's smooth automatic priority yields.
+    /// Enables or disables routine UI priority passing.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if advancing the facade encounters an invalid engine action.
     pub fn set_autopass(&mut self, enabled: bool) -> Result<(), JsValue> {
         self.autopass_enabled = enabled;
         self.opponent_actions.clear();
@@ -274,28 +306,8 @@ impl WebGame {
             };
             let observation = self.game.observe(player);
             let action = if player == self.human {
-                let Some(action) = automatic_human_action_with_blockers(
-                    observation.step,
-                    observation.active_player == self.human,
-                    observation.stack.is_empty(),
-                    observation
-                        .battlefield
-                        .iter()
-                        .any(|permanent| permanent.attacking),
-                    observation
-                        .battlefield
-                        .iter()
-                        .any(|permanent| permanent.blocking.is_some()),
-                    self.should_stop(observation.step),
-                    self.autopass_enabled,
-                    !observation.stack.is_empty()
-                        && observation
-                            .stack
-                            .iter()
-                            .all(|object| object.controller == self.human),
-                    observation.mana_pools[self.human.index()].total() > 0,
-                    &observation.legal_actions,
-                ) else {
+                let automatic_action = self.automatic_human_action_for(&observation);
+                let Some(action) = automatic_action else {
                     self.finish_opponent_animation(&mut pending_animation);
                     return Ok(());
                 };
@@ -361,6 +373,44 @@ impl WebGame {
         ))
     }
 
+    fn automatic_human_action_for(&self, observation: &PlayerObservation) -> Option<Action> {
+        if self.autopass_enabled
+            && let Some(decision) = observation.decision.as_ref()
+            && decision.minimum == 1
+            && decision.maximum == 1
+            && decision.options.len() == 1
+        {
+            return Some(Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![decision.options[0].id],
+            });
+        }
+        automatic_human_action_for_context(
+            AutoPassContext {
+                step: observation.step,
+                human_is_active: observation.active_player == self.human,
+                stack_is_empty: observation.stack.is_empty(),
+                has_attacker: observation
+                    .battlefield
+                    .iter()
+                    .any(|permanent| permanent.attacking),
+                has_blocker: observation
+                    .battlefield
+                    .iter()
+                    .any(|permanent| permanent.blocking.is_some()),
+                stop_here: self.should_stop(observation.step),
+                autopass_enabled: self.autopass_enabled,
+                only_human_objects_on_stack: !observation.stack.is_empty()
+                    && observation
+                        .stack
+                        .iter()
+                        .all(|object| object.controller == self.human),
+                human_has_floating_mana: observation.mana_pools[self.human.index()].total() > 0,
+            },
+            &observation.legal_actions,
+        )
+    }
+
     fn finish_opponent_animation(&mut self, pending: &mut Option<Value>) {
         if let Some(mut animation) = pending.take() {
             animation["state"] = self.snapshot_value(false);
@@ -389,20 +439,10 @@ impl WebGame {
     }
 
     fn automatic_mana_sources(&self, action: &Action) -> Vec<u32> {
-        if !matches!(action, Action::CastSpell { .. } | Action::ActivateAbility { .. }) {
-            return Vec::new();
-        }
-        let mut preview = self.game.clone();
-        let event_start = preview.events().len();
-        if preview.apply(self.human, action.clone()).is_err() {
-            return Vec::new();
-        }
-        preview.events()[event_start..]
-            .iter()
-            .filter_map(|event| match event {
-                GameEvent::ManaAdded { player, source } if *player == self.human => Some(source.0),
-                _ => None,
-            })
+        self.game
+            .mana_sources_for_action(self.human, action)
+            .into_iter()
+            .map(|source| source.0)
             .collect()
     }
 
@@ -435,6 +475,15 @@ impl WebGame {
                     },
                     "paymentAction": matches!(action, Action::CastSpell { .. } | Action::ActivateAbility { .. }),
                     "manaSourceIds": self.automatic_mana_sources(action),
+                    "decisionId": match action {
+                        Action::ChooseDecision { decision, .. }
+                        | Action::CancelDecision { decision } => Some(*decision),
+                        _ => None,
+                    },
+                    "decisionOptionIds": match action {
+                        Action::ChooseDecision { options, .. } => options.clone(),
+                        _ => Vec::new(),
+                    },
                 })
             })
             .collect::<Vec<_>>();
@@ -552,6 +601,23 @@ impl WebGame {
         } else {
             Vec::new()
         };
+        let decision = observation.decision.as_ref().map(|decision| {
+            json!({
+                "id": decision.id,
+                "prompt": decision.prompt,
+                "minimum": decision.minimum,
+                "maximum": decision.maximum,
+                "cancellable": decision.cancellable,
+                "visibility": readable_debug(decision.visibility),
+                "options": decision.options.iter().map(|option| json!({
+                    "id": option.id,
+                    "label": option.label,
+                    "cardId": option.card.map(|(card, _)| card.0),
+                    "cardName": option.card.map(|(_, definition)| self.card_name(definition)),
+                    "zone": readable_debug(option.zone),
+                })).collect::<Vec<_>>(),
+            })
+        });
 
         json!({
             "turn": observation.active_turn,
@@ -590,6 +656,7 @@ impl WebGame {
             "battlefield": battlefield,
             "stack": stack,
             "actions": actions,
+            "decision": decision,
             "canUndoMana": !self.mana_undo_history.is_empty(),
             "phaseStops": self.phase_stops,
             "autopassEnabled": self.autopass_enabled,
@@ -646,7 +713,11 @@ impl WebGame {
     }
 
     fn player_name(&self, player: PlayerId) -> &'static str {
-        if player == self.human { "You" } else { "Opponent" }
+        if player == self.human {
+            "You"
+        } else {
+            "Opponent"
+        }
     }
 
     fn event_label(&self, observation: &PlayerObservation, event: &GameEvent) -> Option<String> {
@@ -701,7 +772,7 @@ impl WebGame {
                 step: Step::PrecombatMain,
             } => Some(format!(
                 "Turn {} · {} turn",
-                (turn + 1) / 2,
+                turn.div_ceil(2),
                 if *active_player == self.human {
                     "your"
                 } else {
@@ -748,34 +819,21 @@ impl WebGame {
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
-            Action::ChooseTriggeredAbility { pay, new_targets } => {
-                let chain_lightning = !new_targets.is_empty()
-                    || matches!(
-                        self.game.events().last(),
-                        Some(GameEvent::SpellResolved { card })
-                            if self.instance_name(observation, *card) == "Chain Lightning"
-                    );
-                if chain_lightning {
-                    if *pay {
-                        format!("Pay RR to copy Chain Lightning → {}", targets(new_targets))
-                    } else {
-                        "Don't copy Chain Lightning".into()
-                    }
-                } else if observation.step == Step::Upkeep {
-                    if *pay {
-                        "Pay 4 to untap Mana Vault".into()
-                    } else {
-                        "Leave Mana Vault tapped".into()
-                    }
-                } else if *pay {
-                    "Pay 1 to gain 1 life with Iron Star".into()
-                } else {
-                    "Don't use Iron Star".into()
-                }
+            Action::ChooseDecision { options, .. } => {
+                let labels = observation
+                    .decision
+                    .as_ref()
+                    .map_or_else(Vec::new, |decision| {
+                        decision
+                            .options
+                            .iter()
+                            .filter(|option| options.contains(&option.id))
+                            .map(|option| option.label.clone())
+                            .collect::<Vec<_>>()
+                    });
+                labels.join(", ")
             }
-            Action::ChooseCopyTargets { targets: values } => {
-                format!("Copy → {}", targets(values))
-            }
+            Action::CancelDecision { .. } => "Cancel".into(),
             Action::ChooseUntap { permanents } => format!(
                 "Untap {}",
                 permanents
@@ -795,6 +853,7 @@ impl WebGame {
                     readable_debug(*color)
                 )
             }
+            Action::PayLifeForMana => "Pay 1 life for 1 colorless mana".into(),
             Action::CastSpell {
                 card,
                 targets: values,
@@ -883,17 +942,16 @@ impl WebGame {
         }
     }
 
-    fn opponent_action_label(
-        &self,
-        observation: &PlayerObservation,
-        action: &Action,
-    ) -> String {
+    fn opponent_action_label(&self, observation: &PlayerObservation, action: &Action) -> String {
         match action {
             Action::BottomCards { cards } => format!(
                 "Bottom {} {}",
                 cards.len(),
                 if cards.len() == 1 { "card" } else { "cards" }
             ),
+            Action::ChooseDecision { .. } if observation.decision.is_none() => {
+                "Opponent made a private choice".into()
+            }
             _ => self.action_label(observation, action),
         }
     }
@@ -906,6 +964,16 @@ fn deck_by_name(name: &str) -> Result<osarena::Deck, JsValue> {
         "artifacts" => Ok(poc::artifacts()),
         "robots" => Ok(poc::robots()),
         "the deck" => Ok(poc::the_deck()),
+        "mono black" => Ok(poc::mono_black()),
+        "white weenie" => Ok(poc::white_weenie()),
+        "erhnamgeddon" => Ok(poc::erhnamgeddon()),
+        "counterburn" => Ok(poc::counterburn()),
+        "lions/dib" | "lions dib" => Ok(poc::lions_dib()),
+        "bwr aggro" => Ok(poc::bwr_aggro()),
+        "gr aggro" => Ok(poc::gr_aggro()),
+        "troll disk" => Ok(poc::troll_disk()),
+        "jeskai aggro" => Ok(poc::jeskai_aggro()),
+        "lion dib bolt" | "lions/dib bolt" | "lions dib bolt" => Ok(poc::lions_dib_bolt()),
         _ => Err(JsValue::from_str("unknown deck")),
     }
 }
@@ -923,7 +991,11 @@ fn action_kind(action: &Action) -> &'static str {
     }
 }
 
-fn automatic_human_action_with_blockers(
+#[derive(Clone, Copy)]
+// These flags are independent policy inputs, not a state machine; keeping
+// them named makes the Arena-style priority rules auditable at the call site.
+#[allow(clippy::struct_excessive_bools)]
+struct AutoPassContext {
     step: Step,
     human_is_active: bool,
     stack_is_empty: bool,
@@ -933,46 +1005,27 @@ fn automatic_human_action_with_blockers(
     autopass_enabled: bool,
     only_human_objects_on_stack: bool,
     human_has_floating_mana: bool,
+}
+
+fn automatic_human_action_for_context(
+    context: AutoPassContext,
     actions: &[Action],
 ) -> Option<Action> {
-    if !autopass_enabled {
+    if !context.autopass_enabled {
         return None;
-    }
-    let mut triggered_choices = actions.iter().filter(|action| {
-        matches!(
-            action,
-            Action::ChooseTriggeredAbility {
-                pay: false,
-                new_targets,
-            } if new_targets.is_empty()
-        )
-    });
-    if let Some(decline) = triggered_choices.next()
-        && triggered_choices.next().is_none()
-        && !actions.iter().any(|action| {
-            matches!(
-                action,
-                Action::ChooseTriggeredAbility {
-                    pay: true,
-                    ..
-                }
-            )
-        })
-    {
-        return Some(decline.clone());
     }
     let has_attack_option = actions
         .iter()
         .any(|action| matches!(action, Action::DeclareAttacker { .. }));
-    let empty_combat_after_attackers = !has_attacker
+    let empty_combat_after_attackers = !context.has_attacker
         && (matches!(
-            step,
+            context.step,
             Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
-        ) || (step == Step::DeclareAttackers && !has_attack_option));
-    if stop_here && !empty_combat_after_attackers {
+        ) || (context.step == Step::DeclareAttackers && !has_attack_option));
+    if context.stop_here && !empty_combat_after_attackers {
         return None;
     }
-    if only_human_objects_on_stack
+    if context.only_human_objects_on_stack
         && let Some(pass) = actions
             .iter()
             .find(|action| matches!(action, Action::PassPriority))
@@ -982,39 +1035,36 @@ fn automatic_human_action_with_blockers(
     // Never fast-forward through the human's entire turn. Even with no card
     // actions available, Main 1 is the stable point where the player can see
     // the draw and deliberately advance into combat.
-    if human_is_active && step == Step::PrecombatMain && stack_is_empty {
+    if context.human_is_active && context.step == Step::PrecombatMain && context.stack_is_empty {
         return None;
     }
     // Arena normally hides routine beginning-phase priority windows on either
     // turn. Stops restore them; floating mana in the end step is a
     // smart-priority case.
-    let routine_beginning_step = matches!(step, Step::Upkeep | Step::Draw);
-    let routine_own_turn_step = human_is_active
-        && (step == Step::BeginningOfCombat
-            || (step == Step::End && !human_has_floating_mana));
-    let smooth_unblocked_attack = human_is_active
-        && has_attacker
-        && !has_blocker
+    let routine_beginning_step = matches!(context.step, Step::Upkeep | Step::Draw);
+    let routine_own_turn_step = context.human_is_active
+        && (context.step == Step::BeginningOfCombat
+            || (context.step == Step::End && !context.human_has_floating_mana));
+    let smooth_unblocked_attack = context.human_is_active
+        && context.has_attacker
+        && !context.has_blocker
         && matches!(
-            step,
-            Step::DeclareAttackers
-                | Step::DeclareBlockers
-                | Step::CombatDamage
-                | Step::EndOfCombat
+            context.step,
+            Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
         );
     let auto_yield_step = routine_beginning_step
         || routine_own_turn_step
         || smooth_unblocked_attack
-        || (!has_attacker
+        || (!context.has_attacker
             && matches!(
-                step,
+                context.step,
                 Step::DeclareAttackers
                     | Step::DeclareBlockers
                     | Step::CombatDamage
                     | Step::EndOfCombat
             ));
     if auto_yield_step
-        && stack_is_empty
+        && context.stack_is_empty
         && let Some(pass) = actions
             .iter()
             .find(|action| matches!(action, Action::PassPriority))
@@ -1048,6 +1098,7 @@ fn automatic_human_action_with_blockers(
 }
 
 #[cfg(test)]
+#[allow(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
 fn automatic_human_action(
     step: Step,
     human_is_active: bool,
@@ -1059,16 +1110,48 @@ fn automatic_human_action(
     human_has_floating_mana: bool,
     actions: &[Action],
 ) -> Option<Action> {
-    automatic_human_action_with_blockers(
-        step,
-        human_is_active,
-        stack_is_empty,
-        has_attacker,
-        false,
-        stop_here,
-        autopass_enabled,
-        only_human_objects_on_stack,
-        human_has_floating_mana,
+    automatic_human_action_for_context(
+        AutoPassContext {
+            step,
+            human_is_active,
+            stack_is_empty,
+            has_attacker,
+            has_blocker: false,
+            stop_here,
+            autopass_enabled,
+            only_human_objects_on_stack,
+            human_has_floating_mana,
+        },
+        actions,
+    )
+}
+
+#[cfg(test)]
+#[allow(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
+fn automatic_human_action_with_blockers(
+    step: Step,
+    human_is_active: bool,
+    stack_is_empty: bool,
+    has_attacker: bool,
+    has_blocker: bool,
+    stop_here: bool,
+    autopass_enabled: bool,
+    only_human_objects_on_stack: bool,
+    human_has_floating_mana: bool,
+    actions: &[Action],
+) -> Option<Action> {
+    automatic_human_action_for_context(
+        AutoPassContext {
+            step,
+            human_is_active,
+            stack_is_empty,
+            has_attacker,
+            has_blocker,
+            stop_here,
+            autopass_enabled,
+            only_human_objects_on_stack,
+            human_has_floating_mana,
+        },
         actions,
     )
 }
@@ -1091,24 +1174,34 @@ fn action_target_card(action: &Action) -> Option<CardInstanceId> {
     if let Action::DeclareBlocker { attacker, .. } = action {
         return Some(*attacker);
     }
-    action_targets(action).iter().find_map(|target| match target {
+    action_targets(action)
+        .iter()
+        .find_map(|target| match target {
             Target::Permanent(id) => Some(*id),
             Target::Player(_) | Target::Spell(_) => None,
         })
 }
 
 fn action_target_player(action: &Action, human: PlayerId) -> Option<&'static str> {
-    action_targets(action).iter().find_map(|target| match target {
-        Target::Player(player) => Some(if *player == human { "human" } else { "opponent" }),
-        Target::Permanent(_) | Target::Spell(_) => None,
-    })
+    action_targets(action)
+        .iter()
+        .find_map(|target| match target {
+            Target::Player(player) => Some(if *player == human {
+                "human"
+            } else {
+                "opponent"
+            }),
+            Target::Permanent(_) | Target::Spell(_) => None,
+        })
 }
 
 fn action_target_stack(action: &Action) -> Option<u32> {
-    action_targets(action).iter().find_map(|target| match target {
-        Target::Spell(id) => Some(id.0),
-        Target::Player(_) | Target::Permanent(_) => None,
-    })
+    action_targets(action)
+        .iter()
+        .find_map(|target| match target {
+            Target::Spell(id) => Some(id.0),
+            Target::Player(_) | Target::Permanent(_) => None,
+        })
 }
 
 fn action_targets(action: &Action) -> &[Target] {
@@ -1136,9 +1229,11 @@ fn action_target_players(action: &Action, human: PlayerId) -> Vec<&'static str> 
     action_targets(action)
         .iter()
         .filter_map(|target| match target {
-            Target::Player(player) => {
-                Some(if *player == human { "human" } else { "opponent" })
-            }
+            Target::Player(player) => Some(if *player == human {
+                "human"
+            } else {
+                "opponent"
+            }),
             Target::Permanent(_) | Target::Spell(_) => None,
         })
         .collect()
@@ -1180,12 +1275,13 @@ fn animated_action_kind(action: &Action) -> &'static str {
         | Action::TakeMulligan
         | Action::BottomCards { .. }
         | Action::DiscardCards { .. }
-        | Action::ChooseTriggeredAbility { .. }
-        | Action::ChooseCopyTargets { .. }
+        | Action::ChooseDecision { .. }
+        | Action::CancelDecision { .. }
         | Action::ChooseUntap { .. } => "choice",
         Action::Concede
         | Action::PassPriority
         | Action::ActivateManaAbility { .. }
+        | Action::PayLifeForMana
         | Action::FinishDeclaringAttackers
         | Action::FinishDeclaringBlockers => "quiet",
     }
@@ -1276,65 +1372,6 @@ mod tests {
             automatic_human_action(
                 Step::PrecombatMain,
                 true,
-                true,
-                false,
-                false,
-                true,
-                false,
-                false,
-                &actions,
-            ),
-            None
-        );
-    }
-
-    #[test]
-    fn an_unpayable_triggered_option_auto_declines() {
-        let actions = [
-            Action::Concede,
-            Action::ChooseTriggeredAbility {
-                pay: false,
-                new_targets: Vec::new(),
-            },
-        ];
-
-        assert_eq!(
-            automatic_human_action(
-                Step::PrecombatMain,
-                false,
-                true,
-                false,
-                false,
-                true,
-                false,
-                false,
-                &actions,
-            ),
-            Some(Action::ChooseTriggeredAbility {
-                pay: false,
-                new_targets: Vec::new(),
-            })
-        );
-    }
-
-    #[test]
-    fn a_payable_triggered_option_still_asks_the_player() {
-        let actions = [
-            Action::Concede,
-            Action::ChooseTriggeredAbility {
-                pay: false,
-                new_targets: Vec::new(),
-            },
-            Action::ChooseTriggeredAbility {
-                pay: true,
-                new_targets: vec![Target::Player(PlayerId::Two)],
-            },
-        ];
-
-        assert_eq!(
-            automatic_human_action(
-                Step::PrecombatMain,
-                false,
                 true,
                 false,
                 false,

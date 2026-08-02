@@ -59,13 +59,21 @@ The engine currently supports:
 - colored and colorless mana, generic and variable-X costs, and mana burn
 - multi-target spells, copy retargeting, activated and triggered choices, and
   restricted untaps
-- functional behavior metadata and execution for all 57 catalog cards
-- fixed 60-card `Goblins`, `Sligh`, `Artifacts`, `Robots`, and `The Deck` decks
-  with 15-card sideboards
+- staged public/private decisions with bounded multi-selection, cancellation,
+  bot preferences, and continuations across costs and effect resolution
+- functional behavior metadata for all 107 catalog cards, with engine support
+  for the shared mana, removal, discard, draw, tutor, and global-effect package
+- ten fixed 60-card archetype decks with 15-card sideboards
 - a small bot API with seeded random and card-aware handcrafted policies
 
 The event log is intentionally omniscient and must not be passed directly to a
 bot; bots consume `PlayerObservation`.
+
+Complex choices are represented by `DecisionObservation`. The engine exposes
+the prompt, visibility, selectable objects, selection bounds, and legal
+`ChooseDecision` actions without exposing private options to the other player.
+Recall, Balance, Demonic Tutor, Time Vault, and Sylvan Library all use this
+shared path.
 
 The POC is playable end to end, but it is not yet a general implementation of
 the Comprehensive Rules. Fireball supports its multi-target additional cost
@@ -78,8 +86,7 @@ support for cards outside the POC.
 
 ## Built-in decks
 
-The proof of concept contains four powered red EC archetypes and one
-five-color control deck:
+The proof of concept contains sixteen powered EC archetypes:
 
 - `poc::goblins()` is a tribal aggro deck built around Goblin King, Goblin
   Grenade, Goblin Balloon Brigade, and Goblins of the Flarg.
@@ -90,8 +97,26 @@ five-color control deck:
 - `poc::robots()` uses Mana Vault to accelerate Juggernaut, Su-Chi, and
   Triskelion, backed by Atog and red removal.
 - `poc::the_deck()` is the format's namesake control strategy: Counterspell,
-  Swords to Plowshares, Disenchant, Jayemdae Tome, and Serra Angel, backed by
-  dual lands and restricted blue power.
+  Mana Drain, Swords to Plowshares, Balance, Demonic Tutor, Jayemdae Tome, and
+  the format's restricted card-draw suite.
+- `poc::mono_black()` combines Dark Ritual, Hypnotic Specter, Hymn to Tourach,
+  Sinkhole, and Juzam Djinn.
+- `poc::white_weenie()` curves Savannah Lions and Icatian Javelineers into
+  Crusade and Armageddon.
+- `poc::erhnamgeddon()` pairs Birds of Paradise and Erhnam Djinn with white
+  removal and Armageddon.
+- `poc::counterburn()` is blue-red tempo with Serendib Efreet, permission,
+  Psionic Blast, and burn.
+- `poc::lions_dib()` is the blue-white Savannah Lions/Serendib Efreet tempo
+  shell.
+- `poc::bwr_aggro()` is a black-white-red knight and burn aggro shell.
+- `poc::gr_aggro()` is a green-red creature deck built around Kird Ape,
+  Argothian Pixies, mana Elves, and pump spells.
+- `poc::troll_disk()` is black-red Sedge Troll control with Nevinyrral's Disk
+  and land destruction.
+- `poc::jeskai_aggro()` is a blue-white-red tempo deck with burn and
+  permission.
+- `poc::lions_dib_bolt()` is the Lion/Dib shell with a dedicated Bolt package.
 
 Their cores are based on the [TC Decks Goblins aggregate][goblins-data], the
 [Wak-Wak Sligh archetype guide][sligh-guide], a representative
@@ -99,10 +124,9 @@ Their cores are based on the [TC Decks Goblins aggregate][goblins-data], the
 aggregate][robots-data]. The Robots list stays mono-red for this implementation
 slice while preserving the archetype's fast-mana and large-artifact core.
 The control shell follows the recurring core in the [TC Decks The Deck
-aggregate][the-deck-data]. Its many historical one-of tutor and recursion
-packages are the next natural expansion rather than being approximated here.
+aggregate][the-deck-data].
 
-All five use some combination of Mishra's Factory, Strip Mine, Black Lotus,
+The decks use some combination of Mishra's Factory, Strip Mine, Black Lotus,
 Mox Ruby, Wheel of Fortune, Chaos Orb, and Sol Ring. The artifact deck also
 uses the off-color Moxen; every Mox now produces its printed color.
 
@@ -112,9 +136,12 @@ against the chosen permanent. The activation uses the stack, and removing the
 Orb before resolution nullifies the flip. This keeps seeded games reproducible
 and makes the format playable without modeling a human motor skill.
 
-This corpus is intentionally based on cards in an actual archetype rather than
-all legal red cards. A card joins the implementation target when a deck we
-want to simulate requires it.
+The expanded corpus now includes the recurring top-table cards that make those
+decks distinct: Copy Artifact, Tetravus, Icy Manipulator, Relic Barrier, The
+Abyss, Sedge Troll, Stone Rain, Kird Ape, Scryb Sprites, Llanowar Elves, Giant
+Growth, Berserk, Pendelhaven, Moat, Wrath of God, Dust to Dust, Hurkyl's
+Recall, Energy Flux, and City in a Bottle. It is still intentionally based on
+cards in actual archetypes rather than every card legal in the format.
 
 ## Bot policies
 
@@ -133,7 +160,7 @@ Run the reproducible, seat-swapped sanity gauntlet with:
 cargo run --release --bin policy_sanity
 ```
 
-The gauntlet uses mirror matches for all five built-in decks, isolating policy
+The gauntlet uses mirror matches for all ten built-in decks, isolating policy
 quality from deck strength.
 
 Run the broader rules audit with:
@@ -155,8 +182,9 @@ when doing a longer soak run, for example
 The `web/` application runs the same Rust engine in the browser through the
 small `wasm/` adapter. Generated bindings live under `web/app/wasm` so Vite can
 bundle the module and its binary together. The browser submits an index from
-the engine's current legal-action list; it never reconstructs or mutates game
-rules in TypeScript.
+the engine's current legal-action list for ordinary actions. Generic decisions
+submit a decision ID and option IDs through the same WASM facade; the browser
+never reconstructs or mutates game rules in TypeScript.
 
 Build fresh browser bindings after changing the Rust API:
 

@@ -36,12 +36,12 @@ pub enum Action {
     DiscardCards {
         cards: Vec<CardInstanceId>,
     },
-    ChooseTriggeredAbility {
-        pay: bool,
-        new_targets: Vec<Target>,
+    ChooseDecision {
+        decision: u32,
+        options: Vec<u32>,
     },
-    ChooseCopyTargets {
-        targets: Vec<Target>,
+    CancelDecision {
+        decision: u32,
     },
     ChooseUntap {
         permanents: Vec<CardInstanceId>,
@@ -54,6 +54,7 @@ pub enum Action {
         source: CardInstanceId,
         color: ManaColor,
     },
+    PayLifeForMana,
     CastSpell {
         card: CardInstanceId,
         targets: Vec<Target>,

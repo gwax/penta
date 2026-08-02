@@ -28,6 +28,7 @@ fn policy_observation(
         exiles: [Vec::new(), Vec::new()],
         battlefield,
         stack: Vec::new(),
+        decision: None,
         result: None,
         legal_actions,
     }

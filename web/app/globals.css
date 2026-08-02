@@ -1502,6 +1502,62 @@ button {
   line-height: 1.3;
 }
 
+.engine-decision {
+  display: grid;
+  gap: 10px;
+}
+
+.decision-options {
+  display: grid;
+  gap: 7px;
+  max-height: min(42vh, 360px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.decision-options button,
+.finalize-decision,
+.cancel-decision {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: rgba(245, 235, 207, 0.07);
+  color: #f5eedf;
+  text-align: left;
+}
+
+.decision-options button:hover,
+.decision-options button:focus-visible {
+  border-color: rgba(212, 170, 93, 0.72);
+  background: rgba(245, 235, 207, 0.13);
+}
+
+.decision-options button.is-selected {
+  border-color: var(--gold);
+  box-shadow: inset 4px 0 0 var(--gold);
+}
+
+.decision-options small,
+.finalize-decision small {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.finalize-decision {
+  border-color: var(--red);
+}
+
+.cancel-decision {
+  justify-content: center;
+  background: transparent;
+}
+
 .block-controls {
   display: grid;
   gap: 10px;

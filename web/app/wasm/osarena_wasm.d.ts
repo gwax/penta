@@ -27,6 +27,18 @@ export class WebGame {
      */
     attack_all(): void;
     /**
+     * Submits the selected option IDs for the current generic decision.
+     *
+     * The selection is validated by the engine, so the browser does not need
+     * to receive an eagerly-expanded action for every possible combination.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error when the game is not waiting for the human,
+     * the JSON is malformed, or the engine rejects the selection.
+     */
+    choose_decision(decision: number, options_json: string): void;
+    /**
      * Commits a complete set of blocker assignments selected by the browser UI.
      *
      * Assignments are encoded as JSON pairs of `[blocker_id, attacker_id]` so
@@ -49,11 +61,21 @@ export class WebGame {
     constructor(human_deck: string, bot_deck: string, bot_policy: string, human_first: boolean, seed: number);
     /**
      * Enables or disables the browser's smooth automatic priority yields.
+     * Enables or disables routine UI priority passing.
+     *
+     * # Errors
+     *
+     * Returns an error if advancing the facade encounters an invalid engine action.
      */
     set_autopass(enabled: boolean): void;
     /**
      * Enables or disables a human-interface stop for one displayed phase.
      * The rules engine still exposes every individual step.
+     * Sets or clears a UI phase stop.
+     *
+     * # Errors
+     *
+     * Returns an error if advancing the facade encounters an invalid engine action.
      */
     set_phase_stop(phase: string, enabled: boolean): void;
     /**
@@ -77,6 +99,7 @@ export interface InitOutput {
     readonly __wbg_webgame_free: (a: number, b: number) => void;
     readonly webgame_act: (a: number, b: number) => [number, number];
     readonly webgame_attack_all: (a: number) => [number, number];
+    readonly webgame_choose_decision: (a: number, b: number, c: number, d: number) => [number, number];
     readonly webgame_finalize_blocks: (a: number, b: number, c: number) => [number, number];
     readonly webgame_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number, number];
     readonly webgame_set_autopass: (a: number, b: number) => [number, number];

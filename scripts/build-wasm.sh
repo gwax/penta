@@ -2,13 +2,17 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+output_dir="${WASM_OUT_DIR:-$repo_root/web/app/wasm}"
+
+cd "$repo_root"
 
 cargo build \
-  --manifest-path "$repo_root/wasm/Cargo.toml" \
+  --package osarena-wasm \
   --target wasm32-unknown-unknown \
-  --release
+  --release \
+  --locked
 
 wasm-bindgen \
-  "$repo_root/wasm/target/wasm32-unknown-unknown/release/osarena_wasm.wasm" \
-  --out-dir "$repo_root/web/app/wasm" \
+  "$repo_root/target/wasm32-unknown-unknown/release/osarena_wasm.wasm" \
+  --out-dir "$output_dir" \
   --target web

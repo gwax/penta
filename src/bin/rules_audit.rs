@@ -27,6 +27,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         ("Artifacts", poc::artifacts()),
         ("Robots", poc::robots()),
         ("The Deck", poc::the_deck()),
+        ("Mono Black", poc::mono_black()),
+        ("White Weenie", poc::white_weenie()),
+        ("Erhnamgeddon", poc::erhnamgeddon()),
+        ("Counterburn", poc::counterburn()),
+        ("Lions/Dib", poc::lions_dib()),
+        ("BWR Aggro", poc::bwr_aggro()),
+        ("GR Aggro", poc::gr_aggro()),
+        ("Troll Disk", poc::troll_disk()),
+        ("Jeskai Aggro", poc::jeskai_aggro()),
+        ("Lion Dib Bolt", poc::lions_dib_bolt()),
     ];
     let mut totals = AuditTotals::default();
 
@@ -130,7 +140,7 @@ fn audit_game(
                  action {action_count}: policy returned no action"
             )
         })?;
-        if !observation.legal_actions.contains(&action) {
+        if !game.is_legal_action(player, &action) {
             return Err(format!(
                 "{first_deck} vs {second_deck}, seed {seed}, {policies}, \
                  action {action_count}: policy chose illegal action {action:?}"

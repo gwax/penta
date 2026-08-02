@@ -5,7 +5,10 @@
 `Game` is the authoritative state machine. Consumers do not mutate zones,
 life, mana, priority, or the stack. They ask for `legal_actions(player)` and
 submit one of those values to `apply(player, action)`. `apply` checks legality
-again so stale bot decisions fail without changing state.
+again so stale bot decisions fail without changing state. For a generic
+`DecisionObservation`, `legal_actions` returns a compact `ChooseDecision`
+marker; callers select option IDs from the observation and use
+`is_legal_action`/`apply` for validation without expanding every combination.
 
 Bots receive `PlayerObservation`, which contains that player's hand and only
 counts for an opponent's hidden zones. `GameEvent` is an omniscient debugging
@@ -48,10 +51,12 @@ Mana abilities resolve immediately and do not use the stack. Spell actions
 consider both floating mana and usable untapped mana sources. Applying a spell
 action deterministically activates only the additional sources needed to pay
 its cost, preferring colorless sources for generic costs and avoiding excess
-production where possible. Explicit mana actions remain legal for callers that
-intentionally want to float mana. Chaos Orb's non-mana activated ability uses
-the stack and is identified separately from spells in `StackObservation`; its
-chosen permanent is exposed as a choice rather than a target.
+production where possible. The read-only `mana_sources_for_action` helper
+exposes that payment preview to UI clients without cloning a complete game
+state. Explicit mana actions remain legal for callers that intentionally want
+to float mana. Chaos Orb's non-mana activated ability uses the stack and is
+identified separately from spells in `StackObservation`; its chosen permanent
+is exposed as a choice rather than a target.
 
 Attacker and blocker declaration are staged to keep legal-action generation
 linear rather than enumerating exponential subsets. No player receives
@@ -93,8 +98,8 @@ large bespoke function per printed card.
 
 The format is Eternal Central 93/94: current Magic rules plus the EC
 exceptions, notably phase-boundary mana burn. The POC implements London
-mulligans, priority-bearing turn steps, cleanup, combat, five fixed powered
-decks, and its 57-card corpus.
+mulligans, priority-bearing turn steps, cleanup, combat, sixteen fixed powered
+decks, and its 128-card corpus.
 
 It deliberately remains narrower than the full Comprehensive Rules. Fireball
 and Fork expose their full targeting decisions, and attackers expose current

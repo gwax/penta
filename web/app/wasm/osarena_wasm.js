@@ -45,6 +45,27 @@ export class WebGame {
         }
     }
     /**
+     * Submits the selected option IDs for the current generic decision.
+     *
+     * The selection is validated by the engine, so the browser does not need
+     * to receive an eagerly-expanded action for every possible combination.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error when the game is not waiting for the human,
+     * the JSON is malformed, or the engine rejects the selection.
+     * @param {number} decision
+     * @param {string} options_json
+     */
+    choose_decision(decision, options_json) {
+        const ptr0 = passStringToWasm0(options_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.webgame_choose_decision(this.__wbg_ptr, decision, ptr0, len0);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
+        }
+    }
+    /**
      * Commits a complete set of blocker assignments selected by the browser UI.
      *
      * Assignments are encoded as JSON pairs of `[blocker_id, attacker_id]` so
@@ -94,6 +115,11 @@ export class WebGame {
     }
     /**
      * Enables or disables the browser's smooth automatic priority yields.
+     * Enables or disables routine UI priority passing.
+     *
+     * # Errors
+     *
+     * Returns an error if advancing the facade encounters an invalid engine action.
      * @param {boolean} enabled
      */
     set_autopass(enabled) {
@@ -105,6 +131,11 @@ export class WebGame {
     /**
      * Enables or disables a human-interface stop for one displayed phase.
      * The rules engine still exposes every individual step.
+     * Sets or clears a UI phase stop.
+     *
+     * # Errors
+     *
+     * Returns an error if advancing the facade encounters an invalid engine action.
      * @param {string} phase
      * @param {boolean} enabled
      */

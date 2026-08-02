@@ -2,118 +2,26 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import initWasm, { WebGame as RustWebGame } from "./wasm/osarena_wasm.js";
-
-type Owner = "human" | "opponent";
-type Card = {
-  id: number;
-  name: string;
-  kind: string;
-  isLand?: boolean;
-  rulesText: string;
-  manaCost?: {
-    generic: number;
-    white: number;
-    blue: number;
-    black: number;
-    red: number;
-    green: number;
-    x: boolean;
-  } | null;
-  owner?: Owner;
-  tapped?: boolean;
-  power?: number | null;
-  toughness?: number | null;
-  damage?: number;
-  attacking?: boolean;
-  blocking?: number | null;
-  flying?: boolean;
-};
-type Action = {
-  index: number;
-  label: string;
-  kind: "primary" | "combat" | "pass" | "danger";
-  cardId?: number | null;
-  targetCardId?: number | null;
-  targetPlayer?: Owner | null;
-  targetStackId?: number | null;
-  targetCardIds?: number[];
-  targetPlayers?: Owner[];
-  targetStackIds?: number[];
-  targetCount?: number;
-  manaAbility?: boolean;
-  spellAction?: boolean;
-  x?: number | null;
-  paymentAction?: boolean;
-  manaSourceIds?: number[];
-};
-type OpponentAction = {
-  label: string;
-  kind: "land" | "spell" | "ability" | "combat" | "choice";
-  card?: string | null;
-  cardId?: number | null;
-  manaSources?: string[];
-  state: GameState;
-};
-type PlayerState = {
-  life: number;
-  library: number;
-  mana: {
-    white: number;
-    blue: number;
-    black: number;
-    red: number;
-    green: number;
-    colorless: number;
-  };
-  hand?: Card[];
-  handSize?: number;
-  graveyard: string[];
-};
-type GameState = {
-  turn: number;
-  step: string;
-  active: string;
-  priority: string;
-  human: PlayerState & { hand: Card[] };
-  opponent: PlayerState & { handSize: number };
-  battlefield: Card[];
-  stack: Array<{ id: number; name: string; owner: Owner; kind: string }>;
-  actions: Action[];
-  opponentActions?: OpponentAction[];
-  canUndoMana: boolean;
-  phaseStops: string[];
-  autopassEnabled: boolean;
-  result: null | { outcome: "win" | "loss" | "draw"; message: string };
-  events: string[];
-};
-const deckNotes: Record<string, string> = {
-  Goblins: "Tribal pressure · Grenade finish",
-  Sligh: "Clean curve · Burn reach",
-  Artifacts: "Fast mana · Atog engine",
-  Robots: "Fast mana · Heavy artifact creatures",
-  "The Deck": "Five-color control · Tome inevitability",
-};
-const defaultHumanDeck = "The Deck";
-const defaultBotDeck = "Goblins";
-
-const turnPhases = [
-  { label: "Beginning", steps: ["Upkeep", "Draw"] },
-  { label: "Main 1", steps: ["Precombat Main"] },
-  {
-    label: "Combat",
-    steps: [
-      "Beginning Of Combat",
-      "Declare Attackers",
-      "Declare Blockers",
-      "Combat Damage",
-      "End Of Combat",
-    ],
-  },
-  { label: "Main 2", steps: ["Postcombat Main"] },
-  { label: "Ending", steps: ["End", "Cleanup"] },
-];
-const opponentActionDurationMs = 3200;
+import {
+  createEngineGame,
+  initializeEngine,
+  readEngineState,
+  type EngineGame,
+} from "./engine-client";
+import type {
+  Action,
+  Card,
+  GameState,
+  OpponentAction,
+  Owner,
+} from "./game-types";
+import {
+  deckNotes,
+  defaultBotDeck,
+  defaultHumanDeck,
+  opponentActionDurationMs,
+  turnPhases,
+} from "./game-config";
 
 const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
 
@@ -144,7 +52,7 @@ const sameTargets = (left: string[], right: string[]) =>
   left.length === right.length && left.every((target) => right.includes(target));
 
 export function GameClient() {
-  const game = useRef<RustWebGame | null>(null);
+  const game = useRef<EngineGame | null>(null);
   const tableRef = useRef<HTMLElement | null>(null);
   const wasmReady = useRef(false);
   const finalStateAfterOpponentActions = useRef<GameState | null>(null);
@@ -172,6 +80,10 @@ export function GameClient() {
   const [cardActionMenu, setCardActionMenu] = useState<number | null>(null);
   const [pendingAction, setPendingAction] = useState<Action | null>(null);
   const [hoverPaymentAction, setHoverPaymentAction] = useState<Action | null>(null);
+  const [decisionSelectionState, setDecisionSelectionState] = useState<{
+    decisionId: number | null;
+    options: number[];
+  }>({ decisionId: null, options: [] });
   const pendingActionRef = useRef<Action | null>(null);
   const dragDropped = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -180,6 +92,11 @@ export function GameClient() {
   const [opponentActionQueue, setOpponentActionQueue] = useState<OpponentAction[]>([]);
   const currentOpponentAction = opponentActionQueue[0] ?? null;
   const watchingOpponent = currentOpponentAction !== null;
+
+  const decisionSelection =
+    state?.decision?.id === decisionSelectionState.decisionId
+      ? decisionSelectionState.options
+      : [];
 
   const presentSnapshot = useCallback((snapshot: GameState) => {
     const opponentActions = snapshot.opponentActions ?? [];
@@ -196,7 +113,7 @@ export function GameClient() {
 
   const refresh = useCallback(() => {
     if (!game.current) return;
-    const snapshot = JSON.parse(game.current.state_json()) as GameState;
+    const snapshot = readEngineState(game.current);
     presentSnapshot(snapshot);
     setSelectedCard(null);
     setSelectedTargetCard(null);
@@ -227,13 +144,13 @@ export function GameClient() {
         setOpponentActionQueue([]);
         finalStateAfterOpponentActions.current = null;
         game.current?.free();
-        game.current = new RustWebGame(
-          nextHumanDeck,
-          nextBotDeck,
-          nextPolicy,
-          nextHumanFirst,
-          nextSeed,
-        );
+        game.current = createEngineGame({
+          humanDeck: nextHumanDeck,
+          botDeck: nextBotDeck,
+          policy: nextPolicy,
+          humanFirst: nextHumanFirst,
+          seed: nextSeed,
+        });
         setError(null);
         refresh();
       } catch (cause) {
@@ -247,7 +164,7 @@ export function GameClient() {
     let alive = true;
     const load = async () => {
       try {
-        await initWasm();
+        await initializeEngine();
         if (!alive) return;
         const startingSeed = initialSeed();
         const startingHumanDeck = initialDeck();
@@ -259,14 +176,14 @@ export function GameClient() {
         setDraftHumanFirst(startingHumanFirst);
         wasmReady.current = true;
         setEngineReady(true);
-        game.current = new RustWebGame(
-          startingHumanDeck,
-          defaultBotDeck,
-          "Handcrafted",
-          startingHumanFirst,
-          startingSeed,
-        );
-        const snapshot = JSON.parse(game.current.state_json()) as GameState;
+        game.current = createEngineGame({
+          humanDeck: startingHumanDeck,
+          botDeck: defaultBotDeck,
+          policy: "Handcrafted",
+          humanFirst: startingHumanFirst,
+          seed: startingSeed,
+        });
+        const snapshot = readEngineState(game.current);
         presentSnapshot(snapshot);
       } catch (cause) {
         if (alive) setError(`Could not start the Rust engine: ${String(cause)}`);
@@ -325,6 +242,19 @@ export function GameClient() {
   const confirmPendingAction = () => {
     const action = pendingActionRef.current;
     if (action) act(action);
+  };
+
+  const submitDecision = (options: number[]) => {
+    if (!state?.decision) return;
+    try {
+      game.current?.choose_decision(
+        state.decision.id,
+        JSON.stringify(options),
+      );
+      refresh();
+    } catch (cause) {
+      setError(String(cause));
+    }
   };
 
   const togglePhaseStop = (phase: string, enabled: boolean) => {
@@ -458,6 +388,7 @@ export function GameClient() {
     );
     return state.actions.filter((action) => {
       if (action.kind === "danger") return false;
+      if (state.decision && action.decisionId === state.decision.id) return false;
       if (!actionMatchesSelectedX(action)) return false;
       if (declaringBlockers && action.kind === "combat") return false;
       if (declaringBlockers && action.label === "Finish blocking") return false;
@@ -480,6 +411,34 @@ export function GameClient() {
     state?.step === "Declare Attackers"
       ? state.actions.filter((action) => action.label.startsWith("Attack with ")).length
       : 0;
+  const cancelDecisionAction = state?.decision
+    ? state.actions.find(
+        (action) =>
+          action.decisionId === state.decision?.id && action.label === "Cancel",
+      )
+    : undefined;
+  const chooseDecisionOption = (optionId: number) => {
+    if (!state?.decision) return;
+    if (state.decision.minimum === 1 && state.decision.maximum === 1) {
+      submitDecision([optionId]);
+      return;
+    }
+    setDecisionSelectionState((current) => {
+      const selected =
+        current.decisionId === state.decision!.id ? current.options : [];
+      if (selected.includes(optionId)) {
+        return {
+          decisionId: state.decision!.id,
+          options: selected.filter((candidate) => candidate !== optionId),
+        };
+      }
+      if (selected.length >= state.decision!.maximum) return current;
+      return {
+        decisionId: state.decision!.id,
+        options: [...selected, optionId],
+      };
+    });
+  };
 
   const opponentPermanents =
     state?.battlefield.filter((card) => card.owner === "opponent") ?? [];
@@ -1232,6 +1191,56 @@ export function GameClient() {
               )}
             </div>
             <div className="action-list">
+              {state.decision && (
+                <div className="engine-decision" role="group" aria-label={state.decision.prompt}>
+                  <div className="target-prompt" role="status">
+                    <strong>{state.decision.prompt}</strong>
+                    <span>
+                      {state.decision.minimum === state.decision.maximum
+                        ? `Choose ${state.decision.minimum}`
+                        : `Choose ${state.decision.minimum}–${state.decision.maximum}`}
+                      {state.decision.visibility === "Private" ? " · Private" : ""}
+                    </span>
+                  </div>
+                  <div className="decision-options">
+                    {state.decision.options.map((option) => (
+                      <button
+                        key={option.id}
+                        className={decisionSelection.includes(option.id) ? "is-selected" : ""}
+                        onClick={() => chooseDecisionOption(option.id)}
+                        disabled={watchingOpponent}
+                      >
+                        <strong>{option.label}</strong>
+                        {option.zone !== "None" && <small>{option.zone}</small>}
+                      </button>
+                    ))}
+                  </div>
+                  {state.decision.maximum > 1 && (
+                    <button
+                      className="finalize-decision"
+                      disabled={
+                        decisionSelection.length < state.decision.minimum ||
+                        watchingOpponent
+                      }
+                      onClick={() => submitDecision(decisionSelection)}
+                    >
+                      <strong>Confirm selection</strong>
+                      <small>
+                        {decisionSelection.length} / {state.decision.maximum} selected
+                      </small>
+                    </button>
+                  )}
+                  {cancelDecisionAction && (
+                    <button
+                      className="cancel-decision"
+                      onClick={() => prepareAction(cancelDecisionAction)}
+                      disabled={watchingOpponent}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              )}
               {attackAllCount > 0 && (
                 <button className="attack-all" onClick={attackAll} disabled={watchingOpponent}>
                   <span aria-hidden="true">⚔</span>
