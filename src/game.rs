@@ -1349,8 +1349,11 @@ impl Game {
                 }
             }
             DecisionContinuation::ManaVault { player, permanent } => {
-                if options.contains(&1) {
-                    let cost = ManaCost::new(4, 0);
+                let cost = ManaCost::new(4, 0);
+                // Multiple tapped Mana Vaults queue their upkeep decisions at
+                // once.  Paying for an earlier vault can make a later
+                // decision's previously-offered payment option stale.
+                if options.contains(&1) && self.can_pay_cost(player, cost, 0) {
                     self.activate_mana_for_cost(player, cost, 0);
                     pay_cost(&mut self.players[player.index()].mana_pool, cost, 0);
                     if let Some(vault) = self
@@ -5318,6 +5321,51 @@ mod tests {
                 .unwrap()
                 .tapped
         );
+    }
+
+    #[test]
+    fn multiple_mana_vault_upkeep_choices_do_not_reuse_stale_mana() {
+        let mut game = ready_game();
+        for id in 10_000..10_002 {
+            let mut vault = creature(id, cards::MANA_VAULT, PlayerId::One);
+            vault.tapped = true;
+            game.battlefield.push(vault);
+        }
+        for id in 10_002..10_006 {
+            game.battlefield
+                .push(creature(id, cards::MOUNTAIN, PlayerId::One));
+        }
+        game.step = Step::Upkeep;
+
+        game.handle_upkeep_triggers();
+        let first = game.observe(PlayerId::One).decision.unwrap();
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: first.id,
+                options: vec![1],
+            },
+        )
+        .unwrap();
+
+        let second = game.observe(PlayerId::One).decision.unwrap();
+        assert_eq!(second.prompt, "Mana Vault would remain tapped");
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: second.id,
+                options: vec![1],
+            },
+        )
+        .unwrap();
+
+        let vaults: Vec<_> = game
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::MANA_VAULT)
+            .map(|permanent| permanent.tapped)
+            .collect();
+        assert_eq!(vaults, vec![false, true]);
     }
 
     #[test]
