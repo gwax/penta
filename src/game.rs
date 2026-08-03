@@ -317,6 +317,10 @@ pub enum GameEvent {
         player: PlayerId,
         card: CardInstanceId,
     },
+    CardsDiscarded {
+        player: PlayerId,
+        cards: Vec<(CardInstanceId, CardDefinitionId)>,
+    },
     LandPlayed {
         player: PlayerId,
         card: CardInstanceId,
@@ -386,6 +390,7 @@ pub struct PermanentObservation {
     pub blocking: Option<CardInstanceId>,
     pub flying: bool,
     pub can_attack: bool,
+    pub entered_this_turn: bool,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -864,6 +869,8 @@ impl Game {
                     blocking: permanent.blocking,
                     flying: self.has_flying(permanent),
                     can_attack: self.can_attack(permanent),
+                    entered_this_turn: self.turns_started[permanent.controller.index()]
+                        == permanent.entered_controller_turn,
                 })
                 .collect(),
             stack: self
@@ -1748,7 +1755,9 @@ impl Game {
             CardBehavior::SwordsToPlowshares => self
                 .battlefield
                 .iter()
-                .filter(|permanent| self.power(permanent).is_some())
+                .filter(|permanent| {
+                    self.power(permanent).is_some() && !self.is_protected_from(permanent, behavior)
+                })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
             CardBehavior::Terror => self
@@ -2734,10 +2743,9 @@ impl Game {
             }
             CardBehavior::SwordsToPlowshares => {
                 if let Some(Target::Permanent(target)) = object.targets.first()
-                    && let Some(index) = self
-                        .battlefield
-                        .iter()
-                        .position(|permanent| permanent.card.id == *target)
+                    && let Some(index) = self.battlefield.iter().position(|permanent| {
+                        permanent.card.id == *target && !self.is_protected_from(permanent, behavior)
+                    })
                 {
                     let controller = self.battlefield[index].controller;
                     let life = self.power(&self.battlefield[index]).unwrap_or(0).max(0);
@@ -2838,10 +2846,20 @@ impl Game {
 
     fn discard_random(&mut self, player: PlayerId, count: u16) {
         self.rng.shuffle(&mut self.players[player.index()].hand);
-        for _ in 0..usize::from(count).min(self.players[player.index()].hand.len()) {
+        let hand_count = u16::try_from(self.players[player.index()].hand.len()).unwrap_or(u16::MAX);
+        let discard_count = count.min(hand_count);
+        let mut discarded = Vec::with_capacity(usize::from(discard_count));
+        for _ in 0..usize::from(discard_count) {
             if let Some(card) = self.players[player.index()].hand.pop() {
+                discarded.push((card.id, card.definition));
                 self.players[player.index()].graveyard.push(card);
             }
+        }
+        if !discarded.is_empty() {
+            self.events.push(GameEvent::CardsDiscarded {
+                player,
+                cards: discarded,
+            });
         }
     }
 
@@ -3060,6 +3078,31 @@ impl Game {
                 .copied_behavior
                 .or_else(|| self.behavior(permanent.card.definition))
         }
+    }
+
+    fn is_protected_from(&self, permanent: &Permanent, source: CardBehavior) -> bool {
+        match self.effective_behavior(permanent) {
+            Some(CardBehavior::BlackKnight | CardBehavior::OrderOfTheEbonHand)
+                if source.is_white() =>
+            {
+                true
+            }
+            Some(CardBehavior::OrderOfLeitbur | CardBehavior::WhiteKnight) if source.is_black() => {
+                true
+            }
+            _ => false,
+        }
+    }
+
+    fn combat_is_protected(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
+        let Some(blocker_behavior) = self.effective_behavior(blocker) else {
+            return false;
+        };
+        let Some(attacker_behavior) = self.effective_behavior(attacker) else {
+            return false;
+        };
+        self.is_protected_from(blocker, attacker_behavior)
+            || self.is_protected_from(attacker, blocker_behavior)
     }
 
     fn mana_colors(&self, permanent: &Permanent) -> Vec<ManaColor> {
@@ -4122,6 +4165,11 @@ impl Game {
                 attackers
                     .iter()
                     .filter_map(move |(attacker, flying, unblockable, power)| {
+                        let attacker_permanent = self
+                            .battlefield
+                            .iter()
+                            .find(|permanent| permanent.card.id == *attacker)
+                            .expect("attacker is on the battlefield");
                         let pixies = self
                             .battlefield
                             .iter()
@@ -4133,7 +4181,8 @@ impl Game {
                         let can_block = !(*unblockable
                             || *flying && !blocker_flying
                             || ironclaw && *power >= 2
-                            || pixies && self.is_artifact_permanent(blocker_permanent));
+                            || pixies && self.is_artifact_permanent(blocker_permanent)
+                            || self.combat_is_protected(blocker_permanent, attacker_permanent));
                         can_block.then_some(Action::DeclareBlocker {
                             blocker,
                             attacker: *attacker,
@@ -5721,6 +5770,47 @@ mod tests {
     }
 
     #[test]
+    fn swords_cannot_target_order_of_the_ebon_hand() {
+        let mut game = ready_game();
+        let order = creature(10_000, cards::ORDER_OF_THE_EBON_HAND, PlayerId::Two);
+        let order_id = order.card.id;
+        game.battlefield.push(order);
+        let swords = card(10_001, cards::SWORDS_TO_PLOWSHARES, PlayerId::One);
+        game.players[0].hand.push(swords.clone());
+        game.players[0].mana_pool.white = 1;
+
+        let swords_action = Action::CastSpell {
+            card: swords.id,
+            targets: vec![Target::Permanent(order_id)],
+            sacrifices: Vec::new(),
+            x: 0,
+        };
+        assert!(!game.legal_actions(PlayerId::One).contains(&swords_action));
+    }
+
+    #[test]
+    fn protection_from_white_prevents_white_blockers() {
+        let mut game = ready_game();
+        let mut order = creature(10_000, cards::ORDER_OF_THE_EBON_HAND, PlayerId::One);
+        order.attacking = true;
+        let lion = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
+        game.battlefield = vec![order, lion];
+        game.step = Step::DeclareBlockers;
+        game.active_player = PlayerId::One;
+        game.attackers_declared = true;
+        game.blockers_declared = false;
+
+        assert!(
+            !game
+                .legal_actions(PlayerId::Two)
+                .contains(&Action::DeclareBlocker {
+                    blocker: CardInstanceId(10_001),
+                    attacker: CardInstanceId(10_000),
+                })
+        );
+    }
+
+    #[test]
     fn ancestral_recall_draws_three_and_time_walk_queues_an_extra_turn() {
         let mut game = ready_game();
         let ancestral = card(10_000, cards::ANCESTRAL_RECALL, PlayerId::One);
@@ -6214,6 +6304,30 @@ mod tests {
         );
         pass_priority_pair(&mut game);
         assert_eq!(game.players[1].life, 15);
+    }
+
+    #[test]
+    fn hypnotic_specter_discards_after_dealing_combat_damage() {
+        let mut game = ready_game();
+        let mut specter = creature(10_000, cards::HYPNOTIC_SPECTER, PlayerId::One);
+        specter.attacking = true;
+        game.battlefield.push(specter);
+        game.players[1]
+            .hand
+            .push(card(10_001, cards::MOUNTAIN, PlayerId::Two));
+
+        game.deal_combat_damage();
+
+        assert_eq!(game.players[1].life, 18);
+        assert!(game.players[1].hand.is_empty());
+        assert_eq!(game.players[1].graveyard.len(), 1);
+        assert!(game.events().iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::CardsDiscarded { player: PlayerId::Two, cards }
+                    if cards.len() == 1 && cards[0].1 == cards::MOUNTAIN
+            )
+        }));
     }
 
     #[test]

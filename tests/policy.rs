@@ -53,6 +53,7 @@ fn permanent(
         blocking: None,
         flying: false,
         can_attack: false,
+        entered_this_turn: false,
     }
 }
 

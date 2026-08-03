@@ -24,6 +24,7 @@ export type Card = {
   blocking?: number | null;
   flying?: boolean;
   canAttack?: boolean;
+  enteredThisTurn?: boolean;
 };
 
 export type Action = {

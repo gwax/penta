@@ -527,6 +527,7 @@ impl WebGame {
                     "blocking": permanent.blocking.map(|id| id.0),
                     "flying": permanent.flying,
                     "canAttack": permanent.can_attack,
+                    "enteredThisTurn": permanent.entered_this_turn,
                 })
             })
             .collect::<Vec<_>>();
@@ -730,6 +731,15 @@ impl WebGame {
                 self.instance_name(observation, *card)
             )),
             GameEvent::CardDrawn { .. } => Some("Opponent drew a card".into()),
+            GameEvent::CardsDiscarded { player, cards } => Some(format!(
+                "{} discarded {} at random",
+                self.player_name(*player),
+                cards
+                    .iter()
+                    .map(|(_, definition)| self.card_name(*definition))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )),
             GameEvent::LandPlayed { player, card } => Some(format!(
                 "{} played {}",
                 self.player_name(*player),
@@ -1077,6 +1087,19 @@ fn automatic_human_action_for_context(
     if context.human_is_active && context.step == Step::PrecombatMain && context.stack_is_empty {
         return None;
     }
+    let has_meaningful_choice = actions.iter().any(|action| {
+        !matches!(
+            action,
+            Action::Concede
+                | Action::PassPriority
+                | Action::ActivateManaAbility { .. }
+                | Action::FinishDeclaringAttackers
+                | Action::FinishDeclaringBlockers
+        )
+    });
+    let has_combat_ability = actions
+        .iter()
+        .any(|action| matches!(action, Action::ActivateAbility { .. }));
     // Arena normally hides routine beginning-phase priority windows on either
     // turn. Stops restore them; floating mana in the end step is a
     // smart-priority case.
@@ -1102,7 +1125,12 @@ fn automatic_human_action_for_context(
                     | Step::CombatDamage
                     | Step::EndOfCombat
             ));
+    let combat_step = matches!(
+        context.step,
+        Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
+    );
     if auto_yield_step
+        && (!combat_step || !context.has_attacker || !has_combat_ability)
         && context.stack_is_empty
         && let Some(pass) = actions
             .iter()
@@ -1110,16 +1138,6 @@ fn automatic_human_action_for_context(
     {
         return Some(pass.clone());
     }
-    let has_meaningful_choice = actions.iter().any(|action| {
-        !matches!(
-            action,
-            Action::Concede
-                | Action::PassPriority
-                | Action::ActivateManaAbility { .. }
-                | Action::FinishDeclaringAttackers
-                | Action::FinishDeclaringBlockers
-        )
-    });
     if has_meaningful_choice {
         return None;
     }
@@ -1593,6 +1611,32 @@ mod tests {
             Some(Action::PassPriority),
             "an unblocked attack runs through combat damage without extra clicks",
         );
+
+        let actions_with_factory_pump = [
+            Action::Concede,
+            Action::ActivateAbility {
+                source: CardInstanceId(8),
+                target: Some(Target::Permanent(CardInstanceId(9))),
+                sacrifice: None,
+            },
+            Action::PassPriority,
+        ];
+        assert_eq!(
+            automatic_human_action(
+                Step::CombatDamage,
+                true,
+                true,
+                true,
+                false,
+                true,
+                false,
+                false,
+                &actions_with_factory_pump,
+            ),
+            None,
+            "a pump ability keeps priority during an unblocked attack",
+        );
+
         assert_eq!(
             automatic_human_action_with_blockers(
                 Step::DeclareBlockers,

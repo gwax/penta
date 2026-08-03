@@ -35,9 +35,17 @@ const initialSeed = () => {
   return randomSeed();
 };
 
-const initialDeck = () => {
+const initialDeckPair = () => {
   const requested = new URLSearchParams(window.location.search).get("deck");
-  return requested && requested in deckNotes ? requested : defaultHumanDeck;
+  const deckNames = Object.keys(deckNotes);
+  const humanDeck = requested && requested in deckNotes
+    ? requested
+    : deckNames[randomSeed() % deckNames.length];
+  let botDeck = deckNames[randomSeed() % deckNames.length];
+  while (botDeck === humanDeck) {
+    botDeck = deckNames[randomSeed() % deckNames.length];
+  }
+  return { humanDeck, botDeck };
 };
 
 const initialHumanFirst = () =>
@@ -182,18 +190,22 @@ export function GameClient() {
         await initializeEngine();
         if (!alive) return;
         const startingSeed = initialSeed();
-        const startingHumanDeck = initialDeck();
+        const startingDecks = initialDeckPair();
+        const startingHumanDeck = startingDecks.humanDeck;
+        const startingBotDeck = startingDecks.botDeck;
         const startingHumanFirst = initialHumanFirst();
         setSeed(startingSeed);
         setHumanDeck(startingHumanDeck);
         setDraftHumanDeck(startingHumanDeck);
+        setBotDeck(startingBotDeck);
+        setDraftBotDeck(startingBotDeck);
         setHumanFirst(startingHumanFirst);
         setDraftHumanFirst(startingHumanFirst);
         wasmReady.current = true;
         setEngineReady(true);
         game.current = createEngineGame({
           humanDeck: startingHumanDeck,
-          botDeck: defaultBotDeck,
+          botDeck: startingBotDeck,
           policy: "Handcrafted",
           humanFirst: startingHumanFirst,
           seed: startingSeed,
@@ -1812,6 +1824,7 @@ function groupCardsIntoPiles(cards: Card[]) {
       card.attacking ? "attacking" : "idle",
       card.blocking ?? "",
       card.damage ?? 0,
+      card.enteredThisTurn ? "entered" : "old",
     ].join(":");
     const pile = piles.get(key) ?? [];
     pile.push(card);
@@ -2075,6 +2088,7 @@ function GameCard({
     card.attacking ? "Attacking" : null,
     card.flying ? "Flying" : null,
     card.damage ? `${card.damage} damage marked` : null,
+    card.enteredThisTurn ? "Played this turn." : null,
   ].filter(Boolean);
 
   const showPreview = (element: HTMLButtonElement) => {
