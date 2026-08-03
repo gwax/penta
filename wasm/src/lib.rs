@@ -1,5 +1,5 @@
-use osarena::poc;
-use osarena::{
+use penta::poc;
+use penta::{
     Action, CardCatalog, CardDefinitionId, CardInstanceId, Game, GameEvent, GameResult,
     HandcraftedPolicy, PlayerId, PlayerObservation, Policy, RandomPolicy, Step, Target,
 };
@@ -494,7 +494,7 @@ impl WebGame {
                 let card = self.catalog.get(permanent.definition);
                 let mana_cost = card.map(|card| card.behavior.mana_cost());
                 let current_kind = card.map_or("unknown".into(), |card| {
-                    if card.behavior == osarena::CardBehavior::MishrasFactory
+                    if card.behavior == penta::CardBehavior::MishrasFactory
                         && permanent.power.is_some()
                     {
                         "artifactcreature".into()
@@ -506,7 +506,7 @@ impl WebGame {
                     "id": permanent.id.0,
                     "name": self.card_name(permanent.definition),
                     "kind": current_kind,
-                    "isLand": card.is_some_and(|card| card.behavior.kind() == osarena::CardKind::Land),
+                    "isLand": card.is_some_and(|card| card.behavior.kind() == penta::CardKind::Land),
                     "manaCost": mana_cost.map(|cost| json!({
                         "generic": cost.generic,
                         "white": cost.white,
@@ -541,7 +541,7 @@ impl WebGame {
                     "kind": card.map_or("unknown".into(), |card| {
                         format!("{:?}", card.behavior.kind()).to_ascii_lowercase()
                     }),
-                    "isLand": card.is_some_and(|card| card.behavior.kind() == osarena::CardKind::Land),
+                    "isLand": card.is_some_and(|card| card.behavior.kind() == penta::CardKind::Land),
                     "manaCost": mana_cost.map(|cost| json!({
                         "generic": cost.generic,
                         "white": cost.white,
@@ -758,6 +758,33 @@ impl WebGame {
                 self.player_name(*player),
                 self.instance_name(observation, *source)
             )),
+            GameEvent::AttackDeclared { player, attackers } => Some(format!(
+                "{} attacked with {}",
+                self.player_name(*player),
+                attackers
+                    .iter()
+                    .map(|attacker| self.instance_name(observation, *attacker))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )),
+            GameEvent::BlockDeclared {
+                player,
+                assignments,
+            } => Some(format!(
+                "{} blocked {}",
+                self.player_name(*player),
+                assignments
+                    .iter()
+                    .map(|(blocker, attacker)| {
+                        format!(
+                            "{} with {}",
+                            self.instance_name(observation, *attacker),
+                            self.instance_name(observation, *blocker)
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )),
             GameEvent::DamageDealt { player, amount } => Some(format!(
                 "{} took {amount} damage",
                 self.player_name(*player)
@@ -957,7 +984,7 @@ impl WebGame {
     }
 }
 
-fn deck_by_name(name: &str) -> Result<osarena::Deck, JsValue> {
+fn deck_by_name(name: &str) -> Result<penta::Deck, JsValue> {
     match name.to_ascii_lowercase().as_str() {
         "goblins" => Ok(poc::goblins()),
         "sligh" => Ok(poc::sligh()),
@@ -1322,7 +1349,7 @@ mod tests {
             Action::Concede,
             Action::ActivateManaAbility {
                 source: CardInstanceId(7),
-                color: osarena::ManaColor::Red,
+                color: penta::ManaColor::Red,
             },
             Action::PassPriority,
         ];

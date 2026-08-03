@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use std::error::Error;
 
-use osarena::poc;
-use osarena::{Game, HandcraftedPolicy, PlayerId, PlayerObservation, Policy, RandomPolicy};
+use penta::poc;
+use penta::{Game, HandcraftedPolicy, PlayerId, PlayerObservation, Policy, RandomPolicy};
 
 const DEFAULT_SEEDS: u64 = 100;
 const ACTION_LIMIT: usize = 50_000;

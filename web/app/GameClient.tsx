@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   createEngineGame,
@@ -45,10 +45,19 @@ const initialHumanFirst = () =>
 
 const cardTargetKey = (id: number) => `card:${id}`;
 const playerTargetKey = (owner: Owner) => `player:${owner}`;
-const actionTargetKeys = (action: Action) => [
+const actionTargetKeys = (action: Action) => Array.from(new Set([
+  ...(action.targetCardId != null ? [cardTargetKey(action.targetCardId)] : []),
   ...(action.targetCardIds ?? []).map(cardTargetKey),
+  ...(action.targetPlayer != null ? [playerTargetKey(action.targetPlayer)] : []),
   ...(action.targetPlayers ?? []).map(playerTargetKey),
-];
+  ...(action.targetStackId != null ? [`stack:${action.targetStackId}`] : []),
+  ...(action.targetStackIds ?? []).map((id) => `stack:${id}`),
+]));
+const hasActionTargets = (action: Action) => actionTargetKeys(action).length > 0;
+const singleTargetKey = (action: Action) => {
+  const targets = actionTargetKeys(action);
+  return targets.length === 1 ? targets[0] : null;
+};
 const sameTargets = (left: string[], right: string[]) =>
   left.length === right.length && left.every((target) => right.includes(target));
 
@@ -79,7 +88,10 @@ export function GameClient() {
   const [selectedBlocker, setSelectedBlocker] = useState<number | null>(null);
   const [blockAssignments, setBlockAssignments] = useState<Record<number, number>>({});
   const [cardActionMenu, setCardActionMenu] = useState<number | null>(null);
+  const [gameLogOpen, setGameLogOpen] = useState(true);
   const [pendingAction, setPendingAction] = useState<Action | null>(null);
+  const [draggingCardId, setDraggingCardId] = useState<number | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [hoverPaymentAction, setHoverPaymentAction] = useState<Action | null>(null);
   const [decisionSelectionState, setDecisionSelectionState] = useState<{
     decisionId: number | null;
@@ -127,6 +139,8 @@ export function GameClient() {
     setBlockAssignments({});
     setCardActionMenu(null);
     setPendingAction(null);
+    setDraggingCardId(null);
+    setDragOverTarget(null);
     setHoverPaymentAction(null);
     pendingActionRef.current = null;
   }, [presentSnapshot]);
@@ -305,15 +319,26 @@ export function GameClient() {
 
   const beginCardDrag = (id: number) => {
     const matching = state?.actions.filter((action) => action.cardId === id) ?? [];
+    const targeted = matching.filter(
+      (action) =>
+        (action.spellAction || (declaringBlockers && action.kind === "combat")) &&
+        !action.manaAbility &&
+        singleTargetKey(action) !== null,
+    );
     const playable = matching.filter(
       (action) =>
         !action.manaAbility &&
-        action.targetCardId == null &&
-        action.targetPlayer == null &&
-        action.targetStackId == null,
+        !hasActionTargets(action),
     );
     dragDropped.current = false;
-    if (playable.length === 1) {
+    if (
+      targeted.length > 0 &&
+      playable.length === 0 &&
+      new Set(targeted.map((action) => action.x ?? null)).size === 1
+    ) {
+      setDraggingCardId(id);
+      setDragOverTarget(null);
+    } else if (playable.length === 1) {
       setPendingAction(playable[0]);
       pendingActionRef.current = playable[0];
     } else if (playable.length > 1) {
@@ -323,6 +348,9 @@ export function GameClient() {
 
   const finishCardDrag = () => {
     if (!dragDropped.current) cancelPendingAction();
+    setDraggingCardId(null);
+    setDragOverTarget(null);
+    dragDropped.current = false;
   };
 
   const previewPaymentForCard = (id: number) => {
@@ -376,7 +404,7 @@ export function GameClient() {
         : [...current, target],
     );
   };
-  const panelActions = useMemo(() => {
+  const panelActions = (() => {
     if (!state) return [];
     const sourceActions = state.actions.filter(
       (action) => action.cardId === selectedCard && actionMatchesSelectedX(action),
@@ -406,7 +434,7 @@ export function GameClient() {
       }
       return !sourceHasTargets && sourceActions.length > 1;
     });
-  }, [actionMatchesSelectedX, declaringBlockers, selectedCard, selectedTargetCard, selectedTargetPlayer, selectedTargetStackId, state]);
+  })();
   const dangerActions = state?.actions.filter((action) => action.kind === "danger") ?? [];
   const attackAllCount =
     state?.step === "Declare Attackers"
@@ -457,22 +485,71 @@ export function GameClient() {
               actionMatchesSelectedX(action)) ||
             (action.cardId === selectedBlocker && action.targetCardId === id),
         ).length ?? 0;
+  const dragTargetActionsForCard = (id: number) =>
+    state?.actions.filter(
+      (action) =>
+        action.cardId === id &&
+        (action.spellAction || (declaringBlockers && action.kind === "combat")) &&
+        !action.manaAbility &&
+        singleTargetKey(action) !== null,
+    ) ?? [];
+  const draggingTargetActions = draggingCardId === null
+    ? []
+    : dragTargetActionsForCard(draggingCardId);
+  const canDragTarget = (target: string) =>
+    draggingCardId !== null &&
+    draggingTargetActions.some((action) => actionTargetKeys(action).includes(target));
+  const handleTargetDragOver = (target: string) => {
+    if (canDragTarget(target)) setDragOverTarget(target);
+  };
+  const handleTargetDragLeave = (target: string) => {
+    setDragOverTarget((current) => (current === target ? null : current));
+  };
+  const handleTargetDrop = (target: string) => {
+    if (!canDragTarget(target)) return;
+    const action = draggingTargetActions.find((candidate) =>
+      actionTargetKeys(candidate).includes(target),
+    );
+    if (!action) return;
+    dragDropped.current = true;
+    setDraggingCardId(null);
+    setDragOverTarget(null);
+    if (declaringBlockers && action.kind === "combat" && action.targetCardId != null) {
+      setBlockAssignments((current) => ({
+        ...current,
+        [action.cardId as number]: action.targetCardId as number,
+      }));
+      setSelectedBlocker(null);
+      return;
+    }
+    prepareAction(action);
+  };
   const cardIsDraggable = (id: number) => {
-    if (watchingOpponent || !state?.human.hand.some((card) => card.id === id)) return false;
+    if (watchingOpponent) return false;
+    if (
+      declaringBlockers &&
+      state?.battlefield.some((card) => card.owner === "human" && card.id === id) &&
+      dragTargetActionsForCard(id).length > 0
+    ) {
+      return true;
+    }
+    if (!state?.human.hand.some((card) => card.id === id)) return false;
     const directActions = state.actions.filter(
       (action) =>
         action.cardId === id &&
         !action.manaAbility &&
-        action.targetCardId == null &&
-        action.targetPlayer == null &&
-        action.targetStackId == null,
+        !hasActionTargets(action),
     );
-    return directActions.length === 1;
+    const targetedActions = dragTargetActionsForCard(id);
+    const hasSingleXValue = new Set(targetedActions.map((action) => action.x ?? null)).size <= 1;
+    return (directActions.length === 1 && targetedActions.length === 0) ||
+      (directActions.length === 0 && targetedActions.length > 0 && hasSingleXValue);
   };
 
   const isTargetable = (id: number) =>
     !watchingOpponent &&
-    ((choosingFireballTargets && canChooseFireballTarget(cardTargetKey(id))) ||
+    (canDragTarget(cardTargetKey(id)) ||
+      (choosingFireballTargets && canChooseFireballTarget(cardTargetKey(id))) ||
       (declaringBlockers &&
       selectedBlocker !== null &&
       (state?.actions.some(
@@ -489,8 +566,9 @@ export function GameClient() {
 
   const isPlayerTargetable = (owner: Owner) =>
     !watchingOpponent &&
-    selectedCard !== null &&
-    ((choosingFireballTargets && canChooseFireballTarget(playerTargetKey(owner))) ||
+    (draggingCardId !== null || selectedCard !== null) &&
+    (canDragTarget(playerTargetKey(owner)) ||
+      (choosingFireballTargets && canChooseFireballTarget(playerTargetKey(owner))) ||
       (state?.actions.some(
         (action) =>
           action.cardId === selectedCard &&
@@ -500,13 +578,14 @@ export function GameClient() {
 
   const isStackTargetable = (id: number) =>
     !watchingOpponent &&
-    selectedCard !== null &&
-    (state?.actions.some(
-      (action) =>
-        action.cardId === selectedCard &&
-        action.targetStackId === id &&
-        actionMatchesSelectedX(action),
-    ) ?? false);
+    (draggingCardId !== null || selectedCard !== null) &&
+    (canDragTarget(`stack:${id}`) ||
+      (state?.actions.some(
+        (action) =>
+          action.cardId === selectedCard &&
+          action.targetStackId === id &&
+          actionMatchesSelectedX(action),
+      ) ?? false));
 
   const selectedSource = state?.battlefield
     .concat(state.human.hand)
@@ -781,9 +860,9 @@ export function GameClient() {
     <main className="arena">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark" aria-hidden="true">OS</span>
+          <span className="brand-mark" aria-hidden="true">P</span>
           <div>
-            <strong>ARENA</strong>
+            <strong>PENTA</strong>
             <small>OLD SCHOOL · 93/94</small>
           </div>
         </div>
@@ -992,8 +1071,14 @@ export function GameClient() {
               player={state.opponent}
               opponent
               targetable={isPlayerTargetable("opponent")}
-              selected={fireballTargets.includes(playerTargetKey("opponent"))}
+              selected={
+                fireballTargets.includes(playerTargetKey("opponent")) ||
+                dragOverTarget === playerTargetKey("opponent")
+              }
               onTarget={() => selectPlayer("opponent")}
+              onDragOverTarget={() => handleTargetDragOver(playerTargetKey("opponent"))}
+              onDragLeaveTarget={() => handleTargetDragLeave(playerTargetKey("opponent"))}
+              onDropTarget={() => handleTargetDrop(playerTargetKey("opponent"))}
             />
             <div className="opponent-hand" aria-label={`${state.opponent.handSize} hidden cards`}>
               {Array.from({ length: state.opponent.handSize }, (_, index) => (
@@ -1046,6 +1131,10 @@ export function GameClient() {
               previewManaSourceIds={previewedPayment?.manaSourceIds ?? []}
               onDragStartCard={beginCardDrag}
               onDragEndCard={finishCardDrag}
+              dragOverTarget={dragOverTarget}
+              onDragOverTarget={handleTargetDragOver}
+              onDragLeaveTarget={handleTargetDragLeave}
+              onDropTarget={handleTargetDrop}
               opponent
             />
 
@@ -1096,21 +1185,33 @@ export function GameClient() {
               className={`stack-zone ${state.stack.length === 0 ? "stack-zone-empty" : ""}`}
               aria-label="Stack"
             >
-              {state.stack.length > 0 && (
-                <>
-                  <span>STACK</span>
-                  {state.stack.map((item) => (
-                    <button
-                      key={item.id}
-                      className={`stack-card ${isStackTargetable(item.id) ? "is-targetable" : ""}`}
-                      onClick={() => selectStackTarget(item.id)}
-                      disabled={!isStackTargetable(item.id)}
-                    >
-                      {item.name}
-                      <small>{item.owner === "human" ? "YOU" : "OPPONENT"}</small>
-                    </button>
-                  ))}
-                </>
+              <span>STACK</span>
+              {state.stack.length === 0 ? (
+                <small className="stack-empty-label">EMPTY</small>
+              ) : (
+                state.stack.map((item) => (
+                  <button
+                    key={item.id}
+                    className={`stack-card ${isStackTargetable(item.id) ? "is-targetable" : ""} ${dragOverTarget === `stack:${item.id}` ? "is-drag-over-target" : ""}`}
+                    onClick={() => selectStackTarget(item.id)}
+                    disabled={!isStackTargetable(item.id)}
+                    onDragOver={(event) => {
+                      if (!isStackTargetable(item.id)) return;
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                      handleTargetDragOver(`stack:${item.id}`);
+                    }}
+                    onDragLeave={() => handleTargetDragLeave(`stack:${item.id}`)}
+                    onDrop={(event) => {
+                      if (!isStackTargetable(item.id)) return;
+                      event.preventDefault();
+                      handleTargetDrop(`stack:${item.id}`);
+                    }}
+                  >
+                    {item.name}
+                    <small>{item.owner === "human" ? "YOU" : "OPPONENT"}</small>
+                  </button>
+                ))
               )}
             </div>
 
@@ -1129,6 +1230,10 @@ export function GameClient() {
               previewManaSourceIds={previewedPayment?.manaSourceIds ?? []}
               onDragStartCard={beginCardDrag}
               onDragEndCard={finishCardDrag}
+              dragOverTarget={dragOverTarget}
+              onDragOverTarget={handleTargetDragOver}
+              onDragLeaveTarget={handleTargetDragLeave}
+              onDropTarget={handleTargetDrop}
             />
 
             <PlayerBar
@@ -1136,8 +1241,14 @@ export function GameClient() {
               note={deckNotes[humanDeck]}
               player={state.human}
               targetable={isPlayerTargetable("human")}
-              selected={fireballTargets.includes(playerTargetKey("human"))}
+              selected={
+                fireballTargets.includes(playerTargetKey("human")) ||
+                dragOverTarget === playerTargetKey("human")
+              }
               onTarget={() => selectPlayer("human")}
+              onDragOverTarget={() => handleTargetDragOver(playerTargetKey("human"))}
+              onDragLeaveTarget={() => handleTargetDragLeave(playerTargetKey("human"))}
+              onDropTarget={() => handleTargetDrop(playerTargetKey("human"))}
             />
 
             <HandZone
@@ -1170,6 +1281,8 @@ export function GameClient() {
                       ? "Assign your blockers"
                     : preparingBlockers
                       ? "Prepare your blockers"
+                    : draggingCardId !== null
+                      ? "Drop on a valid target"
                     : choosingFireballTargets
                       ? "Select Fireball targets"
                     : choosingTarget
@@ -1313,10 +1426,14 @@ export function GameClient() {
                     </span>
                   </div>
                   <button className="finalize-blocks" onClick={finalizeBlocks}>
-                    <strong>Finalize blocks</strong>
-                    <small>
+                    <strong>
                       {Object.keys(blockAssignments).length === 0
                         ? "No blocks"
+                        : "Declare blocks"}
+                    </strong>
+                    <small>
+                      {Object.keys(blockAssignments).length === 0
+                        ? "Skip blocking and continue"
                         : `${Object.keys(blockAssignments).length} assigned`}
                     </small>
                   </button>
@@ -1336,6 +1453,12 @@ export function GameClient() {
                     {selectedSource?.name ?? "this action"}
                     {selectedX !== null ? ` with X = ${selectedX}` : ""}.
                   </span>
+                </div>
+              )}
+              {draggingCardId !== null && (
+                <div className="target-prompt" role="status">
+                  <strong>Drop on a highlighted target</strong>
+                  <span>Release the dragged card over a legal card, player, or spell.</span>
                 </div>
               )}
               {choosingSacrifice && (
@@ -1369,7 +1492,11 @@ export function GameClient() {
                 ))}
               </details>
             )}
-            <details className="game-log">
+            <details
+              className="game-log"
+              open={gameLogOpen}
+              onToggle={(event) => setGameLogOpen(event.currentTarget.open)}
+            >
               <summary>Game log</summary>
               <ol>
                 {state.events.map((event, index) => (
@@ -1420,6 +1547,18 @@ function opponentActionSymbol(kind: OpponentAction["kind"]) {
 function displayActionLabel(action: Action, state: GameState) {
   if (action.label !== "Pass priority") return action.label;
   if (state.stack.length > 0) return `Pass to resolve ${state.stack[0].name}`;
+  const turnLabel = state.active === "You" ? "Pass the turn" : "Your turn";
+  const hasNonPassAction = state.actions.some(
+    (candidate) => candidate.label !== "Pass priority" && candidate.kind !== "danger",
+  );
+  if (
+    state.step === "Postcombat Main" ||
+    state.step === "End" ||
+    state.step === "Cleanup" ||
+    (state.step === "Precombat Main" && !hasNonPassAction)
+  ) {
+    return turnLabel;
+  }
   switch (state.step) {
     case "Upkeep":
     case "Draw":
@@ -1432,10 +1571,10 @@ function displayActionLabel(action: Action, state: GameState) {
     case "End Of Combat":
       return "Pass to main 2";
     case "Postcombat Main":
-      return "Pass to end step";
+      return turnLabel;
     case "End":
     case "Cleanup":
-      return "Pass to next turn";
+      return turnLabel;
     default:
       return "Pass priority";
   }
@@ -1449,6 +1588,9 @@ function PlayerBar({
   targetable = false,
   selected = false,
   onTarget,
+  onDragOverTarget,
+  onDragLeaveTarget,
+  onDropTarget,
 }: {
   name: string;
   note: string;
@@ -1457,6 +1599,9 @@ function PlayerBar({
   targetable?: boolean;
   selected?: boolean;
   onTarget?(): void;
+  onDragOverTarget?(): void;
+  onDragLeaveTarget?(): void;
+  onDropTarget?(): void;
 }) {
   return (
     <div
@@ -1489,6 +1634,16 @@ function PlayerBar({
           className="player-target-hitbox"
           aria-label={`Target ${opponent ? "opponent" : "yourself"}`}
           onClick={onTarget}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+            onDragOverTarget?.();
+          }}
+          onDragLeave={onDragLeaveTarget}
+          onDrop={(event) => {
+            event.preventDefault();
+            onDropTarget?.();
+          }}
         />
       )}
     </div>
@@ -1581,6 +1736,10 @@ function Zone({
   previewManaSourceIds,
   onDragStartCard,
   onDragEndCard,
+  dragOverTarget,
+  onDragOverTarget,
+  onDragLeaveTarget,
+  onDropTarget,
   opponent = false,
 }: {
   cards: Card[];
@@ -1595,6 +1754,10 @@ function Zone({
   previewManaSourceIds: number[];
   onDragStartCard(id: number): void;
   onDragEndCard(): void;
+  dragOverTarget: string | null;
+  onDragOverTarget(target: string): void;
+  onDragLeaveTarget(target: string): void;
+  onDropTarget(target: string): void;
   opponent?: boolean;
 }) {
   const lands = cards.filter((card) => card.kind === "land");
@@ -1614,6 +1777,10 @@ function Zone({
         previewManaSourceIds={previewManaSourceIds}
         onDragStartCard={onDragStartCard}
         onDragEndCard={onDragEndCard}
+        dragOverTarget={dragOverTarget}
+        onDragOverTarget={onDragOverTarget}
+        onDragLeaveTarget={onDragLeaveTarget}
+        onDropTarget={onDropTarget}
       />
     ));
 
@@ -1664,6 +1831,10 @@ function CardPile({
   previewManaSourceIds,
   onDragStartCard,
   onDragEndCard,
+  dragOverTarget,
+  onDragOverTarget,
+  onDragLeaveTarget,
+  onDropTarget,
 }: {
   cards: Card[];
   actionCount(id: number): number;
@@ -1676,6 +1847,10 @@ function CardPile({
   previewManaSourceIds: number[];
   onDragStartCard(id: number): void;
   onDragEndCard(): void;
+  dragOverTarget: string | null;
+  onDragOverTarget(target: string): void;
+  onDragLeaveTarget(target: string): void;
+  onDropTarget(target: string): void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const previewedCards = cards.filter((card) => previewManaSourceIds.includes(card.id)).length;
@@ -1719,9 +1894,13 @@ function CardPile({
               selected={selectedCard === card.id || selectedCardIds.includes(card.id)}
               animating={animatedCardId === card.id}
               previewMana={previewManaSourceIds.includes(card.id)}
+              dragOverTarget={dragOverTarget === cardTargetKey(card.id)}
               onSelect={onSelect}
               onDragStartCard={onDragStartCard}
               onDragEndCard={onDragEndCard}
+              onDragOverTarget={onDragOverTarget}
+              onDragLeaveTarget={onDragLeaveTarget}
+              onDropTarget={onDropTarget}
               compact
             />
           </div>
@@ -1830,9 +2009,13 @@ function GameCard({
   selected,
   animating = false,
   previewMana = false,
+  dragOverTarget = false,
   onSelect,
   onDragStartCard,
   onDragEndCard,
+  onDragOverTarget,
+  onDragLeaveTarget,
+  onDropTarget,
   onPaymentPreviewStart,
   onPaymentPreviewEnd,
   onHoverChange,
@@ -1845,9 +2028,13 @@ function GameCard({
   selected: boolean;
   animating?: boolean;
   previewMana?: boolean;
+  dragOverTarget?: boolean;
   onSelect(id: number): void;
   onDragStartCard?(id: number): void;
   onDragEndCard?(): void;
+  onDragOverTarget?(target: string): void;
+  onDragLeaveTarget?(target: string): void;
+  onDropTarget?(target: string): void;
   onPaymentPreviewStart?(id: number): void;
   onPaymentPreviewEnd?(): void;
   onHoverChange?(hovered: boolean): void;
@@ -1929,6 +2116,7 @@ function GameCard({
           actionable ? "is-actionable" : "",
           targetable ? "is-targetable" : "",
           selected ? "is-selected" : "",
+          dragOverTarget ? "is-drag-over-target" : "",
           animating ? "is-opponent-action-card" : "",
           previewMana ? "is-autotap-preview" : "",
         ].join(" ")}
@@ -1947,6 +2135,18 @@ function GameCard({
           onDragStartCard?.(card.id);
         }}
         onDragEnd={() => onDragEndCard?.()}
+        onDragOver={(event) => {
+          if (!targetable) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          onDragOverTarget?.(cardTargetKey(card.id));
+        }}
+        onDragLeave={() => onDragLeaveTarget?.(cardTargetKey(card.id))}
+        onDrop={(event) => {
+          if (!targetable) return;
+          event.preventDefault();
+          onDropTarget?.(cardTargetKey(card.id));
+        }}
         onMouseEnter={(event) => {
           showPreview(event.currentTarget);
           onPaymentPreviewStart?.(card.id);

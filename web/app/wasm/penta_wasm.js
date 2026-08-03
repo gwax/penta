@@ -1,4 +1,4 @@
-/* @ts-self-types="./osarena_wasm.d.ts" */
+/* @ts-self-types="./penta_wasm.d.ts" */
 
 /**
  * Browser-owned game facade. JavaScript only selects legal action indexes;
@@ -201,7 +201,7 @@ function __wbg_get_imports() {
     };
     return {
         __proto__: null,
-        "./osarena_wasm_bg.js": import0,
+        "./penta_wasm_bg.js": import0,
     };
 }
 
@@ -371,7 +371,7 @@ async function __wbg_init(module_or_path) {
     }
 
     if (module_or_path === undefined) {
-        module_or_path = new URL('osarena_wasm_bg.wasm', import.meta.url);
+        module_or_path = new URL('penta_wasm_bg.wasm', import.meta.url);
     }
     const imports = __wbg_get_imports();
 

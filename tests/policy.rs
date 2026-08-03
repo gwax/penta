@@ -1,6 +1,6 @@
-use osarena::game::PermanentObservation;
-use osarena::poc;
-use osarena::{
+use penta::game::PermanentObservation;
+use penta::poc;
+use penta::{
     Action, CardInstanceId, Game, GameResult, HandcraftedPolicy, ManaPool, PlayerId,
     PlayerObservation, Policy, RandomPolicy, Step, Target, play_game,
 };
@@ -36,7 +36,7 @@ fn policy_observation(
 
 fn permanent(
     id: u32,
-    definition: osarena::CardDefinitionId,
+    definition: penta::CardDefinitionId,
     controller: PlayerId,
     power: Option<i16>,
     toughness: Option<i16>,
@@ -81,7 +81,7 @@ fn handcrafted_does_not_float_unneeded_mana_in_its_main_phase() {
             Action::PassPriority,
             Action::ActivateManaAbility {
                 source: CardInstanceId(1),
-                color: osarena::ManaColor::Red,
+                color: penta::ManaColor::Red,
             },
         ],
     );

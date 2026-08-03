@@ -7,12 +7,12 @@ output_dir="${WASM_OUT_DIR:-$repo_root/web/app/wasm}"
 cd "$repo_root"
 
 cargo build \
-  --package osarena-wasm \
+  --package penta-wasm \
   --target wasm32-unknown-unknown \
   --release \
   --locked
 
 wasm-bindgen \
-  "$repo_root/target/wasm32-unknown-unknown/release/osarena_wasm.wasm" \
+  "$repo_root/target/wasm32-unknown-unknown/release/penta_wasm.wasm" \
   --out-dir "$output_dir" \
   --target web

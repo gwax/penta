@@ -12,13 +12,13 @@ async function render() {
   );
 }
 
-test("server renders the OS Arena application shell", async () => {
+test("server renders the Penta application shell", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>OS Arena/);
+  assert.match(html, /<title>Penta/);
   assert.match(html, /OLD SCHOOL/);
   assert.match(html, /Waking the Rust engine/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);

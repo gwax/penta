@@ -1,4 +1,4 @@
-import initWasm, { WebGame as RustWebGame } from "./wasm/osarena_wasm.js";
+import initWasm, { WebGame as RustWebGame } from "./wasm/penta_wasm.js";
 import type { GameState } from "./game-types";
 
 export type EngineGame = RustWebGame;

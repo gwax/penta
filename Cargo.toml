@@ -3,12 +3,12 @@ members = [".", "wasm"]
 resolver = "3"
 
 [package]
-name = "osarena"
+name = "penta"
 version = "0.1.0"
 edition = "2024"
 description = "A deterministic engine for Eternal Central Old School 93/94 Magic"
 license = "Apache-2.0"
-repository = "https://github.com/lacker/osarena"
+repository = "https://github.com/lacker/penta"
 
 [lib]
 path = "src/lib.rs"

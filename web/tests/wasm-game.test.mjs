@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import init, { WebGame } from "../app/wasm/osarena_wasm.js";
+import init, { WebGame } from "../app/wasm/penta_wasm.js";
 
 test("The Deck exposes colored costs and control rules to the browser", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -29,7 +29,7 @@ test("The Deck exposes colored costs and control rules to the browser", async ()
 
 test("staged engine decisions are serialized as generic private choices", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -55,7 +55,7 @@ test("staged engine decisions are serialized as generic private choices", async 
 
 test("opponent pregame choices do not block the game with animations", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -80,7 +80,7 @@ test("opponent pregame choices do not block the game with animations", async () 
 
 test("the Robots deck and its new card rules are packaged for the browser", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -105,7 +105,7 @@ test("the Robots deck and its new card rules are packaged for the browser", asyn
 
 test("the packaged Rust engine plays through browser actions", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -182,7 +182,7 @@ test("the packaged Rust engine plays through browser actions", async () => {
 
 test("auto-pass declines an unavailable Chain Lightning copy", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -217,7 +217,7 @@ test("auto-pass declines an unavailable Chain Lightning copy", async () => {
 
 test("player-targeted spells identify a clickable player target", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -242,7 +242,7 @@ test("player-targeted spells identify a clickable player target", async () => {
 
 test("the web facade skips combat when no attackers exist", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -268,7 +268,7 @@ test("the web facade skips combat when no attackers exist", async () => {
 
 test("attack all declares every currently legal attacker", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -312,7 +312,7 @@ test("attack all declares every currently legal attacker", async () => {
 
 test("opponent mana taps are grouped with the spell they pay for", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -355,7 +355,7 @@ test("opponent mana taps are grouped with the spell they pay for", async () => {
 
 test("casting a spell automatically taps available mana sources", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -393,7 +393,7 @@ test("casting a spell automatically taps available mana sources", async () => {
 
 test("turning auto-pass off exposes priority over your own spell", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -424,7 +424,7 @@ test("turning auto-pass off exposes priority over your own spell", async () => {
 
 test("targeted permanent actions identify their clickable battlefield target", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -484,7 +484,7 @@ test("targeted permanent actions identify their clickable battlefield target", a
 
 test("Mishra's Factory offers both modes and manual mana can be undone", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -561,7 +561,7 @@ test("Mishra's Factory offers both modes and manual mana can be undone", async (
 
 test("X spells expose explicit affordable values to the browser", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -606,7 +606,7 @@ test("X spells expose explicit affordable values to the browser", async () => {
 
 test("phase stops override smooth UI auto-passing without changing engine steps", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 
@@ -627,7 +627,7 @@ test("phase stops override smooth UI auto-passing without changing engine steps"
 
 test("Orcish Mechanics exposes creature targets and distinct artifact costs", async () => {
   const bytes = await readFile(
-    new URL("../app/wasm/osarena_wasm_bg.wasm", import.meta.url),
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
   );
   await init({ module_or_path: bytes });
 

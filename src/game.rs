@@ -336,6 +336,14 @@ pub enum GameEvent {
     AbilityResolved {
         source: CardInstanceId,
     },
+    AttackDeclared {
+        player: PlayerId,
+        attackers: Vec<CardInstanceId>,
+    },
+    BlockDeclared {
+        player: PlayerId,
+        assignments: Vec<(CardInstanceId, CardInstanceId)>,
+    },
     DamageDealt {
         player: PlayerId,
         amount: u16,
@@ -3923,6 +3931,18 @@ impl Game {
         self.attackers_declared = true;
         self.priority = self.active_player;
         self.consecutive_passes = 0;
+        let attackers = self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == self.active_player && permanent.attacking)
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>();
+        if !attackers.is_empty() {
+            self.events.push(GameEvent::AttackDeclared {
+                player: self.active_player,
+                attackers,
+            });
+        }
     }
 
     fn blocker_actions(&self, player: PlayerId) -> Vec<Action> {
@@ -4000,6 +4020,21 @@ impl Game {
         self.blockers_declared = true;
         self.priority = self.active_player;
         self.consecutive_passes = 0;
+        let assignments = self
+            .battlefield
+            .iter()
+            .filter_map(|permanent| {
+                permanent
+                    .blocking
+                    .map(|attacker| (permanent.card.id, attacker))
+            })
+            .collect::<Vec<_>>();
+        if !assignments.is_empty() {
+            self.events.push(GameEvent::BlockDeclared {
+                player: self.active_player.opponent(),
+                assignments,
+            });
+        }
     }
 
     fn begin_combat_damage_assignment(&mut self) {

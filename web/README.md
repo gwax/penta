@@ -1,4 +1,4 @@
-# Spell web client
+# Penta web client
 
 This directory contains the local browser client for the Rust game engine. It
 uses React, vinext, and a generated WebAssembly bridge; no account or database

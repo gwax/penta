@@ -1,5 +1,5 @@
 [package]
-name = "osarena-wasm"
+name = "penta-wasm"
 version = "0.1.0"
 edition = "2024"
 publish = false
@@ -8,7 +8,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-osarena = { path = ".." }
+penta = { path = ".." }
 serde_json = "1"
 wasm-bindgen = "0.2"
 

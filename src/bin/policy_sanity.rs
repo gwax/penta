@@ -1,5 +1,5 @@
-use osarena::poc;
-use osarena::{Game, GameResult, HandcraftedPolicy, PlayerId, RandomPolicy, play_game};
+use penta::poc;
+use penta::{Game, GameResult, HandcraftedPolicy, PlayerId, RandomPolicy, play_game};
 
 const GAMES_PER_SEAT: u64 = 25;
 const ACTION_LIMIT: usize = 50_000;

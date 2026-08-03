@@ -1,6 +1,6 @@
-# osarena
+# penta
 
-`osarena` is a deterministic, headless simulator for two-player Old School
+`penta` is a deterministic, headless simulator for two-player Old School
 Magic: The Gathering. The first target is bot-vs-bot play and, eventually,
 high-throughput training through Python bindings.
 

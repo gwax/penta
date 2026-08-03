@@ -1,8 +1,8 @@
-use osarena::card::{CardBehavior, CardCatalog, CardDefinition, CardSet};
-use osarena::deck::{Deck, DeckError};
-use osarena::game::{GameResult, WinReason};
-use osarena::poc;
-use osarena::{Action, CardDefinitionId, Game, GameError, GameEvent, PlayerId, Step, Target};
+use penta::card::{CardBehavior, CardCatalog, CardDefinition, CardSet};
+use penta::deck::{Deck, DeckError};
+use penta::game::{GameResult, WinReason};
+use penta::poc;
+use penta::{Action, CardDefinitionId, Game, GameError, GameEvent, PlayerId, Step, Target};
 
 fn catalog() -> CardCatalog {
     CardCatalog::new([
@@ -255,7 +255,7 @@ fn mountain_casts_and_resolves_lightning_bolt() {
         PlayerId::One,
         Action::ActivateManaAbility {
             source: mountain,
-            color: osarena::ManaColor::Red,
+            color: penta::ManaColor::Red,
         },
     )
     .unwrap();
@@ -346,7 +346,7 @@ fn unspent_mana_burns_at_the_end_of_a_phase() {
         PlayerId::One,
         Action::ActivateManaAbility {
             source: mountain,
-            color: osarena::ManaColor::Red,
+            color: penta::ManaColor::Red,
         },
     )
     .unwrap();
@@ -413,21 +413,21 @@ fn drawing_from_an_empty_library_loses_the_game() {
 #[test]
 fn all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
     let decks = [
-        ("Goblins", osarena::poc::goblins()),
-        ("Sligh", osarena::poc::sligh()),
-        ("Artifacts", osarena::poc::artifacts()),
-        ("Robots", osarena::poc::robots()),
-        ("The Deck", osarena::poc::the_deck()),
-        ("Mono Black", osarena::poc::mono_black()),
-        ("White Weenie", osarena::poc::white_weenie()),
-        ("Erhnamgeddon", osarena::poc::erhnamgeddon()),
-        ("Counterburn", osarena::poc::counterburn()),
-        ("Lions/Dib", osarena::poc::lions_dib()),
+        ("Goblins", penta::poc::goblins()),
+        ("Sligh", penta::poc::sligh()),
+        ("Artifacts", penta::poc::artifacts()),
+        ("Robots", penta::poc::robots()),
+        ("The Deck", penta::poc::the_deck()),
+        ("Mono Black", penta::poc::mono_black()),
+        ("White Weenie", penta::poc::white_weenie()),
+        ("Erhnamgeddon", penta::poc::erhnamgeddon()),
+        ("Counterburn", penta::poc::counterburn()),
+        ("Lions/Dib", penta::poc::lions_dib()),
     ];
     for (first_name, first_deck) in &decks {
         for (second_name, second_deck) in &decks {
             let mut game = Game::new(
-                osarena::poc::catalog().unwrap(),
+                penta::poc::catalog().unwrap(),
                 [first_deck.clone(), second_deck.clone()],
                 2_026,
             )
