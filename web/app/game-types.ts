@@ -101,6 +101,7 @@ export type GameState = {
   battlefield: Card[];
   stack: Array<{ id: number; name: string; owner: Owner; kind: string }>;
   actions: Action[];
+  passLabel: string | null;
   decision: DecisionState | null;
   opponentActions?: OpponentAction[];
   canUndoMana: boolean;

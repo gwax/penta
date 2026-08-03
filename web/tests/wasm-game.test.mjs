@@ -694,3 +694,57 @@ test("Orcish Mechanics exposes creature targets and distinct artifact costs", as
 
   game.free();
 });
+
+test("the pass button label reports the engine's real auto-pass destination", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Goblins", "Sligh", "Handcrafted", true, 9394);
+  const currentState = () => JSON.parse(game.state_json());
+  const pass = (state) =>
+    game.act(state.actions.find((action) => action.label === "Pass priority").index);
+
+  let state = currentState();
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = currentState();
+  assert.equal(state.step, "Precombat Main");
+  assert.equal(
+    state.passLabel,
+    "Pass to main 2",
+    "land plays waiting in Main 2 keep the pass from promising the whole turn",
+  );
+  pass(state);
+  state = currentState();
+  assert.equal(state.step, "Postcombat Main");
+
+  game.set_phase_stop("Ending", true);
+  state = currentState();
+  assert.equal(state.passLabel, "Pass to end step");
+  pass(state);
+  state = currentState();
+  assert.equal(state.step, "End");
+
+  game.set_phase_stop("Ending", false);
+  state = currentState();
+  assert.equal(state.passLabel, "Pass the turn");
+  pass(state);
+  state = currentState();
+  assert.equal(state.step, "Precombat Main");
+  assert.equal(state.active, "You");
+  assert.equal(state.turn, 2, "the promised pass really ends the turn");
+
+  game.set_autopass(false);
+  state = currentState();
+  assert.equal(
+    state.passLabel,
+    "Pass to combat",
+    "with auto-pass off the label only promises the next window",
+  );
+  pass(state);
+  state = currentState();
+  assert.equal(state.step, "Beginning Of Combat");
+
+  game.free();
+});

@@ -287,12 +287,8 @@ export function GameClient() {
   const togglePhaseStop = (phase: string, enabled: boolean) => {
     try {
       game.current?.set_phase_stop(phase, enabled);
-      setState((current) => {
-        if (!current) return current;
-        const phaseStops = current.phaseStops.filter((candidate) => candidate !== phase);
-        if (enabled) phaseStops.push(phase);
-        return { ...current, phaseStops };
-      });
+      // Re-read the engine snapshot so the pass label reflects the new stop.
+      refresh();
     } catch (cause) {
       setError(String(cause));
     }
@@ -1558,39 +1554,9 @@ function opponentActionSymbol(kind: OpponentAction["kind"]) {
 
 function displayActionLabel(action: Action, state: GameState) {
   if (action.label !== "Pass priority") return action.label;
-  if (state.stack.length > 0) return `Pass to resolve ${state.stack[0].name}`;
-  const turnLabel = state.active === "You" ? "Pass the turn" : "Your turn";
-  const hasAvailableAttacker = state.battlefield.some(
-    (card) => card.owner === "human" && card.canAttack === true,
-  );
-  const hasCombatWindow = hasAvailableAttacker || state.phaseStops.includes("Combat");
-  if (
-    state.step === "Postcombat Main" ||
-    state.step === "End" ||
-    state.step === "Cleanup" ||
-    (state.step === "Precombat Main" && !hasCombatWindow)
-  ) {
-    return turnLabel;
-  }
-  switch (state.step) {
-    case "Upkeep":
-    case "Draw":
-      return "Pass to main";
-    case "Precombat Main":
-      return "Pass to combat";
-    case "Beginning Of Combat":
-      return "Pass to attackers";
-    case "Combat Damage":
-    case "End Of Combat":
-      return "Pass to main 2";
-    case "Postcombat Main":
-      return turnLabel;
-    case "End":
-    case "Cleanup":
-      return turnLabel;
-    default:
-      return "Pass priority";
-  }
+  // The engine simulates the pass and reports the real destination, so the
+  // button never promises a stop the auto-pass policy will not honor.
+  return state.passLabel ?? "Pass priority";
 }
 
 function PlayerBar({

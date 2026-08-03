@@ -3596,7 +3596,7 @@ impl Game {
         printed || king
     }
 
-    fn has_forestwalk(&self, permanent: &Permanent) -> bool {
+    fn has_forestwalk(permanent: &Permanent) -> bool {
         permanent.forestwalk_until_upkeep_of.is_some()
     }
 
@@ -4145,7 +4145,7 @@ impl Game {
                     self.has_flying(permanent),
                     (self.has_mountainwalk(permanent)
                         && self.controls_mountain(permanent.controller.opponent()))
-                        || (self.has_forestwalk(permanent)
+                        || (Self::has_forestwalk(permanent)
                             && self.controls_forest(permanent.controller.opponent())),
                     self.power(permanent).unwrap_or(0),
                 )

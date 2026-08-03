@@ -412,6 +412,97 @@ impl WebGame {
         )
     }
 
+    /// Predicts where a pass would land by replaying the real auto-pass
+    /// policy on a cloned game, assuming the opponent declines to act. The
+    /// result is the label for the UI's pass button, so the button always
+    /// names the destination the engine will actually reach.
+    fn pass_preview_label(&self) -> Option<String> {
+        if self.game.decision_player() != Some(self.human) {
+            return None;
+        }
+        let observation = self.game.observe(self.human);
+        if !observation
+            .legal_actions
+            .iter()
+            .any(|action| matches!(action, Action::PassPriority))
+        {
+            return None;
+        }
+        if let Some(top) = observation.stack.last() {
+            return Some(format!(
+                "Pass to resolve {}",
+                self.card_name(top.definition)
+            ));
+        }
+        let start_turn = observation.turn;
+        let start_active_is_human = observation.active_player == self.human;
+        let mut sim = self.game.clone();
+        sim.apply(self.human, Action::PassPriority).ok()?;
+        for _ in 0..BOT_ACTION_LIMIT {
+            let Some(player) = sim.decision_player() else {
+                // The yield would end the game outright; keep the plain label.
+                return None;
+            };
+            let sim_observation = sim.observe(player);
+            let action = if player == self.human {
+                match self.automatic_human_action_for(&sim_observation) {
+                    Some(action) => action,
+                    None => {
+                        return Some(Self::pass_destination_label(
+                            &sim_observation,
+                            start_turn,
+                            start_active_is_human,
+                        ));
+                    }
+                }
+            } else if let Some(action) = neutral_opponent_action(&sim_observation) {
+                action
+            } else {
+                // The opponent holds a real choice here, so this is where the
+                // human ends up waiting.
+                let human_observation = sim.observe(self.human);
+                return Some(Self::pass_destination_label(
+                    &human_observation,
+                    start_turn,
+                    start_active_is_human,
+                ));
+            };
+            sim.apply(player, action).ok()?;
+        }
+        None
+    }
+
+    fn pass_destination_label(
+        observation: &PlayerObservation,
+        start_turn: u32,
+        start_active_is_human: bool,
+    ) -> String {
+        if observation.turn != start_turn {
+            // Crossing a turn boundary reads differently depending on whose
+            // turn the pass started in: ending your own turn versus letting
+            // the opponent finish theirs.
+            return if start_active_is_human {
+                "Pass the turn".into()
+            } else {
+                "Pass to your turn".into()
+            };
+        }
+        match observation.step {
+            Step::Upkeep => "Pass to upkeep",
+            Step::Draw => "Pass to draw",
+            Step::PrecombatMain => "Pass to main",
+            Step::BeginningOfCombat => "Pass to combat",
+            Step::DeclareAttackers => "Pass to attackers",
+            Step::DeclareBlockers => "Pass to blockers",
+            Step::CombatDamage => "Pass to combat damage",
+            Step::EndOfCombat => "Pass to end of combat",
+            Step::PostcombatMain => "Pass to main 2",
+            Step::End => "Pass to end step",
+            Step::Cleanup => "Pass to cleanup",
+        }
+        .into()
+    }
+
     fn finish_opponent_animation(&mut self, pending: &mut Option<Value>) {
         if let Some(mut animation) = pending.take() {
             animation["state"] = self.snapshot_value(false);
@@ -659,6 +750,7 @@ impl WebGame {
             "battlefield": battlefield,
             "stack": stack,
             "actions": actions,
+            "passLabel": self.pass_preview_label(),
             "decision": decision,
             "canUndoMana": !self.mana_undo_history.is_empty(),
             "phaseStops": self.phase_stops,
@@ -723,6 +815,7 @@ impl WebGame {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn event_label(&self, observation: &PlayerObservation, event: &GameEvent) -> Option<String> {
         match event {
             GameEvent::GameStarted { seed } => Some(format!("Game started · seed {seed}")),
@@ -1054,6 +1147,47 @@ struct AutoPassContext {
     autopass_enabled: bool,
     only_human_objects_on_stack: bool,
     human_has_floating_mana: bool,
+}
+
+/// The pass-preview stand-in for the opponent: let the pass through wherever
+/// possible, and resolve forced decisions (such as a cleanup discard) with an
+/// arbitrary minimal selection so the preview can keep moving. Returns `None`
+/// when the opponent holds a choice the preview cannot neutrally guess at.
+fn neutral_opponent_action(observation: &PlayerObservation) -> Option<Action> {
+    if let Some(decision) = observation.decision.as_ref() {
+        if decision.options.len() < decision.minimum {
+            return None;
+        }
+        return Some(Action::ChooseDecision {
+            decision: decision.id,
+            options: decision
+                .options
+                .iter()
+                .take(decision.minimum)
+                .map(|option| option.id)
+                .collect(),
+        });
+    }
+    observation
+        .legal_actions
+        .iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::PassPriority
+                    | Action::FinishDeclaringAttackers
+                    | Action::FinishDeclaringBlockers
+            )
+        })
+        .or_else(|| {
+            // A forced cleanup discard: any card works as a stand-in, since
+            // the preview only reports where the human ends up waiting.
+            observation
+                .legal_actions
+                .iter()
+                .find(|action| matches!(action, Action::DiscardCards { .. }))
+        })
+        .cloned()
 }
 
 fn automatic_human_action_for_context(
