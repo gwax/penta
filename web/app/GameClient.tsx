@@ -14,6 +14,7 @@ import type {
   GameState,
   OpponentAction,
   Owner,
+  PlayerState,
 } from "./game-types";
 import {
   deckNotes,
@@ -1058,7 +1059,7 @@ export function GameClient() {
                 aria-label={`Current step: ${state.step}. Click a phase to set or remove a stop.`}
               >
                 {turnPhases.map((phase) => {
-                  const current = phase.steps.includes(state.step);
+                  const current = phase.steps.some((step) => step === state.step);
                   const stopped = state.phaseStops.includes(phase.label);
                   return (
                     <li
