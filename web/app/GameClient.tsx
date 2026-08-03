@@ -1759,8 +1759,27 @@ function HandZone({
   onPaymentPreviewEnd(): void;
 }) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+
+  useEffect(() => {
+    const updateViewportWidth = () => setViewportWidth(window.innerWidth);
+    updateViewportWidth();
+    window.addEventListener("resize", updateViewportWidth);
+    return () => window.removeEventListener("resize", updateViewportWidth);
+  }, []);
+
   const center = (cards.length - 1) / 2;
-  const spacing = Math.min(78, Math.max(42, 700 / Math.max(cards.length - 1, 1)));
+  const compactHand = viewportWidth !== null && viewportWidth <= 620;
+  const cardWidth = compactHand ? 112 : 132;
+  const handPadding = compactHand ? 14 : 36;
+  const rotationAllowance = compactHand ? 42 : 0;
+  const availableWidth = viewportWidth === null
+    ? 700
+    : Math.max(0, viewportWidth - cardWidth - handPadding - rotationAllowance);
+  const spacing = Math.min(
+    78,
+    Math.max(compactHand ? 26 : 42, availableWidth / Math.max(cards.length - 1, 1)),
+  );
 
   return (
     <div className="hand-zone" aria-label="Your hand">
