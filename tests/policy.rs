@@ -52,6 +52,7 @@ fn permanent(
         attacking: false,
         blocking: None,
         flying: false,
+        can_attack: false,
     }
 }
 

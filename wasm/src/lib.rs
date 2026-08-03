@@ -379,6 +379,7 @@ impl WebGame {
             && decision.minimum == 1
             && decision.maximum == 1
             && decision.options.len() == 1
+            && !decision.prompt.starts_with("Erhnam Djinn")
         {
             return Some(Action::ChooseDecision {
                 decision: decision.id,
@@ -525,6 +526,7 @@ impl WebGame {
                     "attacking": permanent.attacking,
                     "blocking": permanent.blocking.map(|id| id.0),
                     "flying": permanent.flying,
+                    "canAttack": permanent.can_attack,
                 })
             })
             .collect::<Vec<_>>();
@@ -784,6 +786,16 @@ impl WebGame {
                     })
                     .collect::<Vec<_>>()
                     .join(", ")
+            )),
+            GameEvent::ErhnamForestwalkGranted {
+                player,
+                source,
+                target,
+            } => Some(format!(
+                "{} used {} to give {} forestwalk",
+                self.player_name(*player),
+                self.instance_name(observation, *source),
+                self.instance_name(observation, *target)
             )),
             GameEvent::DamageDealt { player, amount } => Some(format!(
                 "{} took {amount} damage",

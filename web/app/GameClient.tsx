@@ -1548,14 +1548,15 @@ function displayActionLabel(action: Action, state: GameState) {
   if (action.label !== "Pass priority") return action.label;
   if (state.stack.length > 0) return `Pass to resolve ${state.stack[0].name}`;
   const turnLabel = state.active === "You" ? "Pass the turn" : "Your turn";
-  const hasNonPassAction = state.actions.some(
-    (candidate) => candidate.label !== "Pass priority" && candidate.kind !== "danger",
+  const hasAvailableAttacker = state.battlefield.some(
+    (card) => card.owner === "human" && card.canAttack === true,
   );
+  const hasCombatWindow = hasAvailableAttacker || state.phaseStops.includes("Combat");
   if (
     state.step === "Postcombat Main" ||
     state.step === "End" ||
     state.step === "Cleanup" ||
-    (state.step === "Precombat Main" && !hasNonPassAction)
+    (state.step === "Precombat Main" && !hasCombatWindow)
   ) {
     return turnLabel;
   }

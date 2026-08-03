@@ -753,7 +753,7 @@ impl CardBehavior {
             | Self::IvoryTower
             | Self::ManaVault => ManaCost::new(1, 0),
             Self::Smoke | Self::Fork => ManaCost::new(0, 2),
-            Self::StoneRain => ManaCost::new(3, 1),
+            Self::StoneRain => ManaCost::new(2, 1),
             Self::SedgeTroll => ManaCost::new(2, 1),
             Self::Atog | Self::IronclawOrcs | Self::OrcishMechanics | Self::Shatter => {
                 ManaCost::new(1, 1)
@@ -856,7 +856,6 @@ impl CardBehavior {
             | Self::GraniteGargoyle
             | Self::IronclawOrcs
             | Self::OrderOfLeitbur
-            | Self::OrderOfTheEbonHand
             | Self::HypnoticSpecter
             | Self::ThunderSpirit
             | Self::WhirlingDervish
@@ -866,7 +865,7 @@ impl CardBehavior {
                 haste: false,
                 trample: false,
             }),
-            Self::SavannahLions => Some(CreatureStats {
+            Self::OrderOfTheEbonHand | Self::SavannahLions => Some(CreatureStats {
                 power: 2,
                 toughness: 1,
                 haste: false,

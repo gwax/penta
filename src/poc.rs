@@ -1487,12 +1487,13 @@ fn copies(id: CardDefinitionId, count: usize) -> impl Iterator<Item = CardDefini
 
 #[cfg(test)]
 mod tests {
+    use super::cards;
     use super::{
         artifacts, bwr_aggro, catalog, counterburn, erhnamgeddon, goblins, gr_aggro, jeskai_aggro,
         lions_dib, lions_dib_bolt, mono_black, robots, sligh, the_deck, troll_disk, white_weenie,
     };
     use crate::rules;
-    use crate::{CardBehavior, CardDefinitionId};
+    use crate::{CardBehavior, CardDefinitionId, CreatureStats, ManaCost};
 
     #[test]
     fn built_in_decks_have_tournament_sizes() {
@@ -1522,6 +1523,30 @@ mod tests {
                 card.name
             );
         }
+    }
+
+    #[test]
+    fn stone_rain_costs_two_generic_and_one_red() {
+        let catalog = catalog().unwrap();
+        let card = catalog.get(cards::STONE_RAIN).unwrap();
+
+        assert_eq!(card.behavior.mana_cost(), ManaCost::new(2, 1));
+    }
+
+    #[test]
+    fn order_of_the_ebon_hand_is_a_two_one() {
+        let catalog = catalog().unwrap();
+        let card = catalog.get(cards::ORDER_OF_THE_EBON_HAND).unwrap();
+
+        assert_eq!(
+            card.behavior.creature_stats(),
+            Some(CreatureStats {
+                power: 2,
+                toughness: 1,
+                haste: false,
+                trample: false,
+            })
+        );
     }
 
     fn all_decks() -> [crate::Deck; 16] {

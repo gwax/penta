@@ -68,7 +68,7 @@ struct Permanent {
     card: CardInstance,
     controller: PlayerId,
     tapped: bool,
-    entered_turn: u32,
+    entered_controller_turn: u32,
     damage: u16,
     power_bonus: i16,
     toughness_bonus: i16,
@@ -90,6 +90,7 @@ struct Permanent {
     trample_until_end: bool,
     berserked: bool,
     attacked_this_turn: bool,
+    forestwalk_until_upkeep_of: Option<PlayerId>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -190,6 +191,10 @@ enum DecisionContinuation {
         card: CardInstanceId,
         candidates: Vec<CardInstanceId>,
         choices_left: usize,
+    },
+    ErhnamForestwalk {
+        player: PlayerId,
+        source: CardInstanceId,
     },
 }
 
@@ -344,6 +349,11 @@ pub enum GameEvent {
         player: PlayerId,
         assignments: Vec<(CardInstanceId, CardInstanceId)>,
     },
+    ErhnamForestwalkGranted {
+        player: PlayerId,
+        source: CardInstanceId,
+        target: CardInstanceId,
+    },
     DamageDealt {
         player: PlayerId,
         amount: u16,
@@ -363,6 +373,7 @@ pub enum GameEvent {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct PermanentObservation {
     pub id: CardInstanceId,
     pub definition: CardDefinitionId,
@@ -374,6 +385,7 @@ pub struct PermanentObservation {
     pub attacking: bool,
     pub blocking: Option<CardInstanceId>,
     pub flying: bool,
+    pub can_attack: bool,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -851,6 +863,7 @@ impl Game {
                     attacking: permanent.attacking,
                     blocking: permanent.blocking,
                     flying: self.has_flying(permanent),
+                    can_attack: self.can_attack(permanent),
                 })
                 .collect(),
             stack: self
@@ -1135,6 +1148,41 @@ impl Game {
             false,
             options,
             DecisionContinuation::ManaVault { player, permanent },
+        );
+    }
+
+    fn queue_erhnam_decision(&mut self, player: PlayerId, source: CardInstanceId) {
+        let options = self
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == player.opponent() && self.power(permanent).is_some()
+            })
+            .map(|permanent| {
+                let name = self
+                    .catalog
+                    .get(permanent.card.definition)
+                    .map_or("that creature", |card| card.name.as_str());
+                DecisionOption {
+                    id: permanent.card.id.0,
+                    label: format!("Give {name} forestwalk"),
+                    card: Some((permanent.card.id, permanent.card.definition)),
+                    zone: DecisionZone::Battlefield,
+                }
+            })
+            .collect::<Vec<_>>();
+        if options.is_empty() {
+            return;
+        }
+        self.queue_decision(
+            player,
+            "Erhnam Djinn: choose a creature for forestwalk",
+            DecisionVisibility::Private,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::ErhnamForestwalk { player, source },
         );
     }
 
@@ -1499,6 +1547,38 @@ impl Game {
                 }
                 if choices_left > 1 && self.result.is_none() {
                     self.queue_sylvan_select(player, candidates, choices_left - 1);
+                }
+            }
+            DecisionContinuation::ErhnamForestwalk { player, source } => {
+                let Some(target) = pending
+                    .observation
+                    .options
+                    .iter()
+                    .find(|option| options.contains(&option.id))
+                    .and_then(|option| option.card)
+                    .map(|(card, _)| card)
+                else {
+                    return;
+                };
+                let can_grant = self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == target)
+                    .is_some_and(|permanent| {
+                        permanent.controller == player.opponent() && self.power(permanent).is_some()
+                    });
+                if can_grant
+                    && let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == target)
+                {
+                    permanent.forestwalk_until_upkeep_of = Some(player);
+                    self.events.push(GameEvent::ErhnamForestwalkGranted {
+                        player,
+                        source,
+                        target,
+                    });
                 }
             }
         }
@@ -2107,7 +2187,7 @@ impl Game {
             card,
             controller: player,
             tapped: false,
-            entered_turn: self.turn,
+            entered_controller_turn: self.turns_started[player.index()],
             damage: 0,
             power_bonus: 0,
             toughness_bonus: 0,
@@ -2125,6 +2205,7 @@ impl Game {
             trample_until_end: false,
             berserked: false,
             attacked_this_turn: false,
+            forestwalk_until_upkeep_of: None,
         });
         self.consecutive_passes = 0;
         self.events.push(GameEvent::LandPlayed {
@@ -2331,7 +2412,7 @@ impl Game {
                     behavior,
                     CardBehavior::NevinyrralsDisk | CardBehavior::TimeVault
                 ),
-                entered_turn: self.turn,
+                entered_controller_turn: self.turns_started[object.controller.index()],
                 damage: 0,
                 power_bonus: 0,
                 toughness_bonus: 0,
@@ -2353,6 +2434,7 @@ impl Game {
                 trample_until_end: false,
                 berserked: false,
                 attacked_this_turn: false,
+                forestwalk_until_upkeep_of: None,
             });
             if let Some(copied_behavior) = copied_behavior
                 && let Some(permanent) = self.battlefield.last_mut()
@@ -3323,9 +3405,34 @@ impl Game {
         }
     }
 
-    fn controls_basic_land(&self, player: PlayerId, behavior: CardBehavior) -> bool {
+    fn land_has_type(behavior: CardBehavior, land_type: CardBehavior) -> bool {
+        match land_type {
+            CardBehavior::Forest => matches!(
+                behavior,
+                CardBehavior::Forest
+                    | CardBehavior::Bayou
+                    | CardBehavior::Savannah
+                    | CardBehavior::Taiga
+                    | CardBehavior::TropicalIsland
+            ),
+            CardBehavior::Swamp => matches!(
+                behavior,
+                CardBehavior::Swamp
+                    | CardBehavior::Badlands
+                    | CardBehavior::Bayou
+                    | CardBehavior::Scrubland
+                    | CardBehavior::UndergroundSea
+            ),
+            _ => behavior == land_type,
+        }
+    }
+
+    fn controls_land_type(&self, player: PlayerId, land_type: CardBehavior) -> bool {
         self.battlefield.iter().any(|permanent| {
-            permanent.controller == player && self.effective_behavior(permanent) == Some(behavior)
+            permanent.controller == player
+                && self
+                    .effective_behavior(permanent)
+                    .is_some_and(|behavior| Self::land_has_type(behavior, land_type))
         })
     }
 
@@ -3358,16 +3465,27 @@ impl Game {
         i16::try_from(self.count_behavior(CardBehavior::Crusade)).unwrap_or(i16::MAX)
     }
 
+    fn plus_one_counter_bonus(&self, permanent: &Permanent) -> i16 {
+        if matches!(
+            self.effective_behavior(permanent),
+            Some(CardBehavior::Triskelion | CardBehavior::Tetravus | CardBehavior::WhirlingDervish)
+        ) {
+            i16::try_from(permanent.plus_one_counters).unwrap_or(i16::MAX)
+        } else {
+            0
+        }
+    }
+
     fn power(&self, permanent: &Permanent) -> Option<i16> {
         self.base_stats(permanent).map(|stats| {
             let conditional_bonus = match self.effective_behavior(permanent) {
                 Some(CardBehavior::KirdApe)
-                    if self.controls_basic_land(permanent.controller, CardBehavior::Forest) =>
+                    if self.controls_land_type(permanent.controller, CardBehavior::Forest) =>
                 {
                     1
                 }
                 Some(CardBehavior::SedgeTroll)
-                    if self.controls_basic_land(permanent.controller, CardBehavior::Swamp) =>
+                    if self.controls_land_type(permanent.controller, CardBehavior::Swamp) =>
                 {
                     1
                 }
@@ -3378,7 +3496,7 @@ impl Game {
                 + self.goblin_bonus(permanent)
                 + self.crusade_bonus(permanent)
                 + conditional_bonus
-                + i16::try_from(permanent.plus_one_counters).unwrap_or(i16::MAX)
+                + self.plus_one_counter_bonus(permanent)
         })
     }
 
@@ -3386,12 +3504,12 @@ impl Game {
         self.base_stats(permanent).map(|stats| {
             let conditional_bonus = match self.effective_behavior(permanent) {
                 Some(CardBehavior::KirdApe)
-                    if self.controls_basic_land(permanent.controller, CardBehavior::Forest) =>
+                    if self.controls_land_type(permanent.controller, CardBehavior::Forest) =>
                 {
                     2
                 }
                 Some(CardBehavior::SedgeTroll)
-                    if self.controls_basic_land(permanent.controller, CardBehavior::Swamp) =>
+                    if self.controls_land_type(permanent.controller, CardBehavior::Swamp) =>
                 {
                     1
                 }
@@ -3402,7 +3520,7 @@ impl Game {
                 + self.goblin_bonus(permanent)
                 + self.crusade_bonus(permanent)
                 + conditional_bonus
-                + i16::try_from(permanent.plus_one_counters).unwrap_or(i16::MAX)
+                + self.plus_one_counter_bonus(permanent)
         })
     }
 
@@ -3435,6 +3553,10 @@ impl Game {
         printed || king
     }
 
+    fn has_forestwalk(&self, permanent: &Permanent) -> bool {
+        permanent.forestwalk_until_upkeep_of.is_some()
+    }
+
     fn controls_mountain(&self, player: PlayerId) -> bool {
         self.battlefield.iter().any(|permanent| {
             permanent.controller == player
@@ -3442,9 +3564,19 @@ impl Game {
         })
     }
 
+    fn controls_forest(&self, player: PlayerId) -> bool {
+        self.battlefield.iter().any(|permanent| {
+            permanent.controller == player
+                && self.effective_behavior(permanent) == Some(CardBehavior::Forest)
+        })
+    }
+
     fn can_use_tap_ability(&self, permanent: &Permanent) -> bool {
-        self.base_stats(permanent)
-            .is_none_or(|stats| stats.haste || permanent.entered_turn < self.turn)
+        self.base_stats(permanent).is_none_or(|stats| {
+            stats.haste
+                || self.turns_started[permanent.controller.index()]
+                    > permanent.entered_controller_turn
+        })
     }
 
     #[allow(clippy::too_many_lines)]
@@ -3903,8 +4035,11 @@ impl Game {
         if self.count_behavior(CardBehavior::Moat) > 0 && !self.has_flying(permanent) {
             return false;
         }
-        self.base_stats(permanent)
-            .is_some_and(|stats| stats.haste || permanent.entered_turn < self.turn)
+        self.base_stats(permanent).is_some_and(|stats| {
+            stats.haste
+                || self.turns_started[permanent.controller.index()]
+                    > permanent.entered_controller_turn
+        })
     }
 
     fn declare_attacker(&mut self, attacker: CardInstanceId) {
@@ -3965,8 +4100,10 @@ impl Game {
                 (
                     permanent.card.id,
                     self.has_flying(permanent),
-                    self.has_mountainwalk(permanent)
-                        && self.controls_mountain(permanent.controller.opponent()),
+                    (self.has_mountainwalk(permanent)
+                        && self.controls_mountain(permanent.controller.opponent()))
+                        || (self.has_forestwalk(permanent)
+                            && self.controls_forest(permanent.controller.opponent())),
                     self.power(permanent).unwrap_or(0),
                 )
             })
@@ -4497,6 +4634,11 @@ impl Game {
         self.turns_started[self.active_player.index()] += 1;
         self.step = Step::Upkeep;
         self.players[self.active_player.index()].land_played_this_turn = false;
+        for permanent in &mut self.battlefield {
+            if permanent.forestwalk_until_upkeep_of == Some(self.active_player) {
+                permanent.forestwalk_until_upkeep_of = None;
+            }
+        }
         let winter_orb = self.winter_orb_active();
         let smoke = self.count_behavior(CardBehavior::Smoke) > 0;
         let restricted_lands: Vec<_> = self
@@ -4622,6 +4764,18 @@ impl Game {
                     self.destroy_permanent(artifact);
                 }
             }
+        }
+        let erhnams = self
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == player
+                    && self.effective_behavior(permanent) == Some(CardBehavior::ErhnamDjinn)
+            })
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>();
+        for source in erhnams {
+            self.queue_erhnam_decision(player, source);
         }
         if self.count_behavior(CardBehavior::CityInABottle) > 0 {
             let doomed: Vec<_> = self
@@ -5027,7 +5181,7 @@ mod tests {
             card: card(id, definition, controller),
             controller,
             tapped: false,
-            entered_turn: 0,
+            entered_controller_turn: 0,
             damage: 0,
             power_bonus: 0,
             toughness_bonus: 0,
@@ -5045,6 +5199,7 @@ mod tests {
             trample_until_end: false,
             berserked: false,
             attacked_this_turn: false,
+            forestwalk_until_upkeep_of: None,
         }
     }
 
@@ -6275,8 +6430,8 @@ mod tests {
         let mut orb = creature(10_000, cards::CHAOS_ORB, PlayerId::One);
         let mut mountain = creature(10_001, cards::MOUNTAIN, PlayerId::One);
         let target = creature(10_002, cards::BLACK_VISE, PlayerId::Two);
-        orb.entered_turn = game.turn;
-        mountain.entered_turn = game.turn;
+        orb.entered_controller_turn = game.turns_started[PlayerId::One.index()];
+        mountain.entered_controller_turn = game.turns_started[PlayerId::One.index()];
         let orb_id = orb.card.id;
         let mountain_id = mountain.card.id;
         let target_id = target.card.id;
@@ -6304,6 +6459,34 @@ mod tests {
         );
         assert_eq!(game.players[0].mana_pool.total(), 0);
         assert_eq!(game.stack.len(), 1);
+    }
+
+    #[test]
+    fn icatian_javelineers_cannot_activate_until_their_controller_turn() {
+        let mut game = ready_game();
+        let mut javeliners = creature(10_000, cards::ICATIAN_JAVELINEERS, PlayerId::One);
+        javeliners.plus_one_counters = 1;
+        javeliners.entered_controller_turn = game.turns_started[PlayerId::One.index()];
+        let action = Action::ActivateAbility {
+            source: javeliners.card.id,
+            target: Some(Target::Player(PlayerId::Two)),
+            sacrifice: None,
+        };
+        game.battlefield = vec![javeliners];
+        assert_eq!(game.power(&game.battlefield[0]), Some(1));
+        assert_eq!(game.toughness(&game.battlefield[0]), Some(1));
+
+        assert!(!game.legal_actions(PlayerId::One).contains(&action));
+
+        game.start_next_turn();
+        game.priority = PlayerId::One;
+        assert_eq!(game.active_player, PlayerId::Two);
+        assert!(!game.legal_actions(PlayerId::One).contains(&action));
+
+        game.start_next_turn();
+        game.priority = PlayerId::One;
+        assert_eq!(game.active_player, PlayerId::One);
+        assert!(game.legal_actions(PlayerId::One).contains(&action));
     }
 
     #[test]
@@ -6383,6 +6566,43 @@ mod tests {
                     action,
                     Action::DeclareBlocker { attacker, .. } if *attacker == flarg_id
                 ))
+        );
+    }
+
+    #[test]
+    fn erhnam_djinn_upkeep_targets_a_creature_for_forestwalk() {
+        let mut game = ready_game();
+        let erhnam = creature(10_000, cards::ERHNAM_DJINN, PlayerId::One);
+        let target = creature(10_001, cards::JUZAM_DJINN, PlayerId::Two);
+        let target_id = target.card.id;
+        game.battlefield = vec![erhnam, target];
+        game.turn = 2;
+        game.step = Step::Upkeep;
+
+        game.handle_upkeep_triggers();
+
+        let decision = game.observe(PlayerId::One).decision.unwrap();
+        assert_eq!(
+            decision.prompt,
+            "Erhnam Djinn: choose a creature for forestwalk"
+        );
+        assert_eq!(decision.options.len(), 1);
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![target_id.0],
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == target_id)
+                .unwrap()
+                .forestwalk_until_upkeep_of,
+            Some(PlayerId::One)
         );
     }
 
@@ -6545,7 +6765,7 @@ mod tests {
     fn green_creatures_get_their_land_bonuses_and_llanowar_elves_make_green() {
         let mut game = ready_game();
         game.battlefield.extend([
-            creature(10_000, cards::FOREST, PlayerId::One),
+            creature(10_000, cards::TAIGA, PlayerId::One),
             creature(10_001, cards::KIRD_APE, PlayerId::One),
             creature(10_002, cards::LLANOWAR_ELVES, PlayerId::One),
         ]);
