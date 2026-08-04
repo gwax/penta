@@ -371,9 +371,26 @@ pub enum GameEvent {
         active_player: PlayerId,
         step: Step,
     },
+    /// A permanent left the battlefield. Emitted from the three functions that
+    /// can remove one, so nothing leaves play without the log seeing it. The
+    /// definition travels with the event because the card is by then in a zone
+    /// the observing player may not be able to read.
+    PermanentLeftBattlefield {
+        controller: PlayerId,
+        card: CardInstanceId,
+        definition: CardDefinitionId,
+        destination: BattlefieldExit,
+    },
     GameEnded {
         result: GameResult,
     },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum BattlefieldExit {
+    Graveyard,
+    Exile,
+    Hand,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -4445,9 +4462,19 @@ impl Game {
                 .mana_pool
                 .colorless += 4;
         }
+        self.record_battlefield_exit(&permanent, BattlefieldExit::Graveyard);
         self.players[permanent.card.owner.index()]
             .graveyard
             .push(permanent.card);
+    }
+
+    fn record_battlefield_exit(&mut self, permanent: &Permanent, destination: BattlefieldExit) {
+        self.events.push(GameEvent::PermanentLeftBattlefield {
+            controller: permanent.controller,
+            card: permanent.card.id,
+            definition: permanent.card.definition,
+            destination,
+        });
     }
 
     fn exile_permanent(&mut self, id: CardInstanceId) {
@@ -4459,6 +4486,7 @@ impl Game {
             return;
         };
         let permanent = self.battlefield.remove(index);
+        self.record_battlefield_exit(&permanent, BattlefieldExit::Exile);
         self.players[permanent.card.owner.index()]
             .exile
             .push(permanent.card);
@@ -4473,6 +4501,7 @@ impl Game {
             return;
         };
         let permanent = self.battlefield.remove(index);
+        self.record_battlefield_exit(&permanent, BattlefieldExit::Hand);
         self.players[permanent.card.owner.index()]
             .hand
             .push(permanent.card);

@@ -1,7 +1,7 @@
 use penta::poc;
 use penta::{
-    Action, CardCatalog, CardDefinitionId, CardInstanceId, Game, GameEvent, GameResult,
-    HandcraftedPolicy, PlayerId, PlayerObservation, Policy, RandomPolicy, Step, Target,
+    Action, BattlefieldExit, CardCatalog, CardDefinitionId, CardInstanceId, Game, GameEvent,
+    GameResult, HandcraftedPolicy, PlayerId, PlayerObservation, Policy, RandomPolicy, Step, Target,
 };
 use serde_json::{Value, json};
 use std::fmt::Write as _;
@@ -944,6 +944,25 @@ impl WebGame {
                     "your"
                 } else {
                     "opponent’s"
+                }
+            )),
+            GameEvent::PermanentLeftBattlefield {
+                controller,
+                definition,
+                destination,
+                ..
+            } => Some(format!(
+                "{} {} {}",
+                if *controller == self.human {
+                    "Your"
+                } else {
+                    "Opponent’s"
+                },
+                self.card_name(*definition),
+                match destination {
+                    BattlefieldExit::Graveyard => "was destroyed",
+                    BattlefieldExit::Exile => "was exiled",
+                    BattlefieldExit::Hand => "returned to hand",
                 }
             )),
             GameEvent::GameEnded { result } => Some(match result {

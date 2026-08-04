@@ -125,6 +125,44 @@ impl HandcraftedPolicy {
             .find_map(|permanent| (permanent.id == id).then_some(permanent.definition))
     }
 
+    /// Spells whose whole purpose is to remove something the opponent
+    /// controls. Pump and recursion also take a permanent target, so they are
+    /// deliberately excluded — those want a friendly target.
+    fn is_hostile_removal(behavior: Option<CardBehavior>) -> bool {
+        matches!(
+            behavior,
+            Some(
+                CardBehavior::SwordsToPlowshares
+                    | CardBehavior::Disenchant
+                    | CardBehavior::DivineOffering
+                    | CardBehavior::Shatter
+                    | CardBehavior::Terror
+                    | CardBehavior::DustToDust
+                    | CardBehavior::Detonate
+            )
+        )
+    }
+
+    /// Removal aimed at your own board is never worth its base score, so the
+    /// penalty has to cancel that base outright rather than merely rank below
+    /// a hostile target that may not exist.
+    fn removal_target_score(observation: &PlayerObservation, target: Target) -> i32 {
+        match target {
+            Target::Permanent(id) => observation
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.id == id)
+                .map_or(-10_000, |permanent| {
+                    if permanent.controller == observation.viewer {
+                        -10_000
+                    } else {
+                        250 + i32::from(permanent.power.unwrap_or(0).max(0)) * 25
+                    }
+                }),
+            Target::Player(_) | Target::Spell(_) => -10_000,
+        }
+    }
+
     fn target_score(observation: &PlayerObservation, target: Target) -> i32 {
         match target {
             Target::Player(player) if player == observation.viewer.opponent() => 500,
@@ -294,6 +332,8 @@ impl HandcraftedPolicy {
                             }),
                         Target::Player(_) => -10_000,
                     }
+                } else if Self::is_hostile_removal(behavior) {
+                    Self::removal_target_score(observation, *target)
                 } else {
                     damage.map_or_else(
                         || Self::target_score(observation, *target),

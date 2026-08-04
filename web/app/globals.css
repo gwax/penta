@@ -437,7 +437,10 @@ button {
   position: relative;
   min-width: 0;
   display: grid;
-  grid-template-rows: 48px 30px minmax(130px, 1fr) 48px auto minmax(130px, 1fr) 48px 174px;
+  /* The last row holds the hand fan, which is 176px of card standing 14px off
+     the floor. Sizing it any shorter pushes the resting cards up over the
+     player bar and hides the deck subtitle behind them. */
+  grid-template-rows: 48px 30px minmax(122px, 1fr) 48px auto minmax(122px, 1fr) 48px 190px;
   gap: 2px;
   padding: 6px 14px 8px;
   overflow: hidden;

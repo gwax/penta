@@ -17,9 +17,9 @@ pub use card::{
 };
 pub use deck::{Deck, DeckError, ValidatedDeck};
 pub use game::{
-    DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    Game, GameError, GameEvent, GameResult, ManaPool, PlayerObservation, StackObjectKind, Step,
-    WinReason,
+    BattlefieldExit, DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility,
+    DecisionZone, Game, GameError, GameEvent, GameResult, ManaPool, PlayerObservation,
+    StackObjectKind, Step, WinReason,
 };
 pub use ids::{CardDefinitionId, CardInstanceId, PlayerId, StackObjectId};
 pub use policy::{HandcraftedPolicy, PlayError, Policy, RandomPolicy, play_game};

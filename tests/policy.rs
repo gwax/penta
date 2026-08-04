@@ -368,3 +368,74 @@ fn handcrafted_policy_decisively_beats_random_across_builtin_decks_and_seats() {
         "handcrafted policy won only {wins} of {decided_games} games"
     );
 }
+
+#[test]
+fn handcrafted_never_aims_removal_at_its_own_permanents() {
+    let catalog = poc::catalog().unwrap();
+    let own_angel = permanent(1, poc::cards::SERRA_ANGEL, PlayerId::One, Some(4), Some(4));
+    let own_mox = permanent(2, poc::cards::MOX_PEARL, PlayerId::One, None, None);
+    let swords = CardInstanceId(10);
+    let disenchant = CardInstanceId(11);
+    let mut observation = policy_observation(
+        vec![own_angel, own_mox],
+        vec![
+            Action::PassPriority,
+            Action::CastSpell {
+                card: swords,
+                targets: vec![Target::Permanent(CardInstanceId(1))],
+                sacrifices: Vec::new(),
+                x: 0,
+            },
+            Action::CastSpell {
+                card: disenchant,
+                targets: vec![Target::Permanent(CardInstanceId(2))],
+                sacrifices: Vec::new(),
+                x: 0,
+            },
+        ],
+    );
+    observation.hand = vec![
+        (swords, poc::cards::SWORDS_TO_PLOWSHARES),
+        (disenchant, poc::cards::DISENCHANT),
+    ];
+    let mut policy = HandcraftedPolicy::new(catalog);
+
+    // Removal carries a large base score, so a merely-unattractive friendly
+    // target used to stay far above passing.
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(Action::PassPriority),
+        "the only targets on offer are its own board, so it should hold the removal",
+    );
+}
+
+#[test]
+fn handcrafted_still_spends_removal_on_the_opponent() {
+    let catalog = poc::catalog().unwrap();
+    let own_angel = permanent(1, poc::cards::SERRA_ANGEL, PlayerId::One, Some(4), Some(4));
+    let their_angel = permanent(3, poc::cards::SERRA_ANGEL, PlayerId::Two, Some(4), Some(4));
+    let swords = CardInstanceId(10);
+    let cast_at_theirs = Action::CastSpell {
+        card: swords,
+        targets: vec![Target::Permanent(CardInstanceId(3))],
+        sacrifices: Vec::new(),
+        x: 0,
+    };
+    let mut observation = policy_observation(
+        vec![own_angel, their_angel],
+        vec![
+            Action::PassPriority,
+            Action::CastSpell {
+                card: swords,
+                targets: vec![Target::Permanent(CardInstanceId(1))],
+                sacrifices: Vec::new(),
+                x: 0,
+            },
+            cast_at_theirs.clone(),
+        ],
+    );
+    observation.hand = vec![(swords, poc::cards::SWORDS_TO_PLOWSHARES)];
+    let mut policy = HandcraftedPolicy::new(catalog);
+
+    assert_eq!(policy.choose_action(&observation), Some(cast_at_theirs));
+}

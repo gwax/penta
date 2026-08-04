@@ -8,6 +8,7 @@ export const deckNotes: Record<string, string> = {
   "White Weenie": "Efficient threats · Crusade and Armageddon",
   Erhnamgeddon: "Green-white midrange · Armageddon lock",
   Counterburn: "Blue-red tempo · Counters and direct damage",
+  "Lions DIB": "Blue-white tempo · Cheap threats and permission",
   "Lion Dib Bolt": "Blue-white tempo · Cheap threats and burn",
   "BWR Aggro": "Three-color pressure · Knights and burn",
   "GR Aggro": "Green-red pressure · Efficient creatures and tricks",
