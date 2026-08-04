@@ -51,6 +51,9 @@ const initialDeckPair = () => {
 const initialHumanFirst = () =>
   new URLSearchParams(window.location.search).get("first") !== "false";
 
+const cardName = (state: GameState | null, id: number) =>
+  state?.battlefield.find((card) => card.id === id)?.name ?? "this attacker";
+
 const cardTargetKey = (id: number) => `card:${id}`;
 const playerTargetKey = (owner: Owner) => `player:${owner}`;
 const actionTargetKeys = (action: Action) => Array.from(new Set([
@@ -376,6 +379,11 @@ export function GameClient() {
   const declaringBlockers =
     state?.step === "Declare Blockers" &&
     state.actions.some((action) => action.label === "Finish blocking");
+  // The engine only asks about damage when one attacker is split between
+  // several blockers, so there is exactly one attacker to name.
+  const assigningDamageFor = state?.actions.find(
+    (action) => action.combatDamageAttacker != null,
+  )?.combatDamageAttacker;
   const preparingBlockers =
     state?.step === "Declare Attackers" &&
     state.active === "Opponent" &&
@@ -430,6 +438,9 @@ export function GameClient() {
       if (action.kind === "danger") return false;
       if (state.decision && action.decisionId === state.decision.id) return false;
       if (!actionMatchesSelectedX(action)) return false;
+      // Splitting damage is the only thing the game is waiting for, so it is
+      // listed outright rather than hidden behind selecting the attacker.
+      if (action.combatDamageAttacker != null) return true;
       if (declaringBlockers && action.kind === "combat") return false;
       if (declaringBlockers && action.label === "Finish blocking") return false;
       if (action.kind === "pass" || action.cardId == null) return true;
@@ -1298,6 +1309,8 @@ export function GameClient() {
                 <strong>
                   {watchingOpponent
                     ? `${opponentActionQueue.length} action${opponentActionQueue.length === 1 ? "" : "s"}`
+                    : assigningDamageFor != null
+                      ? `Assign ${cardName(state, assigningDamageFor)} damage`
                     : declaringBlockers
                       ? "Assign your blockers"
                     : preparingBlockers

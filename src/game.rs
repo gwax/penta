@@ -4245,14 +4245,15 @@ impl Game {
             .battlefield
             .iter()
             .filter(|attacker| attacker.attacking)
+            // A single blocker leaves nothing worth deciding: it takes lethal
+            // and, with trample, the rest spills over. Only a real split
+            // between several blockers is worth asking about.
             .filter(|attacker| {
-                let blocker_count = self
-                    .battlefield
+                self.battlefield
                     .iter()
                     .filter(|blocker| blocker.blocking == Some(attacker.card.id))
-                    .count();
-                let trample = self.has_trample(attacker);
-                blocker_count > 1 || (trample && blocker_count > 0)
+                    .count()
+                    > 1
             })
             .map(|attacker| attacker.card.id)
             .collect();
@@ -4285,17 +4286,31 @@ impl Game {
         damage_distributions(recipients.len(), power)
             .into_iter()
             .filter(|amounts| {
+                let blockers = || {
+                    recipients
+                        .iter()
+                        .zip(amounts)
+                        .filter_map(|(target, amount)| match target {
+                            Target::Permanent(id) => Some((*id, *amount)),
+                            Target::Player(_) | Target::Spell(_) => None,
+                        })
+                };
+                // 510.1c: damage is assigned in an order, and a blocker only
+                // gets any once every blocker ahead of it has lethal. Whatever
+                // order the player picks, that leaves at most one blocker
+                // holding a non-lethal share.
+                if blockers()
+                    .filter(|(id, amount)| *amount > 0 && *amount < self.lethal_damage(*id))
+                    .count()
+                    > 1
+                {
+                    return false;
+                }
+                // 510.1d: trample only spills once every blocker has lethal.
                 if !trample || amounts.last().copied().unwrap_or(0) == 0 {
                     return true;
                 }
-                recipients
-                    .iter()
-                    .zip(amounts)
-                    .filter_map(|(target, amount)| match target {
-                        Target::Permanent(id) => Some((*id, *amount)),
-                        Target::Player(_) | Target::Spell(_) => None,
-                    })
-                    .all(|(id, amount)| amount >= self.lethal_damage(id))
+                blockers().all(|(id, amount)| amount >= self.lethal_damage(id))
             })
             .map(|amounts| Action::AssignCombatDamage {
                 attacker: attacker_id,
@@ -4307,6 +4322,39 @@ impl Game {
                     .collect(),
             })
             .collect()
+    }
+
+    /// How an unassigned attacker spreads its damage: enough to kill each
+    /// blocker in turn, then the remainder over the top if it tramples and
+    /// onto the last blocker if it does not.
+    fn default_damage_split(
+        &self,
+        attacker_id: CardInstanceId,
+        blockers: &[CardInstanceId],
+    ) -> Vec<(Target, u16)> {
+        let Some(attacker) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker_id)
+        else {
+            return Vec::new();
+        };
+        let mut remaining = self.power(attacker).unwrap_or(0).max(0).cast_unsigned();
+        let trample = self.has_trample(attacker);
+        let mut split = Vec::with_capacity(blockers.len() + 1);
+        for blocker in blockers {
+            let amount = self.lethal_damage(*blocker).min(remaining);
+            remaining -= amount;
+            split.push((Target::Permanent(*blocker), amount));
+        }
+        if remaining > 0 {
+            if trample {
+                split.push((Target::Player(self.active_player.opponent()), remaining));
+            } else if let Some(last) = split.last_mut() {
+                last.1 += remaining;
+            }
+        }
+        split
     }
 
     fn lethal_damage(&self, permanent_id: CardInstanceId) -> u16 {
@@ -4385,7 +4433,9 @@ impl Game {
                     .combat_damage_assignment
                     .clone();
                 if assignments.is_empty() {
-                    self.damage_target(Some(Target::Permanent(blockers[0])), power);
+                    for (recipient, amount) in self.default_damage_split(attacker_id, &blockers) {
+                        self.damage_target(Some(recipient), amount);
+                    }
                 } else {
                     for assignment in assignments {
                         self.damage_target(Some(assignment.recipient), assignment.amount);
@@ -6336,6 +6386,68 @@ mod tests {
     }
 
     #[test]
+    fn goblin_grenade_eats_exactly_one_of_two_identical_goblins() {
+        let mut game = ready_game();
+        let grenade = card(10_000, cards::GOBLIN_GRENADE, PlayerId::One);
+        let first = creature(10_001, cards::GOBLIN_BALLOON_BRIGADE, PlayerId::One);
+        let second = creature(10_002, cards::GOBLIN_BALLOON_BRIGADE, PlayerId::One);
+        let first_id = first.card.id;
+        let second_id = second.card.id;
+        game.players[0].hand.push(grenade.clone());
+        game.players[0].mana_pool.red = 1;
+        game.battlefield.push(first);
+        game.battlefield.push(second);
+
+        // Each identical Goblin is its own separate cost, not one lumped choice.
+        let casts: Vec<_> = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(
+                |action| matches!(action, Action::CastSpell { card, .. } if *card == grenade.id),
+            )
+            .collect();
+        assert!(
+            casts.iter().all(|action| matches!(
+                action,
+                Action::CastSpell { sacrifices, .. } if sacrifices.len() == 1
+            )),
+            "every Grenade cast sacrifices exactly one Goblin",
+        );
+
+        game.apply(
+            PlayerId::One,
+            Action::CastSpell {
+                card: grenade.id,
+                targets: vec![Target::Player(PlayerId::Two)],
+                sacrifices: vec![first_id],
+                x: 0,
+            },
+        )
+        .unwrap();
+
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != first_id),
+            "the chosen Goblin is gone",
+        );
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == second_id),
+            "its twin stays on the battlefield",
+        );
+        pass_priority_pair(&mut game);
+        assert_eq!(game.players[1].life, 15);
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == second_id),
+            "resolving the Grenade does not take the twin either",
+        );
+    }
+
+    #[test]
     fn hypnotic_specter_discards_after_dealing_combat_damage() {
         let mut game = ready_game();
         let mut specter = creature(10_000, cards::HYPNOTIC_SPECTER, PlayerId::One);
@@ -6875,33 +6987,129 @@ mod tests {
     }
 
     #[test]
-    fn trample_requires_lethal_assignment_before_player_damage() {
+    fn a_single_blocker_needs_no_damage_assignment() {
         let mut game = ready_game();
         let mut attacker = creature(10_000, cards::BALL_LIGHTNING, PlayerId::One);
         attacker.attacking = true;
         let mut blocker = creature(10_001, cards::ATOG, PlayerId::Two);
         blocker.blocking = Some(attacker.card.id);
-        let attacker_id = attacker.card.id;
         let blocker_id = blocker.card.id;
         game.battlefield = vec![attacker, blocker];
+        let life_before = game.players[1].life;
         game.begin_combat_damage_assignment();
 
-        let assignment = |to_blocker, to_player| Action::AssignCombatDamage {
-            attacker: attacker_id,
-            assignments: vec![
-                CombatDamageAssignment {
-                    recipient: Target::Permanent(blocker_id),
-                    amount: to_blocker,
-                },
-                CombatDamageAssignment {
-                    recipient: Target::Player(PlayerId::Two),
-                    amount: to_player,
-                },
-            ],
+        assert!(
+            !game
+                .legal_actions(PlayerId::One)
+                .iter()
+                .any(|action| matches!(action, Action::AssignCombatDamage { .. })),
+            "one blocker leaves nothing worth deciding",
+        );
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != blocker_id),
+            "the blocker still takes lethal damage",
+        );
+        assert_eq!(
+            game.players[1].life,
+            life_before - 4,
+            "a 6/1 trampler over a 1/2 blocker spills the remaining 4",
+        );
+    }
+
+    #[test]
+    fn trample_requires_lethal_assignment_before_player_damage() {
+        let mut game = ready_game();
+        let mut attacker = creature(10_000, cards::BALL_LIGHTNING, PlayerId::One);
+        attacker.attacking = true;
+        let mut first = creature(10_001, cards::ATOG, PlayerId::Two);
+        first.blocking = Some(attacker.card.id);
+        let mut second = creature(10_002, cards::GOBLIN_BALLOON_BRIGADE, PlayerId::Two);
+        second.blocking = Some(attacker.card.id);
+        let attacker_id = attacker.card.id;
+        let (first_id, second_id) = (first.card.id, second.card.id);
+        game.battlefield = vec![attacker, first, second];
+        game.begin_combat_damage_assignment();
+
+        let mut recipients = [Target::Permanent(first_id), Target::Permanent(second_id)];
+        recipients.sort_unstable();
+        let assignment = |to_first: u16, to_second: u16, to_player: u16| {
+            let mut assignments: Vec<_> = recipients
+                .iter()
+                .copied()
+                .zip([to_first, to_second])
+                .map(|(recipient, amount)| CombatDamageAssignment { recipient, amount })
+                .collect();
+            assignments.push(CombatDamageAssignment {
+                recipient: Target::Player(PlayerId::Two),
+                amount: to_player,
+            });
+            Action::AssignCombatDamage {
+                attacker: attacker_id,
+                assignments,
+            }
         };
         let actions = game.legal_actions(PlayerId::One);
-        assert!(!actions.contains(&assignment(1, 5)));
-        assert!(actions.contains(&assignment(2, 4)));
+        let lethal: Vec<u16> = recipients
+            .iter()
+            .map(|target| match target {
+                Target::Permanent(id) => game.lethal_damage(*id),
+                _ => 0,
+            })
+            .collect();
+        let spare = 6 - lethal[0] - lethal[1];
+
+        assert!(
+            actions.contains(&assignment(lethal[0], lethal[1], spare)),
+            "lethal to both blockers then trample over is legal",
+        );
+        assert!(
+            !actions.contains(&assignment(lethal[0] - 1, lethal[1], spare + 1)),
+            "trample cannot spill while a blocker is short of lethal",
+        );
+    }
+
+    #[test]
+    fn damage_cannot_be_dribbled_across_several_blockers_at_once() {
+        let mut game = ready_game();
+        let mut attacker = creature(10_000, cards::SU_CHI, PlayerId::One);
+        attacker.attacking = true;
+        let attacker_id = attacker.card.id;
+        game.battlefield = vec![attacker];
+        let mut ids = Vec::new();
+        for index in 0..3 {
+            let mut blocker = creature(10_001 + index, cards::ATOG, PlayerId::Two);
+            blocker.blocking = Some(attacker_id);
+            ids.push(blocker.card.id);
+            game.battlefield.push(blocker);
+        }
+        ids.sort_unstable();
+        game.begin_combat_damage_assignment();
+
+        let assignment = |amounts: [u16; 3]| Action::AssignCombatDamage {
+            attacker: attacker_id,
+            assignments: ids
+                .iter()
+                .copied()
+                .zip(amounts)
+                .map(|(id, amount)| CombatDamageAssignment {
+                    recipient: Target::Permanent(id),
+                    amount,
+                })
+                .collect(),
+        };
+        let actions = game.legal_actions(PlayerId::One);
+
+        // Su-Chi is 4/4 into three 1/2 blockers, so it can kill two of them.
+        assert!(
+            actions.contains(&assignment([2, 2, 0])),
+            "killing two blockers outright is legal",
+        );
+        assert!(
+            !actions.contains(&assignment([1, 1, 2])),
+            "only the blocker at the front of the order may be left short of lethal",
+        );
     }
 
     #[test]

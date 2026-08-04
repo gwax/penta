@@ -560,6 +560,10 @@ impl WebGame {
                     "manaAbility": matches!(action, Action::ActivateManaAbility { .. }),
                     "spellAction": matches!(action, Action::CastSpell { .. }),
                     "sacrificeCardIds": action_sacrifices(action),
+                    "combatDamageAttacker": match action {
+                        Action::AssignCombatDamage { attacker, .. } => Some(attacker.0),
+                        _ => None,
+                    },
                     "x": match action {
                         Action::CastSpell { x, .. } => Some(*x),
                         _ => None,
@@ -1131,22 +1135,27 @@ impl WebGame {
                 self.instance_name(observation, *blocker)
             ),
             Action::FinishDeclaringBlockers => "Finish blocking".into(),
-            Action::AssignCombatDamage {
-                attacker,
-                assignments,
-            } => format!(
-                "Assign {} damage from {}",
-                assignments
+            // The attacker is already named in the prompt above these buttons,
+            // so each option only has to say where the damage lands. Recipients
+            // taking nothing are noise and stay out of the label.
+            Action::AssignCombatDamage { assignments, .. } => {
+                let landed = assignments
                     .iter()
-                    .map(|assignment| format!(
-                        "{} to {}",
-                        assignment.amount,
-                        self.target_name(observation, assignment.recipient)
-                    ))
-                    .collect::<Vec<_>>()
-                    .join(", "),
-                self.instance_name(observation, *attacker)
-            ),
+                    .filter(|assignment| assignment.amount > 0)
+                    .map(|assignment| {
+                        format!(
+                            "{} to {}",
+                            assignment.amount,
+                            self.target_name(observation, assignment.recipient)
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                if landed.is_empty() {
+                    "Deal no damage".into()
+                } else {
+                    landed.join(", ")
+                }
+            }
             Action::Concede => "Concede game".into(),
         }
     }

@@ -991,3 +991,77 @@ test("actions that eat a permanent report what they would take", async () => {
 
   game.free();
 });
+
+test("combat damage is only asked about when it is a real choice", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const advance = (game, stopWhen) => {
+    for (let turn = 0; turn < 700; turn++) {
+      const state = JSON.parse(game.state_json());
+      if (state.result) return null;
+      const found = stopWhen(state);
+      if (found) return found;
+      if (state.decision) {
+        const wanted = Math.max(state.decision.minimum, 1);
+        game.choose_decision(
+          state.decision.id,
+          JSON.stringify(state.decision.options.slice(0, wanted).map((option) => option.id)),
+        );
+        continue;
+      }
+      const actions = state.actions.filter((action) => action.kind !== "danger");
+      const next =
+        actions.find((action) => action.label === "Keep this hand") ??
+        actions.find((action) => action.label.startsWith("Play ")) ??
+        actions.find((action) => /^Attack with \D/.test(action.label)) ??
+        actions.find((action) => action.label.startsWith("Block ")) ??
+        actions.find((action) => action.label.startsWith("Cast ")) ??
+        actions.find((action) => action.label.startsWith("Discard ")) ??
+        actions.find((action) => action.kind === "pass") ??
+        actions[0];
+      if (!next) return null;
+      game.act(next.index);
+    }
+    return null;
+  };
+
+  // A lone blocker is never a question, so a trampler facing one resolves on
+  // its own instead of listing every way to waste damage on the blocker.
+  const solo = new WebGame("Goblins", "The Deck", "Handcrafted", true, 9394);
+  const prompted = advance(solo, (state) => {
+    const asks = state.actions.filter((action) => action.combatDamageAttacker != null);
+    if (!asks.length) return null;
+    const attacker = state.battlefield.find((card) => card.id === asks[0].combatDamageAttacker);
+    const blockers = state.battlefield.filter((card) => card.blocking === attacker?.id);
+    return blockers.length > 1 ? null : { attacker: attacker?.name, blockers: blockers.length };
+  });
+  assert.equal(prompted, null, `a single blocker still prompted: ${JSON.stringify(prompted)}`);
+  solo.free();
+
+  // Splitting between several blockers is a real decision and stays asked.
+  const split = new WebGame("GR Aggro", "Robots", "Handcrafted", true, 2094591);
+  const ask = advance(split, (state) => {
+    const asks = state.actions.filter((action) => action.combatDamageAttacker != null);
+    return asks.length ? { asks, state } : null;
+  });
+  assert.ok(ask, "the seeded game reaches a multi-blocker assignment");
+  const attacker = ask.state.battlefield.find(
+    (card) => card.id === ask.asks[0].combatDamageAttacker,
+  );
+  assert.ok(attacker, "the browser can name the attacker being assigned");
+  assert.ok(
+    ask.state.battlefield.filter((card) => card.blocking === attacker.id).length > 1,
+    "it is only asked when several blockers share the damage",
+  );
+  for (const action of ask.asks) {
+    assert.ok(
+      /^\d+ to /.test(action.label),
+      `the option says where damage lands: "${action.label}"`,
+    );
+    assert.ok(!/ 0 to /.test(action.label), `recipients taking nothing are left out: "${action.label}"`);
+  }
+  split.free();
+});
