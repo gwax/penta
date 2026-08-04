@@ -1,37 +1,14 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
-import hostingConfig from "./.openai/hosting.json";
-import { sites } from "./build/sites-vite-plugin";
 
-const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
-  "00000000-0000-4000-8000-000000000000";
+// macOS Seatbelt blocks FSEvents, so sandboxed previews need polling for HMR.
+const isSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
-const { d1, r2 } = hostingConfig;
-
-// macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
-const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
-const isVinextDev = process.argv.includes("dev");
-
-const localBindingConfig = {
+// The game runs entirely in the browser, so the Worker serves the app and its
+// assets and needs no storage bindings.
+const workerConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
-  d1_databases: d1
-    ? [
-        {
-          binding: d1,
-          database_name: "site-creator-d1",
-          database_id: SITE_CREATOR_PLACEHOLDER_DATABASE_ID,
-        },
-      ]
-    : [],
-  r2_buckets: r2
-    ? [
-        {
-          binding: r2,
-          bucket_name: "site-creator-r2",
-        },
-      ]
-    : [],
 };
 
 export default defineConfig(async () => {
@@ -45,7 +22,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    server: isCodexSeatbeltSandbox
+    server: isSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
     // The generated WASM declarations are TypeScript-only and are not valid
@@ -54,14 +31,13 @@ export default defineConfig(async () => {
     optimizeDeps: { noDiscovery: true },
     plugins: [
       vinext(),
-      sites(),
       cloudflare({
         // The local client does not need the Miniflare inspector. Disabling
         // its extra listener keeps `pnpm dev` usable in locked-down sandboxes
         // and leaves port 3000 as the only development server endpoint.
         inspectorPort: false,
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-        config: localBindingConfig,
+        config: workerConfig,
       }),
     ],
   };

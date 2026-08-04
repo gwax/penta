@@ -33,8 +33,18 @@ That formats, lints, and tests both Rust crates, rebuilds the WASM artifact,
 builds the client, and runs the browser-facing tests. The shorter commands are
 available from this directory as `pnpm lint`, `pnpm build`, and `pnpm test`.
 
-## Hosting
+## Deploying
 
-`vite.config.ts` and `worker/index.ts` retain the small Sites adapter used for
-deployment. Local development does not require Cloudflare bindings; the
-checked-in `.openai/hosting.json` is only consulted by the deployment plugin.
+The client deploys to Cloudflare Workers. `worker/index.ts` is the entry point
+and `vite.config.ts` declares the Worker; the build writes a ready Wrangler
+config to `dist/server/wrangler.json`.
+
+```bash
+pnpm run deploy
+```
+
+That rebuilds the WASM artifact and the client, then publishes the `penta`
+Worker. It needs a Cloudflare account — `npx wrangler login` once, and
+`npx wrangler whoami` to check which account is active. The game runs entirely
+in the browser, so there are no D1, R2, or other storage bindings to provision,
+and local development needs no Cloudflare credentials at all.
