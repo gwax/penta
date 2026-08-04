@@ -45,6 +45,19 @@ export class WebGame {
         }
     }
     /**
+     * Takes back every attacker declared so far this combat.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error when the attack has already been committed.
+     */
+    cancel_attackers() {
+        const ret = wasm.webgame_cancel_attackers(this.__wbg_ptr);
+        if (ret[1]) {
+            throw takeFromExternrefTable0(ret[0]);
+        }
+    }
+    /**
      * Submits the selected option IDs for the current generic decision.
      *
      * The selection is validated by the engine, so the browser does not need

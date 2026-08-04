@@ -27,6 +27,14 @@ export class WebGame {
      */
     attack_all(): void;
     /**
+     * Takes back every attacker declared so far this combat.
+     *
+     * # Errors
+     *
+     * Returns a JavaScript error when the attack has already been committed.
+     */
+    cancel_attackers(): void;
+    /**
      * Submits the selected option IDs for the current generic decision.
      *
      * The selection is validated by the engine, so the browser does not need
@@ -99,6 +107,7 @@ export interface InitOutput {
     readonly __wbg_webgame_free: (a: number, b: number) => void;
     readonly webgame_act: (a: number, b: number) => [number, number];
     readonly webgame_attack_all: (a: number) => [number, number];
+    readonly webgame_cancel_attackers: (a: number) => [number, number];
     readonly webgame_choose_decision: (a: number, b: number, c: number, d: number) => [number, number];
     readonly webgame_finalize_blocks: (a: number, b: number, c: number) => [number, number];
     readonly webgame_new: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number, number];

@@ -907,6 +907,15 @@ export function GameClient() {
     }
   };
 
+  const cancelAttackers = () => {
+    try {
+      game.current?.cancel_attackers();
+      refresh();
+    } catch (cause) {
+      setError(String(cause));
+    }
+  };
+
   return (
     <main className="arena">
       <header className="topbar">
@@ -1408,11 +1417,22 @@ export function GameClient() {
                   )}
                 </div>
               )}
-              {attackAllCount > 0 && (
+              {attackAllCount > 0 && !state.canCancelAttackers && (
                 <button className="attack-all" onClick={attackAll} disabled={watchingOpponent}>
                   <span aria-hidden="true">⚔</span>
                   <strong>Attack all</strong>
                   <small>{attackAllCount} creature{attackAllCount === 1 ? "" : "s"}</small>
+                </button>
+              )}
+              {state.canCancelAttackers && (
+                <button
+                  className="cancel-attack"
+                  onClick={cancelAttackers}
+                  disabled={watchingOpponent}
+                >
+                  <span aria-hidden="true">↶</span>
+                  <strong>Cancel</strong>
+                  <small>Take back these attackers</small>
                 </button>
               )}
               {choosingFireballTargets && (

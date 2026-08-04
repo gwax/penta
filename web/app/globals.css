@@ -1499,6 +1499,43 @@ button {
   text-transform: uppercase;
 }
 
+/* Sits where "Attack all" was, but reads as a way back rather than a commit. */
+.cancel-attack {
+  min-height: 52px;
+  padding: 0 13px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(232, 220, 188, 0.3);
+  color: #e9dfce;
+  background: rgba(24, 32, 28, 0.8);
+  text-align: left;
+}
+
+.cancel-attack:hover:not(:disabled) {
+  border-color: rgba(232, 220, 188, 0.55);
+  background: rgba(34, 44, 38, 0.9);
+}
+
+.cancel-attack > span {
+  color: #d8c9a4;
+  font-size: 18px;
+}
+
+.cancel-attack strong {
+  font-family: Georgia, serif;
+  font-size: 15px;
+}
+
+.cancel-attack small {
+  color: #9a9482;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .attack-all:hover {
   border-color: #ff997c;
   background: linear-gradient(90deg, #853226, #49251f);

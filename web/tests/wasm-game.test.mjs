@@ -1103,3 +1103,84 @@ test("the Random setup choice is a placeholder, never a deck name", async () => 
     game.free();
   }
 });
+
+test("declaring attackers always offers a confirm and a way back", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Goblins", "The Deck", "Handcrafted", true, 9394);
+  const state = () => JSON.parse(game.state_json());
+  const play = (predicate) => {
+    for (let turn = 0; turn < 500; turn++) {
+      const current = state();
+      if (current.result) return null;
+      if (predicate(current)) return current;
+      const actions = current.actions.filter((action) => action.kind !== "danger");
+      const next =
+        actions.find((action) => action.label === "Keep this hand") ??
+        actions.find((action) => action.label.startsWith("Play ")) ??
+        actions.find((action) => action.label.startsWith("Cast Goblin")) ??
+        actions.find((action) => action.label.startsWith("Discard ")) ??
+        actions.find((action) => action.kind === "pass") ??
+        actions[0];
+      if (!next) return null;
+      game.act(next.index);
+    }
+    return null;
+  };
+
+  const declaring = play(
+    (current) =>
+      current.step === "Declare Attackers" &&
+      current.actions.some((action) => /^Attack with \D/.test(action.label)),
+  );
+  assert.ok(declaring, "the seeded game reaches attacker declaration");
+  assert.equal(declaring.canCancelAttackers, false, "nothing to take back yet");
+  assert.ok(
+    declaring.actions.some((action) => action.label === "No attacks"),
+    "with nothing declared the commit reads as declining",
+  );
+
+  // Declare every attacker on offer; the last one must not commit the attack.
+  let declared = 0;
+  for (;;) {
+    const current = state();
+    const attack = current.actions.find((action) => /^Attack with \D/.test(action.label));
+    if (!attack) break;
+    game.act(attack.index);
+    declared += 1;
+    assert.equal(state().step, "Declare Attackers", "declaring never leaves the step on its own");
+  }
+  assert.ok(declared > 0);
+
+  const committed = state();
+  assert.equal(committed.canCancelAttackers, true, "the attack can still be taken back");
+  assert.equal(
+    committed.battlefield.filter((card) => card.owner === "human" && card.attacking).length,
+    declared,
+  );
+  assert.ok(
+    committed.actions.some((action) => action.label === `Attack with ${declared} creature${declared === 1 ? "" : "s"}`),
+    `the confirm counts the attack: ${committed.actions.map((a) => a.label).join(", ")}`,
+  );
+
+  // Cancelling restores the board exactly as it was before the first declaration.
+  game.cancel_attackers();
+  const reverted = state();
+  assert.equal(reverted.canCancelAttackers, false);
+  assert.equal(
+    reverted.battlefield.filter((card) => card.attacking).length,
+    0,
+    "every attacker is taken back",
+  );
+  assert.equal(
+    reverted.actions.filter((action) => /^Attack with \D/.test(action.label)).length,
+    declared,
+    "and every creature can be declared again",
+  );
+  assert.throws(() => game.cancel_attackers(), /no declared attackers/);
+
+  game.free();
+});

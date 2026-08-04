@@ -36,6 +36,7 @@ pub struct WebGame {
     mana_undo_history: Vec<Game>,
     phase_stops: Vec<String>,
     autopass_enabled: bool,
+    attack_undo: Option<Game>,
 }
 
 #[wasm_bindgen]
@@ -82,6 +83,7 @@ impl WebGame {
             mana_undo_history: Vec::new(),
             phase_stops: Vec::new(),
             autopass_enabled: true,
+            attack_undo: None,
         };
         web_game.advance_until_human_choice()?;
         Ok(web_game)
@@ -129,10 +131,15 @@ impl WebGame {
         if mana_checkpoint.is_none() {
             self.mana_undo_history.clear();
         }
+        // The first declaration of the combat is the point a cancel returns to.
+        if matches!(action, Action::DeclareAttacker { .. }) && self.attack_undo.is_none() {
+            self.attack_undo = Some(self.game.clone());
+        }
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
         self.game.apply(self.human, action).map_err(js_error)?;
         self.advance_until_human_choice()?;
+        self.forget_attack_undo_unless_still_declaring();
         if let Some(checkpoint) = mana_checkpoint {
             let before = checkpoint.observe(self.human);
             let after = self.game.observe(self.human);
@@ -165,6 +172,9 @@ impl WebGame {
         self.mana_undo_history.clear();
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
+        if self.attack_undo.is_none() {
+            self.attack_undo = Some(self.game.clone());
+        }
         loop {
             let action = self
                 .game
@@ -186,7 +196,44 @@ impl WebGame {
         {
             self.game.apply(self.human, finish).map_err(js_error)?;
         }
-        self.advance_until_human_choice()
+        self.advance_until_human_choice()?;
+        self.forget_attack_undo_unless_still_declaring();
+        Ok(())
+    }
+
+    /// Takes back every attacker declared so far this combat.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error when the attack has already been committed.
+    pub fn cancel_attackers(&mut self) -> Result<(), JsValue> {
+        let previous = self
+            .attack_undo
+            .take()
+            .ok_or_else(|| JsValue::from_str("there are no declared attackers to take back"))?;
+        self.game = previous;
+        self.mana_undo_history.clear();
+        self.opponent_actions.clear();
+        self.pending_opponent_mana.clear();
+        Ok(())
+    }
+
+    /// A cancel is only offered while the attack is still being assembled;
+    /// once it is committed the declaration is part of the game.
+    fn forget_attack_undo_unless_still_declaring(&mut self) {
+        if self.attack_undo.is_none() {
+            return;
+        }
+        let still_declaring = self.game.decision_player() == Some(self.human)
+            && self
+                .game
+                .observe(self.human)
+                .legal_actions
+                .iter()
+                .any(|action| matches!(action, Action::FinishDeclaringAttackers));
+        if !still_declaring {
+            self.attack_undo = None;
+        }
     }
 
     /// Commits a complete set of blocker assignments selected by the browser UI.
@@ -759,6 +806,7 @@ impl WebGame {
             "passLabel": self.pass_preview_label(),
             "decision": decision,
             "canUndoMana": !self.mana_undo_history.is_empty(),
+            "canCancelAttackers": self.attack_undo.is_some(),
             "phaseStops": self.phase_stops,
             "autopassEnabled": self.autopass_enabled,
             "opponentActions": opponent_actions,
@@ -1388,6 +1436,12 @@ fn automatic_human_action_for_context(
     if has_meaningful_choice {
         return None;
     }
+    // Committing an attack is the player's call. Running out of creatures to
+    // declare is not the same as being finished, so once anything is attacking
+    // the browser waits for them to confirm.
+    if context.has_attacker && context.step == Step::DeclareAttackers {
+        return None;
+    }
     actions
         .iter()
         .find(|action| {
@@ -2000,6 +2054,42 @@ mod tests {
             ),
             None,
             "blocks have to be declared against a real attack",
+        );
+    }
+
+    #[test]
+    fn declaring_the_last_attacker_does_not_commit_the_attack() {
+        // Running out of creatures to declare is not the same as being done,
+        // so the browser still gets to show the confirm and cancel pair.
+        let actions = [Action::Concede, Action::FinishDeclaringAttackers];
+        assert_eq!(
+            automatic_human_action(
+                Step::DeclareAttackers,
+                true,
+                true,
+                true,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            None,
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::DeclareAttackers,
+                true,
+                true,
+                false,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::FinishDeclaringAttackers),
+            "with nothing declared there is no attack to confirm",
         );
     }
 

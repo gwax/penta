@@ -107,6 +107,7 @@ export type GameState = {
   decision: DecisionState | null;
   opponentActions?: OpponentAction[];
   canUndoMana: boolean;
+  canCancelAttackers: boolean;
   phaseStops: string[];
   autopassEnabled: boolean;
   result: null | { outcome: "win" | "loss" | "draw"; message: string };
