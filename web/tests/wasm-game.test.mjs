@@ -1065,3 +1065,41 @@ test("combat damage is only asked about when it is a real choice", async () => {
   }
   split.free();
 });
+
+test("the Random setup choice is a placeholder, never a deck name", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const source = await readFile(new URL("../app/game-config.ts", import.meta.url), "utf8");
+  const sentinel = /export const randomDeck = "([^"]+)"/.exec(source)?.[1];
+  assert.equal(sentinel, "Random");
+  assert.equal(
+    /export const defaultHumanDeck = (\w+)/.exec(source)?.[1],
+    "randomDeck",
+    "both seats default to Random",
+  );
+  assert.equal(/export const defaultBotDeck = (\w+)/.exec(source)?.[1], "randomDeck");
+
+  const block = source.slice(
+    source.indexOf("deckNotes"),
+    source.indexOf("export const randomDeck"),
+  );
+  const names = [...block.matchAll(/^\s*"?([A-Za-z0-9 '/]+?)"?:\s*"/gm)].map((match) => match[1]);
+  assert.ok(
+    !names.includes(sentinel),
+    "the sentinel is not one of the real decks, so it must be resolved before it reaches the engine",
+  );
+  assert.throws(
+    () => new WebGame(sentinel, "Goblins", "Handcrafted", true, 1),
+    /unknown deck/,
+    "the engine rejects it, which is why the browser resolves it first",
+  );
+
+  // Whatever it resolves to has to be a deck the engine can actually build.
+  for (const name of names) {
+    const game = new WebGame(name, name, "Handcrafted", true, 1);
+    game.free();
+  }
+});

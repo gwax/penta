@@ -17,10 +17,14 @@ import type {
   PlayerState,
 } from "./game-types";
 import {
+  deckChoiceNote,
+  deckChoices,
   deckNotes,
   defaultBotDeck,
   defaultHumanDeck,
   opponentActionDurationMs,
+  placeholderDeck,
+  randomDeck,
   turnPhases,
 } from "./game-config";
 
@@ -35,17 +39,20 @@ const initialSeed = () => {
   return randomSeed();
 };
 
+/// Turns a setup choice into a deck the engine can build. Every choice but
+/// `randomDeck` is already one.
+const resolveDeck = (choice: string) => {
+  if (choice !== randomDeck) return choice;
+  const deckNames = Object.keys(deckNotes);
+  return deckNames[randomSeed() % deckNames.length];
+};
+
 const initialDeckPair = () => {
   const requested = new URLSearchParams(window.location.search).get("deck");
-  const deckNames = Object.keys(deckNotes);
-  const humanDeck = requested && requested in deckNotes
-    ? requested
-    : deckNames[randomSeed() % deckNames.length];
-  let botDeck = deckNames[randomSeed() % deckNames.length];
-  while (botDeck === humanDeck) {
-    botDeck = deckNames[randomSeed() % deckNames.length];
-  }
-  return { humanDeck, botDeck };
+  return {
+    humanDeck: requested && requested in deckNotes ? requested : defaultHumanDeck,
+    botDeck: defaultBotDeck,
+  };
 };
 
 const initialHumanFirst = () =>
@@ -78,8 +85,12 @@ export function GameClient() {
   const wasmReady = useRef(false);
   const finalStateAfterOpponentActions = useRef<GameState | null>(null);
   const [state, setState] = useState<GameState | null>(null);
-  const [humanDeck, setHumanDeck] = useState(defaultHumanDeck);
-  const [botDeck, setBotDeck] = useState(defaultBotDeck);
+  // What the player picked, which may be "Random", versus the deck that
+  // pick actually became for the game now on the table.
+  const [humanDeckChoice, setHumanDeckChoice] = useState(defaultHumanDeck);
+  const [botDeckChoice, setBotDeckChoice] = useState(defaultBotDeck);
+  const [humanDeck, setHumanDeck] = useState(placeholderDeck);
+  const [botDeck, setBotDeck] = useState(placeholderDeck);
   const [policy, setPolicy] = useState("Handcrafted");
   const [humanFirst, setHumanFirst] = useState(true);
   const [draftHumanDeck, setDraftHumanDeck] = useState(defaultHumanDeck);
@@ -162,20 +173,26 @@ export function GameClient() {
   const newGame = useCallback(
     (
       nextSeed = randomSeed(),
-      nextHumanDeck = humanDeck,
-      nextBotDeck = botDeck,
+      // These take a setup choice, so "Random" here rolls a new deck for this
+      // game. Pass the deck already in play to deal the same matchup again.
+      nextHumanDeck = humanDeckChoice,
+      nextBotDeck = botDeckChoice,
       nextPolicy = policy,
       nextHumanFirst = humanFirst,
     ) => {
       if (!wasmReady.current) return;
+      const dealtHumanDeck = resolveDeck(nextHumanDeck);
+      const dealtBotDeck = resolveDeck(nextBotDeck);
       try {
         setSeed(nextSeed);
+        setHumanDeck(dealtHumanDeck);
+        setBotDeck(dealtBotDeck);
         setOpponentActionQueue([]);
         finalStateAfterOpponentActions.current = null;
         game.current?.free();
         game.current = createEngineGame({
-          humanDeck: nextHumanDeck,
-          botDeck: nextBotDeck,
+          humanDeck: dealtHumanDeck,
+          botDeck: dealtBotDeck,
           policy: nextPolicy,
           humanFirst: nextHumanFirst,
           seed: nextSeed,
@@ -186,7 +203,7 @@ export function GameClient() {
         setError(String(cause));
       }
     },
-    [botDeck, humanDeck, humanFirst, policy, refresh],
+    [botDeckChoice, humanDeckChoice, humanFirst, policy, refresh],
   );
 
   useEffect(() => {
@@ -196,15 +213,17 @@ export function GameClient() {
         await initializeEngine();
         if (!alive) return;
         const startingSeed = initialSeed();
-        const startingDecks = initialDeckPair();
-        const startingHumanDeck = startingDecks.humanDeck;
-        const startingBotDeck = startingDecks.botDeck;
+        const startingChoices = initialDeckPair();
+        const startingHumanDeck = resolveDeck(startingChoices.humanDeck);
+        const startingBotDeck = resolveDeck(startingChoices.botDeck);
         const startingHumanFirst = initialHumanFirst();
         setSeed(startingSeed);
+        setHumanDeckChoice(startingChoices.humanDeck);
+        setBotDeckChoice(startingChoices.botDeck);
+        setDraftHumanDeck(startingChoices.humanDeck);
+        setDraftBotDeck(startingChoices.botDeck);
         setHumanDeck(startingHumanDeck);
-        setDraftHumanDeck(startingHumanDeck);
         setBotDeck(startingBotDeck);
-        setDraftBotDeck(startingBotDeck);
         setHumanFirst(startingHumanFirst);
         setDraftHumanFirst(startingHumanFirst);
         wasmReady.current = true;
@@ -855,8 +874,8 @@ export function GameClient() {
   };
 
   const openSetup = () => {
-    setDraftHumanDeck(humanDeck);
-    setDraftBotDeck(botDeck);
+    setDraftHumanDeck(humanDeckChoice);
+    setDraftBotDeck(botDeckChoice);
     setDraftPolicy(policy);
     setDraftHumanFirst(humanFirst);
     setSetupOpen(true);
@@ -864,8 +883,8 @@ export function GameClient() {
 
   const startConfiguredGame = () => {
     if (!wasmReady.current) return;
-    setHumanDeck(draftHumanDeck);
-    setBotDeck(draftBotDeck);
+    setHumanDeckChoice(draftHumanDeck);
+    setBotDeckChoice(draftBotDeck);
     setPolicy(draftPolicy);
     setHumanFirst(draftHumanFirst);
     newGame(
@@ -931,11 +950,11 @@ export function GameClient() {
                     value={draftHumanDeck}
                     onChange={(event) => setDraftHumanDeck(event.target.value)}
                   >
-                    {Object.keys(deckNotes).map((deck) => (
+                    {deckChoices.map((deck) => (
                       <option key={deck}>{deck}</option>
                     ))}
                   </select>
-                  <small>{deckNotes[draftHumanDeck]}</small>
+                  <small>{deckChoiceNote(draftHumanDeck)}</small>
                 </label>
                 <label className="setup-seat">
                   <input
@@ -953,11 +972,11 @@ export function GameClient() {
                     value={draftBotDeck}
                     onChange={(event) => setDraftBotDeck(event.target.value)}
                   >
-                    {Object.keys(deckNotes).map((deck) => (
+                    {deckChoices.map((deck) => (
                       <option key={deck}>{deck}</option>
                     ))}
                   </select>
-                  <small>{deckNotes[draftBotDeck]}</small>
+                  <small>{deckChoiceNote(draftBotDeck)}</small>
                 </label>
                 <label className="setup-policy">
                   <span>Opponent style</span>
@@ -1551,7 +1570,7 @@ export function GameClient() {
               Turn {state.turn} · {humanDeck} vs {botDeck}
             </p>
             <div>
-              <button onClick={() => newGame(seed)}>Replay seed</button>
+              <button onClick={() => newGame(seed, humanDeck, botDeck)}>Replay seed</button>
               <button className="result-primary" onClick={chooseRandomSeed}>
                 New shuffled game
               </button>

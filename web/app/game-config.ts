@@ -16,8 +16,27 @@ export const deckNotes: Record<string, string> = {
   "Jeskai Aggro": "Blue-white-red tempo · Burn and permission",
 };
 
-export const defaultHumanDeck = "The Deck";
-export const defaultBotDeck = "Goblins";
+/// Stands in for a deck in the setup dialog until the game is dealt, at which
+/// point it resolves to one of the decks above. Not a deck name the engine
+/// knows, so it must never reach `deck_by_name`.
+export const randomDeck = "Random";
+
+export const randomDeckNote = "Rolled fresh every time you deal";
+
+export const deckNames = Object.keys(deckNotes);
+
+export const deckChoices = [randomDeck, ...deckNames];
+
+/// Rendered in the header until the first deal resolves the real deck. It has
+/// to be a fixed name: picking one at random here would differ between the
+/// server render and the client, and hydration would tear.
+export const placeholderDeck = deckNames[0];
+
+export const deckChoiceNote = (choice: string) =>
+  choice === randomDeck ? randomDeckNote : (deckNotes[choice] ?? "");
+
+export const defaultHumanDeck = randomDeck;
+export const defaultBotDeck = randomDeck;
 
 export const turnPhases = [
   { label: "Beginning", steps: ["Upkeep", "Draw"] },
