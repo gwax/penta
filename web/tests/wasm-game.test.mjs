@@ -920,3 +920,74 @@ test("the game log reports permanents leaving the battlefield", async () => {
 
   game.free();
 });
+
+test("the attacker button counts the attack instead of naming the step", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Goblins", "The Deck", "Handcrafted", true, 9394);
+  const seen = new Set();
+  for (let turn = 0; turn < 500; turn++) {
+    const state = JSON.parse(game.state_json());
+    if (state.result) break;
+    for (const action of state.actions) {
+      assert.notEqual(action.label, "Finish attacking", "the step name is gone");
+      if (/^(No attacks|Attack with )/.test(action.label)) seen.add(action.label);
+    }
+    const actions = state.actions.filter((action) => action.kind !== "danger");
+    const next =
+      actions.find((action) => action.label === "Keep this hand") ??
+      actions.find((action) => action.label.startsWith("Play ")) ??
+      actions.find((action) => action.label.startsWith("Cast Goblin")) ??
+      actions.find((action) => /^Attack with \D/.test(action.label)) ??
+      actions.find((action) => action.label.startsWith("Block ")) ??
+      actions.find((action) => action.label.startsWith("Assign ")) ??
+      actions.find((action) => action.label.startsWith("Discard ")) ??
+      actions.find((action) => action.kind === "pass") ??
+      actions[0];
+    if (!next) break;
+    game.act(next.index);
+  }
+
+  assert.ok(seen.has("No attacks"), `saw: ${[...seen].join(", ")}`);
+  assert.ok(seen.has("Attack with 1 creature"), `saw: ${[...seen].join(", ")}`);
+  assert.ok(
+    [...seen].some((label) => /^Attack with [2-9] creatures$/.test(label)),
+    `plural form appears: ${[...seen].join(", ")}`,
+  );
+
+  game.free();
+});
+
+test("actions that eat a permanent report what they would take", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  // Seed 4 puts Atog on the board with exactly one artifact to eat, which is
+  // the case the browser must never resolve on the player's behalf.
+  const game = new WebGame("Artifacts", "Robots", "Handcrafted", true, 4);
+  const play = (label) => {
+    const state = JSON.parse(game.state_json());
+    const action = state.actions.find((candidate) => candidate.label.startsWith(label));
+    assert.ok(action, `${label} is available; have ${state.actions.map((a) => a.label).join(", ")}`);
+    game.act(action.index);
+  };
+  play("Keep this hand");
+  play("Play Mountain");
+  play("Cast Mox Emerald");
+  play("Cast Atog");
+
+  const state = JSON.parse(game.state_json());
+  const eats = state.actions.filter((action) => (action.sacrificeCardIds ?? []).length > 0);
+  assert.equal(eats.length, 1, "exactly one artifact is available to eat");
+  assert.match(eats[0].label, /sacrifice Mox Emerald/);
+  const mox = state.battlefield.find((card) => card.name === "Mox Emerald");
+  assert.ok(mox, "the Mox is still on the battlefield until the player commits");
+  assert.deepEqual(eats[0].sacrificeCardIds, [mox.id], "the cost names the exact permanent");
+
+  game.free();
+});

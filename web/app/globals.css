@@ -474,7 +474,9 @@ button {
 
 .opponent-action {
   position: absolute;
-  z-index: 12;
+  /* Above the battlefield pile counts (20), which otherwise punch their badge
+     through this notification. Still below the banners and modals. */
+  z-index: 24;
   top: 80px;
   left: 50%;
   width: min(390px, calc(100% - 40px));

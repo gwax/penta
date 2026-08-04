@@ -502,6 +502,9 @@ export function GameClient() {
         action.cardId === id &&
         (action.spellAction || (declaringBlockers && action.kind === "combat")) &&
         !action.manaAbility &&
+        // Dropping on a target would also settle the sacrifice, which the
+        // player has to choose deliberately.
+        (action.sacrificeCardIds?.length ?? 0) === 0 &&
         singleTargetKey(action) !== null,
     ) ?? [];
   const draggingTargetActions = draggingCardId === null
@@ -796,7 +799,16 @@ export function GameClient() {
         action.targetPlayer != null ||
         action.targetStackId != null,
     );
-    if (untargeted.length > 1 || (untargeted.length > 0 && hasTargetedAction)) {
+    // Destroying one of your own permanents is never something a single click
+    // should decide for you, even when there is only one thing it could take.
+    const costsSacrifice = matching.some(
+      (action) => (action.sacrificeCardIds?.length ?? 0) > 0,
+    );
+    if (
+      untargeted.length > 1 ||
+      (untargeted.length > 0 && hasTargetedAction) ||
+      (costsSacrifice && !hasTargetedAction)
+    ) {
       setSelectedCard(null);
       setSelectedTargetCard(null);
       setSelectedTargetPlayer(null);
@@ -804,10 +816,8 @@ export function GameClient() {
       setCardActionMenu(id);
       return;
     }
-    if (matching.length === 1 && matching[0].spellAction) {
-      prepareAction(matching[0]);
-      return;
-    }
+    // A lone legal target still gets picked out on the board by hand, so the
+    // player always sees what the spell is about to hit.
     if (hasTargetedAction) {
       setSelectedCard(id);
       setSelectedTargetCard(null);

@@ -439,3 +439,41 @@ fn handcrafted_still_spends_removal_on_the_opponent() {
 
     assert_eq!(policy.choose_action(&observation), Some(cast_at_theirs));
 }
+
+#[test]
+fn handcrafted_animates_a_factory_once_rather_than_every_priority() {
+    let catalog = poc::catalog().unwrap();
+    let animate = Action::ActivateAbility {
+        source: CardInstanceId(1),
+        target: None,
+        sacrifice: None,
+    };
+
+    let dormant = permanent(1, poc::cards::MISHRA_S_FACTORY, PlayerId::One, None, None);
+    let mut observation =
+        policy_observation(vec![dormant], vec![Action::PassPriority, animate.clone()]);
+    observation.step = Step::BeginningOfCombat;
+    let mut policy = HandcraftedPolicy::new(catalog.clone());
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(animate.clone()),
+        "a dormant Factory is still worth animating",
+    );
+
+    // Same board, except the Factory is already a 2/2.
+    let awake = permanent(
+        1,
+        poc::cards::MISHRA_S_FACTORY,
+        PlayerId::One,
+        Some(2),
+        Some(2),
+    );
+    let mut observation = policy_observation(vec![awake], vec![Action::PassPriority, animate]);
+    observation.step = Step::BeginningOfCombat;
+    let mut policy = HandcraftedPolicy::new(catalog);
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(Action::PassPriority),
+        "animating a Factory that is already a creature only burns mana",
+    );
+}

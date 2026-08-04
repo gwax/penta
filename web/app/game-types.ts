@@ -41,6 +41,7 @@ export type Action = {
   targetCount?: number;
   manaAbility?: boolean;
   spellAction?: boolean;
+  sacrificeCardIds?: number[];
   x?: number | null;
   paymentAction?: boolean;
   manaSourceIds?: number[];

@@ -128,6 +128,13 @@ impl HandcraftedPolicy {
     /// Spells whose whole purpose is to remove something the opponent
     /// controls. Pump and recursion also take a permanent target, so they are
     /// deliberately excluded — those want a friendly target.
+    fn is_already_a_creature(observation: &PlayerObservation, id: CardInstanceId) -> bool {
+        observation
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.id == id && permanent.power.is_some())
+    }
+
     fn is_hostile_removal(behavior: Option<CardBehavior>) -> bool {
         matches!(
             behavior,
@@ -387,6 +394,13 @@ impl HandcraftedPolicy {
             Some(
                 CardBehavior::ChaosOrb | CardBehavior::StripMine | CardBehavior::OrcishMechanics,
             ) => 7_200 + target_score,
+            // Animating a Factory that is already a creature does nothing but
+            // spend mana, so only the +1/+1 mode stays repeatable.
+            Some(CardBehavior::MishrasFactory)
+                if target.is_none() && Self::is_already_a_creature(observation, source) =>
+            {
+                -100
+            }
             Some(CardBehavior::MishrasFactory) => 5_800 + target_score,
             Some(
                 CardBehavior::GoblinBalloonBrigade

@@ -559,6 +559,7 @@ impl WebGame {
                     "targetCount": action_targets(action).len(),
                     "manaAbility": matches!(action, Action::ActivateManaAbility { .. }),
                     "spellAction": matches!(action, Action::CastSpell { .. }),
+                    "sacrificeCardIds": action_sacrifices(action),
                     "x": match action {
                         Action::CastSpell { x, .. } => Some(*x),
                         _ => None,
@@ -1108,7 +1109,22 @@ impl WebGame {
             Action::DeclareAttacker { attacker } => {
                 format!("Attack with {}", self.instance_name(observation, *attacker))
             }
-            Action::FinishDeclaringAttackers => "Finish attacking".into(),
+            // Naming the commitment reads better than naming the step: the
+            // button is the last chance to see how big the attack is.
+            Action::FinishDeclaringAttackers => {
+                let declared = observation
+                    .battlefield
+                    .iter()
+                    .filter(|permanent| {
+                        permanent.controller == observation.viewer && permanent.attacking
+                    })
+                    .count();
+                match declared {
+                    0 => "No attacks".into(),
+                    1 => "Attack with 1 creature".into(),
+                    count => format!("Attack with {count} creatures"),
+                }
+            }
             Action::DeclareBlocker { blocker, attacker } => format!(
                 "Block {} with {}",
                 self.instance_name(observation, *attacker),
@@ -1317,6 +1333,17 @@ fn automatic_human_action_for_context(
     let routine_own_turn_step = context.human_is_active
         && (context.step == Step::BeginningOfCombat
             || (context.step == Step::End && !context.human_has_floating_mana));
+    // On the opponent's turn the interesting window is their end step, where
+    // instants are cheapest. Combat they never committed to, and their second
+    // main, are both worth skipping to get there.
+    let routine_opponent_turn_step = !context.human_is_active
+        && (context.step == Step::BeginningOfCombat
+            || context.step == Step::PostcombatMain
+            || (!context.has_attacker
+                && matches!(
+                    context.step,
+                    Step::DeclareAttackers | Step::DeclareBlockers | Step::EndOfCombat
+                )));
     let smooth_unblocked_attack = context.human_is_active
         && context.has_attacker
         && !context.has_blocker
@@ -1326,6 +1353,7 @@ fn automatic_human_action_for_context(
         );
     let auto_yield_step = routine_beginning_step
         || routine_own_turn_step
+        || routine_opponent_turn_step
         || smooth_unblocked_attack
         || (!context.has_attacker
             && matches!(
@@ -1434,6 +1462,20 @@ fn action_card(action: &Action) -> Option<CardInstanceId> {
         }
         Action::DeclareBlocker { blocker, .. } => Some(*blocker),
         _ => None,
+    }
+}
+
+/// Permanents this action would destroy as part of its cost. The browser makes
+/// the player pick these explicitly rather than spending whatever is to hand.
+fn action_sacrifices(action: &Action) -> Vec<u32> {
+    match action {
+        Action::CastSpell { sacrifices, .. } => sacrifices.iter().map(|id| id.0).collect(),
+        Action::ActivateAbility {
+            source,
+            sacrifice: Some(sacrifice),
+            ..
+        } if sacrifice != source => vec![sacrifice.0],
+        _ => Vec::new(),
     }
 }
 
@@ -1882,6 +1924,73 @@ mod tests {
                 &actions,
             ),
             None
+        );
+    }
+
+    #[test]
+    fn the_opponents_combat_and_second_main_yield_but_their_end_step_does_not() {
+        // A castable instant is exactly what makes these windows "meaningful",
+        // and exactly why the end step has to stay.
+        let actions = [
+            Action::Concede,
+            Action::CastSpell {
+                card: CardInstanceId(7),
+                targets: vec![Target::Player(PlayerId::Two)],
+                sacrifices: Vec::new(),
+                x: 0,
+            },
+            Action::PassPriority,
+        ];
+        let on_their_turn = |step| {
+            automatic_human_action(
+                step, false, true, false, false, true, false, false, &actions,
+            )
+        };
+
+        for step in [
+            Step::BeginningOfCombat,
+            Step::DeclareAttackers,
+            Step::DeclareBlockers,
+            Step::EndOfCombat,
+            Step::PostcombatMain,
+        ] {
+            assert_eq!(
+                on_their_turn(step),
+                Some(Action::PassPriority),
+                "an unattacked {step:?} on the opponent's turn should yield",
+            );
+        }
+        assert_eq!(
+            on_their_turn(Step::End),
+            None,
+            "the opponent's end step is where instants get cast",
+        );
+    }
+
+    #[test]
+    fn a_declared_attack_still_stops_on_the_opponents_turn() {
+        let actions = [
+            Action::Concede,
+            Action::DeclareBlocker {
+                blocker: CardInstanceId(7),
+                attacker: CardInstanceId(8),
+            },
+            Action::PassPriority,
+        ];
+        assert_eq!(
+            automatic_human_action(
+                Step::DeclareBlockers,
+                false,
+                true,
+                true,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            None,
+            "blocks have to be declared against a real attack",
         );
     }
 
