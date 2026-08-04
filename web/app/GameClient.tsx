@@ -136,6 +136,9 @@ export function GameClient() {
     if (!game.current) return;
     const snapshot = readEngineState(game.current);
     presentSnapshot(snapshot);
+    // A rejected action leaves a banner behind; the next accepted one retires
+    // it, so a transient failure cannot cover the table for the rest of the game.
+    setError(null);
     setSelectedCard(null);
     setSelectedTargetCard(null);
     setSelectedTargetPlayer(null);

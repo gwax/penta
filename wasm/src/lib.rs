@@ -438,38 +438,36 @@ impl WebGame {
         let start_active_is_human = observation.active_player == self.human;
         let mut sim = self.game.clone();
         sim.apply(self.human, Action::PassPriority).ok()?;
+        // Every exit below labels the step the simulation reached, so a pass
+        // that runs the game out (lethal damage) or that the preview cannot
+        // carry further still names a destination instead of falling back to
+        // the bare "Pass priority".
         for _ in 0..BOT_ACTION_LIMIT {
             let Some(player) = sim.decision_player() else {
-                // The yield would end the game outright; keep the plain label.
-                return None;
+                break;
             };
             let sim_observation = sim.observe(player);
             let action = if player == self.human {
                 match self.automatic_human_action_for(&sim_observation) {
                     Some(action) => action,
-                    None => {
-                        return Some(Self::pass_destination_label(
-                            &sim_observation,
-                            start_turn,
-                            start_active_is_human,
-                        ));
-                    }
+                    None => break,
                 }
             } else if let Some(action) = neutral_opponent_action(&sim_observation) {
                 action
             } else {
                 // The opponent holds a real choice here, so this is where the
                 // human ends up waiting.
-                let human_observation = sim.observe(self.human);
-                return Some(Self::pass_destination_label(
-                    &human_observation,
-                    start_turn,
-                    start_active_is_human,
-                ));
+                break;
             };
-            sim.apply(player, action).ok()?;
+            if sim.apply(player, action).is_err() {
+                break;
+            }
         }
-        None
+        Some(Self::pass_destination_label(
+            &sim.observe(self.human),
+            start_turn,
+            start_active_is_human,
+        ))
     }
 
     fn pass_destination_label(
@@ -677,7 +675,10 @@ impl WebGame {
                 "message": format!(
                     "{} — {}",
                     if winner == self.human { "You win" } else { "You lose" },
-                    readable_debug(reason)
+                    // WinReason names the loser as "the opponent" from the
+                    // winner's seat. The browser only ever has the human's
+                    // seat, so say who actually did the losing.
+                    win_reason_text(reason, winner != self.human)
                 ),
             }),
             GameResult::Draw => json!({"outcome": "draw", "message": "Draw"}),
@@ -785,8 +786,29 @@ impl WebGame {
                     .flatten()
                     .find_map(|(candidate, definition)| (*candidate == id).then_some(*definition))
             })
+            .or_else(|| {
+                // A spell the opponent just cast is still on the stack, and it
+                // is public there even though it never passed through a zone
+                // this observation can see.
+                observation
+                    .stack
+                    .iter()
+                    .find_map(|object| (object.card == id).then_some(object.definition))
+            })
+            .or_else(|| {
+                // Exiled cards stay public, and the log keeps referring to them
+                // long after Swords to Plowshares removed them from the board.
+                observation
+                    .exiles
+                    .iter()
+                    .flatten()
+                    .find_map(|(candidate, definition)| (*candidate == id).then_some(*definition))
+            })
             .map_or_else(
-                || format!("card #{}", id.0),
+                // A card that has since moved somewhere this observation cannot
+                // read — shuffled back into a library, say — is still described
+                // in words rather than as a raw instance id.
+                || "a card".into(),
                 |definition| self.card_name(definition),
             )
     }
@@ -796,12 +818,15 @@ impl WebGame {
             Target::Player(player) if player == self.human => "you".into(),
             Target::Player(_) => "opponent".into(),
             Target::Permanent(id) => self.instance_name(observation, id),
+            // A countered or resolved spell leaves no trace the observation can
+            // name, and stack object ids are not card ids, so the log says what
+            // it honestly knows rather than printing a raw id.
             Target::Spell(id) => observation
                 .stack
                 .iter()
                 .find(|object| object.id == id)
                 .map_or_else(
-                    || format!("spell #{}", id.0),
+                    || "a spell".into(),
                     |object| self.card_name(object.definition),
                 ),
         }
@@ -973,7 +998,14 @@ impl WebGame {
                             .map(|option| option.label.clone())
                             .collect::<Vec<_>>()
                     });
-                labels.join(", ")
+                if labels.is_empty() {
+                    // The engine also enumerates a bare schema placeholder for
+                    // the pending decision; never hand the browser a blank
+                    // label it could render as an unlabelled control.
+                    "Choose an option".into()
+                } else {
+                    labels.join(", ")
+                }
             }
             Action::CancelDecision { .. } => "Cancel".into(),
             Action::ChooseUntap { permanents } => format!(
@@ -1091,7 +1123,15 @@ impl WebGame {
                 cards.len(),
                 if cards.len() == 1 { "card" } else { "cards" }
             ),
-            Action::ChooseDecision { .. } if observation.decision.is_none() => {
+            // Only the human's own pending decision has option labels this
+            // observation can read. Anything else the opponent chose stays
+            // private, including when the human is mid-decision themselves.
+            Action::ChooseDecision { decision, .. }
+                if observation
+                    .decision
+                    .as_ref()
+                    .is_none_or(|visible| visible.id != *decision) =>
+            {
                 "Opponent made a private choice".into()
             }
             _ => self.action_label(observation, action),
@@ -1117,6 +1157,23 @@ fn deck_by_name(name: &str) -> Result<penta::Deck, JsValue> {
         "jeskai aggro" => Ok(poc::jeskai_aggro()),
         "lion dib bolt" | "lions/dib bolt" | "lions dib bolt" => Ok(poc::lions_dib_bolt()),
         _ => Err(JsValue::from_str("unknown deck")),
+    }
+}
+
+/// Describes why the game ended from the browser player's seat.
+/// `human_lost` selects the second-person phrasing.
+fn win_reason_text(reason: penta::WinReason, human_lost: bool) -> &'static str {
+    match (reason, human_lost) {
+        (penta::WinReason::OpponentConceded, false) => "opponent conceded",
+        (penta::WinReason::OpponentConceded, true) => "you conceded",
+        (penta::WinReason::OpponentLostAllLife, false) => "opponent lost all life",
+        (penta::WinReason::OpponentLostAllLife, true) => "you lost all life",
+        (penta::WinReason::OpponentTriedToDrawFromEmptyLibrary, false) => {
+            "opponent drew from an empty library"
+        }
+        (penta::WinReason::OpponentTriedToDrawFromEmptyLibrary, true) => {
+            "you drew from an empty library"
+        }
     }
 }
 
