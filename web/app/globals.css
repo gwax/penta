@@ -472,6 +472,26 @@ button {
   fill: #ffd56a;
 }
 
+/* A card leaving play: a fixed-position stand-in that drifts from where the
+   card stood to its owner's graveyard counter, then removes itself. */
+.card-ghost {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  overflow: hidden;
+  border: 1px solid #8d7a5c;
+  border-radius: 4px;
+  color: #2a241c;
+  background: var(--paper);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+  font-family: Georgia, serif;
+  font-size: 11px;
+  text-align: center;
+  pointer-events: none;
+}
+
 /* Announces the turn change over the table. Sits above the opponent-action
    notification so a turn flip is never hidden behind their last play. */
 .turn-banner {

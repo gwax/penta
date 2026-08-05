@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   createEngineGame,
@@ -99,8 +99,9 @@ export function GameClient() {
   const [draftPolicy, setDraftPolicy] = useState("Handcrafted");
   const [draftHumanFirst, setDraftHumanFirst] = useState(true);
   type TurnBanner = { active: string; turn: number };
-  const [pendingTurnBanners, setPendingTurnBanners] = useState<TurnBanner[]>([]);
-  const announcedTurn = useRef<string | null>(null);
+  type PresentationStep =
+    | { kind: "action"; action: OpponentAction; state: GameState }
+    | { kind: "banner"; banner: TurnBanner; state: GameState };
   const [setupOpen, setSetupOpen] = useState(true);
   const [setupDismissible, setSetupDismissible] = useState(false);
   const [seed, setSeed] = useState(9394);
@@ -128,36 +129,67 @@ export function GameClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [engineReady, setEngineReady] = useState(false);
-  const [opponentActionQueue, setOpponentActionQueue] = useState<OpponentAction[]>([]);
-  const currentOpponentAction = opponentActionQueue[0] ?? null;
-  const watchingOpponent = currentOpponentAction !== null;
-  // One notification holds the floor at a time. Their turn beginning leads the
-  // plays it is about to bring; your turn beginning follows the last of them.
-  const nextTurnBanner = pendingTurnBanners[0] ?? null;
-  const turnBanner =
-    nextTurnBanner && (nextTurnBanner.active === "Opponent" || currentOpponentAction === null)
-      ? nextTurnBanner
-      : null;
-  const turnBannerKey = turnBanner ? `${turnBanner.active}:${turnBanner.turn}` : null;
-  const showingOpponentAction = !turnBanner && currentOpponentAction !== null;
+  const [presentationQueue, setPresentationQueue] = useState<PresentationStep[]>([]);
+  // What the player is currently looking at; the queue builder diffs against
+  // this so every popup and animation runs from the state actually on screen.
+  const displayedState = useRef<GameState | null>(null);
+  // Card positions from the last presented state, keyed by card instance id.
+  const flipRects = useRef<Map<number, { rect: DOMRect; owner: string; name: string; zone: string }>>(new Map());
+  const suppressFlip = useRef(false);
+  const currentStep = presentationQueue[0] ?? null;
+  const currentOpponentAction = currentStep?.kind === "action" ? currentStep.action : null;
+  const turnBanner = currentStep?.kind === "banner" ? currentStep.banner : null;
+  const watchingOpponent = currentStep !== null;
+  const actionStepsRemaining = presentationQueue.filter((step) => step.kind === "action").length;
 
   const decisionSelection =
     state?.decision?.id === decisionSelectionState.decisionId
       ? decisionSelectionState.options
       : [];
 
+  const applyState = useCallback((next: GameState) => {
+    displayedState.current = next;
+    setState(next);
+  }, []);
+
+  // Lays the engine's result out as a strictly ordered story: each opponent
+  // play is its own beat with the state as it stood right after that play, and
+  // a turn change gets its own beat before anything from the new turn — so the
+  // card you draw next turn is never in your hand while the old turn is still
+  // being told.
   const presentSnapshot = useCallback((snapshot: GameState) => {
-    const opponentActions = snapshot.opponentActions ?? [];
-    if (opponentActions.length > 0) {
+    const turnChanged = (from: GameState | null, to: GameState) =>
+      !from || from.gameTurn !== to.gameTurn || from.active !== to.active;
+    const steps: PresentationStep[] = [];
+    let cursor = displayedState.current;
+    for (const action of snapshot.opponentActions ?? []) {
+      if (turnChanged(cursor, action.state)) {
+        steps.push({
+          kind: "banner",
+          banner: { active: action.state.active, turn: action.state.turn },
+          state: cursor ?? action.state,
+        });
+      }
+      steps.push({ kind: "action", action, state: action.state });
+      cursor = action.state;
+    }
+    if (turnChanged(cursor, snapshot)) {
+      steps.push({
+        kind: "banner",
+        banner: { active: snapshot.active, turn: snapshot.turn },
+        state: cursor ?? snapshot,
+      });
+    }
+    if (steps.length > 0) {
       finalStateAfterOpponentActions.current = snapshot;
-      setOpponentActionQueue(opponentActions);
-      setState(opponentActions[0].state);
+      setPresentationQueue(steps);
+      applyState(steps[0].state);
     } else {
       finalStateAfterOpponentActions.current = null;
-      setOpponentActionQueue([]);
-      setState(snapshot);
+      setPresentationQueue([]);
+      applyState(snapshot);
     }
-  }, []);
+  }, [applyState]);
 
   const refresh = useCallback(() => {
     if (!game.current) return;
@@ -194,15 +226,16 @@ export function GameClient() {
       nextHumanFirst = humanFirst,
     ) => {
       if (!wasmReady.current) return;
-      announcedTurn.current = null;
-      setPendingTurnBanners([]);
+      // A fresh game replaces the whole board; nothing should glide between
+      // unrelated games, and no stale beats should keep playing.
+      suppressFlip.current = true;
+      setPresentationQueue([]);
       const dealtHumanDeck = resolveDeck(nextHumanDeck);
       const dealtBotDeck = resolveDeck(nextBotDeck);
       try {
         setSeed(nextSeed);
         setHumanDeck(dealtHumanDeck);
         setBotDeck(dealtBotDeck);
-        setOpponentActionQueue([]);
         finalStateAfterOpponentActions.current = null;
         game.current?.free();
         game.current = createEngineGame({
@@ -266,47 +299,133 @@ export function GameClient() {
   }, [presentSnapshot]);
 
   useEffect(() => {
-    if (currentOpponentAction === null || turnBanner) return;
+    if (currentStep === null) return;
+    const duration =
+      currentStep.kind === "action" ? opponentActionDurationMs : turnBannerDurationMs;
     const timer = window.setTimeout(() => {
-      const remaining = opponentActionQueue.slice(1);
+      const remaining = presentationQueue.slice(1);
       if (remaining.length > 0) {
-        setState(remaining[0].state);
+        applyState(remaining[0].state);
       } else if (finalStateAfterOpponentActions.current) {
-        setState(finalStateAfterOpponentActions.current);
+        applyState(finalStateAfterOpponentActions.current);
         finalStateAfterOpponentActions.current = null;
       }
-      setOpponentActionQueue(remaining);
-    }, opponentActionDurationMs);
+      setPresentationQueue(remaining);
+    }, duration);
     return () => window.clearTimeout(timer);
-  }, [currentOpponentAction, opponentActionQueue, turnBanner]);
-
-  // Turn changes queue up rather than firing where they happen, so they never
-  // land on top of the opponent's play that caused them.
-  useEffect(() => {
-    if (!state) return;
-    const key = `${state.gameTurn}:${state.active}`;
-    if (announcedTurn.current === key) return;
-    announcedTurn.current = key;
-    setPendingTurnBanners((current) => [...current, { active: state.active, turn: state.turn }]);
-  }, [state]);
-
-  useEffect(() => {
-    if (!turnBannerKey) return;
-    const timer = window.setTimeout(
-      () => setPendingTurnBanners((current) => current.slice(1)),
-      turnBannerDurationMs,
-    );
-    return () => window.clearTimeout(timer);
-  }, [turnBannerKey]);
+  }, [applyState, currentStep, presentationQueue]);
 
   const skipOpponentActions = () => {
+    suppressFlip.current = true;
     if (finalStateAfterOpponentActions.current) {
-      setState(finalStateAfterOpponentActions.current);
+      applyState(finalStateAfterOpponentActions.current);
       finalStateAfterOpponentActions.current = null;
     }
-    setOpponentActionQueue([]);
-    setPendingTurnBanners((current) => current.slice(-1));
+    setPresentationQueue([]);
   };
+
+  // FLIP layer: whenever the presented state changes, diff every on-table
+  // card's position against where it was. Cards that moved glide there, cards
+  // that appeared fly in from the zone they logically came from (your library
+  // for a draw, their hand for their play), and cards that vanished leave a
+  // ghost that drifts to the owner's graveyard counter.
+  useLayoutEffect(() => {
+    const table = tableRef.current;
+    if (!state || !table) return;
+    const previous = flipRects.current;
+    const entries = new Map<
+      number,
+      { el: HTMLElement; rect: DOMRect; owner: string; name: string; zone: string }
+    >();
+    table.querySelectorAll<HTMLElement>("[data-card-id]").forEach((el) => {
+      const id = Number(el.dataset.cardId);
+      if (!Number.isFinite(id)) return;
+      entries.set(id, {
+        el,
+        rect: el.getBoundingClientRect(),
+        owner: el.dataset.cardOwner ?? "human",
+        name: el.dataset.cardName ?? "",
+        zone: el.dataset.cardZone ?? "",
+      });
+    });
+    const store = new Map<number, { rect: DOMRect; owner: string; name: string; zone: string }>();
+    entries.forEach((entry, id) =>
+      store.set(id, { rect: entry.rect, owner: entry.owner, name: entry.name, zone: entry.zone }),
+    );
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const skip = reduced || suppressFlip.current || previous.size === 0;
+    suppressFlip.current = false;
+    flipRects.current = store;
+    if (skip) return;
+
+    const anchorRect = (selector: string) =>
+      table.querySelector(selector)?.getBoundingClientRect() ??
+      document.querySelector(selector)?.getBoundingClientRect() ??
+      null;
+    const flyFrom = (entry: { el: HTMLElement; rect: DOMRect }, from: DOMRect, entering: boolean) => {
+      const dx = from.left + from.width / 2 - (entry.rect.left + entry.rect.width / 2);
+      const dy = from.top + from.height / 2 - (entry.rect.top + entry.rect.height / 2);
+      const scale = entering
+        ? Math.max(0.2, Math.min(1, from.width / Math.max(entry.rect.width, 1)))
+        : 1;
+      entry.el.animate(
+        [
+          {
+            transform: `translate(${dx}px, ${dy}px) scale(${scale})`,
+            opacity: entering ? 0.35 : 1,
+          },
+          { transform: "none", opacity: 1 },
+        ],
+        { duration: 460, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+      );
+    };
+
+    entries.forEach((entry, id) => {
+      const before = previous.get(id);
+      if (before) {
+        const dx = before.rect.left - entry.rect.left;
+        const dy = before.rect.top - entry.rect.top;
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) flyFrom(entry, before.rect, false);
+        return;
+      }
+      const origin =
+        entry.owner === "opponent"
+          ? anchorRect(".opponent-hand")
+          : entry.zone === "hand"
+            ? anchorRect('.player-bar:not(.player-opponent) .zone-counts span[title="Library"]')
+            : anchorRect(".player-bar:not(.player-opponent) .zone-counts");
+      if (origin) flyFrom(entry, origin, true);
+    });
+
+    previous.forEach((before, id) => {
+      if (entries.has(id)) return;
+      const grave = anchorRect(
+        before.owner === "opponent"
+          ? '.player-opponent .zone-counts span[title="Graveyard"]'
+          : '.player-bar:not(.player-opponent) .zone-counts span[title="Graveyard"]',
+      );
+      if (!grave) return;
+      const ghost = document.createElement("div");
+      ghost.className = "card-ghost";
+      ghost.textContent = before.name;
+      ghost.style.left = `${before.rect.left}px`;
+      ghost.style.top = `${before.rect.top}px`;
+      ghost.style.width = `${before.rect.width}px`;
+      ghost.style.height = `${before.rect.height}px`;
+      document.body.appendChild(ghost);
+      const dx = grave.left + grave.width / 2 - (before.rect.left + before.rect.width / 2);
+      const dy = grave.top + grave.height / 2 - (before.rect.top + before.rect.height / 2);
+      const animation = ghost.animate(
+        [
+          { transform: "none", opacity: 1 },
+          { transform: `translate(${dx}px, ${dy}px) scale(0.12)`, opacity: 0.1 },
+        ],
+        { duration: 560, easing: "cubic-bezier(0.5, 0, 0.75, 0.6)" },
+      );
+      animation.onfinish = () => ghost.remove();
+      animation.oncancel = () => ghost.remove();
+    });
+  }, [state]);
 
   const act = (action: Action) => {
     try {
@@ -1195,10 +1314,10 @@ export function GameClient() {
               </div>
             )}
 
-            {showingOpponentAction && currentOpponentAction && (
+            {currentOpponentAction && (
               <div
                 className={`opponent-action opponent-action-${currentOpponentAction.kind}`}
-                key={`${currentOpponentAction.label}-${opponentActionQueue.length}`}
+                key={`${currentOpponentAction.label}-${presentationQueue.length}`}
                 role="status"
                 aria-live="polite"
               >
@@ -1215,9 +1334,9 @@ export function GameClient() {
                       </span>
                     )}
                 </div>
-                {opponentActionQueue.length > 1 && (
+                {actionStepsRemaining > 1 && (
                   <span className="opponent-action-count">
-                    +{opponentActionQueue.length - 1}
+                    +{actionStepsRemaining - 1}
                   </span>
                 )}
               </div>
@@ -1300,6 +1419,10 @@ export function GameClient() {
                   <button
                     key={item.id}
                     className={`stack-card ${isStackTargetable(item.id) ? "is-targetable" : ""} ${dragOverTarget === `stack:${item.id}` ? "is-drag-over-target" : ""}`}
+                    data-card-id={item.cardId}
+                    data-card-owner={item.owner}
+                    data-card-name={item.name}
+                    data-card-zone="stack"
                     onClick={() => selectStackTarget(item.id)}
                     disabled={!isStackTargetable(item.id)}
                     onDragOver={(event) => {
@@ -1383,7 +1506,9 @@ export function GameClient() {
                 <span>{watchingOpponent ? "OPPONENT ACTING" : "YOUR DECISION"}</span>
                 <strong>
                   {watchingOpponent
-                    ? `${opponentActionQueue.length} action${opponentActionQueue.length === 1 ? "" : "s"}`
+                    ? actionStepsRemaining > 0
+                      ? `${actionStepsRemaining} action${actionStepsRemaining === 1 ? "" : "s"}`
+                      : "New turn"
                     : assigningDamageFor != null
                       ? `Assign ${cardName(state, assigningDamageFor)} damage`
                     : declaringBlockers
@@ -1980,6 +2105,7 @@ function CardPile({
           >
             <GameCard
               card={card}
+              zone="battlefield"
               actionable={actionCount(card.id) > 0}
               draggableAction={isDraggable(card.id)}
               targetable={isTargetable(card.id)}
@@ -2073,6 +2199,7 @@ function HandZone({
             >
               <GameCard
                 card={card}
+                zone="hand"
                 actionable={actionCount(card.id) > 0}
                 draggableAction={isDraggable(card.id)}
                 targetable={isTargetable(card.id)}
@@ -2095,6 +2222,7 @@ function HandZone({
 
 function GameCard({
   card,
+  zone = "battlefield",
   actionable,
   draggableAction = false,
   targetable = false,
@@ -2114,6 +2242,7 @@ function GameCard({
   compact = false,
 }: {
   card: Card;
+  zone?: string;
   actionable: boolean;
   draggableAction?: boolean;
   targetable?: boolean;
@@ -2221,6 +2350,9 @@ function GameCard({
               : `Inspect ${card.name}`
         }
         aria-describedby={previewPosition ? previewId : undefined}
+        data-card-owner={card.owner ?? "human"}
+        data-card-name={card.name}
+        data-card-zone={zone}
         draggable={draggableAction && !targetable}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = "move";

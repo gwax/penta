@@ -1410,3 +1410,62 @@ test("a board with no creatures skips its own second main", async () => {
     "passing into declared blockers always names the damage it causes",
   );
 });
+
+test("opponent-action snapshots never contain your next draw", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  // Each animation frame carries the state right after its own action, so the
+  // story can be told in order: the card you draw for your next turn must not
+  // sit in your hand while the opponent's turn is still being replayed.
+  const game = new WebGame("Goblins", "The Deck", "Handcrafted", true, 9394);
+  let turnsChecked = 0;
+  for (let turn = 0; turn < 400; turn += 1) {
+    const state = JSON.parse(game.state_json());
+    if (state.result) break;
+    const handBefore = new Set(state.human.hand.map((card) => card.id));
+    const actions = state.actions.filter((action) => action.kind !== "danger");
+    if (state.decision) {
+      const wanted = Math.max(state.decision.minimum, 1);
+      game.choose_decision(
+        state.decision.id,
+        JSON.stringify(state.decision.options.slice(0, wanted).map((option) => option.id)),
+      );
+      continue;
+    }
+    const next =
+      actions.find((action) => action.label === "Keep this hand") ??
+      actions.find((action) => action.label.startsWith("Play ")) ??
+      actions.find((action) => action.label.startsWith("Cast Goblin")) ??
+      actions.find((action) => action.label.startsWith("Block ")) ??
+      actions.find((action) => action.label.startsWith("Discard ")) ??
+      actions.find((action) => action.kind === "pass") ??
+      actions[0];
+    if (!next) break;
+    game.act(next.index);
+
+    const after = JSON.parse(game.state_json());
+    const animations = after.opponentActions ?? [];
+    if (animations.length === 0) continue;
+    const drawn = after.human.hand.filter((card) => !handBefore.has(card.id));
+    if (drawn.length === 0) continue;
+    turnsChecked += 1;
+    for (const frame of animations) {
+      for (const card of drawn) {
+        assert.ok(
+          !frame.state.human.hand.some((held) => held.id === card.id),
+          `"${frame.label}" already shows ${card.name} in hand`,
+        );
+      }
+      assert.ok(
+        !frame.state.canCancelAttackers,
+        "no replayed frame still offers taking the attack back",
+      );
+    }
+  }
+  assert.ok(turnsChecked >= 3, `checked ${turnsChecked} turns with draws`);
+
+  game.free();
+});

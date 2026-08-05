@@ -138,6 +138,9 @@ impl WebGame {
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
         self.game.apply(self.human, action).map_err(js_error)?;
+        // Committing the attack invalidates the checkpoint immediately, so no
+        // snapshot taken while the turn plays out still offers the cancel.
+        self.forget_attack_undo_unless_still_declaring();
         self.advance_until_human_choice()?;
         self.forget_attack_undo_unless_still_declaring();
         if let Some(checkpoint) = mana_checkpoint {
@@ -196,6 +199,7 @@ impl WebGame {
         {
             self.game.apply(self.human, finish).map_err(js_error)?;
         }
+        self.forget_attack_undo_unless_still_declaring();
         self.advance_until_human_choice()?;
         self.forget_attack_undo_unless_still_declaring();
         Ok(())
@@ -345,17 +349,14 @@ impl WebGame {
     }
 
     fn advance_until_human_choice(&mut self) -> Result<(), JsValue> {
-        let mut pending_animation = None;
         for _ in 0..BOT_ACTION_LIMIT {
             let Some(player) = self.game.decision_player() else {
-                self.finish_opponent_animation(&mut pending_animation);
                 return Ok(());
             };
             let observation = self.game.observe(player);
             let action = if player == self.human {
                 let automatic_action = self.automatic_human_action_for(&observation);
                 let Some(action) = automatic_action else {
-                    self.finish_opponent_animation(&mut pending_animation);
                     return Ok(());
                 };
                 action
@@ -364,13 +365,12 @@ impl WebGame {
                     .choose_action(&observation)
                     .ok_or_else(|| JsValue::from_str("bot returned no action"))?
             };
+            let mut pending_animation = None;
             if player != self.human {
                 if let Action::ActivateManaAbility { source, .. } = &action {
-                    self.finish_opponent_animation(&mut pending_animation);
                     self.pending_opponent_mana
                         .push(self.instance_name(&observation, *source));
                 } else if should_animate_action(&action) {
-                    self.finish_opponent_animation(&mut pending_animation);
                     let mana_sources = if matches!(
                         action,
                         Action::CastSpell { .. } | Action::ActivateAbility { .. }
@@ -396,9 +396,10 @@ impl WebGame {
             }
             let event_start = self.game.events().len();
             self.game.apply(player, action).map_err(js_error)?;
-            if player != self.human
-                && let Some(animation) = pending_animation.as_mut()
-            {
+            // The animation carries the state as it stands right after its own
+            // action, so the browser can show each play before anything later —
+            // the human's next draw included — has happened yet.
+            if let Some(mut animation) = pending_animation.take() {
                 let mana_sources = self.game.events()[event_start..]
                     .iter()
                     .filter_map(|event| match event {
@@ -413,6 +414,8 @@ impl WebGame {
                 if let Some(existing) = animation["manaSources"].as_array_mut() {
                     existing.extend(mana_sources);
                 }
+                animation["state"] = self.snapshot_value(false);
+                self.opponent_actions.push(animation);
             }
         }
         Err(JsValue::from_str(
@@ -602,13 +605,6 @@ impl WebGame {
         .into()
     }
 
-    fn finish_opponent_animation(&mut self, pending: &mut Option<Value>) {
-        if let Some(mut animation) = pending.take() {
-            animation["state"] = self.snapshot_value(false);
-            self.opponent_actions.push(animation);
-        }
-    }
-
     #[allow(clippy::too_many_lines)]
     fn snapshot(&self) -> Value {
         self.snapshot_value(true)
@@ -762,6 +758,7 @@ impl WebGame {
             .map(|object| {
                 json!({
                     "id": object.id.0,
+                    "cardId": object.card.0,
                     "name": self.card_name(object.definition),
                     "owner": if object.controller == self.human { "human" } else { "opponent" },
                     "kind": format!("{:?}", object.kind),
