@@ -1402,6 +1402,56 @@ fn neutral_opponent_action(observation: &PlayerObservation) -> Option<Action> {
         .cloned()
 }
 
+/// Whether this priority window is one the browser hands back without asking.
+fn is_routine_window(context: &AutoPassContext, actions: &[Action]) -> bool {
+    // Arena normally hides routine beginning-phase priority windows on either
+    // turn. Stops restore them; floating mana in the end step is a
+    // smart-priority case.
+    let routine_beginning_step = matches!(context.step, Step::Upkeep | Step::Draw);
+    // Activating a permanent you already control is available at instant speed
+    // — on their turn, at your end step — so it is not a reason to hold a
+    // routine window open. Committing from hand is once-a-turn and is.
+    let can_commit_from_hand = actions
+        .iter()
+        .any(|action| matches!(action, Action::CastSpell { .. } | Action::PlayLand { .. }));
+    // Damage is already dealt by the end of combat and nothing about it can be
+    // changed, so the window is noise on either player's turn.
+    let end_of_combat = context.step == Step::EndOfCombat;
+    let routine_own_turn_step = context.human_is_active
+        && (context.step == Step::BeginningOfCombat
+            || (context.step == Step::PostcombatMain
+                && (!context.human_controls_creature || !can_commit_from_hand))
+            || (context.step == Step::End && !context.human_has_floating_mana));
+    // On the opponent's turn the interesting window is their end step, where
+    // instants are cheapest. Combat they never committed to, and their second
+    // main, are both worth skipping to get there.
+    let routine_opponent_turn_step = !context.human_is_active
+        && (context.step == Step::BeginningOfCombat
+            || context.step == Step::PostcombatMain
+            || (!context.has_attacker
+                && matches!(context.step, Step::DeclareAttackers | Step::DeclareBlockers)));
+    let smooth_unblocked_attack = context.human_is_active
+        && context.has_attacker
+        && !context.has_blocker
+        && matches!(
+            context.step,
+            Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
+        );
+    routine_beginning_step
+        || end_of_combat
+        || routine_own_turn_step
+        || routine_opponent_turn_step
+        || smooth_unblocked_attack
+        || (!context.has_attacker
+            && matches!(
+                context.step,
+                Step::DeclareAttackers
+                    | Step::DeclareBlockers
+                    | Step::CombatDamage
+                    | Step::EndOfCombat
+            ))
+}
+
 fn automatic_human_action_for_context(
     context: AutoPassContext,
     actions: &[Action],
@@ -1446,47 +1496,12 @@ fn automatic_human_action_for_context(
     let has_combat_ability = actions
         .iter()
         .any(|action| matches!(action, Action::ActivateAbility { .. }));
-    // Arena normally hides routine beginning-phase priority windows on either
-    // turn. Stops restore them; floating mana in the end step is a
-    // smart-priority case.
-    let routine_beginning_step = matches!(context.step, Step::Upkeep | Step::Draw);
-    let routine_own_turn_step = context.human_is_active
-        && (context.step == Step::BeginningOfCombat
-            || (context.step == Step::PostcombatMain && !context.human_controls_creature)
-            || (context.step == Step::End && !context.human_has_floating_mana));
-    // On the opponent's turn the interesting window is their end step, where
-    // instants are cheapest. Combat they never committed to, and their second
-    // main, are both worth skipping to get there.
-    let routine_opponent_turn_step = !context.human_is_active
-        && (context.step == Step::BeginningOfCombat
-            || context.step == Step::PostcombatMain
-            || (!context.has_attacker
-                && matches!(
-                    context.step,
-                    Step::DeclareAttackers | Step::DeclareBlockers | Step::EndOfCombat
-                )));
-    let smooth_unblocked_attack = context.human_is_active
-        && context.has_attacker
-        && !context.has_blocker
-        && matches!(
-            context.step,
-            Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
-        );
-    let auto_yield_step = routine_beginning_step
-        || routine_own_turn_step
-        || routine_opponent_turn_step
-        || smooth_unblocked_attack
-        || (!context.has_attacker
-            && matches!(
-                context.step,
-                Step::DeclareAttackers
-                    | Step::DeclareBlockers
-                    | Step::CombatDamage
-                    | Step::EndOfCombat
-            ));
+    let auto_yield_step = is_routine_window(&context, actions);
+    // A combat ability is worth pausing for while it can still change the
+    // outcome. Once damage is dealt, pumping a creature decides nothing.
     let combat_step = matches!(
         context.step,
-        Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
+        Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage
     );
     if auto_yield_step
         && (!combat_step || !context.has_attacker || !has_combat_ability)

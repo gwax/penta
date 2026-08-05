@@ -1469,3 +1469,88 @@ test("opponent-action snapshots never contain your next draw", async () => {
 
   game.free();
 });
+
+test("combat runs out to a decision, not through empty windows", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const decks = ["Goblins", "Sligh", "White Weenie", "GR Aggro", "Erhnamgeddon", "Robots"];
+  let endOfCombatStops = 0;
+  let secondMainIdle = 0;
+  let secondMainHoldingSpell = 0;
+
+  for (let game = 0; game < 24; game += 1) {
+    // Develops a board but holds every non-creature spell, so the second main
+    // always has something worth stopping for.
+    const match = new WebGame(
+      decks[game % decks.length],
+      decks[(game * 3 + 1) % decks.length],
+      "Handcrafted",
+      game % 2 === 0,
+      game * 7919 + 41,
+    );
+    for (let turn = 0; turn < 700; turn += 1) {
+      const state = JSON.parse(match.state_json());
+      if (state.result) break;
+      if (state.step === "End Of Combat") endOfCombatStops += 1;
+      if (state.active === "You" && state.step === "Postcombat Main") {
+        if (state.actions.some((action) => /^(Cast |Play )/.test(action.label))) {
+          secondMainHoldingSpell += 1;
+        } else {
+          secondMainIdle += 1;
+        }
+      }
+      if (state.decision) {
+        const wanted = Math.max(state.decision.minimum, 1);
+        try {
+          match.choose_decision(
+            state.decision.id,
+            JSON.stringify(state.decision.options.slice(0, wanted).map((option) => option.id)),
+          );
+        } catch { break; }
+        continue;
+      }
+      const inFirstMain = state.active === "You" && state.step === "Precombat Main";
+      const actions = state.actions.filter((action) => action.kind !== "danger");
+      const next =
+        actions.find((action) => action.label === "Keep this hand") ??
+        (inFirstMain ? actions.find((action) => action.label.startsWith("Play ")) : null) ??
+        (inFirstMain
+          ? actions.find(
+              (action) =>
+                action.label.startsWith("Cast ") &&
+                /Goblin|Knight|Lion|Elves|Ape|Djinn|Atog|Juggernaut|Brigade|Orcs|Troll/.test(
+                  action.label,
+                ),
+            )
+          : null) ??
+        actions.find((action) => /^Attack with \D/.test(action.label)) ??
+        actions.find((action) => /^Attack with \d/.test(action.label)) ??
+        actions.find((action) => action.label.startsWith("Block ")) ??
+        actions.find((action) => action.label.startsWith("Assign ")) ??
+        actions.find((action) => action.label.startsWith("Discard ")) ??
+        actions.find((action) => action.kind === "pass") ??
+        actions[0];
+      if (!next) break;
+      try { match.act(next.index); } catch { break; }
+    }
+    match.free();
+  }
+
+  assert.equal(
+    endOfCombatStops,
+    0,
+    "damage is already dealt by end of combat, so the window is never held",
+  );
+  assert.equal(
+    secondMainIdle,
+    0,
+    "a second main with nothing to commit from hand is passed through",
+  );
+  assert.ok(
+    secondMainHoldingSpell > 10,
+    `but a castable card still holds it, got ${secondMainHoldingSpell}`,
+  );
+});

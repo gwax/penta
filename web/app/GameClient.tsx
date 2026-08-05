@@ -376,7 +376,15 @@ export function GameClient() {
           },
           { transform: "none", opacity: 1 },
         ],
-        { duration: 460, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+        {
+          duration: 460,
+          easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+          // Compose with the card's own transform instead of replacing it. A
+          // tapped card carries rotate(7deg); replacing that would straighten
+          // it for the length of the glide and snap it back at the end, which
+          // reads exactly like untapping and re-tapping.
+          composite: "add",
+        },
       );
     };
 
