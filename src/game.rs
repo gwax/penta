@@ -1880,7 +1880,6 @@ impl Game {
                 );
                 targets
             }
-            CardBehavior::BlackVise => vec![vec![Target::Player(player.opponent())]],
             _ => vec![Vec::new()],
         }
     }
@@ -2416,6 +2415,9 @@ impl Game {
         if behavior.kind().is_permanent() {
             let chosen_player = match object.targets.first() {
                 Some(Target::Player(player)) => Some(*player),
+                // "Choose an opponent" has exactly one answer with two players,
+                // so the card is cast without asking and the opponent is implied.
+                _ if behavior == CardBehavior::BlackVise => Some(object.controller.opponent()),
                 _ => None,
             };
             let copied_behavior = if behavior == CardBehavior::CopyArtifact {
@@ -6165,6 +6167,55 @@ mod tests {
     }
 
     #[test]
+    fn black_vise_needs_no_target_and_still_squeezes_the_opponent() {
+        let mut game = ready_game();
+        let vise = card(10_000, cards::BLACK_VISE, PlayerId::One);
+        game.players[0].hand.push(vise.clone());
+        game.players[0].mana_pool.colorless = 1;
+
+        // With two players "choose an opponent" has one answer, so the cast
+        // carries no target and offers the player nothing to pick.
+        let cast = Action::CastSpell {
+            card: vise.id,
+            targets: Vec::new(),
+            sacrifices: Vec::new(),
+            x: 0,
+        };
+        let casts: Vec<_> = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == vise.id))
+            .collect();
+        assert_eq!(casts, vec![cast.clone()], "exactly one way to cast it");
+
+        game.apply(PlayerId::One, cast).unwrap();
+        pass_priority_pair(&mut game);
+        let resolved = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == vise.id)
+            .expect("Black Vise resolved onto the battlefield");
+        assert_eq!(
+            resolved.chosen_player,
+            Some(PlayerId::Two),
+            "the opponent is implied rather than chosen",
+        );
+
+        // Six cards in hand is two beyond four, so their upkeep costs 2 life.
+        for index in 0..6 {
+            game.players[1]
+                .hand
+                .push(card(20_000 + index, cards::MOUNTAIN, PlayerId::Two));
+        }
+        let before = game.players[1].life;
+        game.turn = 2;
+        game.active_player = PlayerId::Two;
+        game.step = Step::Upkeep;
+        game.handle_upkeep_triggers();
+        assert_eq!(game.players[1].life, before - 2);
+    }
+
+    #[test]
     fn mox_ruby_can_pay_black_vises_generic_cost() {
         let mut game = ready_game();
         let mox = creature(10_000, cards::MOX_RUBY, PlayerId::One);
@@ -6175,7 +6226,7 @@ mod tests {
 
         let cast_vise = Action::CastSpell {
             card: vise.id,
-            targets: vec![Target::Player(PlayerId::Two)],
+            targets: Vec::new(),
             sacrifices: Vec::new(),
             x: 0,
         };
@@ -6204,7 +6255,7 @@ mod tests {
 
         let action = Action::CastSpell {
             card: vise.id,
-            targets: vec![Target::Player(PlayerId::Two)],
+            targets: Vec::new(),
             sacrifices: Vec::new(),
             x: 0,
         };
