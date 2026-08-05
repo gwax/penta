@@ -160,6 +160,16 @@ export function GameClient() {
   const presentSnapshot = useCallback((snapshot: GameState) => {
     const turnChanged = (from: GameState | null, to: GameState) =>
       !from || from.gameTurn !== to.gameTurn || from.active !== to.active;
+    // The untap step belongs to the turn being announced, so the banner's held
+    // frame shows the incoming player's permanents straightening.
+    const withUntap = (held: GameState, active: string): GameState => ({
+      ...held,
+      battlefield: held.battlefield.map((card) =>
+        card.tapped && card.owner === (active === "You" ? "human" : "opponent")
+          ? { ...card, tapped: false }
+          : card,
+      ),
+    });
     const steps: PresentationStep[] = [];
     let cursor = displayedState.current;
     for (const action of snapshot.opponentActions ?? []) {
@@ -167,7 +177,7 @@ export function GameClient() {
         steps.push({
           kind: "banner",
           banner: { active: action.state.active, turn: action.state.turn },
-          state: cursor ?? action.state,
+          state: cursor ? withUntap(cursor, action.state.active) : action.state,
         });
       }
       steps.push({ kind: "action", action, state: action.state });
@@ -177,7 +187,7 @@ export function GameClient() {
       steps.push({
         kind: "banner",
         banner: { active: snapshot.active, turn: snapshot.turn },
-        state: cursor ?? snapshot,
+        state: cursor ? withUntap(cursor, snapshot.active) : snapshot,
       });
     }
     if (steps.length > 0) {
@@ -1281,6 +1291,7 @@ export function GameClient() {
               confirmPendingAction();
             }}
           >
+            <StackTargetArrows stack={state.stack} state={state} tableRef={tableRef} />
             {declaringBlockers && (
               <BlockArrows
                 assignments={blockAssignments}
@@ -1408,6 +1419,7 @@ export function GameClient() {
                         power: item.power,
                         toughness: item.toughness,
                         owner: item.owner,
+                        xValue: item.manaCost?.x ? item.x : null,
                       }}
                       zone="stack"
                       targetKey={`stack:${item.id}`}
@@ -1421,6 +1433,9 @@ export function GameClient() {
                       onDropTarget={handleTargetDrop}
                       compact
                     />
+                    {item.manaCost?.x ? (
+                      <span className="stack-x-badge">X = {item.x}</span>
+                    ) : null}
                     <small className="stack-card-owner">
                       {item.owner === "human" ? "YOU" : "OPPONENT"}
                     </small>
@@ -1833,6 +1848,111 @@ function PlayerBar({
         />
       )}
     </div>
+  );
+}
+
+/// Arrows from each spell on the stack to whatever it is aimed at, so a
+/// Divine Offering pointing at your Mox is visibly pointing at your Mox.
+function StackTargetArrows({
+  stack,
+  state,
+  tableRef,
+}: {
+  stack: GameState["stack"];
+  state: GameState;
+  tableRef: { current: HTMLElement | null };
+}) {
+  const [lines, setLines] = useState<
+    Array<{ key: string; x1: number; y1: number; x2: number; y2: number }>
+  >([]);
+
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    const update = () => {
+      const tableBounds = table.getBoundingClientRect();
+      const center = (el: Element) => {
+        const bounds = el.getBoundingClientRect();
+        return {
+          x: bounds.left + bounds.width / 2 - tableBounds.left,
+          y: bounds.top + bounds.height / 2 - tableBounds.top,
+        };
+      };
+      const next: Array<{ key: string; x1: number; y1: number; x2: number; y2: number }> = [];
+      for (const item of stack) {
+        const source = table.querySelector<HTMLElement>(
+          `.stack-zone [data-card-id="${item.cardId}"]`,
+        );
+        if (!source) continue;
+        const from = center(source);
+        const targets: Array<{ key: string; el: Element | null }> = [
+          ...item.targetCardIds.map((id) => ({
+            key: `card:${id}`,
+            el: table.querySelector(`[data-card-id="${id}"]:not(.stack-zone *)`),
+          })),
+          ...item.targetPlayers.map((owner) => ({
+            key: `player:${owner}`,
+            el: table.querySelector(
+              owner === "opponent" ? ".player-opponent" : ".player-bar:not(.player-opponent)",
+            ),
+          })),
+          ...item.targetStackIds.map((stackId) => {
+            const targetItem = state.stack.find((candidate) => candidate.id === stackId);
+            return {
+              key: `stack:${stackId}`,
+              el: targetItem
+                ? table.querySelector(`.stack-zone [data-card-id="${targetItem.cardId}"]`)
+                : null,
+            };
+          }),
+        ];
+        for (const target of targets) {
+          if (!target.el) continue;
+          const to = center(target.el);
+          next.push({ key: `${item.id}->${target.key}`, x1: from.x, y1: from.y, x2: to.x, y2: to.y });
+        }
+      }
+      setLines((current) =>
+        JSON.stringify(current) === JSON.stringify(next) ? current : next,
+      );
+    };
+    const frame = window.requestAnimationFrame(update);
+    const interval = window.setInterval(update, 400);
+    window.addEventListener("resize", update);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearInterval(interval);
+      window.removeEventListener("resize", update);
+    };
+  }, [stack, state, tableRef]);
+
+  if (lines.length === 0) return null;
+  return (
+    <svg className="stack-target-arrows" aria-label="Spell targets">
+      <defs>
+        <marker
+          id="stack-arrow-head"
+          markerWidth="8"
+          markerHeight="8"
+          refX="7"
+          refY="4"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path d="M 0 0 L 8 4 L 0 8 z" />
+        </marker>
+      </defs>
+      {lines.map((line) => (
+        <line
+          key={line.key}
+          x1={line.x1}
+          y1={line.y1}
+          x2={line.x2}
+          y2={line.y2}
+          markerEnd="url(#stack-arrow-head)"
+        />
+      ))}
+    </svg>
   );
 }
 
@@ -2423,6 +2543,9 @@ function GameCard({
             <span className="card-hover-rules">{card.rulesText}</span>
             <span className="card-hover-details">
               <span><b>Cost</b> {manaCost}</span>
+              {card.xValue !== null && card.xValue !== undefined && (
+                <span><b>X</b> {card.xValue}</span>
+              )}
               {card.power !== null && card.power !== undefined && (
                 <span><b>Power / toughness</b> {card.power} / {card.toughness}</span>
               )}

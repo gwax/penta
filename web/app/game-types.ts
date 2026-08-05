@@ -25,6 +25,7 @@ export type Card = {
   flying?: boolean;
   canAttack?: boolean;
   enteredThisTurn?: boolean;
+  xValue?: number | null;
 };
 
 export type Action = {
@@ -114,6 +115,10 @@ export type GameState = {
     rulesText: string;
     power?: number | null;
     toughness?: number | null;
+    x: number;
+    targetCardIds: number[];
+    targetPlayers: Owner[];
+    targetStackIds: number[];
   }>;
   actions: Action[];
   passLabel: string | null;

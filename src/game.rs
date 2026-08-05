@@ -337,6 +337,10 @@ pub enum GameEvent {
     SpellResolved {
         card: CardInstanceId,
     },
+    /// A targeted spell resolved with every target gone, so it did nothing.
+    SpellFizzled {
+        card: CardInstanceId,
+    },
     AbilityActivated {
         player: PlayerId,
         source: CardInstanceId,
@@ -2475,6 +2479,13 @@ impl Game {
                     permanent.plus_one_counters = 3;
                 }
             }
+        } else if self.spell_fizzles(&object) {
+            // 608.2b: a spell whose targets are all illegal on resolution does
+            // nothing at all — a second Counterspell aimed at the same target
+            // arrives to find it gone and goes to the graveyard spent.
+            self.events.push(GameEvent::SpellFizzled {
+                card: object.card.id,
+            });
         } else {
             self.resolve_spell_effect(&object, behavior);
         }
@@ -4560,6 +4571,21 @@ impl Game {
         self.players[permanent.card.owner.index()]
             .hand
             .push(permanent.card);
+    }
+
+    /// True when a spell had targets and every one of them is now illegal.
+    fn spell_fizzles(&self, object: &StackObject) -> bool {
+        if object.targets.is_empty() {
+            return false;
+        }
+        object.targets.iter().all(|target| match target {
+            Target::Player(_) => false,
+            Target::Permanent(id) => !self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == *id),
+            Target::Spell(id) => !self.stack.iter().any(|candidate| candidate.id == *id),
+        })
     }
 
     fn counter_spell(&mut self, id: StackObjectId) {

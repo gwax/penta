@@ -135,6 +135,41 @@ impl HandcraftedPolicy {
             .any(|permanent| permanent.id == id && permanent.power.is_some())
     }
 
+    fn counter_target_score(observation: &PlayerObservation, target: Target) -> i32 {
+        match target {
+            Target::Spell(id) => observation
+                .stack
+                .iter()
+                .find(|object| object.id == id)
+                .map_or(-10_000, |object| {
+                    if object.controller == observation.viewer {
+                        -10_000
+                    } else if observation.stack.iter().any(|counter| {
+                        counter.controller == observation.viewer
+                            && counter.targets.contains(&Target::Spell(id))
+                    }) {
+                        // Already answered: a second counter aimed at the same
+                        // spell fizzles for nothing.
+                        -10_000
+                    } else {
+                        2_000
+                    }
+                }),
+            Target::Permanent(id) => observation
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.id == id)
+                .map_or(-10_000, |permanent| {
+                    if permanent.controller == observation.viewer {
+                        -10_000
+                    } else {
+                        1_000
+                    }
+                }),
+            Target::Player(_) => -10_000,
+        }
+    }
+
     fn is_hostile_removal(behavior: Option<CardBehavior>) -> bool {
         matches!(
             behavior,
@@ -314,31 +349,7 @@ impl HandcraftedPolicy {
                     behavior,
                     Some(CardBehavior::Counterspell | CardBehavior::RedElementalBlast)
                 ) {
-                    match target {
-                        Target::Spell(id) => observation
-                            .stack
-                            .iter()
-                            .find(|object| object.id == *id)
-                            .map_or(-10_000, |object| {
-                                if object.controller == observation.viewer {
-                                    -10_000
-                                } else {
-                                    2_000
-                                }
-                            }),
-                        Target::Permanent(id) => observation
-                            .battlefield
-                            .iter()
-                            .find(|permanent| permanent.id == *id)
-                            .map_or(-10_000, |permanent| {
-                                if permanent.controller == observation.viewer {
-                                    -10_000
-                                } else {
-                                    1_000
-                                }
-                            }),
-                        Target::Player(_) => -10_000,
-                    }
+                    Self::counter_target_score(observation, *target)
                 } else if Self::is_hostile_removal(behavior) {
                     Self::removal_target_score(observation, *target)
                 } else {

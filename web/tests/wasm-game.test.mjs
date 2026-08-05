@@ -1452,13 +1452,25 @@ test("opponent-action snapshots never contain your next draw", async () => {
     const drawn = after.human.hand.filter((card) => !handBefore.has(card.id));
     if (drawn.length === 0) continue;
     turnsChecked += 1;
-    for (const frame of animations) {
-      for (const card of drawn) {
+    for (const card of drawn) {
+      // A card may enter the hand mid-replay (Timetwister resolving refills
+      // the hand at its own beat) — but once it appears it must stay, and it
+      // must never show up in frames before the beat that produced it.
+      const appears = animations.map((frame) =>
+        frame.state.human.hand.some((held) => held.id === card.id),
+      );
+      assert.ok(
+        !appears[0] || animations.length === 1,
+        `"${animations[0].label}" already shows ${card.name} in hand`,
+      );
+      for (let i = 1; i < appears.length; i += 1) {
         assert.ok(
-          !frame.state.human.hand.some((held) => held.id === card.id),
-          `"${frame.label}" already shows ${card.name} in hand`,
+          !(appears[i - 1] && !appears[i]),
+          `${card.name} flickers out of hand at "${animations[i].label}"`,
         );
       }
+    }
+    for (const frame of animations) {
       assert.ok(
         !frame.state.canCancelAttackers,
         "no replayed frame still offers taking the attack back",

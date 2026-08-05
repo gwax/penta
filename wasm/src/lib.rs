@@ -396,9 +396,37 @@ impl WebGame {
             }
             let event_start = self.game.events().len();
             self.game.apply(player, action).map_err(js_error)?;
-            // The animation carries the state as it stands right after its own
-            // action, so the browser can show each play before anything later —
-            // the human's next draw included — has happened yet.
+            // A pass that completes a round resolves the top of the stack, an
+            // event no one clicked. Without its own beat the object would blink
+            // out between frames — and a turn banner could show while a spell
+            // everyone watched resolve still sat on the stack.
+            if pending_animation.is_none() {
+                let resolved: Vec<_> = self.game.events()[event_start..]
+                    .iter()
+                    .filter_map(|event| match event {
+                        GameEvent::SpellResolved { card }
+                        | GameEvent::AbilityResolved { source: card } => Some((*card, false)),
+                        GameEvent::SpellFizzled { card } => Some((*card, true)),
+                        _ => None,
+                    })
+                    .collect();
+                for (card, fizzled) in resolved {
+                    let observation = self.game.observe(self.human);
+                    let name = self.instance_name(&observation, card);
+                    self.opponent_actions.push(json!({
+                        "label": if fizzled {
+                            format!("{name} fizzles")
+                        } else {
+                            format!("{name} resolves")
+                        },
+                        "kind": "spell",
+                        "card": name,
+                        "cardId": card.0,
+                        "manaSources": Vec::<String>::new(),
+                        "state": self.snapshot_value(false),
+                    }));
+                }
+            }
             if let Some(mut animation) = pending_animation.take() {
                 let mana_sources = self.game.events()[event_start..]
                     .iter()
@@ -767,6 +795,32 @@ impl WebGame {
                     "name": self.card_name(object.definition),
                     "owner": if object.controller == self.human { "human" } else { "opponent" },
                     "kind": format!("{:?}", object.kind),
+                    "x": object.x,
+                    "targetCardIds": object
+                        .targets
+                        .iter()
+                        .filter_map(|target| match target {
+                            Target::Permanent(id) => Some(id.0),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>(),
+                    "targetPlayers": object
+                        .targets
+                        .iter()
+                        .filter_map(|target| match target {
+                            Target::Player(player) if *player == self.human => Some("human"),
+                            Target::Player(_) => Some("opponent"),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>(),
+                    "targetStackIds": object
+                        .targets
+                        .iter()
+                        .filter_map(|target| match target {
+                            Target::Spell(id) => Some(id.0),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>(),
                     "cardKind": card.map_or("unknown".into(), |card| {
                         format!("{:?}", card.behavior.kind()).to_ascii_lowercase()
                     }),
@@ -1070,6 +1124,10 @@ impl WebGame {
                 } else {
                     "opponent’s"
                 }
+            )),
+            GameEvent::SpellFizzled { card } => Some(format!(
+                "{} fizzled — its target was gone",
+                self.instance_name(observation, *card)
             )),
             GameEvent::PermanentLeftBattlefield {
                 controller,
