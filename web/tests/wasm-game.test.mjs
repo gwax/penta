@@ -258,10 +258,16 @@ test("the web facade skips combat when no attackers exist", async () => {
   state = JSON.parse(game.state_json());
 
   assert.equal(state.step, "Beginning Of Combat");
+  const beforeCombat = state;
   game.act(state.actions.find((action) => action.kind === "pass").index);
   state = JSON.parse(game.state_json());
 
-  assert.equal(state.step, "Postcombat Main");
+  // With no creatures there is no combat to react to, so the second main has
+  // nothing to offer either and the pass carries the turn out.
+  assert.ok(
+    state.gameTurn > beforeCombat.gameTurn,
+    `the turn ended instead of idling in ${state.step}`,
+  );
 
   game.free();
 });
@@ -712,16 +718,13 @@ test("the pass button label reports the engine's real auto-pass destination", as
   assert.equal(state.step, "Precombat Main");
   assert.equal(
     state.passLabel,
-    "Go to main 2",
-    "land plays waiting in Main 2 keep the pass from promising the whole turn",
+    "End turn",
+    "an empty board has no combat and nothing to do after it, so the pass is the whole turn",
   );
-  pass(state);
-  state = currentState();
-  assert.equal(state.step, "Postcombat Main");
 
   game.set_phase_stop("Ending", true);
   state = currentState();
-  assert.equal(state.passLabel, "Go to end step");
+  assert.equal(state.passLabel, "Go to end step", "a stop puts the end step back");
   pass(state);
   state = currentState();
   assert.equal(state.step, "End");
@@ -1203,16 +1206,21 @@ test("the pass button label matches where the click actually lands", async () =>
     "Go to main phase": sameTurnAt(["Precombat Main"]),
     "Go to attacks": sameTurnAt(["Beginning Of Combat", "Declare Attackers"]),
     "Go to blocks": sameTurnAt(["Declare Blockers"]),
-    "Go to damage": sameTurnAt(["Combat Damage"]),
+    // Damage names the button whenever the pass causes it, not only when the
+    // yield happens to stop on the step.
+    "Go to damage": (before, after) =>
+      before.battlefield.some((card) => card.attacking) &&
+      (after.gameTurn > before.gameTurn ||
+        ["Combat Damage", "End Of Combat", "Postcombat Main", "End", "Cleanup"].includes(after.step)),
     "Go to end of combat": sameTurnAt(["End Of Combat"]),
-    "Go to main 2": sameTurnAt(["Postcombat Main"]),
+    "Go to second main": sameTurnAt(["Postcombat Main"]),
     "Go to end step": sameTurnAt(["End"]),
     "Discard down to seven": sameTurnAt(["Cleanup"]),
     "Go to their upkeep": sameTurnAt(["Upkeep"]),
     "Go to their draw": sameTurnAt(["Draw"]),
     "Go to their main phase": sameTurnAt(["Precombat Main"]),
     "Go to their attack": sameTurnAt(["Beginning Of Combat", "Declare Attackers"]),
-    "Go to their main 2": sameTurnAt(["Postcombat Main"]),
+    "Go to their second main": sameTurnAt(["Postcombat Main"]),
     "Go to their end step": sameTurnAt(["End"]),
     "Go to cleanup": sameTurnAt(["Cleanup"]),
   };
@@ -1317,4 +1325,88 @@ test("the pass button label matches where the click actually lands", async () =>
       `"Go to their attack" landed in their combat ${attack.hit}/${attack.used} times`,
     );
   }
+});
+
+test("a board with no creatures skips its own second main", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const decks = ["Goblins", "Sligh", "White Weenie", "GR Aggro", "The Deck"];
+  let idledWithoutCreatures = 0;
+  let firstMainWithoutCreatures = 0;
+  let saidSecondMain = 0;
+  let dealtDamageLabel = 0;
+  let blockedBeforeDamage = 0;
+
+  for (let game = 0; game < 40; game += 1) {
+    const match = new WebGame(
+      decks[game % decks.length],
+      decks[(game * 3 + 1) % decks.length],
+      "Handcrafted",
+      game % 2 === 0,
+      game * 31337 + 5,
+    );
+    for (let turn = 0; turn < 600; turn += 1) {
+      const state = JSON.parse(match.state_json());
+      if (state.result) break;
+
+      const myCreatures = state.battlefield.filter(
+        (card) => card.owner === "human" && card.power != null,
+      ).length;
+      if (state.active === "You" && myCreatures === 0) {
+        if (state.step === "Postcombat Main") idledWithoutCreatures += 1;
+        if (state.step === "Precombat Main" && state.passLabel) {
+          firstMainWithoutCreatures += 1;
+          if (state.passLabel === "Go to second main") saidSecondMain += 1;
+        }
+      }
+      // Attacking into declared blockers: the pass is about to deal damage.
+      if (
+        state.active === "You" &&
+        state.step === "Declare Blockers" &&
+        state.battlefield.some((card) => card.owner === "human" && card.attacking) &&
+        state.battlefield.some((card) => card.owner === "opponent" && card.blocking != null) &&
+        state.passLabel
+      ) {
+        blockedBeforeDamage += 1;
+        if (state.passLabel === "Go to damage") dealtDamageLabel += 1;
+      }
+
+      if (state.decision) {
+        const wanted = Math.max(state.decision.minimum, 1);
+        try {
+          match.choose_decision(
+            state.decision.id,
+            JSON.stringify(state.decision.options.slice(0, wanted).map((option) => option.id)),
+          );
+        } catch { break; }
+        continue;
+      }
+      const actions = state.actions.filter((action) => action.kind !== "danger");
+      const next =
+        actions.find((action) => action.label === "Keep this hand") ??
+        actions.find((action) => action.label.startsWith("Play ")) ??
+        actions.find((action) => /^Attack with \D/.test(action.label)) ??
+        actions.find((action) => action.label.startsWith("Block ")) ??
+        actions.find((action) => action.label.startsWith("Cast ")) ??
+        actions.find((action) => action.label.startsWith("Discard ")) ??
+        actions.find((action) => action.kind === "pass") ??
+        actions[0];
+      if (!next) break;
+      try { match.act(next.index); } catch { break; }
+    }
+    match.free();
+  }
+
+  assert.ok(firstMainWithoutCreatures > 50, `exercised the empty board, got ${firstMainWithoutCreatures}`);
+  assert.equal(idledWithoutCreatures, 0, "an empty board never waits in its own second main");
+  assert.equal(saidSecondMain, 0, "and never promises to go there");
+  assert.ok(blockedBeforeDamage > 10, `exercised blocked combat, got ${blockedBeforeDamage}`);
+  assert.equal(
+    dealtDamageLabel,
+    blockedBeforeDamage,
+    "passing into declared blockers always names the damage it causes",
+  );
 });

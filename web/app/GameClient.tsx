@@ -98,7 +98,8 @@ export function GameClient() {
   const [draftBotDeck, setDraftBotDeck] = useState(defaultBotDeck);
   const [draftPolicy, setDraftPolicy] = useState("Handcrafted");
   const [draftHumanFirst, setDraftHumanFirst] = useState(true);
-  const [turnBanner, setTurnBanner] = useState<{ active: string; turn: number } | null>(null);
+  type TurnBanner = { active: string; turn: number };
+  const [pendingTurnBanners, setPendingTurnBanners] = useState<TurnBanner[]>([]);
   const announcedTurn = useRef<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(true);
   const [setupDismissible, setSetupDismissible] = useState(false);
@@ -130,6 +131,15 @@ export function GameClient() {
   const [opponentActionQueue, setOpponentActionQueue] = useState<OpponentAction[]>([]);
   const currentOpponentAction = opponentActionQueue[0] ?? null;
   const watchingOpponent = currentOpponentAction !== null;
+  // One notification holds the floor at a time. Their turn beginning leads the
+  // plays it is about to bring; your turn beginning follows the last of them.
+  const nextTurnBanner = pendingTurnBanners[0] ?? null;
+  const turnBanner =
+    nextTurnBanner && (nextTurnBanner.active === "Opponent" || currentOpponentAction === null)
+      ? nextTurnBanner
+      : null;
+  const turnBannerKey = turnBanner ? `${turnBanner.active}:${turnBanner.turn}` : null;
+  const showingOpponentAction = !turnBanner && currentOpponentAction !== null;
 
   const decisionSelection =
     state?.decision?.id === decisionSelectionState.decisionId
@@ -185,6 +195,7 @@ export function GameClient() {
     ) => {
       if (!wasmReady.current) return;
       announcedTurn.current = null;
+      setPendingTurnBanners([]);
       const dealtHumanDeck = resolveDeck(nextHumanDeck);
       const dealtBotDeck = resolveDeck(nextBotDeck);
       try {
@@ -255,7 +266,7 @@ export function GameClient() {
   }, [presentSnapshot]);
 
   useEffect(() => {
-    if (currentOpponentAction === null) return;
+    if (currentOpponentAction === null || turnBanner) return;
     const timer = window.setTimeout(() => {
       const remaining = opponentActionQueue.slice(1);
       if (remaining.length > 0) {
@@ -267,24 +278,26 @@ export function GameClient() {
       setOpponentActionQueue(remaining);
     }, opponentActionDurationMs);
     return () => window.clearTimeout(timer);
-  }, [currentOpponentAction, opponentActionQueue]);
+  }, [currentOpponentAction, opponentActionQueue, turnBanner]);
 
-  // Announce the turn as the player sees it change, which during opponent
-  // animations is when the queued snapshot reaches the new turn rather than
-  // when the engine got there.
+  // Turn changes queue up rather than firing where they happen, so they never
+  // land on top of the opponent's play that caused them.
   useEffect(() => {
     if (!state) return;
     const key = `${state.gameTurn}:${state.active}`;
     if (announcedTurn.current === key) return;
     announcedTurn.current = key;
-    setTurnBanner({ active: state.active, turn: state.turn });
+    setPendingTurnBanners((current) => [...current, { active: state.active, turn: state.turn }]);
   }, [state]);
 
   useEffect(() => {
-    if (!turnBanner) return;
-    const timer = window.setTimeout(() => setTurnBanner(null), turnBannerDurationMs);
+    if (!turnBannerKey) return;
+    const timer = window.setTimeout(
+      () => setPendingTurnBanners((current) => current.slice(1)),
+      turnBannerDurationMs,
+    );
     return () => window.clearTimeout(timer);
-  }, [turnBanner]);
+  }, [turnBannerKey]);
 
   const skipOpponentActions = () => {
     if (finalStateAfterOpponentActions.current) {
@@ -292,6 +305,7 @@ export function GameClient() {
       finalStateAfterOpponentActions.current = null;
     }
     setOpponentActionQueue([]);
+    setPendingTurnBanners((current) => current.slice(-1));
   };
 
   const act = (action: Action) => {
@@ -1181,7 +1195,7 @@ export function GameClient() {
               </div>
             )}
 
-            {currentOpponentAction && (
+            {showingOpponentAction && currentOpponentAction && (
               <div
                 className={`opponent-action opponent-action-${currentOpponentAction.kind}`}
                 key={`${currentOpponentAction.label}-${opponentActionQueue.length}`}
@@ -1251,10 +1265,10 @@ export function GameClient() {
                       <button
                         type="button"
                         aria-pressed={stopped}
-                        title={`${stopped ? "Remove" : "Set"} stop on ${phase.label}`}
+                        title={`${stopped ? "Remove" : "Set"} stop on ${phase.title}`}
                         onClick={() => togglePhaseStop(phase.label, !stopped)}
                       >
-                        <span>{phase.label}</span>
+                        <span>{phase.title}</span>
                         {current && <small>{state.step}</small>}
                         {stopped && <i aria-label="Stop set">STOP</i>}
                       </button>

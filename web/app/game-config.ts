@@ -38,11 +38,14 @@ export const deckChoiceNote = (choice: string) =>
 export const defaultHumanDeck = randomDeck;
 export const defaultBotDeck = randomDeck;
 
+// `label` is the engine's identifier for a phase stop; `title` is what the
+// player reads. They differ because the rules call it Main 2 and nobody else does.
 export const turnPhases = [
-  { label: "Beginning", steps: ["Upkeep", "Draw"] },
-  { label: "Main 1", steps: ["Precombat Main"] },
+  { label: "Beginning", title: "Beginning", steps: ["Upkeep", "Draw"] },
+  { label: "Main 1", title: "First Main", steps: ["Precombat Main"] },
   {
     label: "Combat",
+    title: "Combat",
     steps: [
       "Beginning Of Combat",
       "Declare Attackers",
@@ -51,8 +54,8 @@ export const turnPhases = [
       "End Of Combat",
     ],
   },
-  { label: "Main 2", steps: ["Postcombat Main"] },
-  { label: "Ending", steps: ["End", "Cleanup"] },
+  { label: "Main 2", title: "Second Main", steps: ["Postcombat Main"] },
+  { label: "Ending", title: "Ending", steps: ["End", "Cleanup"] },
 ] as const;
 
 export const opponentActionDurationMs = 3200;

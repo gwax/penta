@@ -454,6 +454,9 @@ impl WebGame {
                         .iter()
                         .all(|object| object.controller == self.human),
                 human_has_floating_mana: observation.mana_pools[self.human.index()].total() > 0,
+                human_controls_creature: observation.battlefield.iter().any(|permanent| {
+                    permanent.controller == self.human && permanent.power.is_some()
+                }),
             },
             &observation.legal_actions,
         )
@@ -482,6 +485,12 @@ impl WebGame {
         let start_active_is_human = observation.active_player == self.human;
         let mut sim = self.game.clone();
         sim.apply(self.human, Action::PassPriority).ok()?;
+        // Combat damage is the loudest thing a pass can cause, so it names the
+        // button even when the yield carries on past it. Watching for attackers
+        // standing in a pre-damage step and then for the step advancing past it
+        // catches the combats where every attacker dies on the way through.
+        let mut attack_pending = Self::attack_awaiting_damage(&observation);
+        let mut deals_combat_damage = false;
         // Every exit below labels the step the simulation reached, so a pass
         // that runs the game out (lethal damage) or that the preview cannot
         // carry further still names a destination instead of falling back to
@@ -491,6 +500,23 @@ impl WebGame {
                 break;
             };
             let sim_observation = sim.observe(player);
+            // Only this turn's combat is the pass's doing; an attack a whole
+            // turn away is not what the button is about to cause.
+            attack_pending |= sim_observation.turn == start_turn
+                && Self::attack_awaiting_damage(&sim_observation);
+            if attack_pending
+                && (sim_observation.turn != start_turn
+                    || matches!(
+                        sim_observation.step,
+                        Step::CombatDamage
+                            | Step::EndOfCombat
+                            | Step::PostcombatMain
+                            | Step::End
+                            | Step::Cleanup
+                    ))
+            {
+                deals_combat_damage = true;
+            }
             let action = if player == self.human {
                 match self.automatic_human_action_for(&sim_observation) {
                     Some(action) => action,
@@ -507,11 +533,25 @@ impl WebGame {
                 break;
             }
         }
+        if deals_combat_damage {
+            return Some("Go to damage".into());
+        }
         Some(Self::pass_destination_label(
             &sim.observe(self.human),
             start_turn,
             start_active_is_human,
         ))
+    }
+
+    /// Attackers are declared and the damage step has not happened yet.
+    fn attack_awaiting_damage(observation: &PlayerObservation) -> bool {
+        matches!(
+            observation.step,
+            Step::DeclareAttackers | Step::DeclareBlockers
+        ) && observation
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.attacking)
     }
 
     fn pass_destination_label(
@@ -540,7 +580,7 @@ impl WebGame {
                 Step::DeclareBlockers => "Go to blocks",
                 Step::CombatDamage => "Go to damage",
                 Step::EndOfCombat => "Go to end of combat",
-                Step::PostcombatMain => "Go to main 2",
+                Step::PostcombatMain => "Go to second main",
                 Step::End => "Go to end step",
                 // The only reason to hold priority in cleanup is a full hand.
                 Step::Cleanup => "Discard down to seven",
@@ -554,7 +594,7 @@ impl WebGame {
                 Step::DeclareBlockers => "Go to blocks",
                 Step::CombatDamage => "Go to damage",
                 Step::EndOfCombat => "Go to end of combat",
-                Step::PostcombatMain => "Go to their main 2",
+                Step::PostcombatMain => "Go to their second main",
                 Step::End => "Go to their end step",
                 Step::Cleanup => "Go to cleanup",
             }
@@ -1310,6 +1350,7 @@ struct AutoPassContext {
     autopass_enabled: bool,
     only_human_objects_on_stack: bool,
     human_has_floating_mana: bool,
+    human_controls_creature: bool,
 }
 
 /// The pass-preview stand-in for the opponent: let the pass through wherever
@@ -1414,6 +1455,7 @@ fn automatic_human_action_for_context(
     let routine_beginning_step = matches!(context.step, Step::Upkeep | Step::Draw);
     let routine_own_turn_step = context.human_is_active
         && (context.step == Step::BeginningOfCombat
+            || (context.step == Step::PostcombatMain && !context.human_controls_creature)
             || (context.step == Step::End && !context.human_has_floating_mana));
     // On the opponent's turn the interesting window is their end step, where
     // instants are cheapest. Combat they never committed to, and their second
@@ -1504,6 +1546,7 @@ fn automatic_human_action(
             autopass_enabled,
             only_human_objects_on_stack,
             human_has_floating_mana,
+            human_controls_creature: true,
         },
         actions,
     )
@@ -1534,6 +1577,7 @@ fn automatic_human_action_with_blockers(
             autopass_enabled,
             only_human_objects_on_stack,
             human_has_floating_mana,
+            human_controls_creature: true,
         },
         actions,
     )
