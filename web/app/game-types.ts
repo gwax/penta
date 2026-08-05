@@ -40,6 +40,7 @@ export type Action = {
   targetPlayers?: Owner[];
   targetStackIds?: number[];
   targetCount?: number;
+  abilitySummary?: string | null;
   manaAbility?: boolean;
   spellAction?: boolean;
   sacrificeCardIds?: number[];
@@ -53,7 +54,9 @@ export type Action = {
 
 export type OpponentAction = {
   label: string;
-  kind: "land" | "spell" | "ability" | "combat" | "choice";
+  // "turn" beats carry no action of their own — they exist so a turn nobody
+  // acted on is still announced.
+  kind: "land" | "spell" | "ability" | "combat" | "choice" | "turn";
   card?: string | null;
   cardId?: number | null;
   manaSources?: string[];

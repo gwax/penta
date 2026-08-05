@@ -1064,6 +1064,11 @@ impl Game {
     }
 
     fn queue_chain_lightning_decision(&mut self, player: PlayerId, spell: StackObject) {
+        // Without RR to spend there is nothing to decide, and a prompt whose
+        // only answer is "no" is worse than no prompt at all.
+        if !self.can_pay_cost(player, ManaCost::new(0, 2), 0) {
+            return;
+        }
         let mut targets = self.damage_targets();
         if let Some(target) = spell.targets.first()
             && !targets.contains(target)
@@ -1076,22 +1081,20 @@ impl Game {
             card: None,
             zone: DecisionZone::None,
         }];
-        if self.can_pay_cost(player, ManaCost::new(0, 2), 0) {
-            options.extend(
-                targets
-                    .iter()
-                    .enumerate()
-                    .map(|(index, target)| DecisionOption {
-                        id: u32::try_from(index + 1).unwrap_or(u32::MAX),
-                        label: format!(
-                            "Copy Chain Lightning → {}",
-                            self.target_label(player, *target)
-                        ),
-                        card: None,
-                        zone: DecisionZone::None,
-                    }),
-            );
-        }
+        options.extend(
+            targets
+                .iter()
+                .enumerate()
+                .map(|(index, target)| DecisionOption {
+                    id: u32::try_from(index + 1).unwrap_or(u32::MAX),
+                    label: format!(
+                        "Copy Chain Lightning → {}",
+                        self.target_label(player, *target)
+                    ),
+                    card: None,
+                    zone: DecisionZone::None,
+                }),
+        );
         self.queue_decision(
             player,
             "Copy Chain Lightning?",

@@ -1,7 +1,8 @@
 use penta::poc;
 use penta::{
-    Action, BattlefieldExit, CardCatalog, CardDefinitionId, CardInstanceId, Game, GameEvent,
-    GameResult, HandcraftedPolicy, PlayerId, PlayerObservation, Policy, RandomPolicy, Step, Target,
+    Action, ActivatedAbilityText, BattlefieldExit, CardCatalog, CardDefinitionId, CardInstanceId,
+    Game, GameEvent, GameResult, HandcraftedPolicy, PlayerId, PlayerObservation, Policy,
+    RandomPolicy, Step, Target,
 };
 use serde_json::{Value, json};
 use std::fmt::Write as _;
@@ -37,6 +38,9 @@ pub struct WebGame {
     phase_stops: Vec<String>,
     autopass_enabled: bool,
     attack_undo: Option<Game>,
+    /// The turn the presentation has already announced, so a turn nobody acts
+    /// on still gets its banner instead of being skipped over in silence.
+    announced_turn: Option<u32>,
 }
 
 #[wasm_bindgen]
@@ -84,6 +88,8 @@ impl WebGame {
             phase_stops: Vec::new(),
             autopass_enabled: true,
             attack_undo: None,
+            // The opening turn arrives with the board, not as a change to it.
+            announced_turn: Some(1),
         };
         web_game.advance_until_human_choice()?;
         Ok(web_game)
@@ -137,7 +143,13 @@ impl WebGame {
         }
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
+        let event_start = self.game.events().len();
         self.game.apply(self.human, action).map_err(js_error)?;
+        // Yielding is how combat damage happens, and ending your own turn hands
+        // one to the opponent. Both need showing every bit as much as the
+        // actions the bot takes on its own.
+        self.record_combat_damage(event_start);
+        self.record_turn_change(event_start);
         // Committing the attack invalidates the checkpoint immediately, so no
         // snapshot taken while the turn plays out still offers the cancel.
         self.forget_attack_undo_unless_still_declaring();
@@ -427,6 +439,7 @@ impl WebGame {
                     }));
                 }
             }
+            self.record_combat_damage(event_start);
             if let Some(mut animation) = pending_animation.take() {
                 let mana_sources = self.game.events()[event_start..]
                     .iter()
@@ -445,10 +458,82 @@ impl WebGame {
                 animation["state"] = self.snapshot_value(false);
                 self.opponent_actions.push(animation);
             }
+            // Last, so the beat that ended the turn is still watched before the
+            // next turn is announced.
+            self.record_turn_change(event_start);
         }
         Err(JsValue::from_str(
             "game exceeded its automatic action limit",
         ))
+    }
+
+    /// Gives combat damage its own beat.
+    ///
+    /// Nobody clicks damage into happening, and yielding through the step is
+    /// now the normal way an unblocked attack ends. Without a beat the life
+    /// totals and the dead creatures would change between frames.
+    fn record_combat_damage(&mut self, event_start: usize) {
+        let events = &self.game.events()[event_start..];
+        let entered_damage = events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::StepChanged {
+                    step: Step::CombatDamage,
+                    ..
+                }
+            )
+        });
+        if !entered_damage {
+            return;
+        }
+        let landed = events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::DamageDealt { .. } | GameEvent::PermanentLeftBattlefield { .. }
+            )
+        });
+        if !landed {
+            return;
+        }
+        self.opponent_actions.push(json!({
+            "label": "Combat damage",
+            "kind": "combat",
+            "card": Value::Null,
+            "cardId": Value::Null,
+            "manaSources": Vec::<String>::new(),
+            "state": self.snapshot_value(false),
+        }));
+    }
+
+    /// Gives a turn that just began its own presentation beat.
+    ///
+    /// Turn banners are otherwise inferred from the beats around them, so an
+    /// opponent who draws and passes would slide by without ever being
+    /// announced. This beat carries no action of its own — the client shows
+    /// the banner and moves on.
+    fn record_turn_change(&mut self, event_start: usize) {
+        let Some(turn) = self.game.events()[event_start..]
+            .iter()
+            .filter_map(|event| match event {
+                GameEvent::StepChanged { turn, .. } => Some(*turn),
+                _ => None,
+            })
+            .next_back()
+        else {
+            return;
+        };
+        if self.announced_turn == Some(turn) {
+            return;
+        }
+        self.announced_turn = Some(turn);
+        self.opponent_actions.push(json!({
+            "label": "New turn",
+            "kind": "turn",
+            "card": Value::Null,
+            "cardId": Value::Null,
+            "manaSources": Vec::<String>::new(),
+            "state": self.snapshot_value(false),
+        }));
     }
 
     fn automatic_human_action_for(&self, observation: &PlayerObservation) -> Option<Action> {
@@ -564,14 +649,50 @@ impl WebGame {
                 break;
             }
         }
+        let ending = sim.observe(self.human);
+        // Taking an attack unblocked is a commitment, not a destination, so on
+        // defense the button names the decision the same way "No attacks" does.
+        if !start_active_is_human && Self::declines_all_blocks(&observation, &ending, start_turn) {
+            return Some("No blocks".into());
+        }
         if deals_combat_damage {
             return Some("Go to damage".into());
         }
         Some(Self::pass_destination_label(
-            &sim.observe(self.human),
+            &ending,
             start_turn,
             start_active_is_human,
         ))
+    }
+
+    /// Whether this pass carries the defender through the block step without
+    /// blocking anything: attackers are in, nothing of yours is blocking, and
+    /// the simulation runs out the other side of blockers still that way.
+    fn declines_all_blocks(
+        before: &PlayerObservation,
+        after: &PlayerObservation,
+        start_turn: u32,
+    ) -> bool {
+        let blocking = |observation: &PlayerObservation| {
+            observation
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.blocking.is_some())
+        };
+        matches!(
+            before.step,
+            Step::BeginningOfCombat | Step::DeclareAttackers | Step::DeclareBlockers
+        ) && before
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.attacking)
+            && !blocking(before)
+            && !blocking(after)
+            && (after.turn != start_turn
+                || matches!(
+                    after.step,
+                    Step::CombatDamage | Step::EndOfCombat | Step::PostcombatMain | Step::End
+                ))
     }
 
     /// Attackers are declared and the damage step has not happened yet.
@@ -682,6 +803,13 @@ impl WebGame {
                     "targetPlayers": action_target_players(action, self.human),
                     "targetStackIds": action_target_stacks(action),
                     "targetCount": action_targets(action).len(),
+                    // What the ability does, with no target picked yet, so the
+                    // card's menu can offer the effect by name.
+                    "abilitySummary": match action {
+                        Action::ActivateAbility { source, target: Some(_), .. } =>
+                            self.ability_text(&observation, *source).map(|text| text.summary),
+                        _ => None,
+                    },
                     "manaAbility": matches!(action, Action::ActivateManaAbility { .. }),
                     "spellAction": matches!(action, Action::CastSpell { .. }),
                     "sacrificeCardIds": action_sacrifices(action),
@@ -939,6 +1067,21 @@ impl WebGame {
             "result": result,
             "events": events,
         })
+    }
+
+    /// Plain-language description of a permanent's targeted ability, so menus
+    /// can name the effect rather than the card that carries it.
+    fn ability_text(
+        &self,
+        observation: &PlayerObservation,
+        source: CardInstanceId,
+    ) -> Option<ActivatedAbilityText> {
+        observation
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.id == source)
+            .and_then(|permanent| self.catalog.get(permanent.definition))
+            .and_then(|card| card.behavior.activated_ability_text())
     }
 
     fn card_name(&self, definition: CardDefinitionId) -> String {
@@ -1262,18 +1405,21 @@ impl WebGame {
                 sacrifice,
             } => {
                 let source_name = self.instance_name(observation, *source);
-                if source_name == "Mishra's Factory" {
-                    return target.map_or_else(
-                        || "Make Mishra's Factory a 2/2 creature".into(),
-                        |target| {
-                            format!(
-                                "Give {} +1/+1 with Mishra's Factory",
-                                self.target_name(observation, target)
-                            )
-                        },
-                    );
+                if source_name == "Mishra's Factory" && target.is_none() {
+                    return "Make Mishra's Factory a 2/2 creature".into();
                 }
-                let mut label = format!("Activate {source_name}");
+                // "Activate Strip Mine" says nothing about what the click does,
+                // so a described ability names its own effect instead.
+                let described =
+                    target
+                        .zip(self.ability_text(observation, *source))
+                        .map(|(target, text)| {
+                            text.targeted
+                                .replace("{}", &self.target_name(observation, target))
+                        });
+                let mut label = described
+                    .clone()
+                    .unwrap_or_else(|| format!("Activate {source_name}"));
                 if let Some(sacrifice) = sacrifice
                     && sacrifice != source
                 {
@@ -1283,7 +1429,9 @@ impl WebGame {
                         self.instance_name(observation, *sacrifice)
                     );
                 }
-                if let Some(target) = target {
+                if let Some(target) = target
+                    && described.is_none()
+                {
                     let _ = write!(label, " → {}", self.target_name(observation, *target));
                 }
                 label
@@ -1516,11 +1664,27 @@ fn is_routine_window(context: &AutoPassContext, actions: &[Action]) -> bool {
             context.step,
             Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
         );
+    // Nothing is blocking, so the rest of their combat is just watching the
+    // damage land. The interesting window is their end step, so head there
+    // instead of stopping once per remaining combat step. A block still on
+    // offer means the decision has not been made yet and this is not it.
+    let block_still_available = actions
+        .iter()
+        .any(|action| matches!(action, Action::DeclareBlocker { .. }));
+    let smooth_unblocked_defense = !context.human_is_active
+        && context.has_attacker
+        && !context.has_blocker
+        && !block_still_available
+        && matches!(
+            context.step,
+            Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
+        );
     routine_beginning_step
         || end_of_combat
         || routine_own_turn_step
         || routine_opponent_turn_step
         || smooth_unblocked_attack
+        || smooth_unblocked_defense
         || (!context.has_attacker
             && matches!(
                 context.step,
@@ -1582,8 +1746,11 @@ fn automatic_human_action_for_context(
         context.step,
         Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage
     );
+    // Defending an attack nobody blocked is the exception: no creature of
+    // yours is in the combat, so no ability of yours can change it.
+    let ability_changes_combat = context.human_is_active || context.has_blocker;
     if auto_yield_step
-        && (!combat_step || !context.has_attacker || !has_combat_ability)
+        && (!combat_step || !context.has_attacker || !has_combat_ability || !ability_changes_combat)
         && context.stack_is_empty
         && let Some(pass) = actions
             .iter()

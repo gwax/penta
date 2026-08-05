@@ -473,7 +473,9 @@ test("targeted permanent actions identify their clickable battlefield target", a
   assert.ok(stripMana, "Strip Mine remains available as a colorless mana source");
   assert.equal(stripMana.manaAbility, true);
   const stripAction = state.actions.find((action) => {
-    if (!action.label.startsWith("Activate Strip Mine →")) return false;
+    // The label describes the effect, not the card: "Destroy Plains with Strip Mine".
+    if (!/^Destroy .* with Strip Mine$/.test(action.label)) return false;
+    assert.equal(action.abilitySummary, "Destroy a land");
     return state.battlefield.some(
       (card) => card.id === action.targetCardId && card.owner === "opponent",
     );
@@ -1212,6 +1214,13 @@ test("the pass button label matches where the click actually lands", async () =>
       before.battlefield.some((card) => card.attacking) &&
       (after.gameTurn > before.gameTurn ||
         ["Combat Damage", "End Of Combat", "Postcombat Main", "End", "Cleanup"].includes(after.step)),
+    // On defense the button names the commitment: nothing of yours blocks, and
+    // the click carries the attack all the way past the block step.
+    "No blocks": (before, after) =>
+      before.battlefield.some((card) => card.attacking) &&
+      !after.battlefield.some((card) => card.blocking != null) &&
+      (after.gameTurn > before.gameTurn ||
+        ["Combat Damage", "End Of Combat", "Postcombat Main", "End", "Cleanup"].includes(after.step)),
     "Go to end of combat": sameTurnAt(["End Of Combat"]),
     "Go to second main": sameTurnAt(["Postcombat Main"]),
     "Go to end step": sameTurnAt(["End"]),
@@ -1301,7 +1310,9 @@ test("the pass button label matches where the click actually lands", async () =>
 
   const total = [...tally.values()].reduce((sum, row) => sum + row.used, 0);
   assert.ok(total > 300, `exercised enough passes, got ${total}`);
-  for (const required of ["Your turn", "End turn", "Go to attacks", "Go to damage", "Go to their end step"]) {
+  // "Go to damage" needs a block to have been declared, which this sweep only
+  // reaches by luck; the defender test below covers it deliberately.
+  for (const required of ["Your turn", "End turn", "Go to attacks", "No blocks", "Go to their end step"]) {
     assert.ok(tally.has(required), `saw "${required}"; got ${[...tally.keys()].join(", ")}`);
   }
 
@@ -1480,6 +1491,84 @@ test("opponent-action snapshots never contain your next draw", async () => {
   assert.ok(turnsChecked >= 3, `checked ${turnsChecked} turns with draws`);
 
   game.free();
+});
+
+test("declining a block runs to their end step; blocking keeps the damage stop", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  // Defending is meant to be one decision, not four: block or don't, and if
+  // you don't, the next thing worth stopping for is their end step.
+  const defend = (block, deck = "White Weenie", seed = 12) => {
+    const game = new WebGame(deck, "Goblins", "Handcrafted", false, seed);
+    const stops = [];
+    for (let step = 0; step < 400; step += 1) {
+      const state = JSON.parse(game.state_json());
+      if (state.result) break;
+      if (state.decision) {
+        const wanted = Math.max(state.decision.minimum, 1);
+        game.choose_decision(
+          state.decision.id,
+          JSON.stringify(state.decision.options.slice(0, wanted).map((option) => option.id)),
+        );
+        continue;
+      }
+      const actions = state.actions.filter((action) => action.kind !== "danger");
+      const blocks = actions.filter((action) => action.label.startsWith("Block "));
+      if (state.active !== "You" && state.battlefield.some((card) => card.attacking)) {
+        stops.push({
+          step: state.step,
+          pass: state.passLabel,
+          canBlock: blocks.length > 0,
+        });
+      }
+      const next =
+        (block && blocks.length ? blocks[0] : null) ??
+        actions.find((action) => action.label === "Keep this hand") ??
+        actions.find((action) => action.label.startsWith("Play ")) ??
+        actions.find((action) => action.label.startsWith("Cast ")) ??
+        actions.find((action) => action.kind === "pass") ??
+        actions[0];
+      if (!next) break;
+      game.act(next.index);
+    }
+    game.free();
+    return stops;
+  };
+
+  const declined = defend(false);
+  assert.ok(
+    declined.some((stop) => stop.canBlock),
+    "the block decision itself still stops",
+  );
+  assert.ok(
+    !declined.some((stop) => stop.pass === "Go to damage"),
+    `no damage stop once nothing is blocking; got ${JSON.stringify(declined)}`,
+  );
+  assert.ok(
+    declined.every((stop) => stop.pass !== "Go to their end step"),
+    `their end step is where the yield lands, not a second button; got ${JSON.stringify(declined)}`,
+  );
+
+  const blocked = defend(true);
+  assert.ok(
+    blocked.some((stop) => stop.pass === "Go to damage"),
+    `a declared block keeps its pre-damage window; got ${JSON.stringify(blocked)}`,
+  );
+
+  // With no creature able to block, the pass is the decision, so it says so
+  // instead of promising a block step that will not happen.
+  const creatureless = defend(false, "The Deck", 77);
+  assert.ok(
+    creatureless.some((stop) => stop.pass === "No blocks"),
+    `taking an attack unblocked is named as such; got ${JSON.stringify(creatureless)}`,
+  );
+  assert.ok(
+    creatureless.every((stop) => stop.pass !== "Go to damage"),
+    `nothing to block with means no damage stop; got ${JSON.stringify(creatureless)}`,
+  );
 });
 
 test("combat runs out to a decision, not through empty windows", async () => {

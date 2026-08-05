@@ -305,11 +305,82 @@ pub struct CreatureStats {
     pub trample: bool,
 }
 
+/// How a client should describe activating a permanent's targeted ability.
+///
+/// `targeted` is a template with `{}` where the target's name goes, so a menu
+/// can name the effect instead of the card; `summary` is the same effect with
+/// no particular target picked yet.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ActivatedAbilityText {
+    pub targeted: &'static str,
+    pub summary: &'static str,
+}
+
 impl CardBehavior {
     /// The legendary permanents in the pool, for the legend rule.
     #[must_use]
     pub const fn is_legendary(self) -> bool {
         matches!(self, Self::Pendelhaven | Self::LibraryOfAlexandria)
+    }
+
+    /// Describes a permanent's targeted activated ability in plain language.
+    ///
+    /// "Activate Strip Mine" says nothing about what the click does, so the
+    /// UI asks here instead and reads back the effect.
+    #[must_use]
+    pub const fn activated_ability_text(self) -> Option<ActivatedAbilityText> {
+        let text = match self {
+            Self::GlassesOfUrza => ActivatedAbilityText {
+                targeted: "Look at {}'s hand with Glasses of Urza",
+                summary: "Look at a player's hand",
+            },
+            Self::IcyManipulator => ActivatedAbilityText {
+                targeted: "Tap {} with Icy Manipulator",
+                summary: "Tap an artifact, creature, or land",
+            },
+            Self::RelicBarrier => ActivatedAbilityText {
+                targeted: "Tap {} with Relic Barrier",
+                summary: "Tap an artifact",
+            },
+            Self::Pendelhaven => ActivatedAbilityText {
+                targeted: "Give {} +1/+2 with Pendelhaven",
+                summary: "Give a 1/1 creature +1/+2",
+            },
+            Self::StoneGiant => ActivatedAbilityText {
+                targeted: "Give {} flying with Stone Giant",
+                summary: "Give a smaller creature flying",
+            },
+            Self::StripMine => ActivatedAbilityText {
+                targeted: "Destroy {} with Strip Mine",
+                summary: "Destroy a land",
+            },
+            Self::ChaosOrb => ActivatedAbilityText {
+                targeted: "Flip Chaos Orb onto {}",
+                summary: "Flip Chaos Orb onto a permanent",
+            },
+            Self::OrcishMechanics => ActivatedAbilityText {
+                targeted: "Deal 2 damage to {} with Orcish Mechanics",
+                summary: "Deal 2 damage",
+            },
+            Self::Triskelion => ActivatedAbilityText {
+                targeted: "Deal 1 damage to {} with Triskelion",
+                summary: "Deal 1 damage",
+            },
+            Self::IcatianJavelineers => ActivatedAbilityText {
+                targeted: "Deal 1 damage to {} with Icatian Javelineers",
+                summary: "Deal 1 damage",
+            },
+            Self::MazeOfIth => ActivatedAbilityText {
+                targeted: "Untap {} and take it out of combat",
+                summary: "Take an attacker out of combat",
+            },
+            Self::MishrasFactory => ActivatedAbilityText {
+                targeted: "Give {} +1/+1 with Mishra's Factory",
+                summary: "Give an Assembly-Worker +1/+1",
+            },
+            _ => return None,
+        };
+        Some(text)
     }
 
     /// Returns concise rules text for the behavior implemented by the simulator.

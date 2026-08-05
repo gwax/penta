@@ -180,7 +180,11 @@ export function GameClient() {
           state: cursor ? withUntap(cursor, action.state.active) : action.state,
         });
       }
-      steps.push({ kind: "action", action, state: action.state });
+      // A turn beat is only there to be announced; the banner above already
+      // said everything it has to say.
+      if (action.kind !== "turn") {
+        steps.push({ kind: "action", action, state: action.state });
+      }
       cursor = action.state;
     }
     if (turnChanged(cursor, snapshot)) {
@@ -237,9 +241,12 @@ export function GameClient() {
     ) => {
       if (!wasmReady.current) return;
       // A fresh game replaces the whole board; nothing should glide between
-      // unrelated games, and no stale beats should keep playing.
+      // unrelated games, and no stale beats should keep playing. Forgetting
+      // the last board matters most: presenting against a finished game would
+      // hold its result card up over the new one.
       suppressFlip.current = true;
       setPresentationQueue([]);
+      displayedState.current = null;
       const dealtHumanDeck = resolveDeck(nextHumanDeck);
       const dealtBotDeck = resolveDeck(nextBotDeck);
       try {
@@ -826,15 +833,22 @@ export function GameClient() {
         action.targetPlayer == null &&
         action.targetStackId == null,
     ) ?? [];
-  const actionMenuHasTargets =
-    cardActionMenu !== null &&
-    (state?.actions.some(
-      (action) =>
-        action.cardId === cardActionMenu &&
-        (action.targetCardId != null ||
-          action.targetPlayer != null ||
-          action.targetStackId != null),
-    ) ?? false);
+  const actionMenuTargetedActions =
+    cardActionMenu === null
+      ? []
+      : (state?.actions.filter(
+          (action) =>
+            action.cardId === cardActionMenu &&
+            (action.targetCardId != null ||
+              action.targetPlayer != null ||
+              action.targetStackId != null),
+        ) ?? []);
+  const actionMenuHasTargets = actionMenuTargetedActions.length > 0;
+  // "Choose a target" says nothing about what the target is for, so the menu
+  // reads back the ability whenever the engine can describe it.
+  const actionMenuTargetLabel =
+    actionMenuTargetedActions.find((action) => action.abilitySummary)?.abilitySummary ??
+    "Choose a target on the battlefield";
   const choosingTarget =
     !choosingFireballTargets &&
     selectedCard !== null &&
@@ -849,6 +863,9 @@ export function GameClient() {
           action.targetPlayer != null ||
           action.targetStackId != null),
     ) ?? false);
+  const selectedAbilitySummary = state?.actions.find(
+    (action) => action.cardId === selectedCard && action.abilitySummary,
+  )?.abilitySummary;
   const selectedTarget = state?.battlefield.find(
     (card) => card.id === selectedTargetCard,
   );
@@ -1039,10 +1056,6 @@ export function GameClient() {
         setSelectedTargetStackId(null);
       }
     }
-  };
-
-  const chooseRandomSeed = () => {
-    newGame(randomSeed());
   };
 
   const openSetup = () => {
@@ -1250,7 +1263,7 @@ export function GameClient() {
                     setCardActionMenu(null);
                   }}
                 >
-                  <strong>Choose a target on the battlefield</strong>
+                  <strong>{actionMenuTargetLabel}</strong>
                   <i aria-hidden="true">→</i>
                 </button>
               )}
@@ -1691,7 +1704,7 @@ export function GameClient() {
               )}
               {choosingTarget && (
                 <div className="target-prompt" role="status">
-                  <strong>Choose a highlighted target</strong>
+                  <strong>{selectedAbilitySummary ?? "Choose a highlighted target"}</strong>
                   <span>
                     Click a highlighted card, player, or spell for{" "}
                     {selectedSource?.name ?? "this action"}
@@ -1762,8 +1775,13 @@ export function GameClient() {
             </p>
             <div>
               <button onClick={() => newGame(seed, humanDeck, botDeck)}>Replay seed</button>
-              <button className="result-primary" onClick={chooseRandomSeed}>
-                New shuffled game
+              {/* The decks that just played, not the setup choices: a rematch
+                  keeps the matchup even when it was rolled at random. */}
+              <button
+                className="result-primary"
+                onClick={() => newGame(randomSeed(), humanDeck, botDeck)}
+              >
+                Rematch
               </button>
             </div>
           </section>

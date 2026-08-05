@@ -12,8 +12,8 @@ pub mod rules;
 
 pub use action::{Action, ActionError, CombatDamageAssignment, ManaColor, Target};
 pub use card::{
-    CardBehavior, CardCatalog, CardDefinition, CardKind, CardSet, CatalogError, CreatureStats,
-    ManaCost,
+    ActivatedAbilityText, CardBehavior, CardCatalog, CardDefinition, CardKind, CardSet,
+    CatalogError, CreatureStats, ManaCost,
 };
 pub use deck::{Deck, DeckError, ValidatedDeck};
 pub use game::{
