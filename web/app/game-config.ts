@@ -58,6 +58,8 @@ export const turnPhases = [
   { label: "Ending", title: "Ending", steps: ["End", "Cleanup"] },
 ] as const;
 
-export const opponentActionDurationMs = 3200;
+// The board itself tells the story now — each beat only needs to be long
+// enough to watch the cards move.
+export const opponentActionDurationMs = 2000;
 
 export const turnBannerDurationMs = 1800;

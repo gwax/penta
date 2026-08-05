@@ -1144,7 +1144,7 @@ button {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   min-height: 34px;
   padding: 4px 8px;
   border-top: 1px solid rgba(201, 181, 137, 0.24);
@@ -1154,6 +1154,12 @@ button {
 
 .stack-zone-empty {
   color: #746d60;
+}
+
+/* With real cards aboard, the strip needs the full card height; empty, it
+   stays a slim divider. */
+.stack-zone:has(.stack-card-slot) {
+  min-height: 88px;
 }
 
 .stack-zone > span {
@@ -1166,6 +1172,23 @@ button {
   color: #746d60;
   font-size: 10px;
   letter-spacing: 0.12em;
+}
+
+/* Spells on the stack are the same cards as everywhere else, with a small
+   owner tag hung underneath. */
+.stack-card-slot {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding-bottom: 1px;
+}
+
+.stack-card-owner {
+  color: #b0a590;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
 }
 
 .stack-card {

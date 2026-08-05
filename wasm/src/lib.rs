@@ -756,12 +756,33 @@ impl WebGame {
             .iter()
             .rev()
             .map(|object| {
+                // Enough card detail for the browser to draw a real card on
+                // the stack rather than a name tag.
+                let card = self.catalog.get(object.definition);
+                let mana_cost = card.map(|card| card.behavior.mana_cost());
+                let creature_stats = card.and_then(|card| card.behavior.creature_stats());
                 json!({
                     "id": object.id.0,
                     "cardId": object.card.0,
                     "name": self.card_name(object.definition),
                     "owner": if object.controller == self.human { "human" } else { "opponent" },
                     "kind": format!("{:?}", object.kind),
+                    "cardKind": card.map_or("unknown".into(), |card| {
+                        format!("{:?}", card.behavior.kind()).to_ascii_lowercase()
+                    }),
+                    "isLand": card.is_some_and(|card| card.behavior.kind() == penta::CardKind::Land),
+                    "manaCost": mana_cost.map(|cost| json!({
+                        "generic": cost.generic,
+                        "white": cost.white,
+                        "blue": cost.blue,
+                        "black": cost.black,
+                        "red": cost.red,
+                        "green": cost.green,
+                        "x": cost.variable_x,
+                    })),
+                    "rulesText": card.map_or("", |card| card.behavior.rules_text()),
+                    "power": creature_stats.map(|stats| stats.power),
+                    "toughness": creature_stats.map(|stats| stats.toughness),
                 })
             })
             .collect::<Vec<_>>();

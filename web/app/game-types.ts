@@ -102,7 +102,19 @@ export type GameState = {
   human: PlayerState & { hand: Card[] };
   opponent: PlayerState & { handSize: number };
   battlefield: Card[];
-  stack: Array<{ id: number; cardId: number; name: string; owner: Owner; kind: string }>;
+  stack: Array<{
+    id: number;
+    cardId: number;
+    name: string;
+    owner: Owner;
+    kind: string;
+    cardKind: string;
+    isLand?: boolean;
+    manaCost?: Card["manaCost"];
+    rulesText: string;
+    power?: number | null;
+    toughness?: number | null;
+  }>;
   actions: Action[];
   passLabel: string | null;
   decision: DecisionState | null;

@@ -1322,34 +1322,6 @@ export function GameClient() {
               </div>
             )}
 
-            {currentOpponentAction && (
-              <div
-                className={`opponent-action opponent-action-${currentOpponentAction.kind}`}
-                key={`${currentOpponentAction.label}-${presentationQueue.length}`}
-                role="status"
-                aria-live="polite"
-              >
-                <span className="opponent-action-icon" aria-hidden="true">
-                  {opponentActionSymbol(currentOpponentAction.kind)}
-                </span>
-                <div>
-                  <small>Opponent</small>
-                  <strong>{currentOpponentAction.label}</strong>
-                  {currentOpponentAction.manaSources &&
-                    currentOpponentAction.manaSources.length > 0 && (
-                      <span className="opponent-action-mana-used">
-                        Tapped {currentOpponentAction.manaSources.join(", ")}
-                      </span>
-                    )}
-                </div>
-                {actionStepsRemaining > 1 && (
-                  <span className="opponent-action-count">
-                    +{actionStepsRemaining - 1}
-                  </span>
-                )}
-              </div>
-            )}
-
             <Zone
               cards={opponentPermanents}
               empty="Opponent battlefield"
@@ -1424,31 +1396,35 @@ export function GameClient() {
                 <small className="stack-empty-label">EMPTY</small>
               ) : (
                 state.stack.map((item) => (
-                  <button
-                    key={item.id}
-                    className={`stack-card ${isStackTargetable(item.id) ? "is-targetable" : ""} ${dragOverTarget === `stack:${item.id}` ? "is-drag-over-target" : ""}`}
-                    data-card-id={item.cardId}
-                    data-card-owner={item.owner}
-                    data-card-name={item.name}
-                    data-card-zone="stack"
-                    onClick={() => selectStackTarget(item.id)}
-                    disabled={!isStackTargetable(item.id)}
-                    onDragOver={(event) => {
-                      if (!isStackTargetable(item.id)) return;
-                      event.preventDefault();
-                      event.dataTransfer.dropEffect = "move";
-                      handleTargetDragOver(`stack:${item.id}`);
-                    }}
-                    onDragLeave={() => handleTargetDragLeave(`stack:${item.id}`)}
-                    onDrop={(event) => {
-                      if (!isStackTargetable(item.id)) return;
-                      event.preventDefault();
-                      handleTargetDrop(`stack:${item.id}`);
-                    }}
-                  >
-                    {item.name}
-                    <small>{item.owner === "human" ? "YOU" : "OPPONENT"}</small>
-                  </button>
+                  <div className="stack-card-slot" key={item.id}>
+                    <GameCard
+                      card={{
+                        id: item.cardId,
+                        name: item.name,
+                        kind: item.cardKind,
+                        isLand: item.isLand,
+                        manaCost: item.manaCost,
+                        rulesText: item.rulesText,
+                        power: item.power,
+                        toughness: item.toughness,
+                        owner: item.owner,
+                      }}
+                      zone="stack"
+                      targetKey={`stack:${item.id}`}
+                      actionable={isStackTargetable(item.id)}
+                      targetable={isStackTargetable(item.id)}
+                      selected={false}
+                      dragOverTarget={dragOverTarget === `stack:${item.id}`}
+                      onSelect={() => selectStackTarget(item.id)}
+                      onDragOverTarget={handleTargetDragOver}
+                      onDragLeaveTarget={handleTargetDragLeave}
+                      onDropTarget={handleTargetDrop}
+                      compact
+                    />
+                    <small className="stack-card-owner">
+                      {item.owner === "human" ? "YOU" : "OPPONENT"}
+                    </small>
+                  </div>
                 ))
               )}
             </div>
@@ -1782,20 +1758,6 @@ export function GameClient() {
   );
 }
 
-function opponentActionSymbol(kind: OpponentAction["kind"]) {
-  switch (kind) {
-    case "land":
-      return "▲";
-    case "spell":
-      return "✦";
-    case "ability":
-      return "◇";
-    case "combat":
-      return "⚔";
-    case "choice":
-      return "…";
-  }
-}
 
 function displayActionLabel(action: Action, state: GameState) {
   if (action.label !== "Pass priority") return action.label;
@@ -2231,6 +2193,7 @@ function HandZone({
 function GameCard({
   card,
   zone = "battlefield",
+  targetKey,
   actionable,
   draggableAction = false,
   targetable = false,
@@ -2251,6 +2214,7 @@ function GameCard({
 }: {
   card: Card;
   zone?: string;
+  targetKey?: string;
   actionable: boolean;
   draggableAction?: boolean;
   targetable?: boolean;
@@ -2372,13 +2336,13 @@ function GameCard({
           if (!targetable) return;
           event.preventDefault();
           event.dataTransfer.dropEffect = "move";
-          onDragOverTarget?.(cardTargetKey(card.id));
+          onDragOverTarget?.(targetKey ?? cardTargetKey(card.id));
         }}
-        onDragLeave={() => onDragLeaveTarget?.(cardTargetKey(card.id))}
+        onDragLeave={() => onDragLeaveTarget?.(targetKey ?? cardTargetKey(card.id))}
         onDrop={(event) => {
           if (!targetable) return;
           event.preventDefault();
-          onDropTarget?.(cardTargetKey(card.id));
+          onDropTarget?.(targetKey ?? cardTargetKey(card.id));
         }}
         onMouseEnter={(event) => {
           showPreview(event.currentTarget);

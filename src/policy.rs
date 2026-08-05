@@ -645,7 +645,21 @@ impl HandcraftedPolicy {
     }
 
     fn score_land(&self, observation: &PlayerObservation, card: CardInstanceId) -> i32 {
-        match Self::hand_definition(observation, card).and_then(|id| self.behavior(id)) {
+        let definition = Self::hand_definition(observation, card);
+        let behavior = definition.and_then(|id| self.behavior(id));
+        // The legend rule bins a duplicate on arrival. Replacing a tapped copy
+        // with a fresh one is fine; duplicating an untapped one wastes both
+        // the card and the land drop.
+        if behavior.is_some_and(CardBehavior::is_legendary)
+            && observation.battlefield.iter().any(|permanent| {
+                permanent.controller == observation.viewer
+                    && Some(permanent.definition) == definition
+                    && !permanent.tapped
+            })
+        {
+            return 40;
+        }
+        match behavior {
             Some(CardBehavior::Tundra | CardBehavior::VolcanicIsland) => 9_400,
             Some(CardBehavior::Island | CardBehavior::Mountain | CardBehavior::Plains) => 9_300,
             Some(CardBehavior::MishrasFactory) => 9_200,

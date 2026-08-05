@@ -2242,6 +2242,9 @@ impl Game {
             self.deal_damage(player, 2 * ankhs);
             self.check_life_totals();
         }
+        // A second legendary land can arrive this way without the stack ever
+        // being involved, so the legend rule has to run here too.
+        self.apply_legend_rule();
     }
 
     fn activate_mana_source(&mut self, player: PlayerId, source: CardInstanceId, color: ManaColor) {
@@ -4585,7 +4588,49 @@ impl Game {
         for id in dead {
             self.destroy_permanent(id);
         }
+        self.apply_legend_rule();
         self.check_life_totals();
+    }
+
+    /// The legend rule as a state-based action: a player controlling two or
+    /// more legendary permanents with the same name keeps one and puts the
+    /// rest into the graveyard. The rules let the controller choose; with
+    /// identical names the copies differ only in tap and damage state, so the
+    /// strictly best one — untapped over tapped, then newest — is kept
+    /// without asking.
+    fn apply_legend_rule(&mut self) {
+        loop {
+            let mut extra: Option<CardInstanceId> = None;
+            'search: for permanent in &self.battlefield {
+                let Some(behavior) = self.behavior(permanent.card.definition) else {
+                    continue;
+                };
+                if !behavior.is_legendary() {
+                    continue;
+                }
+                for other in &self.battlefield {
+                    if other.card.id == permanent.card.id
+                        || other.controller != permanent.controller
+                        || other.card.definition != permanent.card.definition
+                    {
+                        continue;
+                    }
+                    let permanent_wins = (!permanent.tapped && other.tapped)
+                        || (permanent.tapped == other.tapped
+                            && permanent.card.id.0 > other.card.id.0);
+                    extra = Some(if permanent_wins {
+                        other.card.id
+                    } else {
+                        permanent.card.id
+                    });
+                    break 'search;
+                }
+            }
+            let Some(extra) = extra else {
+                return;
+            };
+            self.destroy_permanent_without_regeneration(extra);
+        }
     }
 
     fn untap_actions(&self, player: PlayerId) -> Vec<Action> {
@@ -6164,6 +6209,56 @@ mod tests {
                 .all(|permanent| permanent.card.id != lotus_id)
         );
         assert_eq!(game.players[0].graveyard.last().unwrap().id, lotus_id);
+    }
+
+    #[test]
+    fn the_legend_rule_keeps_one_pendelhaven_per_player() {
+        let mut game = ready_game();
+        let mut old_haven = creature(10_000, cards::PENDELHAVEN, PlayerId::One);
+        old_haven.tapped = true;
+        game.battlefield.push(old_haven);
+        game.players[0]
+            .hand
+            .push(card(10_001, cards::PENDELHAVEN, PlayerId::One));
+        // The opponent's own Pendelhaven is unaffected: the rule is per player.
+        game.battlefield
+            .push(creature(10_002, cards::PENDELHAVEN, PlayerId::Two));
+
+        game.apply(
+            PlayerId::One,
+            Action::PlayLand {
+                card: CardInstanceId(10_001),
+            },
+        )
+        .unwrap();
+
+        let mine: Vec<_> = game
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == PlayerId::One
+                    && permanent.card.definition == cards::PENDELHAVEN
+            })
+            .collect();
+        assert_eq!(mine.len(), 1, "only one Pendelhaven survives");
+        assert_eq!(
+            mine[0].card.id,
+            CardInstanceId(10_001),
+            "the untapped newcomer is kept over the tapped original",
+        );
+        assert!(!mine[0].tapped, "the survivor is the untapped one",);
+        assert_eq!(
+            game.players[0].graveyard.len(),
+            1,
+            "the extra copy went to the graveyard",
+        );
+        assert!(
+            game.battlefield.iter().any(|permanent| {
+                permanent.controller == PlayerId::Two
+                    && permanent.card.definition == cards::PENDELHAVEN
+            }),
+            "the opponent keeps theirs",
+        );
     }
 
     #[test]

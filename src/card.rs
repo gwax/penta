@@ -306,6 +306,12 @@ pub struct CreatureStats {
 }
 
 impl CardBehavior {
+    /// The legendary permanents in the pool, for the legend rule.
+    #[must_use]
+    pub const fn is_legendary(self) -> bool {
+        matches!(self, Self::Pendelhaven | Self::LibraryOfAlexandria)
+    }
+
     /// Returns concise rules text for the behavior implemented by the simulator.
     #[must_use]
     #[allow(clippy::too_many_lines)]
