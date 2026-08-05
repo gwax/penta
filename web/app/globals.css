@@ -472,6 +472,79 @@ button {
   fill: #ffd56a;
 }
 
+/* Announces the turn change over the table. Sits above the opponent-action
+   notification so a turn flip is never hidden behind their last play. */
+.turn-banner {
+  position: absolute;
+  z-index: 26;
+  top: 50%;
+  left: 50%;
+  padding: 12px 34px;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
+  color: #f6efe0;
+  background: rgba(12, 18, 15, 0.9);
+  text-align: center;
+  pointer-events: none;
+  animation: turn-banner-in 1800ms ease both;
+}
+
+.turn-banner strong {
+  font-family: Georgia, serif;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+}
+
+.turn-banner small {
+  color: var(--gold);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.turn-banner-yours strong {
+  color: #ffe6b8;
+}
+
+@keyframes turn-banner-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  14%,
+  72% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turn-banner {
+    animation-duration: 1800ms;
+    animation-name: turn-banner-hold;
+  }
+
+  @keyframes turn-banner-hold {
+    0%,
+    80% {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
 .opponent-action {
   position: absolute;
   /* Above the battlefield pile counts (20), which otherwise punch their badge

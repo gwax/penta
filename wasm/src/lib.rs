@@ -476,10 +476,7 @@ impl WebGame {
             return None;
         }
         if let Some(top) = observation.stack.last() {
-            return Some(format!(
-                "Pass to resolve {}",
-                self.card_name(top.definition)
-            ));
+            return Some(format!("Resolve {}", self.card_name(top.definition)));
         }
         let start_turn = observation.turn;
         let start_active_is_human = observation.active_player == self.human;
@@ -522,28 +519,45 @@ impl WebGame {
         start_turn: u32,
         start_active_is_human: bool,
     ) -> String {
+        // Name what happens next rather than the step the rules call it. The
+        // simulation above already settled where the pass lands, so these
+        // read as a promise the click has to keep.
         if observation.turn != start_turn {
-            // Crossing a turn boundary reads differently depending on whose
-            // turn the pass started in: ending your own turn versus letting
-            // the opponent finish theirs.
             return if start_active_is_human {
-                "Pass the turn".into()
+                "End turn".into()
             } else {
-                "Pass to your turn".into()
+                "Your turn".into()
             };
         }
-        match observation.step {
-            Step::Upkeep => "Pass to upkeep",
-            Step::Draw => "Pass to draw",
-            Step::PrecombatMain => "Pass to main",
-            Step::BeginningOfCombat => "Pass to combat",
-            Step::DeclareAttackers => "Pass to attackers",
-            Step::DeclareBlockers => "Pass to blockers",
-            Step::CombatDamage => "Pass to combat damage",
-            Step::EndOfCombat => "Pass to end of combat",
-            Step::PostcombatMain => "Pass to main 2",
-            Step::End => "Pass to end step",
-            Step::Cleanup => "Pass to cleanup",
+        // The same step means different things depending on whose turn it is:
+        // "Go to attacks" is a promise to attack, not a warning to block.
+        if start_active_is_human {
+            match observation.step {
+                Step::Upkeep => "Go to upkeep",
+                Step::Draw => "Draw a card",
+                Step::PrecombatMain => "Go to main phase",
+                Step::BeginningOfCombat | Step::DeclareAttackers => "Go to attacks",
+                Step::DeclareBlockers => "Go to blocks",
+                Step::CombatDamage => "Go to damage",
+                Step::EndOfCombat => "Go to end of combat",
+                Step::PostcombatMain => "Go to main 2",
+                Step::End => "Go to end step",
+                // The only reason to hold priority in cleanup is a full hand.
+                Step::Cleanup => "Discard down to seven",
+            }
+        } else {
+            match observation.step {
+                Step::Upkeep => "Go to their upkeep",
+                Step::Draw => "Go to their draw",
+                Step::PrecombatMain => "Go to their main phase",
+                Step::BeginningOfCombat | Step::DeclareAttackers => "Go to their attack",
+                Step::DeclareBlockers => "Go to blocks",
+                Step::CombatDamage => "Go to damage",
+                Step::EndOfCombat => "Go to end of combat",
+                Step::PostcombatMain => "Go to their main 2",
+                Step::End => "Go to their end step",
+                Step::Cleanup => "Go to cleanup",
+            }
         }
         .into()
     }
@@ -1316,6 +1330,17 @@ fn neutral_opponent_action(observation: &PlayerObservation) -> Option<Action> {
                 .map(|option| option.id)
                 .collect(),
         });
+    }
+    // An opponent holding an untapped creature attacks with it almost every
+    // time, and the human needs to be told they are heading into blocks
+    // rather than idling through to an end step that never arrives.
+    if observation.step == Step::DeclareAttackers
+        && let Some(attack) = observation
+            .legal_actions
+            .iter()
+            .find(|action| matches!(action, Action::DeclareAttacker { .. }))
+    {
+        return Some(attack.clone());
     }
     observation
         .legal_actions

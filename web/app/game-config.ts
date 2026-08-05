@@ -56,3 +56,5 @@ export const turnPhases = [
 ] as const;
 
 export const opponentActionDurationMs = 3200;
+
+export const turnBannerDurationMs = 1800;

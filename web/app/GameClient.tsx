@@ -24,6 +24,7 @@ import {
   defaultHumanDeck,
   opponentActionDurationMs,
   placeholderDeck,
+  turnBannerDurationMs,
   randomDeck,
   turnPhases,
 } from "./game-config";
@@ -97,6 +98,8 @@ export function GameClient() {
   const [draftBotDeck, setDraftBotDeck] = useState(defaultBotDeck);
   const [draftPolicy, setDraftPolicy] = useState("Handcrafted");
   const [draftHumanFirst, setDraftHumanFirst] = useState(true);
+  const [turnBanner, setTurnBanner] = useState<{ active: string; turn: number } | null>(null);
+  const announcedTurn = useRef<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(true);
   const [setupDismissible, setSetupDismissible] = useState(false);
   const [seed, setSeed] = useState(9394);
@@ -181,6 +184,7 @@ export function GameClient() {
       nextHumanFirst = humanFirst,
     ) => {
       if (!wasmReady.current) return;
+      announcedTurn.current = null;
       const dealtHumanDeck = resolveDeck(nextHumanDeck);
       const dealtBotDeck = resolveDeck(nextBotDeck);
       try {
@@ -264,6 +268,23 @@ export function GameClient() {
     }, opponentActionDurationMs);
     return () => window.clearTimeout(timer);
   }, [currentOpponentAction, opponentActionQueue]);
+
+  // Announce the turn as the player sees it change, which during opponent
+  // animations is when the queued snapshot reaches the new turn rather than
+  // when the engine got there.
+  useEffect(() => {
+    if (!state) return;
+    const key = `${state.gameTurn}:${state.active}`;
+    if (announcedTurn.current === key) return;
+    announcedTurn.current = key;
+    setTurnBanner({ active: state.active, turn: state.turn });
+  }, [state]);
+
+  useEffect(() => {
+    if (!turnBanner) return;
+    const timer = window.setTimeout(() => setTurnBanner(null), turnBannerDurationMs);
+    return () => window.clearTimeout(timer);
+  }, [turnBanner]);
 
   const skipOpponentActions = () => {
     if (finalStateAfterOpponentActions.current) {
@@ -1147,6 +1168,18 @@ export function GameClient() {
                 </span>
               ))}
             </div>
+
+            {turnBanner && (
+              <div
+                className={`turn-banner ${turnBanner.active === "You" ? "turn-banner-yours" : ""}`}
+                key={`${turnBanner.active}-${turnBanner.turn}`}
+                role="status"
+                aria-live="polite"
+              >
+                <strong>{turnBanner.active === "You" ? "Your turn" : "Opponent’s turn"}</strong>
+                <small>Turn {turnBanner.turn}</small>
+              </div>
+            )}
 
             {currentOpponentAction && (
               <div

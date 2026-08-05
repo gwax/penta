@@ -95,6 +95,7 @@ export type DecisionState = {
 
 export type GameState = {
   turn: number;
+  gameTurn: number;
   step: string;
   active: string;
   priority: string;

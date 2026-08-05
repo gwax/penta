@@ -712,7 +712,7 @@ test("the pass button label reports the engine's real auto-pass destination", as
   assert.equal(state.step, "Precombat Main");
   assert.equal(
     state.passLabel,
-    "Pass to main 2",
+    "Go to main 2",
     "land plays waiting in Main 2 keep the pass from promising the whole turn",
   );
   pass(state);
@@ -721,14 +721,14 @@ test("the pass button label reports the engine's real auto-pass destination", as
 
   game.set_phase_stop("Ending", true);
   state = currentState();
-  assert.equal(state.passLabel, "Pass to end step");
+  assert.equal(state.passLabel, "Go to end step");
   pass(state);
   state = currentState();
   assert.equal(state.step, "End");
 
   game.set_phase_stop("Ending", false);
   state = currentState();
-  assert.equal(state.passLabel, "Pass the turn");
+  assert.equal(state.passLabel, "End turn");
   pass(state);
   state = currentState();
   assert.equal(state.step, "Precombat Main");
@@ -739,7 +739,7 @@ test("the pass button label reports the engine's real auto-pass destination", as
   state = currentState();
   assert.equal(
     state.passLabel,
-    "Pass to combat",
+    "Go to attacks",
     "with auto-pass off the label only promises the next window",
   );
   pass(state);
@@ -1183,4 +1183,138 @@ test("declaring attackers always offers a confirm and a way back", async () => {
   assert.throws(() => game.cancel_attackers(), /no declared attackers/);
 
   game.free();
+});
+
+test("the pass button label matches where the click actually lands", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  // gameTurn is the global counter. `turn` is per-player and changes meaning
+  // when the active player flips, so boundaries must be read from gameTurn.
+  const sameTurnAt = (steps) => (before, after) =>
+    after.gameTurn === before.gameTurn && steps.includes(after.step);
+  const arrivals = {
+    "Your turn": (b, a) => a.gameTurn > b.gameTurn && a.active === "You",
+    "End turn": (b, a) => a.gameTurn > b.gameTurn && b.active === "You",
+    "Draw a card": sameTurnAt(["Draw"]),
+    "Go to upkeep": sameTurnAt(["Upkeep"]),
+    "Go to main phase": sameTurnAt(["Precombat Main"]),
+    "Go to attacks": sameTurnAt(["Beginning Of Combat", "Declare Attackers"]),
+    "Go to blocks": sameTurnAt(["Declare Blockers"]),
+    "Go to damage": sameTurnAt(["Combat Damage"]),
+    "Go to end of combat": sameTurnAt(["End Of Combat"]),
+    "Go to main 2": sameTurnAt(["Postcombat Main"]),
+    "Go to end step": sameTurnAt(["End"]),
+    "Discard down to seven": sameTurnAt(["Cleanup"]),
+    "Go to their upkeep": sameTurnAt(["Upkeep"]),
+    "Go to their draw": sameTurnAt(["Draw"]),
+    "Go to their main phase": sameTurnAt(["Precombat Main"]),
+    "Go to their attack": sameTurnAt(["Beginning Of Combat", "Declare Attackers"]),
+    "Go to their main 2": sameTurnAt(["Postcombat Main"]),
+    "Go to their end step": sameTurnAt(["End"]),
+    "Go to cleanup": sameTurnAt(["Cleanup"]),
+  };
+
+  const decks = ["Goblins", "Sligh", "White Weenie", "Erhnamgeddon", "GR Aggro", "The Deck"];
+  const tally = new Map();
+  const record = (label, hit, quiet) => {
+    const row = tally.get(label) ?? { used: 0, hit: 0, quiet: 0, quietHit: 0 };
+    row.used += 1;
+    if (hit) row.hit += 1;
+    if (quiet) {
+      row.quiet += 1;
+      if (hit) row.quietHit += 1;
+    }
+    tally.set(label, row);
+  };
+  const misses = [];
+
+  for (let game = 0; game < 24; game += 1) {
+    const match = new WebGame(
+      decks[game % decks.length],
+      decks[(game * 5 + 2) % decks.length],
+      "Handcrafted",
+      game % 2 === 0,
+      game * 7919 + 13,
+    );
+    for (let turn = 0; turn < 600; turn += 1) {
+      const before = JSON.parse(match.state_json());
+      if (before.result) break;
+      if (before.decision) {
+        const wanted = Math.max(before.decision.minimum, 1);
+        try {
+          match.choose_decision(
+            before.decision.id,
+            JSON.stringify(before.decision.options.slice(0, wanted).map((option) => option.id)),
+          );
+        } catch { break; }
+        continue;
+      }
+      const actions = before.actions.filter((action) => action.kind !== "danger");
+      const pass = actions.find((action) => action.label === "Pass priority");
+      const usePass = pass && turn % 2 === 0;
+      const next =
+        (usePass ? pass : null) ??
+        actions.find((action) => action.label === "Keep this hand") ??
+        actions.find((action) => action.label.startsWith("Play ")) ??
+        actions.find((action) => /^Attack with \D/.test(action.label)) ??
+        actions.find((action) => action.label.startsWith("Block ")) ??
+        actions.find((action) => action.label.startsWith("Cast ")) ??
+        actions.find((action) => action.label.startsWith("Discard ")) ??
+        actions.find((action) => action.kind === "pass") ??
+        actions[0];
+      if (!next) break;
+      const promised = before.passLabel;
+      try { match.act(next.index); } catch { break; }
+      if (!usePass) continue;
+
+      const after = JSON.parse(match.state_json());
+      if (after.result) continue;
+      const quiet = (after.opponentActions ?? []).length === 0;
+
+      if (promised?.startsWith("Resolve ")) {
+        record("Resolve", after.stack.length < before.stack.length, quiet);
+        continue;
+      }
+      const arrived = arrivals[promised];
+      assert.ok(arrived, `unmapped pass label "${promised}"`);
+      const hit = arrived(before, after);
+      record(promised, hit, quiet);
+      if (!hit && quiet) {
+        misses.push(
+          `"${promised}" from turn ${before.gameTurn} ${before.step} (${before.active}) landed on turn ${after.gameTurn} ${after.step} (${after.active})`,
+        );
+      }
+    }
+    match.free();
+  }
+
+  const total = [...tally.values()].reduce((sum, row) => sum + row.used, 0);
+  assert.ok(total > 300, `exercised enough passes, got ${total}`);
+  for (const required of ["Your turn", "End turn", "Go to attacks", "Go to damage", "Go to their end step"]) {
+    assert.ok(tally.has(required), `saw "${required}"; got ${[...tally.keys()].join(", ")}`);
+  }
+
+  // Only the opponent taking a turn of their own can invalidate a prediction,
+  // and that is exactly when the game should stop to show you what they did.
+  // Their attack is the one call the preview guesses at from public board
+  // state, so it is the one label allowed to be conservative.
+  const guessed = new Set(["Go to their attack", "Resolve"]);
+  const quietMisses = misses.filter((line) => !line.startsWith('"Go to their attack"'));
+  assert.deepEqual(quietMisses, [], "a quiet opponent never invalidates a prediction");
+
+  for (const [label, row] of tally) {
+    if (guessed.has(label) || row.used < 20) continue;
+    const rate = row.hit / row.used;
+    assert.ok(rate >= 0.95, `"${label}" landed where promised ${row.hit}/${row.used} times`);
+  }
+  const attack = tally.get("Go to their attack");
+  if (attack && attack.used >= 20) {
+    assert.ok(
+      attack.hit / attack.used >= 0.9,
+      `"Go to their attack" landed in their combat ${attack.hit}/${attack.used} times`,
+    );
+  }
 });
