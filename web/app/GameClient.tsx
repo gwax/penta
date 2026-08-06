@@ -1407,20 +1407,25 @@ export function GameClient() {
               {turnBanner && (
                 <div
                   className={`turn-banner ${
-                    !turnBanner.pregame && turnBanner.active === "You" ? "turn-banner-yours" : ""
+                    turnBanner.active === "You" ? "turn-banner-yours" : ""
                   }`}
                   key={`${turnBanner.pregame ? "pregame" : turnBanner.active}-${turnBanner.turn}`}
                   role="status"
                   aria-live="polite"
                 >
+                  {/* The opening banner answers the two things you cannot
+                      read off the board yet: who is on the play, and — when
+                      you left the choice to chance — what you are playing. */}
                   <strong>
                     {turnBanner.pregame
-                      ? "Keep or mull"
+                      ? turnBanner.active === "You"
+                        ? "You go first"
+                        : "Opponent goes first"
                       : turnBanner.active === "You"
                         ? "Your turn"
                         : "Opponent’s turn"}
                   </strong>
-                  <small>{turnBanner.pregame ? "Opening hand" : `Turn ${turnBanner.turn}`}</small>
+                  <small>{turnBanner.pregame ? humanDeck : `Turn ${turnBanner.turn}`}</small>
                 </div>
               )}
               {/* The row's own frame says where the stack is; a card sitting
