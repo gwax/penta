@@ -19,7 +19,9 @@ test("server renders the Penta application shell", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>Penta/);
-  assert.match(html, /OLD SCHOOL/);
+  // The masthead moved onto the table, which only exists once the engine has
+  // dealt a game, so the shell is the deck picker and the loading state.
+  assert.match(html, /Choose your deck/);
   assert.match(html, /Waking the Rust engine/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });

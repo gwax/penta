@@ -49,19 +49,6 @@ button {
     var(--ink);
 }
 
-.topbar {
-  min-height: 58px;
-  padding: 7px 18px;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 24px;
-  border-bottom: 1px solid #39322a;
-  background: #13110f;
-  position: relative;
-  z-index: 10;
-}
-
 .brand {
   display: flex;
   align-items: center;
@@ -95,53 +82,6 @@ button {
   color: var(--muted);
   letter-spacing: 0.12em;
   font-size: 8px;
-}
-
-.match-summary {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  color: #cfc5b4;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.match-summary i {
-  color: #6f685e;
-  font-family: Georgia, serif;
-  font-size: 11px;
-  font-weight: 400;
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.current-seed {
-  color: #776f63;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
-  text-transform: uppercase;
-}
-
-.new-game-link {
-  padding: 5px 0;
-  border-bottom: 1px solid var(--red);
-  color: #e9dfce;
-  background: transparent;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.new-game-link:hover {
-  color: white;
-  border-color: #ef6a51;
 }
 
 .setup-backdrop {
@@ -428,7 +368,7 @@ button {
 }
 
 .game-layout {
-  height: calc(100vh - 58px);
+  height: 100vh;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 310px;
 }
@@ -437,15 +377,14 @@ button {
   position: relative;
   min-width: 0;
   display: grid;
-  /* Opponent bar, their hand, their board, the stack, your board, your bar,
-     the phase strip, your hand. The stack sits between the two boards so the
-     game reads top to bottom, and its row is a fixed height whether or not
-     anything is on it — a row that grew with the stack shoved both boards
-     around every time a spell was cast. The last row holds the hand fan,
-     which is 176px of card standing 14px off the floor. Sizing it any shorter
-     pushes the resting cards up over the player bar and hides the deck
-     subtitle behind them. */
-  grid-template-rows: 48px 30px minmax(122px, 1fr) 84px minmax(122px, 1fr) 48px 48px 190px;
+  /* Masthead and their panel, their board, the stack, your board, the phase
+     strip carrying your panel, your hand. The stack sits between the two
+     boards so the game reads top to bottom, and its row is a fixed height
+     whether or not anything is on it — a row that grew with the stack shoved
+     both boards around every time a spell was cast. The last row holds the
+     hand fan, which is 176px of card standing 14px off the floor. Sizing it
+     any shorter pushes the resting cards up over the phase strip. */
+  grid-template-rows: 40px minmax(122px, 1fr) 84px minmax(122px, 1fr) 48px 190px;
   gap: 2px;
   padding: 6px 14px 8px;
   overflow: hidden;
@@ -670,13 +609,32 @@ button {
   }
 }
 
+/* The masthead, their hand, and their panel share the table's first row. */
+.table-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.table-header .opponent-hand {
+  justify-self: center;
+}
+
+.table-header .player-bar {
+  justify-self: end;
+}
+
+/* The player panel is as wide as its own contents: it sits beside the board
+   rather than under it, so it costs no row of its own. */
 .player-bar {
   position: relative;
-  width: 100%;
+  width: max-content;
+  min-height: 34px;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 12px;
+  padding: 0 11px;
   border: 1px solid var(--line);
   border-radius: 0;
   color: inherit;
@@ -713,40 +671,12 @@ button {
   background: transparent;
 }
 
-.avatar {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--gold);
-  border-radius: 50%;
-  color: var(--gold);
-  font-family: Georgia, serif;
-  font-weight: 700;
-}
-
-.player-name {
-  min-width: 160px;
-}
-
-.player-name strong,
-.player-name span {
-  display: block;
-}
-
 .player-name strong {
   font-family: Georgia, serif;
-  font-size: 16px;
-}
-
-.player-name span {
-  margin-top: 2px;
-  color: #a9a191;
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .zone-counts {
-  margin-left: auto;
   display: flex;
   gap: 8px;
   color: #aaa18f;
@@ -761,12 +691,12 @@ button {
 }
 
 .mana-pool span {
-  width: 25px;
-  height: 25px;
+  width: 21px;
+  height: 21px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -807,7 +737,7 @@ button {
 }
 
 .life-total {
-  width: 54px;
+  width: 48px;
   display: flex;
   align-items: baseline;
   justify-content: end;
@@ -822,7 +752,7 @@ button {
 
 .life-total strong {
   font-family: Georgia, serif;
-  font-size: 24px;
+  font-size: 21px;
 }
 
 .opponent-hand {
@@ -1006,7 +936,7 @@ button {
 .center-line {
   height: 100%;
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr) 120px;
+  grid-template-columns: 124px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   padding: 4px 13px;
@@ -1089,7 +1019,7 @@ button {
   position: relative;
   width: 100%;
   min-height: 32px;
-  padding: 4px 5px;
+  padding: 4px 3px;
   display: grid;
   place-content: center;
   color: inherit;
@@ -1105,7 +1035,7 @@ button {
   overflow: hidden;
   font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
@@ -2060,6 +1990,31 @@ button {
   text-transform: uppercase;
 }
 
+.game-menu-match {
+  margin: 9px 0 0;
+  display: grid;
+  gap: 2px;
+  color: #b3a893;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.game-menu-match i {
+  color: #6f685e;
+  font-family: Georgia, serif;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.game-menu-match small {
+  margin-top: 4px;
+  color: #776f63;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 400;
+}
+
 .game-menu button {
   width: 100%;
   margin-top: 8px;
@@ -2211,32 +2166,28 @@ button {
    row stays a fixed size so the stack still never moves anything. */
 @media (max-height: 820px) {
   .table {
-    grid-template-rows: 44px 26px minmax(104px, 1fr) 76px minmax(104px, 1fr) 44px 44px 190px;
+    grid-template-rows: 38px minmax(112px, 1fr) 78px minmax(112px, 1fr) 44px 190px;
   }
 
   .battlefield-zone {
-    grid-template-rows: repeat(2, 50px);
+    grid-template-rows: repeat(2, 54px);
   }
 
   .game-card-compact {
-    height: 50px;
+    height: 54px;
   }
 
   /* The art is the part of a board card nobody reads, so it gives up the
      height rather than the title or the type line. */
   .game-card-compact .card-art {
-    min-height: 10px;
+    min-height: 12px;
   }
 }
 
 @media (max-width: 1000px) {
-  .topbar {
-    grid-template-columns: auto 1fr auto;
-  }
-
   .game-layout {
     height: auto;
-    min-height: calc(100vh - 74px);
+    min-height: 100vh;
     grid-template-columns: 1fr;
   }
 
@@ -2256,19 +2207,8 @@ button {
 }
 
 @media (max-width: 620px) {
-  .topbar {
-    padding: 8px 10px;
-    gap: 8px;
-  }
-
-  .brand small,
-  .match-summary,
-  .current-seed {
+  .brand small {
     display: none !important;
-  }
-
-  .topbar-actions {
-    margin-left: auto;
   }
 
   .setup-dialog {
@@ -2319,7 +2259,7 @@ button {
   }
 
   .center-line {
-    grid-template-columns: 82px minmax(0, 1fr);
+    grid-template-columns: 82px minmax(0, 1fr) auto;
     gap: 7px;
     padding-inline: 7px;
   }

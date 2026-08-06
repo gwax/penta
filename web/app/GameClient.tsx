@@ -1124,27 +1124,6 @@ export function GameClient() {
 
   return (
     <main className="arena">
-      <header className="topbar">
-        <div className="brand">
-          <span className="brand-mark" aria-hidden="true">P</span>
-          <div>
-            <strong>PENTA</strong>
-            <small>OLD SCHOOL · 93/94</small>
-          </div>
-        </div>
-        <div className="match-summary" aria-label="Current match">
-          <span>You · {humanDeck}</span>
-          <i>versus</i>
-          <span>{policy} · {botDeck}</span>
-        </div>
-        <div className="topbar-actions">
-          <span className="current-seed">Seed {seed}</span>
-          <button className="new-game-link" onClick={openSetup}>
-            New game
-          </button>
-        </div>
-      </header>
-
       {setupOpen && (
         <div className="setup-backdrop">
           <section
@@ -1332,27 +1311,36 @@ export function GameClient() {
                 tableRef={tableRef}
               />
             )}
-            <PlayerBar
-              name={`${policy} · ${botDeck}`}
-              note={deckNotes[botDeck]}
-              player={state.opponent}
-              opponent
-              targetable={isPlayerTargetable("opponent")}
-              selected={
-                fireballTargets.includes(playerTargetKey("opponent")) ||
-                dragOverTarget === playerTargetKey("opponent")
-              }
-              onTarget={() => selectPlayer("opponent")}
-              onDragOverTarget={() => handleTargetDragOver(playerTargetKey("opponent"))}
-              onDragLeaveTarget={() => handleTargetDragLeave(playerTargetKey("opponent"))}
-              onDropTarget={() => handleTargetDrop(playerTargetKey("opponent"))}
-            />
-            <div className="opponent-hand" aria-label={`${state.opponent.handSize} hidden cards`}>
-              {Array.from({ length: state.opponent.handSize }, (_, index) => (
-                <span className="card-back" key={index}>
-                  <i>93</i>
-                </span>
-              ))}
+            {/* The masthead shares its row with their hand and their panel, so
+                the top of the table costs one row instead of three. */}
+            <div className="table-header">
+              <div className="brand">
+                <span className="brand-mark" aria-hidden="true">P</span>
+                <div>
+                  <strong>PENTA</strong>
+                  <small>OLD SCHOOL · 93/94</small>
+                </div>
+              </div>
+              <div className="opponent-hand" aria-label={`${state.opponent.handSize} hidden cards`}>
+                {Array.from({ length: state.opponent.handSize }, (_, index) => (
+                  <span className="card-back" key={index}>
+                    <i>93</i>
+                  </span>
+                ))}
+              </div>
+              <PlayerBar
+                player={state.opponent}
+                opponent
+                targetable={isPlayerTargetable("opponent")}
+                selected={
+                  fireballTargets.includes(playerTargetKey("opponent")) ||
+                  dragOverTarget === playerTargetKey("opponent")
+                }
+                onTarget={() => selectPlayer("opponent")}
+                onDragOverTarget={() => handleTargetDragOver(playerTargetKey("opponent"))}
+                onDragLeaveTarget={() => handleTargetDragLeave(playerTargetKey("opponent"))}
+                onDropTarget={() => handleTargetDrop(playerTargetKey("opponent"))}
+              />
             </div>
 
             <Zone
@@ -1463,21 +1451,8 @@ export function GameClient() {
               onDropTarget={handleTargetDrop}
             />
 
-            <PlayerBar
-              name={`You · ${humanDeck}`}
-              note={deckNotes[humanDeck]}
-              player={state.human}
-              targetable={isPlayerTargetable("human")}
-              selected={
-                fireballTargets.includes(playerTargetKey("human")) ||
-                dragOverTarget === playerTargetKey("human")
-              }
-              onTarget={() => selectPlayer("human")}
-              onDragOverTarget={() => handleTargetDragOver(playerTargetKey("human"))}
-              onDragLeaveTarget={() => handleTargetDragLeave(playerTargetKey("human"))}
-              onDropTarget={() => handleTargetDrop(playerTargetKey("human"))}
-            />
-
+            {/* Your panel rides the phase strip: it is the only other thing
+                that belongs to you rather than to the board. */}
             <div className="center-line">
               {/* Nobody's turn has started while hands are being settled, so
                   the strip names the decision instead of a step. */}
@@ -1532,6 +1507,18 @@ export function GameClient() {
                 <span>Auto-pass</span>
                 <i>{state.autopassEnabled ? "On" : "Off"}</i>
               </button>
+              <PlayerBar
+                player={state.human}
+                targetable={isPlayerTargetable("human")}
+                selected={
+                  fireballTargets.includes(playerTargetKey("human")) ||
+                  dragOverTarget === playerTargetKey("human")
+                }
+                onTarget={() => selectPlayer("human")}
+                onDragOverTarget={() => handleTargetDragOver(playerTargetKey("human"))}
+                onDragLeaveTarget={() => handleTargetDragLeave(playerTargetKey("human"))}
+                onDropTarget={() => handleTargetDrop(playerTargetKey("human"))}
+              />
             </div>
 
             <HandZone
@@ -1780,16 +1767,23 @@ export function GameClient() {
                 </button>
               ))}
             </div>
-            {dangerActions.length > 0 && (
-              <details className="game-menu">
-                <summary>Game menu</summary>
-                {dangerActions.map((action) => (
-                  <button key={action.index} onClick={() => act(action)} disabled={watchingOpponent}>
-                    {action.label}
-                  </button>
-                ))}
-              </details>
-            )}
+            {/* Which decks are playing and under what seed is something you
+                read once, so it lives in here with the rest of the meta. */}
+            <details className="game-menu">
+              <summary>Game menu</summary>
+              <p className="game-menu-match">
+                <span>You · {humanDeck}</span>
+                <i>versus</i>
+                <span>{policy} · {botDeck}</span>
+                <small>Seed {seed}</small>
+              </p>
+              <button onClick={openSetup}>New game</button>
+              {dangerActions.map((action) => (
+                <button key={action.index} onClick={() => act(action)} disabled={watchingOpponent}>
+                  {action.label}
+                </button>
+              ))}
+            </details>
             <details
               className="game-log"
               open={gameLogOpen}
@@ -1840,9 +1834,10 @@ function displayActionLabel(action: Action, state: GameState) {
   return state.passLabel ?? "Pass priority";
 }
 
+/// The player panel: whose it is, what they have left, and the thing you aim
+/// a Lightning Bolt at. It is deliberately small — a deck name is something
+/// you look up once, and it was costing a full row of the table.
 function PlayerBar({
-  name,
-  note,
   player,
   opponent = false,
   targetable = false,
@@ -1852,8 +1847,6 @@ function PlayerBar({
   onDragLeaveTarget,
   onDropTarget,
 }: {
-  name: string;
-  note: string;
   player: PlayerState;
   opponent?: boolean;
   targetable?: boolean;
@@ -1867,10 +1860,8 @@ function PlayerBar({
     <div
       className={`player-bar ${opponent ? "player-opponent" : ""} ${targetable ? "is-targetable" : ""} ${selected ? "is-selected-target" : ""}`}
     >
-      <div className="avatar">{opponent ? "B" : "Y"}</div>
       <div className="player-name">
-        <strong>{name}</strong>
-        <span>{note}</span>
+        <strong>{opponent ? "Opponent" : "You"}</strong>
       </div>
       <div className="zone-counts">
         <span title="Library">LIB {player.library}</span>
