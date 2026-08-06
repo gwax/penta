@@ -56,8 +56,8 @@ button {
 }
 
 .brand-mark {
-  width: 38px;
-  height: 38px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
   border: 2px solid var(--red);
@@ -72,16 +72,20 @@ button {
   display: block;
 }
 
+/* Two lines of wordmark at the body's 1.5 leading stood 39px tall in the
+   38px row they now share, which pushed the whole header off centre. */
 .brand strong {
   letter-spacing: 0.22em;
   font-size: 16px;
+  line-height: 1.1;
 }
 
 .brand small {
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--muted);
   letter-spacing: 0.12em;
   font-size: 8px;
+  line-height: 1.1;
 }
 
 .setup-backdrop {
@@ -756,10 +760,9 @@ button {
 }
 
 .opponent-hand {
-  min-height: 28px;
   display: flex;
   justify-content: center;
-  align-items: start;
+  align-items: center;
 }
 
 .card-back {
@@ -774,7 +777,6 @@ button {
   background:
     radial-gradient(circle, #47261f 0 25%, transparent 26%),
     #201815;
-  transform: translateY(-5px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
@@ -940,13 +942,14 @@ button {
 
 .turn-status {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .turn-status strong {
   color: #f1dfbd;
   font-family: Georgia, serif;
   font-size: 14px;
+  line-height: 1.15;
 }
 
 .turn-status span,
