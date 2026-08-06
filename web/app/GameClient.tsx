@@ -459,6 +459,11 @@ export function GameClient() {
     entries.forEach((entry, id) => {
       const before = previous.get(id);
       if (before) {
+        // The hand re-fans itself whenever a card leaves it, with its own
+        // transition on the slot. Gliding the card inside that slot as well
+        // sets the two against each other, which is what made the hand
+        // jitter every time you played something.
+        if (before.zone === "hand" && entry.zone === "hand") return;
         const dx = before.rect.left - entry.rect.left;
         const dy = before.rect.top - entry.rect.top;
         if (Math.abs(dx) > 6 || Math.abs(dy) > 6) flyFrom(entry, before.rect, false);

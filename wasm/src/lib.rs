@@ -414,38 +414,17 @@ impl WebGame {
                     self.pending_opponent_mana.clear();
                 }
             }
+            // Who owns each object on the stack, read before it leaves: a
+            // resolution event names the card but the object is gone by then.
+            let stack_owners: Vec<(CardInstanceId, PlayerId)> = observation
+                .stack
+                .iter()
+                .map(|object| (object.card, object.controller))
+                .collect();
             let event_start = self.game.events().len();
             self.game.apply(player, action).map_err(js_error)?;
-            // A pass that completes a round resolves the top of the stack, an
-            // event no one clicked. Without its own beat the object would blink
-            // out between frames — and a turn banner could show while a spell
-            // everyone watched resolve still sat on the stack.
             if pending_animation.is_none() {
-                let resolved: Vec<_> = self.game.events()[event_start..]
-                    .iter()
-                    .filter_map(|event| match event {
-                        GameEvent::SpellResolved { card }
-                        | GameEvent::AbilityResolved { source: card } => Some((*card, false)),
-                        GameEvent::SpellFizzled { card } => Some((*card, true)),
-                        _ => None,
-                    })
-                    .collect();
-                for (card, fizzled) in resolved {
-                    let observation = self.game.observe(self.human);
-                    let name = self.instance_name(&observation, card);
-                    self.opponent_actions.push(json!({
-                        "label": if fizzled {
-                            format!("{name} fizzles")
-                        } else {
-                            format!("{name} resolves")
-                        },
-                        "kind": "spell",
-                        "card": name,
-                        "cardId": card.0,
-                        "manaSources": Vec::<String>::new(),
-                        "state": self.snapshot_value(false),
-                    }));
-                }
+                self.record_resolutions(event_start, &stack_owners);
             }
             self.record_combat_damage(event_start);
             self.record_draw_step(event_start);
@@ -474,6 +453,56 @@ impl WebGame {
         Err(JsValue::from_str(
             "game exceeded its automatic action limit",
         ))
+    }
+
+    /// Gives anything that resolved off the stack its own beat.
+    ///
+    /// A pass that completes a round resolves the top of the stack, an event
+    /// no one clicked. Without a beat the object would blink out between
+    /// frames — and a turn banner could show while a spell everyone watched
+    /// resolve still sat on the stack.
+    ///
+    /// Your own spell is the exception: its resolution is the rest of the
+    /// click you just made, and replaying it locks the board for a beat you
+    /// did not need to watch. A fizzle is always shown, whoever cast it, since
+    /// it is the only explanation for a spell that did nothing.
+    fn record_resolutions(
+        &mut self,
+        event_start: usize,
+        stack_owners: &[(CardInstanceId, PlayerId)],
+    ) {
+        let resolved: Vec<_> = self.game.events()[event_start..]
+            .iter()
+            .filter_map(|event| match event {
+                GameEvent::SpellResolved { card } | GameEvent::AbilityResolved { source: card } => {
+                    Some((*card, false))
+                }
+                GameEvent::SpellFizzled { card } => Some((*card, true)),
+                _ => None,
+            })
+            .collect();
+        for (card, fizzled) in resolved {
+            let yours = stack_owners
+                .iter()
+                .any(|(object, controller)| *object == card && *controller == self.human);
+            if yours && !fizzled {
+                continue;
+            }
+            let observation = self.game.observe(self.human);
+            let name = self.instance_name(&observation, card);
+            self.opponent_actions.push(json!({
+                "label": if fizzled {
+                    format!("{name} fizzles")
+                } else {
+                    format!("{name} resolves")
+                },
+                "kind": "spell",
+                "card": name,
+                "cardId": card.0,
+                "manaSources": Vec::<String>::new(),
+                "state": self.snapshot_value(false),
+            }));
+        }
     }
 
     /// Gives the turn's draw its own beat.

@@ -1493,6 +1493,62 @@ test("opponent-action snapshots never contain your next draw", async () => {
   game.free();
 });
 
+test("your own spell resolving is not a beat you have to sit through", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  // The yield that resolves your own spell is automatic, so replaying it puts
+  // the board in "opponent acting" — every button disabled — for a beat you
+  // did not need to watch. A fizzle still gets one: it is the only
+  // explanation for a spell that did nothing.
+  let casts = 0;
+  let theirResolutions = 0;
+  for (const deck of ["Sligh", "Artifacts", "White Weenie", "The Deck"]) {
+    for (const seed of [97, 291, 485]) {
+      const game = new WebGame(deck, "The Deck", "Handcrafted", true, seed);
+      for (let step = 0; step < 250; step += 1) {
+        const state = JSON.parse(game.state_json());
+        if (state.result) break;
+        if (state.decision) {
+          const wanted = Math.max(state.decision.minimum, 1);
+          try {
+            game.choose_decision(
+              state.decision.id,
+              JSON.stringify(state.decision.options.slice(0, wanted).map((o) => o.id)),
+            );
+          } catch { break; }
+          continue;
+        }
+        const actions = state.actions.filter((action) => action.kind !== "danger");
+        const next =
+          actions.find((action) => action.label === "Keep this hand") ??
+          actions.find((action) => action.label.startsWith("Play ")) ??
+          actions.find((action) => action.label.startsWith("Cast ")) ??
+          actions.find((action) => action.kind === "pass") ??
+          actions[0];
+        if (!next) break;
+        const cast = /^Cast ([^→(]+)/.exec(next.label)?.[1]?.trim();
+        try { game.act(next.index); } catch { break; }
+
+        const beats = JSON.parse(game.state_json()).opponentActions ?? [];
+        if (cast) {
+          casts += 1;
+          assert.ok(
+            !beats.some((beat) => beat.label === `${cast} resolves`),
+            `"${next.label}" replays its own resolution: ${beats.map((b) => b.label).join(", ")}`,
+          );
+        }
+        theirResolutions += beats.filter((beat) => / resolves$/.test(beat.label)).length;
+      }
+      game.free();
+    }
+  }
+  assert.ok(casts >= 100, `exercised enough casts, got ${casts}`);
+  assert.ok(theirResolutions > 0, "their spells still resolve on their own beat");
+});
+
 test("your own play is on the board before the turn it ended is announced", async () => {
   const bytes = await readFile(
     new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
