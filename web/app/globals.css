@@ -825,14 +825,6 @@ button {
   grid-row: 2;
 }
 
-.battlefield-zone > .zone-empty {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-}
-
 .hand-zone {
   position: relative;
   align-items: end;
@@ -1098,18 +1090,6 @@ button {
   color: #746d60;
   border-color: rgba(201, 181, 137, 0.14);
   background: rgba(15, 18, 17, 0.16);
-}
-
-.stack-zone > span {
-  color: #b0a590;
-  font-size: 10px;
-  letter-spacing: 0.15em;
-}
-
-.stack-empty-label {
-  color: #746d60;
-  font-size: 10px;
-  letter-spacing: 0.12em;
 }
 
 .stack-target-arrows {

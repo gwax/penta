@@ -1345,7 +1345,7 @@ export function GameClient() {
 
             <Zone
               cards={opponentPermanents}
-              empty="Opponent battlefield"
+              label="Opponent battlefield"
               actionCount={cardActions}
               isDraggable={cardIsDraggable}
               isTargetable={isTargetable}
@@ -1388,51 +1388,48 @@ export function GameClient() {
                   <small>{turnBanner.pregame ? "Opening hand" : `Turn ${turnBanner.turn}`}</small>
                 </div>
               )}
-              <span>STACK</span>
-              {state.stack.length === 0 ? (
-                <small className="stack-empty-label">EMPTY</small>
-              ) : (
-                state.stack.map((item) => (
-                  <div className="stack-card-slot" key={item.id}>
-                    <GameCard
-                      card={{
-                        id: item.cardId,
-                        name: item.name,
-                        kind: item.cardKind,
-                        isLand: item.isLand,
-                        manaCost: item.manaCost,
-                        rulesText: item.rulesText,
-                        power: item.power,
-                        toughness: item.toughness,
-                        owner: item.owner,
-                        xValue: item.manaCost?.x ? item.x : null,
-                      }}
-                      zone="stack"
-                      targetKey={`stack:${item.id}`}
-                      actionable={isStackTargetable(item.id)}
-                      targetable={isStackTargetable(item.id)}
-                      selected={false}
-                      dragOverTarget={dragOverTarget === `stack:${item.id}`}
-                      onSelect={() => selectStackTarget(item.id)}
-                      onDragOverTarget={handleTargetDragOver}
-                      onDragLeaveTarget={handleTargetDragLeave}
-                      onDropTarget={handleTargetDrop}
-                      compact
-                    />
-                    {item.manaCost?.x ? (
-                      <span className="stack-x-badge">X = {item.x}</span>
-                    ) : null}
-                    <small className="stack-card-owner">
-                      {item.owner === "human" ? "YOU" : "OPPONENT"}
-                    </small>
-                  </div>
-                ))
-              )}
+              {/* The row's own frame says where the stack is; a card sitting
+                  in it says what is on it. Neither needs labelling. */}
+              {state.stack.map((item) => (
+                <div className="stack-card-slot" key={item.id}>
+                  <GameCard
+                    card={{
+                      id: item.cardId,
+                      name: item.name,
+                      kind: item.cardKind,
+                      isLand: item.isLand,
+                      manaCost: item.manaCost,
+                      rulesText: item.rulesText,
+                      power: item.power,
+                      toughness: item.toughness,
+                      owner: item.owner,
+                      xValue: item.manaCost?.x ? item.x : null,
+                    }}
+                    zone="stack"
+                    targetKey={`stack:${item.id}`}
+                    actionable={isStackTargetable(item.id)}
+                    targetable={isStackTargetable(item.id)}
+                    selected={false}
+                    dragOverTarget={dragOverTarget === `stack:${item.id}`}
+                    onSelect={() => selectStackTarget(item.id)}
+                    onDragOverTarget={handleTargetDragOver}
+                    onDragLeaveTarget={handleTargetDragLeave}
+                    onDropTarget={handleTargetDrop}
+                    compact
+                  />
+                  {item.manaCost?.x ? (
+                    <span className="stack-x-badge">X = {item.x}</span>
+                  ) : null}
+                  <small className="stack-card-owner">
+                    {item.owner === "human" ? "YOU" : "OPPONENT"}
+                  </small>
+                </div>
+              ))}
             </div>
 
             <Zone
               cards={humanPermanents}
-              empty="Your battlefield"
+              label="Your battlefield"
               actionCount={cardActions}
               isDraggable={cardIsDraggable}
               isTargetable={isTargetable}
@@ -2081,7 +2078,7 @@ function BlockArrows({
 
 function Zone({
   cards,
-  empty,
+  label,
   actionCount,
   isDraggable,
   isTargetable,
@@ -2099,7 +2096,7 @@ function Zone({
   opponent = false,
 }: {
   cards: Card[];
-  empty: string;
+  label: string;
   actionCount(id: number): number;
   isDraggable(id: number): boolean;
   isTargetable(id: number): boolean;
@@ -2143,6 +2140,7 @@ function Zone({
   return (
     <div
       className={`battlefield-zone ${opponent ? "battlefield-opponent" : "battlefield-human"}`}
+      aria-label={label}
     >
       <div className="battlefield-row battlefield-nonlands" aria-label="Nonland permanents">
         {renderCards(nonlands)}
@@ -2150,7 +2148,6 @@ function Zone({
       <div className="battlefield-row battlefield-lands" aria-label="Lands">
         {renderCards(lands)}
       </div>
-      {cards.length === 0 && <span className="zone-empty">{empty}</span>}
     </div>
   );
 }
