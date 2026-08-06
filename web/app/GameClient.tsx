@@ -206,6 +206,19 @@ export function GameClient() {
     });
     const steps: PresentationStep[] = [];
     let cursor = displayedState.current;
+    // Your own click is not a beat to watch — it already happened. Replaying
+    // from the board it left behind keeps a land you just played out of the
+    // frame that announces the turn it ended.
+    const acted = snapshot.afterYourAction;
+    if (
+      acted &&
+      cursor &&
+      acted.gameTurn === cursor.gameTurn &&
+      acted.active === cursor.active &&
+      acted.pregame === cursor.pregame
+    ) {
+      cursor = acted;
+    }
     for (const action of snapshot.opponentActions ?? []) {
       if (turnChanged(cursor, action.state)) {
         steps.push({

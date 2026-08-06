@@ -41,6 +41,8 @@ pub struct WebGame {
     /// The turn the presentation has already announced, so a turn nobody acts
     /// on still gets its banner instead of being skipped over in silence.
     announced_turn: Option<u32>,
+    /// The board the moment your own action landed, before the game answered.
+    human_action_state: Option<Value>,
 }
 
 #[wasm_bindgen]
@@ -90,6 +92,7 @@ impl WebGame {
             attack_undo: None,
             // The opening turn arrives with the board, not as a change to it.
             announced_turn: Some(1),
+            human_action_state: None,
         };
         web_game.advance_until_human_choice()?;
         Ok(web_game)
@@ -145,6 +148,10 @@ impl WebGame {
         self.pending_opponent_mana.clear();
         let event_start = self.game.events().len();
         self.game.apply(self.human, action).map_err(js_error)?;
+        // What you just did, before anything the game does in response. The
+        // replay is told from here, so a land you played is on the board
+        // before the turn it ended is announced.
+        self.human_action_state = Some(self.snapshot_value(false));
         // Yielding is how combat damage happens, and ending your own turn hands
         // one to the opponent. Both need showing every bit as much as the
         // actions the bot takes on its own.
@@ -1036,6 +1043,13 @@ impl WebGame {
         } else {
             Vec::new()
         };
+        // Only worth sending alongside a replay: with nothing to replay the
+        // client shows this state directly and your action is already in it.
+        let human_action_state = if include_opponent_actions && !self.opponent_actions.is_empty() {
+            self.human_action_state.clone()
+        } else {
+            None
+        };
         let decision = observation.decision.as_ref().map(|decision| {
             json!({
                 "id": decision.id,
@@ -1101,6 +1115,7 @@ impl WebGame {
             "phaseStops": self.phase_stops,
             "autopassEnabled": self.autopass_enabled,
             "opponentActions": opponent_actions,
+            "afterYourAction": human_action_state,
             "result": result,
             "events": events,
         })

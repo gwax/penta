@@ -129,6 +129,9 @@ export type GameState = {
   passLabel: string | null;
   decision: DecisionState | null;
   opponentActions?: OpponentAction[];
+  /// The board the moment your own action landed, before the game answered.
+  /// Only sent when there is a replay to run; the replay starts from here.
+  afterYourAction?: GameState | null;
   canUndoMana: boolean;
   canCancelAttackers: boolean;
   phaseStops: string[];

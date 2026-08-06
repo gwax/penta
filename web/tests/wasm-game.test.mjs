@@ -1493,6 +1493,93 @@ test("opponent-action snapshots never contain your next draw", async () => {
   game.free();
 });
 
+test("your own play is on the board before the turn it ended is announced", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  // The client replays a turn from the board your click left behind, not from
+  // the board before it, so a land played in your second main is down before
+  // the "Opponent's turn" banner is held over it. This mirrors that rule.
+  const turnChanged = (from, to) =>
+    from
+      ? from.pregame !== to.pregame ||
+        (!to.pregame && (from.gameTurn !== to.gameTurn || from.active !== to.active))
+      : true;
+
+  let banners = 0;
+  for (const deck of ["Sligh", "White Weenie", "GR Aggro", "Lions DIB"]) {
+    for (const seed of [31, 62, 155, 217]) {
+      const game = new WebGame(deck, "The Deck", "Handcrafted", true, seed);
+      let displayed = JSON.parse(game.state_json());
+      for (let step = 0; step < 250; step += 1) {
+        const state = JSON.parse(game.state_json());
+        if (state.result) break;
+        if (state.decision) {
+          const wanted = Math.max(state.decision.minimum, 1);
+          try {
+            game.choose_decision(
+              state.decision.id,
+              JSON.stringify(state.decision.options.slice(0, wanted).map((o) => o.id)),
+            );
+          } catch { break; }
+          displayed = JSON.parse(game.state_json());
+          continue;
+        }
+        const actions = state.actions.filter((action) => action.kind !== "danger");
+        // Commit spells in main one and hold the land for main two: playing it
+        // there is the click that can hand the turn straight over.
+        const next =
+          actions.find((action) => action.label === "Keep this hand") ??
+          (state.step === "Precombat Main"
+            ? actions.find((action) => action.label.startsWith("Cast "))
+            : null) ??
+          (state.step === "Postcombat Main"
+            ? actions.find((action) => action.label.startsWith("Play "))
+            : null) ??
+          actions.find((action) => /^Attack with \d/.test(action.label)) ??
+          actions.find((action) => action.kind === "pass") ??
+          actions[0];
+        if (!next) break;
+        const before = new Set(
+          state.battlefield.filter((card) => card.owner === "human").map((card) => card.id),
+        );
+        try { game.act(next.index); } catch { break; }
+
+        const after = JSON.parse(game.state_json());
+        const beats = after.opponentActions ?? [];
+        let cursor = displayed;
+        const acted = after.afterYourAction;
+        if (
+          acted &&
+          cursor &&
+          acted.gameTurn === cursor.gameTurn &&
+          acted.active === cursor.active &&
+          acted.pregame === cursor.pregame
+        ) {
+          cursor = acted;
+        }
+        if (beats.length && turnChanged(cursor, beats[0].state)) {
+          const played = (acted ?? after).battlefield.filter(
+            (card) => card.owner === "human" && !before.has(card.id),
+          );
+          if (played.length) banners += 1;
+          for (const card of played) {
+            assert.ok(
+              cursor.battlefield.some((held) => held.id === card.id),
+              `${card.name} is on the board the banner is held over, after "${next.label}"`,
+            );
+          }
+        }
+        displayed = beats.length ? beats[beats.length - 1].state : after;
+      }
+      game.free();
+    }
+  }
+  assert.ok(banners >= 10, `exercised the case, saw ${banners}`);
+});
+
 test("mulligans are not a turn, and the draw happens in the beginning phase", async () => {
   const bytes = await readFile(
     new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
