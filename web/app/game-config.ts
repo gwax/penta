@@ -62,4 +62,8 @@ export const turnPhases = [
 // enough to watch the cards move.
 export const opponentActionDurationMs = 2000;
 
+// A draw is one card moving and happens every single turn, so it gets just
+// enough time to be seen leaving the library.
+export const drawBeatDurationMs = 900;
+
 export const turnBannerDurationMs = 1800;

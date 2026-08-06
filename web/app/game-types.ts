@@ -56,7 +56,7 @@ export type OpponentAction = {
   label: string;
   // "turn" beats carry no action of their own — they exist so a turn nobody
   // acted on is still announced.
-  kind: "land" | "spell" | "ability" | "combat" | "choice" | "turn";
+  kind: "land" | "spell" | "ability" | "combat" | "choice" | "turn" | "draw";
   card?: string | null;
   cardId?: number | null;
   manaSources?: string[];
@@ -101,6 +101,8 @@ export type GameState = {
   turn: number;
   gameTurn: number;
   step: string;
+  /// Opening hands are still being settled, so no turn or step has begun.
+  pregame: boolean;
   active: string;
   priority: string;
   human: PlayerState & { hand: Card[] };

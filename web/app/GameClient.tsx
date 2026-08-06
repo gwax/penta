@@ -22,6 +22,7 @@ import {
   deckNotes,
   defaultBotDeck,
   defaultHumanDeck,
+  drawBeatDurationMs,
   opponentActionDurationMs,
   placeholderDeck,
   turnBannerDurationMs,
@@ -98,7 +99,9 @@ export function GameClient() {
   const [draftBotDeck, setDraftBotDeck] = useState(defaultBotDeck);
   const [draftPolicy, setDraftPolicy] = useState("Handcrafted");
   const [draftHumanFirst, setDraftHumanFirst] = useState(true);
-  type TurnBanner = { active: string; turn: number };
+  // `pregame` banners announce the opening hand rather than a turn, since
+  // turn one has not started while anyone is still deciding to mulligan.
+  type TurnBanner = { active: string; turn: number; pregame?: boolean };
   type PresentationStep =
     | { kind: "action"; action: OpponentAction; state: GameState }
     | { kind: "banner"; banner: TurnBanner; state: GameState };
@@ -140,7 +143,11 @@ export function GameClient() {
   const currentOpponentAction = currentStep?.kind === "action" ? currentStep.action : null;
   const turnBanner = currentStep?.kind === "banner" ? currentStep.banner : null;
   const watchingOpponent = currentStep !== null;
-  const actionStepsRemaining = presentationQueue.filter((step) => step.kind === "action").length;
+  // Drawing for the turn is something the game does, not something the
+  // opponent chose, so it stays out of the "N actions" count.
+  const actionStepsRemaining = presentationQueue.filter(
+    (step) => step.kind === "action" && step.action.kind !== "draw",
+  ).length;
 
   const decisionSelection =
     state?.decision?.id === decisionSelectionState.decisionId
@@ -158,8 +165,18 @@ export function GameClient() {
   // card you draw next turn is never in your hand while the old turn is still
   // being told.
   const presentSnapshot = useCallback((snapshot: GameState) => {
+    // Opening hands get announced too, and the turn they lead into gets its
+    // own banner once the mulligans are settled.
     const turnChanged = (from: GameState | null, to: GameState) =>
-      !from || from.gameTurn !== to.gameTurn || from.active !== to.active;
+      from
+        ? from.pregame !== to.pregame ||
+          (!to.pregame && (from.gameTurn !== to.gameTurn || from.active !== to.active))
+        : true;
+    const bannerFor = (state: GameState): TurnBanner => ({
+      active: state.active,
+      turn: state.turn,
+      pregame: state.pregame,
+    });
     // The untap step belongs to the turn being announced, so the banner's held
     // frame shows the incoming player's permanents straightening.
     const withUntap = (held: GameState, active: string): GameState => ({
@@ -176,7 +193,7 @@ export function GameClient() {
       if (turnChanged(cursor, action.state)) {
         steps.push({
           kind: "banner",
-          banner: { active: action.state.active, turn: action.state.turn },
+          banner: bannerFor(action.state),
           state: cursor ? withUntap(cursor, action.state.active) : action.state,
         });
       }
@@ -190,7 +207,7 @@ export function GameClient() {
     if (turnChanged(cursor, snapshot)) {
       steps.push({
         kind: "banner",
-        banner: { active: snapshot.active, turn: snapshot.turn },
+        banner: bannerFor(snapshot),
         state: cursor ? withUntap(cursor, snapshot.active) : snapshot,
       });
     }
@@ -318,7 +335,11 @@ export function GameClient() {
   useEffect(() => {
     if (currentStep === null) return;
     const duration =
-      currentStep.kind === "action" ? opponentActionDurationMs : turnBannerDurationMs;
+      currentStep.kind !== "action"
+        ? turnBannerDurationMs
+        : currentStep.action.kind === "draw"
+          ? drawBeatDurationMs
+          : opponentActionDurationMs;
     const timer = window.setTimeout(() => {
       const remaining = presentationQueue.slice(1);
       if (remaining.length > 0) {
@@ -1336,13 +1357,21 @@ export function GameClient() {
 
             {turnBanner && (
               <div
-                className={`turn-banner ${turnBanner.active === "You" ? "turn-banner-yours" : ""}`}
-                key={`${turnBanner.active}-${turnBanner.turn}`}
+                className={`turn-banner ${
+                  !turnBanner.pregame && turnBanner.active === "You" ? "turn-banner-yours" : ""
+                }`}
+                key={`${turnBanner.pregame ? "pregame" : turnBanner.active}-${turnBanner.turn}`}
                 role="status"
                 aria-live="polite"
               >
-                <strong>{turnBanner.active === "You" ? "Your turn" : "Opponent’s turn"}</strong>
-                <small>Turn {turnBanner.turn}</small>
+                <strong>
+                  {turnBanner.pregame
+                    ? "Keep or mull"
+                    : turnBanner.active === "You"
+                      ? "Your turn"
+                      : "Opponent’s turn"}
+                </strong>
+                <small>{turnBanner.pregame ? "Opening hand" : `Turn ${turnBanner.turn}`}</small>
               </div>
             )}
 
@@ -1369,16 +1398,29 @@ export function GameClient() {
             />
 
             <div className="center-line">
+              {/* Nobody's turn has started while hands are being settled, so
+                  the strip names the decision instead of a step. */}
               <div className="turn-status">
-                <strong>{state.active === "You" ? "Your turn" : "Opponent’s turn"}</strong>
-                <span>Turn {state.turn}</span>
+                <strong>
+                  {state.pregame
+                    ? "Keep or mull"
+                    : state.active === "You"
+                      ? "Your turn"
+                      : "Opponent’s turn"}
+                </strong>
+                <span>{state.pregame ? "Opening hand" : `Turn ${state.turn}`}</span>
               </div>
               <ol
                 className="phase-track"
-                aria-label={`Current step: ${state.step}. Click a phase to set or remove a stop.`}
+                aria-label={
+                  state.pregame
+                    ? "The game has not started. Click a phase to set or remove a stop."
+                    : `Current step: ${state.step}. Click a phase to set or remove a stop.`
+                }
               >
                 {turnPhases.map((phase) => {
-                  const current = phase.steps.some((step) => step === state.step);
+                  const current =
+                    !state.pregame && phase.steps.some((step) => step === state.step);
                   const stopped = state.phaseStops.includes(phase.label);
                   return (
                     <li

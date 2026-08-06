@@ -1493,6 +1493,58 @@ test("opponent-action snapshots never contain your next draw", async () => {
   game.free();
 });
 
+test("mulligans are not a turn, and the draw happens in the beginning phase", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  const game = new WebGame("Sligh", "The Deck", "Handcrafted", true, 4242);
+  const opening = JSON.parse(game.state_json());
+  assert.equal(opening.pregame, true, "choosing an opening hand is not turn one");
+  assert.ok(
+    opening.actions.some((action) => action.label === "Keep this hand"),
+    "the opening decision is the mulligan",
+  );
+
+  const keep = opening.actions.find((action) => action.label === "Keep this hand");
+  game.act(keep.index);
+  const started = JSON.parse(game.state_json());
+  assert.equal(started.pregame, false, "keeping starts the game");
+
+  // Every draw beat has to be labelled with the step the phase strip shows,
+  // or the card animates into a hand the board says is already in main one.
+  let drawBeats = 0;
+  for (let step = 0; step < 200; step += 1) {
+    const state = JSON.parse(game.state_json());
+    if (state.result) break;
+    for (const beat of state.opponentActions ?? []) {
+      if (beat.kind !== "draw") continue;
+      drawBeats += 1;
+      assert.equal(beat.state.step, "Draw", "a draw beat is held in the draw step");
+      assert.equal(beat.state.pregame, false);
+    }
+    if (state.decision) {
+      const wanted = Math.max(state.decision.minimum, 1);
+      game.choose_decision(
+        state.decision.id,
+        JSON.stringify(state.decision.options.slice(0, wanted).map((option) => option.id)),
+      );
+      continue;
+    }
+    const actions = state.actions.filter((action) => action.kind !== "danger");
+    const next =
+      actions.find((action) => action.label.startsWith("Play ")) ??
+      actions.find((action) => action.kind === "pass") ??
+      actions[0];
+    if (!next) break;
+    game.act(next.index);
+  }
+  assert.ok(drawBeats >= 4, `every turn's draw gets a beat, saw ${drawBeats}`);
+
+  game.free();
+});
+
 test("declining a block runs to their end step; blocking keeps the damage stop", async () => {
   const bytes = await readFile(
     new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
@@ -1556,6 +1608,10 @@ test("declining a block runs to their end step; blocking keeps the damage stop",
   assert.ok(
     blocked.some((stop) => stop.pass === "Go to damage"),
     `a declared block keeps its pre-damage window; got ${JSON.stringify(blocked)}`,
+  );
+  assert.ok(
+    blocked.every((stop) => stop.step !== "Combat Damage" && stop.step !== "End Of Combat"),
+    `damage is history by the time priority returns; got ${JSON.stringify(blocked)}`,
   );
 
   // With no creature able to block, the pass is the decision, so it says so

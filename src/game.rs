@@ -622,6 +622,15 @@ impl Game {
         Some(self.priority)
     }
 
+    /// Whether the game is still settling opening hands.
+    ///
+    /// The first turn has not begun during mulligans, so a client should not
+    /// be describing a step or a turn yet.
+    #[must_use]
+    pub const fn in_pregame(&self) -> bool {
+        self.pregame.is_some()
+    }
+
     #[must_use]
     /// Returns the omniscient event trace.
     ///

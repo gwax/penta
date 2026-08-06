@@ -149,6 +149,7 @@ impl WebGame {
         // one to the opponent. Both need showing every bit as much as the
         // actions the bot takes on its own.
         self.record_combat_damage(event_start);
+        self.record_draw_step(event_start);
         self.record_turn_change(event_start);
         // Committing the attack invalidates the checkpoint immediately, so no
         // snapshot taken while the turn plays out still offers the cancel.
@@ -440,6 +441,7 @@ impl WebGame {
                 }
             }
             self.record_combat_damage(event_start);
+            self.record_draw_step(event_start);
             if let Some(mut animation) = pending_animation.take() {
                 let mana_sources = self.game.events()[event_start..]
                     .iter()
@@ -465,6 +467,38 @@ impl WebGame {
         Err(JsValue::from_str(
             "game exceeded its automatic action limit",
         ))
+    }
+
+    /// Gives the turn's draw its own beat.
+    ///
+    /// The draw step is over in the same yield that entered it, so without a
+    /// beat the card arrives in a frame the board already labels "first main".
+    /// Holding it here draws the card where the phase strip says it happens.
+    fn record_draw_step(&mut self, event_start: usize) {
+        let events = &self.game.events()[event_start..];
+        let drew = events
+            .iter()
+            .any(|event| matches!(event, GameEvent::CardDrawn { .. }));
+        let in_draw_step = events.iter().any(|event| {
+            matches!(
+                event,
+                GameEvent::StepChanged {
+                    step: Step::Draw,
+                    ..
+                }
+            )
+        });
+        if !drew || !in_draw_step {
+            return;
+        }
+        self.opponent_actions.push(json!({
+            "label": "Draw",
+            "kind": "draw",
+            "card": Value::Null,
+            "cardId": Value::Null,
+            "manaSources": Vec::<String>::new(),
+            "state": self.snapshot_value(false),
+        }));
     }
 
     /// Gives combat damage its own beat.
@@ -1024,6 +1058,9 @@ impl WebGame {
             "turn": observation.active_turn,
             "gameTurn": observation.turn,
             "step": readable_debug(observation.step),
+            // Turn one has not started yet, so the board should not be
+            // claiming an upkeep is happening.
+            "pregame": self.game.in_pregame(),
             "active": if observation.active_player == self.human { "You" } else { "Opponent" },
             "priority": if observation.priority == self.human { "You" } else { "Opponent" },
             "human": {
@@ -1641,9 +1678,10 @@ fn is_routine_window(context: &AutoPassContext, actions: &[Action]) -> bool {
     let can_commit_from_hand = actions
         .iter()
         .any(|action| matches!(action, Action::CastSpell { .. } | Action::PlayLand { .. }));
-    // Damage is already dealt by the end of combat and nothing about it can be
-    // changed, so the window is noise on either player's turn.
-    let end_of_combat = context.step == Step::EndOfCombat;
+    // Damage lands on the way into the damage step, so by the time anyone
+    // holds priority there it is history. Neither window can change the
+    // combat, on either player's turn — they just cost a click each.
+    let combat_is_settled = matches!(context.step, Step::CombatDamage | Step::EndOfCombat);
     let routine_own_turn_step = context.human_is_active
         && (context.step == Step::BeginningOfCombat
             || (context.step == Step::PostcombatMain
@@ -1660,10 +1698,7 @@ fn is_routine_window(context: &AutoPassContext, actions: &[Action]) -> bool {
     let smooth_unblocked_attack = context.human_is_active
         && context.has_attacker
         && !context.has_blocker
-        && matches!(
-            context.step,
-            Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
-        );
+        && matches!(context.step, Step::DeclareAttackers | Step::DeclareBlockers);
     // Nothing is blocking, so the rest of their combat is just watching the
     // damage land. The interesting window is their end step, so head there
     // instead of stopping once per remaining combat step. A block still on
@@ -1675,24 +1710,15 @@ fn is_routine_window(context: &AutoPassContext, actions: &[Action]) -> bool {
         && context.has_attacker
         && !context.has_blocker
         && !block_still_available
-        && matches!(
-            context.step,
-            Step::DeclareBlockers | Step::CombatDamage | Step::EndOfCombat
-        );
+        && context.step == Step::DeclareBlockers;
     routine_beginning_step
-        || end_of_combat
+        || combat_is_settled
         || routine_own_turn_step
         || routine_opponent_turn_step
         || smooth_unblocked_attack
         || smooth_unblocked_defense
         || (!context.has_attacker
-            && matches!(
-                context.step,
-                Step::DeclareAttackers
-                    | Step::DeclareBlockers
-                    | Step::CombatDamage
-                    | Step::EndOfCombat
-            ))
+            && matches!(context.step, Step::DeclareAttackers | Step::DeclareBlockers))
 }
 
 fn automatic_human_action_for_context(
@@ -1742,10 +1768,7 @@ fn automatic_human_action_for_context(
     let auto_yield_step = is_routine_window(&context, actions);
     // A combat ability is worth pausing for while it can still change the
     // outcome. Once damage is dealt, pumping a creature decides nothing.
-    let combat_step = matches!(
-        context.step,
-        Step::DeclareAttackers | Step::DeclareBlockers | Step::CombatDamage
-    );
+    let combat_step = matches!(context.step, Step::DeclareAttackers | Step::DeclareBlockers);
     // Defending an attack nobody blocked is the exception: no creature of
     // yours is in the combat, so no ability of yours can change it.
     let ability_changes_combat = context.human_is_active || context.has_blocker;
@@ -2254,31 +2277,6 @@ mod tests {
             "an unblocked attack runs through combat damage without extra clicks",
         );
 
-        let actions_with_factory_pump = [
-            Action::Concede,
-            Action::ActivateAbility {
-                source: CardInstanceId(8),
-                target: Some(Target::Permanent(CardInstanceId(9))),
-                sacrifice: None,
-            },
-            Action::PassPriority,
-        ];
-        assert_eq!(
-            automatic_human_action(
-                Step::CombatDamage,
-                true,
-                true,
-                true,
-                false,
-                true,
-                false,
-                false,
-                &actions_with_factory_pump,
-            ),
-            None,
-            "a pump ability keeps priority during an unblocked attack",
-        );
-
         assert_eq!(
             automatic_human_action_with_blockers(
                 Step::DeclareBlockers,
@@ -2294,6 +2292,49 @@ mod tests {
             ),
             None,
             "a declared blocker interrupts smooth combat",
+        );
+    }
+
+    #[test]
+    fn a_pump_ability_holds_combat_open_only_while_it_matters() {
+        let actions = [
+            Action::Concede,
+            Action::ActivateAbility {
+                source: CardInstanceId(8),
+                target: Some(Target::Permanent(CardInstanceId(9))),
+                sacrifice: None,
+            },
+            Action::PassPriority,
+        ];
+        assert_eq!(
+            automatic_human_action(
+                Step::DeclareAttackers,
+                true,
+                true,
+                true,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            None,
+            "a pump ability keeps priority while it can still change the attack",
+        );
+        assert_eq!(
+            automatic_human_action(
+                Step::CombatDamage,
+                true,
+                true,
+                true,
+                false,
+                true,
+                false,
+                false,
+                &actions,
+            ),
+            Some(Action::PassPriority),
+            "but damage is already dealt by the time priority comes back",
         );
     }
 
