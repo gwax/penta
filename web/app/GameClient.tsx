@@ -1848,9 +1848,10 @@ export function GameClient() {
               Turn {state.turn} · {humanDeck} vs {botDeck}
             </p>
             <div>
-              <button onClick={() => newGame(seed, humanDeck, botDeck)}>Replay seed</button>
-              {/* The decks that just played, not the setup choices: a rematch
-                  keeps the matchup even when it was rolled at random. */}
+              {/* New game takes the setup choices, so "Random" rolls again;
+                  a rematch takes the decks that just played, which keeps the
+                  matchup even when chance picked it. */}
+              <button onClick={() => newGame(randomSeed())}>New game</button>
               <button
                 className="result-primary"
                 onClick={() => newGame(randomSeed(), humanDeck, botDeck)}

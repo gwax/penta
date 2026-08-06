@@ -1565,8 +1565,9 @@ test("your own play is on the board before the turn it ended is announced", asyn
       : true;
 
   let banners = 0;
-  for (const deck of ["Sligh", "White Weenie", "GR Aggro", "Lions DIB"]) {
-    for (const seed of [31, 62, 155, 217]) {
+  let handovers = 0;
+  for (const deck of ["Sligh", "White Weenie", "GR Aggro", "Lions DIB", "Robots", "Artifacts"]) {
+    for (const seed of [31, 62, 155, 217, 318, 424, 530]) {
       const game = new WebGame(deck, "The Deck", "Handcrafted", true, seed);
       let displayed = JSON.parse(game.state_json());
       for (let step = 0; step < 250; step += 1) {
@@ -1584,15 +1585,20 @@ test("your own play is on the board before the turn it ended is announced", asyn
           continue;
         }
         const actions = state.actions.filter((action) => action.kind !== "danger");
-        // Commit spells in main one and hold the land for main two: playing it
-        // there is the click that can hand the turn straight over.
+        // Lands always, spells in main one only every other turn: that leaves
+        // a board to hold the second main open and something in hand to spend
+        // there, which is the click that resolves and hands the turn over in
+        // one go.
         const next =
           actions.find((action) => action.label === "Keep this hand") ??
           (state.step === "Precombat Main"
+            ? actions.find((action) => action.label.startsWith("Play "))
+            : null) ??
+          (state.step === "Precombat Main" && state.gameTurn % 2 === 1
             ? actions.find((action) => action.label.startsWith("Cast "))
             : null) ??
           (state.step === "Postcombat Main"
-            ? actions.find((action) => action.label.startsWith("Play "))
+            ? actions.find((action) => action.label.startsWith("Cast "))
             : null) ??
           actions.find((action) => /^Attack with \d/.test(action.label)) ??
           actions.find((action) => action.kind === "pass") ??
@@ -1620,6 +1626,7 @@ test("your own play is on the board before the turn it ended is announced", asyn
           const played = (acted ?? after).battlefield.filter(
             (card) => card.owner === "human" && !before.has(card.id),
           );
+          handovers += 1;
           if (played.length) banners += 1;
           for (const card of played) {
             assert.ok(
@@ -1627,13 +1634,21 @@ test("your own play is on the board before the turn it ended is announced", asyn
               `${card.name} is on the board the banner is held over, after "${next.label}"`,
             );
           }
+          // A spell you cast resolves on an automatic yield, so by the time
+          // their turn is announced it belongs on the board, not the stack.
+          assert.deepEqual(
+            cursor.stack.filter((object) => object.owner === "human").map((o) => o.name),
+            [],
+            `nothing of yours is still on the stack after "${next.label}"`,
+          );
         }
         displayed = beats.length ? beats[beats.length - 1].state : after;
       }
       game.free();
     }
   }
-  assert.ok(banners >= 10, `exercised the case, saw ${banners}`);
+  assert.ok(banners >= 10, `saw your play land before the banner ${banners} times`);
+  assert.ok(handovers >= 100, `exercised enough handovers, saw ${handovers}`);
 });
 
 test("mulligans are not a turn, and the draw happens in the beginning phase", async () => {

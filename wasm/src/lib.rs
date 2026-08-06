@@ -449,6 +449,14 @@ impl WebGame {
             // Last, so the beat that ended the turn is still watched before the
             // next turn is announced.
             self.record_turn_change(event_start);
+            // Your click is not finished until your own spell has left the
+            // stack: the yields that resolve it are automatic and produce no
+            // beat, so they belong to what you did rather than to the replay.
+            // The moment anything worth watching happens, this stops moving
+            // and the replay starts from there.
+            if player == self.human && self.opponent_actions.is_empty() {
+                self.human_action_state = Some(self.snapshot_value(false));
+            }
         }
         Err(JsValue::from_str(
             "game exceeded its automatic action limit",
