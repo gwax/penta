@@ -149,6 +149,23 @@ export function GameClient() {
     (step) => step.kind === "action" && step.action.kind !== "draw",
   ).length;
 
+  // What the phase strip describes. A turn banner is the gap between two
+  // turns: the board still shows the one that ended, so the strip names the
+  // one arriving and lights no step until it actually begins.
+  const strip = turnBanner
+    ? {
+        active: turnBanner.active,
+        turn: turnBanner.turn,
+        pregame: turnBanner.pregame ?? false,
+        step: null as string | null,
+      }
+    : {
+        active: state?.active ?? "You",
+        turn: state?.turn ?? 1,
+        pregame: state?.pregame ?? false,
+        step: state && !state.pregame ? state.step : null,
+      };
+
   const decisionSelection =
     state?.decision?.id === decisionSelectionState.decisionId
       ? decisionSelectionState.options
@@ -1451,29 +1468,31 @@ export function GameClient() {
             {/* Your panel rides the phase strip: it is the only other thing
                 that belongs to you rather than to the board. */}
             <div className="center-line">
-              {/* Nobody's turn has started while hands are being settled, so
-                  the strip names the decision instead of a step. */}
+              {/* While the banner announces a turn the strip announces the
+                  same one, with nothing lit: the board is still showing the
+                  turn that just ended, but the turn it belongs to is over.
+                  Nobody's turn has started while hands are being settled
+                  either, so the strip names that decision instead of a step. */}
               <div className="turn-status">
                 <strong>
-                  {state.pregame
+                  {strip.pregame
                     ? "Keep or mull"
-                    : state.active === "You"
+                    : strip.active === "You"
                       ? "Your turn"
                       : "Opponent’s turn"}
                 </strong>
-                <span>{state.pregame ? "Opening hand" : `Turn ${state.turn}`}</span>
+                <span>{strip.pregame ? "Opening hand" : `Turn ${strip.turn}`}</span>
               </div>
               <ol
                 className="phase-track"
                 aria-label={
-                  state.pregame
-                    ? "The game has not started. Click a phase to set or remove a stop."
-                    : `Current step: ${state.step}. Click a phase to set or remove a stop.`
+                  strip.step === null
+                    ? "Between turns. Click a phase to set or remove a stop."
+                    : `Current step: ${strip.step}. Click a phase to set or remove a stop.`
                 }
               >
                 {turnPhases.map((phase) => {
-                  const current =
-                    !state.pregame && phase.steps.some((step) => step === state.step);
+                  const current = phase.steps.some((step) => step === strip.step);
                   const stopped = state.phaseStops.includes(phase.label);
                   return (
                     <li
@@ -1487,7 +1506,7 @@ export function GameClient() {
                         onClick={() => togglePhaseStop(phase.label, !stopped)}
                       >
                         <span>{phase.title}</span>
-                        {current && <small>{state.step}</small>}
+                        {current && <small>{strip.step}</small>}
                         {stopped && <i aria-label="Stop set">STOP</i>}
                       </button>
                     </li>
