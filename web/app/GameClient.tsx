@@ -1355,26 +1355,6 @@ export function GameClient() {
               ))}
             </div>
 
-            {turnBanner && (
-              <div
-                className={`turn-banner ${
-                  !turnBanner.pregame && turnBanner.active === "You" ? "turn-banner-yours" : ""
-                }`}
-                key={`${turnBanner.pregame ? "pregame" : turnBanner.active}-${turnBanner.turn}`}
-                role="status"
-                aria-live="polite"
-              >
-                <strong>
-                  {turnBanner.pregame
-                    ? "Keep or mull"
-                    : turnBanner.active === "You"
-                      ? "Your turn"
-                      : "Opponent’s turn"}
-                </strong>
-                <small>{turnBanner.pregame ? "Opening hand" : `Turn ${turnBanner.turn}`}</small>
-              </div>
-            )}
-
             <Zone
               cards={opponentPermanents}
               empty="Opponent battlefield"
@@ -1397,66 +1377,29 @@ export function GameClient() {
               opponent
             />
 
-            <div className="center-line">
-              {/* Nobody's turn has started while hands are being settled, so
-                  the strip names the decision instead of a step. */}
-              <div className="turn-status">
-                <strong>
-                  {state.pregame
-                    ? "Keep or mull"
-                    : state.active === "You"
-                      ? "Your turn"
-                      : "Opponent’s turn"}
-                </strong>
-                <span>{state.pregame ? "Opening hand" : `Turn ${state.turn}`}</span>
-              </div>
-              <ol
-                className="phase-track"
-                aria-label={
-                  state.pregame
-                    ? "The game has not started. Click a phase to set or remove a stop."
-                    : `Current step: ${state.step}. Click a phase to set or remove a stop.`
-                }
-              >
-                {turnPhases.map((phase) => {
-                  const current =
-                    !state.pregame && phase.steps.some((step) => step === state.step);
-                  const stopped = state.phaseStops.includes(phase.label);
-                  return (
-                    <li
-                      className={`${current ? "phase-current" : ""} ${stopped ? "phase-stopped" : ""}`}
-                      key={phase.label}
-                    >
-                      <button
-                        type="button"
-                        aria-pressed={stopped}
-                        title={`${stopped ? "Remove" : "Set"} stop on ${phase.title}`}
-                        onClick={() => togglePhaseStop(phase.label, !stopped)}
-                      >
-                        <span>{phase.title}</span>
-                        {current && <small>{state.step}</small>}
-                        {stopped && <i aria-label="Stop set">STOP</i>}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-              <button
-                type="button"
-                className={`autopass-toggle ${state.autopassEnabled ? "is-on" : ""}`}
-                aria-pressed={state.autopassEnabled}
-                title="Automatically yield routine priority windows"
-                onClick={() => toggleAutopass(!state.autopassEnabled)}
-              >
-                <span>Auto-pass</span>
-                <i>{state.autopassEnabled ? "On" : "Off"}</i>
-              </button>
-            </div>
-
             <div
               className={`stack-zone ${state.stack.length === 0 ? "stack-zone-empty" : ""}`}
               aria-label="Stack"
             >
+              {turnBanner && (
+                <div
+                  className={`turn-banner ${
+                    !turnBanner.pregame && turnBanner.active === "You" ? "turn-banner-yours" : ""
+                  }`}
+                  key={`${turnBanner.pregame ? "pregame" : turnBanner.active}-${turnBanner.turn}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <strong>
+                    {turnBanner.pregame
+                      ? "Keep or mull"
+                      : turnBanner.active === "You"
+                        ? "Your turn"
+                        : "Opponent’s turn"}
+                  </strong>
+                  <small>{turnBanner.pregame ? "Opening hand" : `Turn ${turnBanner.turn}`}</small>
+                </div>
+              )}
               <span>STACK</span>
               {state.stack.length === 0 ? (
                 <small className="stack-empty-label">EMPTY</small>
@@ -1534,6 +1477,62 @@ export function GameClient() {
               onDragLeaveTarget={() => handleTargetDragLeave(playerTargetKey("human"))}
               onDropTarget={() => handleTargetDrop(playerTargetKey("human"))}
             />
+
+            <div className="center-line">
+              {/* Nobody's turn has started while hands are being settled, so
+                  the strip names the decision instead of a step. */}
+              <div className="turn-status">
+                <strong>
+                  {state.pregame
+                    ? "Keep or mull"
+                    : state.active === "You"
+                      ? "Your turn"
+                      : "Opponent’s turn"}
+                </strong>
+                <span>{state.pregame ? "Opening hand" : `Turn ${state.turn}`}</span>
+              </div>
+              <ol
+                className="phase-track"
+                aria-label={
+                  state.pregame
+                    ? "The game has not started. Click a phase to set or remove a stop."
+                    : `Current step: ${state.step}. Click a phase to set or remove a stop.`
+                }
+              >
+                {turnPhases.map((phase) => {
+                  const current =
+                    !state.pregame && phase.steps.some((step) => step === state.step);
+                  const stopped = state.phaseStops.includes(phase.label);
+                  return (
+                    <li
+                      className={`${current ? "phase-current" : ""} ${stopped ? "phase-stopped" : ""}`}
+                      key={phase.label}
+                    >
+                      <button
+                        type="button"
+                        aria-pressed={stopped}
+                        title={`${stopped ? "Remove" : "Set"} stop on ${phase.title}`}
+                        onClick={() => togglePhaseStop(phase.label, !stopped)}
+                      >
+                        <span>{phase.title}</span>
+                        {current && <small>{state.step}</small>}
+                        {stopped && <i aria-label="Stop set">STOP</i>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+              <button
+                type="button"
+                className={`autopass-toggle ${state.autopassEnabled ? "is-on" : ""}`}
+                aria-pressed={state.autopassEnabled}
+                title="Automatically yield routine priority windows"
+                onClick={() => toggleAutopass(!state.autopassEnabled)}
+              >
+                <span>Auto-pass</span>
+                <i>{state.autopassEnabled ? "On" : "Off"}</i>
+              </button>
+            </div>
 
             <HandZone
               cards={state.human.hand}

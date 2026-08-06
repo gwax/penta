@@ -437,10 +437,15 @@ button {
   position: relative;
   min-width: 0;
   display: grid;
-  /* The last row holds the hand fan, which is 176px of card standing 14px off
-     the floor. Sizing it any shorter pushes the resting cards up over the
-     player bar and hides the deck subtitle behind them. */
-  grid-template-rows: 48px 30px minmax(122px, 1fr) 48px auto minmax(122px, 1fr) 48px 190px;
+  /* Opponent bar, their hand, their board, the stack, your board, your bar,
+     the phase strip, your hand. The stack sits between the two boards so the
+     game reads top to bottom, and its row is a fixed height whether or not
+     anything is on it — a row that grew with the stack shoved both boards
+     around every time a spell was cast. The last row holds the hand fan,
+     which is 176px of card standing 14px off the floor. Sizing it any shorter
+     pushes the resting cards up over the player bar and hides the deck
+     subtitle behind them. */
+  grid-template-rows: 48px 30px minmax(122px, 1fr) 84px minmax(122px, 1fr) 48px 48px 190px;
   gap: 2px;
   padding: 6px 14px 8px;
   overflow: hidden;
@@ -995,8 +1000,11 @@ button {
   font-style: italic;
 }
 
+/* The phase strip. It used to divide the two boards, where a growing stack
+   bounced it up and down; down here between your board and your hand it holds
+   still, and nothing has to draw an arrow across it. */
 .center-line {
-  min-height: 50px;
+  height: 100%;
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr) 120px;
   align-items: center;
@@ -1140,25 +1148,26 @@ button {
 }
 
 .stack-zone {
+  /* The turn banner lives in here, so it lands on the table's centre line
+     instead of wherever half the table's height happens to fall. */
+  position: relative;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 10px;
-  min-height: 34px;
   padding: 4px 8px;
   border-top: 1px solid rgba(201, 181, 137, 0.24);
   border-bottom: 1px solid rgba(201, 181, 137, 0.24);
   background: rgba(15, 18, 17, 0.32);
 }
 
+/* The row is reserved whether or not anything is on the stack, so an empty
+   stack reads as the table's centre line rather than a gap. */
 .stack-zone-empty {
   color: #746d60;
-}
-
-/* With real cards aboard, the strip needs the full card height; empty, it
-   stays a slim divider. */
-.stack-zone:has(.stack-card-slot) {
-  min-height: 88px;
+  border-color: rgba(201, 181, 137, 0.14);
+  background: rgba(15, 18, 17, 0.16);
 }
 
 .stack-zone > span {
@@ -2197,6 +2206,29 @@ button {
   background: var(--red);
 }
 
+/* A short window has to give somewhere. The hand keeps its full height — its
+   cards are the ones you read — so the board cards shrink instead, and every
+   row stays a fixed size so the stack still never moves anything. */
+@media (max-height: 820px) {
+  .table {
+    grid-template-rows: 44px 26px minmax(104px, 1fr) 76px minmax(104px, 1fr) 44px 44px 190px;
+  }
+
+  .battlefield-zone {
+    grid-template-rows: repeat(2, 50px);
+  }
+
+  .game-card-compact {
+    height: 50px;
+  }
+
+  /* The art is the part of a board card nobody reads, so it gives up the
+     height rather than the title or the type line. */
+  .game-card-compact .card-art {
+    min-height: 10px;
+  }
+}
+
 @media (max-width: 1000px) {
   .topbar {
     grid-template-columns: auto 1fr auto;
@@ -2270,7 +2302,7 @@ button {
   .table {
     min-height: 750px;
     padding-inline: 7px;
-    grid-template-rows: 52px 28px 130px 58px auto 130px 52px 158px;
+    grid-template-rows: 52px 28px 130px 92px 130px 52px 58px 158px;
   }
 
   .player-name {
@@ -2287,7 +2319,6 @@ button {
   }
 
   .center-line {
-    min-height: 58px;
     grid-template-columns: 82px minmax(0, 1fr);
     gap: 7px;
     padding-inline: 7px;
