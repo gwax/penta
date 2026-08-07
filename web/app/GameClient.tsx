@@ -2250,7 +2250,18 @@ function groupCardsIntoPiles(cards: Card[]) {
     pile.push(card);
     piles.set(key, pile);
   }
-  return Array.from(piles, ([key, pileCards]) => ({ key, cards: pileCards }));
+  // The React key must not carry that state. A pile whose key changes is a pile
+  // React unmounts, which throws away every card's DOM node inside it — so a
+  // land losing its summoning sickness, which nothing on the board draws, still
+  // made the card blink. Number the piles within each card name instead: a pile
+  // keeps its identity while the cards in it tap, take damage, or grow old.
+  const nth = new Map<string, number>();
+  return Array.from(piles.values(), (pileCards) => {
+    const name = `${pileCards[0].name}:${pileCards[0].kind}`;
+    const index = nth.get(name) ?? 0;
+    nth.set(name, index + 1);
+    return { key: `${name}#${index}`, cards: pileCards };
+  });
 }
 
 function CardPile({
