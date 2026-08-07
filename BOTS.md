@@ -23,8 +23,8 @@ threaded. Training-scale rollouts are practical on a laptop.
 
 ## Quick start: Python
 
-Requires Python 3.9+ and a [Rust toolchain](https://rustup.rs). From the
-repository root:
+Requires Python 3.9+ and [rustup](https://rustup.rs), which installs the
+repository's pinned Rust version automatically. From the repository root:
 
 ```bash
 cd bindings/penta-py

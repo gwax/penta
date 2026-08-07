@@ -227,8 +227,11 @@ pull request rather than restating their steps:
 ./scripts/check-bindings.sh  # the C ABI and Python module each play full games
 ```
 
-CI builds on current stable Rust, which is usually ahead of any given
-developer's toolchain, so a pedantic lint can fire there first.
+`rust-toolchain.toml` pins the Rust version, components, and the wasm
+target, so rustup installs the same compiler for contributors, maintainers,
+and CI. Clippy runs pedantic with `-D warnings`, where a newer toolchain can
+fail a build an older one passes; pinning makes that a deliberate upgrade
+commit instead of a surprise. A fresh clone needs no `rustup` commands.
 
 [ec-rules]: https://www.eternalcentral.com/9394rules/
 [goblins-data]: https://www.tcdecks.net/archetype.php?archetype=Goblins&format=Old+School&src=all

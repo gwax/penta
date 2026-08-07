@@ -21,11 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-          targets: wasm32-unknown-unknown
+      # rust-toolchain.toml names the version, components, and targets, so
+      # there is nothing to restate here and nothing to drift.
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install
 
       # The wasm-bindgen CLI must match the crate exactly or it refuses the
       # module, so read the version out of the lockfile rather than pinning
@@ -76,8 +75,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install
 
       - uses: actions/setup-python@v7
         with:
