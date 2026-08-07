@@ -1,5 +1,8 @@
 [workspace]
-members = [".", "wasm"]
+members = [".", "wasm", "bindings/penta-ffi"]
+# penta-py links against a Python toolchain, so it builds on its own rather
+# than dragging that requirement into every `cargo test`.
+exclude = ["bindings/penta-py"]
 resolver = "3"
 
 [package]
@@ -12,6 +15,9 @@ repository = "https://github.com/lacker/penta"
 
 [lib]
 path = "src/lib.rs"
+
+[dependencies]
+serde_json = "1"
 
 [lints.rust]
 unsafe_code = "forbid"

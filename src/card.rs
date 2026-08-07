@@ -1183,6 +1183,15 @@ impl CardCatalog {
         self.by_id.get(&id)
     }
 
+    /// Every definition in the catalog, ordered by id so consumers see a
+    /// stable listing.
+    #[must_use]
+    pub fn definitions(&self) -> Vec<&CardDefinition> {
+        let mut definitions: Vec<_> = self.by_id.values().collect();
+        definitions.sort_by_key(|definition| definition.id);
+        definitions
+    }
+
     #[must_use]
     pub fn is_banned(&self, id: CardDefinitionId) -> bool {
         self.get(id)

@@ -1599,24 +1599,9 @@ impl WebGame {
 }
 
 fn deck_by_name(name: &str) -> Result<penta::Deck, JsValue> {
-    match name.to_ascii_lowercase().as_str() {
-        "goblins" => Ok(poc::goblins()),
-        "sligh" => Ok(poc::sligh()),
-        "artifacts" => Ok(poc::artifacts()),
-        "robots" => Ok(poc::robots()),
-        "the deck" => Ok(poc::the_deck()),
-        "mono black" => Ok(poc::mono_black()),
-        "white weenie" => Ok(poc::white_weenie()),
-        "erhnamgeddon" => Ok(poc::erhnamgeddon()),
-        "counterburn" => Ok(poc::counterburn()),
-        "lions/dib" | "lions dib" => Ok(poc::lions_dib()),
-        "bwr aggro" => Ok(poc::bwr_aggro()),
-        "gr aggro" => Ok(poc::gr_aggro()),
-        "troll disk" => Ok(poc::troll_disk()),
-        "jeskai aggro" => Ok(poc::jeskai_aggro()),
-        "lion dib bolt" | "lions/dib bolt" | "lions dib bolt" => Ok(poc::lions_dib_bolt()),
-        _ => Err(JsValue::from_str("unknown deck")),
-    }
+    // The protocol module owns the deck list, so bots and the browser can
+    // never disagree about which names exist.
+    penta::protocol::deck_by_name(name).ok_or_else(|| JsValue::from_str("unknown deck"))
 }
 
 /// Describes why the game ended from the browser player's seat.

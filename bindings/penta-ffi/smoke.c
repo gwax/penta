@@ -1,0 +1,124 @@
+/* Smoke test for the C ABI: plays full games against both built-in bots
+ * choosing pseudo-random legal actions, and checks the JSON surface looks
+ * like the protocol. Run via scripts/check-bindings.sh. */
+
+#include "include/penta.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static unsigned long rng_state = 12345;
+
+static unsigned long next_rand(void) {
+    /* Deterministic LCG so the smoke test never flakes. */
+    rng_state = rng_state * 6364136223846793005UL + 1442695040888963407UL;
+    return rng_state >> 33;
+}
+
+static int fail(const char *what) {
+    fprintf(stderr, "FAIL: %s: %s\n", what, penta_last_error());
+    return 1;
+}
+
+static int play_one(const char *config, int check_json) {
+    PentaGame *game = penta_new(config);
+    if (!game) return fail("penta_new");
+
+    if (check_json) {
+        int32_t seat = penta_decision_seat(game);
+        char *observation = penta_observe_json(game, seat);
+        if (!observation) return fail("penta_observe_json");
+        if (!strstr(observation, "\"legalActions\"") ||
+            !strstr(observation, "\"seat\"") ||
+            !strstr(observation, "\"protocolVersion\"")) {
+            fprintf(stderr, "FAIL: observation missing protocol fields\n");
+            return 1;
+        }
+        penta_string_free(observation);
+    }
+
+    int steps;
+    for (steps = 0; steps < 200000; steps++) {
+        if (penta_result(game) != -1) break;
+        uint32_t count = penta_legal_action_count(game);
+        if (count == 0) {
+            fprintf(stderr, "FAIL: no legal actions but no result\n");
+            return 1;
+        }
+        /* Random over every action concedes almost immediately, which tests
+         * nothing. Find Concede's index in the observation and dodge it. */
+        long concede = -1;
+        int32_t seat = penta_decision_seat(game);
+        char *observation = penta_observe_json(game, seat);
+        if (!observation) return fail("penta_observe_json");
+        const char *found = strstr(observation, "\"type\":\"Concede\"");
+        if (found) {
+            /* Keys sort alphabetically, so "index" precedes "type" inside
+             * the same object: back up to the nearest "index": before it. */
+            const char *scan = observation;
+            const char *best = NULL;
+            while ((scan = strstr(scan, "\"index\":")) != NULL && scan < found) {
+                best = scan;
+                scan++;
+            }
+            if (best) concede = atol(best + 8);
+        }
+        penta_string_free(observation);
+
+        uint32_t pick = (uint32_t)(next_rand() % count);
+        if (count > 1 && (long)pick == concede)
+            pick = (pick + 1) % count;
+        if (penta_act(game, pick) != 0)
+            return fail("penta_act");
+    }
+
+    int32_t result = penta_result(game);
+    penta_free(game);
+    if (result == -1) {
+        fprintf(stderr, "FAIL: game did not finish in %d steps\n", steps);
+        return 1;
+    }
+    printf("ok: result=%d after %d of your decisions\n", result, steps);
+    return 0;
+}
+
+int main(void) {
+    printf("engine %s, protocol %u\n", penta_engine_version(),
+           penta_protocol_version());
+
+    char *decks = penta_deck_names_json();
+    if (!decks || !strstr(decks, "Sligh")) return fail("penta_deck_names_json");
+    penta_string_free(decks);
+
+    char *catalog = penta_catalog_json();
+    if (!catalog || !strstr(catalog, "Lightning Bolt"))
+        return fail("penta_catalog_json");
+    penta_string_free(catalog);
+
+    /* Random moves against each built-in opponent, and a self-play game. */
+    if (play_one("{\"p1Deck\":\"Sligh\",\"p2Deck\":\"The Deck\","
+                 "\"opponent\":\"handcrafted\",\"opponentSeat\":\"p2\","
+                 "\"seed\":7}", 1))
+        return 1;
+    if (play_one("{\"p1Deck\":\"Goblins\",\"p2Deck\":\"White Weenie\","
+                 "\"opponent\":\"random\",\"opponentSeat\":\"p2\","
+                 "\"seed\":11}", 0))
+        return 1;
+    if (play_one("{\"p1Deck\":\"Sligh\",\"p2Deck\":\"Goblins\","
+                 "\"opponent\":\"external\",\"seed\":13}", 0))
+        return 1;
+
+    /* Error paths report through penta_last_error instead of crashing. */
+    if (penta_new("{\"p1Deck\":\"Not A Deck\",\"p2Deck\":\"Sligh\"}") != NULL) {
+        fprintf(stderr, "FAIL: bad deck accepted\n");
+        return 1;
+    }
+    if (strlen(penta_last_error()) == 0) {
+        fprintf(stderr, "FAIL: bad deck left no error message\n");
+        return 1;
+    }
+
+    printf("smoke test passed\n");
+    return 0;
+}

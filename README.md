@@ -1,8 +1,11 @@
 # penta
 
 `penta` is a deterministic, headless simulator for two-player Old School
-Magic: The Gathering. The first target is bot-vs-bot play and, eventually,
-high-throughput training through Python bindings.
+Magic: The Gathering, built for writing AI bots against.
+
+**Want to write a bot?** You can drive the engine from Python, C, C++, or
+Rust, play against the included bot algorithms, and train against self-play.
+The instructions are in [BOTS.md](BOTS.md).
 
 ## Format
 

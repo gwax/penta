@@ -1,0 +1,18 @@
+[package]
+name = "penta-ffi"
+version = "0.1.0"
+edition = "2024"
+description = "C ABI for the penta engine, for C, C++, and any FFI-capable language"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+penta = { path = "../.." }
+
+# The whole point of this crate is the unsafe boundary; everything inside it
+# stays a thin translation layer over the safe protocol module.
+[lints.clippy]
+pedantic = "warn"

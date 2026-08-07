@@ -7,6 +7,7 @@ pub mod game;
 pub mod ids;
 pub mod poc;
 pub mod policy;
+pub mod protocol;
 mod rng;
 pub mod rules;
 
