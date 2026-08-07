@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt;
+use std::sync::Arc;
 
 use super::{
     CardDefinition, CardPrinting, CardPrintingId, CardSet, CardStructure, PlayActionKind,
@@ -11,11 +12,40 @@ use crate::{
     PlayOptionId, TargetSlotId,
 };
 
+/// A catalog is immutable once built, and callers pass it around by value —
+/// a game, a policy, and the protocol facade each hold one. Sharing the maps
+/// behind an `Arc` makes those clones a refcount bump instead of a deep copy
+/// of every definition.
 #[derive(Clone, Debug, Default)]
 pub struct CardCatalog {
+    entries: Arc<CatalogEntries>,
+}
+
+#[derive(Debug, Default)]
+struct CatalogEntries {
     definitions: HashMap<CardDefinitionId, CardDefinition>,
     ids_by_name: HashMap<String, CardDefinitionId>,
     definition_by_printing: HashMap<CardPrintingId, CardDefinitionId>,
+}
+
+impl CatalogEntries {
+    fn attach_printing(&mut self, printing: CardPrinting) -> Result<(), CatalogError> {
+        let definition = printing.id.definition;
+        if !self.definitions.contains_key(&definition) {
+            return Err(CatalogError::OrphanPrinting(printing.id));
+        }
+        if self.definition_by_printing.contains_key(&printing.id) {
+            return Err(CatalogError::DuplicatePrintingId(printing.id));
+        }
+
+        self.definition_by_printing.insert(printing.id, definition);
+        self.definitions
+            .get_mut(&definition)
+            .expect("printing definition was checked above")
+            .printings
+            .push(printing);
+        Ok(())
+    }
 }
 
 impl CardCatalog {
@@ -46,14 +76,14 @@ impl CardCatalog {
         definitions: impl IntoIterator<Item = CardDefinition>,
         printings: impl IntoIterator<Item = CardPrinting>,
     ) -> Result<Self, CatalogError> {
-        let mut catalog = Self::default();
+        let mut entries = CatalogEntries::default();
         let mut definition_printings = Vec::new();
         for mut definition in definitions {
-            if catalog.definitions.contains_key(&definition.id) {
+            if entries.definitions.contains_key(&definition.id) {
                 return Err(CatalogError::DuplicateId(definition.id));
             }
             let normalized_name = normalize_name(&definition.name);
-            if catalog.ids_by_name.contains_key(&normalized_name) {
+            if entries.ids_by_name.contains_key(&normalized_name) {
                 return Err(CatalogError::DuplicateName(definition.name));
             }
             validate_composition(&definition)?;
@@ -63,8 +93,8 @@ impl CardCatalog {
                     .into_iter()
                     .map(|printing| (definition.id, printing)),
             );
-            catalog.ids_by_name.insert(normalized_name, definition.id);
-            catalog.definitions.insert(definition.id, definition);
+            entries.ids_by_name.insert(normalized_name, definition.id);
+            entries.definitions.insert(definition.id, definition);
         }
 
         for (definition, printing) in definition_printings {
@@ -74,42 +104,26 @@ impl CardCatalog {
                     printing: printing.id,
                 });
             }
-            catalog.attach_printing(printing)?;
+            entries.attach_printing(printing)?;
         }
         for printing in printings {
-            catalog.attach_printing(printing)?;
+            entries.attach_printing(printing)?;
         }
-        Ok(catalog)
-    }
-
-    fn attach_printing(&mut self, printing: CardPrinting) -> Result<(), CatalogError> {
-        let definition = printing.id.definition;
-        if !self.definitions.contains_key(&definition) {
-            return Err(CatalogError::OrphanPrinting(printing.id));
-        }
-        if self.definition_by_printing.contains_key(&printing.id) {
-            return Err(CatalogError::DuplicatePrintingId(printing.id));
-        }
-
-        self.definition_by_printing.insert(printing.id, definition);
-        self.definitions
-            .get_mut(&definition)
-            .expect("printing definition was checked above")
-            .printings
-            .push(printing);
-        Ok(())
+        Ok(Self {
+            entries: Arc::new(entries),
+        })
     }
 
     #[must_use]
     pub fn get(&self, id: CardDefinitionId) -> Option<&CardDefinition> {
-        self.definitions.get(&id)
+        self.entries.definitions.get(&id)
     }
 
     /// Every definition in the catalog, ordered by id so consumers see a
     /// stable listing.
     #[must_use]
     pub fn definitions(&self) -> Vec<&CardDefinition> {
-        let mut definitions: Vec<_> = self.definitions.values().collect();
+        let mut definitions: Vec<_> = self.entries.definitions.values().collect();
         definitions.sort_by_key(|definition| definition.id);
         definitions
     }
@@ -117,13 +131,14 @@ impl CardCatalog {
     /// Looks up a card definition ID by its case-insensitive printed name.
     #[must_use]
     pub fn find_by_name(&self, name: &str) -> Option<CardDefinitionId> {
-        self.ids_by_name.get(&normalize_name(name)).copied()
+        self.entries.ids_by_name.get(&normalize_name(name)).copied()
     }
 
     #[must_use]
     pub fn get_printing(&self, id: CardPrintingId) -> Option<&CardPrinting> {
-        let definition = self.definition_by_printing.get(&id)?;
-        self.definitions
+        let definition = self.entries.definition_by_printing.get(&id)?;
+        self.entries
+            .definitions
             .get(definition)?
             .printings
             .iter()

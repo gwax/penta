@@ -5,6 +5,8 @@
 //! records provide distinct physical-printing identities without duplicating
 //! gameplay definitions.
 
+use std::sync::LazyLock;
+
 mod behavior;
 mod catalog;
 mod characteristics;
@@ -25,12 +27,22 @@ pub use model::{
     TargetPredicate, TargetSlotDef,
 };
 
+/// The built-in catalog, validated once per process. Construction walks every
+/// definition and printing, and callers used to pay for it on every game — a
+/// training loop opens thousands.
+static BUILT_IN: LazyLock<Result<CardCatalog, CatalogError>> = LazyLock::new(|| {
+    CardCatalog::with_additional_printings(sets::definitions(), sets::additional_printings())
+});
+
 /// Builds the complete card catalog required by the built-in decks.
+///
+/// The returned catalog shares its definitions with every other caller, so
+/// this is cheap enough to call per game.
 ///
 /// # Errors
 ///
 /// Returns [`CatalogError`] if a built-in definition, name, or printing is
 /// accidentally duplicated or references an unknown card.
 pub fn catalog() -> Result<CardCatalog, CatalogError> {
-    CardCatalog::with_additional_printings(sets::definitions(), sets::additional_printings())
+    BUILT_IN.clone()
 }
