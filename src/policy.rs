@@ -135,6 +135,17 @@ impl HandcraftedPolicy {
             .any(|permanent| permanent.id == id && permanent.power.is_some())
     }
 
+    /// Whether an ability's target is attacking or blocking right now, which
+    /// is the only time a until-end-of-turn pump changes anything.
+    fn target_is_fighting(observation: &PlayerObservation, target: Option<Target>) -> bool {
+        let Some(Target::Permanent(id)) = target else {
+            return false;
+        };
+        observation.battlefield.iter().any(|permanent| {
+            permanent.id == id && (permanent.attacking || permanent.blocking.is_some())
+        })
+    }
+
     fn counter_target_score(observation: &PlayerObservation, target: Target) -> i32 {
         match target {
             Target::Spell(id) => observation
@@ -409,6 +420,14 @@ impl HandcraftedPolicy {
             // spend mana, so only the +1/+1 mode stays repeatable.
             Some(CardBehavior::MishrasFactory)
                 if target.is_none() && Self::is_already_a_creature(observation, source) =>
+            {
+                -100
+            }
+            // The +1/+1 costs the Factory its tap, so it only pays for itself
+            // once the creature it feeds is in combat. Pumping earlier — most
+            // often itself — spends the attack it was about to make.
+            Some(CardBehavior::MishrasFactory)
+                if target.is_some() && !Self::target_is_fighting(observation, target) =>
             {
                 -100
             }

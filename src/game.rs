@@ -2020,11 +2020,16 @@ impl Game {
                             }),
                     );
                 }
+                // Payable, not already paid: every other ability is offered
+                // when you can afford it and taps the lands for you. These
+                // three used to appear only once red was already floating,
+                // which meant tapping a Mountain by hand first or never
+                // finding the ability at all.
                 Some(
                     CardBehavior::GoblinBalloonBrigade
                     | CardBehavior::GraniteGargoyle
                     | CardBehavior::DragonWhelp,
-                ) if self.players[player.index()].mana_pool.red > 0 => {
+                ) if self.can_pay_cost(player, ManaCost::new(0, 1), 0) => {
                     actions.push(Action::ActivateAbility {
                         source: permanent.card.id,
                         target: None,
@@ -3830,7 +3835,9 @@ impl Game {
                 }
             }
             Some(CardBehavior::GoblinBalloonBrigade) => {
-                self.players[player.index()].mana_pool.red -= 1;
+                let cost = ManaCost::new(0, 1);
+                self.activate_mana_for_cost(player, cost, 0);
+                pay_cost(&mut self.players[player.index()].mana_pool, cost, 0);
                 if let Some(permanent) = self
                     .battlefield
                     .iter_mut()
@@ -3840,7 +3847,9 @@ impl Game {
                 }
             }
             Some(CardBehavior::GraniteGargoyle) => {
-                self.players[player.index()].mana_pool.red -= 1;
+                let cost = ManaCost::new(0, 1);
+                self.activate_mana_for_cost(player, cost, 0);
+                pay_cost(&mut self.players[player.index()].mana_pool, cost, 0);
                 if let Some(permanent) = self
                     .battlefield
                     .iter_mut()
@@ -3850,7 +3859,9 @@ impl Game {
                 }
             }
             Some(CardBehavior::DragonWhelp) => {
-                self.players[player.index()].mana_pool.red -= 1;
+                let cost = ManaCost::new(0, 1);
+                self.activate_mana_for_cost(player, cost, 0);
+                pay_cost(&mut self.players[player.index()].mana_pool, cost, 0);
                 if let Some(permanent) = self
                     .battlefield
                     .iter_mut()
@@ -6567,6 +6578,70 @@ mod tests {
         );
         pass_priority_pair(&mut game);
         assert_eq!(game.players[1].life, 15);
+    }
+
+    #[test]
+    fn firebreathing_is_offered_while_the_mana_is_still_in_the_land() {
+        // These abilities used to appear only once red was already floating,
+        // so the ability was invisible until you tapped a Mountain by hand —
+        // and every other ability in the game taps for you.
+        for definition in [
+            cards::DRAGON_WHELP,
+            cards::GOBLIN_BALLOON_BRIGADE,
+            cards::GRANITE_GARGOYLE,
+        ] {
+            let mut game = ready_game();
+            let source = creature(10_000, definition, PlayerId::One);
+            let source_id = source.card.id;
+            game.battlefield.push(source);
+            game.battlefield
+                .push(creature(10_001, cards::MOUNTAIN, PlayerId::One));
+            assert_eq!(game.players[0].mana_pool.red, 0);
+
+            let activation = game
+                .legal_actions(PlayerId::One)
+                .into_iter()
+                .find(|action| {
+                    matches!(action, Action::ActivateAbility { source, target: None, .. }
+                        if *source == source_id)
+                })
+                .expect("the ability is offered with an untapped Mountain and an empty pool");
+
+            let before = game
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source_id)
+                .map(|permanent| game.power(permanent));
+            game.apply(PlayerId::One, activation).unwrap();
+            while !game.stack.is_empty() {
+                game.apply(PlayerId::One, Action::PassPriority).unwrap();
+                game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+            }
+
+            assert!(
+                game.battlefield
+                    .iter()
+                    .any(|permanent| permanent.card.definition == cards::MOUNTAIN
+                        && permanent.tapped),
+                "activating tapped the land for you",
+            );
+            assert_eq!(
+                game.players[0].mana_pool.red, 0,
+                "and spent exactly the red it produced",
+            );
+            let after = game
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source_id)
+                .map(|permanent| game.power(permanent));
+            if definition == cards::DRAGON_WHELP {
+                assert_eq!(
+                    after,
+                    before.map(|power| power.map(|value| value + 1)),
+                    "Dragon Whelp grew",
+                );
+            }
+        }
     }
 
     #[test]

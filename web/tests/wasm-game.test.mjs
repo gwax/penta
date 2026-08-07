@@ -1047,7 +1047,7 @@ test("combat damage is only asked about when it is a real choice", async () => {
   solo.free();
 
   // Splitting between several blockers is a real decision and stays asked.
-  const split = new WebGame("GR Aggro", "Robots", "Handcrafted", true, 2094591);
+  const split = new WebGame("GR Aggro", "Robots", "Handcrafted", true, 40990);
   const ask = advance(split, (state) => {
     const asks = state.actions.filter((action) => action.combatDamageAttacker != null);
     return asks.length ? { asks, state } : null;
@@ -1248,7 +1248,7 @@ test("the pass button label matches where the click actually lands", async () =>
   };
   const misses = [];
 
-  for (let game = 0; game < 24; game += 1) {
+  for (let game = 0; game < 40; game += 1) {
     const match = new WebGame(
       decks[game % decks.length],
       decks[(game * 5 + 2) % decks.length],
@@ -1491,6 +1491,58 @@ test("opponent-action snapshots never contain your next draw", async () => {
   assert.ok(turnsChecked >= 3, `checked ${turnsChecked} turns with draws`);
 
   game.free();
+});
+
+test("the bot animates its Factory to attack instead of tapping it to pump itself", async () => {
+  const bytes = await readFile(
+    new URL("../app/wasm/penta_wasm_bg.wasm", import.meta.url),
+  );
+  await init({ module_or_path: bytes });
+
+  // The pump costs the Factory its tap, so aiming it at itself trades the
+  // attack for +1/+1 on a creature that can no longer attack. The bot used to
+  // do this every turn it could.
+  let selfPumps = 0;
+  let attacks = 0;
+  let animations = 0;
+  for (const deck of ["Sligh", "Artifacts", "Robots", "The Deck", "Lions DIB"]) {
+    for (const seed of [37, 74, 148, 296]) {
+      const game = new WebGame("Mono Black", deck, "Handcrafted", true, seed);
+      for (let step = 0; step < 400; step += 1) {
+        const state = JSON.parse(game.state_json());
+        if (state.result) break;
+        for (const beat of state.opponentActions ?? []) {
+          if (/Give Mishra's Factory \+1\/\+1 with Mishra's Factory/.test(beat.label)) {
+            selfPumps += 1;
+          }
+          if (/Make Mishra's Factory a 2\/2/.test(beat.label)) animations += 1;
+          if (/^Attack with Mishra's Factory/.test(beat.label)) attacks += 1;
+        }
+        if (state.decision) {
+          const wanted = Math.max(state.decision.minimum, 1);
+          try {
+            game.choose_decision(
+              state.decision.id,
+              JSON.stringify(state.decision.options.slice(0, wanted).map((o) => o.id)),
+            );
+          } catch { break; }
+          continue;
+        }
+        const actions = state.actions.filter((action) => action.kind !== "danger");
+        const next =
+          actions.find((action) => action.label === "Keep this hand") ??
+          actions.find((action) => action.label.startsWith("Play ")) ??
+          actions.find((action) => action.kind === "pass") ??
+          actions[0];
+        if (!next) break;
+        try { game.act(next.index); } catch { break; }
+      }
+      game.free();
+    }
+  }
+  assert.equal(selfPumps, 0, "a Factory never taps itself to pump itself");
+  assert.ok(animations > 0, `the Factory still becomes a creature, saw ${animations}`);
+  assert.ok(attacks > 0, `and attacks with it, saw ${attacks}`);
 });
 
 test("your own spell resolving is not a beat you have to sit through", async () => {
