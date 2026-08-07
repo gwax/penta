@@ -1,0 +1,94 @@
+name: CI
+
+# Both jobs run the same scripts you run locally, so CI and `./scripts/*.sh`
+# cannot drift apart: if it passes here it passed the way you'd check it.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push supersedes the run in flight for the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Rust formatting, lints, and tests, plus the browser client and its
+  # engine tests. Equivalent to `./scripts/check-all.sh`.
+  check-all:
+    name: engine and web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+
+      # The wasm-bindgen CLI must match the crate exactly or it refuses the
+      # module, so read the version out of the lockfile rather than pinning
+      # it twice and letting the two drift.
+      - name: Read wasm-bindgen version from Cargo.lock
+        id: wasm-bindgen
+        run: |
+          version="$(
+            awk '/^name = "wasm-bindgen"$/ { found = 1; next }
+                 found && /^version = / { gsub(/[",]/, "", $3); print $3; exit }' Cargo.lock
+          )"
+          if [[ -z "$version" ]]; then
+            echo "could not find wasm-bindgen in Cargo.lock" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install wasm-bindgen CLI
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen-cli@${{ steps.wasm-bindgen.outputs.version }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install web dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: web
+
+      # Generates the Git-ignored WASM bindings on the way through.
+      - name: check-all
+        run: ./scripts/check-all.sh
+
+  # The bot-facing surfaces: the C ABI and the Python module each play full
+  # games. Equivalent to `./scripts/check-bindings.sh`.
+  check-bindings:
+    name: bot bindings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          # penta-py is its own workspace, so it needs naming separately.
+          workspaces: |
+            .
+            bindings/penta-py
+
+      - name: check-bindings
+        run: ./scripts/check-bindings.sh
