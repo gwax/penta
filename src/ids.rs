@@ -61,13 +61,21 @@ pub struct PhysicalCardId(pub u32);
 pub struct GameObjectId(pub u32);
 
 /// Compatibility name for callers written before physical cards and game
-/// objects had separate identities.
-#[deprecated(note = "use GameObjectId for actions and observations")]
+/// objects had separate identities. Prefer [`GameObjectId`] in new code.
+///
+/// This is the same type, not a distinct one, so nothing here stops a
+/// protocol 1 caller from carrying an ID across a zone change — which is now
+/// wrong. `#[deprecated]` is deliberately absent: on a `use` re-export the
+/// attribute never reaches callers, and a `type` alias that would carry it
+/// cannot be used as a constructor, so it would break every `CardInstanceId(n)`
+/// in the wild. The migration pressure has to come from the changelog.
 pub use GameObjectId as CardInstanceId;
 
 /// Compatibility name for callers written before stack objects shared the
-/// global game-object identity space.
-#[deprecated(note = "use GameObjectId")]
+/// global game-object identity space. Prefer [`GameObjectId`] in new code.
+///
+/// The same caveat as [`CardInstanceId`] applies: this is an alias, not a
+/// separate type, and it carries no compiler warning.
 pub use GameObjectId as StackObjectId;
 
 /// One of the two players in a game.
