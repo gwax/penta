@@ -1877,6 +1877,50 @@ function displayActionLabel(action: Action, state: GameState) {
 /// The player panel: whose it is, what they have left, and the thing you aim
 /// a Lightning Bolt at. It is deliberately small — a deck name is something
 /// you look up once, and it was costing a full row of the table.
+/// Mana you are holding, written the way the cards write it: one number for
+/// colourless and a lettered pip for each coloured point. Empty is the normal
+/// state, so it shows nothing — but keeps its width, since mana appears while
+/// you are paying for something and the row must not jump as you tap lands.
+function ManaPool({ mana }: { mana: PlayerState["mana"] }) {
+  const coloured = [
+    ["white", mana.white, "W"],
+    ["blue", mana.blue, "U"],
+    ["black", mana.black, "B"],
+    ["red", mana.red, "R"],
+    ["green", mana.green, "G"],
+  ] as const;
+  const spoken = [
+    mana.colorless > 0 ? `${mana.colorless} colourless` : null,
+    ...coloured.map(([name, count]) => (count > 0 ? `${count} ${name}` : null)),
+  ].filter(Boolean);
+  return (
+    <span
+      className="mana-pool card-cost"
+      aria-label={spoken.length ? `Mana pool: ${spoken.join(", ")}` : "Mana pool empty"}
+      title={spoken.length ? `Mana pool: ${spoken.join(", ")}` : "No floating mana"}
+    >
+      {mana.colorless > 0 && <i className="mana-generic">{mana.colorless}</i>}
+      {coloured.flatMap(([name, count, letter]) =>
+        // A pip each, the way a cost is written — until there are more than
+        // will fit, when the colour collapses to one counted pip rather than
+        // growing the panel and squeezing the phase strip beside it.
+        count > 3
+          ? [
+              <i className={`mana-${name}-symbol is-counted`} key={name}>
+                {letter}
+                {count}
+              </i>,
+            ]
+          : Array.from({ length: count }, (_, index) => (
+              <i className={`mana-${name}-symbol`} key={`${name}${index}`}>
+                {letter}
+              </i>
+            )),
+      )}
+    </span>
+  );
+}
+
 function PlayerBar({
   player,
   opponent = false,
@@ -1907,14 +1951,7 @@ function PlayerBar({
         <span title="Library">LIB {player.library}</span>
         <span title="Graveyard">GY {player.graveyard.length}</span>
       </div>
-      <div className="mana-pool" title="Mana pool">
-        {player.mana.white > 0 && <span className="mana-white">W{player.mana.white}</span>}
-        {player.mana.blue > 0 && <span className="mana-blue">U{player.mana.blue}</span>}
-        {player.mana.black > 0 && <span className="mana-black">B{player.mana.black}</span>}
-        <span className="mana-red">{player.mana.red}</span>
-        {player.mana.green > 0 && <span className="mana-green">G{player.mana.green}</span>}
-        <span className="mana-colorless">{player.mana.colorless}</span>
-      </div>
+      <ManaPool mana={player.mana} />
       <div className="life-total">
         <small>LIFE</small>
         <strong>{player.life}</strong>

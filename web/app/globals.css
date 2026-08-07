@@ -688,56 +688,30 @@ button {
   font-size: 11px;
 }
 
+/* Reserved for three pips whether or not any are held, so tapping lands to
+   pay for something does not shove the row it sits in around. */
 .mana-pool {
+  min-width: 52px;
   display: flex;
-  gap: 5px;
+  justify-content: flex-end;
+  gap: 3px;
   margin-left: 8px;
 }
 
-.mana-pool span {
-  width: 21px;
-  height: 21px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: 800;
+.mana-pool i {
+  width: 15px;
+  height: 15px;
+  font-size: 9px;
 }
 
-.mana-red {
-  border: 1px solid #e3755f;
-  color: #ffd5c9;
-  background: #762b22;
-}
-
-.mana-white {
-  border: 1px solid #e8dfbd;
-  color: #3b3527;
-  background: #f4edcf;
-}
-
-.mana-blue {
-  border: 1px solid #6ba7d8;
-  color: #e2f2ff;
-  background: #245b85;
-}
-
-.mana-black {
-  border: 1px solid #756b75;
-  color: #f0e9f0;
-  background: #29242b;
-}
-
-.mana-green {
-  border: 1px solid #75a77e;
-  color: #e1f5e4;
-  background: #285b34;
-}
-
-.mana-colorless {
-  border: 1px solid #a9a18c;
-  color: #292720;
-  background: #c7bfa9;
+/* More of one colour than fits: a pill with the count instead of a row of
+   pips, so the panel keeps its width. */
+.mana-pool i.is-counted {
+  width: auto;
+  min-width: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  letter-spacing: 0.02em;
 }
 
 .life-total {
