@@ -1,5 +1,7 @@
 # penta
 
+[![CI](https://github.com/lacker/penta/actions/workflows/ci.yml/badge.svg)](https://github.com/lacker/penta/actions/workflows/ci.yml)
+
 `penta` is a deterministic, headless simulator for two-player Old School
 Magic: The Gathering, built for writing AI bots against.
 
@@ -214,6 +216,19 @@ skipped when the compiled module and generator version are unchanged.
 cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
+
+## Checks
+
+Two scripts cover everything, and CI runs exactly these on every push and
+pull request rather than restating their steps:
+
+```sh
+./scripts/check-all.sh       # Rust fmt, clippy, tests; web lint, build, tests
+./scripts/check-bindings.sh  # the C ABI and Python module each play full games
+```
+
+CI builds on current stable Rust, which is usually ahead of any given
+developer's toolchain, so a pedantic lint can fire there first.
 
 [ec-rules]: https://www.eternalcentral.com/9394rules/
 [goblins-data]: https://www.tcdecks.net/archetype.php?archetype=Goblins&format=Old+School&src=all
