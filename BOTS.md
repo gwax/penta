@@ -13,7 +13,9 @@ mulligans, mana payment, combat — arrives as entries in that same list.
 The included opponents:
 
 - `random` — picks uniformly among legal actions. The sanity check: if your
-  bot cannot beat noise, something is wrong.
+  bot cannot beat noise, something is wrong. It plays a real, witless game
+  rather than resigning, because nothing a bot can choose ends the game on
+  the spot.
 - `handcrafted` — a rules-based policy that plays lands on curve, attacks,
   blocks, and answers threats. The first real milestone.
 
@@ -47,6 +49,7 @@ while game.result() is None:
     observation = json.loads(game.observe())
     actions = observation["legalActions"]
     choice = actions[0]["index"]          # your bot's decision goes here
+                                          # (nothing in the list resigns)
     game.act(choice)
 print(game.result())                       # "p1", "p2", or "draw"
 ```
@@ -181,10 +184,16 @@ Every entry in `legalActions` has an `index` (what you pass to `act`) and a
 targeting), `ActivateAbility`, `ActivateManaAbility`, `PayLifeForMana`,
 `DeclareAttacker`, `FinishDeclaringAttackers`, `DeclareBlocker`,
 `FinishDeclaringBlockers`, `AssignCombatDamage`, `DiscardCards`,
-`ChooseUntap`, `ChooseDecision`, `CancelDecision`, `PassPriority`,
-`Concede`.
+`ChooseUntap`, `ChooseDecision`, `CancelDecision`, `PassPriority`.
 
-Two things worth knowing:
+Three things worth knowing:
+
+- **Nothing in the list loses on the spot.** Conceding is legal in every
+  state of Magic, but it is strictly dominated for a bot — resigning can
+  only lose a game that playing on might win — so it is not offered here at
+  all. Picking blindly, by index or at random, makes a weak bot rather than
+  an instant loss. (Humans concede through the browser client, which reads
+  the engine's own action list.)
 
 - **Mana is handled for you.** If a `CastSpell` appears in `legalActions`,
   you can afford it; playing it taps lands automatically. Tapping lands by

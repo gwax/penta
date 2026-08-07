@@ -38,6 +38,8 @@ static int play_one(const char *config, int check_json) {
         penta_string_free(observation);
     }
 
+    /* Uniform random over the whole list. Nothing in it resigns, so this
+     * plays a real if witless game rather than ending on turn one. */
     int steps;
     for (steps = 0; steps < 200000; steps++) {
         if (penta_result(game) != -1) break;
@@ -46,30 +48,7 @@ static int play_one(const char *config, int check_json) {
             fprintf(stderr, "FAIL: no legal actions but no result\n");
             return 1;
         }
-        /* Random over every action concedes almost immediately, which tests
-         * nothing. Find Concede's index in the observation and dodge it. */
-        long concede = -1;
-        int32_t seat = penta_decision_seat(game);
-        char *observation = penta_observe_json(game, seat);
-        if (!observation) return fail("penta_observe_json");
-        const char *found = strstr(observation, "\"type\":\"Concede\"");
-        if (found) {
-            /* Keys sort alphabetically, so "index" precedes "type" inside
-             * the same object: back up to the nearest "index": before it. */
-            const char *scan = observation;
-            const char *best = NULL;
-            while ((scan = strstr(scan, "\"index\":")) != NULL && scan < found) {
-                best = scan;
-                scan++;
-            }
-            if (best) concede = atol(best + 8);
-        }
-        penta_string_free(observation);
-
-        uint32_t pick = (uint32_t)(next_rand() % count);
-        if (count > 1 && (long)pick == concede)
-            pick = (pick + 1) % count;
-        if (penta_act(game, pick) != 0)
+        if (penta_act(game, (uint32_t)(next_rand() % count)) != 0)
             return fail("penta_act");
     }
 

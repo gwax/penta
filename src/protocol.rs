@@ -261,19 +261,32 @@ fn result_json(result: GameResult) -> Value {
     }
 }
 
-/// Expands the engine's action list into the protocol's.
+/// Translates the engine's action list into the one bots see.
 ///
-/// The engine lists a pending decision as one template action with empty
-/// `options`, expecting the caller to fill in ids from the decision schema.
-/// Bots act by index, so the protocol expands the template: a pick-exactly-one
-/// decision becomes one concrete action per option, and a multi-pick keeps a
-/// default choice of the first `minimum` options so an index-only bot always
-/// has a legal move. Bots that want a different multi-pick send it through
+/// Two differences from [`PlayerObservation::legal_actions`]:
+///
+/// Conceding is dropped. It is legal in every state, and for a bot it is
+/// strictly dominated — resigning can only lose a game that playing on might
+/// win — so both built-in policies already refuse it and no rational bot
+/// would pick it. Leaving it in made uniform-random exploration resign on
+/// turn one, which is a poor action space for the audience this protocol is
+/// for. Humans still concede through the browser, which reads the engine's
+/// list directly.
+///
+/// Pending decisions are expanded. The engine lists one template action with
+/// empty `options`, expecting the caller to fill in ids from the decision
+/// schema. Bots act by index, so a pick-exactly-one decision becomes one
+/// concrete action per option, and a multi-pick keeps a default choice of the
+/// first `minimum` options so an index-only bot always has a legal move. Bots
+/// that want a different multi-pick send it through
 /// [`BotGame::choose_decision`].
 #[must_use]
 pub fn protocol_actions(observation: &PlayerObservation) -> Vec<Action> {
     let mut actions = Vec::with_capacity(observation.legal_actions.len());
     for action in &observation.legal_actions {
+        if matches!(action, Action::Concede) {
+            continue;
+        }
         match (action, observation.decision.as_ref()) {
             (Action::ChooseDecision { decision, options }, Some(pending))
                 if options.is_empty() && *decision == pending.id =>
@@ -684,6 +697,8 @@ mod tests {
 
     /// A do-nothing bot written the way the docs tell people to write one:
     /// read `legalActions`, prefer the quiet options by their `type` tags.
+    /// Note it never has to avoid anything: nothing in the list loses on
+    /// the spot.
     fn pass_bot(observation: &Value) -> usize {
         let actions = observation["legalActions"].as_array().expect("array");
         for preferred in [
@@ -762,6 +777,53 @@ mod tests {
         // The opponent's hand is a count, never a list of cards.
         assert!(observation["opponentHandSize"].is_u64());
         assert_eq!(observation["hand"].as_array().expect("hand").len(), 7);
+    }
+
+    #[test]
+    fn bots_are_never_offered_the_chance_to_resign() {
+        // Conceding is legal in every state and strictly dominated, so it is
+        // not in the bot's list at all. That makes picking blindly — index
+        // zero, or uniform random — a weak bot rather than an instant loss,
+        // which is what a random baseline has to be worth measuring against.
+        let decks = deck_names();
+        let mut observations = 0_u32;
+        let mut rng = 12_345_u64;
+        for index in 0..12 {
+            let mut game = BotGame::new(
+                decks[index % decks.len()],
+                decks[(index * 7 + 3) % decks.len()],
+                Opponent::External,
+                PlayerId::Two,
+                index as u64 * 101,
+            )
+            .expect("game starts");
+            for _ in 0..1_500 {
+                if game.result().is_some() {
+                    break;
+                }
+                let seat = game.decision_seat().expect("still running");
+                let observation: Value =
+                    serde_json::from_str(&game.observe_json(seat)).expect("valid JSON");
+                let actions = observation["legalActions"].as_array().expect("array");
+                assert!(
+                    !actions.is_empty(),
+                    "removing Concede never empties the list",
+                );
+                for action in actions {
+                    assert_ne!(action["type"], "Concede", "no way to resign by index");
+                }
+                // Uniform random over the whole list, the baseline a new bot
+                // author measures against.
+                rng = rng.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+                let pick = usize::try_from(rng >> 33).unwrap_or(0) % actions.len();
+                game.act(pick).expect("legal index");
+                observations += 1;
+            }
+        }
+        assert!(
+            observations > 2_000,
+            "played enough to be meaningful, saw {observations}",
+        );
     }
 
     #[test]
