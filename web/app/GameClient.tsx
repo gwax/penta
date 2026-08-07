@@ -521,13 +521,26 @@ export function GameClient() {
     >();
     entries.forEach((entry, id) => {
       if (previous.has(id)) return;
-      const match = Array.from(disappearing).find(([, before]) =>
-        isPresentationPredecessor(before, entry),
-      );
-      if (!match) return;
-      const [previousId, snapshot] = match;
-      disappearing.delete(previousId);
-      presentationPredecessors.set(id, { id: previousId, snapshot });
+      // Four identical Savannah Lions all match each other on owner and name,
+      // so taking the first candidate would pick by map order and fly the
+      // wrong one. Take the nearest instead: the shortest glide is both the
+      // likeliest pairing and the least wrong one to look at when it isn't.
+      let nearestId: number | null = null;
+      let nearest: CardPresentationRect | null = null;
+      let shortest = Infinity;
+      for (const [previousId, before] of disappearing) {
+        if (!isPresentationPredecessor(before, entry)) continue;
+        const dx = before.rect.left - entry.rect.left;
+        const dy = before.rect.top - entry.rect.top;
+        const distance = dx * dx + dy * dy;
+        if (distance >= shortest) continue;
+        shortest = distance;
+        nearestId = previousId;
+        nearest = before;
+      }
+      if (nearestId === null || nearest === null) return;
+      disappearing.delete(nearestId);
+      presentationPredecessors.set(id, { id: nearestId, snapshot: nearest });
     });
     const matchedPredecessorIds = new Set(
       Array.from(presentationPredecessors.values(), (predecessor) => predecessor.id),
