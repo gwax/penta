@@ -7,7 +7,7 @@ resolver = "3"
 
 [package]
 name = "penta"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "A deterministic engine for Eternal Central Old School 93/94 Magic"
 license = "Apache-2.0"

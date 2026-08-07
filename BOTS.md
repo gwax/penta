@@ -220,9 +220,21 @@ game, byte for byte — replays, regression tests, and reproducible training
 episodes are free. `(engine version, seed, decks, action list)` is a
 complete record of a game.
 
-Rules behavior is part of the API: pin `engine_version()` alongside any
-trained weights, since a rules fix can change what a trained policy sees.
-`protocol_version()` covers the JSON shapes themselves and changes rarely.
+Two numbers describe what you trained against, and both are worth pinning
+alongside your weights:
+
+- `protocol_version()` covers the JSON shapes and the action space they
+  describe. It bumps when a bot written against the old number could
+  misread the new output — including a change to what appears in
+  `legalActions`, since that shifts every index.
+- `engine_version()` covers rules behavior, which is part of the contract
+  too: a rules fix can change what a trained policy sees even when the
+  shapes hold still.
+
+[CHANGELOG.md](CHANGELOG.md) records what moved between versions and what a
+bot has to do about it. Before 1.0, expect the action space to keep
+settling — reading the `type` tags rather than hardcoding indices costs
+nothing now and survives those changes.
 
 ## What the engine covers, honestly
 

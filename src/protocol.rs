@@ -21,10 +21,15 @@ use crate::{
     PlayerId, PlayerObservation, RandomPolicy, StackObjectKind, Target, WinReason, poc,
 };
 
-/// Bumped whenever the JSON shapes in this module change incompatibly.
-pub const PROTOCOL_VERSION: u32 = 0;
+/// The wire contract: the JSON shapes here and the action space they
+/// describe. Bumped whenever a bot written against the old number could
+/// misread the new output — a renamed field, or a change to what appears in
+/// `legalActions`. Version 1 dropped conceding from the bot's actions.
+pub const PROTOCOL_VERSION: u32 = 1;
 
-/// The engine crate version, for pinning trained bots to rules behavior.
+/// The engine crate version. Rules behavior is part of the contract too: a
+/// fix can change what a trained policy sees even when the shapes hold
+/// still, so pin this alongside any trained weights.
 pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// One shy of the engine's own replay guard, so a runaway game fails here
