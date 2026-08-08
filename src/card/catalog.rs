@@ -187,8 +187,48 @@ impl CardCatalog {
     }
 }
 
+/// Folds a printed card name to the key both the catalog and a lookup use.
+///
+/// Magic prints accented names — Juzám Djinn, Márton Stromgald, Lim-Dûl —
+/// and decklists, search boxes, and bot authors overwhelmingly type them
+/// without the accents. Folding here means the catalog can store the name as
+/// printed while every spelling still resolves to the same card.
 fn normalize_name(name: &str) -> String {
-    name.trim().to_ascii_lowercase()
+    let mut normalized = String::with_capacity(name.len());
+
+    for lowered in name.trim().chars().flat_map(char::to_lowercase) {
+        match ascii_fold(lowered) {
+            Some(replacement) => normalized.push_str(replacement),
+            None => normalized.push(lowered),
+        }
+    }
+
+    normalized
+}
+
+/// The ASCII spelling of one lowercase Latin-1 letter, or `None` when the
+/// character is already the key form.
+///
+/// Ligatures and the letters that conventionally spell out are handled as
+/// strings rather than single characters, so Æther folds to `aether` and not
+/// to `ather` — otherwise typing the unaccented name would stop matching,
+/// which is the whole point of folding.
+fn ascii_fold(lowered: char) -> Option<&'static str> {
+    Some(match lowered {
+        'à' | 'á' | 'â' | 'ã' | 'ä' | 'å' => "a",
+        'æ' => "ae",
+        'ç' => "c",
+        'è' | 'é' | 'ê' | 'ë' => "e",
+        'ì' | 'í' | 'î' | 'ï' => "i",
+        'ð' => "d",
+        'ñ' => "n",
+        'ò' | 'ó' | 'ô' | 'õ' | 'ö' | 'ø' => "o",
+        'ù' | 'ú' | 'û' | 'ü' => "u",
+        'ý' | 'ÿ' => "y",
+        'þ' => "th",
+        'ß' => "ss",
+        _ => return None,
+    })
 }
 
 fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError> {
@@ -1277,5 +1317,62 @@ mod tests {
                 mode: ModeId(0),
             }
         );
+    }
+}
+
+#[cfg(test)]
+mod name_normalization_tests {
+    use super::normalize_name;
+    use crate::card;
+
+    #[test]
+    fn an_accented_name_is_found_by_either_spelling() {
+        let catalog = card::catalog().expect("built-in catalog");
+        let printed = catalog
+            .find_by_name("Juzám Djinn")
+            .expect("the name as printed on the card resolves");
+        let typed = catalog
+            .find_by_name("Juzam Djinn")
+            .expect("the name as players type it resolves");
+
+        assert_eq!(printed, typed);
+        assert_eq!(
+            catalog.get(printed).expect("definition").name,
+            "Juzám Djinn",
+            "the catalog stores the printed name; folding only affects lookup"
+        );
+    }
+
+    #[test]
+    fn folding_spells_out_ligatures_instead_of_dropping_them() {
+        // Æ is the case that a single-character fold gets wrong: mapping it to
+        // "a" would make the unaccented spelling stop matching, which is the
+        // opposite of what folding is for.
+        assert_eq!(normalize_name("Æther Vial"), "aether vial");
+        assert_eq!(normalize_name("Aether Vial"), "aether vial");
+    }
+
+    #[test]
+    fn folding_covers_the_accents_magic_actually_prints() {
+        for (printed, plain) in [
+            ("Juzám Djinn", "Juzam Djinn"),
+            ("Márton Stromgald", "Marton Stromgald"),
+            ("Lim-Dûl's Vault", "Lim-Dul's Vault"),
+            ("Séance", "Seance"),
+            ("Jötun Grunt", "Jotun Grunt"),
+            ("Ærathi Berserker", "Aerathi Berserker"),
+        ] {
+            assert_eq!(
+                normalize_name(printed),
+                normalize_name(plain),
+                "{printed} and {plain} must resolve to the same card"
+            );
+        }
+    }
+
+    #[test]
+    fn normalization_still_trims_and_lowercases() {
+        assert_eq!(normalize_name("  Black Lotus  "), "black lotus");
+        assert_eq!(normalize_name("BLACK LOTUS"), "black lotus");
     }
 }

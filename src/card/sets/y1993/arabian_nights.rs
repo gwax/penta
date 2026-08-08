@@ -35,7 +35,7 @@ pub(in crate::card::sets) static ERHNAM_DJINN: CardRecord = CardRecord::new(
 // Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static JUZAM_DJINN: CardRecord = CardRecord::new(
     cards::JUZAM_DJINN,
-    "Juzam Djinn",
+    "Juzám Djinn",
     CardArt::new("31bf3f14-b5df-498b-a1bb-965885c82401", "Mark Tedin"),
     CardSet::ArabianNights,
     false,
@@ -43,7 +43,7 @@ pub(in crate::card::sets) static JUZAM_DJINN: CardRecord = CardRecord::new(
     CardRules::new(
         CardKind::Creature,
         ManaCost::colored(2, 0, 0, 2, 0, 0),
-        "At your upkeep, Juzam Djinn deals 1 damage to you.",
+        "At your upkeep, Juzám Djinn deals 1 damage to you.",
     )
     .creature(5, 5),
 );
