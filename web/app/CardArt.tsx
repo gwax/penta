@@ -49,6 +49,10 @@ export function CardArt({
           draggable={false}
           loading="lazy"
           decoding="async"
+          // Scryfall needs the card's ID to serve the image; it does not need
+          // to know which page asked, and a game URL carries the seed and both
+          // decklists in its query string.
+          referrerPolicy="no-referrer"
           onError={(event) => {
             event.currentTarget.hidden = true;
             onImageError?.();
