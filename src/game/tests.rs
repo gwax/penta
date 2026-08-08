@@ -3378,3 +3378,117 @@ fn duress_takes_a_noncreature_nonland_card_of_the_casters_choosing() {
     );
     assert_eq!(game.players[1].graveyard.len(), 1);
 }
+
+#[test]
+fn mulch_keeps_the_lands_and_bins_the_rest() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    game.players[0].library.extend([
+        card(10_001, cards::MOUNTAIN, PlayerId::One),
+        card(10_002, cards::LIGHTNING_BOLT, PlayerId::One),
+        card(10_003, cards::MOUNTAIN, PlayerId::One),
+        card(10_004, cards::SAVANNAH_LIONS, PlayerId::One),
+        card(10_005, cards::BLACK_LOTUS, PlayerId::One), // fifth card is untouched
+    ]);
+    let before_hand = game.players[0].hand.len();
+
+    let cast = spell(10_000, cards::MULCH, PlayerId::One, 0);
+    game.resolve_spell_effect(&cast, CardBehavior::Mulch);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        before_hand + 2,
+        "two lands kept"
+    );
+    assert_eq!(game.players[0].graveyard.len(), 2, "two nonlands binned");
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "only the top four were revealed"
+    );
+}
+
+#[test]
+fn grisly_salvage_may_keep_one_creature_or_land() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    game.players[0].library.extend([
+        card(10_001, cards::LIGHTNING_BOLT, PlayerId::One), // not eligible
+        card(10_002, cards::SAVANNAH_LIONS, PlayerId::One), // creature
+        card(10_003, cards::MOUNTAIN, PlayerId::One),       // land
+        card(10_004, cards::BLACK_LOTUS, PlayerId::One),    // not eligible
+        card(10_005, cards::COUNTERSPELL, PlayerId::One),   // not eligible
+    ]);
+
+    let cast = spell(10_000, cards::GRISLY_SALVAGE, PlayerId::One, 0);
+    game.resolve_spell_effect(&cast, CardBehavior::GrislySalvage);
+
+    let decision = game.observe(PlayerId::One).decision.expect("a choice");
+    assert_eq!(decision.options.len(), 2, "the creature and the land");
+    assert_eq!(
+        decision.minimum, 0,
+        "'you may' means keeping nothing is legal"
+    );
+
+    let keep = decision
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(id, _)| id == CardInstanceId(10_003))
+        })
+        .expect("the land is offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![keep],
+        },
+    )
+    .unwrap();
+
+    // A zone change mints a new object id, so the card is identified by what
+    // it is rather than by the id it had in the library.
+    assert_eq!(game.players[0].hand.len(), 1);
+    assert_eq!(
+        game.players[0].hand[0].definition,
+        cards::MOUNTAIN,
+        "the chosen land reached hand"
+    );
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        4,
+        "the other four are binned"
+    );
+    assert!(game.players[0].library.is_empty());
+}
+
+#[test]
+fn grisly_salvage_can_decline_and_bin_everything() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .extend((0..5).map(|i| card(10_100 + i, cards::SAVANNAH_LIONS, PlayerId::One)));
+
+    let cast = spell(10_000, cards::GRISLY_SALVAGE, PlayerId::One, 0);
+    game.resolve_spell_effect(&cast, CardBehavior::GrislySalvage);
+    let decision = game.observe(PlayerId::One).decision.expect("a choice");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("declining is legal");
+
+    assert!(game.players[0].hand.is_empty(), "nothing was kept");
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        5,
+        "and no revealed card was lost on the way"
+    );
+}

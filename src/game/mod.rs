@@ -247,6 +247,12 @@ enum DecisionContinuation {
     Duress {
         victim: PlayerId,
     },
+    /// Holds the revealed cards while the caster decides which to keep; they
+    /// have already left the library, so the continuation must place them all.
+    GrislySalvage {
+        player: PlayerId,
+        revealed: Vec<CardInstance>,
+    },
     Balance {
         task: BalanceTask,
         remaining: Vec<BalanceTask>,
@@ -1621,6 +1627,22 @@ impl Game {
                         vault.tapped = false;
                     }
                 }
+            }
+            DecisionContinuation::GrislySalvage { player, revealed } => {
+                let kept = pending
+                    .observation
+                    .options
+                    .iter()
+                    .find(|option| options.contains(&option.id))
+                    .and_then(|option| option.card)
+                    .map(|(card, _)| card);
+                let (to_hand, to_graveyard): (Vec<_>, Vec<_>) =
+                    revealed.into_iter().partition(|card| Some(card.id) == kept);
+                for card in to_hand {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    self.players[player.index()].hand.push(card);
+                }
+                self.bury_cards(player, to_graveyard);
             }
             DecisionContinuation::Duress { victim } => {
                 let Some(option) = pending
@@ -3540,6 +3562,47 @@ impl Game {
                     );
                 }
             }
+            CardBehavior::Mulch => {
+                let player = object.controller;
+                let revealed = self.take_top_of_library(player, 4);
+                let (lands, rest): (Vec<_>, Vec<_>) = revealed.into_iter().partition(|card| {
+                    self.catalog
+                        .get(card.definition)
+                        .is_some_and(|definition| definition.rules.kind == CardKind::Land)
+                });
+                for card in lands {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    self.players[player.index()].hand.push(card);
+                }
+                self.bury_cards(player, rest);
+            }
+            CardBehavior::GrislySalvage => {
+                let player = object.controller;
+                let revealed = self.take_top_of_library(player, 5);
+                let eligible = revealed
+                    .iter()
+                    .filter(|card| {
+                        self.catalog.get(card.definition).is_some_and(|definition| {
+                            let kind = definition.rules.kind;
+                            kind.is_creature() || kind == CardKind::Land
+                        })
+                    })
+                    .cloned()
+                    .collect::<Vec<_>>();
+                let options = self.card_decision_options(&eligible, DecisionZone::Library);
+                // "You may put ... into your hand": taking nothing is a real
+                // choice, so the minimum is zero even when something qualifies.
+                self.queue_decision(
+                    player,
+                    "Put a creature or land card into your hand",
+                    DecisionVisibility::Public,
+                    DecisionPreference::HigherCardValue,
+                    0..=1,
+                    false,
+                    options,
+                    DecisionContinuation::GrislySalvage { player, revealed },
+                );
+            }
             CardBehavior::HymnToTourach => self.discard_random(object.controller.opponent(), 2),
             CardBehavior::MindTwist => {
                 self.discard_random(object.controller.opponent(), object.x());
@@ -3572,6 +3635,23 @@ impl Game {
                 );
             }
             _ => {}
+        }
+    }
+
+    /// Lifts the top `count` cards off a library, fewer if it is short.
+    /// Revealing them is informational only; nothing yet keys off having seen
+    /// a card, so the mechanical effect is where they end up.
+    fn take_top_of_library(&mut self, player: PlayerId, count: usize) -> Vec<CardInstance> {
+        let library = &mut self.players[player.index()].library;
+        let taken = count.min(library.len());
+        library.drain(..taken).collect()
+    }
+
+    /// Sends cards to their owner's graveyard in the order given.
+    fn bury_cards(&mut self, player: PlayerId, cards: Vec<CardInstance>) {
+        for card in cards {
+            let (card, _zone_change) = self.zone_change_card(card);
+            self.players[player.index()].graveyard.push(card);
         }
     }
 

@@ -254,7 +254,7 @@ pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static MULCH: CardRecord = CardRecord::new(
     cards::MULCH,
     "Mulch",
@@ -267,8 +267,7 @@ pub(in crate::card::sets) static MULCH: CardRecord = CardRecord::new(
         ManaCost::colored(1, 0, 0, 0, 0, 1),
         "Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard.",
     )
-    .type_line("Sorcery")
-    .metadata_only(),
+    .type_line("Sorcery"),
 );
 
 // Implementation status: Baseline creature is playable; card-specific printed abilities are pending.
