@@ -1924,9 +1924,12 @@ mod tests {
         assert_eq!(vault["implementationStatus"], "partial");
         assert_eq!(vault["parts"][0]["implementationStatus"], "partial");
 
-        let act = find("Blasphemous Act");
-        assert_eq!(act["implementationStatus"], "metadataOnly");
-        assert_eq!(act["parts"][0]["implementationStatus"], "metadataOnly");
+        // Any card still carrying legacy aggregate rules text will do here;
+        // this one is expected to migrate eventually, and the assertion should
+        // then be repointed rather than deleted.
+        let legacy = find("Domri Rade");
+        assert_eq!(legacy["implementationStatus"], "metadataOnly");
+        assert_eq!(legacy["parts"][0]["implementationStatus"], "metadataOnly");
 
         assert!(cards.iter().all(|card| {
             card["playOptions"].as_array().is_some_and(|options| {

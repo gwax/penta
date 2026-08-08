@@ -6,8 +6,8 @@ use crate::card::{
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
     CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, DoubleFacedKind,
     EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaCost, ManaKindDef,
-    ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef, ZoneKind,
-    abilities, cards,
+    ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef, ValueDef,
+    ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 
@@ -34,11 +34,23 @@ pub(in crate::card::sets) static BLASPHEMOUS_ACT: CardRecord = CardRecord::new(
     "Blasphemous Act",
     CardArt::new("509ce648-fb76-486d-8b39-183e368b7cb7", "Daarken"),
     CardSet::Innistrad,
-    CardRules::new_sorcery(
-        ManaCost::colored(8, 0, 0, 0, 1, 0),
-        "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature.",
-    )
-    .metadata_only(),
+    CardRules::new_sorcery(ManaCost::colored(8, 0, 0, 0, 1, 0), "").with_abilities(&[
+        AbilityDef::not_implemented(
+            "This spell costs {1} less to cast for each creature on the battlefield.",
+            "Cost reduction that scales with the board is not implemented, so the spell always costs its printed {8}{R}.",
+        ),
+        AbilityDef::spell(
+            "Blasphemous Act deals 13 damage to each creature.",
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                amount: ValueDef::Constant(13),
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CLIFFTOP_RETREAT: CardRecord = CardRecord::new(
@@ -339,11 +351,19 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
     "Think Twice",
     CardArt::new("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco"),
     CardSet::Innistrad,
-    CardRules::new_instant(
-        ManaCost::colored(1, 0, 1, 0, 0, 0),
-        "Draw a card.\nFlashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-    )
-    .metadata_only(),
+    CardRules::new_instant(ManaCost::colored(1, 0, 1, 0, 0, 0), "").with_abilities(&[
+        AbilityDef::spell(
+            "Draw a card.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::not_implemented(
+            "Flashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+            "Casting from the graveyard for a flashback cost is not implemented.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(

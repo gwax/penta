@@ -2,9 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityImplementationDef, BasicLandType, CardArt, CardRules, CardSet,
-    CardSupertype, EffectDef, LandEntry, ManaCost, abilities, cards,
+    AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, BasicLandType,
+    CardArt, CardRules, CardSet, CardSupertype, EffectDef, EffectRecipientDef, LandEntry, ManaCost,
+    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
+use crate::ids::TargetSlotId;
 
 pub(in crate::card::sets) static ASSEMBLE_THE_LEGION: CardRecord = CardRecord::new(
     cards::ASSEMBLE_THE_LEGION,
@@ -162,10 +164,38 @@ pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord:
         &["Spirit", "Advisor"],
         5,
         5,
-        "When Obzedat enters, target opponent loses 2 life and you gain 2 life.\nAt the beginning of your end step, you may exile Obzedat. If you do, return it to the battlefield under its owner's control at the beginning of your next upkeep. It gains haste.",
+        "",
     )
     .with_supertype(CardSupertype::Legendary)
-    .metadata_only(),
+    .with_abilities(&[
+        AbilityDef::triggered(
+            "When Obzedat enters, target opponent loses 2 life and you gain 2 life.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::Sequence(&[
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    amount: ValueDef::Constant(2),
+                },
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(2),
+                },
+            ]),
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "opponent",
+            AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+        )]),
+        AbilityDef::not_implemented(
+            "At the beginning of your end step, you may exile Obzedat. If you do, return it to the battlefield under its owner's control at the beginning of your next upkeep. It gains haste.",
+            "Exiling a permanent and returning it on a later turn is not implemented.",
+        ),
+    ]),
 );
 
 // Implementation status: partial — the pay-life choice and explicit mana abilities run, but

@@ -7334,3 +7334,82 @@ fn thragtusk_gains_five_life_when_it_enters() {
     assert_eq!(game.players[0].life, 25);
     assert_eq!(game.battlefield.len(), 1);
 }
+
+#[test]
+fn think_twice_draws_a_card() {
+    let mut game = ready_game();
+    let spell = card(10_001, cards::THINK_TWICE, PlayerId::One);
+    game.players[0].hand.push(spell.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+    let before = game.players[0].library.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_action(spell.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[0].library.len(), before - 1);
+    assert_eq!(game.players[0].hand.len(), 1);
+}
+
+#[test]
+fn blasphemous_act_burns_down_both_sides() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SERRA_ANGEL, PlayerId::One));
+    game.battlefield
+        .push(creature(10_001, cards::JUZAM_DJINN, PlayerId::Two));
+    // A land is not a creature and must survive.
+    game.battlefield
+        .push(creature(10_002, cards::MOUNTAIN, PlayerId::Two));
+    let spell = card(10_003, cards::BLASPHEMOUS_ACT, PlayerId::One);
+    game.players[0].hand.push(spell.clone());
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 8;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(spell.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.battlefield.len(), 1, "only the land is left");
+    assert_eq!(game.battlefield[0].card.definition, cards::MOUNTAIN);
+}
+
+#[test]
+fn obzedat_drains_the_opponent_when_it_enters() {
+    let mut game = ready_game();
+    let obzedat = card(10_001, cards::OBZEDAT_GHOST_COUNCIL, PlayerId::One);
+    game.players[0].hand.push(obzedat.clone());
+    game.players[0].mana_pool.white = 2;
+    game.players[0].mana_pool.black = 2;
+    game.players[0].mana_pool.colorless = 1;
+
+    // The creature spell itself takes no targets; the entry trigger picks its
+    // own when it goes on the stack.
+    game.apply(
+        PlayerId::One,
+        cast_action(obzedat.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    if let Some(decision) = game.observe(PlayerId::One).decision {
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![decision.options[0].id],
+            },
+        )
+        .unwrap();
+    }
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[1].life, 18);
+    assert_eq!(game.players[0].life, 22);
+}
