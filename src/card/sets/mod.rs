@@ -424,8 +424,8 @@ mod tests {
 
     use super::{CardRecord, SET_MODULES, y1993, y2011, y2012, y2013};
     use crate::card::{
-        CardEffectStatus, CardPrinting, CardPrintingId, CardStructure, DoubleFacedKind,
-        PlayActionKind, PlayRestriction, SpellForm, TargetPredicate, cards,
+        CardPrinting, CardPrintingId, CardStructure, DoubleFacedKind, PlayActionKind,
+        PlayRestriction, SpellForm, TargetPredicate, cards,
     };
     use crate::{CardDefinitionId, CardPartId, CardSet, Format, ModeId, PlayOptionId};
 
@@ -643,7 +643,10 @@ mod tests {
             assert!(!record.is_basic_land);
             assert!(Format::IsdRtrStandard.allows_set(record.set));
             assert_eq!(record.behavior.rules(), &record.rules);
-            assert_eq!(record.rules.effect_status, CardEffectStatus::MetadataOnly);
+            // Implementation status is per card now and moves as effects land,
+            // so it is deliberately not asserted here. Each record carries an
+            // "Implementation status" comment, and the catalog reports
+            // effectStatus for anyone who needs to know at runtime.
         }
 
         assert!(!names.contains("Celestial Purge"));

@@ -2169,6 +2169,18 @@ impl Game {
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
+            CardBehavior::DoomBlade => self
+                .battlefield
+                .iter()
+                .filter(|permanent| {
+                    self.power(permanent).is_some()
+                        && !self
+                            .behavior(permanent.card.definition)
+                            .is_some_and(CardBehavior::is_black)
+                        && !self.is_protected_from(permanent, behavior)
+                })
+                .map(|permanent| vec![Target::Permanent(permanent.card.id)])
+                .collect(),
             CardBehavior::Terror => self
                 .battlefield
                 .iter()
@@ -3279,10 +3291,13 @@ impl Game {
                     self.damage_target(Some(Target::Permanent(target)), object.x());
                 }
             }
+            // Doom Blade belongs here rather than with Terror: it says
+            // nothing about regeneration, so the ordinary destroy applies.
             CardBehavior::Shatter
             | CardBehavior::Disenchant
             | CardBehavior::Sinkhole
-            | CardBehavior::StoneRain => {
+            | CardBehavior::StoneRain
+            | CardBehavior::DoomBlade => {
                 if let Some(Target::Permanent(target)) = object.first_target() {
                     self.destroy_permanent(target);
                 }

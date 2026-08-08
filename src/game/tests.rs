@@ -3127,3 +3127,45 @@ fn firebreathing_is_offered_while_the_mana_is_still_in_the_land() {
         }
     }
 }
+
+#[test]
+fn doom_blade_destroys_a_nonblack_creature_but_not_a_black_one() {
+    let mut game = ready_game();
+    game.battlefield.extend([
+        creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two),
+        creature(10_002, cards::JUZAM_DJINN, PlayerId::Two),
+    ]);
+
+    let named: Vec<_> = game
+        .legal_target_lists(CardBehavior::DoomBlade, 0, PlayerId::One, None)
+        .into_iter()
+        .filter_map(|choice| match choice.first() {
+            Some(Target::Permanent(id)) => Some(*id),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        named.contains(&CardInstanceId(10_001)),
+        "the white creature is a legal target"
+    );
+    assert!(
+        !named.contains(&CardInstanceId(10_002)),
+        "Juzam Djinn is black, so Doom Blade cannot touch it"
+    );
+
+    let cast = spell_with_targets(
+        10_003,
+        cards::DOOM_BLADE,
+        PlayerId::One,
+        vec![Target::Permanent(CardInstanceId(10_001))],
+        0,
+    );
+    game.resolve_spell_effect(&cast, CardBehavior::DoomBlade);
+
+    assert_eq!(game.battlefield.len(), 1, "only the black creature is left");
+    assert_eq!(
+        game.battlefield[0].card.definition,
+        cards::JUZAM_DJINN,
+        "and it is the one Doom Blade could not target"
+    );
+}

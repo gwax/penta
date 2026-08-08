@@ -59,7 +59,7 @@ pub(in crate::card::sets) static CELESTIAL_FLARE: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Metadata only; this spell is withheld from legal actions.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static DOOM_BLADE: CardRecord = CardRecord::new(
     cards::DOOM_BLADE,
     "Doom Blade",
@@ -72,8 +72,7 @@ pub(in crate::card::sets) static DOOM_BLADE: CardRecord = CardRecord::new(
         ManaCost::colored(1, 0, 0, 1, 0, 0),
         "Destroy target nonblack creature.",
     )
-    .type_line("Instant")
-    .metadata_only(),
+    .type_line("Instant"),
 );
 
 // Implementation status: Baseline creature casting/combat and declaratively modeled traits are active; remaining printed abilities are pending.
