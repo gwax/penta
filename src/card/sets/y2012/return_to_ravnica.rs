@@ -400,7 +400,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static SPHINXS_REVELATION: CardRecord = CardRecord::new(
     cards::SPHINXS_REVELATION,
     "Sphinx's Revelation",
@@ -413,8 +413,7 @@ pub(in crate::card::sets) static SPHINXS_REVELATION: CardRecord = CardRecord::ne
         ManaCost::variable(0, 1, 2, 0, 0, 0, 1),
         "You gain X life and draw X cards.",
     )
-    .type_line("Instant")
-    .metadata_only(),
+    .type_line("Instant"),
 );
 
 // Implementation status: Land types and mana production are active; entry currently takes the tapped/no-life branch.

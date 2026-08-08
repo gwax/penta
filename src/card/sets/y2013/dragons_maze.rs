@@ -63,7 +63,7 @@ pub(in crate::card::sets) static GAZE_OF_GRANITE: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Metadata only; this spell is withheld from legal actions.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static PUTREFY: CardRecord = CardRecord::new(
     cards::PUTREFY,
     "Putrefy",
@@ -76,8 +76,7 @@ pub(in crate::card::sets) static PUTREFY: CardRecord = CardRecord::new(
         ManaCost::colored(1, 0, 0, 1, 0, 1),
         "Destroy target artifact or creature. It can't be regenerated.",
     )
-    .type_line("Instant")
-    .metadata_only(),
+    .type_line("Instant"),
 );
 
 // Implementation status: Baseline creature casting/combat and declaratively modeled traits are active; remaining printed abilities are pending.
@@ -238,7 +237,7 @@ pub(in crate::card::sets) static VOICE_OF_RESURGENCE: CardRecord = CardRecord::n
     .metadata_only(),
 );
 
-// Implementation status: Metadata only; this spell is withheld from legal actions.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static WARLEADERS_HELIX: CardRecord = CardRecord::new(
     cards::WARLEADERS_HELIX,
     "Warleader's Helix",
@@ -251,8 +250,7 @@ pub(in crate::card::sets) static WARLEADERS_HELIX: CardRecord = CardRecord::new(
         ManaCost::colored(2, 1, 0, 0, 1, 0),
         "Warleader's Helix deals 4 damage to any target and you gain 4 life.",
     )
-    .type_line("Instant")
-    .metadata_only(),
+    .type_line("Instant"),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

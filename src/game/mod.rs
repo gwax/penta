@@ -2169,7 +2169,8 @@ impl Game {
             | CardBehavior::ChainLightning
             | CardBehavior::GoblinGrenade
             | CardBehavior::DrainLife
-            | CardBehavior::PsionicBlast => self
+            | CardBehavior::PsionicBlast
+            | CardBehavior::WarleadersHelix => self
                 .damage_targets()
                 .into_iter()
                 .map(|target| vec![target])
@@ -2218,6 +2219,15 @@ impl Game {
                 .iter()
                 .filter(|permanent| {
                     self.power(permanent).is_some() && !self.is_protected_from(permanent, behavior)
+                })
+                .map(|permanent| vec![Target::Permanent(permanent.card.id)])
+                .collect(),
+            CardBehavior::Putrefy => self
+                .battlefield
+                .iter()
+                .filter(|permanent| {
+                    (self.power(permanent).is_some() || self.is_artifact_permanent(permanent))
+                        && !self.is_protected_from(permanent, behavior)
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
@@ -3280,6 +3290,11 @@ impl Game {
                     self.lose_life(player, 2);
                 }
             }
+            CardBehavior::SphinxsRevelation => {
+                let player = object.controller;
+                self.gain_life(player, object.x());
+                self.draw_cards(player, object.x());
+            }
             CardBehavior::Braingeyser => {
                 if let Some(Target::Player(player)) = object.first_target() {
                     self.draw_cards(player, object.x());
@@ -3302,6 +3317,10 @@ impl Game {
             }
             CardBehavior::LightningBolt => {
                 self.damage_target(object.first_target(), 3);
+            }
+            CardBehavior::WarleadersHelix => {
+                self.damage_target(object.first_target(), 4);
+                self.gain_life(object.controller, 4);
             }
             CardBehavior::GiantGrowth => {
                 if let Some(Target::Permanent(target)) = object.first_target()
@@ -3394,7 +3413,7 @@ impl Game {
                     self.destroy_permanent(target);
                 }
             }
-            CardBehavior::Terror => {
+            CardBehavior::Terror | CardBehavior::Putrefy => {
                 if let Some(Target::Permanent(target)) = object.first_target() {
                     self.destroy_permanent_without_regeneration(target);
                 }
@@ -5463,6 +5482,10 @@ impl Game {
         self.untap_pending = false;
         self.priority = self.active_player;
         self.finish_untap_choices();
+    }
+
+    fn gain_life(&mut self, player: PlayerId, amount: u16) {
+        self.players[player.index()].life += i16::try_from(amount).unwrap_or(i16::MAX);
     }
 
     /// Life loss that is not damage: no source deals it, nothing that

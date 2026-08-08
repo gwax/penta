@@ -75,7 +75,7 @@ pub(in crate::card::sets) static DOOM_BLADE: CardRecord = CardRecord::new(
     .type_line("Instant"),
 );
 
-// Implementation status: Baseline creature casting/combat and declaratively modeled traits are active; remaining printed abilities are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static ELVISH_MYSTIC: CardRecord = CardRecord::new(
     cards::ELVISH_MYSTIC,
     "Elvish Mystic",
@@ -90,8 +90,7 @@ pub(in crate::card::sets) static ELVISH_MYSTIC: CardRecord = CardRecord::new(
     )
     .type_line("Creature — Elf Druid")
     .creature(1, 1)
-    .produces([false, false, false, false, true, false])
-    .metadata_only(),
+    .produces([false, false, false, false, true, false]),
 );
 
 // Implementation status: Land entry and mana production are active; other printed abilities are pending.

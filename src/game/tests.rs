@@ -3492,3 +3492,97 @@ fn grisly_salvage_can_decline_and_bin_everything() {
         "and no revealed card was lost on the way"
     );
 }
+
+#[test]
+fn putrefy_kills_a_creature_or_an_artifact_without_regeneration() {
+    let mut game = ready_game();
+    game.battlefield.extend([
+        creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two),
+        creature(10_002, cards::BLACK_LOTUS, PlayerId::Two), // artifact
+        creature(10_003, cards::MOUNTAIN, PlayerId::Two),    // land: neither
+    ]);
+
+    let named: Vec<_> = game
+        .legal_target_lists(CardBehavior::Putrefy, 0, PlayerId::One, None)
+        .into_iter()
+        .filter_map(|choice| match choice.first() {
+            Some(Target::Permanent(id)) => Some(*id),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        named.len(),
+        2,
+        "the creature and the artifact, not the land"
+    );
+
+    let cast = spell_with_targets(
+        10_004,
+        cards::PUTREFY,
+        PlayerId::One,
+        vec![Target::Permanent(CardInstanceId(10_002))],
+        0,
+    );
+    game.resolve_spell_effect(&cast, CardBehavior::Putrefy);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == CardInstanceId(10_002)),
+        "the artifact was destroyed"
+    );
+}
+
+#[test]
+fn warleaders_helix_burns_and_gains_in_one_resolution() {
+    let mut game = ready_game();
+    let before = game.players[0].life;
+
+    let cast = spell_with_targets(
+        10_000,
+        cards::WARLEADERS_HELIX,
+        PlayerId::One,
+        vec![Target::Player(PlayerId::Two)],
+        0,
+    );
+    game.resolve_spell_effect(&cast, CardBehavior::WarleadersHelix);
+
+    assert_eq!(game.players[1].life, 16, "four damage to the opponent");
+    assert_eq!(game.players[0].life, before + 4, "and four life to you");
+}
+
+#[test]
+fn sphinxs_revelation_scales_life_and_cards_with_x() {
+    let mut game = ready_game();
+    let before_life = game.players[0].life;
+    let before_hand = game.players[0].hand.len();
+
+    let cast = spell(10_000, cards::SPHINXS_REVELATION, PlayerId::One, 3);
+    game.resolve_spell_effect(&cast, CardBehavior::SphinxsRevelation);
+
+    assert_eq!(game.players[0].life, before_life + 3);
+    assert_eq!(game.players[0].hand.len(), before_hand + 3);
+}
+
+#[test]
+fn the_mana_creatures_tap_for_their_colour() {
+    // Their whole printed text is a mana ability the engine already models,
+    // so they are complete rather than staged.
+    for (definition, expected) in [
+        (cards::AVACYNS_PILGRIM, ManaColor::White),
+        (cards::ELVISH_MYSTIC, ManaColor::Green),
+    ] {
+        let mut game = ready_game();
+        game.battlefield
+            .push(creature(10_001, definition, PlayerId::One));
+        assert!(
+            game.legal_actions(PlayerId::One)
+                .iter()
+                .any(|action| matches!(
+                    action,
+                    Action::ActivateManaAbility { color, .. } if *color == expected
+                )),
+            "{definition:?} taps for {expected:?}"
+        );
+    }
+}

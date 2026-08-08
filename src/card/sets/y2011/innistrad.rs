@@ -7,7 +7,7 @@ use crate::card::{
 };
 use crate::ids::{CardPartId, PlayOptionId};
 
-// Implementation status: Baseline creature and printed mana ability are active.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static AVACYNS_PILGRIM: CardRecord = CardRecord::new(
     cards::AVACYNS_PILGRIM,
     "Avacyn's Pilgrim",
@@ -25,8 +25,7 @@ pub(in crate::card::sets) static AVACYNS_PILGRIM: CardRecord = CardRecord::new(
     )
     .type_line("Creature — Human Monk")
     .creature(1, 1)
-    .produces([true, false, false, false, false, false])
-    .metadata_only(),
+    .produces([true, false, false, false, false, false]),
 );
 
 // Implementation status: Spell is withheld from play; printed effects are pending.
