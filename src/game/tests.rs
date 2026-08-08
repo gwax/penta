@@ -1002,6 +1002,48 @@ fn demonic_tutor_exposes_a_library_choice_then_shuffles() {
 }
 
 #[test]
+fn a_tutor_with_nothing_to_find_leaves_a_legal_action() {
+    // An empty library used to produce a decision asking for exactly one of
+    // zero options, and not cancellable. `is_legal` rejects a ChooseDecision
+    // carrying fewer than `minimum` options, so no legal action existed and
+    // the game deadlocked -- every policy stalls, having nothing to return.
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    let tutor = spell(10_000, cards::DEMONIC_TUTOR, PlayerId::One, 0);
+
+    game.resolve_spell_effect(&tutor, CardBehavior::DemonicTutor);
+
+    let observation = game.observe(PlayerId::One);
+    if let Some(decision) = observation.decision.as_ref() {
+        assert!(
+            decision.minimum <= decision.options.len(),
+            "a decision must never ask for more than it offers: \
+             minimum={} options={}",
+            decision.minimum,
+            decision.options.len(),
+        );
+    }
+    assert!(
+        !observation.legal_actions.is_empty(),
+        "an empty library must still leave the player something to do"
+    );
+
+    // The player resolves it by finding nothing, and the game moves on.
+    let decision = observation.decision.expect("the tutor still asks");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("choosing nothing from nothing is legal");
+
+    assert!(game.pending_decisions.is_empty());
+    assert!(game.players[0].hand.is_empty(), "nothing was found");
+}
+
+#[test]
 fn armageddon_destroys_every_land_but_not_creatures() {
     let mut game = ready_game();
     game.battlefield.extend([

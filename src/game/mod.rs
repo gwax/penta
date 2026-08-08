@@ -933,6 +933,16 @@ impl Game {
         options: Vec<DecisionOption>,
         continuation: DecisionContinuation,
     ) {
+        // A player can only choose from what is there. Asking for a minimum
+        // the options cannot supply leaves no legal `ChooseDecision`, because
+        // `is_legal` requires at least `minimum` of them — and when the
+        // decision is also not cancellable, the game has no legal action at
+        // all and deadlocks. Demonic Tutor did exactly that on an empty
+        // library. Magic resolves as much of an effect as it can, so lower the
+        // requirement to what exists and let the continuation take it from
+        // there; each one already handles being handed nothing.
+        let minimum = (*bounds.start()).min(options.len());
+
         let id = self.next_decision_id;
         self.next_decision_id = self.next_decision_id.saturating_add(1);
         self.pending_decisions.push(PendingDecision {
@@ -942,8 +952,8 @@ impl Game {
                 prompt: prompt.into(),
                 visibility,
                 preference,
-                minimum: *bounds.start(),
-                maximum: *bounds.end(),
+                minimum,
+                maximum: (*bounds.end()).max(minimum),
                 cancellable,
                 options,
             },
