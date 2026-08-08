@@ -2232,6 +2232,23 @@ impl Game {
                 })
                 .map(|object| vec![Target::Spell(object.id)])
                 .collect(),
+            // Both read the spell's kind off its chosen play option, so a
+            // split or modal card counts as whatever it was actually cast as.
+            CardBehavior::Negate | CardBehavior::EssenceScatter => self
+                .stack
+                .iter()
+                .filter(|object| {
+                    object.kind == StackObjectKind::Spell
+                        && self.stack_spell_kind(object).is_some_and(|kind| {
+                            if behavior == CardBehavior::EssenceScatter {
+                                kind.is_creature()
+                            } else {
+                                !kind.is_creature()
+                            }
+                        })
+                })
+                .map(|object| vec![Target::Spell(object.id)])
+                .collect(),
             CardBehavior::Counterspell | CardBehavior::ManaDrain => self
                 .stack
                 .iter()
@@ -3373,6 +3390,11 @@ impl Game {
                 Some(Target::Permanent(target)) => self.destroy_permanent(target),
                 Some(Target::Player(_)) | None => {}
             },
+            CardBehavior::Negate | CardBehavior::EssenceScatter => {
+                if let Some(Target::Spell(target)) = object.first_target() {
+                    self.counter_spell(target);
+                }
+            }
             CardBehavior::BlueElementalBlast => match object.first_target() {
                 Some(Target::Spell(target)) => self.counter_spell(target),
                 Some(Target::Permanent(target)) => self.destroy_permanent(target),

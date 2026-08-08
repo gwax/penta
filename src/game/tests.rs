@@ -3169,3 +3169,58 @@ fn doom_blade_destroys_a_nonblack_creature_but_not_a_black_one() {
         "and it is the one Doom Blade could not target"
     );
 }
+
+#[test]
+fn negate_and_essence_scatter_split_the_stack_by_card_kind() {
+    let mut game = ready_game();
+    // A creature spell and a noncreature spell, both waiting to resolve.
+    game.stack
+        .push(spell(10_001, cards::SAVANNAH_LIONS, PlayerId::Two, 0));
+    game.stack
+        .push(spell(10_002, cards::LIGHTNING_BOLT, PlayerId::Two, 0));
+
+    let spells_hit = |game: &Game, behavior| -> Vec<StackObjectId> {
+        game.legal_target_lists(behavior, 0, PlayerId::One, None)
+            .into_iter()
+            .filter_map(|choice| match choice.first() {
+                Some(Target::Spell(id)) => Some(*id),
+                _ => None,
+            })
+            .collect()
+    };
+
+    let scatter = spells_hit(&game, CardBehavior::EssenceScatter);
+    assert_eq!(
+        scatter,
+        vec![StackObjectId(10_001)],
+        "Essence Scatter sees only the creature spell"
+    );
+    let negate = spells_hit(&game, CardBehavior::Negate);
+    assert_eq!(
+        negate,
+        vec![StackObjectId(10_002)],
+        "Negate sees only the noncreature spell"
+    );
+
+    let counter = spell_with_targets(
+        10_003,
+        cards::NEGATE,
+        PlayerId::One,
+        vec![Target::Spell(StackObjectId(10_002))],
+        0,
+    );
+    game.resolve_spell_effect(&counter, CardBehavior::Negate);
+    assert!(
+        !game
+            .stack
+            .iter()
+            .any(|object| object.id == StackObjectId(10_002)),
+        "the countered spell left the stack"
+    );
+    assert!(
+        game.stack
+            .iter()
+            .any(|object| object.id == StackObjectId(10_001)),
+        "and the creature spell is untouched"
+    );
+}

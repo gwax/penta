@@ -76,7 +76,7 @@ pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static ESSENCE_SCATTER: CardRecord = CardRecord::new(
     cards::ESSENCE_SCATTER,
     "Essence Scatter",
@@ -89,8 +89,7 @@ pub(in crate::card::sets) static ESSENCE_SCATTER: CardRecord = CardRecord::new(
         ManaCost::colored(1, 0, 1, 0, 0, 0),
         "Counter target creature spell.",
     )
-    .type_line("Instant")
-    .metadata_only(),
+    .type_line("Instant"),
 );
 
 // Implementation status: Spell is withheld from play; printed effects are pending.
@@ -185,7 +184,7 @@ pub(in crate::card::sets) static MUTILATE: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static NEGATE: CardRecord = CardRecord::new(
     cards::NEGATE,
     "Negate",
@@ -198,8 +197,7 @@ pub(in crate::card::sets) static NEGATE: CardRecord = CardRecord::new(
         ManaCost::colored(1, 0, 1, 0, 0, 0),
         "Counter target noncreature spell.",
     )
-    .type_line("Instant")
-    .metadata_only(),
+    .type_line("Instant"),
 );
 
 // Implementation status: Spell is withheld from play; printed effects are pending.
