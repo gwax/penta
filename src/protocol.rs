@@ -32,17 +32,13 @@ use crate::{
 /// misread the new output — a renamed field, or a change to what appears in
 /// `legalActions`. Version 1 dropped conceding from the bot's actions. Version
 /// 2 added formats, game-object identity, and structured casting choices.
-/// Version 3 identifies trigger procedures and triggered stack objects.
-/// Version 4 identifies the exact printed, intrinsic, or granted mana ability
-/// selected by an activation.
-/// Version 5 distinguishes an absent mana cost from a printed `{0}` cost in
-/// catalog JSON.
-/// Version 6 exposes clause-derived implementation coverage and stops exposing
-/// the compatibility execution gate as card metadata.
-/// Version 7 distinguishes a granted ability's effective source definition,
-/// source clause, and grant site instead of presenting any of them as an ID on
-/// the affected object.
-pub const PROTOCOL_VERSION: u32 = 7;
+/// Version 3 identifies trigger procedures and triggered stack objects; names
+/// the exact printed, intrinsic, or granted ability selected by an activation;
+/// distinguishes no mana cost from a printed `{0}`; exposes clause-derived
+/// implementation coverage; and preserves structural provenance for granted
+/// abilities. These changes form one compatibility boundary even though they
+/// were developed across several commits.
+pub const PROTOCOL_VERSION: u32 = 3;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold

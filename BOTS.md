@@ -5,7 +5,7 @@ ships Eternal Central Old School 93/94 and the final pre-Theros ISD–RTR
 Standard format. This guide is for writing a program that plays it: from
 Python, C, C++, or Rust, against the included bots or against itself.
 
-This guide describes protocol 2, shipped by engine version 0.3.0. Old School
+This guide describes protocol 3, shipped by engine version 0.6.0. Old School
 remains the default for compatibility; new integrations should record and pass
 an explicit format slug with each game.
 
@@ -241,7 +241,7 @@ simulating in their own process, where there is nobody to hide from.
 | `hand` | your cards: `{instance, definition, name}` |
 | `opponentHandSize` | their hand as a count — never the cards |
 | `battlefield` | every permanent, including its current-zone object ID, canonical definition, and presented card-part ID |
-| `stack` | pending spells and abilities, bottom to top, including each object's source and locked cast signature when applicable |
+| `stack` | pending spells, activated abilities, and triggered abilities, bottom to top, including each object's frozen source, ability origin/text, targets, and locked cast signature when applicable |
 | `graveyards`, `exiles` | public zones, both players |
 | `decision` | a pending choice (see below), or null |
 | `result` | null while running, else `{winner, reason}` |
@@ -269,6 +269,23 @@ per legal casting choice), `ActivateAbility`, `ActivateManaAbility`, `PayLifeFor
 `FinishDeclaringBlockers`, `AssignCombatDamage`, `DiscardCards`,
 `ChooseUntap`, `ChooseDecision`, `CancelDecision`, `PassPriority`.
 
+Ability actions identify the exact clause being used in an `ability` object.
+Its `kind` determines the rest of its provenance:
+
+- `printed` carries the canonical `definition`, positional `partId`, and
+  positional `abilityId`.
+- `intrinsicBasicLand` carries the lowercase `landType` whose rules supplied
+  the ability.
+- `granted` carries the granting `source` object together with
+  `sourceDefinition`, `sourcePartId`, `sourceAbilityId`, and `grantId`.
+
+`ActivateAbility` also carries `targetSelections`, the flattened `targets`,
+and a compatibility `target` containing the first selected target. Targets are
+chosen before the activated ability becomes an independent stack object.
+`ActivateManaAbility` uses the same origin vocabulary but resolves immediately
+because mana abilities never use the stack. The engine does not infer that
+classification merely because an effect happens to produce mana.
+
 Three things worth knowing:
 
 - **Nothing in the list loses on the spot.** Conceding is legal in every
@@ -287,14 +304,30 @@ Three things worth knowing:
 
 ### Decisions
 
-Some card effects ask a question mid-resolution — "copy Chain Lightning?",
-"choose a card to return". These arrive as a `decision` object (prompt,
-options, `minimum`/`maximum` counts) *and* as `ChooseDecision` entries in
+Every decision has a `kind`:
+
+- `Choice` asks an ordinary question during costs or resolution — "copy Chain
+  Lightning?", "choose a card to return", and so on.
+- `TriggerOrder` asks a player to order simultaneous triggers. Each option has
+  a `triggerId` and frozen `abilityText`; `orderSemantics: "resolution"` means
+  the submitted list is first-resolving-first, even though the stack itself is
+  displayed bottom-to-top.
+- `TriggerPlacement` asks for targets while one triggered ability is being put
+  on the stack. Every player orders and targets their own triggers, in
+  active-player/nonactive-player placement order, before priority returns.
+
+These arrive as a `decision` object (prompt, options,
+`minimum`/`maximum` counts) *and* as `ChooseDecision` entries in
 `legalActions`: a pick-exactly-one decision becomes one indexed action per
 option, so an index-only bot handles it like anything else. For a
-pick-several decision, `legalActions` carries one default selection (the
-first `minimum` options) and `choose_decision([option_ids])` submits any
-other selection you'd prefer.
+pick-several decision, `legalActions` carries one default selection (the first
+`minimum` options) and `choose_decision([option_ids])` submits any other
+selection you'd prefer.
+
+Catalog cards and parts expose clause-derived `implementationStatus` as
+`complete`, `partial`, or `metadataOnly`. The old execution gate is not public
+coverage metadata. A card with no printed mana cost has `"manaCost": null`;
+a printed `{0}` has a mana-cost object whose `generic` field is zero.
 
 ## Determinism and versioning
 

@@ -93,7 +93,6 @@ pub(in crate::card::sets) static ENCROACHING_WASTES: CardRecord = CardRecord::ne
         ]),
 );
 
-// Implementation status: complete — intimidate and the enters-the-battlefield exile both run.
 pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
     cards::LIFEBANE_ZOMBIE,
     "Lifebane Zombie",

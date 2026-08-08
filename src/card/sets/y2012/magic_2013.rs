@@ -24,7 +24,6 @@ pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: complete — the enters-the-battlefield trigger uses the shared stack.
 pub(in crate::card::sets) static AUGUR_OF_BOLAS: CardRecord = CardRecord::new(
     cards::AUGUR_OF_BOLAS,
     "Augur of Bolas",

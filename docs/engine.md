@@ -121,7 +121,7 @@ predicates are checked again at resolution; an object that remains on the
 battlefield but ceases to satisfy “target creature,” for example, is no longer
 a legal target.
 
-## Priority and atomic actions
+## Priority and stack actions
 
 Exactly one player has priority while a game is running. Concession is always
 legal; other actions are generated only for the priority player.
@@ -132,16 +132,35 @@ legal; other actions are generated only for the priority player.
 - Two passes with an empty stack advance the turn step.
 - After a resolution or step change, the active player receives priority.
 
-Mana abilities resolve immediately and do not use the stack. Spell actions
-consider both floating mana and usable untapped mana sources. Applying a spell
-action deterministically activates only the additional sources needed to pay
-its cost, preferring colorless sources for generic costs and avoiding excess
-production where possible. The read-only `mana_sources_for_action` helper
-exposes that payment preview to UI clients without cloning a complete game
-state. Explicit mana actions remain legal for callers that intentionally want
-to float mana. Chaos Orb's non-mana activated ability uses the stack and is
-identified separately from spells in `StackObservation`; its chosen permanent
-is exposed as a choice rather than a target.
+Activated and triggered mana abilities resolve immediately and do not use the
+stack. This is an explicit ability category, not something inferred from its
+effect: an ability that produces mana can still be an ordinary activated
+ability and use the stack. Other supported activated abilities create stack
+objects with their source, clause origin, text, targets, and resolver frozen at
+activation. Removing or changing the source does not erase that independent
+ability object.
+
+Committed events capture matching triggered abilities from the objects that
+declare them. The active player's simultaneous triggers are handled before the
+nonactive player's; each player explicitly chooses the first-resolving-first
+order of their own group and, when needed, places targeted triggers one at a
+time with targets selected. After every pending trigger is on the stack,
+priority returns to the player who was about to receive it. A trigger stack
+object freezes its source object ID and event context; resolution consults the
+live incarnation when it remains available or the engine's retained
+last-known-information snapshot after it leaves. The source may therefore
+disappear before resolution without losing required information.
+
+Spell actions consider both floating mana and usable untapped mana sources.
+Applying a spell action deterministically activates only the additional
+sources needed to pay its cost, preferring colorless sources for generic costs
+and avoiding excess production where possible. The read-only
+`mana_sources_for_action` helper exposes that payment preview to UI clients
+without cloning a complete game state. Explicit mana actions remain legal for
+callers that intentionally want to float mana. Chaos Orb's non-mana activated
+ability uses the stack and is identified separately from spells in
+`StackObservation`; the deterministic approximation models its selected
+permanent as a target.
 
 Attacker and blocker declaration are staged to keep legal-action generation
 linear rather than enumerating exponential subsets. No player receives
@@ -242,20 +261,29 @@ physically represent the requested result.
 
 All random choices use the engine-owned, versioned PRNG. A dependency upgrade
 therefore cannot change the meaning of an existing seed. A replay can be
-reconstructed from the format/card version, decks, seed, and submitted action
-sequence. Events provide a convenient derived trace for debugging and UI use.
+reconstructed from the engine version, format, decks, seed, and submitted
+action sequence. Events provide a convenient derived trace for debugging and
+UI use.
 
 ## Card behavior
 
 Each built-in canonical card is declared once in the `CARDS` registry of its
 representative or debut set module, under the set's release-year module. Its
 `CardRecord` keeps identity and its primary `CardRules` together: name, cost,
-type, rules text, creature stats, and traits can all be understood at the
-card's declaration. Structured cards attach a `CardComposition` containing
+types, creature stats, and ordered ability clauses can all be understood at
+the card's declaration. Structured cards attach a `CardComposition` containing
 their parts, topology, and play options; an ordinary record receives an
-equivalent one-part composition automatically. An immediately adjacent
-`Implementation status` comment records which rules are executable and which
-remain metadata.
+equivalent one-part composition automatically.
+
+An `AbilityDef` owns one rules-text clause together with its explicit timing
+category, costs, targets, effect, and implementation. The displayed card text
+is the clauses' text joined in printed order with newlines, so presentation and
+execution do not duplicate Oracle text. Clause IDs are assigned from that
+order when definitions are attached to a card part. A clause is declarative,
+custom-full, custom-partial, or not implemented; every non-declarative form
+keeps an explanation beside the clause. Complete, Partial, and MetadataOnly
+card coverage is derived from all clauses and the executable land/creature
+baseline rather than stored as a second card-level assertion.
 
 A set module's `ADDITIONAL_PRINTINGS` registry points back to those canonical
 records for reprints or additional variants in that set. The resulting
@@ -265,11 +293,13 @@ and its rules. Format legality considers all known printings: a nonbasic card
 is legal when at least one printing belongs to the format's allowed sets,
 regardless of which printing might eventually be selected for presentation.
 
-Executable game effects are still selected by the closed `CardBehavior` enum,
-which is safe to serialize and also provides a compatibility lookup for copied
-or temporary card behavior. Unsupported cards can exist in other catalogs and
-hidden zones but do not generate cast actions. This makes partial coverage
-explicit and keeps arbitrary card code out of serialized game state.
+Most executable effects use reusable declarative primitives or constructors in
+`card::abilities`. `CardBehavior` remains a closed, serialization-safe escape
+hatch attached only to the custom clause that needs card-specific resolution;
+declarative cards need no behavior identity. Unsupported cards can exist in
+other catalogs and hidden zones but do not generate play options that would
+resolve as silent no-ops. This makes partial coverage explicit and keeps
+arbitrary card code out of serialized game state.
 
 As the corpus grows, behavior should be factored into reusable primitives
 (damage, draw, destroy, continuous restrictions, triggers) rather than one
@@ -286,13 +316,15 @@ combat, and fixed built-in decks for both profiles.
 
 It deliberately remains narrower than the full Comprehensive Rules. Fireball
 and Fork expose their full targeting decisions, and attackers expose current
-combat damage assignment decisions. Simple non-mana abilities and triggers
-generally resolve atomically. Chaos Orb's activation uses the stack and
-deterministically destroys its chosen permanent rather than simulating EC's
-physical card flip; removing the Orb before resolution nullifies the ability.
-Colored sources pay their printed colors, dual lands expose both choices, and
-flexible sources such as Black Lotus and Fellwar Stone are considered when the
-engine checks or automatically pays a cost. Red Elemental Blast can counter
-blue spells or destroy blue permanents.
+combat damage assignment decisions. Supported non-mana activated and triggered
+abilities use the same priority-bearing stack as spells, while explicitly
+tagged mana abilities remain immediate. Chaos Orb's activation uses the stack
+and deterministically destroys its target rather than simulating EC's physical
+card flip; removing the Orb before resolution does not remove the ability, but
+an illegal target makes it fail normally. Colored sources pay their printed
+colors, dual lands expose both choices, and flexible sources such as Black
+Lotus and Fellwar Stone are considered when the engine checks or automatically
+pays a cost. Red Elemental Blast can counter blue spells or destroy blue
+permanents.
 
 [foundations-update]: https://magic.wizards.com/en/news/announcements/foundations-update-bulletin

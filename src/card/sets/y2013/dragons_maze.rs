@@ -4,8 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
     CardBehavior, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure,
-    CardSupertype, ColorDef, EffectDef, ManaCost, ObjectPredicateDef, PlayOptionDef, PlayerRelation,
-    SpellForm, TargetPredicate, TargetSlotDef, TriggerEventDef, ZoneKind, abilities, cards,
+    CardSupertype, ColorDef, EffectDef, ManaCost, ObjectPredicateDef, PlayOptionDef,
+    PlayerRelation, SpellForm, TargetPredicate, TargetSlotDef, TriggerEventDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 
@@ -99,7 +100,6 @@ pub(in crate::card::sets) static RURIC_THAR_THE_UNBOWED: CardRecord = CardRecord
     ]),
 );
 
-// Implementation status: complete — the enters-the-battlefield exile runs.
 pub(in crate::card::sets) static SIN_COLLECTOR: CardRecord = CardRecord::new(
     cards::SIN_COLLECTOR,
     "Sin Collector",

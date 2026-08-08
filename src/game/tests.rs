@@ -6781,8 +6781,9 @@ fn augur_of_bolas_may_decline_and_bottom_all_three() {
     );
 }
 
-/// Casts a creature from hand and resolves it, so its entry ability runs.
-fn cast_and_resolve(game: &mut Game, instance: u32, definition: CardDefinitionId) {
+/// Casts a creature, resolves it, and explicitly targets player two while its
+/// reveal-and-exile trigger is being put on the stack.
+fn cast_and_place_reveal_trigger(game: &mut Game, instance: u32, definition: CardDefinitionId) {
     let creature = card(instance, definition, PlayerId::One);
     game.players[0].hand.push(creature.clone());
     game.players[0].mana_pool.white = 3;
@@ -6795,27 +6796,76 @@ fn cast_and_resolve(game: &mut Game, instance: u32, definition: CardDefinitionId
     )
     .unwrap();
     pass_priority_pair(game);
+
+    let placement = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the trigger's controller chooses its target");
+    assert_eq!(placement.kind, DecisionKind::TriggerPlacement);
+    assert_eq!(placement.visibility, DecisionVisibility::Public);
+    assert_eq!(placement.minimum, 1);
+    assert_eq!(placement.maximum, 1);
+    assert_eq!(placement.options.len(), 1, "there is one opponent");
+    assert!(
+        game.stack.is_empty(),
+        "the target is chosen before placement"
+    );
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: placement.id,
+            options: vec![placement.options[0].id],
+        },
+    )
+    .unwrap();
+
+    assert_eq!(game.stack.len(), 1);
+    assert_eq!(game.stack[0].kind, StackObjectKind::TriggeredAbility);
+    let payload = game.stack[0]
+        .ability
+        .as_ref()
+        .expect("the trigger freezes its rules payload");
+    assert_eq!(
+        payload.targets,
+        vec![TargetSelection::single(
+            TargetSlotId(0),
+            Target::Player(PlayerId::Two),
+        )],
+        "resolution uses the opponent selected during trigger placement",
+    );
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "the hand choice waits until the trigger resolves",
+    );
 }
 
 #[test]
 fn sin_collector_exiles_an_instant_or_sorcery_from_the_revealed_hand() {
     let mut game = ready_game();
-    game.players[1]
-        .hand
-        .push(card(12_000, cards::SAVANNAH_LIONS, PlayerId::Two));
-    game.players[1]
-        .hand
-        .push(card(12_001, cards::LIGHTNING_BOLT, PlayerId::Two));
-    cast_and_resolve(&mut game, 12_100, cards::SIN_COLLECTOR);
+    let lions = card(12_000, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let bolt = card(12_001, cards::LIGHTNING_BOLT, PlayerId::Two);
+    game.players[1].hand.extend([lions.clone(), bolt.clone()]);
+    cast_and_place_reveal_trigger(&mut game, 12_100, cards::SIN_COLLECTOR);
+
+    pass_priority_pair(&mut game);
 
     // Only the Bolt qualifies; the creature is not offered.
     let decision = game.observe(PlayerId::One).decision.unwrap();
+    assert_eq!(decision.visibility, DecisionVisibility::Public);
     let offered: Vec<_> = decision
         .options
         .iter()
         .filter_map(|option| option.card.map(|(_, definition)| definition))
         .collect();
     assert_eq!(offered, vec![cards::LIGHTNING_BOLT]);
+    assert_eq!(
+        game.observe(PlayerId::One).last_seen_hand,
+        Some((
+            PlayerId::Two,
+            vec![(lions.id, lions.definition), (bolt.id, bolt.definition)],
+        )),
+        "revealing the hand exposes ineligible cards too",
+    );
 
     game.apply(
         PlayerId::One,
@@ -6835,18 +6885,59 @@ fn sin_collector_exiles_an_instant_or_sorcery_from_the_revealed_hand() {
 }
 
 #[test]
+fn sin_collector_can_be_responded_to_with_an_eligible_instant() {
+    let mut game = ready_game();
+    let lions = card(12_000, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let bolt = card(12_001, cards::LIGHTNING_BOLT, PlayerId::Two);
+    game.players[1].hand.extend([lions.clone(), bolt.clone()]);
+    game.players[1].mana_pool.red = 1;
+    cast_and_place_reveal_trigger(&mut game, 12_100, cards::SIN_COLLECTOR);
+
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    let response = cast_action(bolt.id, vec![Target::Player(PlayerId::One)], Vec::new(), 0);
+    assert!(game.legal_actions(PlayerId::Two).contains(&response));
+    game.apply(PlayerId::Two, response).unwrap();
+    assert_eq!(game.stack.len(), 2);
+    assert_eq!(game.stack.last().unwrap().kind, StackObjectKind::Spell);
+
+    pass_priority_pair(&mut game);
+    assert_eq!(game.players[0].life, 17);
+    assert_eq!(game.stack.len(), 1, "Sin Collector's trigger remains");
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "the Bolt is no longer in hand when the trigger resolves",
+    );
+    assert_eq!(
+        game.observe(PlayerId::One).last_seen_hand,
+        Some((PlayerId::Two, vec![(lions.id, lions.definition)])),
+        "the hand is revealed at resolution, after the response",
+    );
+    assert!(game.players[1].exile.is_empty());
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+    );
+}
+
+#[test]
 fn lifebane_zombie_only_takes_green_or_white_creatures() {
     let mut game = ready_game();
     for (instance, definition) in [
         (12_000, cards::SAVANNAH_LIONS), // white creature
-        (12_001, cards::JUZAM_DJINN),    // black creature
-        (12_002, cards::LIGHTNING_BOLT), // not a creature
+        (12_001, cards::ARBOR_ELF),      // green creature
+        (12_002, cards::JUZAM_DJINN),    // black creature
+        (12_003, cards::LIGHTNING_BOLT), // not a creature
     ] {
         game.players[1]
             .hand
             .push(card(instance, definition, PlayerId::Two));
     }
-    cast_and_resolve(&mut game, 12_100, cards::LIFEBANE_ZOMBIE);
+    cast_and_place_reveal_trigger(&mut game, 12_100, cards::LIFEBANE_ZOMBIE);
+    pass_priority_pair(&mut game);
 
     let decision = game.observe(PlayerId::One).decision.unwrap();
     let offered: Vec<_> = decision
@@ -6854,18 +6945,43 @@ fn lifebane_zombie_only_takes_green_or_white_creatures() {
         .iter()
         .filter_map(|option| option.card.map(|(_, definition)| definition))
         .collect();
-    assert_eq!(offered, vec![cards::SAVANNAH_LIONS]);
+    assert_eq!(offered, vec![cards::SAVANNAH_LIONS, cards::ARBOR_ELF]);
+
+    let elf = decision
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(_, card)| card == cards::ARBOR_ELF)
+        })
+        .expect("the green creature is eligible");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![elf.id],
+        },
+    )
+    .unwrap();
+    assert_eq!(game.players[1].exile[0].definition, cards::ARBOR_ELF);
 }
 
 #[test]
 fn a_reveal_and_exile_creature_asks_nothing_of_an_empty_hand() {
     let mut game = ready_game();
     game.players[1].hand.clear();
-    cast_and_resolve(&mut game, 12_100, cards::SIN_COLLECTOR);
+    cast_and_place_reveal_trigger(&mut game, 12_100, cards::SIN_COLLECTOR);
+    pass_priority_pair(&mut game);
 
     assert!(
         game.observe(PlayerId::One).decision.is_none(),
         "nothing to take, so nothing to ask"
+    );
+    assert_eq!(
+        game.observe(PlayerId::One).last_seen_hand,
+        Some((PlayerId::Two, Vec::new())),
+        "the empty hand was still revealed",
     );
     assert_eq!(game.battlefield.len(), 1, "the creature still arrives");
 }

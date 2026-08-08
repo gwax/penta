@@ -360,3 +360,11 @@ pub unsafe extern "C" fn penta_free(game: *mut BotGame) {
         drop(unsafe { Box::from_raw(game) });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn ffi_package_version_matches_engine_version() {
+        assert_eq!(env!("CARGO_PKG_VERSION"), penta::protocol::ENGINE_VERSION);
+    }
+}

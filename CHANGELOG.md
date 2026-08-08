@@ -12,7 +12,7 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
-## Unreleased — protocol 7
+## 0.6.0 — protocol 3
 
 ### Changed
 
@@ -20,6 +20,11 @@ minor for breaking changes, per Cargo's 0.x convention.
   intrinsic, or granted ability that created them. Triggered abilities become
   independent stack objects with frozen source information and may be answered
   before they resolve; mana abilities remain immediate.
+- Trigger placement now follows active-player/nonactive-player order, with
+  each player explicitly ordering and targeting their own simultaneous
+  triggers before priority returns. This intentionally changes replay and
+  policy outcomes for lines such as answering Ankh of Mishra or City of Brass
+  damage before it resolves.
 - Card rules text and implementation coverage now belong to ordered ability
   clauses. Card-level `Complete`, `Partial`, and `MetadataOnly` status is
   derived from those clauses, exposed as `implementationStatus`, and used by
@@ -36,13 +41,9 @@ minor for breaking changes, per Cargo's 0.x convention.
   `"manaCost": null`; a printed `{0}` remains a mana-cost object whose
   `generic` value is zero.
 
-Protocol 4 added the selected ability origin to activated-action JSON.
-Protocol 5 distinguishes no mana cost from a printed `{0}` cost.
-Protocol 6 replaces public `effectStatus` metadata with clause-derived
-`implementationStatus`; the former remains only an internal playability gate.
-Protocol 7 gives granted abilities structural provenance for their effective
-source definition, source clause, and grant site instead of treating those as
-an ability ID on the affected object.
+All incompatible wire changes above ship together as protocol 3. A protocol
+number identifies the compatibility boundary for a release, branch, or pull
+request; it does not increment once per field or intermediate commit.
 
 ## 0.5.0 — protocol 2
 
