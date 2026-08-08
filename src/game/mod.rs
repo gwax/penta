@@ -98,6 +98,10 @@ struct Permanent {
     factory_animated: bool,
     dragon_whelp_activations: u8,
     plus_one_counters: u16,
+    /// Icatian Javelineers enters with a javelin counter, not a +1/+1 counter.
+    /// Sharing one field forced the stat bonus to allowlist which cards it
+    /// applied to, which meant every new +1/+1 counter card had to be added.
+    javelin_counters: u16,
     /// Marked when a deathtouch source damages this creature. Any nonzero
     /// damage from such a source is lethal, so state-based actions need to
     /// know the damage's origin, not just its size. Clears with damage.
@@ -2695,7 +2699,7 @@ impl Game {
                 Some(CardBehavior::IcatianJavelineers)
                     if !permanent.tapped
                         && self.can_use_tap_ability(permanent)
-                        && permanent.plus_one_counters > 0 =>
+                        && permanent.javelin_counters > 0 =>
                 {
                     actions.extend(self.damage_targets().into_iter().map(|target| {
                         Action::ActivateAbility {
@@ -2805,6 +2809,7 @@ impl Game {
             factory_animated: false,
             dragon_whelp_activations: 0,
             plus_one_counters: 0,
+            javelin_counters: 0,
             dealt_deathtouch_damage: false,
             combat_damage_assignment: Vec::new(),
             copied_behavior: None,
@@ -3163,9 +3168,9 @@ impl Game {
                 dragon_whelp_activations: 0,
                 plus_one_counters: match behavior {
                     CardBehavior::Triskelion | CardBehavior::Tetravus => 3,
-                    CardBehavior::IcatianJavelineers => 1,
                     _ => 0,
                 },
+                javelin_counters: u16::from(behavior == CardBehavior::IcatianJavelineers),
                 dealt_deathtouch_damage: false,
                 combat_damage_assignment: Vec::new(),
                 copied_behavior: None,
@@ -4436,15 +4441,8 @@ impl Game {
         i16::try_from(self.count_behavior(CardBehavior::Crusade)).unwrap_or(i16::MAX)
     }
 
-    fn plus_one_counter_bonus(&self, permanent: &Permanent) -> i16 {
-        if matches!(
-            self.effective_behavior(permanent),
-            Some(CardBehavior::Triskelion | CardBehavior::Tetravus | CardBehavior::WhirlingDervish)
-        ) {
-            i16::try_from(permanent.plus_one_counters).unwrap_or(i16::MAX)
-        } else {
-            0
-        }
+    fn plus_one_counter_bonus(permanent: &Permanent) -> i16 {
+        i16::try_from(permanent.plus_one_counters).unwrap_or(i16::MAX)
     }
 
     fn power(&self, permanent: &Permanent) -> Option<i16> {
@@ -4467,7 +4465,7 @@ impl Game {
                 + self.goblin_bonus(permanent)
                 + self.crusade_bonus(permanent)
                 + conditional_bonus
-                + self.plus_one_counter_bonus(permanent)
+                + Self::plus_one_counter_bonus(permanent)
         })
     }
 
@@ -4491,7 +4489,7 @@ impl Game {
                 + self.goblin_bonus(permanent)
                 + self.crusade_bonus(permanent)
                 + conditional_bonus
-                + self.plus_one_counter_bonus(permanent)
+                + Self::plus_one_counter_bonus(permanent)
         })
     }
 
@@ -4507,6 +4505,11 @@ impl Game {
             || self
                 .base_stats(permanent)
                 .is_some_and(|stats| stats.trample)
+    }
+
+    fn has_undying(&self, permanent: &Permanent) -> bool {
+        self.effective_behavior(permanent)
+            .is_some_and(|behavior| behavior.rules().has_undying)
     }
 
     fn has_reach(&self, permanent: &Permanent) -> bool {
@@ -4915,7 +4918,7 @@ impl Game {
                     .map(|permanent| {
                         permanent.tapped = true;
                         if behavior == CardBehavior::IcatianJavelineers {
-                            permanent.plus_one_counters -= 1;
+                            permanent.javelin_counters -= 1;
                         }
                         permanent.card.clone()
                     })
@@ -5389,9 +5392,47 @@ impl Game {
                 .colorless += 4;
         }
         self.record_battlefield_exit(&permanent, BattlefieldExit::Graveyard);
+        // Undying checks the counters the creature had as it died, so this has
+        // to be read before the card leaves.
+        let undying = self.has_undying(&permanent) && permanent.plus_one_counters == 0;
+        let presented = permanent.presented;
         let owner = permanent.card.owner;
         let (card, _zone_change) = self.zone_change_card(permanent.card);
         self.players[owner.index()].graveyard.push(card);
+
+        // It really does die first: the card reaches the graveyard, then comes
+        // back as a new object with a fresh identity, under its owner's
+        // control rather than whoever controlled it.
+        if undying && let Some(card) = self.players[owner.index()].graveyard.pop() {
+            let (card, _zone_change) = self.zone_change_card(card);
+            self.battlefield.push(Permanent {
+                card,
+                presented,
+                controller: owner,
+                tapped: false,
+                entered_controller_turn: self.turns_started[owner.index()],
+                damage: 0,
+                power_bonus: 0,
+                toughness_bonus: 0,
+                attacking: false,
+                blocking: None,
+                chosen_player: None,
+                destroy_at_end: false,
+                flying_until_end: false,
+                factory_animated: false,
+                dragon_whelp_activations: 0,
+                plus_one_counters: 1,
+                javelin_counters: 0,
+                dealt_deathtouch_damage: false,
+                combat_damage_assignment: Vec::new(),
+                copied_behavior: None,
+                regeneration_shields: 0,
+                trample_until_end: false,
+                berserked: false,
+                attacked_this_turn: false,
+                forestwalk_until_upkeep_of: None,
+            });
+        }
     }
 
     fn record_battlefield_exit(&mut self, permanent: &Permanent, destination: BattlefieldExit) {

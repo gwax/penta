@@ -98,7 +98,7 @@ pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new
     .metadata_only(),
 );
 
-// Implementation status: Baseline creature is playable; card-specific printed abilities are pending.
+// Implementation status: complete — haste and undying are both executed.
 pub(in crate::card::sets) static STRANGLEROOT_GEIST: CardRecord = CardRecord::new(
     cards::STRANGLEROOT_GEIST,
     "Strangleroot Geist",
@@ -114,8 +114,7 @@ pub(in crate::card::sets) static STRANGLEROOT_GEIST: CardRecord = CardRecord::ne
     .type_line("Creature — Spirit")
     .creature(2, 1)
     .undying()
-    .haste()
-    .metadata_only(),
+    .haste(),
 );
 
 // Implementation status: Spell is withheld from play; printed effects are pending.

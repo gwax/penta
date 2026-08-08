@@ -57,6 +57,7 @@ fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Perm
         factory_animated: false,
         dragon_whelp_activations: 0,
         plus_one_counters: 0,
+        javelin_counters: 0,
         dealt_deathtouch_damage: false,
         combat_damage_assignment: Vec::new(),
         copied_behavior: None,
@@ -2539,7 +2540,7 @@ fn chaos_orb_can_be_activated_the_turn_it_enters_using_untapped_mana() {
 fn icatian_javelineers_cannot_activate_until_their_controller_turn() {
     let mut game = ready_game();
     let mut javeliners = creature(10_000, cards::ICATIAN_JAVELINEERS, PlayerId::One);
-    javeliners.plus_one_counters = 1;
+    javeliners.javelin_counters = 1;
     javeliners.entered_controller_turn = game.turns_started[PlayerId::One.index()];
     let action = Action::ActivateAbility {
         source: javeliners.card.id,
@@ -3742,4 +3743,84 @@ fn hexproof_stops_opponents_targeting_but_not_its_controller() {
         1,
         "its own controller still can, hexproof only stops opponents"
     );
+}
+
+#[test]
+fn undying_returns_the_creature_once_with_a_counter() {
+    // Strangleroot Geist is a 2/1 with haste and undying.
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_001, cards::STRANGLEROOT_GEIST, PlayerId::One));
+
+    game.destroy_permanent(CardInstanceId(10_001));
+
+    assert_eq!(
+        game.battlefield.len(),
+        1,
+        "it came back rather than staying dead"
+    );
+    let returned = &game.battlefield[0];
+    assert_eq!(returned.plus_one_counters, 1, "with a +1/+1 counter");
+    assert_ne!(
+        returned.card.id,
+        CardInstanceId(10_001),
+        "and as a new object, because it really did change zones"
+    );
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "the card left the graveyard on its way back"
+    );
+
+    // Second death: it has a counter now, so undying does not apply.
+    let second = returned.card.id;
+    game.destroy_permanent(second);
+    assert!(game.battlefield.is_empty(), "it stays dead the second time");
+    assert_eq!(game.players[0].graveyard.len(), 1);
+}
+
+#[test]
+fn undying_returns_it_to_its_owner_not_whoever_killed_it() {
+    let mut game = ready_game();
+    let mut geist = creature(10_001, cards::STRANGLEROOT_GEIST, PlayerId::One);
+    // Someone else has taken control of it.
+    geist.controller = PlayerId::Two;
+    game.battlefield.push(geist);
+
+    game.destroy_permanent(CardInstanceId(10_001));
+
+    assert_eq!(
+        game.battlefield[0].controller,
+        PlayerId::One,
+        "undying returns it under its owner's control"
+    );
+}
+
+#[test]
+fn a_plus_one_counter_boosts_stats_whatever_put_it_there() {
+    // Strangleroot Geist is a 2/1; undying brings it back as a 3/2. Before
+    // +1/+1 counters and javelin counters were separated, the stat bonus was
+    // allowlisted to three named cards and this counter did nothing.
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_001, cards::STRANGLEROOT_GEIST, PlayerId::One));
+    game.destroy_permanent(CardInstanceId(10_001));
+
+    let returned = &game.battlefield[0];
+    assert_eq!(game.power(returned), Some(3), "2/1 plus a counter is 3/2");
+    assert_eq!(game.toughness(returned), Some(2));
+}
+
+#[test]
+fn a_javelin_counter_is_not_a_plus_one_counter() {
+    // Icatian Javelineers enters with a javelin counter and stays a 1/1.
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_001, cards::ICATIAN_JAVELINEERS, PlayerId::One));
+    let javelineers = &game.battlefield[0];
+    assert_eq!(
+        game.power(javelineers),
+        Some(1),
+        "its counter is ammunition, not a stat boost"
+    );
+    assert_eq!(game.toughness(javelineers), Some(1));
 }
