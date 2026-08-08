@@ -38,8 +38,9 @@ else
     fail "wasm-bindgen is not installed on PATH or in Cargo's bin directory"
     bindgen_problem=true
 fi
-require_command shellcheck || true
-require_command actionlint || true
+infra_linter_problem=false
+require_command shellcheck || infra_linter_problem=true
+require_command actionlint || infra_linter_problem=true
 require_command cc || true
 require_command python3 || true
 
@@ -119,6 +120,10 @@ if (( failures > 0 )); then
     if [[ "$bindgen_problem" == true ]]; then
         printf 'Install wasm-bindgen with: cargo install wasm-bindgen-cli --version %s --locked\n' \
             "$required_bindgen" >&2
+    fi
+    if [[ "$infra_linter_problem" == true ]]; then
+        printf 'Install the infrastructure linters with: brew install shellcheck actionlint\n' >&2
+        printf "They are optional locally -- 'make check' skips the one you lack -- but CI requires both.\n" >&2
     fi
     exit 1
 fi

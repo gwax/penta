@@ -33,7 +33,7 @@ define run_rust_tests
 endef
 
 .PHONY: help doctor fmt fmt-rust fmt-python-binding \
-	lint lint-rust lint-web lint-infra lint-python-binding \
+	lint lint-rust lint-web lint-infra lint-infra-available lint-python-binding \
 	test test-rust test-rust-full test-rust-slow \
 	test-engine test-engine-unit test-engine-integration test-policy test-wasm-rust \
 	build-wasm build-web \
@@ -68,14 +68,16 @@ lint-rust: ## Lint every Rust workspace target and feature.
 lint-web: ## Lint the web client.
 	cd web && CI=true pnpm lint
 
-lint-infra: ## Statically check shell scripts and GitHub Actions workflows.
-	shellcheck scripts/*.sh
-	actionlint
+lint-infra: ## Statically check shell scripts and workflows; require both linters.
+	./scripts/lint-infra.sh all
+
+lint-infra-available: ## Same, but skip an infrastructure linter this machine lacks.
+	./scripts/lint-infra.sh available
 
 lint-python-binding: ## Lint the standalone Python binding crate.
 	cargo clippy --manifest-path bindings/penta-py/Cargo.toml --locked --all-targets --all-features -- -D warnings
 
-lint: lint-rust lint-web lint-infra ## Run engine, web, and infrastructure linters.
+lint: lint-rust lint-web lint-infra-available ## Run engine, web, and infrastructure linters.
 
 test-engine: ## Run the normal tests for the core engine package.
 	$(call run_rust_tests,-p penta,)
@@ -161,7 +163,7 @@ check-rust: fmt-rust lint-rust test-rust-full ## Run the complete root Rust work
 
 check-web: lint-web typecheck-web test-web-full ## Run the complete web gate.
 
-check: check-rust check-web lint-infra ## Run the complete engine, web, and tooling gate.
+check: check-rust check-web lint-infra-available ## Run the complete engine, web, and tooling gate.
 
 check-bindings-c: ## Build and smoke-test only the C ABI.
 	./scripts/check-bindings.sh c
