@@ -4164,3 +4164,131 @@ fn paying_for_a_shock_land_at_exactly_two_life_loses_the_game() {
         })
     ));
 }
+
+/// Puts `library` on top of player one's library, top card first.
+fn stack_library(game: &mut Game, library: &[(u32, CardDefinitionId)]) {
+    for (instance, definition) in library.iter().rev() {
+        game.players[0]
+            .library
+            .insert(0, card(*instance, *definition, PlayerId::One));
+    }
+}
+
+#[test]
+fn augur_of_bolas_digs_three_deep_when_it_enters() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (11_000, cards::SAVANNAH_LIONS),
+            (11_001, cards::LIGHTNING_BOLT),
+            (11_002, cards::SERRA_ANGEL),
+            (11_003, cards::JUZAM_DJINN),
+        ],
+    );
+    let augur = card(11_100, cards::AUGUR_OF_BOLAS, PlayerId::One);
+    game.players[0].hand.push(augur.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(augur.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    // Only the Bolt among the top three is an instant or sorcery.
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    let offered: Vec<_> = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(_, definition)| definition))
+        .collect();
+    assert_eq!(offered, vec![cards::LIGHTNING_BOLT]);
+
+    let bolt = decision.options.iter().find(|o| o.card.is_some()).unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![bolt.id],
+        },
+    )
+    .unwrap();
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|c| c.definition == cards::LIGHTNING_BOLT)
+    );
+    // The other two went to the bottom, leaving the fourth card on top.
+    let library: Vec<_> = game.players[0]
+        .library
+        .iter()
+        .map(|c| c.definition)
+        .collect();
+    assert_eq!(
+        library,
+        vec![
+            cards::JUZAM_DJINN,
+            cards::SAVANNAH_LIONS,
+            cards::SERRA_ANGEL
+        ]
+    );
+}
+
+#[test]
+fn augur_of_bolas_may_decline_and_bottom_all_three() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (11_000, cards::LIGHTNING_BOLT),
+            (11_001, cards::SERRA_ANGEL),
+            (11_002, cards::JUZAM_DJINN),
+            (11_003, cards::SAVANNAH_LIONS),
+        ],
+    );
+    let augur = card(11_100, cards::AUGUR_OF_BOLAS, PlayerId::One);
+    game.players[0].hand.push(augur.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(augur.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    assert_eq!(decision.minimum, 0, "revealing is optional");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .unwrap();
+
+    assert!(game.players[0].hand.is_empty());
+    let library: Vec<_> = game.players[0]
+        .library
+        .iter()
+        .map(|c| c.definition)
+        .collect();
+    assert_eq!(
+        library,
+        vec![
+            cards::SAVANNAH_LIONS,
+            cards::LIGHTNING_BOLT,
+            cards::SERRA_ANGEL,
+            cards::JUZAM_DJINN
+        ]
+    );
+}

@@ -23,7 +23,7 @@ pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Baseline creature is playable; card-specific printed abilities are pending.
+// Implementation status: complete — the enters-the-battlefield dig runs.
 pub(in crate::card::sets) static AUGUR_OF_BOLAS: CardRecord = CardRecord::new(
     cards::AUGUR_OF_BOLAS,
     "Augur of Bolas",
@@ -37,8 +37,7 @@ pub(in crate::card::sets) static AUGUR_OF_BOLAS: CardRecord = CardRecord::new(
         "When this creature enters, look at the top three cards of your library. You may reveal an instant or sorcery card from among them and put it into your hand. Put the rest on the bottom of your library in any order.",
     )
     .type_line("Creature — Merfolk Wizard")
-    .creature(1, 3)
-    .metadata_only(),
+    .creature(1, 3),
 );
 
 // Implementation status: Baseline creature is playable; card-specific printed abilities are pending.

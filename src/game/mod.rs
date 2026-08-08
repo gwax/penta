@@ -288,6 +288,12 @@ enum DecisionContinuation {
         player: PlayerId,
         source: GameObjectId,
     },
+    /// Augur of Bolas holding the three cards it looked at; they have already
+    /// left the library, so the continuation must place all of them.
+    AugurOfBolas {
+        player: PlayerId,
+        revealed: Vec<CardInstance>,
+    },
     /// A shock land asking whether to pay life to come in untapped.
     ShockLand {
         player: PlayerId,
@@ -1589,6 +1595,27 @@ impl Game {
         let pending = self.pending_decisions.remove(0);
         debug_assert_eq!(pending.observation.id, decision);
         match pending.continuation {
+            DecisionContinuation::AugurOfBolas { player, revealed } => {
+                let kept = pending
+                    .observation
+                    .options
+                    .iter()
+                    .find(|option| options.contains(&option.id))
+                    .and_then(|option| option.card)
+                    .map(|(card, _)| card);
+                let (to_hand, to_bottom): (Vec<_>, Vec<_>) =
+                    revealed.into_iter().partition(|card| Some(card.id) == kept);
+                for card in to_hand {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    self.players[player.index()].hand.push(card);
+                }
+                // "In any order" -- printed order is as good as any, and the
+                // rest of the library is already unknown to everyone.
+                for card in to_bottom {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    self.players[player.index()].library.push(card);
+                }
+            }
             DecisionContinuation::ShockLand {
                 player,
                 permanent,
@@ -3266,6 +3293,7 @@ impl Game {
                     permanent.plus_one_counters = 3;
                 }
             }
+            self.resolve_battlefield_entry(object.controller, behavior);
         } else if self.spell_fizzles(&object) {
             // 608.2b: a spell whose targets are all illegal on resolution does
             // nothing at all — a second Counterspell aimed at the same target
@@ -3292,6 +3320,45 @@ impl Game {
             definition,
         });
         self.check_state_based_actions();
+    }
+
+    /// Runs a permanent's "when this enters" ability. The engine had no such
+    /// hook at all -- permanents were pushed onto the battlefield and nothing
+    /// looked at them again -- which is why every enters-the-battlefield
+    /// creature in the catalog was a stub.
+    ///
+    /// These resolve immediately rather than going on the stack. Nothing here
+    /// targets or can be responded to, so the only visible difference would be
+    /// a priority window in which nothing can happen.
+    fn resolve_battlefield_entry(&mut self, controller: PlayerId, behavior: CardBehavior) {
+        if behavior == CardBehavior::AugurOfBolas {
+            let revealed = self.take_top_of_library(controller, 3);
+            let eligible = revealed
+                .iter()
+                .filter(|card| {
+                    self.catalog.get(card.definition).is_some_and(|definition| {
+                        matches!(definition.rules.kind, CardKind::Instant | CardKind::Sorcery)
+                    })
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            let options = self.card_decision_options(&eligible, DecisionZone::Library);
+            // "You may reveal": taking nothing is a real choice, so the
+            // minimum is zero even when something qualifies.
+            self.queue_decision(
+                controller,
+                "Put an instant or sorcery card into your hand",
+                DecisionVisibility::Public,
+                DecisionPreference::HigherCardValue,
+                0..=1,
+                false,
+                options,
+                DecisionContinuation::AugurOfBolas {
+                    player: controller,
+                    revealed,
+                },
+            );
+        }
     }
 
     fn resolve_activated_ability(&mut self, object: &StackObject) {
