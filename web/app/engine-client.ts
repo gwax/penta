@@ -1,4 +1,8 @@
 import initWasm, { WebGame as RustWebGame } from "./wasm/penta_wasm.js";
+// wasm-bindgen's loader defaults to new URL(..., import.meta.url), which Vite 8
+// resolves to a file: URL the browser refuses to load. Ask Vite for the asset
+// URL instead.
+import wasmUrl from "./wasm/penta_wasm_bg.wasm?url";
 import type { GameState } from "./game-types";
 import type { FormatId } from "./game-config";
 
@@ -15,7 +19,7 @@ export type EngineConfig = {
 
 /** Loads the generated WASM module exactly once per browser session. */
 export async function initializeEngine(): Promise<void> {
-  await initWasm();
+  await initWasm({ module_or_path: wasmUrl });
 }
 
 export function createEngineGame(config: EngineConfig): EngineGame {
