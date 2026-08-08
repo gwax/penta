@@ -127,6 +127,13 @@ pub enum GameEvent {
         player: PlayerId,
         amount: u16,
     },
+    /// Life paid or drained rather than dealt. Kept apart from damage because
+    /// nothing that triggers on damage may see it, and prevention never
+    /// applies.
+    LifeLost {
+        player: PlayerId,
+        amount: u16,
+    },
     ManaBurn {
         player: PlayerId,
         amount: u16,

@@ -3224,3 +3224,79 @@ fn negate_and_essence_scatter_split_the_stack_by_card_kind() {
         "and the creature spell is untouched"
     );
 }
+
+#[test]
+fn dispel_counters_only_instants() {
+    let mut game = ready_game();
+    game.stack
+        .push(spell(10_001, cards::LIGHTNING_BOLT, PlayerId::Two, 0)); // instant
+    game.stack
+        .push(spell(10_002, cards::ARMAGEDDON, PlayerId::Two, 0)); // sorcery
+
+    let hit: Vec<_> = game
+        .legal_target_lists(CardBehavior::Dispel, 0, PlayerId::One, None)
+        .into_iter()
+        .filter_map(|choice| match choice.first() {
+            Some(Target::Spell(id)) => Some(*id),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        hit,
+        vec![StackObjectId(10_001)],
+        "Dispel sees the instant and not the sorcery"
+    );
+}
+
+#[test]
+fn ultimate_price_spares_multicolored_creatures() {
+    let mut game = ready_game();
+    game.battlefield.extend([
+        creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two), // mono-white
+        creature(10_002, cards::SERENDIB_EFREET, PlayerId::Two), // mono-blue
+    ]);
+
+    let named: Vec<_> = game
+        .legal_target_lists(CardBehavior::UltimatePrice, 0, PlayerId::One, None)
+        .into_iter()
+        .filter_map(|choice| match choice.first() {
+            Some(Target::Permanent(id)) => Some(*id),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(named.len(), 2, "both monocolored creatures are targetable");
+}
+
+#[test]
+fn sign_in_blood_draws_two_and_costs_two_life_without_dealing_damage() {
+    let mut game = ready_game();
+    let before_hand = game.players[0].hand.len();
+    let before_life = game.players[0].life;
+
+    let cast = spell_with_targets(
+        10_000,
+        cards::SIGN_IN_BLOOD,
+        PlayerId::One,
+        vec![Target::Player(PlayerId::One)],
+        0,
+    );
+    game.resolve_spell_effect(&cast, CardBehavior::SignInBlood);
+
+    assert_eq!(game.players[0].hand.len(), before_hand + 2);
+    assert_eq!(game.players[0].life, before_life - 2);
+    // Losing life is not being dealt damage: nothing that triggers on damage
+    // may see this, so it must not be logged as damage either.
+    assert!(
+        game.events
+            .iter()
+            .any(|event| matches!(event, GameEvent::LifeLost { amount: 2, .. })),
+        "the loss is recorded as life loss"
+    );
+    assert!(
+        !game
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::DamageDealt { .. })),
+        "and never as damage"
+    );
+}

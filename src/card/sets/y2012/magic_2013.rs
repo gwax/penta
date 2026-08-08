@@ -257,7 +257,7 @@ pub(in crate::card::sets) static ROOTBOUND_CRAG: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static SIGN_IN_BLOOD: CardRecord = CardRecord::new(
     cards::SIGN_IN_BLOOD,
     "Sign in Blood",
@@ -270,8 +270,7 @@ pub(in crate::card::sets) static SIGN_IN_BLOOD: CardRecord = CardRecord::new(
         ManaCost::colored(0, 0, 0, 2, 0, 0),
         "Target player draws two cards and loses 2 life.",
     )
-    .type_line("Sorcery")
-    .metadata_only(),
+    .type_line("Sorcery"),
 );
 
 // Implementation status: Land entry and mana production are active.

@@ -574,7 +574,9 @@ impl WebGame {
         let landed = events.iter().any(|event| {
             matches!(
                 event,
-                GameEvent::DamageDealt { .. } | GameEvent::PermanentLeftBattlefield { .. }
+                GameEvent::DamageDealt { .. }
+                    | GameEvent::LifeLost { .. }
+                    | GameEvent::PermanentLeftBattlefield { .. }
             )
         });
         if !landed {
@@ -1448,6 +1450,9 @@ impl WebGame {
                 "{} took {amount} damage",
                 self.player_name(*player)
             )),
+            GameEvent::LifeLost { player, amount } => {
+                Some(format!("{} lost {amount} life", self.player_name(*player)))
+            }
             GameEvent::ManaBurn { player, amount } => Some(format!(
                 "{} took {amount} mana burn",
                 self.player_name(*player)

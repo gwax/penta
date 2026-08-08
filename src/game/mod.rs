@@ -2107,7 +2107,9 @@ impl Game {
         exact_count: Option<usize>,
     ) -> Vec<Vec<Target>> {
         match behavior {
-            CardBehavior::AncestralRecall | CardBehavior::Braingeyser => {
+            CardBehavior::AncestralRecall
+            | CardBehavior::Braingeyser
+            | CardBehavior::SignInBlood => {
                 vec![
                     vec![Target::Player(PlayerId::One)],
                     vec![Target::Player(PlayerId::Two)],
@@ -2166,6 +2168,20 @@ impl Game {
                 .iter()
                 .filter(|permanent| {
                     self.power(permanent).is_some() && !self.is_protected_from(permanent, behavior)
+                })
+                .map(|permanent| vec![Target::Permanent(permanent.card.id)])
+                .collect(),
+            CardBehavior::UltimatePrice => self
+                .battlefield
+                .iter()
+                .filter(|permanent| {
+                    self.power(permanent).is_some()
+                        && self
+                            .behavior(permanent.card.definition)
+                            .is_some_and(|creature| {
+                                creature.color_identity().iter().filter(|on| **on).count() == 1
+                            })
+                        && !self.is_protected_from(permanent, behavior)
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
@@ -2234,18 +2250,18 @@ impl Game {
                 .collect(),
             // Both read the spell's kind off its chosen play option, so a
             // split or modal card counts as whatever it was actually cast as.
-            CardBehavior::Negate | CardBehavior::EssenceScatter => self
+            CardBehavior::Negate | CardBehavior::EssenceScatter | CardBehavior::Dispel => self
                 .stack
                 .iter()
                 .filter(|object| {
                     object.kind == StackObjectKind::Spell
-                        && self.stack_spell_kind(object).is_some_and(|kind| {
-                            if behavior == CardBehavior::EssenceScatter {
-                                kind.is_creature()
-                            } else {
-                                !kind.is_creature()
-                            }
-                        })
+                        && self
+                            .stack_spell_kind(object)
+                            .is_some_and(|kind| match behavior {
+                                CardBehavior::EssenceScatter => kind.is_creature(),
+                                CardBehavior::Dispel => kind == CardKind::Instant,
+                                _ => !kind.is_creature(),
+                            })
                 })
                 .map(|object| vec![Target::Spell(object.id)])
                 .collect(),
@@ -3206,6 +3222,14 @@ impl Game {
                     self.draw_cards(player, 3);
                 }
             }
+            // "Draws two cards and loses 2 life" is one effect on one player,
+            // so it can be aimed at yourself as a draw spell.
+            CardBehavior::SignInBlood => {
+                if let Some(Target::Player(player)) = object.first_target() {
+                    self.draw_cards(player, 2);
+                    self.lose_life(player, 2);
+                }
+            }
             CardBehavior::Braingeyser => {
                 if let Some(Target::Player(player)) = object.first_target() {
                     self.draw_cards(player, object.x());
@@ -3314,7 +3338,8 @@ impl Game {
             | CardBehavior::Disenchant
             | CardBehavior::Sinkhole
             | CardBehavior::StoneRain
-            | CardBehavior::DoomBlade => {
+            | CardBehavior::DoomBlade
+            | CardBehavior::UltimatePrice => {
                 if let Some(Target::Permanent(target)) = object.first_target() {
                     self.destroy_permanent(target);
                 }
@@ -3390,7 +3415,7 @@ impl Game {
                 Some(Target::Permanent(target)) => self.destroy_permanent(target),
                 Some(Target::Player(_)) | None => {}
             },
-            CardBehavior::Negate | CardBehavior::EssenceScatter => {
+            CardBehavior::Negate | CardBehavior::EssenceScatter | CardBehavior::Dispel => {
                 if let Some(Target::Spell(target)) = object.first_target() {
                     self.counter_spell(target);
                 }
@@ -5287,6 +5312,14 @@ impl Game {
         self.untap_pending = false;
         self.priority = self.active_player;
         self.finish_untap_choices();
+    }
+
+    /// Life loss that is not damage: no source deals it, nothing that
+    /// triggers on damage sees it, and prevention does not apply.
+    fn lose_life(&mut self, player: PlayerId, amount: u16) {
+        let amount_as_i16 = i16::try_from(amount).unwrap_or(i16::MAX);
+        self.players[player.index()].life -= amount_as_i16;
+        self.events.push(GameEvent::LifeLost { player, amount });
     }
 
     fn deal_damage(&mut self, player: PlayerId, amount: u16) {

@@ -114,7 +114,7 @@ pub(in crate::card::sets) static DETENTION_SPHERE: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static DISPEL: CardRecord = CardRecord::new(
     cards::DISPEL,
     "Dispel",
@@ -127,8 +127,7 @@ pub(in crate::card::sets) static DISPEL: CardRecord = CardRecord::new(
         ManaCost::colored(0, 0, 1, 0, 0, 0),
         "Counter target instant spell.",
     )
-    .type_line("Instant")
-    .metadata_only(),
+    .type_line("Instant"),
 );
 
 // Implementation status: Land entry and mana production are active.
@@ -493,7 +492,7 @@ pub(in crate::card::sets) static TEMPLE_GARDEN: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static ULTIMATE_PRICE: CardRecord = CardRecord::new(
     cards::ULTIMATE_PRICE,
     "Ultimate Price",
@@ -506,8 +505,7 @@ pub(in crate::card::sets) static ULTIMATE_PRICE: CardRecord = CardRecord::new(
         ManaCost::colored(1, 0, 0, 1, 0, 0),
         "Destroy target monocolored creature.",
     )
-    .type_line("Instant")
-    .metadata_only(),
+    .type_line("Instant"),
 );
 
 // Implementation status: Spell is withheld from play; printed effects are pending.
