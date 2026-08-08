@@ -7461,3 +7461,40 @@ fn quicken_still_draws_even_though_its_flash_rider_is_pending() {
     assert_eq!(game.players[0].library.len(), before - 1);
     assert_eq!(game.players[0].hand.len(), 1);
 }
+
+#[test]
+fn mutilate_scales_with_the_swamps_you_control() {
+    for (swamps, angel_survives) in [(1, true), (4, false)] {
+        let mut game = ready_game();
+        for index in 0..swamps {
+            game.battlefield
+                .push(creature(11_000 + index, cards::SWAMP, PlayerId::One));
+        }
+        // Serra Angel is 4/4, so it dies only once four Swamps are out.
+        game.battlefield
+            .push(creature(10_000, cards::SERRA_ANGEL, PlayerId::Two));
+        let spell = card(10_001, cards::MUTILATE, PlayerId::One);
+        game.players[0].hand.push(spell.clone());
+        game.players[0].mana_pool.black = 2;
+        game.players[0].mana_pool.colorless = 2;
+
+        game.apply(
+            PlayerId::One,
+            cast_action(spell.id, Vec::new(), Vec::new(), 0),
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+
+        let angel = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::SERRA_ANGEL);
+        if angel_survives {
+            let angel = angel.expect("one Swamp is only -1/-1");
+            assert_eq!(game.power(angel), Some(3));
+            assert_eq!(game.toughness(angel), Some(3));
+        } else {
+            assert!(angel.is_none(), "four Swamps is -4/-4 and lethal");
+        }
+    }
+}

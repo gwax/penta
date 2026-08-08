@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, EffectDef,
-    EffectRecipientDef, LandEntry, ManaCost, ManaKindDef, ObjectPredicateDef, PlayerRelation,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
+    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaCost, ManaKindDef,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::TargetSlotId;
 
@@ -163,16 +164,35 @@ pub(in crate::card::sets) static JACE_MEMORY_ADEPT: CardRecord = CardRecord::new
     .metadata_only(),
 );
 
+/// Mutilate scales with your Swamps, and reads the same count twice.
+static SWAMPS_YOU_CONTROL: ValueDef = ValueDef::CountMatchingObjects(&ObjectQueryDef {
+    object: ObjectPredicateDef::Subtype("Swamp"),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::You,
+});
+
 pub(in crate::card::sets) static MUTILATE: CardRecord = CardRecord::new(
     cards::MUTILATE,
     "Mutilate",
     CardArt::new("c48bc86b-df0a-4a9c-8aad-c3ffb742a5ff", "Tyler Jacobson"),
     CardSet::Magic2013,
-    CardRules::new_sorcery(
-        ManaCost::colored(2, 0, 0, 2, 0, 0),
-        "All creatures get -1/-1 until end of turn for each Swamp you control.",
-    )
-    .metadata_only(),
+    CardRules::new_sorcery(ManaCost::colored(2, 0, 0, 2, 0, 0), "").with_abilities(&[
+        AbilityDef::spell(
+            "All creatures get -1/-1 until end of turn for each Swamp you control.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Negate(&SWAMPS_YOU_CONTROL),
+                    toughness: ValueDef::Negate(&SWAMPS_YOU_CONTROL),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static NEGATE: CardRecord = CardRecord::new(

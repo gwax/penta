@@ -5527,6 +5527,16 @@ impl Game {
                 )
                 .unwrap_or(i32::MAX)
             }
+            ValueDef::CountMatchingObjects(query) => {
+                let recipient = EffectRecipientDef::MatchingObjects {
+                    object: query.object,
+                    zones: query.zones,
+                    controller: query.controller,
+                };
+                i32::try_from(self.effect_recipients(recipient, object, context).len())
+                    .unwrap_or(i32::MAX)
+            }
+            ValueDef::Negate(inner) => self.effect_value(*inner, object, context).saturating_neg(),
         }
     }
 

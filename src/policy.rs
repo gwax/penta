@@ -225,10 +225,14 @@ impl HandcraftedPolicy {
         match value {
             ValueDef::Constant(value) => u16::try_from(value).ok(),
             ValueDef::ChosenX => Some(x),
+            // Board-dependent values are not knowable from the definition
+            // alone, so the caller falls back to its own heuristics.
             ValueDef::SourcePower
             | ValueDef::SourceToughness
             | ValueDef::TriggerEventAmount
-            | ValueDef::CardsInHandAbove { .. } => None,
+            | ValueDef::CardsInHandAbove { .. }
+            | ValueDef::CountMatchingObjects(_)
+            | ValueDef::Negate(_) => None,
         }
     }
 

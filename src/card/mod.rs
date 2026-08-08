@@ -29,10 +29,10 @@ pub use model::{
     DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef,
     ImplementationStatus, KeywordAbility, LandEntry, ManaCost, ManaKindDef, ManaRestrictionDef,
     ManaSelectionDef, ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef, MeldResultDef, ModeDef,
-    ModeSetDef, ObjectPredicateDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
-    PrintedManaCost, ReplacementAbilityDef, SpecialActionDef, SpellAbilityDef, SpellForm,
-    StaticAbilityDef, TargetPredicate, TargetSlotDef, TriggerEventDef, TriggeredAbilityDef,
-    TurnStepDef, ValueDef, ZoneKind,
+    ModeSetDef, ObjectPredicateDef, ObjectQueryDef, PlayActionKind, PlayOptionDef, PlayRestriction,
+    PlayerRelation, PrintedManaCost, ReplacementAbilityDef, SpecialActionDef, SpellAbilityDef,
+    SpellForm, StaticAbilityDef, TargetPredicate, TargetSlotDef, TriggerEventDef,
+    TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

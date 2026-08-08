@@ -582,6 +582,15 @@ impl AddManaEffectDef {
 /// A value evaluated from the resolving spell or ability and its captured
 /// event. `SourcePower` and `SourceToughness` deliberately leave current-versus
 /// last-known-information selection to the runtime source reference.
+/// A set of objects described the way [`EffectRecipientDef::MatchingObjects`]
+/// describes one, so a count and a sweep name their subject identically.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ObjectQueryDef {
+    pub object: ObjectPredicateDef,
+    pub zones: &'static [ZoneKind],
+    pub controller: PlayerRelation,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ValueDef {
     Constant(i32),
@@ -593,6 +602,12 @@ pub enum ValueDef {
         player: PlayerRelation,
         threshold: u8,
     },
+    /// How many objects match, for the "for each" clauses. Held by reference
+    /// so that `ValueDef` stays small enough to embed freely.
+    CountMatchingObjects(&'static ObjectQueryDef),
+    /// The negation of another value, so a "for each" penalty can reuse the
+    /// same count a bonus would.
+    Negate(&'static ValueDef),
 }
 
 /// An object or player affected by an effect. Targets are chosen when a spell
