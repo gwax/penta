@@ -288,6 +288,10 @@ enum DecisionContinuation {
         player: PlayerId,
         source: GameObjectId,
     },
+    /// Sin Collector and Lifebane Zombie, holding the hand they exile from.
+    ExileFromHand {
+        victim: PlayerId,
+    },
     /// Augur of Bolas holding the three cards it looked at; they have already
     /// left the library, so the continuation must place all of them.
     AugurOfBolas {
@@ -1595,6 +1599,21 @@ impl Game {
         let pending = self.pending_decisions.remove(0);
         debug_assert_eq!(pending.observation.id, decision);
         match pending.continuation {
+            DecisionContinuation::ExileFromHand { victim } => {
+                let Some((card, _)) = pending
+                    .observation
+                    .options
+                    .iter()
+                    .find(|option| options.contains(&option.id))
+                    .and_then(|option| option.card)
+                else {
+                    return;
+                };
+                if let Some(card) = remove_card(&mut self.players[victim.index()].hand, card) {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    self.players[victim.index()].exile.push(card);
+                }
+            }
             DecisionContinuation::AugurOfBolas { player, revealed } => {
                 let kept = pending
                     .observation
@@ -3331,34 +3350,88 @@ impl Game {
     /// targets or can be responded to, so the only visible difference would be
     /// a priority window in which nothing can happen.
     fn resolve_battlefield_entry(&mut self, controller: PlayerId, behavior: CardBehavior) {
-        if behavior == CardBehavior::AugurOfBolas {
-            let revealed = self.take_top_of_library(controller, 3);
-            let eligible = revealed
-                .iter()
-                .filter(|card| {
-                    self.catalog.get(card.definition).is_some_and(|definition| {
-                        matches!(definition.rules.kind, CardKind::Instant | CardKind::Sorcery)
-                    })
-                })
-                .cloned()
-                .collect::<Vec<_>>();
-            let options = self.card_decision_options(&eligible, DecisionZone::Library);
-            // "You may reveal": taking nothing is a real choice, so the
-            // minimum is zero even when something qualifies.
-            self.queue_decision(
-                controller,
-                "Put an instant or sorcery card into your hand",
-                DecisionVisibility::Public,
-                DecisionPreference::HigherCardValue,
-                0..=1,
-                false,
-                options,
-                DecisionContinuation::AugurOfBolas {
-                    player: controller,
-                    revealed,
-                },
-            );
+        match behavior {
+            CardBehavior::SinCollector | CardBehavior::LifebaneZombie => {
+                self.queue_reveal_and_exile(controller, behavior);
+            }
+            CardBehavior::AugurOfBolas => self.queue_augur_dig(controller),
+            _ => {}
         }
+    }
+
+    /// Sin Collector and Lifebane Zombie: the opponent reveals their hand and
+    /// you exile one card of a kind the card names. With two players "target
+    /// opponent" has exactly one answer, so nothing is asked about it.
+    fn queue_reveal_and_exile(&mut self, controller: PlayerId, behavior: CardBehavior) {
+        let victim = controller.opponent();
+        let eligible = self.players[victim.index()]
+            .hand
+            .iter()
+            .filter(|card| {
+                self.catalog
+                    .get(card.definition)
+                    .is_some_and(|definition| match behavior {
+                        CardBehavior::LifebaneZombie => {
+                            let colors = definition.rules.colors;
+                            definition.rules.kind.is_creature() && (colors[0] || colors[4])
+                        }
+                        _ => matches!(definition.rules.kind, CardKind::Instant | CardKind::Sorcery),
+                    })
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        if eligible.is_empty() {
+            // The hand is revealed and holds nothing this card can take. A
+            // prompt with no options is answerable, but there is nothing to
+            // ask.
+            return;
+        }
+        let options = self.card_decision_options(&eligible, DecisionZone::Hand);
+        let prompt = if behavior == CardBehavior::LifebaneZombie {
+            "Exile a green or white creature card from their hand"
+        } else {
+            "Exile an instant or sorcery card from their hand"
+        };
+        // The hand is revealed, so the choice is public rather than hidden.
+        self.queue_decision(
+            controller,
+            prompt,
+            DecisionVisibility::Public,
+            DecisionPreference::HigherCardValue,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::ExileFromHand { victim },
+        );
+    }
+
+    fn queue_augur_dig(&mut self, controller: PlayerId) {
+        let revealed = self.take_top_of_library(controller, 3);
+        let eligible = revealed
+            .iter()
+            .filter(|card| {
+                self.catalog.get(card.definition).is_some_and(|definition| {
+                    matches!(definition.rules.kind, CardKind::Instant | CardKind::Sorcery)
+                })
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        let options = self.card_decision_options(&eligible, DecisionZone::Library);
+        // "You may reveal": taking nothing is a real choice, so the
+        // minimum is zero even when something qualifies.
+        self.queue_decision(
+            controller,
+            "Put an instant or sorcery card into your hand",
+            DecisionVisibility::Public,
+            DecisionPreference::HigherCardValue,
+            0..=1,
+            false,
+            options,
+            DecisionContinuation::AugurOfBolas {
+                player: controller,
+                revealed,
+            },
+        );
     }
 
     fn resolve_activated_ability(&mut self, object: &StackObject) {

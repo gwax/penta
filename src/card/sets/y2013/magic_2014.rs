@@ -112,7 +112,7 @@ pub(in crate::card::sets) static ENCROACHING_WASTES: CardRecord = CardRecord::ne
     .metadata_only(),
 );
 
-// Implementation status: Baseline creature casting/combat and declaratively modeled traits are active; remaining printed abilities are pending.
+// Implementation status: complete — intimidate and the enters-the-battlefield exile both run.
 pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
     cards::LIFEBANE_ZOMBIE,
     "Lifebane Zombie",
@@ -127,8 +127,7 @@ pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
     )
     .type_line("Creature — Zombie Warrior")
     .creature(3, 1)
-    .intimidate()
-    .metadata_only(),
+    .intimidate(),
 );
 
 // Implementation status: Land entry and mana production are active; other printed abilities are pending.

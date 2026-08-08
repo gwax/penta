@@ -99,7 +99,7 @@ pub(in crate::card::sets) static RURIC_THAR_THE_UNBOWED: CardRecord = CardRecord
     .metadata_only(),
 );
 
-// Implementation status: Baseline creature casting/combat and declaratively modeled traits are active; remaining printed abilities are pending.
+// Implementation status: complete — the enters-the-battlefield exile runs.
 pub(in crate::card::sets) static SIN_COLLECTOR: CardRecord = CardRecord::new(
     cards::SIN_COLLECTOR,
     "Sin Collector",
@@ -113,8 +113,7 @@ pub(in crate::card::sets) static SIN_COLLECTOR: CardRecord = CardRecord::new(
         "When this creature enters, target opponent reveals their hand. You choose an instant or sorcery card from it and exile that card.",
     )
     .type_line("Creature — Human Cleric")
-    .creature(2, 1)
-    .metadata_only(),
+    .creature(2, 1),
 );
 
 const fn turn_rules() -> CardRules {

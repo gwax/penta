@@ -4292,3 +4292,92 @@ fn augur_of_bolas_may_decline_and_bottom_all_three() {
         ]
     );
 }
+
+/// Casts a creature from hand and resolves it, so its entry ability runs.
+fn cast_and_resolve(game: &mut Game, instance: u32, definition: CardDefinitionId) {
+    let creature = card(instance, definition, PlayerId::One);
+    game.players[0].hand.push(creature.clone());
+    game.players[0].mana_pool.white = 3;
+    game.players[0].mana_pool.black = 3;
+    game.players[0].mana_pool.blue = 3;
+    game.players[0].mana_pool.colorless = 3;
+    game.apply(
+        PlayerId::One,
+        cast_action(creature.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(game);
+}
+
+#[test]
+fn sin_collector_exiles_an_instant_or_sorcery_from_the_revealed_hand() {
+    let mut game = ready_game();
+    game.players[1]
+        .hand
+        .push(card(12_000, cards::SAVANNAH_LIONS, PlayerId::Two));
+    game.players[1]
+        .hand
+        .push(card(12_001, cards::LIGHTNING_BOLT, PlayerId::Two));
+    cast_and_resolve(&mut game, 12_100, cards::SIN_COLLECTOR);
+
+    // Only the Bolt qualifies; the creature is not offered.
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    let offered: Vec<_> = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(_, definition)| definition))
+        .collect();
+    assert_eq!(offered, vec![cards::LIGHTNING_BOLT]);
+
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decision.options[0].id],
+        },
+    )
+    .unwrap();
+
+    assert_eq!(game.players[1].exile[0].definition, cards::LIGHTNING_BOLT);
+    assert_eq!(game.players[1].hand.len(), 1, "the creature stays");
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "exiled, not discarded"
+    );
+}
+
+#[test]
+fn lifebane_zombie_only_takes_green_or_white_creatures() {
+    let mut game = ready_game();
+    for (instance, definition) in [
+        (12_000, cards::SAVANNAH_LIONS), // white creature
+        (12_001, cards::JUZAM_DJINN),    // black creature
+        (12_002, cards::LIGHTNING_BOLT), // not a creature
+    ] {
+        game.players[1]
+            .hand
+            .push(card(instance, definition, PlayerId::Two));
+    }
+    cast_and_resolve(&mut game, 12_100, cards::LIFEBANE_ZOMBIE);
+
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    let offered: Vec<_> = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(_, definition)| definition))
+        .collect();
+    assert_eq!(offered, vec![cards::SAVANNAH_LIONS]);
+}
+
+#[test]
+fn a_reveal_and_exile_creature_asks_nothing_of_an_empty_hand() {
+    let mut game = ready_game();
+    game.players[1].hand.clear();
+    cast_and_resolve(&mut game, 12_100, cards::SIN_COLLECTOR);
+
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "nothing to take, so nothing to ask"
+    );
+    assert_eq!(game.battlefield.len(), 1, "the creature still arrives");
+}
