@@ -6,6 +6,12 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const primaryWorktreePort = 3000;
 
+/// Editor and agent tooling configures a preview by writing one fixed port
+/// into a config file, which cannot track a per-worktree assignment. Such a
+/// tool sets this instead, and `dev:url` then reports the port it pinned, so
+/// the two still agree.
+export const devPortOverrideVariable = "PENTA_DEV_PORT";
+
 const linkedPortStart = 10_000;
 const linkedPortEnd = 49_151;
 const portFileName = ".dev-port";
@@ -120,7 +126,24 @@ export function chooseWorktreePort(
   throw new Error("There are more linked worktrees than available development ports");
 }
 
-export function getWorktreeDevPort({ cwd = fileURLToPath(new URL(".", import.meta.url)) } = {}) {
+export function parseDevPortOverride(value) {
+  if (value === undefined || value.trim() === "") return undefined;
+
+  const port = Number(value.trim());
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new Error(`${devPortOverrideVariable} must be a port number: ${value}`);
+  }
+
+  return port;
+}
+
+export function getWorktreeDevPort({
+  cwd = fileURLToPath(new URL(".", import.meta.url)),
+  env = process.env,
+} = {}) {
+  const override = parseDevPortOverride(env[devPortOverrideVariable]);
+  if (override !== undefined) return override;
+
   let commonGitDirectory;
   let currentRoot;
   let worktreeOutput;

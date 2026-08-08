@@ -3,6 +3,9 @@ import test from "node:test";
 
 import {
   chooseWorktreePort,
+  devPortOverrideVariable,
+  getWorktreeDevPort,
+  parseDevPortOverride,
   parseWorktreeRoots,
   primaryWorktreePort,
 } from "../worktree-port.js";
@@ -60,4 +63,28 @@ test("NUL-delimited porcelain output preserves unusual worktree paths", () => {
   ].join("\0");
 
   assert.deepEqual(parseWorktreeRoots(porcelain), [roots[0], unusualRoot]);
+});
+
+test("an environment override pins the port for every caller", () => {
+  // Editor and agent previews pin one port in a static config file. Both the
+  // server and `dev:url` read the override, so they cannot disagree.
+  const env = { [devPortOverrideVariable]: "3000" };
+  assert.equal(getWorktreeDevPort({ env }), 3000);
+  assert.equal(getWorktreeDevPort({ env: { [devPortOverrideVariable]: " 8080 " } }), 8080);
+});
+
+test("an absent or blank override falls back to the worktree assignment", () => {
+  assert.equal(parseDevPortOverride(undefined), undefined);
+  assert.equal(parseDevPortOverride(""), undefined);
+  assert.equal(parseDevPortOverride("   "), undefined);
+});
+
+test("a malformed override fails loudly instead of silently picking a port", () => {
+  for (const value of ["zero", "0", "-1", "65536", "3000.5"]) {
+    assert.throws(
+      () => parseDevPortOverride(value),
+      new RegExp(`${devPortOverrideVariable} must be a port number`),
+      `expected ${value} to be rejected`,
+    );
+  }
 });
