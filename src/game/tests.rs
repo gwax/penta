@@ -7498,3 +7498,81 @@ fn mutilate_scales_with_the_swamps_you_control() {
         }
     }
 }
+
+#[test]
+fn abrupt_decay_only_reaches_cheap_nonland_permanents() {
+    // Savannah Lions is {W}, Serra Angel is {3}{W}{W}, and a land is a land.
+    for (definition, legal) in [
+        (cards::SAVANNAH_LIONS, true),
+        (cards::BLACK_VISE, true),
+        (cards::SERRA_ANGEL, false),
+        (cards::MOUNTAIN, false),
+    ] {
+        let mut game = ready_game();
+        let target = creature(10_000, definition, PlayerId::Two);
+        let target_id = target.card.id;
+        game.battlefield.push(target);
+        let spell = card(10_001, cards::ABRUPT_DECAY, PlayerId::One);
+        game.players[0].hand.push(spell.clone());
+        game.players[0].mana_pool.black = 1;
+        game.players[0].mana_pool.green = 1;
+
+        let action = cast_action(spell.id, vec![Target::Permanent(target_id)], Vec::new(), 0);
+        assert_eq!(
+            game.legal_actions(PlayerId::One).contains(&action),
+            legal,
+            "{definition:?} should be {}",
+            if legal { "targetable" } else { "out of reach" }
+        );
+        if !legal {
+            continue;
+        }
+        game.apply(PlayerId::One, action).unwrap();
+        pass_priority_pair(&mut game);
+        assert!(game.battlefield.is_empty(), "{definition:?} is destroyed");
+    }
+}
+
+#[test]
+fn abrupt_decay_says_on_the_card_that_it_cannot_be_countered() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::Two));
+    let decay = card(10_001, cards::ABRUPT_DECAY, PlayerId::One);
+    let counterspell = card(10_002, cards::COUNTERSPELL, PlayerId::Two);
+    game.players[0].hand.push(decay.clone());
+    game.players[0].mana_pool.black = 1;
+    game.players[0].mana_pool.green = 1;
+    game.players[1].hand.push(counterspell.clone());
+    game.players[1].mana_pool.blue = 2;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            decay.id,
+            vec![Target::Permanent(CardInstanceId(10_000))],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    let decay_on_stack = game.stack[0].id;
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            counterspell.id,
+            vec![Target::Spell(decay_on_stack)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.battlefield.is_empty(),
+        "the Decay resolved despite the Counterspell"
+    );
+}

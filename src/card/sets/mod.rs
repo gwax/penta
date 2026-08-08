@@ -316,7 +316,8 @@ mod tests {
             | ObjectPredicateDef::Spell
             | ObjectPredicateDef::NoncreatureSpell
             | ObjectPredicateDef::Color(_)
-            | ObjectPredicateDef::Subtype(_) => true,
+            | ObjectPredicateDef::Subtype(_)
+            | ObjectPredicateDef::ManaValueAtMost(_) => true,
         }
     }
 
@@ -594,7 +595,21 @@ mod tests {
                     && shared_stack_effect(ability.effect)
             }
             DeclarativeAbilityDef::Static(definition) => {
-                battlefield_only(definition.source_zones) && shared_static_effect(ability.effect)
+                // A spell that says it cannot be countered is a static ability
+                // whose source sits on the stack, not the battlefield, and the
+                // runtime reads it there when a counter tries to resolve.
+                let uncounterable_spell = definition.source_zones == [ZoneKind::Stack]
+                    && matches!(
+                        ability.effect,
+                        EffectDef::Apply {
+                            recipient: EffectRecipientDef::Source,
+                            effect: AppliedEffectDef::CannotBeCountered,
+                            ..
+                        }
+                    );
+                uncounterable_spell
+                    || (battlefield_only(definition.source_zones)
+                        && shared_static_effect(ability.effect))
             }
             DeclarativeAbilityDef::Replacement(definition) => {
                 battlefield_only(definition.source_zones)

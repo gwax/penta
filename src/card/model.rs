@@ -361,6 +361,8 @@ pub enum ObjectPredicateDef {
     NoncreatureSpell,
     Color(ColorDef),
     Subtype(&'static str),
+    /// Mana value at most this much, for "with mana value N or less".
+    ManaValueAtMost(u8),
     All(&'static [ObjectPredicateDef]),
     AnyOf(&'static [ObjectPredicateDef]),
     Not(&'static ObjectPredicateDef),

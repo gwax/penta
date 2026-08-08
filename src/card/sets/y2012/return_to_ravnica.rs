@@ -3,11 +3,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, EffectDef,
-    EffectRecipientDef, LandEntry, ManaCost, ManaKindDef, ModeDef, ModeSetDef, ObjectPredicateDef,
-    PlayOptionDef, PlayerRelation, SpellForm, TargetPredicate, TargetSlotDef, ValueDef, ZoneKind,
-    abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaCost, ManaKindDef, ModeDef,
+    ModeSetDef, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TargetPredicate,
+    TargetSlotDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, ModeId, PlayOptionId, TargetSlotId};
 
@@ -16,11 +16,37 @@ pub(in crate::card::sets) static ABRUPT_DECAY: CardRecord = CardRecord::new(
     "Abrupt Decay",
     CardArt::new("3b1e92b4-6e53-4dba-a572-c67e01965ac5", "Svetlin Velinov"),
     CardSet::ReturnToRavnica,
-    CardRules::new_instant(
-        ManaCost::colored(0, 0, 0, 1, 0, 1),
-        "This spell can't be countered.\nDestroy target nonland permanent with mana value 3 or less.",
-    )
-    .metadata_only(),
+    CardRules::new_instant(ManaCost::colored(0, 0, 0, 1, 0, 1), "").with_abilities(&[
+        AbilityDef::static_ability(
+            "This spell can't be countered.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBeCountered,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        )
+        .with_source_zones(&[ZoneKind::Stack]),
+        AbilityDef::spell(
+            "Destroy target nonland permanent with mana value 3 or less.",
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                can_regenerate: true,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "nonland permanent with mana value 3 or less",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    ObjectPredicateDef::ManaValueAtMost(3),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
+    ]),
 );
 
 pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new(

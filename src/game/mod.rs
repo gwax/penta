@@ -300,6 +300,7 @@ struct TriggerEventObject {
     controller: PlayerId,
     colors: [bool; 5],
     subtypes: Cow<'static, [&'static str]>,
+    mana_value: u16,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1943,6 +1944,7 @@ impl Game {
             }
             ObjectPredicateDef::Color(color) => object.colors[color.index()],
             ObjectPredicateDef::Subtype(subtype) => object.subtypes.contains(&subtype),
+            ObjectPredicateDef::ManaValueAtMost(limit) => object.mana_value <= u16::from(limit),
             ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {
                 Self::trigger_object_matches(*predicate, object, source, is_spell)
             }),
@@ -3831,6 +3833,7 @@ impl Game {
         let mut types = [false; CardType::COUNT];
         let mut colors = [false; 5];
         let mut subtypes = Vec::new();
+        let mut mana_value = 0;
         for part in parts {
             let part = definition.part(part)?;
             for (combined, present) in types.iter_mut().zip(part.rules.kind().types()) {
@@ -3844,6 +3847,7 @@ impl Game {
                     subtypes.push(*subtype);
                 }
             }
+            mana_value += part.rules.mana_cost().map_or(0, ManaCost::mana_value);
         }
         Some(TriggerEventObject {
             id,
@@ -3851,6 +3855,7 @@ impl Game {
             controller,
             colors,
             subtypes: Cow::Owned(subtypes),
+            mana_value,
         })
     }
 
@@ -5767,7 +5772,8 @@ impl Game {
             | ObjectPredicateDef::Spell
             | ObjectPredicateDef::NoncreatureSpell
             | ObjectPredicateDef::Color(_)
-            | ObjectPredicateDef::Subtype(_) => false,
+            | ObjectPredicateDef::Subtype(_)
+            | ObjectPredicateDef::ManaValueAtMost(_) => false,
         }
     }
 
@@ -6554,6 +6560,7 @@ impl Game {
             } else {
                 rules.subtypes()
             }),
+            mana_value: self.permanent_mana_value(permanent),
         }
     }
 
@@ -8767,8 +8774,35 @@ impl Game {
 
     /// Whether a spell on the stack can be countered at all. Supreme Verdict
     /// says it cannot, and says so on the card rather than in the engine.
+    /// Whether a spell on the stack can be countered at all.
+    ///
+    /// A card says so on itself, with a static clause applying
+    /// `CannotBeCountered` to its own spell. Supreme Verdict still says it
+    /// through its legacy custom behavior and is named here until it migrates
+    /// to clauses like the rest.
     fn can_be_countered(&self, object: &StackObject) -> bool {
-        self.behavior(object.card.definition) != Some(CardBehavior::SupremeVerdict)
+        if self.behavior(object.card.definition) == Some(CardBehavior::SupremeVerdict) {
+            return false;
+        }
+        let printed_uncounterable = self
+            .catalog
+            .get(object.card.definition)
+            .into_iter()
+            .flat_map(|definition| definition.parts.iter())
+            .flat_map(|part| part.rules.ability_clauses().iter())
+            .any(|ability| {
+                ability.implementation.is_executable()
+                    && matches!(ability.definition, DeclarativeAbilityDef::Static(_))
+                    && matches!(
+                        ability.effect,
+                        EffectDef::Apply {
+                            recipient: EffectRecipientDef::Source,
+                            effect: AppliedEffectDef::CannotBeCountered,
+                            ..
+                        }
+                    )
+            });
+        !printed_uncounterable
     }
 
     fn counter_spell(&mut self, id: GameObjectId) {
