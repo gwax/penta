@@ -5,6 +5,42 @@ use super::{DecisionObservation, GameResult, ManaPool, StackObjectKind, Step};
 pub(super) type PublicCard = (GameObjectId, CardDefinitionId);
 pub(super) type LastSeenHand = Option<(PlayerId, Vec<PublicCard>)>;
 
+/// One card in a hand or library, as a simulation rearranging hidden state
+/// sees it. Unlike an observation this is never redacted, because a `Game` in
+/// your own process has nobody to hide it from — see [`crate::Game::hand`].
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ZoneCard {
+    pub object: GameObjectId,
+    pub definition: CardDefinitionId,
+}
+
+/// Why a hand or library could not be rearranged.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ZoneError {
+    /// The same object was named twice in one zone.
+    Duplicate(GameObjectId),
+    /// The object is not in any hand or library. Battlefield, stack, and
+    /// graveyard cards are public, so moving them is not rearranging hidden
+    /// state.
+    NotHidden(GameObjectId),
+}
+
+impl std::fmt::Display for ZoneError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Duplicate(object) => {
+                write!(formatter, "{object:?} was named twice in one zone")
+            }
+            Self::NotHidden(object) => write!(
+                formatter,
+                "{object:?} is not in a hand or library, so it is not hidden state"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ZoneError {}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct PermanentObservation {

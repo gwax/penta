@@ -12,6 +12,33 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
+## 0.5.0 — protocol 2
+
+### Added
+
+- `Game` can now be used as a simulation substrate, not only driven as a
+  match. `hand`, `library`, `set_hand`, `set_library`, `definition_of`, and
+  `detached_cards` read and rearrange hidden state without redaction, and the
+  Python module exposes the same surface. `observe` is unchanged and remains
+  the redacted view anything client-facing should use — a game running in your
+  own process has nobody to hide from.
+
+  This is what determinized search needs, and deliberately all it needs. Every
+  determinization is a permutation of unseen cards across unseen zones, so
+  uniform, weighted, and belief-filtered samplers are the same two calls with a
+  different shuffle. The engine supplies no distribution.
+
+### Changed
+
+- `ActionError` gained a `CardsDetached` variant, which is why this is a minor
+  bump rather than a patch: a caller matching the enum exhaustively must handle
+  it. Rearranging hidden state usually spans several zones, so a card lifted
+  out of one is held aside until it is put back, and `apply` refuses to run
+  while any card is homeless rather than losing it.
+
+Protocol stays at 2. No JSON shape changed and no action was added or removed;
+the new methods sit beside the protocol rather than in it.
+
 ## 0.4.0 — protocol 2
 
 ### Fixed

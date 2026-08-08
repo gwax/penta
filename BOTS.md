@@ -86,6 +86,8 @@ The module surface:
 | `game.choose_decision([ids])` | answer a multi-pick decision explicitly (see below) |
 | `game.decision_seat()` | `"p1"` / `"p2"` / `None` when the game is over |
 | `game.clone()` | an independent copy of the game — fork it, try a line, discard it |
+| `game.hand(seat)`, `game.library(seat)` | a zone's real contents, unredacted — for simulating, not for playing |
+| `game.set_hand(seat, ids)`, `game.set_library(seat, ids)` | rearrange hidden state in a fork |
 | `game.result()` | `None`, `"p1"`, `"p2"`, or `"draw"` |
 | `penta.catalog(format=)` | every canonical definition annotated with legality for the selected format, as JSON |
 | `penta.deck_names(format=)` | the selected format's built-in decks |
@@ -183,6 +185,47 @@ mid-state into an independent copy, the built-in opponent's state included.
 Fork at a decision, roll each candidate action out to the end, play the
 winner in the real game — the clone and the original never disturb each
 other, and a clone fed the same indices replays byte-identically.
+
+
+### Rolling out against worlds you cannot see
+
+A clone forks the *true* state, hidden zones included. For self-play training
+that is exactly right. For a search bot choosing a move in a real match it is
+not: rollouts on the true world are influenced by cards the searcher has not
+seen, so the outcomes it measures encode information it does not have.
+
+The fix is to search over worlds consistent with what your seat actually
+knows. Fork the game, replace the hidden zones with a sampled arrangement, and
+average over several such worlds:
+
+```python
+world = game.clone()
+
+# Cards p1 cannot account for: p2's hand plus both libraries.
+unseen  = [c["objectId"] for c in json.loads(world.hand("p2"))]
+unseen += [c["objectId"] for c in json.loads(world.library("p2"))]
+random.shuffle(unseen)                      # your distribution, not ours
+
+hand_size = len(json.loads(world.hand("p2")))
+world.set_hand("p2", unseen[:hand_size])
+world.set_library("p2", unseen[hand_size:])
+```
+
+The engine deliberately ships no sampler. Every determinization is a
+permutation of unseen cards across unseen zones, so a uniform re-deal, a
+weighting by what the opponent has cast, and a belief filter maintained across
+turns are all the same two calls with a different shuffle. Picking one for you
+would privilege one search design over the others.
+
+What the engine does guarantee is that you cannot lose a card. A rearrangement
+usually spans several zones, so a card lifted out of one is held aside until
+you put it back — `game.detached()` lists them, and `act` raises while any
+remain, rather than playing on with cards missing.
+
+These accessors are not redacted. That is not a hole in match secrecy: a
+tournament server hands a bot redacted observations over a wire and never a
+game object, so transparency here only reaches someone simulating in their own
+process, where there is nobody to hide from.
 
 ## The observation
 

@@ -32,7 +32,7 @@ pub use format::{Format, FormatRules};
 pub use game::{
     BattlefieldExit, DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility,
     DecisionZone, Game, GameError, GameEvent, GameResult, ManaPool, PlayerObservation,
-    StackObjectKind, Step, WinReason, ZoneChangeOutcome,
+    StackObjectKind, Step, WinReason, ZoneCard, ZoneChangeOutcome, ZoneError,
 };
 pub use ids::{
     AdditionalCostId, AlternativeCostId, CardDefinitionId, CardInstanceId, CardPartId,

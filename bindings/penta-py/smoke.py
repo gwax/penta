@@ -117,6 +117,40 @@ while game.result() is None:
     assert steps < 200000
 print("self-play:", game.result(), "in", steps, "decisions")
 
+
+# determinization: the caller reshuffles hidden state itself, so search can
+# roll out worlds consistent with what a seat actually knows. The engine
+# supplies no distribution -- only the guarantee that no card is lost.
+import random
+
+game = penta.Game("Sligh", "The Deck", opponent="handcrafted", seed=3)
+game.act(pass_bot(json.loads(game.observe())))
+world = game.clone()
+
+unseen = [c["objectId"] for c in json.loads(world.hand("p2"))]
+unseen += [c["objectId"] for c in json.loads(world.library("p2"))]
+before = len(unseen)
+random.Random(7).shuffle(unseen)
+
+hand_size = len(json.loads(world.hand("p2")))
+world.set_hand("p2", unseen[:hand_size])
+assert json.loads(world.detached()), "the old hand is held aside mid-rearrangement"
+try:
+    world.act(0)
+    raise AssertionError("acting with cards detached must raise")
+except ValueError:
+    pass
+world.set_library("p2", unseen[hand_size:])
+assert not json.loads(world.detached()), "every card has a home again"
+
+after = len(json.loads(world.hand("p2"))) + len(json.loads(world.library("p2")))
+assert after == before, f"conserved {before} cards, found {after}"
+assert json.loads(world.hand("p2")) != json.loads(game.hand("p2")), "the world differs"
+assert json.loads(world.observe("p1")) == json.loads(game.observe("p1")), \
+    "p1 cannot tell: their own view is untouched"
+world.act(pass_bot(json.loads(world.observe())))
+print("determinize: hidden state reshuffled, cards conserved, p1's view unchanged")
+
 # hidden info: p1 never sees p2's hand
 game = penta.Game("Sligh", "The Deck", opponent="handcrafted", seed=3)
 obs = json.loads(game.observe())

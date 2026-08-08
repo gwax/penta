@@ -86,7 +86,15 @@ pub enum Action {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ActionError {
     GameAlreadyFinished,
-    NotLegal { player: PlayerId, action: Action },
+    NotLegal {
+        player: PlayerId,
+        action: Action,
+    },
+    /// A simulation lifted cards out of a hand or library and never put them
+    /// back. Playing on from here would quietly lose them.
+    CardsDetached {
+        count: usize,
+    },
 }
 
 impl fmt::Display for ActionError {
@@ -96,6 +104,11 @@ impl fmt::Display for ActionError {
             Self::NotLegal { player, action } => {
                 write!(formatter, "{action:?} is not legal for {player}")
             }
+            Self::CardsDetached { count } => write!(
+                formatter,
+                "{count} card(s) are detached from every zone; \
+                 finish rearranging hands and libraries before playing on"
+            ),
         }
     }
 }

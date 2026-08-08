@@ -195,6 +195,22 @@ fn seat_by_name(name: &str) -> Option<PlayerId> {
     }
 }
 
+/// Serializes the unredacted zone view. `objectId` matches the identifier the
+/// observation already uses, so a caller can join the two without a lookup.
+fn zone_cards_json(cards: &[crate::ZoneCard]) -> Value {
+    Value::from(
+        cards
+            .iter()
+            .map(|card| {
+                json!({
+                    "objectId": card.object.0,
+                    "definition": card.definition.0,
+                })
+            })
+            .collect::<Vec<_>>(),
+    )
+}
+
 fn target_json(target: Target) -> Value {
     match target {
         Target::Player(player) => json!({ "type": "player", "seat": seat_name(player) }),
@@ -1058,6 +1074,54 @@ impl BotGame {
     #[must_use]
     pub fn decision_seat_name(&self) -> Option<&'static str> {
         self.decision_seat().map(seat_name)
+    }
+
+    /// A seat's hand as `{objectId, definition}` JSON, unredacted.
+    ///
+    /// This is the simulation surface, not the protocol surface. It reports
+    /// what is really there so a search bot can rearrange hidden state for a
+    /// rollout; [`Self::observe_json`] remains the redacted view a client
+    /// should be shown.
+    #[must_use]
+    pub fn hand_json(&self, seat: PlayerId) -> String {
+        zone_cards_json(&self.game.hand(seat)).to_string()
+    }
+
+    /// A seat's library, top card first. See [`Self::hand_json`].
+    #[must_use]
+    pub fn library_json(&self, seat: PlayerId) -> String {
+        zone_cards_json(&self.game.library(seat)).to_string()
+    }
+
+    /// Cards lifted out of a zone and not yet put back. See
+    /// [`Self::hand_json`].
+    #[must_use]
+    pub fn detached_json(&self) -> String {
+        zone_cards_json(&self.game.detached_cards()).to_string()
+    }
+
+    /// Replaces a seat's hand with exactly these objects.
+    ///
+    /// # Errors
+    ///
+    /// Returns the zone error as a string when an object is named twice or is
+    /// not currently in a hand or library.
+    pub fn set_hand(&mut self, seat: PlayerId, objects: &[GameObjectId]) -> Result<(), String> {
+        self.game
+            .set_hand(seat, objects)
+            .map_err(|error| error.to_string())
+    }
+
+    /// Replaces a seat's library, top card first. See [`Self::set_hand`].
+    ///
+    /// # Errors
+    ///
+    /// Returns the zone error as a string under the same conditions as
+    /// [`Self::set_hand`].
+    pub fn set_library(&mut self, seat: PlayerId, objects: &[GameObjectId]) -> Result<(), String> {
+        self.game
+            .set_library(seat, objects)
+            .map_err(|error| error.to_string())
     }
 
     /// The observation for one seat as canonical protocol JSON.

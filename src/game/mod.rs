@@ -27,7 +27,9 @@ pub use decision::{
 };
 pub use event::{BattlefieldExit, GameEvent, GameResult, StackObjectKind, Step, WinReason};
 pub use mana::ManaPool;
-pub use observation::{PermanentObservation, PlayerObservation, StackObservation};
+pub use observation::{
+    PermanentObservation, PlayerObservation, StackObservation, ZoneCard, ZoneError,
+};
 
 use observation::{LastSeenHand, PublicCard};
 
@@ -270,6 +272,11 @@ pub struct Game {
     #[allow(dead_code)] // Reserved for backing validation and future meld actions.
     physical_cards: Vec<PhysicalCard>,
     players: [PlayerState; 2],
+    /// Cards a simulation lifted out of a hand or library and has not put back
+    /// yet. Rearranging hidden state usually spans several zones, so the setters
+    /// let the board be briefly incomplete and `apply` refuses to run until it
+    /// is whole again. Empty in every game that is only played, never edited.
+    detached: Vec<CardInstance>,
     battlefield: Vec<Permanent>,
     stack: Vec<StackObject>,
     next_object_id: u32,
@@ -405,6 +412,7 @@ impl Game {
             catalog,
             physical_cards,
             players,
+            detached: Vec::new(),
             battlefield: Vec::new(),
             stack: Vec::new(),
             next_object_id,
@@ -676,6 +684,11 @@ impl Game {
     /// Returns [`ActionError`] when the game is over or the action is not
     /// currently legal for that player.
     pub fn apply(&mut self, player: PlayerId, action: Action) -> Result<(), ActionError> {
+        if !self.detached.is_empty() {
+            return Err(ActionError::CardsDetached {
+                count: self.detached.len(),
+            });
+        }
         if self.result.is_some() {
             return Err(ActionError::GameAlreadyFinished);
         }
@@ -764,6 +777,108 @@ impl Game {
         } else {
             self.legal_actions(player).contains(action)
         }
+    }
+
+    /// One card in a hand or library, as a simulation sees it.
+    ///
+    /// This is not redacted. [`Self::observe`] is the redacted view, and it is
+    /// what anything talking to a client should use; a `Game` in your own
+    /// process has no one to hide from.
+    #[must_use]
+    pub fn hand(&self, player: PlayerId) -> Vec<ZoneCard> {
+        zone_cards(&self.players[player.index()].hand)
+    }
+
+    /// The player's library from the top down, so index zero is the next draw.
+    #[must_use]
+    pub fn library(&self, player: PlayerId) -> Vec<ZoneCard> {
+        zone_cards(&self.players[player.index()].library)
+    }
+
+    /// What a game object is, for objects a simulation is rearranging.
+    #[must_use]
+    pub fn definition_of(&self, object: GameObjectId) -> Option<CardDefinitionId> {
+        self.hidden_zone_cards()
+            .find(|card| card.id == object)
+            .map(|card| card.definition)
+    }
+
+    /// Replaces a hand with exactly `cards`, taking each from wherever in a
+    /// hand or library it currently sits.
+    ///
+    /// Cards displaced out of the hand are held aside rather than destroyed;
+    /// put them somewhere with another setter before playing on. See
+    /// [`Self::detached_cards`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ZoneError`] when an object is named twice or is not in a hand
+    /// or library. Cards on the battlefield, on the stack, or in a graveyard
+    /// are public, so moving them is not rearranging hidden state.
+    pub fn set_hand(&mut self, player: PlayerId, cards: &[GameObjectId]) -> Result<(), ZoneError> {
+        let taken = self.take_from_hidden_zones(cards)?;
+        let displaced = std::mem::replace(&mut self.players[player.index()].hand, taken);
+        self.detached.extend(displaced);
+        Ok(())
+    }
+
+    /// Replaces a library with exactly `cards`, top card first. Behaves like
+    /// [`Self::set_hand`] in every other respect.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ZoneError`] under the same conditions as [`Self::set_hand`].
+    pub fn set_library(
+        &mut self,
+        player: PlayerId,
+        cards: &[GameObjectId],
+    ) -> Result<(), ZoneError> {
+        let taken = self.take_from_hidden_zones(cards)?;
+        let displaced = std::mem::replace(&mut self.players[player.index()].library, taken);
+        self.detached.extend(displaced);
+        Ok(())
+    }
+
+    /// Cards lifted out of a zone and not yet put back. [`Self::apply`] refuses
+    /// to run while this is non-empty, so a half-finished rearrangement fails
+    /// loudly instead of losing cards.
+    #[must_use]
+    pub fn detached_cards(&self) -> Vec<ZoneCard> {
+        zone_cards(&self.detached)
+    }
+
+    fn hidden_zone_cards(&self) -> impl Iterator<Item = &CardInstance> {
+        self.players
+            .iter()
+            .flat_map(|player| player.hand.iter().chain(player.library.iter()))
+            .chain(self.detached.iter())
+    }
+
+    /// Removes each named object from whichever hand, library, or holding area
+    /// it is in, preserving the caller's order.
+    fn take_from_hidden_zones(
+        &mut self,
+        cards: &[GameObjectId],
+    ) -> Result<Vec<CardInstance>, ZoneError> {
+        let mut seen = std::collections::HashSet::with_capacity(cards.len());
+        for card in cards {
+            if !seen.insert(*card) {
+                return Err(ZoneError::Duplicate(*card));
+            }
+        }
+
+        let mut taken = Vec::with_capacity(cards.len());
+        for card in cards {
+            let found = self.players.iter_mut().find_map(|player| {
+                remove_card(&mut player.hand, *card)
+                    .or_else(|| remove_card(&mut player.library, *card))
+            });
+            let instance = found
+                .or_else(|| remove_card(&mut self.detached, *card))
+                .ok_or(ZoneError::NotHidden(*card))?;
+            taken.push(instance);
+        }
+        Ok(taken)
     }
 
     #[must_use]
@@ -5580,6 +5695,17 @@ impl Game {
         self.result = Some(result);
         self.events.push(GameEvent::GameEnded { result });
     }
+}
+
+/// Projects internal card instances into the public, unredacted zone view.
+fn zone_cards(cards: &[CardInstance]) -> Vec<ZoneCard> {
+    cards
+        .iter()
+        .map(|card| ZoneCard {
+            object: card.id,
+            definition: card.definition,
+        })
+        .collect()
 }
 
 fn remove_card(cards: &mut Vec<CardInstance>, id: GameObjectId) -> Option<CardInstance> {

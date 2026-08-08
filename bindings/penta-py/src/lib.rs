@@ -107,6 +107,53 @@ impl Game {
         Ok(self.inner.observe_json(seat))
     }
 
+    /// A seat's hand as JSON `[{objectId, definition}]`, unredacted.
+    ///
+    /// This is the simulation surface. `observe` stays redacted and is what a
+    /// client should be shown; this reports what is really there, so a search
+    /// bot can rearrange hidden state before a rollout. Nothing is hidden from
+    /// you here because the game runs in your own process.
+    fn hand(&self, seat: &str) -> PyResult<String> {
+        Ok(self.inner.hand_json(seat_from_name(seat)?))
+    }
+
+    /// A seat's library, top card first. See `hand`.
+    fn library(&self, seat: &str) -> PyResult<String> {
+        Ok(self.inner.library_json(seat_from_name(seat)?))
+    }
+
+    /// Replaces a seat's hand with exactly these object ids, taking each from
+    /// wherever in a hand or library it currently sits.
+    ///
+    /// Cards displaced out of the hand are held aside rather than destroyed.
+    /// Put them somewhere with another call before acting again: `act` raises
+    /// while any card is still detached, so a half-finished rearrangement
+    /// cannot quietly lose cards.
+    #[allow(clippy::needless_pass_by_value)]
+    fn set_hand(&mut self, seat: &str, object_ids: Vec<u32>) -> PyResult<()> {
+        let seat = seat_from_name(seat)?;
+        let objects: Vec<_> = object_ids.into_iter().map(engine::GameObjectId).collect();
+        self.inner
+            .set_hand(seat, &objects)
+            .map_err(PyValueError::new_err)
+    }
+
+    /// Replaces a seat's library, top card first. See `set_hand`.
+    #[allow(clippy::needless_pass_by_value)]
+    fn set_library(&mut self, seat: &str, object_ids: Vec<u32>) -> PyResult<()> {
+        let seat = seat_from_name(seat)?;
+        let objects: Vec<_> = object_ids.into_iter().map(engine::GameObjectId).collect();
+        self.inner
+            .set_library(seat, &objects)
+            .map_err(PyValueError::new_err)
+    }
+
+    /// Cards lifted out of a zone and not yet put back, as JSON. Empty unless
+    /// a rearrangement is half finished.
+    fn detached(&self) -> String {
+        self.inner.detached_json()
+    }
+
     /// How many legal actions the acting seat has; 0 when the game is over.
     fn legal_action_count(&self) -> usize {
         self.inner.legal_action_count()
