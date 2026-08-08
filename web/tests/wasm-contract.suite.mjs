@@ -79,6 +79,52 @@ test("a search can be resolved by failing to find", async () => {
   game.free();
 });
 
+test("two mulligans identify each card in every bottom pair", async () => {
+  await initializeWasm();
+
+  const game = new WebGame("The Deck", "Sligh", "Handcrafted", true, 77);
+  let state = JSON.parse(game.state_json());
+  for (let mulligan = 0; mulligan < 2; mulligan += 1) {
+    const takeMulligan = state.actions.find(
+      (action) => action.label === "Take a mulligan",
+    );
+    assert.ok(takeMulligan);
+    game.act(takeMulligan.index);
+    state = JSON.parse(game.state_json());
+    assert.equal(state.human.hand.length, 7);
+  }
+
+  const keep = state.actions.find((action) => action.label === "Keep this hand");
+  assert.ok(keep);
+  game.act(keep.index);
+  state = JSON.parse(game.state_json());
+
+  const bottomActions = state.actions.filter(
+    (action) => action.bottomCardIds.length > 0,
+  );
+  assert.equal(bottomActions.length, 21);
+  assert.ok(bottomActions.every((action) => action.bottomCardIds.length === 2));
+  assert.deepEqual(
+    [...new Set(bottomActions.flatMap((action) => action.bottomCardIds))].sort(
+      (a, b) => a - b,
+    ),
+    state.human.hand.map((card) => card.id).sort((a, b) => a - b),
+  );
+
+  const chosen = bottomActions[0];
+  game.act(chosen.index);
+  state = JSON.parse(game.state_json());
+  assert.equal(state.human.hand.length, 5);
+  assert.ok(
+    chosen.bottomCardIds.every(
+      (cardId) => !state.human.hand.some((card) => card.id === cardId),
+    ),
+  );
+  assert.equal(state.pregame, false);
+
+  game.free();
+});
+
 test("opponent pregame choices do not block the game with animations", async () => {
   await initializeWasm();
 
