@@ -655,9 +655,6 @@ impl WebGame {
                         .iter()
                         .all(|object| object.controller == self.human),
                 human_has_floating_mana: observation.mana_pools[self.human.index()].total() > 0,
-                human_controls_creature: observation.battlefield.iter().any(|permanent| {
-                    permanent.controller == self.human && permanent.power.is_some()
-                }),
             },
             &observation.legal_actions,
         )
@@ -1960,7 +1957,6 @@ struct AutoPassContext {
     autopass_enabled: bool,
     only_human_objects_on_stack: bool,
     human_has_floating_mana: bool,
-    human_controls_creature: bool,
 }
 
 /// The pass-preview stand-in for the opponent: let the pass through wherever
@@ -2021,20 +2017,22 @@ fn is_routine_window(context: &AutoPassContext, actions: &[Action]) -> bool {
     // turn. Stops restore them; floating mana in the end step is a
     // smart-priority case.
     let routine_beginning_step = matches!(context.step, Step::Upkeep | Step::Draw);
-    // Activating a permanent you already control is available at instant speed
-    // — on their turn, at your end step — so it is not a reason to hold a
-    // routine window open. Committing from hand is once-a-turn and is.
-    let can_commit_from_hand = actions
-        .iter()
-        .any(|action| matches!(action, Action::CastSpell { .. } | Action::PlayLand { .. }));
+    // A legal cast, land play, or non-mana activated ability is worth holding
+    // second main open for. Mana abilities alone stay routine, or every
+    // untapped land would force an otherwise empty stop.
+    let has_second_main_action = actions.iter().any(|action| {
+        matches!(
+            action,
+            Action::CastSpell { .. } | Action::PlayLand { .. } | Action::ActivateAbility { .. }
+        )
+    });
     // Damage lands on the way into the damage step, so by the time anyone
     // holds priority there it is history. Neither window can change the
     // combat, on either player's turn — they just cost a click each.
     let combat_is_settled = matches!(context.step, Step::CombatDamage | Step::EndOfCombat);
     let routine_own_turn_step = context.human_is_active
         && (context.step == Step::BeginningOfCombat
-            || (context.step == Step::PostcombatMain
-                && (!context.human_controls_creature || !can_commit_from_hand))
+            || (context.step == Step::PostcombatMain && !has_second_main_action)
             || (context.step == Step::End && !context.human_has_floating_mana));
     // On the opponent's turn the interesting window is their end step, where
     // instants are cheapest. Combat they never committed to, and their second
@@ -2176,7 +2174,6 @@ fn automatic_human_action(
             autopass_enabled,
             only_human_objects_on_stack,
             human_has_floating_mana,
-            human_controls_creature: true,
         },
         actions,
     )
@@ -2207,7 +2204,6 @@ fn automatic_human_action_with_blockers(
             autopass_enabled,
             only_human_objects_on_stack,
             human_has_floating_mana,
-            human_controls_creature: true,
         },
         actions,
     )
@@ -2644,6 +2640,60 @@ mod tests {
                 &actions,
             ),
             None
+        );
+    }
+
+    #[test]
+    fn second_main_waits_for_spells_lands_and_non_mana_abilities() {
+        let context = AutoPassContext {
+            step: Step::PostcombatMain,
+            human_is_active: true,
+            stack_is_empty: true,
+            has_attacker: false,
+            has_blocker: false,
+            stop_here: false,
+            autopass_enabled: true,
+            only_human_objects_on_stack: false,
+            human_has_floating_mana: false,
+        };
+        let useful_actions = [
+            Action::PlayLand {
+                card: CardInstanceId(7),
+                option: PlayOptionId::DEFAULT,
+            },
+            Action::CastSpell {
+                card: CardInstanceId(8),
+                choices: choices_targeting(Target::Player(PlayerId::Two)),
+                sacrifices: Vec::new(),
+            },
+            Action::ActivateAbility {
+                source: CardInstanceId(9),
+                target: None,
+                sacrifice: None,
+            },
+        ];
+
+        for useful_action in useful_actions {
+            let actions = [Action::Concede, useful_action, Action::PassPriority];
+            assert_eq!(
+                automatic_human_action_for_context(context, &actions),
+                None,
+                "a legal spell, land play, or non-mana ability must keep second-main priority",
+            );
+        }
+
+        let actionless = [
+            Action::Concede,
+            Action::ActivateManaAbility {
+                source: CardInstanceId(10),
+                color: penta::ManaColor::Red,
+            },
+            Action::PassPriority,
+        ];
+        assert_eq!(
+            automatic_human_action_for_context(context, &actionless),
+            Some(Action::PassPriority),
+            "a second main with only mana abilities can still auto-pass",
         );
     }
 

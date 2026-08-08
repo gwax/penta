@@ -148,13 +148,16 @@ test("[slow] the pass button label matches where the click actually lands", asyn
   }
 });
 
-test("[slow] a board with no creatures skips its own second main", async () => {
+test("[slow] creatureless second mains wait exactly for usable card actions", async () => {
   await initializeWasm();
 
   const decks = ["Goblins", "Sligh", "White Weenie", "GR Aggro", "The Deck"];
-  let idledWithoutCreatures = 0;
+  let idledWithoutUsefulAction = 0;
+  let heldForUsefulAction = 0;
   let firstMainWithoutCreatures = 0;
-  let saidSecondMain = 0;
+  let promisedUsefulSecondMain = 0;
+  let promisedIdleSecondMain = 0;
+  let skippedUsefulSecondMain = 0;
   let dealtDamageLabel = 0;
   let blockedBeforeDamage = 0;
 
@@ -173,11 +176,25 @@ test("[slow] a board with no creatures skips its own second main", async () => {
       const myCreatures = state.battlefield.filter(
         (card) => card.owner === "human" && card.power != null,
       ).length;
-      if (state.active === "You" && myCreatures === 0) {
-        if (state.step === "Postcombat Main") idledWithoutCreatures += 1;
+      const hasUsefulCardAction = state.actions.some(
+        (action) => action.paymentAction || action.label.startsWith("Play "),
+      );
+      const cleanPriority =
+        state.stack.length === 0 &&
+        Object.values(state.human.mana).every((amount) => amount === 0);
+      if (state.active === "You" && myCreatures === 0 && cleanPriority) {
+        if (state.step === "Postcombat Main") {
+          if (hasUsefulCardAction) heldForUsefulAction += 1;
+          else idledWithoutUsefulAction += 1;
+        }
         if (state.step === "Precombat Main" && state.passLabel) {
           firstMainWithoutCreatures += 1;
-          if (state.passLabel === "Go to second main") saidSecondMain += 1;
+          if (state.passLabel === "Go to second main") {
+            if (hasUsefulCardAction) promisedUsefulSecondMain += 1;
+            else promisedIdleSecondMain += 1;
+          } else if (hasUsefulCardAction) {
+            skippedUsefulSecondMain += 1;
+          }
         }
       }
       // Attacking into declared blockers: the pass is about to deal damage.
@@ -219,8 +236,29 @@ test("[slow] a board with no creatures skips its own second main", async () => {
   }
 
   assert.ok(firstMainWithoutCreatures > 50, `exercised the empty board, got ${firstMainWithoutCreatures}`);
-  assert.equal(idledWithoutCreatures, 0, "an empty board never waits in its own second main");
-  assert.equal(saidSecondMain, 0, "and never promises to go there");
+  assert.ok(
+    heldForUsefulAction > 10,
+    `usable card actions hold creatureless second mains, got ${heldForUsefulAction}`,
+  );
+  assert.equal(
+    idledWithoutUsefulAction,
+    0,
+    "a creatureless second main with no usable card action is passed through",
+  );
+  assert.ok(
+    promisedUsefulSecondMain > 10,
+    `the pass preview promises useful creatureless second mains, got ${promisedUsefulSecondMain}`,
+  );
+  assert.equal(
+    promisedIdleSecondMain,
+    0,
+    "the pass preview never promises an idle creatureless second main",
+  );
+  assert.equal(
+    skippedUsefulSecondMain,
+    0,
+    "the pass preview never skips a useful creatureless second main",
+  );
   assert.ok(blockedBeforeDamage > 10, `exercised blocked combat, got ${blockedBeforeDamage}`);
   assert.equal(
     dealtDamageLabel,
@@ -368,6 +406,9 @@ test("[slow] your own play is on the board before the turn it ended is announced
     for (const seed of [31, 62, 155, 217, 318, 424, 530]) {
       const game = new WebGame(deck, "The Deck", "Handcrafted", true, seed);
       let displayed = JSON.parse(game.state_json());
+      // A newly resolved permanent can hold second main open with an ability,
+      // so carry that play across the extra pass to the eventual turn banner.
+      const pendingOwnPlays = new Map();
       for (let step = 0; step < 250; step += 1) {
         const state = JSON.parse(game.state_json());
         if (state.result) break;
@@ -411,6 +452,17 @@ test("[slow] your own play is on the board before the turn it ended is announced
         const beats = after.opponentActions ?? [];
         let cursor = displayed;
         const acted = after.afterYourAction;
+        const settled = acted ?? after;
+        const settledOwnCards = settled.battlefield.filter(
+          (card) => card.owner === "human",
+        );
+        for (const card of settledOwnCards) {
+          if (!before.has(card.id)) pendingOwnPlays.set(card.id, card);
+        }
+        const settledOwnIds = new Set(settledOwnCards.map((card) => card.id));
+        for (const id of pendingOwnPlays.keys()) {
+          if (!settledOwnIds.has(id)) pendingOwnPlays.delete(id);
+        }
         if (
           acted &&
           cursor &&
@@ -421,9 +473,7 @@ test("[slow] your own play is on the board before the turn it ended is announced
           cursor = acted;
         }
         if (beats.length && turnChanged(cursor, beats[0].state)) {
-          const played = (acted ?? after).battlefield.filter(
-            (card) => card.owner === "human" && !before.has(card.id),
-          );
+          const played = [...pendingOwnPlays.values()];
           handovers += 1;
           if (played.length) banners += 1;
           for (const card of played) {
@@ -439,6 +489,7 @@ test("[slow] your own play is on the board before the turn it ended is announced
             [],
             `nothing of yours is still on the stack after "${next.label}"`,
           );
+          pendingOwnPlays.clear();
         }
         displayed = beats.length ? beats[beats.length - 1].state : after;
       }

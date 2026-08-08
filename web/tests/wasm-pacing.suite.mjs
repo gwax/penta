@@ -72,11 +72,21 @@ test("the pass button label reports the engine's real auto-pass destination", as
   game.act(state.actions.find((action) => action.label === "Keep this hand").index);
   state = currentState();
   assert.equal(state.step, "Precombat Main");
+  assert.ok(
+    state.actions.some(
+      (action) => action.paymentAction || action.label.startsWith("Play "),
+    ),
+    "the deterministic hand has something useful to do in second main",
+  );
   assert.equal(
     state.passLabel,
-    "End turn",
-    "an empty board has no combat and nothing to do after it, so the pass is the whole turn",
+    "Go to second main",
+    "an empty board skips combat but retains a useful second main",
   );
+  pass(state);
+  state = currentState();
+  assert.equal(state.step, "Postcombat Main");
+  assert.equal(state.passLabel, "End turn");
 
   game.set_phase_stop("Ending", true);
   state = currentState();
