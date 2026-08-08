@@ -57,6 +57,7 @@ fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Perm
         factory_animated: false,
         dragon_whelp_activations: 0,
         plus_one_counters: 0,
+        dealt_deathtouch_damage: false,
         combat_damage_assignment: Vec::new(),
         copied_behavior: None,
         regeneration_shields: 0,
@@ -3585,4 +3586,70 @@ fn the_mana_creatures_tap_for_their_colour() {
             "{definition:?} taps for {expected:?}"
         );
     }
+}
+
+#[test]
+fn deathtouch_kills_whatever_it_touches_and_lifelink_pays_its_controller() {
+    // Vampire Nighthawk is a 2/3 flying deathtouch lifelink. Before these
+    // keywords were read, it was a 2/3 flier and nothing more.
+    let mut game = ready_game();
+    game.step = Step::CombatDamage;
+    let mut hawk = creature(10_001, cards::VAMPIRE_NIGHTHAWK, PlayerId::One);
+    hawk.attacking = true;
+    let mut wall = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two); // 4/4
+    wall.blocking = Some(CardInstanceId(10_001));
+    game.battlefield.extend([hawk, wall]);
+    let before_life = game.players[0].life;
+
+    game.deal_combat_damage();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SERRA_ANGEL),
+        "two deathtouch damage is lethal to a 4/4"
+    );
+    assert_eq!(
+        game.players[0].life,
+        before_life + 2,
+        "and lifelink paid its controller for the damage dealt"
+    );
+}
+
+#[test]
+fn lifelink_pays_for_damage_to_a_player_too() {
+    let mut game = ready_game();
+    game.step = Step::CombatDamage;
+    let mut hawk = creature(10_001, cards::VAMPIRE_NIGHTHAWK, PlayerId::One);
+    hawk.attacking = true;
+    game.battlefield.push(hawk);
+    let before = game.players[0].life;
+
+    game.deal_combat_damage();
+
+    assert_eq!(game.players[1].life, 18, "unblocked, it hits for two");
+    assert_eq!(game.players[0].life, before + 2, "and gains that much");
+}
+
+#[test]
+fn an_ordinary_creature_does_not_gain_life_or_kill_through_toughness() {
+    let mut game = ready_game();
+    game.step = Step::CombatDamage;
+    let mut lions = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One); // 2/1 vanilla
+    lions.attacking = true;
+    let mut wall = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two); // 4/4
+    wall.blocking = Some(CardInstanceId(10_001));
+    game.battlefield.extend([lions, wall]);
+    let before = game.players[0].life;
+
+    game.deal_combat_damage();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SERRA_ANGEL),
+        "two ordinary damage does not kill a 4/4"
+    );
+    assert_eq!(game.players[0].life, before, "and gains nobody any life");
 }

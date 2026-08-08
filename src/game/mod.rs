@@ -98,6 +98,10 @@ struct Permanent {
     factory_animated: bool,
     dragon_whelp_activations: u8,
     plus_one_counters: u16,
+    /// Marked when a deathtouch source damages this creature. Any nonzero
+    /// damage from such a source is lethal, so state-based actions need to
+    /// know the damage's origin, not just its size. Clears with damage.
+    dealt_deathtouch_damage: bool,
     combat_damage_assignment: Vec<CombatDamageAssignment>,
     /// A Copy Artifact remembers the printed behavior it copied when it
     /// entered.  Keeping this on the permanent lets all of the normal rules
@@ -2773,6 +2777,7 @@ impl Game {
             factory_animated: false,
             dragon_whelp_activations: 0,
             plus_one_counters: 0,
+            dealt_deathtouch_damage: false,
             combat_damage_assignment: Vec::new(),
             copied_behavior: None,
             regeneration_shields: 0,
@@ -3133,6 +3138,7 @@ impl Game {
                     CardBehavior::IcatianJavelineers => 1,
                     _ => 0,
                 },
+                dealt_deathtouch_damage: false,
                 combat_damage_assignment: Vec::new(),
                 copied_behavior: None,
                 regeneration_shields: 0,
@@ -4475,6 +4481,48 @@ impl Game {
                 .is_some_and(|stats| stats.trample)
     }
 
+    fn has_deathtouch(&self, permanent: &Permanent) -> bool {
+        self.effective_behavior(permanent)
+            .is_some_and(|behavior| behavior.rules().has_deathtouch)
+    }
+
+    fn has_lifelink(&self, permanent: &Permanent) -> bool {
+        self.effective_behavior(permanent)
+            .is_some_and(|behavior| behavior.rules().has_lifelink)
+    }
+
+    /// Applies the damage a creature deals, plus whatever its keywords add:
+    /// lifelink pays its controller, and deathtouch makes any nonzero damage
+    /// to a creature lethal regardless of toughness.
+    fn deal_damage_from_creature(&mut self, source: GameObjectId, target: Target, amount: u16) {
+        self.damage_target(Some(target), amount);
+        if amount == 0 {
+            return;
+        }
+        let Some(source_permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+        else {
+            return;
+        };
+        let controller = source_permanent.controller;
+        let lifelink = self.has_lifelink(source_permanent);
+        let deathtouch = self.has_deathtouch(source_permanent);
+        if lifelink {
+            self.gain_life(controller, amount);
+        }
+        if deathtouch
+            && let Target::Permanent(id) = target
+            && let Some(victim) = self
+                .battlefield
+                .iter_mut()
+                .find(|permanent| permanent.card.id == id)
+        {
+            victim.dealt_deathtouch_damage = true;
+        }
+    }
+
     fn has_mountainwalk(&self, permanent: &Permanent) -> bool {
         let printed = self
             .effective_behavior(permanent)
@@ -5172,7 +5220,8 @@ impl Game {
                 .map(|permanent| permanent.card.id)
                 .collect();
             if blockers.is_empty() {
-                self.deal_damage(self.active_player.opponent(), power);
+                let defender = self.active_player.opponent();
+                self.deal_damage_from_creature(attacker_id, Target::Player(defender), power);
                 match self.effective_behavior(&self.battlefield[attacker_index]) {
                     Some(CardBehavior::HypnoticSpecter) => {
                         self.discard_random(self.active_player.opponent(), 1);
@@ -5191,24 +5240,34 @@ impl Game {
                     .clone();
                 if assignments.is_empty() {
                     for (recipient, amount) in self.default_damage_split(attacker_id, &blockers) {
-                        self.damage_target(Some(recipient), amount);
+                        self.deal_damage_from_creature(attacker_id, recipient, amount);
                     }
                 } else {
                     for assignment in assignments {
-                        self.damage_target(Some(assignment.recipient), assignment.amount);
+                        self.deal_damage_from_creature(
+                            attacker_id,
+                            assignment.recipient,
+                            assignment.amount,
+                        );
                     }
                 }
-                let return_damage: u16 = blockers
-                    .iter()
-                    .filter_map(|id| {
-                        self.battlefield
-                            .iter()
-                            .find(|permanent| permanent.card.id == *id)
-                            .and_then(|permanent| self.power(permanent))
-                    })
-                    .map(|value| value.max(0).cast_unsigned())
-                    .sum();
-                self.damage_target(Some(Target::Permanent(attacker_id)), return_damage);
+                // Each blocker deals its own damage so its keywords apply;
+                // summing first would lose whose deathtouch and lifelink it was.
+                for blocker_id in blockers {
+                    let strike = self
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == blocker_id)
+                        .and_then(|permanent| self.power(permanent))
+                        .unwrap_or(0)
+                        .max(0)
+                        .cast_unsigned();
+                    self.deal_damage_from_creature(
+                        blocker_id,
+                        Target::Permanent(attacker_id),
+                        strike,
+                    );
+                }
             }
         }
         self.check_state_based_actions();
@@ -5234,6 +5293,7 @@ impl Game {
             permanent.regeneration_shields -= 1;
             permanent.tapped = true;
             permanent.damage = 0;
+            permanent.dealt_deathtouch_damage = false;
             permanent.attacking = false;
             permanent.blocking = None;
             permanent.combat_damage_assignment.clear();
@@ -5376,7 +5436,11 @@ impl Game {
             .iter()
             .filter(|permanent| {
                 self.toughness(permanent).is_some_and(|toughness| {
-                    toughness <= 0 || i32::from(permanent.damage) >= i32::from(toughness)
+                    toughness <= 0
+                        || i32::from(permanent.damage) >= i32::from(toughness)
+                        // Deathtouch: any nonzero damage from such a source is
+                        // lethal however large the toughness.
+                        || (permanent.dealt_deathtouch_damage && permanent.damage > 0)
                 })
             })
             .map(|permanent| permanent.card.id)
@@ -5829,6 +5893,7 @@ impl Game {
     fn finish_cleanup(&mut self) {
         for permanent in &mut self.battlefield {
             permanent.damage = 0;
+            permanent.dealt_deathtouch_damage = false;
             permanent.power_bonus = 0;
             permanent.toughness_bonus = 0;
             permanent.flying_until_end = false;

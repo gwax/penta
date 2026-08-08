@@ -331,7 +331,7 @@ pub(in crate::card::sets) static THUNDERMAW_HELLKITE: CardRecord = CardRecord::n
     .metadata_only(),
 );
 
-// Implementation status: Baseline creature is playable; card-specific printed abilities are pending.
+// Implementation status: complete — flying, deathtouch, and lifelink are all executed.
 pub(in crate::card::sets) static VAMPIRE_NIGHTHAWK: CardRecord = CardRecord::new(
     cards::VAMPIRE_NIGHTHAWK,
     "Vampire Nighthawk",
@@ -348,8 +348,7 @@ pub(in crate::card::sets) static VAMPIRE_NIGHTHAWK: CardRecord = CardRecord::new
     .creature(2, 3)
     .flying()
     .deathtouch()
-    .lifelink()
-    .metadata_only(),
+    .lifelink(),
 );
 
 // Implementation status: Spell is withheld from play; printed effects are pending.
