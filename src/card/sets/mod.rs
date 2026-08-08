@@ -414,10 +414,19 @@ mod tests {
                 effect,
                 duration,
             } => shared_resolving_apply(recipient, effect, duration),
-            EffectDef::None
-            | EffectDef::EntersTapped
-            | EffectDef::MoveToZone { .. }
-            | EffectDef::Special(_) => false,
+            // Only the moves the runtime actually performs are inside the
+            // boundary. A move to the stack or command zone is still a seam.
+            EffectDef::MoveToZone { object, zone } => {
+                matches!(
+                    zone,
+                    ZoneKind::Battlefield
+                        | ZoneKind::Hand
+                        | ZoneKind::Graveyard
+                        | ZoneKind::Exile
+                        | ZoneKind::Library
+                ) && shared_effect_recipient(object)
+            }
+            EffectDef::None | EffectDef::EntersTapped | EffectDef::Special(_) => false,
         }
     }
 

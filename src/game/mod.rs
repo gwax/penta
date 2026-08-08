@@ -145,6 +145,49 @@ struct Permanent {
     deathtouch_damage: bool,
 }
 
+impl Permanent {
+    /// A permanent as it arrives on the battlefield, before any card-specific
+    /// adjustments. Three call sites used to spell out every field, which made
+    /// adding one a three-place edit and gave a new entry path nothing to
+    /// build on.
+    fn entering(
+        card: CardInstance,
+        presented: CardPartId,
+        controller: PlayerId,
+        entered_controller_turn: u32,
+    ) -> Self {
+        Self {
+            card,
+            presented,
+            controller,
+            tapped: false,
+            entered_controller_turn,
+            damage: 0,
+            loyalty: None,
+            power_bonus: 0,
+            toughness_bonus: 0,
+            attacking: false,
+            blocking: None,
+            chosen_player: None,
+            destroy_at_end: false,
+            temporary_keywords: Vec::new(),
+            factory_animated: false,
+            dragon_whelp_activations: 0,
+            plus_one_counters: 0,
+            javelin_counters: 0,
+            exile_instead_of_dying: false,
+            combat_damage_assignment: Vec::new(),
+            copied_from: None,
+            regeneration_shields: 0,
+            berserked: false,
+            attacked_this_turn: false,
+            forestwalk_until_upkeep_of: None,
+            damage_sources: Vec::new(),
+            deathtouch_damage: false,
+        }
+    }
+}
+
 /// A retired object incarnation retained for last-known-information queries.
 /// Zone changes still create a new [`GameObjectId`]; this record deliberately
 /// never follows the physical card into its new zone.
@@ -5467,13 +5510,20 @@ impl Game {
                 effect,
                 duration,
             } => self.resolve_applied_effect(recipient, effect, duration, object, context),
+            EffectDef::MoveToZone {
+                object: recipient,
+                zone,
+            } => {
+                for target in self.effect_recipients(recipient, object, context) {
+                    self.move_target_to_zone(target, zone);
+                }
+            }
             EffectDef::None
             | EffectDef::AddMana(AddManaEffectDef {
                 mana: ManaSelectionDef::Choice(_),
                 ..
             })
             | EffectDef::EntersTapped
-            | EffectDef::MoveToZone { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing mana and the remaining declarative effect
                 // families are execution seams until a supported card needs
@@ -5542,6 +5592,57 @@ impl Game {
                     .unwrap_or(i32::MAX)
             }
             ValueDef::Negate(inner) => self.effect_value(*inner, object, context).saturating_neg(),
+        }
+    }
+
+    /// Moves one object to a zone. Only the moves a supported card actually
+    /// makes are handled; the rest stay seams rather than guesses.
+    fn move_target_to_zone(&mut self, target: Target, zone: ZoneKind) {
+        let Target::Card(id) = target else {
+            return;
+        };
+        let Some((from, card)) = self.card_in_nonbattlefield_zone(id) else {
+            return;
+        };
+        let owner = card.owner;
+        let cards = match from {
+            ZoneKind::Library => &mut self.players[owner.index()].library,
+            ZoneKind::Hand => &mut self.players[owner.index()].hand,
+            ZoneKind::Graveyard => &mut self.players[owner.index()].graveyard,
+            ZoneKind::Exile => &mut self.players[owner.index()].exile,
+            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => return,
+        };
+        let Some(card) = remove_card(cards, id) else {
+            return;
+        };
+        let (card, _zone_change) = self.zone_change_card(card);
+        match zone {
+            ZoneKind::Battlefield => {
+                let presented = self
+                    .catalog
+                    .get(card.definition)
+                    .map_or(CardPartId::PRIMARY, CardDefinition::primary_part_id);
+                let permanent =
+                    Permanent::entering(card, presented, owner, self.turns_started[owner.index()]);
+                self.battlefield.push(permanent);
+                // The card really did enter, so anything watching for that has
+                // to see it, exactly as a resolving permanent spell would.
+                let entered = self
+                    .battlefield
+                    .last()
+                    .expect("the card just pushed is on the battlefield");
+                let entered_event = self.trigger_event_object(entered);
+                self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
+                    object: entered_event,
+                    from,
+                    to: ZoneKind::Battlefield,
+                });
+            }
+            ZoneKind::Hand => self.players[owner.index()].hand.push(card),
+            ZoneKind::Graveyard => self.players[owner.index()].graveyard.push(card),
+            ZoneKind::Exile => self.players[owner.index()].exile.push(card),
+            ZoneKind::Library => self.players[owner.index()].library.push(card),
+            ZoneKind::Stack | ZoneKind::Command => {}
         }
     }
 

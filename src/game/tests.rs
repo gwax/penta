@@ -7576,3 +7576,54 @@ fn abrupt_decay_says_on_the_card_that_it_cannot_be_countered() {
         "the Decay resolved despite the Counterspell"
     );
 }
+
+#[test]
+fn unburial_rites_reanimates_from_your_own_graveyard() {
+    let mut game = ready_game();
+    game.players[0]
+        .graveyard
+        .push(card(10_000, cards::SERRA_ANGEL, PlayerId::One));
+    // The opponent's graveyard is out of reach.
+    game.players[1]
+        .graveyard
+        .push(card(10_002, cards::JUZAM_DJINN, PlayerId::Two));
+    let rites = card(10_001, cards::UNBURIAL_RITES, PlayerId::One);
+    game.players[0].hand.push(rites.clone());
+    // {4}{B} to cast; the flashback cost is the white half.
+    game.players[0].mana_pool.black = 1;
+    game.players[0].mana_pool.colorless = 4;
+
+    let theirs = cast_action(
+        rites.id,
+        vec![Target::Card(CardInstanceId(10_002))],
+        Vec::new(),
+        0,
+    );
+    assert!(
+        !game.legal_actions(PlayerId::One).contains(&theirs),
+        "their graveyard is not yours"
+    );
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            rites.id,
+            vec![Target::Card(CardInstanceId(10_000))],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.battlefield.len(), 1);
+    assert_eq!(game.battlefield[0].card.definition, cards::SERRA_ANGEL);
+    assert_eq!(game.battlefield[0].controller, PlayerId::One);
+    assert!(
+        !game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the angel left the graveyard, though the Rites itself arrives there"
+    );
+}

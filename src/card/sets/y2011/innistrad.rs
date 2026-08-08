@@ -371,11 +371,29 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
     "Unburial Rites",
     CardArt::new("2794c82b-e5ce-4369-894e-bf56c6402ae1", "Ryan Pancoast"),
     CardSet::Innistrad,
-    CardRules::new_sorcery(
-        ManaCost::colored(4, 0, 0, 1, 0, 0),
-        "Return target creature card from your graveyard to the battlefield.\nFlashback {3}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-    )
-    .metadata_only(),
+    CardRules::new_sorcery(ManaCost::colored(4, 0, 0, 1, 0, 0), "").with_abilities(&[
+        AbilityDef::spell(
+            "Return target creature card from your graveyard to the battlefield.",
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                zone: ZoneKind::Battlefield,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "creature card in your graveyard",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: Some(PlayerRelation::You),
+            },
+        )]),
+        AbilityDef::not_implemented(
+            "Flashback {3}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+            "Casting from the graveyard for a flashback cost is not implemented.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static URGENT_EXORCISM: CardRecord = CardRecord::new(
