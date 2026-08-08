@@ -3300,3 +3300,81 @@ fn sign_in_blood_draws_two_and_costs_two_life_without_dealing_damage() {
         "and never as damage"
     );
 }
+
+#[test]
+fn dissipate_exiles_the_spell_it_counters() {
+    let mut game = ready_game();
+    game.stack
+        .push(spell(10_001, cards::LIGHTNING_BOLT, PlayerId::Two, 0));
+
+    let cast = spell_with_targets(
+        10_002,
+        cards::DISSIPATE,
+        PlayerId::One,
+        vec![Target::Spell(StackObjectId(10_001))],
+        0,
+    );
+    game.resolve_spell_effect(&cast, CardBehavior::Dissipate);
+
+    assert!(game.stack.is_empty(), "the spell left the stack");
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "a Dissipated spell does not reach the graveyard"
+    );
+    assert_eq!(
+        game.players[1].exile.len(),
+        1,
+        "it is exiled instead, so it cannot be rebought"
+    );
+}
+
+#[test]
+fn duress_takes_a_noncreature_nonland_card_of_the_casters_choosing() {
+    let mut game = ready_game();
+    game.players[1].hand.extend([
+        card(10_001, cards::SAVANNAH_LIONS, PlayerId::Two), // creature: off limits
+        card(10_002, cards::MOUNTAIN, PlayerId::Two),       // land: off limits
+        card(10_003, cards::LIGHTNING_BOLT, PlayerId::Two), // fair game
+    ]);
+
+    let cast = spell_with_targets(
+        10_000,
+        cards::DURESS,
+        PlayerId::One,
+        vec![Target::Player(PlayerId::Two)],
+        0,
+    );
+    game.resolve_spell_effect(&cast, CardBehavior::Duress);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the caster chooses");
+    assert_eq!(
+        decision.options.len(),
+        1,
+        "only the instant is a legal choice"
+    );
+    // The hand is revealed, so the choice is public rather than hidden.
+    assert_eq!(decision.visibility, DecisionVisibility::Public);
+
+    let choice = decision.options[0].id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![choice],
+        },
+    )
+    .expect("choosing the revealed card is legal");
+
+    assert_eq!(game.players[1].hand.len(), 2, "one card was discarded");
+    assert!(
+        !game.players[1]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and it was the one the caster named"
+    );
+    assert_eq!(game.players[1].graveyard.len(), 1);
+}

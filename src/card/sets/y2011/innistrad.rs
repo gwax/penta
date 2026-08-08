@@ -67,7 +67,7 @@ pub(in crate::card::sets) static CLIFFTOP_RETREAT: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static DISSIPATE: CardRecord = CardRecord::new(
     cards::DISSIPATE,
     "Dissipate",
@@ -80,8 +80,7 @@ pub(in crate::card::sets) static DISSIPATE: CardRecord = CardRecord::new(
         ManaCost::colored(1, 0, 2, 0, 0, 0),
         "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
     )
-    .type_line("Instant")
-    .metadata_only(),
+    .type_line("Instant"),
 );
 
 const fn garruk_front_rules() -> CardRules {

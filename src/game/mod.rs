@@ -209,6 +209,13 @@ struct BalanceTask {
     action: BalanceAction,
 }
 
+/// Where a countered spell ends up.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CounteredSpellZone {
+    Graveyard,
+    Exile,
+}
+
 #[derive(Clone, Debug)]
 enum DecisionContinuation {
     Tutor,
@@ -236,6 +243,9 @@ enum DecisionContinuation {
     },
     RecallReturn {
         player: PlayerId,
+    },
+    Duress {
+        victim: PlayerId,
     },
     Balance {
         task: BalanceTask,
@@ -1612,6 +1622,23 @@ impl Game {
                     }
                 }
             }
+            DecisionContinuation::Duress { victim } => {
+                let Some(option) = pending
+                    .observation
+                    .options
+                    .iter()
+                    .find(|option| options.contains(&option.id))
+                else {
+                    return;
+                };
+                let Some((card, _)) = option.card else {
+                    return;
+                };
+                if let Some(card) = remove_card(&mut self.players[victim.index()].hand, card) {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    self.players[victim.index()].graveyard.push(card);
+                }
+            }
             DecisionContinuation::Tutor => {
                 let found = pending
                     .observation
@@ -2107,6 +2134,7 @@ impl Game {
         exact_count: Option<usize>,
     ) -> Vec<Vec<Target>> {
         match behavior {
+            CardBehavior::Duress => vec![vec![Target::Player(player.opponent())]],
             CardBehavior::AncestralRecall
             | CardBehavior::Braingeyser
             | CardBehavior::SignInBlood => {
@@ -2265,7 +2293,7 @@ impl Game {
                 })
                 .map(|object| vec![Target::Spell(object.id)])
                 .collect(),
-            CardBehavior::Counterspell | CardBehavior::ManaDrain => self
+            CardBehavior::Counterspell | CardBehavior::ManaDrain | CardBehavior::Dissipate => self
                 .stack
                 .iter()
                 .filter(|object| object.kind == StackObjectKind::Spell)
@@ -3420,6 +3448,11 @@ impl Game {
                     self.counter_spell(target);
                 }
             }
+            CardBehavior::Dissipate => {
+                if let Some(Target::Spell(target)) = object.first_target() {
+                    self.counter_spell_into(target, CounteredSpellZone::Exile);
+                }
+            }
             CardBehavior::BlueElementalBlast => match object.first_target() {
                 Some(Target::Spell(target)) => self.counter_spell(target),
                 Some(Target::Permanent(target)) => self.destroy_permanent(target),
@@ -3478,6 +3511,34 @@ impl Game {
                     options,
                     DecisionContinuation::Tutor,
                 );
+            }
+            CardBehavior::Duress => {
+                if let Some(Target::Player(victim)) = object.first_target() {
+                    let eligible = self.players[victim.index()]
+                        .hand
+                        .iter()
+                        .filter(|card| {
+                            self.catalog.get(card.definition).is_some_and(|definition| {
+                                let kind = definition.rules.kind;
+                                !kind.is_creature() && kind != CardKind::Land
+                            })
+                        })
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    let options = self.card_decision_options(&eligible, DecisionZone::Hand);
+                    // The hand is revealed, so the caster picking from it is
+                    // public information rather than a hidden choice.
+                    self.queue_decision(
+                        object.controller,
+                        "Choose a card for them to discard",
+                        DecisionVisibility::Public,
+                        DecisionPreference::HigherCardValue,
+                        1..=1,
+                        false,
+                        options,
+                        DecisionContinuation::Duress { victim },
+                    );
+                }
             }
             CardBehavior::HymnToTourach => self.discard_random(object.controller.opponent(), 2),
             CardBehavior::MindTwist => {
@@ -5189,14 +5250,24 @@ impl Game {
     }
 
     fn counter_spell(&mut self, id: GameObjectId) {
+        self.counter_spell_into(id, CounteredSpellZone::Graveyard);
+    }
+
+    /// A countered spell normally goes to its owner's graveyard, but several
+    /// cards exile it instead so it cannot be rebought.
+    fn counter_spell_into(&mut self, id: GameObjectId, zone: CounteredSpellZone) {
         let Some(index) = self.stack.iter().position(|object| object.id == id) else {
             return;
         };
         let object = self.stack.remove(index);
+        // A copy ceases to exist rather than going anywhere.
         if !object.is_copy {
             let owner = object.card.owner;
             let (card, _zone_change) = self.zone_change_card(object.card);
-            self.players[owner.index()].graveyard.push(card);
+            match zone {
+                CounteredSpellZone::Graveyard => self.players[owner.index()].graveyard.push(card),
+                CounteredSpellZone::Exile => self.players[owner.index()].exile.push(card),
+            }
         }
     }
 

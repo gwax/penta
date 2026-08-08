@@ -59,7 +59,7 @@ pub(in crate::card::sets) static DISCIPLE_OF_BOLAS: CardRecord = CardRecord::new
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — card rules are executed by the engine.
 pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new(
     cards::DURESS,
     "Duress",
@@ -72,8 +72,7 @@ pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new(
         ManaCost::colored(0, 0, 0, 1, 0, 0),
         "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card.",
     )
-    .type_line("Sorcery")
-    .metadata_only(),
+    .type_line("Sorcery"),
 );
 
 // Implementation status: complete — card rules are executed by the engine.
