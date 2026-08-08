@@ -1020,6 +1020,8 @@ pub struct CardRules {
     pub has_lifelink: bool,
     pub has_reach: bool,
     pub has_undying: bool,
+    /// Printed "this spell can't be countered."
+    pub cannot_be_countered: bool,
     /// Protection colors in `[white, blue, black, red, green]` order.
     pub protection_colors: [bool; 5],
     /// Printed colors in `[white, blue, black, red, green]` order.
@@ -1063,6 +1065,7 @@ impl CardRules {
             has_lifelink: false,
             has_reach: false,
             has_undying: false,
+            cannot_be_countered: false,
             protection_colors: [false; 5],
             colors: [
                 mana_cost.white > 0 || mana_cost.white_red_hybrid > 0,
@@ -1241,6 +1244,12 @@ impl CardRules {
     #[must_use]
     pub const fn undying(mut self) -> Self {
         self.has_undying = true;
+        self
+    }
+
+    #[must_use]
+    pub const fn uncounterable(mut self) -> Self {
+        self.cannot_be_countered = true;
         self
     }
 

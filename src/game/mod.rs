@@ -3498,6 +3498,19 @@ impl Game {
                     }
                 }
             }
+            CardBehavior::SupremeVerdict => {
+                // Unlike Wrath of God, the Verdict does not say "they can't be
+                // regenerated", so a regeneration shield still saves.
+                let creatures: Vec<_> = self
+                    .battlefield
+                    .iter()
+                    .filter(|permanent| self.power(permanent).is_some())
+                    .map(|permanent| permanent.card.id)
+                    .collect();
+                for creature in creatures {
+                    self.destroy_permanent(creature);
+                }
+            }
             CardBehavior::WrathOfGod => {
                 let creatures: Vec<_> = self
                     .battlefield
@@ -5560,6 +5573,14 @@ impl Game {
         })
     }
 
+    /// Whether a spell on the stack can be countered at all. Supreme Verdict
+    /// says it cannot, and says so on the card rather than in the engine.
+    fn can_be_countered(&self, object: &StackObject) -> bool {
+        !self
+            .behavior(object.card.definition)
+            .is_some_and(|behavior| behavior.rules().cannot_be_countered)
+    }
+
     fn counter_spell(&mut self, id: GameObjectId) {
         self.counter_spell_into(id, CounteredSpellZone::Graveyard);
     }
@@ -5570,6 +5591,12 @@ impl Game {
         let Some(index) = self.stack.iter().position(|object| object.id == id) else {
             return;
         };
+        // "Can't be countered" is not "can't be targeted": a Counterspell may
+        // legally target Supreme Verdict, resolve, and accomplish nothing. So
+        // this is the only place that checks, and the target lists do not.
+        if !self.can_be_countered(&self.stack[index]) {
+            return;
+        }
         let object = self.stack.remove(index);
         // A copy ceases to exist rather than going anywhere.
         if !object.is_copy {

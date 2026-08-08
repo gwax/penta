@@ -146,7 +146,7 @@ impl HandcraftedPolicy {
         })
     }
 
-    fn counter_target_score(observation: &PlayerObservation, target: Target) -> i32 {
+    fn counter_target_score(&self, observation: &PlayerObservation, target: Target) -> i32 {
         match target {
             Target::Spell(id) => observation
                 .stack
@@ -154,6 +154,12 @@ impl HandcraftedPolicy {
                 .find(|object| object.id == id)
                 .map_or(-10_000, |object| {
                     if object.controller == observation.viewer {
+                        -10_000
+                    } else if self
+                        .behavior(object.definition)
+                        .is_some_and(|behavior| behavior.rules().cannot_be_countered)
+                    {
+                        // Legal to target, but it would accomplish nothing.
                         -10_000
                     } else if observation.stack.iter().any(|counter| {
                         counter.controller == observation.viewer
@@ -178,6 +184,31 @@ impl HandcraftedPolicy {
                     }
                 }),
             Target::Player(_) => -10_000,
+        }
+    }
+
+    /// A sweeper is worth casting in proportion to how far behind on board it
+    /// leaves you -- which is to say, not at all when you are ahead. Without
+    /// this the policy treats a wrath as an ordinary sorcery and fires it into
+    /// its own creatures.
+    fn sweeper_score(observation: &PlayerObservation) -> i32 {
+        let count = |controller: PlayerId| {
+            i32::try_from(
+                observation
+                    .battlefield
+                    .iter()
+                    .filter(|permanent| {
+                        permanent.controller == controller && permanent.power.is_some()
+                    })
+                    .count(),
+            )
+            .unwrap_or(0)
+        };
+        let swing = count(observation.viewer.opponent()) - count(observation.viewer);
+        if swing <= 0 {
+            -10_000
+        } else {
+            6_500 + swing * 500
         }
     }
 
@@ -361,7 +392,7 @@ impl HandcraftedPolicy {
                     behavior,
                     Some(CardBehavior::Counterspell | CardBehavior::RedElementalBlast)
                 ) {
-                    Self::counter_target_score(observation, *target)
+                    self.counter_target_score(observation, *target)
                 } else if Self::is_hostile_removal(behavior) {
                     Self::removal_target_score(observation, *target)
                 } else {
@@ -381,6 +412,9 @@ impl HandcraftedPolicy {
             Some(CardBehavior::GoblinGrenade) => 8_500,
             Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => 8_000,
             Some(CardBehavior::PillarOfFlame) => 7_800,
+            Some(CardBehavior::SupremeVerdict | CardBehavior::WrathOfGod) => {
+                Self::sweeper_score(observation)
+            }
             Some(CardBehavior::Fireball) => 7_900 + i32::from(x) * 20,
             Some(CardBehavior::Shatter | CardBehavior::Detonate | CardBehavior::ChaosOrb) => 7_400,
             Some(CardBehavior::Fork) => 7_300,

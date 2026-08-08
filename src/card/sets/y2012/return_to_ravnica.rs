@@ -436,7 +436,7 @@ pub(in crate::card::sets) static STEAM_VENTS: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — the sweep runs and the spell cannot be countered.
 pub(in crate::card::sets) static SUPREME_VERDICT: CardRecord = CardRecord::new(
     cards::SUPREME_VERDICT,
     "Supreme Verdict",
@@ -450,7 +450,7 @@ pub(in crate::card::sets) static SUPREME_VERDICT: CardRecord = CardRecord::new(
         "This spell can't be countered.\nDestroy all creatures.",
     )
     .type_line("Sorcery")
-    .metadata_only(),
+    .uncounterable(),
 );
 
 // Implementation status: Spell is withheld from play; printed effects are pending.

@@ -4004,3 +4004,99 @@ fn pillar_of_flame_can_burn_a_player() {
 
     assert_eq!(game.players[1].life, 18);
 }
+
+#[test]
+fn supreme_verdict_destroys_every_creature() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
+    game.battlefield
+        .push(creature(10_001, cards::SERRA_ANGEL, PlayerId::Two));
+    let verdict = card(10_002, cards::SUPREME_VERDICT, PlayerId::One);
+    game.players[0].hand.push(verdict.clone());
+    game.players[0].mana_pool.white = 2;
+    game.players[0].mana_pool.blue = 3;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(verdict.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.battlefield.is_empty(), "both sides are swept");
+    assert_eq!(
+        game.players[0].graveyard[0].definition,
+        cards::SAVANNAH_LIONS
+    );
+    assert_eq!(game.players[1].graveyard[0].definition, cards::SERRA_ANGEL);
+}
+
+#[test]
+fn supreme_verdict_does_not_stop_regeneration() {
+    // Wrath of God says "they can't be regenerated". The Verdict does not.
+    let mut game = ready_game();
+    let mut troll = creature(10_000, cards::SEDGE_TROLL, PlayerId::Two);
+    troll.regeneration_shields = 1;
+    game.battlefield.push(troll);
+    let verdict = card(10_002, cards::SUPREME_VERDICT, PlayerId::One);
+    game.players[0].hand.push(verdict.clone());
+    game.players[0].mana_pool.white = 2;
+    game.players[0].mana_pool.blue = 3;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(verdict.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.battlefield.len(), 1, "the shield saves the troll");
+    assert!(game.players[1].graveyard.is_empty());
+}
+
+#[test]
+fn a_counterspell_may_target_supreme_verdict_and_accomplish_nothing() {
+    // Can't be countered is not can't be targeted: the Counterspell is a legal
+    // play, resolves, and simply fails to do its job.
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SERRA_ANGEL, PlayerId::Two));
+    let verdict = card(10_002, cards::SUPREME_VERDICT, PlayerId::One);
+    let counterspell = card(10_003, cards::COUNTERSPELL, PlayerId::Two);
+    game.players[0].hand.push(verdict.clone());
+    game.players[0].mana_pool.white = 2;
+    game.players[0].mana_pool.blue = 3;
+    game.players[1].hand.push(counterspell.clone());
+    game.players[1].mana_pool.blue = 2;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(verdict.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    let verdict_on_stack = game.stack[0].id;
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            counterspell.id,
+            vec![Target::Spell(verdict_on_stack)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    // Once for the Counterspell, once for the Verdict underneath it.
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut game);
+
+    assert!(game.stack.is_empty());
+    assert!(game.battlefield.is_empty(), "the sweep still happened");
+    assert_eq!(game.players[1].graveyard[0].definition, cards::COUNTERSPELL);
+    assert_eq!(
+        game.players[0].graveyard[0].definition,
+        cards::SUPREME_VERDICT,
+        "the Verdict resolved rather than being countered"
+    );
+}
