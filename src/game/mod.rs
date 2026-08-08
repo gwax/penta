@@ -2151,8 +2151,36 @@ impl Game {
         Self::play_option_kind(definition, option)
     }
 
-    #[allow(clippy::too_many_lines)]
+    /// Every legal target list, with hexproof applied once at the end rather
+    /// than in each of the several dozen per-card filters below.
     fn legal_target_lists(
+        &self,
+        behavior: CardBehavior,
+        x: u16,
+        player: PlayerId,
+        exact_count: Option<usize>,
+    ) -> Vec<Vec<Target>> {
+        self.printed_target_lists(behavior, x, player, exact_count)
+            .into_iter()
+            .filter(|choice| {
+                choice.iter().all(|target| match target {
+                    Target::Permanent(id) => self
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == *id)
+                        .is_none_or(|permanent| {
+                            // Hexproof stops opponents only; you can always
+                            // target your own.
+                            permanent.controller == player || !self.has_hexproof(permanent)
+                        }),
+                    Target::Player(_) | Target::Spell(_) => true,
+                })
+            })
+            .collect()
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn printed_target_lists(
         &self,
         behavior: CardBehavior,
         x: u16,
@@ -4481,6 +4509,32 @@ impl Game {
                 .is_some_and(|stats| stats.trample)
     }
 
+    fn has_reach(&self, permanent: &Permanent) -> bool {
+        self.effective_behavior(permanent)
+            .is_some_and(|behavior| behavior.rules().has_reach)
+    }
+
+    fn has_hexproof(&self, permanent: &Permanent) -> bool {
+        self.effective_behavior(permanent)
+            .is_some_and(|behavior| behavior.rules().has_hexproof)
+    }
+
+    fn has_intimidate(&self, permanent: &Permanent) -> bool {
+        self.effective_behavior(permanent)
+            .is_some_and(|behavior| behavior.rules().has_intimidate)
+    }
+
+    /// Whether two permanents share at least one printed colour, which is what
+    /// intimidate asks about.
+    fn shares_a_colour(&self, left: &Permanent, right: &Permanent) -> bool {
+        let colours = |permanent: &Permanent| {
+            self.effective_behavior(permanent)
+                .map_or([false; 5], CardBehavior::color_identity)
+        };
+        let (left, right) = (colours(left), colours(right));
+        left.iter().zip(right).any(|(a, b)| *a && b)
+    }
+
     fn has_deathtouch(&self, permanent: &Permanent) -> bool {
         self.effective_behavior(permanent)
             .is_some_and(|behavior| behavior.rules().has_deathtouch)
@@ -4982,6 +5036,7 @@ impl Game {
                     .find(|permanent| permanent.card.id == blocker)
                     .expect("blocker is on the battlefield");
                 let blocker_flying = self.has_flying(blocker_permanent);
+                let blocker_reach = self.has_reach(blocker_permanent);
                 let ironclaw =
                     self.effective_behavior(blocker_permanent) == Some(CardBehavior::IronclawOrcs);
                 attackers
@@ -5000,8 +5055,12 @@ impl Game {
                                 self.effective_behavior(permanent)
                                     == Some(CardBehavior::ArgothianPixies)
                             });
+                        let intimidated = self.has_intimidate(attacker_permanent)
+                            && !self.is_artifact_permanent(blocker_permanent)
+                            && !self.shares_a_colour(blocker_permanent, attacker_permanent);
                         let can_block = !(*unblockable
-                            || *flying && !blocker_flying
+                            || *flying && !(blocker_flying || blocker_reach)
+                            || intimidated
                             || ironclaw && *power >= 2
                             || pixies && self.is_artifact_permanent(blocker_permanent)
                             || self.combat_is_protected(blocker_permanent, attacker_permanent));

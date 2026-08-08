@@ -3653,3 +3653,93 @@ fn an_ordinary_creature_does_not_gain_life_or_kill_through_toughness() {
     );
     assert_eq!(game.players[0].life, before, "and gains nobody any life");
 }
+
+#[test]
+fn reach_blocks_fliers_without_flying() {
+    // Ruric Thar has reach; a plain ground creature does not.
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    game.active_player = PlayerId::One;
+    let mut flier = creature(10_001, cards::SERRA_ANGEL, PlayerId::One);
+    flier.attacking = true;
+    game.battlefield.push(flier);
+    game.battlefield.push(creature(
+        10_002,
+        cards::RURIC_THAR_THE_UNBOWED,
+        PlayerId::Two,
+    ));
+    game.battlefield
+        .push(creature(10_003, cards::SAVANNAH_LIONS, PlayerId::Two));
+
+    let blockers: Vec<_> = game
+        .blocker_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::DeclareBlocker { blocker, .. } => Some(blocker),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        blockers.contains(&CardInstanceId(10_002)),
+        "reach can block a flier"
+    );
+    assert!(
+        !blockers.contains(&CardInstanceId(10_003)),
+        "a ground creature still cannot"
+    );
+}
+
+#[test]
+fn intimidate_only_lets_artifacts_and_matching_colours_block() {
+    // Lifebane Zombie is black; only black or artifact creatures may block it.
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    game.active_player = PlayerId::One;
+    let mut zombie = creature(10_001, cards::LIFEBANE_ZOMBIE, PlayerId::One);
+    zombie.attacking = true;
+    game.battlefield.push(zombie);
+    game.battlefield
+        .push(creature(10_002, cards::JUZAM_DJINN, PlayerId::Two)); // black
+    game.battlefield
+        .push(creature(10_003, cards::SAVANNAH_LIONS, PlayerId::Two)); // white
+
+    let blockers: Vec<_> = game
+        .blocker_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::DeclareBlocker { blocker, .. } => Some(blocker),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        blockers.contains(&CardInstanceId(10_002)),
+        "a black creature shares a colour and may block"
+    );
+    assert!(
+        !blockers.contains(&CardInstanceId(10_003)),
+        "a white creature may not"
+    );
+}
+
+#[test]
+fn hexproof_stops_opponents_targeting_but_not_its_controller() {
+    let mut game = ready_game();
+    game.battlefield.push(creature(
+        10_001,
+        cards::SIGARDA_HOST_OF_HERONS,
+        PlayerId::Two,
+    ));
+
+    let opponent_targets = game.legal_target_lists(CardBehavior::Terror, 0, PlayerId::One, None);
+    assert!(
+        opponent_targets.is_empty(),
+        "an opponent cannot target hexproof"
+    );
+
+    let own_targets = game.legal_target_lists(CardBehavior::Terror, 0, PlayerId::Two, None);
+    assert_eq!(
+        own_targets.len(),
+        1,
+        "its own controller still can, hexproof only stops opponents"
+    );
+}
