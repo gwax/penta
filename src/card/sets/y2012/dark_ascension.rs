@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType, DoubleFacedKind,
-    EffectDef, EffectRecipientDef, LandEntry, ManaCost, ManaKindDef, ObjectPredicateDef,
-    PlayOptionDef, SpellForm, ZoneKind, abilities, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt,
+    CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaCost,
+    ManaKindDef, ObjectPredicateDef, PlayOptionDef, SpellForm, ValueDef, ZoneKind, abilities,
+    cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 
@@ -144,11 +145,33 @@ pub(in crate::card::sets) static TRAGIC_SLIP: CardRecord = CardRecord::new(
     "Tragic Slip",
     CardArt::new("09666671-601e-4fca-bdfb-fb288bf2672c", "Christopher Moeller"),
     CardSet::DarkAscension,
-    CardRules::new_instant(
-        ManaCost::colored(0, 0, 0, 1, 0, 0),
-        "Target creature gets -1/-1 until end of turn.\nMorbid — That creature gets -13/-13 until end of turn instead if a creature died this turn.",
-    )
-    .metadata_only(),
+    CardRules::new_instant(ManaCost::colored(0, 0, 0, 1, 0, 0), "").with_abilities(&[
+        AbilityDef::spell(
+            "Target creature gets -1/-1 until end of turn.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(-1),
+                    toughness: ValueDef::Constant(-1),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "creature",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
+        AbilityDef::not_implemented(
+            "Morbid — That creature gets -13/-13 until end of turn instead if a creature died this turn.",
+            "Morbid conditions that depend on a creature having died this turn are not implemented, so the spell always applies -1/-1.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static VAULT_OF_THE_ARCHANGEL: CardRecord = CardRecord::new(

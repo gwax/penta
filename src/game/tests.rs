@@ -7413,3 +7413,51 @@ fn obzedat_drains_the_opponent_when_it_enters() {
     assert_eq!(game.players[1].life, 18);
     assert_eq!(game.players[0].life, 22);
 }
+
+#[test]
+fn tragic_slip_shrinks_a_creature_and_kills_a_small_one() {
+    // Savannah Lions is 2/1, so -1/-1 is lethal; Serra Angel is 4/4 and lives.
+    for (definition, survives) in [(cards::SAVANNAH_LIONS, false), (cards::SERRA_ANGEL, true)] {
+        let mut game = ready_game();
+        let target = creature(10_000, definition, PlayerId::Two);
+        let target_id = target.card.id;
+        game.battlefield.push(target);
+        let spell = card(10_001, cards::TRAGIC_SLIP, PlayerId::One);
+        game.players[0].hand.push(spell.clone());
+        game.players[0].mana_pool.black = 1;
+
+        game.apply(
+            PlayerId::One,
+            cast_action(spell.id, vec![Target::Permanent(target_id)], Vec::new(), 0),
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+
+        if survives {
+            let permanent = game.battlefield.first().expect("the angel survives");
+            assert_eq!(game.power(permanent), Some(3));
+            assert_eq!(game.toughness(permanent), Some(3));
+        } else {
+            assert!(game.battlefield.is_empty(), "{definition:?} should die");
+        }
+    }
+}
+
+#[test]
+fn quicken_still_draws_even_though_its_flash_rider_is_pending() {
+    let mut game = ready_game();
+    let spell = card(10_001, cards::QUICKEN, PlayerId::One);
+    game.players[0].hand.push(spell.clone());
+    game.players[0].mana_pool.blue = 1;
+    let before = game.players[0].library.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_action(spell.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[0].library.len(), before - 1);
+    assert_eq!(game.players[0].hand.len(), 1);
+}

@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
-    CardBehavior, CardRules, CardSet, EffectDef, LandEntry, ManaCost, ManaKindDef,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ZoneKind, abilities, cards,
+    CardBehavior, CardRules, CardSet, EffectDef, EffectRecipientDef, LandEntry, ManaCost,
+    ManaKindDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::TargetSlotId;
 
@@ -163,11 +164,19 @@ pub(in crate::card::sets) static QUICKEN: CardRecord = CardRecord::new(
     "Quicken",
     CardArt::new("066bef3d-c785-4b25-9b91-8f676aa9906f", "Aleksi Briclot"),
     CardSet::Magic2014,
-    CardRules::new_instant(
-        ManaCost::colored(0, 0, 1, 0, 0, 0),
-        "The next sorcery spell you cast this turn can be cast as though it had flash. (It can be cast any time you could cast an instant.)\nDraw a card.",
-    )
-    .metadata_only(),
+    CardRules::new_instant(ManaCost::colored(0, 0, 1, 0, 0, 0), "").with_abilities(&[
+        AbilityDef::not_implemented(
+            "The next sorcery spell you cast this turn can be cast as though it had flash. (It can be cast any time you could cast an instant.)",
+            "Granting flash to a later spell is not implemented.",
+        ),
+        AbilityDef::spell(
+            "Draw a card.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static RATCHET_BOMB: CardRecord = CardRecord::new(
