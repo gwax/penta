@@ -59,6 +59,7 @@ fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Perm
         plus_one_counters: 0,
         javelin_counters: 0,
         dealt_deathtouch_damage: false,
+        exile_instead_of_dying: false,
         combat_damage_assignment: Vec::new(),
         copied_behavior: None,
         regeneration_shields: 0,
@@ -3920,4 +3921,86 @@ fn blood_baron_of_vizkopa_ascends_at_thirty_life() {
     assert_eq!(game.power(&baron), Some(10));
     assert_eq!(game.toughness(&baron), Some(10));
     assert!(game.has_flying(&baron));
+}
+
+#[test]
+fn pillar_of_flame_exiles_what_it_kills() {
+    let mut game = ready_game();
+    // Savannah Lions is 2/1, so two damage is lethal.
+    let lion = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let lion_id = lion.card.id;
+    game.battlefield.push(lion);
+    let pillar = card(10_001, cards::PILLAR_OF_FLAME, PlayerId::One);
+    game.players[0].hand.push(pillar.clone());
+    game.players[0].mana_pool.red = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(pillar.id, vec![Target::Permanent(lion_id)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.battlefield.is_empty());
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "the lion never reaches the graveyard"
+    );
+    assert_eq!(game.players[1].exile[0].definition, cards::SAVANNAH_LIONS);
+}
+
+#[test]
+fn pillar_of_flame_exiles_a_survivor_that_dies_later_this_turn() {
+    let mut game = ready_game();
+    // Serra Angel is 4/4: two damage leaves it alive, but the replacement
+    // lasts the turn, so a later Lightning Bolt exiles it anyway.
+    let angel = creature(10_000, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    let pillar = card(10_001, cards::PILLAR_OF_FLAME, PlayerId::One);
+    let bolt = card(10_002, cards::LIGHTNING_BOLT, PlayerId::One);
+    game.players[0].hand.push(pillar.clone());
+    game.players[0].hand.push(bolt.clone());
+    game.players[0].mana_pool.red = 2;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(pillar.id, vec![Target::Permanent(angel_id)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    assert_eq!(game.battlefield.len(), 1, "four damage is not lethal");
+
+    game.apply(
+        PlayerId::One,
+        cast_action(bolt.id, vec![Target::Permanent(angel_id)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.battlefield.is_empty());
+    assert!(game.players[1].graveyard.is_empty());
+    assert_eq!(game.players[1].exile[0].definition, cards::SERRA_ANGEL);
+}
+
+#[test]
+fn pillar_of_flame_can_burn_a_player() {
+    let mut game = ready_game();
+    let pillar = card(10_001, cards::PILLAR_OF_FLAME, PlayerId::One);
+    game.players[0].hand.push(pillar.clone());
+    game.players[0].mana_pool.red = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            pillar.id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[1].life, 18);
 }

@@ -58,7 +58,7 @@ pub(in crate::card::sets) static DEMONIC_RISING: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Spell is withheld from play; printed effects are pending.
+// Implementation status: complete — the damage and the exile replacement are both executed.
 pub(in crate::card::sets) static PILLAR_OF_FLAME: CardRecord = CardRecord::new(
     cards::PILLAR_OF_FLAME,
     "Pillar of Flame",
@@ -71,8 +71,7 @@ pub(in crate::card::sets) static PILLAR_OF_FLAME: CardRecord = CardRecord::new(
         ManaCost::colored(0, 0, 0, 0, 1, 0),
         "Pillar of Flame deals 2 damage to any target. If a creature dealt damage this way would die this turn, exile it instead.",
     )
-    .type_line("Sorcery")
-    .metadata_only(),
+    .type_line("Sorcery"),
 );
 
 // Implementation status: Baseline creature is playable; card-specific printed abilities are pending.

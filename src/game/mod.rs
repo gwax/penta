@@ -106,6 +106,10 @@ struct Permanent {
     /// damage from such a source is lethal, so state-based actions need to
     /// know the damage's origin, not just its size. Clears with damage.
     dealt_deathtouch_damage: bool,
+    /// Set by Pillar of Flame: if this creature would die this turn, it is
+    /// exiled instead. The replacement outlives the damage itself, so it
+    /// cannot be a property of the damage. Clears in cleanup.
+    exile_instead_of_dying: bool,
     combat_damage_assignment: Vec<CombatDamageAssignment>,
     /// A Copy Artifact remembers the printed behavior it copied when it
     /// entered.  Keeping this on the permanent lets all of the normal rules
@@ -2208,6 +2212,7 @@ impl Game {
             }
             CardBehavior::LightningBolt
             | CardBehavior::ChainLightning
+            | CardBehavior::PillarOfFlame
             | CardBehavior::GoblinGrenade
             | CardBehavior::DrainLife
             | CardBehavior::PsionicBlast
@@ -2811,6 +2816,7 @@ impl Game {
             plus_one_counters: 0,
             javelin_counters: 0,
             dealt_deathtouch_damage: false,
+            exile_instead_of_dying: false,
             combat_damage_assignment: Vec::new(),
             copied_behavior: None,
             regeneration_shields: 0,
@@ -3172,6 +3178,7 @@ impl Game {
                 },
                 javelin_counters: u16::from(behavior == CardBehavior::IcatianJavelineers),
                 dealt_deathtouch_damage: false,
+                exile_instead_of_dying: false,
                 combat_damage_assignment: Vec::new(),
                 copied_behavior: None,
                 regeneration_shields: 0,
@@ -3356,6 +3363,17 @@ impl Game {
             }
             CardBehavior::LightningBolt => {
                 self.damage_target(object.first_target(), 3);
+            }
+            CardBehavior::PillarOfFlame => {
+                self.damage_target(object.first_target(), 2);
+                if let Some(Target::Permanent(target)) = object.first_target()
+                    && let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == target)
+                {
+                    permanent.exile_instead_of_dying = true;
+                }
             }
             CardBehavior::WarleadersHelix => {
                 self.damage_target(object.first_target(), 4);
@@ -5411,6 +5429,13 @@ impl Game {
     }
 
     fn remove_permanent_to_graveyard(&mut self, index: usize) {
+        // Pillar of Flame replaces the death outright. Nothing dies, so
+        // nothing that watches for a death -- undying included -- happens.
+        if self.battlefield[index].exile_instead_of_dying {
+            let id = self.battlefield[index].card.id;
+            self.exile_permanent(id);
+            return;
+        }
         let permanent = self.battlefield.remove(index);
         if self.effective_behavior(&permanent) == Some(CardBehavior::SuChi) {
             self.players[permanent.controller.index()]
@@ -5450,6 +5475,7 @@ impl Game {
                 plus_one_counters: 1,
                 javelin_counters: 0,
                 dealt_deathtouch_damage: false,
+                exile_instead_of_dying: false,
                 combat_damage_assignment: Vec::new(),
                 copied_behavior: None,
                 regeneration_shields: 0,
@@ -6020,6 +6046,7 @@ impl Game {
         for permanent in &mut self.battlefield {
             permanent.damage = 0;
             permanent.dealt_deathtouch_damage = false;
+            permanent.exile_instead_of_dying = false;
             permanent.power_bonus = 0;
             permanent.toughness_bonus = 0;
             permanent.flying_until_end = false;

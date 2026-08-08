@@ -318,6 +318,7 @@ impl HandcraftedPolicy {
         let x = choices.x();
         let damage = match behavior {
             Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => Some(3),
+            Some(CardBehavior::PillarOfFlame) => Some(2),
             Some(CardBehavior::GoblinGrenade) => Some(5),
             Some(CardBehavior::Fireball) => Some(
                 x.checked_div(u16::try_from(choices.iter_targets().count()).unwrap_or(u16::MAX))
@@ -379,6 +380,7 @@ impl HandcraftedPolicy {
             Some(CardBehavior::Braingeyser) => 7_500 + i32::from(x) * 30,
             Some(CardBehavior::GoblinGrenade) => 8_500,
             Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => 8_000,
+            Some(CardBehavior::PillarOfFlame) => 7_800,
             Some(CardBehavior::Fireball) => 7_900 + i32::from(x) * 20,
             Some(CardBehavior::Shatter | CardBehavior::Detonate | CardBehavior::ChaosOrb) => 7_400,
             Some(CardBehavior::Fork) => 7_300,
