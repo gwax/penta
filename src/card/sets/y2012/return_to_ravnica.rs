@@ -2,10 +2,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, BasicLandType, CardArt,
-    CardBehavior, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure,
-    CardSupertype, EffectDef, LandEntry, ManaCost, ManaKindDef, ModeDef, ModeSetDef, PlayOptionDef,
-    SpellForm, TargetPredicate, TargetSlotDef, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
+    AddManaEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition, CardEffectStatus,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, EffectDef,
+    EffectRecipientDef, LandEntry, ManaCost, ManaKindDef, ModeDef, ModeSetDef, ObjectPredicateDef,
+    PlayOptionDef, PlayerRelation, SpellForm, TargetPredicate, TargetSlotDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::{CardPartId, ModeId, PlayOptionId, TargetSlotId};
 
@@ -304,11 +306,29 @@ pub(in crate::card::sets) static MIZZIUM_MORTARS: CardRecord = CardRecord::new(
     "Mizzium Mortars",
     CardArt::new("d4ded88d-2688-4f5e-a8b2-16216cf9c792", "Noah Bradley"),
     CardSet::ReturnToRavnica,
-    CardRules::new_sorcery(
-        ManaCost::colored(1, 0, 0, 0, 1, 0),
-        "Mizzium Mortars deals 4 damage to target creature you don't control.\nOverload {3}{R}{R}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
-    )
-    .metadata_only(),
+    CardRules::new_sorcery(ManaCost::colored(1, 0, 0, 0, 1, 0), "").with_abilities(&[
+        AbilityDef::spell(
+            "Mizzium Mortars deals 4 damage to target creature you don't control.",
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                amount: ValueDef::Constant(4),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "creature you don't control",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::Opponent),
+                owner: None,
+            },
+        )]),
+        AbilityDef::not_implemented(
+            "Overload {3}{R}{R}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+            "Alternative overload costs that rewrite a spell's targeting are not implemented.",
+        ),
+    ]),
 );
 
 // Implementation status: partial — the pay-life choice and explicit mana abilities run, but

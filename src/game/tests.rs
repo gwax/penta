@@ -7263,3 +7263,74 @@ fn urgent_exorcism_takes_spirits_and_enchantments_but_nothing_else() {
         );
     }
 }
+
+#[test]
+fn ray_of_revelation_destroys_an_enchantment() {
+    let mut game = ready_game();
+    let target = creature(10_000, cards::ENERGY_FLUX, PlayerId::Two);
+    let target_id = target.card.id;
+    game.battlefield.push(target);
+    let spell = card(10_001, cards::RAY_OF_REVELATION, PlayerId::One);
+    game.players[0].hand.push(spell.clone());
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(spell.id, vec![Target::Permanent(target_id)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.battlefield.is_empty());
+}
+
+#[test]
+fn mizzium_mortars_cannot_be_aimed_at_your_own_creature() {
+    for (controller, legal) in [(PlayerId::Two, true), (PlayerId::One, false)] {
+        let mut game = ready_game();
+        let target = creature(10_000, cards::SERRA_ANGEL, controller);
+        let target_id = target.card.id;
+        game.battlefield.push(target);
+        let spell = card(10_001, cards::MIZZIUM_MORTARS, PlayerId::One);
+        game.players[0].hand.push(spell.clone());
+        game.players[0].mana_pool.red = 1;
+        game.players[0].mana_pool.colorless = 1;
+
+        let action = cast_action(spell.id, vec![Target::Permanent(target_id)], Vec::new(), 0);
+        assert_eq!(
+            game.legal_actions(PlayerId::One).contains(&action),
+            legal,
+            "a creature controlled by {controller} should be {}",
+            if legal { "targetable" } else { "out of reach" }
+        );
+        if !legal {
+            continue;
+        }
+        game.apply(PlayerId::One, action).unwrap();
+        pass_priority_pair(&mut game);
+        // Serra Angel is 4/4, so four damage is exactly lethal.
+        assert!(game.battlefield.is_empty());
+    }
+}
+
+#[test]
+fn thragtusk_gains_five_life_when_it_enters() {
+    let mut game = ready_game();
+    let tusk = card(10_001, cards::THRAGTUSK, PlayerId::One);
+    game.players[0].hand.push(tusk.clone());
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.colorless = 4;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(tusk.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    // The trigger is a stack object now, so it needs its own resolution.
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[0].life, 25);
+    assert_eq!(game.battlefield.len(), 1);
+}

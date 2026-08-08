@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
-    CardStructure, DoubleFacedKind, LandEntry, ManaCost, ManaKindDef, PlayOptionDef, SpellForm,
-    abilities, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType, DoubleFacedKind,
+    EffectDef, EffectRecipientDef, LandEntry, ManaCost, ManaKindDef, ObjectPredicateDef,
+    PlayOptionDef, SpellForm, ZoneKind, abilities, cards,
 };
-use crate::ids::{CardPartId, PlayOptionId};
+use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 
 pub(in crate::card::sets) static HELLRIDER: CardRecord = CardRecord::new(
     cards::HELLRIDER,
@@ -93,11 +94,29 @@ pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new
     "Ray of Revelation",
     CardArt::new("d7e2c5a4-cf92-46bd-9033-8036436488cb", "Cliff Childs"),
     CardSet::DarkAscension,
-    CardRules::new_instant(
-        ManaCost::colored(1, 1, 0, 0, 0, 0),
-        "Destroy target enchantment.\nFlashback {G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-    )
-    .metadata_only(),
+    CardRules::new_instant(ManaCost::colored(1, 1, 0, 0, 0, 0), "").with_abilities(&[
+        AbilityDef::spell(
+            "Destroy target enchantment.",
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                can_regenerate: true,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "enchantment",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Enchantment),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
+        AbilityDef::not_implemented(
+            "Flashback {G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+            "Casting from the graveyard for a flashback cost is not implemented.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static STRANGLEROOT_GEIST: CardRecord = CardRecord::new(

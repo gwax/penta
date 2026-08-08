@@ -317,9 +317,26 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
         &["Beast"],
         5,
         3,
-        "When this creature enters, you gain 5 life.\nWhen this creature leaves the battlefield, create a 3/3 green Beast creature token.",
+        "",
     )
-    .metadata_only(),
+    .with_abilities(&[
+        AbilityDef::triggered(
+            "When this creature enters, you gain 5 life.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(5),
+            },
+        ),
+        AbilityDef::not_implemented(
+            "When this creature leaves the battlefield, create a 3/3 green Beast creature token.",
+            "Creating creature tokens is not implemented.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static THUNDERMAW_HELLKITE: CardRecord = CardRecord::new(
