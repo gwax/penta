@@ -1,0 +1,1 @@
+../../../.agents/skills/query-magic-references/SKILL.md

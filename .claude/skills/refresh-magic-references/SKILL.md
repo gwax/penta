@@ -1,0 +1,1 @@
+../../../.agents/skills/refresh-magic-references/SKILL.md

@@ -11,9 +11,11 @@ inspect; never dump the database into model context.
 
 ## Start safely
 
-Read [references/schema.md](references/schema.md) before composing a nontrivial
-query. It documents the schema, indexes, FTS behavior, examples, and
-interpretation limits.
+Read [the schema reference](.agents/skills/query-magic-references/references/schema.md)
+before composing a nontrivial query. It documents the schema, indexes, FTS
+behavior, examples, and interpretation limits. Like the script paths below,
+this path is written from the repository root, so it resolves the same way
+however the skill was loaded — including through `.claude/skills`.
 
 Resolve the database path instead of constructing or hardcoding it:
 

@@ -1,5 +1,14 @@
 # Repository instructions
 
+This file is canonical for every agent. `CLAUDE.md` imports it rather than
+restating it, so put repository guidance here and leave that file alone.
+
+Skills live in `.agents/skills/<name>/`, and `.claude/skills/<name>/SKILL.md`
+symlinks to the same file so Claude Code discovers them too. A skill body is
+therefore read through two directories: write paths inside one from the
+repository root, never relative to the file. `tests/agent_skills.rs` enforces
+all of this.
+
 ## Optional reference material
 
 Magic rules and card data may be available in an optional development cache

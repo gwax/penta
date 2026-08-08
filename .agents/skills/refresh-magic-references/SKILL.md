@@ -1,6 +1,6 @@
 ---
 name: refresh-magic-references
-description: "Locate, inspect, migrate, refresh, and index this repository's optional shared Magic: The Gathering reference cache, including the Wizards Comprehensive Rules, Eternal Central 93/94 rules, Scryfall bulk card and ruling data, and schema-versioned SQLite indexes. Use when Codex needs reproducible local rules or card data, needs to diagnose cache freshness or locking, needs to build or repair the Scryfall index, or is asked to populate or update the clone-wide cache. Do not require it for questions that authoritative online sources can answer reliably."
+description: "Locate, inspect, migrate, refresh, and index this repository's optional shared Magic: The Gathering reference cache, including the Wizards Comprehensive Rules, Eternal Central 93/94 rules, Scryfall bulk card and ruling data, and schema-versioned SQLite indexes. Use when an agent needs reproducible local rules or card data, needs to diagnose cache freshness or locking, needs to build or repair the Scryfall index, or is asked to populate or update the clone-wide cache. Do not require it for questions that authoritative online sources can answer reliably."
 ---
 
 # Refresh Magic References
