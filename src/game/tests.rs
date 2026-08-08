@@ -3824,3 +3824,100 @@ fn a_javelin_counter_is_not_a_plus_one_counter() {
     );
     assert_eq!(game.toughness(javelineers), Some(1));
 }
+
+#[test]
+fn protection_reads_the_printed_colours_not_a_list_of_card_names() {
+    // Blood Baron of Vizkopa has protection from white and from black. Its
+    // data was already in the catalog; the engine simply never looked at it.
+    let mut game = ready_game();
+    game.battlefield.push(creature(
+        10_001,
+        cards::BLOOD_BARON_OF_VIZKOPA,
+        PlayerId::Two,
+    ));
+
+    // Swords to Plowshares is white, Terror is black, Lightning Bolt is red.
+    for (behavior, blocked) in [
+        (CardBehavior::SwordsToPlowshares, true),
+        (CardBehavior::Terror, true),
+        (CardBehavior::LightningBolt, false),
+    ] {
+        let targets = game.legal_target_lists(behavior, 0, PlayerId::One, None);
+        let names_baron = targets.iter().any(|choice| {
+            matches!(choice.first(), Some(Target::Permanent(id)) if *id == CardInstanceId(10_001))
+        });
+        assert_eq!(
+            names_baron,
+            !blocked,
+            "{behavior:?} targeting Blood Baron should be {}",
+            if blocked { "blocked" } else { "allowed" }
+        );
+    }
+}
+
+#[test]
+fn the_old_school_knights_keep_their_protection() {
+    // These four used to be named in the engine directly. Moving to printed
+    // data must not change what they do.
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_001, cards::WHITE_KNIGHT, PlayerId::Two));
+    game.battlefield
+        .push(creature(10_002, cards::BLACK_KNIGHT, PlayerId::Two));
+
+    let hit_by = |game: &Game, behavior| -> Vec<CardInstanceId> {
+        game.legal_target_lists(behavior, 0, PlayerId::One, None)
+            .into_iter()
+            .filter_map(|choice| match choice.first() {
+                Some(Target::Permanent(id)) => Some(*id),
+                _ => None,
+            })
+            .collect()
+    };
+
+    // Terror is black and cannot touch White Knight. It could not touch Black
+    // Knight either, but only because Black Knight is black, so the white
+    // Swords to Plowshares is what shows protection working the other way.
+    let by_black = hit_by(&game, CardBehavior::Terror);
+    assert!(
+        !by_black.contains(&CardInstanceId(10_001)),
+        "White Knight has protection from black"
+    );
+
+    let by_white = hit_by(&game, CardBehavior::SwordsToPlowshares);
+    assert!(
+        !by_white.contains(&CardInstanceId(10_002)),
+        "Black Knight has protection from white"
+    );
+    assert!(
+        by_white.contains(&CardInstanceId(10_001)),
+        "White Knight has no protection from white"
+    );
+}
+
+#[test]
+fn blood_baron_of_vizkopa_ascends_at_thirty_life() {
+    let mut game = ready_game();
+    game.battlefield.push(creature(
+        10_001,
+        cards::BLOOD_BARON_OF_VIZKOPA,
+        PlayerId::One,
+    ));
+    let baron = game.battlefield.last().unwrap().clone();
+
+    // Neither half of the condition alone is enough.
+    game.players[0].life = 30;
+    game.players[1].life = 11;
+    assert_eq!(game.power(&baron), Some(4));
+    assert!(!game.has_flying(&baron));
+
+    game.players[0].life = 29;
+    game.players[1].life = 10;
+    assert_eq!(game.power(&baron), Some(4));
+
+    game.players[0].life = 30;
+    game.players[1].life = 10;
+    assert_eq!(game.power(&baron), Some(10));
+    assert_eq!(game.toughness(&baron), Some(10));
+    assert!(game.has_flying(&baron));
+}

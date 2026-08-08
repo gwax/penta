@@ -26,7 +26,7 @@ pub(in crate::card::sets) static AETHERLING: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Baseline creature casting/combat and declaratively modeled traits are active; remaining printed abilities are pending.
+// Implementation status: complete — lifelink, protection, and the ascension bonus are all executed.
 pub(in crate::card::sets) static BLOOD_BARON_OF_VIZKOPA: CardRecord = CardRecord::new(
     cards::BLOOD_BARON_OF_VIZKOPA,
     "Blood Baron of Vizkopa",
@@ -42,8 +42,7 @@ pub(in crate::card::sets) static BLOOD_BARON_OF_VIZKOPA: CardRecord = CardRecord
     .type_line("Creature — Vampire")
     .creature(4, 4)
     .lifelink()
-    .protection([true, false, true, false, false])
-    .metadata_only(),
+    .protection([true, false, true, false, false]),
 );
 
 // Implementation status: Metadata only; this spell is withheld from legal actions.

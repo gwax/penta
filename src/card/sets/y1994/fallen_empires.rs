@@ -64,7 +64,8 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
         ManaCost::colored(0, 2, 0, 0, 0, 0),
         "Protection from black. WW: Gets +1/+0 until end of turn. W: Gains first strike until end of turn.",
     )
-    .creature(2, 2),
+    .creature(2, 2)
+    .protection([false, false, true, false, false]),
 );
 
 // Implementation status: complete — card rules are executed by the engine.
@@ -80,7 +81,8 @@ pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord
         ManaCost::colored(0, 0, 0, 2, 0, 0),
         "Protection from white. BB: Gets +1/+0 until end of turn. B: Gains first strike until end of turn.",
     )
-    .creature(2, 1),
+    .creature(2, 1)
+    .protection([true, false, false, false, false]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

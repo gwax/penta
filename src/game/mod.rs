@@ -2155,8 +2155,11 @@ impl Game {
         Self::play_option_kind(definition, option)
     }
 
-    /// Every legal target list, with hexproof applied once at the end rather
-    /// than in each of the several dozen per-card filters below.
+    /// Every legal target list, with hexproof and protection applied once at
+    /// the end rather than in each of the several dozen per-card filters
+    /// below. Doing it here is not just tidier: protection used to be spelled
+    /// out arm by arm, and the arms that forgot -- Terror among them -- were
+    /// simply wrong.
     fn legal_target_lists(
         &self,
         behavior: CardBehavior,
@@ -2174,8 +2177,10 @@ impl Game {
                         .find(|permanent| permanent.card.id == *id)
                         .is_none_or(|permanent| {
                             // Hexproof stops opponents only; you can always
-                            // target your own.
-                            permanent.controller == player || !self.has_hexproof(permanent)
+                            // target your own. Protection stops everyone,
+                            // including the permanent's own controller.
+                            (permanent.controller == player || !self.has_hexproof(permanent))
+                                && !self.is_protected_from(permanent, behavior)
                         }),
                     Target::Player(_) | Target::Spell(_) => true,
                 })
@@ -2253,17 +2258,14 @@ impl Game {
             CardBehavior::SwordsToPlowshares => self
                 .battlefield
                 .iter()
-                .filter(|permanent| {
-                    self.power(permanent).is_some() && !self.is_protected_from(permanent, behavior)
-                })
+                .filter(|permanent| self.power(permanent).is_some())
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
             CardBehavior::Putrefy => self
                 .battlefield
                 .iter()
                 .filter(|permanent| {
-                    (self.power(permanent).is_some() || self.is_artifact_permanent(permanent))
-                        && !self.is_protected_from(permanent, behavior)
+                    self.power(permanent).is_some() || self.is_artifact_permanent(permanent)
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
@@ -2277,7 +2279,6 @@ impl Game {
                             .is_some_and(|creature| {
                                 creature.color_identity().iter().filter(|on| **on).count() == 1
                             })
-                        && !self.is_protected_from(permanent, behavior)
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
@@ -2289,7 +2290,6 @@ impl Game {
                         && !self
                             .behavior(permanent.card.definition)
                             .is_some_and(CardBehavior::is_black)
-                        && !self.is_protected_from(permanent, behavior)
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
@@ -3966,18 +3966,22 @@ impl Game {
         }
     }
 
+    /// Whether a permanent has protection from a source's colour.
+    ///
+    /// This used to name the four Old School knights directly. It reads the
+    /// printed protection colours instead, so Blood Baron -- whose data the
+    /// engine had been ignoring -- and every future card work without being
+    /// added to a list.
     fn is_protected_from(&self, permanent: &Permanent, source: CardBehavior) -> bool {
-        match self.effective_behavior(permanent) {
-            Some(CardBehavior::BlackKnight | CardBehavior::OrderOfTheEbonHand)
-                if source.is_white() =>
-            {
-                true
-            }
-            Some(CardBehavior::OrderOfLeitbur | CardBehavior::WhiteKnight) if source.is_black() => {
-                true
-            }
-            _ => false,
-        }
+        let Some(behavior) = self.effective_behavior(permanent) else {
+            return false;
+        };
+        let protection = behavior.rules().protection_colors;
+        let source_colors = source.color_identity();
+        protection
+            .iter()
+            .zip(source_colors)
+            .any(|(protected, coloured)| *protected && coloured)
     }
 
     fn combat_is_protected(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
@@ -4460,7 +4464,13 @@ impl Game {
                 }
                 _ => 0,
             };
+            let ascended = if self.blood_baron_has_ascended(permanent) {
+                6
+            } else {
+                0
+            };
             stats.power
+                + ascended
                 + permanent.power_bonus
                 + self.goblin_bonus(permanent)
                 + self.crusade_bonus(permanent)
@@ -4484,7 +4494,13 @@ impl Game {
                 }
                 _ => 0,
             };
+            let ascended = if self.blood_baron_has_ascended(permanent) {
+                6
+            } else {
+                0
+            };
             stats.toughness
+                + ascended
                 + permanent.toughness_bonus
                 + self.goblin_bonus(permanent)
                 + self.crusade_bonus(permanent)
@@ -4495,9 +4511,19 @@ impl Game {
 
     fn has_flying(&self, permanent: &Permanent) -> bool {
         permanent.flying_until_end
+            || self.blood_baron_has_ascended(permanent)
             || self
                 .effective_rules(permanent)
                 .is_some_and(|rules| rules.has_flying)
+    }
+
+    /// Blood Baron of Vizkopa's condition: 30 or more life for its controller
+    /// and 10 or less for the opponent. While it holds the Baron is +6/+6 and
+    /// flies.
+    fn blood_baron_has_ascended(&self, permanent: &Permanent) -> bool {
+        self.effective_behavior(permanent) == Some(CardBehavior::BloodBaronOfVizkopa)
+            && self.players[permanent.controller.index()].life >= 30
+            && self.players[permanent.controller.opponent().index()].life <= 10
     }
 
     fn has_trample(&self, permanent: &Permanent) -> bool {
