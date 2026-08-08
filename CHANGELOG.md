@@ -12,6 +12,30 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
+## 0.4.0 — protocol 2
+
+### Fixed
+
+- A library search may now fail to find. Searching a hidden zone never obliges
+  the searcher to find anything (CR 701.19c), but Demonic Tutor demanded
+  exactly one card, so a player holding a full library was forced to take one.
+  Failing to find is distinct from cancelling: the spell resolved and the
+  search happened, so the library is still shuffled — otherwise a player could
+  tutor, decline, and read their own deck order off the top.
+- A decision never asks for more cards than it offers. An empty library made
+  Demonic Tutor demand one of zero options with no way to cancel, which left
+  no legal action at all and deadlocked the game for every policy.
+
+### Changed
+
+- The bundled handcrafted policy takes as many options as a beneficial
+  decision allows rather than the bare minimum, so it still finds a card when
+  a search permits declining.
+
+Protocol stays at 2: no JSON field was added, removed, or renamed. A bot that
+reads a decision's `minimum` needs no change, but one that assumed a search
+always yields a card will now see games where it does not.
+
 ## 0.3.0 — protocol 2
 
 ### Changed

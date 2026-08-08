@@ -1002,6 +1002,113 @@ fn demonic_tutor_exposes_a_library_choice_then_shuffles() {
 }
 
 #[test]
+fn a_search_may_fail_to_find_even_with_a_full_library() {
+    // CR 701.19c: searching a hidden zone never obliges the searcher to find.
+    // This is not cancelling the spell -- Demonic Tutor resolved, the search
+    // happened, and it turned up nothing on purpose.
+    let mut game = ready_game();
+    for (index, definition) in [cards::JUZAM_DJINN, cards::BLACK_LOTUS]
+        .into_iter()
+        .enumerate()
+    {
+        let id = 10_001 + u32::try_from(index).unwrap();
+        game.players[0]
+            .library
+            .push(card(id, definition, PlayerId::One));
+    }
+    let tutor = spell(10_000, cards::DEMONIC_TUTOR, PlayerId::One, 0);
+    game.resolve_spell_effect(&tutor, CardBehavior::DemonicTutor);
+
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    assert_eq!(decision.minimum, 0, "a search is never compulsory");
+    assert_eq!(decision.maximum, 1);
+    assert!(
+        !decision.cancellable,
+        "failing to find is a resolution, not a way out of the spell"
+    );
+
+    let library_before = game.players[0].library.len();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("failing to find is a legal resolution");
+
+    assert!(game.players[0].hand.is_empty(), "nothing was found");
+    assert_eq!(
+        game.players[0].library.len(),
+        library_before,
+        "and nothing left the library"
+    );
+    assert!(game.pending_decisions.is_empty(), "the search is over");
+}
+
+#[test]
+fn the_handcrafted_policy_still_finds_when_it_may_decline() {
+    // Failing to find became legal, and the policy takes `minimum` options by
+    // default -- which is now zero. Left alone it would tutor for nothing
+    // every single time, quietly turning Demonic Tutor into a blank.
+    use crate::{HandcraftedPolicy, Policy};
+
+    let mut game = ready_game();
+    game.players[0]
+        .library
+        .push(card(10_001, cards::BLACK_LOTUS, PlayerId::One));
+    let tutor = spell(10_000, cards::DEMONIC_TUTOR, PlayerId::One, 0);
+    game.resolve_spell_effect(&tutor, CardBehavior::DemonicTutor);
+
+    let mut policy = HandcraftedPolicy::new(poc::catalog().unwrap());
+    let action = policy
+        .choose_action(&game.observe(PlayerId::One))
+        .expect("the policy answers the search");
+    let Action::ChooseDecision { options, .. } = &action else {
+        panic!("expected a decision, got {action:?}");
+    };
+    assert_eq!(options.len(), 1, "the policy searched and found a card");
+
+    game.apply(PlayerId::One, action.clone()).expect("legal");
+    assert_eq!(game.players[0].hand.len(), 1, "the card reached hand");
+}
+
+#[test]
+fn a_search_shuffles_even_when_it_finds_nothing() {
+    // Otherwise a player learns their own library order for free: tutor, fail
+    // to find, and the top of the deck is whatever it already was.
+    let mut game = ready_game();
+    let before: Vec<_> = game.players[0].library.iter().map(|card| card.id).collect();
+    assert!(
+        before.len() > 10,
+        "the deck's library is long enough for a shuffle to be observable"
+    );
+
+    let tutor = spell(10_000, cards::DEMONIC_TUTOR, PlayerId::One, 0);
+    game.resolve_spell_effect(&tutor, CardBehavior::DemonicTutor);
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("failing to find is legal");
+
+    let after: Vec<_> = game.players[0].library.iter().map(|card| card.id).collect();
+    assert_eq!(
+        before.len(),
+        after.len(),
+        "a failed search moves no cards, it only shuffles"
+    );
+    assert_ne!(
+        before, after,
+        "the library was shuffled despite finding nothing"
+    );
+}
+
+#[test]
 fn a_tutor_with_nothing_to_find_leaves_a_legal_action() {
     // An empty library used to produce a decision asking for exactly one of
     // zero options, and not cancellable. `is_legal` rejects a ChooseDecision

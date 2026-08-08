@@ -790,11 +790,21 @@ impl HandcraftedPolicy {
                 DecisionPreference::Neutral => 0,
             }
         });
+        // How many to take, once they are in preference order. Taking the
+        // minimum is right when a decision costs you something — discards and
+        // sacrifices give up as little as the effect demands. `HigherCardValue`
+        // marks the decisions that hand you cards, and there the minimum can be
+        // zero: a search may always fail to find, and a bot that took the
+        // minimum would tutor for nothing every time.
+        let take = match decision.preference {
+            DecisionPreference::HigherCardValue => decision.maximum.min(options.len()),
+            DecisionPreference::LowerCardValue | DecisionPreference::Neutral => decision.minimum,
+        };
         Some(Action::ChooseDecision {
             decision: decision.id,
             options: options
                 .into_iter()
-                .take(decision.minimum)
+                .take(take)
                 .map(|option| option.id)
                 .collect(),
         })

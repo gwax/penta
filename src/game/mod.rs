@@ -1519,22 +1519,23 @@ impl Game {
                 }
             }
             DecisionContinuation::Tutor => {
-                let Some(option) = pending
+                let found = pending
                     .observation
                     .options
                     .iter()
                     .find(|option| options.contains(&option.id))
-                else {
-                    return;
-                };
-                let Some((card, _)) = option.card else {
-                    return;
-                };
-                if let Some(card) = remove_card(&mut self.players[player.index()].library, card) {
+                    .and_then(|option| option.card);
+                if let Some((card, _)) = found
+                    && let Some(card) = remove_card(&mut self.players[player.index()].library, card)
+                {
                     let (card, _zone_change) = self.zone_change_card(card);
                     self.players[player.index()].hand.push(card);
-                    self.rng.shuffle(&mut self.players[player.index()].library);
                 }
+                // The card says "then shuffle", and a search that finds
+                // nothing still searched. Skipping this would hand a player
+                // their library order for free: tutor, fail to find, and the
+                // top of the deck is whatever it already was.
+                self.rng.shuffle(&mut self.players[player.index()].library);
             }
             DecisionContinuation::RecallCost {
                 player,
@@ -3308,10 +3309,15 @@ impl Game {
                     .collect();
                 self.queue_decision(
                     object.controller,
-                    "Choose a card to put into your hand",
+                    "Choose a card to put into your hand, or fail to find",
                     DecisionVisibility::Private,
                     DecisionPreference::HigherCardValue,
-                    1..=1,
+                    // Searching a hidden zone never obliges the searcher to
+                    // find (CR 701.19c), so the minimum is zero even with a
+                    // full library. Failing to find is not cancelling: the
+                    // spell resolved and the search happened, which is why
+                    // the shuffle below runs either way.
+                    0..=1,
                     false,
                     options,
                     DecisionContinuation::Tutor,

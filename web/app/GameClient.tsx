@@ -1773,7 +1773,9 @@ export function GameClient({
                     <span>
                       {state.decision.minimum === state.decision.maximum
                         ? `Choose ${state.decision.minimum}`
-                        : `Choose ${state.decision.minimum}–${state.decision.maximum}`}
+                        : state.decision.minimum === 0
+                          ? `Choose up to ${state.decision.maximum}`
+                          : `Choose ${state.decision.minimum}–${state.decision.maximum}`}
                       {state.decision.visibility === "Private" ? " · Private" : ""}
                     </span>
                   </div>
@@ -1790,7 +1792,12 @@ export function GameClient({
                       </button>
                     ))}
                   </div>
-                  {state.decision.maximum > 1 && (
+                  {/* Every decision that does not submit on the first click
+                      needs a way to commit. A search is the case that made
+                      this matter: it allows exactly one card but does not
+                      require it, so gating on `maximum > 1` left the player
+                      able to select a card and unable to confirm anything. */}
+                  {!(state.decision.minimum === 1 && state.decision.maximum === 1) && (
                     <button
                       className="finalize-decision"
                       disabled={
@@ -1799,7 +1806,11 @@ export function GameClient({
                       }
                       onClick={() => submitDecision(decisionSelection)}
                     >
-                      <strong>Confirm selection</strong>
+                      <strong>
+                        {decisionSelection.length === 0 && state.decision.minimum === 0
+                          ? "Choose none"
+                          : "Confirm selection"}
+                      </strong>
                       <small>
                         {decisionSelection.length} / {state.decision.maximum} selected
                       </small>

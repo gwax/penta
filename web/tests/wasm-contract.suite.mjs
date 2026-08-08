@@ -36,12 +36,45 @@ test("staged engine decisions are serialized as generic private choices", async 
   state = JSON.parse(game.state_json());
 
   assert.equal(state.decision.visibility, "Private");
-  assert.equal(state.decision.minimum, 1);
+  // A search never obliges the searcher to find, so the minimum is zero even
+  // with a full library. The client relies on this to offer "Choose none".
+  assert.equal(state.decision.minimum, 0);
   assert.equal(state.decision.maximum, 1);
+  assert.equal(
+    state.decision.cancellable,
+    false,
+    "failing to find resolves the spell rather than backing out of it",
+  );
   assert.ok(state.decision.options.length > 40);
   const choice = state.decision.options[0];
   game.choose_decision(state.decision.id, JSON.stringify([choice.id]));
   assert.equal(JSON.parse(game.state_json()).decision, null);
+
+  game.free();
+});
+
+test("a search can be resolved by failing to find", async () => {
+  await initializeWasm();
+
+  const game = new WebGame("The Deck", "Goblins", "Random", true, 214);
+  let state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Keep this hand").index);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Cast Black Lotus").index);
+  state = JSON.parse(game.state_json());
+  game.act(state.actions.find((action) => action.label === "Cast Demonic Tutor").index);
+  state = JSON.parse(game.state_json());
+
+  const handBeforeSearch = state.human.hand.length;
+  const libraryBeforeSearch = state.human.library;
+
+  // An empty selection is the wire form of failing to find.
+  game.choose_decision(state.decision.id, JSON.stringify([]));
+  state = JSON.parse(game.state_json());
+
+  assert.equal(state.decision, null, "the search resolved");
+  assert.equal(state.human.hand.length, handBeforeSearch, "no card was found");
+  assert.equal(state.human.library, libraryBeforeSearch, "and none left the library");
 
   game.free();
 });
