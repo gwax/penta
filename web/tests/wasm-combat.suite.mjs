@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { initializeWasm, WebGame } from "./wasm-test-support.mjs";
 
-test("the web facade skips combat when no attackers exist", async () => {
+test("the web facade skips empty combat but keeps a useful second main", async () => {
   await initializeWasm();
 
   const game = new WebGame("Goblins", "Sligh", "Handcrafted", true, 5);
@@ -19,14 +19,18 @@ test("the web facade skips combat when no attackers exist", async () => {
 
   assert.equal(state.step, "Beginning Of Combat");
   const beforeCombat = state;
+  assert.equal(state.passLabel, "Go to second main");
   game.act(state.actions.find((action) => action.kind === "pass").index);
   state = JSON.parse(game.state_json());
 
-  // With no creatures there is no combat to react to, so the second main has
-  // nothing to offer either and the pass carries the turn out.
+  // With no creatures there is no combat to react to, but the castable Bolt
+  // still makes second main a useful priority window.
+  assert.equal(state.gameTurn, beforeCombat.gameTurn);
+  assert.equal(state.active, "You");
+  assert.equal(state.step, "Postcombat Main");
   assert.ok(
-    state.gameTurn > beforeCombat.gameTurn,
-    `the turn ended instead of idling in ${state.step}`,
+    state.actions.some((action) => action.label.startsWith("Cast Lightning Bolt")),
+    "the castable Bolt holds second-main priority open without a creature",
   );
 
   game.free();

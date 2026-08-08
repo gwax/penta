@@ -58,7 +58,7 @@ test("[slow] combat runs out to a decision, not through empty windows", async ()
   const decks = ["Goblins", "Sligh", "White Weenie", "GR Aggro", "Erhnamgeddon", "Robots"];
   let endOfCombatStops = 0;
   let secondMainIdle = 0;
-  let secondMainHoldingSpell = 0;
+  let secondMainHoldingAction = 0;
 
   for (let game = 0; game < 24; game += 1) {
     // Develops a board but holds every non-creature spell, so the second main
@@ -75,8 +75,12 @@ test("[slow] combat runs out to a decision, not through empty windows", async ()
       if (state.result) break;
       if (state.step === "End Of Combat") endOfCombatStops += 1;
       if (state.active === "You" && state.step === "Postcombat Main") {
-        if (state.actions.some((action) => /^(Cast |Play )/.test(action.label))) {
-          secondMainHoldingSpell += 1;
+        if (
+          state.actions.some(
+            (action) => action.paymentAction || action.label.startsWith("Play "),
+          )
+        ) {
+          secondMainHoldingAction += 1;
         } else {
           secondMainIdle += 1;
         }
@@ -126,10 +130,10 @@ test("[slow] combat runs out to a decision, not through empty windows", async ()
   assert.equal(
     secondMainIdle,
     0,
-    "a second main with nothing to commit from hand is passed through",
+    "a second main with no spell, land play, or non-mana ability is passed through",
   );
   assert.ok(
-    secondMainHoldingSpell > 10,
-    `but a castable card still holds it, got ${secondMainHoldingSpell}`,
+    secondMainHoldingAction > 10,
+    `but a usable card action still holds it, got ${secondMainHoldingAction}`,
   );
 });

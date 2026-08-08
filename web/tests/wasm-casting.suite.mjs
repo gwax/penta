@@ -178,6 +178,64 @@ test("targeted permanent actions identify their clickable battlefield target", a
   game.free();
 });
 
+test("a usable battlefield ability holds second main open", async () => {
+  await initializeWasm();
+
+  const game = new WebGame("Goblins", "Sligh", "Handcrafted", true, 24);
+  let state = JSON.parse(game.state_json());
+  for (const label of [
+    "Keep this hand",
+    "Pass priority",
+    "Pass priority",
+    "Play Strip Mine",
+  ]) {
+    const action = state.actions.find((candidate) => candidate.label === label);
+    assert.ok(action, `the deterministic fixture offers ${label}`);
+    game.act(action.index);
+    state = JSON.parse(game.state_json());
+  }
+
+  assert.equal(state.turn, 2);
+  assert.equal(state.active, "You");
+  assert.equal(state.step, "Precombat Main");
+  assert.ok(
+    !state.actions.some(
+      (action) => action.spellAction || action.label.startsWith("Play "),
+    ),
+    "no spell or land play can otherwise hold the next priority window open",
+  );
+  const destroy = state.actions.find(
+    (action) => action.label === "Destroy Mountain with Strip Mine",
+  );
+  assert.ok(destroy, "Strip Mine has a legal non-mana activation");
+  assert.equal(destroy.abilitySummary, "Destroy a land");
+  assert.equal(destroy.manaAbility, false);
+  assert.equal(state.passLabel, "Go to second main");
+
+  game.act(state.actions.find((action) => action.kind === "pass").index);
+  state = JSON.parse(game.state_json());
+
+  assert.equal(state.turn, 2);
+  assert.equal(state.gameTurn, 3);
+  assert.equal(state.active, "You");
+  assert.equal(state.step, "Postcombat Main");
+  assert.equal(state.passLabel, "End turn");
+  assert.ok(
+    state.actions.some(
+      (action) => action.label === "Destroy Mountain with Strip Mine",
+    ),
+    "the usable battlefield ability holds second-main priority open",
+  );
+  assert.ok(
+    !state.actions.some(
+      (action) => action.spellAction || action.label.startsWith("Play "),
+    ),
+    "the ability is the only reason to retain priority",
+  );
+
+  game.free();
+});
+
 test("Mishra's Factory offers both modes and manual mana can be undone", async () => {
   await initializeWasm();
 
