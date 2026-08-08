@@ -696,10 +696,11 @@ fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {
         .or_else(|| choose(&|action| matches!(action, Action::PassPriority)))
 }
 
-/// The simulation surface: a caller who owns the process can read and
-/// rearrange hidden state, which is what determinized search needs. The engine
-/// supplies no distribution — only conservation.
+/// The simulation surface: a caller who owns the process can read hidden state
+/// and state what it might have been instead. That is what determinized search
+/// needs, and the engine supplies no distribution for it.
 mod hidden_state {
+    use penta::card::cards;
     use penta::{Game, PlayerId, ZoneError, card, decks};
 
     fn game() -> Game {
@@ -716,88 +717,73 @@ mod hidden_state {
         let game = game();
         // observe() gives the opponent's hand only as a count; the simulation
         // view gives the cards themselves.
-        let observation = game.observe(PlayerId::One);
-        assert_eq!(observation.opponent_hand_size, 7);
+        assert_eq!(game.observe(PlayerId::One).opponent_hand_size, 7);
         assert_eq!(game.hand(PlayerId::Two).len(), 7);
-        assert!(
-            game.hand(PlayerId::Two)
-                .iter()
-                .all(|card| game.definition_of(card.object) == Some(card.definition))
-        );
+        assert_eq!(game.library(PlayerId::Two).len(), 53);
     }
 
     #[test]
-    fn a_caller_can_deal_the_opponent_a_different_hand() {
-        let mut game = game();
-        let before = game.hand(PlayerId::Two);
-        let library = game.library(PlayerId::Two);
+    fn the_same_position_can_be_played_out_as_two_different_worlds() {
+        // The point of the API: you do not know their last card, so build both
+        // worlds and roll each out. Neither is a permutation of the true state.
+        let mut bolt_world = game();
+        let mut counter_world = game();
+        for (world, guess) in [
+            (&mut bolt_world, cards::LIGHTNING_BOLT),
+            (&mut counter_world, cards::COUNTERSPELL),
+        ] {
+            world
+                .set_hand(PlayerId::Two, &[cards::MOUNTAIN, guess])
+                .unwrap();
+        }
 
-        // The essence of determinization: swap the top of their library for
-        // their hand. Every card is accounted for, so play continues.
-        let new_hand: Vec<_> = library[..7].iter().map(|card| card.object).collect();
-        let new_library: Vec<_> = library[7..]
-            .iter()
-            .chain(before.iter())
-            .map(|card| card.object)
-            .collect();
-        game.set_hand(PlayerId::Two, &new_hand).unwrap();
-        game.set_library(PlayerId::Two, &new_library).unwrap();
-
-        assert_eq!(game.hand(PlayerId::Two).len(), 7);
-        assert_ne!(game.hand(PlayerId::Two), before);
-        assert!(game.detached_cards().is_empty(), "nothing was dropped");
-        assert!(
-            game.legal_actions(PlayerId::One)
-                .iter()
-                .any(|action| matches!(action, penta::Action::KeepHand)),
-            "the game plays on after the swap"
-        );
-    }
-
-    #[test]
-    fn cards_lifted_out_and_not_replaced_block_play() {
-        let mut game = game();
-        let library = game.library(PlayerId::Two);
-        let stolen: Vec<_> = library[..7].iter().map(|card| card.object).collect();
-
-        // Overwriting the hand displaces the old one into the holding area.
-        game.set_hand(PlayerId::Two, &stolen).unwrap();
-        assert_eq!(game.detached_cards().len(), 7, "the old hand is held aside");
-
-        let error = game
-            .apply(PlayerId::One, penta::Action::KeepHand)
-            .expect_err("a half-finished rearrangement must not play on");
-        assert!(
-            matches!(error, penta::ActionError::CardsDetached { count: 7 }),
-            "got {error:?}"
-        );
-
-        // Putting them back makes the game whole again.
-        let restored: Vec<_> = game
-            .detached_cards()
-            .iter()
-            .chain(game.library(PlayerId::Two).iter())
-            .map(|card| card.object)
-            .collect();
-        game.set_library(PlayerId::Two, &restored).unwrap();
-        assert!(game.detached_cards().is_empty());
-        game.apply(PlayerId::One, penta::Action::KeepHand)
-            .expect("play resumes once every card has a home");
-    }
-
-    #[test]
-    fn public_zones_are_not_hidden_state() {
-        let mut game = game();
-        let battlefield_or_missing = penta::GameObjectId(9_999);
+        assert_eq!(bolt_world.hand(PlayerId::Two).len(), 2);
         assert_eq!(
-            game.set_hand(PlayerId::Two, &[battlefield_or_missing]),
-            Err(ZoneError::NotHidden(battlefield_or_missing)),
+            bolt_world.hand(PlayerId::Two)[1].definition,
+            cards::LIGHTNING_BOLT
+        );
+        assert_eq!(
+            counter_world.hand(PlayerId::Two)[1].definition,
+            cards::COUNTERSPELL
+        );
+        // Fresh cards get fresh identities rather than reusing anything.
+        assert_ne!(
+            bolt_world.hand(PlayerId::Two)[0].object,
+            game().hand(PlayerId::Two)[0].object
+        );
+        // Both worlds are playable.
+        for world in [&mut bolt_world, &mut counter_world] {
+            world
+                .apply(PlayerId::One, penta::Action::KeepHand)
+                .expect("a rewritten world plays on");
+        }
+    }
+
+    #[test]
+    fn a_library_can_be_stacked_or_emptied() {
+        let mut game = game();
+        game.set_library(PlayerId::Two, &[cards::BLACK_LOTUS])
+            .unwrap();
+        assert_eq!(game.library(PlayerId::Two).len(), 1);
+        assert_eq!(
+            game.library(PlayerId::Two)[0].definition,
+            cards::BLACK_LOTUS
         );
 
-        let card = game.hand(PlayerId::Two)[0].object;
+        game.set_library(PlayerId::Two, &[]).unwrap();
+        assert!(
+            game.library(PlayerId::Two).is_empty(),
+            "a simulation may explore an empty library"
+        );
+    }
+
+    #[test]
+    fn a_card_outside_the_catalog_is_rejected() {
+        let mut game = game();
+        let unknown = penta::CardDefinitionId(60_000);
         assert_eq!(
-            game.set_hand(PlayerId::Two, &[card, card]),
-            Err(ZoneError::Duplicate(card)),
+            game.set_hand(PlayerId::Two, &[unknown]),
+            Err(ZoneError::UnknownCard(unknown)),
         );
     }
 }

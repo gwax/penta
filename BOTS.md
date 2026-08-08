@@ -87,7 +87,7 @@ The module surface:
 | `game.decision_seat()` | `"p1"` / `"p2"` / `None` when the game is over |
 | `game.clone()` | an independent copy of the game — fork it, try a line, discard it |
 | `game.hand(seat)`, `game.library(seat)` | a zone's real contents, unredacted — for simulating, not for playing |
-| `game.set_hand(seat, ids)`, `game.set_library(seat, ids)` | rearrange hidden state in a fork |
+| `game.set_hand(seat, defs)`, `game.set_library(seat, defs)` | say what a zone holds, in a fork |
 | `game.result()` | `None`, `"p1"`, `"p2"`, or `"draw"` |
 | `penta.catalog(format=)` | every canonical definition annotated with legality for the selected format, as JSON |
 | `penta.deck_names(format=)` | the selected format's built-in decks |
@@ -195,37 +195,37 @@ not: rollouts on the true world are influenced by cards the searcher has not
 seen, so the outcomes it measures encode information it does not have.
 
 The fix is to search over worlds consistent with what your seat actually
-knows. Fork the game, replace the hidden zones with a sampled arrangement, and
-average over several such worlds:
+knows. You do not know their last card — it could be a Lightning Bolt, it
+could be a Counterspell — so build both worlds and roll each one out:
 
 ```python
-world = game.clone()
+catalog = {c["name"]: c["definition"] for c in json.loads(penta.catalog())["cards"]}
 
-# Cards p1 cannot account for: p2's hand plus both libraries.
-unseen  = [c["objectId"] for c in json.loads(world.hand("p2"))]
-unseen += [c["objectId"] for c in json.loads(world.library("p2"))]
-random.shuffle(unseen)                      # your distribution, not ours
-
-hand_size = len(json.loads(world.hand("p2")))
-world.set_hand("p2", unseen[:hand_size])
-world.set_library("p2", unseen[hand_size:])
+for guess in ("Lightning Bolt", "Counterspell"):
+    world = game.clone()
+    world.set_hand("p2", [catalog["Mountain"], catalog[guess]])
+    # ... roll this world out and score it
 ```
 
-The engine deliberately ships no sampler. Every determinization is a
-permutation of unseen cards across unseen zones, so a uniform re-deal, a
-weighting by what the opponent has cast, and a belief filter maintained across
-turns are all the same two calls with a different shuffle. Picking one for you
-would privilege one search design over the others.
+`set_hand` and `set_library` say what a zone *holds*, by card definition. The
+cards are built fresh, so you are stating a hypothesis rather than shuffling
+the real one, and nothing is conserved: stack a library, empty it, or hand
+someone a card that was never in their deck. A world you invented has no
+reason to balance.
 
-What the engine does guarantee is that you cannot lose a card. A rearrangement
-usually spans several zones, so a card lifted out of one is held aside until
-you put it back — `game.detached()` lists them, and `act` raises while any
-remain, rather than playing on with cards missing.
+`hand(seat)` and `library(seat)` read the zones back as
+`[{objectId, definition}]`, unredacted, so you can see the true state you are
+replacing and weight your guesses however you like. The engine ships no
+sampler — a uniform re-deal, a weighting by what the opponent has cast, and a
+belief filter maintained across turns are all just different lists of
+definitions.
 
-These accessors are not redacted. That is not a hole in match secrecy: a
-tournament server hands a bot redacted observations over a wire and never a
-game object, so transparency here only reaches someone simulating in their own
-process, where there is nobody to hide from.
+Two things to know. Rewritten cards get new object IDs, so rewrite an
+opponent's zones rather than your own if you are holding IDs from an earlier
+observation. And these accessors are not redacted, which is not a hole in
+match secrecy: a tournament server hands a bot redacted observations over a
+wire and never a game object, so transparency here only reaches someone
+simulating in their own process, where there is nobody to hide from.
 
 ## The observation
 

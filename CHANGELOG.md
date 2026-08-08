@@ -16,25 +16,18 @@ minor for breaking changes, per Cargo's 0.x convention.
 
 ### Added
 
-- `Game` can now be used as a simulation substrate, not only driven as a
-  match. `hand`, `library`, `set_hand`, `set_library`, `definition_of`, and
-  `detached_cards` read and rearrange hidden state without redaction, and the
-  Python module exposes the same surface. `observe` is unchanged and remains
-  the redacted view anything client-facing should use — a game running in your
-  own process has nobody to hide from.
+- `Game` can be used as a simulation substrate, not only driven as a match.
+  `hand` and `library` read a zone unredacted; `set_hand` and `set_library`
+  say what a zone holds, by card definition. The Python module exposes the
+  same surface. `observe` is unchanged and remains the redacted view anything
+  client-facing should use — a game running in your own process has nobody to
+  hide from.
 
-  This is what determinized search needs, and deliberately all it needs. Every
-  determinization is a permutation of unseen cards across unseen zones, so
-  uniform, weighted, and belief-filtered samplers are the same two calls with a
-  different shuffle. The engine supplies no distribution.
-
-### Changed
-
-- `ActionError` gained a `CardsDetached` variant, which is why this is a minor
-  bump rather than a patch: a caller matching the enum exhaustively must handle
-  it. Rearranging hidden state usually spans several zones, so a card lifted
-  out of one is held aside until it is put back, and `apply` refuses to run
-  while any card is homeless rather than losing it.
+  This is what determinized search needs. You do not know an opponent's last
+  card, so you build the worlds you think are plausible and roll each out.
+  Cards are built fresh rather than moved, and nothing is conserved: a
+  hypothetical world has no reason to balance, and the engine ships no sampler
+  because naming the cards is the whole API.
 
 Protocol stays at 2. No JSON shape changed and no action was added or removed;
 the new methods sit beside the protocol rather than in it.

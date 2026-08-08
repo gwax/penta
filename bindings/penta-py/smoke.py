@@ -118,38 +118,41 @@ while game.result() is None:
 print("self-play:", game.result(), "in", steps, "decisions")
 
 
-# determinization: the caller reshuffles hidden state itself, so search can
-# roll out worlds consistent with what a seat actually knows. The engine
-# supplies no distribution -- only the guarantee that no card is lost.
-import random
+# hypothetical worlds: you do not know what the opponent holds, so build the
+# worlds you think are plausible and roll each one out. The engine supplies no
+# distribution -- naming the cards is the whole API.
+by_name = {card["name"]: definition for definition, card in catalog.items()}
 
 game = penta.Game("Sligh", "The Deck", opponent="handcrafted", seed=3)
 game.act(pass_bot(json.loads(game.observe())))
+truth = json.loads(game.hand("p2"))
+assert truth, "the simulation view shows the opponent's real hand"
+
+worlds = []
+for guess in ("Lightning Bolt", "Counterspell"):
+    world = game.clone()
+    world.set_hand("p2", [by_name["Mountain"], by_name[guess]])
+    held = [c["definition"] for c in json.loads(world.hand("p2"))]
+    assert held == [by_name["Mountain"], by_name[guess]]
+    world.act(pass_bot(json.loads(world.observe())))
+    worlds.append(held)
+
+assert worlds[0] != worlds[1], "two different worlds from one position"
+assert json.loads(game.hand("p2")) == truth, "the real game is untouched"
+
+# A library can be stacked outright, including down to nothing.
 world = game.clone()
+world.set_library("p2", [by_name["Black Lotus"]])
+assert len(json.loads(world.library("p2"))) == 1
+world.set_library("p2", [])
+assert json.loads(world.library("p2")) == []
 
-unseen = [c["objectId"] for c in json.loads(world.hand("p2"))]
-unseen += [c["objectId"] for c in json.loads(world.library("p2"))]
-before = len(unseen)
-random.Random(7).shuffle(unseen)
-
-hand_size = len(json.loads(world.hand("p2")))
-world.set_hand("p2", unseen[:hand_size])
-assert json.loads(world.detached()), "the old hand is held aside mid-rearrangement"
 try:
-    world.act(0)
-    raise AssertionError("acting with cards detached must raise")
+    world.set_hand("p2", [60000])
+    raise AssertionError("a card outside the catalog must raise")
 except ValueError:
     pass
-world.set_library("p2", unseen[hand_size:])
-assert not json.loads(world.detached()), "every card has a home again"
-
-after = len(json.loads(world.hand("p2"))) + len(json.loads(world.library("p2")))
-assert after == before, f"conserved {before} cards, found {after}"
-assert json.loads(world.hand("p2")) != json.loads(game.hand("p2")), "the world differs"
-assert json.loads(world.observe("p1")) == json.loads(game.observe("p1")), \
-    "p1 cannot tell: their own view is untouched"
-world.act(pass_bot(json.loads(world.observe())))
-print("determinize: hidden state reshuffled, cards conserved, p1's view unchanged")
+print("simulate: opponent hands rewritten, worlds diverge, real game untouched")
 
 # hidden info: p1 never sees p2's hand
 game = penta.Game("Sligh", "The Deck", opponent="handcrafted", seed=3)

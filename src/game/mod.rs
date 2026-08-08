@@ -272,11 +272,6 @@ pub struct Game {
     #[allow(dead_code)] // Reserved for backing validation and future meld actions.
     physical_cards: Vec<PhysicalCard>,
     players: [PlayerState; 2],
-    /// Cards a simulation lifted out of a hand or library and has not put back
-    /// yet. Rearranging hidden state usually spans several zones, so the setters
-    /// let the board be briefly incomplete and `apply` refuses to run until it
-    /// is whole again. Empty in every game that is only played, never edited.
-    detached: Vec<CardInstance>,
     battlefield: Vec<Permanent>,
     stack: Vec<StackObject>,
     next_object_id: u32,
@@ -412,7 +407,6 @@ impl Game {
             catalog,
             physical_cards,
             players,
-            detached: Vec::new(),
             battlefield: Vec::new(),
             stack: Vec::new(),
             next_object_id,
@@ -684,11 +678,6 @@ impl Game {
     /// Returns [`ActionError`] when the game is over or the action is not
     /// currently legal for that player.
     pub fn apply(&mut self, player: PlayerId, action: Action) -> Result<(), ActionError> {
-        if !self.detached.is_empty() {
-            return Err(ActionError::CardsDetached {
-                count: self.detached.len(),
-            });
-        }
         if self.result.is_some() {
             return Err(ActionError::GameAlreadyFinished);
         }
@@ -795,90 +784,80 @@ impl Game {
         zone_cards(&self.players[player.index()].library)
     }
 
-    /// What a game object is, for objects a simulation is rearranging.
-    #[must_use]
-    pub fn definition_of(&self, object: GameObjectId) -> Option<CardDefinitionId> {
-        self.hidden_zone_cards()
-            .find(|card| card.id == object)
-            .map(|card| card.definition)
-    }
-
-    /// Replaces a hand with exactly `cards`, taking each from wherever in a
-    /// hand or library it currently sits.
+    /// Replaces a hand with exactly these cards, named by definition.
     ///
-    /// Cards displaced out of the hand are held aside rather than destroyed;
-    /// put them somewhere with another setter before playing on. See
-    /// [`Self::detached_cards`].
+    /// The cards are built fresh, so this states what a hand *is* rather than
+    /// moving objects around: to explore "their last card is either Lightning
+    /// Bolt or Counterspell", set the same hand twice with a different last
+    /// entry and play both out. Nothing is conserved, because a simulation
+    /// exploring a world it cannot see has no reason to be.
+    ///
+    /// The new cards get new object IDs. Rewrite an opponent's zones rather
+    /// than your own if you are holding IDs from an earlier observation.
     ///
     /// # Errors
     ///
-    /// Returns [`ZoneError`] when an object is named twice or is not in a hand
-    /// or library. Cards on the battlefield, on the stack, or in a graveyard
-    /// are public, so moving them is not rearranging hidden state.
-    pub fn set_hand(&mut self, player: PlayerId, cards: &[GameObjectId]) -> Result<(), ZoneError> {
-        let taken = self.take_from_hidden_zones(cards)?;
-        let displaced = std::mem::replace(&mut self.players[player.index()].hand, taken);
-        self.detached.extend(displaced);
+    /// Returns [`ZoneError::UnknownCard`] if a definition is not in the
+    /// catalog this game was built with.
+    pub fn set_hand(
+        &mut self,
+        player: PlayerId,
+        cards: &[CardDefinitionId],
+    ) -> Result<(), ZoneError> {
+        let built = self.build_zone(player, cards)?;
+        self.players[player.index()].hand = built;
         Ok(())
     }
 
-    /// Replaces a library with exactly `cards`, top card first. Behaves like
-    /// [`Self::set_hand`] in every other respect.
+    /// Replaces a library with exactly these cards, top card first. Behaves
+    /// like [`Self::set_hand`] in every other respect.
     ///
     /// # Errors
     ///
-    /// Returns [`ZoneError`] under the same conditions as [`Self::set_hand`].
+    /// Returns [`ZoneError::UnknownCard`] under the same conditions as
+    /// [`Self::set_hand`].
     pub fn set_library(
         &mut self,
         player: PlayerId,
-        cards: &[GameObjectId],
+        cards: &[CardDefinitionId],
     ) -> Result<(), ZoneError> {
-        let taken = self.take_from_hidden_zones(cards)?;
-        let displaced = std::mem::replace(&mut self.players[player.index()].library, taken);
-        self.detached.extend(displaced);
+        let built = self.build_zone(player, cards)?;
+        self.players[player.index()].library = built;
         Ok(())
     }
 
-    /// Cards lifted out of a zone and not yet put back. [`Self::apply`] refuses
-    /// to run while this is non-empty, so a half-finished rearrangement fails
-    /// loudly instead of losing cards.
-    #[must_use]
-    pub fn detached_cards(&self) -> Vec<ZoneCard> {
-        zone_cards(&self.detached)
-    }
-
-    fn hidden_zone_cards(&self) -> impl Iterator<Item = &CardInstance> {
-        self.players
-            .iter()
-            .flat_map(|player| player.hand.iter().chain(player.library.iter()))
-            .chain(self.detached.iter())
-    }
-
-    /// Removes each named object from whichever hand, library, or holding area
-    /// it is in, preserving the caller's order.
-    fn take_from_hidden_zones(
+    /// Mints fresh instances owned by `player`, one per definition.
+    fn build_zone(
         &mut self,
-        cards: &[GameObjectId],
+        player: PlayerId,
+        cards: &[CardDefinitionId],
     ) -> Result<Vec<CardInstance>, ZoneError> {
-        let mut seen = std::collections::HashSet::with_capacity(cards.len());
-        for card in cards {
-            if !seen.insert(*card) {
-                return Err(ZoneError::Duplicate(*card));
-            }
+        if let Some(unknown) = cards
+            .iter()
+            .find(|definition| self.catalog.get(**definition).is_none())
+        {
+            return Err(ZoneError::UnknownCard(*unknown));
         }
 
-        let mut taken = Vec::with_capacity(cards.len());
-        for card in cards {
-            let found = self.players.iter_mut().find_map(|player| {
-                remove_card(&mut player.hand, *card)
-                    .or_else(|| remove_card(&mut player.library, *card))
-            });
-            let instance = found
-                .or_else(|| remove_card(&mut self.detached, *card))
-                .ok_or(ZoneError::NotHidden(*card))?;
-            taken.push(instance);
-        }
-        Ok(taken)
+        cards
+            .iter()
+            .map(|definition| {
+                let id = GameObjectId(self.next_object_id);
+                self.next_object_id = self
+                    .next_object_id
+                    .checked_add(1)
+                    .ok_or(ZoneError::TooManyCards)?;
+                Ok(CardInstance {
+                    id,
+                    definition: *definition,
+                    owner: player,
+                    // A card conjured for a hypothetical has no physical
+                    // provenance, which only meld and copy effects consult.
+                    backing: ObjectBacking::None,
+                    characteristics: CharacteristicSource::Card(*definition),
+                })
+            })
+            .collect()
     }
 
     #[must_use]

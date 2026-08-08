@@ -122,36 +122,38 @@ impl Game {
         Ok(self.inner.library_json(seat_from_name(seat)?))
     }
 
-    /// Replaces a seat's hand with exactly these object ids, taking each from
-    /// wherever in a hand or library it currently sits.
+    /// Replaces a seat's hand with exactly these card definitions.
     ///
-    /// Cards displaced out of the hand are held aside rather than destroyed.
-    /// Put them somewhere with another call before acting again: `act` raises
-    /// while any card is still detached, so a half-finished rearrangement
-    /// cannot quietly lose cards.
+    /// The cards are built fresh, so this says what a hand *is* rather than
+    /// moving cards around: to explore "their last card is either Lightning
+    /// Bolt or Counterspell", set the same hand twice with a different last
+    /// entry and roll both out. Nothing is conserved -- a hypothetical world
+    /// has no reason to be.
+    ///
+    /// Definitions are the `definition` ids from `catalog()`.
     #[allow(clippy::needless_pass_by_value)]
-    fn set_hand(&mut self, seat: &str, object_ids: Vec<u32>) -> PyResult<()> {
+    fn set_hand(&mut self, seat: &str, definitions: Vec<u16>) -> PyResult<()> {
         let seat = seat_from_name(seat)?;
-        let objects: Vec<_> = object_ids.into_iter().map(engine::GameObjectId).collect();
+        let cards: Vec<_> = definitions
+            .into_iter()
+            .map(engine::CardDefinitionId)
+            .collect();
         self.inner
-            .set_hand(seat, &objects)
+            .set_hand(seat, &cards)
             .map_err(PyValueError::new_err)
     }
 
     /// Replaces a seat's library, top card first. See `set_hand`.
     #[allow(clippy::needless_pass_by_value)]
-    fn set_library(&mut self, seat: &str, object_ids: Vec<u32>) -> PyResult<()> {
+    fn set_library(&mut self, seat: &str, definitions: Vec<u16>) -> PyResult<()> {
         let seat = seat_from_name(seat)?;
-        let objects: Vec<_> = object_ids.into_iter().map(engine::GameObjectId).collect();
+        let cards: Vec<_> = definitions
+            .into_iter()
+            .map(engine::CardDefinitionId)
+            .collect();
         self.inner
-            .set_library(seat, &objects)
+            .set_library(seat, &cards)
             .map_err(PyValueError::new_err)
-    }
-
-    /// Cards lifted out of a zone and not yet put back, as JSON. Empty unless
-    /// a rearrangement is half finished.
-    fn detached(&self) -> String {
-        self.inner.detached_json()
     }
 
     /// How many legal actions the acting seat has; 0 when the game is over.

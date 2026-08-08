@@ -19,6 +19,7 @@ use crate::card::{
 };
 use crate::casting::{CastChoices, CastSignature};
 use crate::game::{DecisionObservation, StackObservation};
+use crate::ids::CardDefinitionId;
 use crate::policy::Policy;
 use crate::{
     Action, CardCatalog, Deck, Format, Game, GameObjectId, GameResult, HandcraftedPolicy,
@@ -1093,22 +1094,15 @@ impl BotGame {
         zone_cards_json(&self.game.library(seat)).to_string()
     }
 
-    /// Cards lifted out of a zone and not yet put back. See
-    /// [`Self::hand_json`].
-    #[must_use]
-    pub fn detached_json(&self) -> String {
-        zone_cards_json(&self.game.detached_cards()).to_string()
-    }
-
-    /// Replaces a seat's hand with exactly these objects.
+    /// Replaces a seat's hand with exactly these card definitions.
     ///
     /// # Errors
     ///
-    /// Returns the zone error as a string when an object is named twice or is
-    /// not currently in a hand or library.
-    pub fn set_hand(&mut self, seat: PlayerId, objects: &[GameObjectId]) -> Result<(), String> {
+    /// Returns the zone error as a string when a definition is not in the
+    /// catalog this game was built with.
+    pub fn set_hand(&mut self, seat: PlayerId, cards: &[CardDefinitionId]) -> Result<(), String> {
         self.game
-            .set_hand(seat, objects)
+            .set_hand(seat, cards)
             .map_err(|error| error.to_string())
     }
 
@@ -1118,9 +1112,13 @@ impl BotGame {
     ///
     /// Returns the zone error as a string under the same conditions as
     /// [`Self::set_hand`].
-    pub fn set_library(&mut self, seat: PlayerId, objects: &[GameObjectId]) -> Result<(), String> {
+    pub fn set_library(
+        &mut self,
+        seat: PlayerId,
+        cards: &[CardDefinitionId],
+    ) -> Result<(), String> {
         self.game
-            .set_library(seat, objects)
+            .set_library(seat, cards)
             .map_err(|error| error.to_string())
     }
 

@@ -14,27 +14,23 @@ pub struct ZoneCard {
     pub definition: CardDefinitionId,
 }
 
-/// Why a hand or library could not be rearranged.
+/// Why a hand or library could not be set.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ZoneError {
-    /// The same object was named twice in one zone.
-    Duplicate(GameObjectId),
-    /// The object is not in any hand or library. Battlefield, stack, and
-    /// graveyard cards are public, so moving them is not rearranging hidden
-    /// state.
-    NotHidden(GameObjectId),
+    /// The definition is not in the catalog this game was built with.
+    UnknownCard(CardDefinitionId),
+    /// The game ran out of object identifiers.
+    TooManyCards,
 }
 
 impl std::fmt::Display for ZoneError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Duplicate(object) => {
-                write!(formatter, "{object:?} was named twice in one zone")
-            }
-            Self::NotHidden(object) => write!(
+            Self::UnknownCard(definition) => write!(
                 formatter,
-                "{object:?} is not in a hand or library, so it is not hidden state"
+                "{definition:?} is not in this game's card catalog"
             ),
+            Self::TooManyCards => formatter.write_str("the game ran out of object identifiers"),
         }
     }
 }
