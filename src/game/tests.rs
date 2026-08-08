@@ -6994,6 +6994,11 @@ fn declarative_destroy_spells_enforce_their_target_types_and_resolve() {
         (cards::DISENCHANT, cards::ENERGY_FLUX, ManaColor::White),
         (cards::DISENCHANT, cards::JUGGERNAUT, ManaColor::White),
         (cards::SINKHOLE, cards::MOUNTAIN, ManaColor::Black),
+        (
+            cards::URGENT_EXORCISM,
+            cards::STRANGLEROOT_GEIST,
+            ManaColor::White,
+        ),
         (cards::STONE_RAIN, cards::MOUNTAIN, ManaColor::Red),
     ] {
         let mut game = ready_game();
@@ -7228,4 +7233,33 @@ fn simultaneous_exits_keep_pre_exit_characteristics_for_trigger_matching() {
 
     assert_eq!(game.pending_triggers.len(), 1);
     assert_eq!(game.pending_triggers[0].context.object, Some(taiga_id));
+}
+
+#[test]
+fn urgent_exorcism_takes_spirits_and_enchantments_but_nothing_else() {
+    // The predicate is a subtype or a card type, so a plain creature is out
+    // of reach while a Spirit creature is not.
+    for (target_definition, legal) in [
+        (cards::STRANGLEROOT_GEIST, true),
+        (cards::ENERGY_FLUX, true),
+        (cards::SAVANNAH_LIONS, false),
+        (cards::BLACK_VISE, false),
+    ] {
+        let mut game = ready_game();
+        let target = creature(10_000, target_definition, PlayerId::Two);
+        let target_id = target.card.id;
+        game.battlefield.push(target);
+        let spell = card(10_001, cards::URGENT_EXORCISM, PlayerId::One);
+        game.players[0].hand.push(spell.clone());
+        game.players[0].mana_pool.white = 1;
+        game.players[0].mana_pool.colorless = 1;
+
+        let action = cast_action(spell.id, vec![Target::Permanent(target_id)], Vec::new(), 0);
+        assert_eq!(
+            game.legal_actions(PlayerId::One).contains(&action),
+            legal,
+            "{target_definition:?} should be {}",
+            if legal { "targetable" } else { "out of reach" }
+        );
+    }
 }

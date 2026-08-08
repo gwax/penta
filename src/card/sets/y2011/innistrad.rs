@@ -363,11 +363,28 @@ pub(in crate::card::sets) static URGENT_EXORCISM: CardRecord = CardRecord::new(
     "Urgent Exorcism",
     CardArt::new("516a437c-a2ee-43c6-876c-1a63a455c97c", "Svetlin Velinov"),
     CardSet::Innistrad,
-    CardRules::new_instant(
-        ManaCost::colored(1, 1, 0, 0, 0, 0),
-        "Destroy target Spirit or enchantment.",
-    )
-    .metadata_only(),
+    CardRules::new_instant(ManaCost::colored(1, 1, 0, 0, 0, 0), "").with_abilities(&[
+        AbilityDef::spell(
+            "Destroy target Spirit or enchantment.",
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                can_regenerate: true,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "Spirit or enchantment",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::Subtype("Spirit"),
+                    ObjectPredicateDef::HasType(CardType::Enchantment),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
+    ]),
 );
 
 pub(in crate::card::sets) static WOODLAND_CEMETERY: CardRecord = CardRecord::new(
