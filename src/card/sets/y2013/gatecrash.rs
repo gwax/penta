@@ -151,7 +151,7 @@ pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::ne
     .metadata_only(),
 );
 
-// Implementation status: Mana production is active; the land currently takes the tapped/no-life branch, and the choice is pending.
+// Implementation status: complete — mana production and the pay-life-or-tapped choice both run.
 pub(in crate::card::sets) static GODLESS_SHRINE: CardRecord = CardRecord::new(
     cards::GODLESS_SHRINE,
     "Godless Shrine",
@@ -167,8 +167,7 @@ pub(in crate::card::sets) static GODLESS_SHRINE: CardRecord = CardRecord::new(
     .type_line("Land — Plains Swamp")
     .produces([true, false, true, false, false, false])
     .land_types([true, false, true, false, false])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .metadata_only(),
+    .land_entry(LandEntry::PayLifeOrTapped(2)),
 );
 
 // Implementation status: Baseline creature casting/combat and declaratively modeled traits are active; remaining printed abilities are pending.
@@ -190,7 +189,7 @@ pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord:
     .metadata_only(),
 );
 
-// Implementation status: Mana production is active; the land currently takes the tapped/no-life branch, and the choice is pending.
+// Implementation status: complete — mana production and the pay-life-or-tapped choice both run.
 pub(in crate::card::sets) static SACRED_FOUNDRY: CardRecord = CardRecord::new(
     cards::SACRED_FOUNDRY,
     "Sacred Foundry",
@@ -206,8 +205,7 @@ pub(in crate::card::sets) static SACRED_FOUNDRY: CardRecord = CardRecord::new(
     .type_line("Land — Mountain Plains")
     .produces([true, false, false, true, false, false])
     .land_types([true, false, false, true, false])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .metadata_only(),
+    .land_entry(LandEntry::PayLifeOrTapped(2)),
 );
 
 // Implementation status: Baseline creature casting/combat and declaratively modeled traits are active; remaining printed abilities are pending.
@@ -229,7 +227,7 @@ pub(in crate::card::sets) static SEPULCHRAL_PRIMORDIAL: CardRecord = CardRecord:
     .metadata_only(),
 );
 
-// Implementation status: Mana production is active; the land currently takes the tapped/no-life branch, and the choice is pending.
+// Implementation status: complete — mana production and the pay-life-or-tapped choice both run.
 pub(in crate::card::sets) static STOMPING_GROUND: CardRecord = CardRecord::new(
     cards::STOMPING_GROUND,
     "Stomping Ground",
@@ -245,8 +243,7 @@ pub(in crate::card::sets) static STOMPING_GROUND: CardRecord = CardRecord::new(
     .type_line("Land — Mountain Forest")
     .produces([false, false, false, true, true, false])
     .land_types([false, false, false, true, true])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .metadata_only(),
+    .land_entry(LandEntry::PayLifeOrTapped(2)),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

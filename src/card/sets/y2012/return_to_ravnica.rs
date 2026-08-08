@@ -165,7 +165,7 @@ pub(in crate::card::sets) static GRISLY_SALVAGE: CardRecord = CardRecord::new(
     .type_line("Instant"),
 );
 
-// Implementation status: Land types and mana production are active; entry currently takes the tapped/no-life branch.
+// Implementation status: complete — land types, mana production, and the pay-life-or-tapped choice all run.
 pub(in crate::card::sets) static HALLOWED_FOUNTAIN: CardRecord = CardRecord::new(
     cards::HALLOWED_FOUNTAIN,
     "Hallowed Fountain",
@@ -181,8 +181,7 @@ pub(in crate::card::sets) static HALLOWED_FOUNTAIN: CardRecord = CardRecord::new
     .type_line("Land — Plains Island")
     .produces([true, true, false, false, false, false])
     .land_types([true, true, false, false, false])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .metadata_only(),
+    .land_entry(LandEntry::PayLifeOrTapped(2)),
 );
 
 const fn izzet_charm_rules() -> CardRules {
@@ -329,7 +328,7 @@ pub(in crate::card::sets) static MIZZIUM_MORTARS: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Land types and mana production are active; entry currently takes the tapped/no-life branch.
+// Implementation status: complete — land types, mana production, and the pay-life-or-tapped choice all run.
 pub(in crate::card::sets) static OVERGROWN_TOMB: CardRecord = CardRecord::new(
     cards::OVERGROWN_TOMB,
     "Overgrown Tomb",
@@ -345,8 +344,7 @@ pub(in crate::card::sets) static OVERGROWN_TOMB: CardRecord = CardRecord::new(
     .type_line("Land — Swamp Forest")
     .produces([false, false, true, false, true, false])
     .land_types([false, false, true, false, true])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .metadata_only(),
+    .land_entry(LandEntry::PayLifeOrTapped(2)),
 );
 
 // Implementation status: Spell is withheld from play; printed effects are pending.
@@ -416,7 +414,7 @@ pub(in crate::card::sets) static SPHINXS_REVELATION: CardRecord = CardRecord::ne
     .type_line("Instant"),
 );
 
-// Implementation status: Land types and mana production are active; entry currently takes the tapped/no-life branch.
+// Implementation status: complete — land types, mana production, and the pay-life-or-tapped choice all run.
 pub(in crate::card::sets) static STEAM_VENTS: CardRecord = CardRecord::new(
     cards::STEAM_VENTS,
     "Steam Vents",
@@ -432,8 +430,7 @@ pub(in crate::card::sets) static STEAM_VENTS: CardRecord = CardRecord::new(
     .type_line("Land — Island Mountain")
     .produces([false, true, false, true, false, false])
     .land_types([false, true, false, true, false])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .metadata_only(),
+    .land_entry(LandEntry::PayLifeOrTapped(2)),
 );
 
 // Implementation status: complete — the sweep runs and the spell cannot be countered.
@@ -470,7 +467,7 @@ pub(in crate::card::sets) static SYNCOPATE: CardRecord = CardRecord::new(
     .metadata_only(),
 );
 
-// Implementation status: Land types and mana production are active; entry currently takes the tapped/no-life branch.
+// Implementation status: complete — land types, mana production, and the pay-life-or-tapped choice all run.
 pub(in crate::card::sets) static TEMPLE_GARDEN: CardRecord = CardRecord::new(
     cards::TEMPLE_GARDEN,
     "Temple Garden",
@@ -486,8 +483,7 @@ pub(in crate::card::sets) static TEMPLE_GARDEN: CardRecord = CardRecord::new(
     .type_line("Land — Forest Plains")
     .produces([true, false, false, false, true, false])
     .land_types([true, false, false, false, true])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .metadata_only(),
+    .land_entry(LandEntry::PayLifeOrTapped(2)),
 );
 
 // Implementation status: complete — card rules are executed by the engine.

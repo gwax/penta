@@ -288,6 +288,12 @@ enum DecisionContinuation {
         player: PlayerId,
         source: GameObjectId,
     },
+    /// A shock land asking whether to pay life to come in untapped.
+    ShockLand {
+        player: PlayerId,
+        permanent: GameObjectId,
+        life: u8,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -1583,6 +1589,23 @@ impl Game {
         let pending = self.pending_decisions.remove(0);
         debug_assert_eq!(pending.observation.id, decision);
         match pending.continuation {
+            DecisionContinuation::ShockLand {
+                player,
+                permanent,
+                life,
+            } => {
+                if options.contains(&1) {
+                    if let Some(land) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|candidate| candidate.card.id == permanent)
+                    {
+                        land.tapped = false;
+                    }
+                    self.lose_life(player, u16::from(life));
+                    self.check_life_totals();
+                }
+            }
             DecisionContinuation::IronStar { player } => {
                 if options.contains(&1) {
                     let cost = ManaCost::new(1, 0);
@@ -2787,8 +2810,11 @@ impl Game {
             .expect("legal land action references a card in hand");
         let tapped = match land_rules.land_entry {
             LandEntry::Untapped => false,
-            // Until land-entry choices are exposed as decisions, use the
-            // legal decline branch and keep the player's life unchanged.
+            // A shock land arrives tapped and the decision below untaps it if
+            // the player pays. Printed, the payment is a replacement and the
+            // land never enters tapped at all, but nobody gets priority in
+            // between and nothing here triggers on entering tapped, so the
+            // only difference is which way round the two events read.
             LandEntry::Tapped | LandEntry::PayLifeOrTapped(_) => true,
             LandEntry::TappedUnlessControlsLandType(types) => {
                 !self.controls_any_land_type(player, types)
@@ -2839,6 +2865,51 @@ impl Game {
         // A second legendary land can arrive this way without the stack ever
         // being involved, so the legend rule has to run here too.
         self.apply_legend_rule();
+        if let LandEntry::PayLifeOrTapped(life) = land_rules.land_entry {
+            self.queue_shock_land_decision(player, permanent_id, life);
+        }
+    }
+
+    /// Shock lands: pay the life to have it enter untapped, or leave it tapped.
+    fn queue_shock_land_decision(&mut self, player: PlayerId, permanent: GameObjectId, life: u8) {
+        let name = self
+            .battlefield
+            .iter()
+            .find(|candidate| candidate.card.id == permanent)
+            .and_then(|candidate| self.catalog.get(candidate.card.definition))
+            .map_or_else(|| "the land".to_string(), |card| card.name.clone());
+        // You may pay life down to zero, but not more life than you have.
+        if self.players[player.index()].life < i16::from(life) {
+            return;
+        }
+        let options = vec![
+            DecisionOption {
+                id: 0,
+                label: format!("Leave {name} tapped"),
+                card: None,
+                zone: DecisionZone::None,
+            },
+            DecisionOption {
+                id: 1,
+                label: format!("Pay {life} life for {name} to enter untapped"),
+                card: None,
+                zone: DecisionZone::None,
+            },
+        ];
+        self.queue_decision(
+            player,
+            format!("Pay {life} life for {name}?"),
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::ShockLand {
+                player,
+                permanent,
+                life,
+            },
+        );
     }
 
     fn activate_mana_source(&mut self, player: PlayerId, source: GameObjectId, color: ManaColor) {

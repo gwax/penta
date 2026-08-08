@@ -4100,3 +4100,67 @@ fn a_counterspell_may_target_supreme_verdict_and_accomplish_nothing() {
         "the Verdict resolved rather than being countered"
     );
 }
+
+/// Plays a shock land and answers its enters-untapped question.
+fn play_shock_land(game: &mut Game, definition: CardDefinitionId, pay: bool) {
+    game.players[0]
+        .hand
+        .push(card(10_500, definition, PlayerId::One));
+    game.play_land(PlayerId::One, CardInstanceId(10_500), PlayOptionId::DEFAULT);
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    let option = u32::from(pay);
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .unwrap();
+}
+
+#[test]
+fn a_shock_land_can_be_paid_for_or_left_tapped() {
+    for (pay, tapped, life) in [(true, false, 18), (false, true, 20)] {
+        let mut game = ready_game();
+        play_shock_land(&mut game, cards::HALLOWED_FOUNTAIN, pay);
+
+        assert_eq!(game.battlefield[0].tapped, tapped);
+        assert_eq!(game.players[0].life, life);
+        assert!(game.pending_decisions.is_empty());
+    }
+}
+
+#[test]
+fn a_shock_land_asks_nothing_when_the_life_is_not_there() {
+    // You may pay life down to zero, but you cannot pay more than you have.
+    let mut game = ready_game();
+    game.players[0].life = 1;
+    game.players[0]
+        .hand
+        .push(card(10_500, cards::STEAM_VENTS, PlayerId::One));
+    game.play_land(PlayerId::One, CardInstanceId(10_500), PlayOptionId::DEFAULT);
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "no prompt whose only real answer is no"
+    );
+    assert!(game.battlefield[0].tapped);
+    assert_eq!(game.players[0].life, 1);
+}
+
+#[test]
+fn paying_for_a_shock_land_at_exactly_two_life_loses_the_game() {
+    let mut game = ready_game();
+    game.players[0].life = 2;
+    play_shock_land(&mut game, cards::TEMPLE_GARDEN, true);
+
+    assert_eq!(game.players[0].life, 0);
+    assert!(matches!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::Two,
+            ..
+        })
+    ));
+}
