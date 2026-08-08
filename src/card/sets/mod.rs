@@ -264,9 +264,9 @@ mod tests {
         AbilityCostDef, AbilityDef, AbilityImplementationDef, AppliedEffectDef, BasicLandType,
         CardPrinting, CardPrintingId, CardStructure, CardSupertype, DeclarativeAbilityDef,
         DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, EvergreenAbility,
-        ImplementationStatus, ManaKindDef, ManaRestrictionDef, ManaSelectionDef,
-        ManaSpendEffectDef, ObjectPredicateDef, PlayActionKind, PlayRestriction, SpellForm,
-        TargetPredicate, TriggerEventDef, ZoneKind, cards,
+        EvergreenAbilityDef, ImplementationStatus, ManaKindDef, ManaRestrictionDef,
+        ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, PlayActionKind, PlayRestriction,
+        SpellForm, TargetPredicate, TriggerEventDef, ZoneKind, cards,
     };
     use crate::{AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ModeId, PlayOptionId};
 
@@ -312,12 +312,9 @@ mod tests {
             ObjectPredicateDef::Special(_) => false,
             ObjectPredicateDef::Any
             | ObjectPredicateDef::Source
-            | ObjectPredicateDef::Land
-            | ObjectPredicateDef::Creature
-            | ObjectPredicateDef::Artifact
+            | ObjectPredicateDef::HasType(_)
             | ObjectPredicateDef::Spell
             | ObjectPredicateDef::NoncreatureSpell
-            | ObjectPredicateDef::CardKind(_)
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::Subtype(_) => true,
         }
@@ -812,9 +809,9 @@ mod tests {
         assert_eq!(garruk.rules, garruk.primary_part().unwrap().rules);
         assert_eq!(garruk.parts.len(), 2);
         assert_eq!(garruk.parts[1].name, "Garruk, the Veil-Cursed");
-        assert_eq!(garruk.parts[1].mana_cost, None);
+        assert_eq!(garruk.parts[1].rules.mana_cost(), None);
         assert_eq!(
-            garruk.parts[1].rules.colors,
+            garruk.parts[1].rules.colors(),
             [false, false, true, false, true]
         );
         assert!(matches!(
@@ -830,8 +827,8 @@ mod tests {
         assert_eq!(huntmaster.rules, huntmaster.primary_part().unwrap().rules);
         assert_eq!(huntmaster.parts.len(), 2);
         assert_eq!(huntmaster.parts[1].name, "Ravager of the Fells");
-        assert_eq!(huntmaster.parts[1].mana_cost, None);
-        assert_eq!(huntmaster.parts[1].rules.creature_stats.unwrap().power, 4);
+        assert_eq!(huntmaster.parts[1].rules.mana_cost(), None);
+        assert_eq!(huntmaster.parts[1].rules.creature_stats().unwrap().power, 4);
         assert!(
             huntmaster.parts[1]
                 .rules
@@ -841,12 +838,12 @@ mod tests {
         let turn_burn = y2013::dragons_maze::TURN_BURN.definition();
         assert_eq!(turn_burn.name, "Turn // Burn");
         assert_eq!(turn_burn.rules, turn_burn.parts[0].rules);
-        assert!(turn_burn.rules.alternate_mana_costs.is_empty());
+        assert!(turn_burn.rules.alternate_mana_costs().is_empty());
         assert_eq!(turn_burn.parts.len(), 2);
         assert_eq!(turn_burn.parts[0].name, "Turn");
         assert_eq!(turn_burn.parts[1].name, "Burn");
         assert_eq!(
-            turn_burn.parts[1].rules.colors,
+            turn_burn.parts[1].rules.colors(),
             [false, false, false, true, false]
         );
         assert!(matches!(
@@ -909,7 +906,7 @@ mod tests {
         );
 
         let mountain = y1993::alpha::MOUNTAIN.definition();
-        assert_eq!(mountain.parts[0].mana_cost, None);
+        assert_eq!(mountain.parts[0].rules.mana_cost(), None);
         assert_eq!(mountain.play_options[0].action, PlayActionKind::PlayLand);
         assert_eq!(mountain.play_options[0].mana_cost, None);
     }
@@ -961,7 +958,7 @@ mod tests {
         let lands = SET_MODULES
             .iter()
             .flat_map(|module| module.cards.iter().copied())
-            .filter(|record| record.rules.kind == crate::card::CardKind::Land)
+            .filter(|record| record.rules.kind() == crate::card::CardKind::Land)
             .collect::<Vec<_>>();
         assert_eq!(lands.len(), 45);
 
@@ -977,10 +974,11 @@ mod tests {
         assert_eq!(lands_without_mana, ["Maze of Ith"]);
 
         for land in lands {
-            let basic_subtypes = BasicLandType::ALL
+            let land_types = BasicLandType::ALL
                 .into_iter()
                 .filter(|land_type| land.rules.has_subtype(land_type.subtype()))
-                .count();
+                .collect::<Vec<_>>();
+            let basic_subtypes = land_types.len();
             let printed_mana_abilities = land
                 .rules
                 .ability_clauses()
@@ -994,6 +992,15 @@ mod tests {
                 "{} has {basic_subtypes} basic land subtypes but only {printed_mana_abilities} printed mana abilities",
                 land.name
             );
+            for land_type in land_types {
+                let expected = EvergreenAbilityDef::basic_land_mana(land_type);
+                assert!(
+                    land.rules.ability_clauses().contains(&expected),
+                    "{} has the {} subtype without its matching mana ability",
+                    land.name,
+                    land_type.subtype(),
+                );
+            }
         }
     }
 
@@ -1106,9 +1113,7 @@ mod tests {
         for (record, ability_id, targeted, summary) in cases {
             let ability = record
                 .rules
-                .ability_clauses()
-                .iter()
-                .find(|ability| ability.id == ability_id)
+                .ability(ability_id)
                 .unwrap_or_else(|| panic!("{} is missing ability {ability_id:?}", record.name));
             assert!(matches!(
                 ability.definition,
@@ -1228,7 +1233,9 @@ mod tests {
         {
             let definition = record.definition();
             for part in &definition.parts {
-                for ability in part.rules.ability_clauses() {
+                for attached in part.rules.indexed_abilities() {
+                    let ability_id = attached.id;
+                    let ability = attached.definition;
                     assert!(
                         !matches!(
                             (ability.definition, ability.implementation),
@@ -1240,15 +1247,15 @@ mod tests {
                         "{} {:?} ability {:?} is legacy text claiming full implementation without an executable behavior: {ability:?}",
                         definition.name,
                         part.id,
-                        ability.id,
+                        ability_id,
                     );
                     if ability.implementation == AbilityImplementationDef::Definition {
                         assert!(
-                            shared_definition_ability(ability),
+                            shared_definition_ability(&ability),
                             "{} {:?} ability {:?} claims Definition outside the shared runtime boundary: {ability:?}",
                             definition.name,
                             part.id,
-                            ability.id,
+                            ability_id,
                         );
                     }
                     assert_nested_definition_abilities(&definition.name, ability.effect);

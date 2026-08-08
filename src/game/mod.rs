@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt;
@@ -9,17 +10,17 @@ use crate::action::{
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CardBehavior, CardCatalog, CardDefinition,
-    CardEffectStatus, CardKind, CardRules, CardSet, CardSupertype, ColorDef, DeclarativeAbilityDef,
-    EffectDef, EffectDurationDef, EffectRecipientDef, EvergreenAbility, LandEntry, ManaCost,
-    ManaKindDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, PlayActionKind,
-    PlayOptionDef, PlayerRelation, TargetPredicate, TargetSlotDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, intrinsic_basic_land_mana_ability,
+    CardEffectStatus, CardKind, CardPart, CardRules, CardSet, CardSupertype, CardType, ColorDef,
+    DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef, EvergreenAbility,
+    EvergreenAbilityDef, LandEntry, ManaCost, ManaKindDef, ManaSelectionDef, ManaSpendEffectDef,
+    ObjectPredicateDef, PlayActionKind, PlayOptionDef, PlayerRelation, TargetPredicate,
+    TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
 use crate::ids::{
-    AbilityId, CardDefinitionId, CardPartId, GameObjectId, MeldRecipeId, ModeId, PhysicalCardId,
-    PlayOptionId, PlayerId, TargetSlotId,
+    AbilityId, CardDefinitionId, CardPartId, GameObjectId, GrantId, MeldRecipeId, ModeId,
+    PhysicalCardId, PlayOptionId, PlayerId, TargetSlotId,
 };
 use crate::rng::ReplayRng;
 #[cfg(test)]
@@ -291,16 +292,16 @@ impl TriggerContext {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct TriggerEventObject {
     id: GameObjectId,
-    kind: CardKind,
+    types: [bool; CardType::COUNT],
     controller: PlayerId,
     colors: [bool; 5],
-    subtypes: &'static [&'static str],
+    subtypes: Cow<'static, [&'static str]>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum CommittedTriggerEvent {
     ZoneChanged {
         object: TriggerEventObject,
@@ -324,7 +325,7 @@ enum CommittedTriggerEvent {
 }
 
 impl CommittedTriggerEvent {
-    const fn context(self) -> TriggerContext {
+    const fn context(&self) -> TriggerContext {
         match self {
             Self::ZoneChanged { object, .. }
             | Self::BecomesTapped { object }
@@ -343,7 +344,7 @@ impl CommittedTriggerEvent {
             Self::StepBegins { player, .. } => TriggerContext {
                 object: None,
                 object_controller: None,
-                event_player: Some(player),
+                event_player: Some(*player),
                 amount: None,
             },
         }
@@ -467,6 +468,25 @@ struct PlayerState {
 struct EffectiveAbility {
     origin: AbilityOrigin,
     ability: AbilityDef,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct StaticAppliedEffect {
+    source: GameObjectId,
+    source_definition: CardDefinitionId,
+    source_part: CardPartId,
+    source_ability: AbilityId,
+    grant: Option<GrantId>,
+    effect: AppliedEffectDef,
+}
+
+struct StaticEffectTraversal<'a> {
+    source: &'a Permanent,
+    source_definition: CardDefinitionId,
+    source_part: CardPartId,
+    source_ability: AbilityId,
+    affected: &'a Permanent,
+    next_grant: usize,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1579,7 +1599,7 @@ impl Game {
         }
     }
 
-    fn capture_battlefield_triggers(&mut self, event: CommittedTriggerEvent) {
+    fn capture_battlefield_triggers(&mut self, event: &CommittedTriggerEvent) {
         let listeners = self.battlefield_trigger_listeners();
         self.capture_battlefield_triggers_from_snapshot(&listeners, event);
     }
@@ -1645,7 +1665,7 @@ impl Game {
     fn capture_battlefield_triggers_from_snapshot(
         &mut self,
         listeners: &[BattlefieldTriggerListener],
-        event: CommittedTriggerEvent,
+        event: &CommittedTriggerEvent,
     ) {
         let mana_triggers = listeners
             .iter()
@@ -1745,16 +1765,16 @@ impl Game {
         &mut self,
         source: &Permanent,
         abilities: &[EffectiveAbility],
-        event: CommittedTriggerEvent,
+        event: &CommittedTriggerEvent,
     ) {
         let triggers = abilities
             .iter()
             .filter_map(|effective| match effective.ability.definition {
                 DeclarativeAbilityDef::Triggered(definition)
-                    if effective.ability.implementation.is_executable()
-                        && effective.ability.implementation
-                            != AbilityImplementationDef::Definition
-                        && effective.ability.implementation.custom_behavior().is_some()
+                    if matches!(
+                        effective.ability.implementation,
+                        AbilityImplementationDef::CustomPartial { .. }
+                    ) && effective.ability.implementation.custom_behavior().is_some()
                         && definition.source_zones.contains(&ZoneKind::Battlefield)
                         && self.trigger_event_matches(definition.event, event, source.card.id) =>
                 {
@@ -1849,7 +1869,7 @@ impl Game {
     fn trigger_event_matches(
         &self,
         definition: TriggerEventDef,
-        event: CommittedTriggerEvent,
+        event: &CommittedTriggerEvent,
         source: GameObjectId,
     ) -> bool {
         match (definition, event) {
@@ -1865,8 +1885,8 @@ impl Game {
                     to: actual_to,
                 },
             ) => {
-                from.is_none_or(|expected| expected == actual_from)
-                    && to.is_none_or(|expected| expected == actual_to)
+                from.is_none_or(|expected| expected == *actual_from)
+                    && to.is_none_or(|expected| expected == *actual_to)
                     && Self::trigger_object_matches(predicate, object, source, false)
             }
             (
@@ -1886,10 +1906,10 @@ impl Game {
             ) => {
                 let controller = self
                     .current_or_last_known_controller(source)
-                    .unwrap_or(actual_player);
-                step == actual_step
+                    .unwrap_or(*actual_player);
+                step == *actual_step
                     && self.player_relation_matches(
-                        actual_player,
+                        *actual_player,
                         player,
                         controller,
                         event.context(),
@@ -1901,26 +1921,25 @@ impl Game {
                     source: actual_source,
                     ..
                 },
-            ) => source == actual_source,
+            ) => source == *actual_source,
             _ => false,
         }
     }
 
     fn trigger_object_matches(
         predicate: ObjectPredicateDef,
-        object: TriggerEventObject,
+        object: &TriggerEventObject,
         source: GameObjectId,
         is_spell: bool,
     ) -> bool {
         match predicate {
             ObjectPredicateDef::Any => true,
             ObjectPredicateDef::Source => object.id == source,
-            ObjectPredicateDef::Land => object.kind == CardKind::Land,
-            ObjectPredicateDef::Creature => object.kind.is_creature(),
-            ObjectPredicateDef::Artifact => object.kind.is_artifact(),
+            ObjectPredicateDef::HasType(card_type) => object.types[card_type.index()],
             ObjectPredicateDef::Spell => is_spell,
-            ObjectPredicateDef::NoncreatureSpell => is_spell && !object.kind.is_creature(),
-            ObjectPredicateDef::CardKind(kind) => object.kind == kind,
+            ObjectPredicateDef::NoncreatureSpell => {
+                is_spell && !object.types[CardType::Creature.index()]
+            }
             ObjectPredicateDef::Color(color) => object.colors[color.index()],
             ObjectPredicateDef::Subtype(subtype) => object.subtypes.contains(&subtype),
             ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {
@@ -2096,14 +2115,11 @@ impl Game {
         match predicate {
             ObjectPredicateDef::Any => true,
             ObjectPredicateDef::Source => card.id == source,
-            ObjectPredicateDef::Land => rules.kind == CardKind::Land,
-            ObjectPredicateDef::Creature => rules.kind.is_creature(),
-            ObjectPredicateDef::Artifact => rules.kind.is_artifact(),
+            ObjectPredicateDef::HasType(card_type) => rules.kind().has_type(card_type),
             ObjectPredicateDef::Spell
             | ObjectPredicateDef::NoncreatureSpell
             | ObjectPredicateDef::Special(_) => false,
-            ObjectPredicateDef::CardKind(kind) => rules.kind == kind,
-            ObjectPredicateDef::Color(color) => rules.colors[color.index()],
+            ObjectPredicateDef::Color(color) => rules.colors()[color.index()],
             ObjectPredicateDef::Subtype(subtype) => rules.has_subtype(subtype),
             ObjectPredicateDef::All(predicates) => predicates
                 .iter()
@@ -2145,41 +2161,18 @@ impl Game {
         match predicate {
             ObjectPredicateDef::Any => true,
             ObjectPredicateDef::Source => id == source,
-            ObjectPredicateDef::Land => {
+            ObjectPredicateDef::HasType(card_type) => {
                 if is_spell {
-                    kind == CardKind::Land
+                    kind.has_type(card_type)
                 } else {
                     self.battlefield
                         .iter()
                         .find(|permanent| permanent.card.id == id)
-                        .is_some_and(|permanent| {
-                            self.permanent_kind(permanent) == Some(CardKind::Land)
-                        })
-                }
-            }
-            ObjectPredicateDef::Creature => {
-                if is_spell {
-                    kind.is_creature()
-                } else {
-                    self.battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == id)
-                        .is_some_and(|permanent| self.base_stats(permanent).is_some())
-                }
-            }
-            ObjectPredicateDef::Artifact => {
-                if is_spell {
-                    kind.is_artifact()
-                } else {
-                    self.battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == id)
-                        .is_some_and(|permanent| self.is_artifact_permanent(permanent))
+                        .is_some_and(|permanent| self.permanent_has_type(permanent, card_type))
                 }
             }
             ObjectPredicateDef::Spell => is_spell,
             ObjectPredicateDef::NoncreatureSpell => is_spell && !kind.is_creature(),
-            ObjectPredicateDef::CardKind(expected) => kind == expected,
             ObjectPredicateDef::Color(color) => {
                 if is_spell {
                     self.stack
@@ -2191,7 +2184,7 @@ impl Game {
                         .iter()
                         .find(|permanent| permanent.card.id == id)
                         .and_then(|permanent| self.effective_rules(permanent))
-                        .is_some_and(|rules| rules.colors[color.index()])
+                        .is_some_and(|rules| rules.colors()[color.index()])
                 }
             }
             ObjectPredicateDef::Subtype(subtype) => {
@@ -3456,7 +3449,7 @@ impl Game {
                     .filter(|option| match &option.form {
                         crate::card::SpellForm::Part(part) => definition
                             .part(*part)
-                            .is_some_and(|part| part.rules.kind == CardKind::Land),
+                            .is_some_and(|part| part.rules.kind() == CardKind::Land),
                         crate::card::SpellForm::Combined(_) => false,
                     })
                     .map(|option| Action::PlayLand {
@@ -3593,7 +3586,7 @@ impl Game {
             crate::card::SpellForm::Part(part) => *part,
             crate::card::SpellForm::Combined(parts) => *parts.first()?,
         };
-        definition.part(first).map(|part| part.rules.kind)
+        definition.part(first).map(|part| part.rules.kind())
     }
 
     fn play_option_behavior(
@@ -3619,21 +3612,22 @@ impl Game {
         let part_id = *part_id;
         let part = definition.part(part_id)?;
         part.rules
-            .ability_clauses()
-            .iter()
-            .find(|ability| {
-                ability.implementation.is_executable()
-                    && matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
+            .indexed_abilities()
+            .find(|attached| {
+                attached.definition.implementation.is_executable()
+                    && matches!(
+                        attached.definition.definition,
+                        DeclarativeAbilityDef::Spell(_)
+                    )
             })
-            .copied()
-            .map(|ability| {
+            .map(|attached| {
                 (
                     AbilityOrigin::Printed {
                         definition: definition.id,
                         part: part_id,
-                        ability: ability.id,
+                        ability: attached.id,
                     },
-                    ability,
+                    attached.definition,
                 )
             })
     }
@@ -3649,11 +3643,10 @@ impl Game {
         definition
             .part(*part_id)?
             .rules
-            .ability_clauses()
-            .iter()
-            .find_map(|ability| {
-                (ability.id != primary)
-                    .then(|| ability.implementation.custom_behavior())
+            .indexed_abilities()
+            .find_map(|attached| {
+                (attached.id != primary)
+                    .then(|| attached.definition.implementation.custom_behavior())
                     .flatten()
             })
     }
@@ -3862,11 +3855,11 @@ impl Game {
         match signature.form() {
             crate::card::SpellForm::Part(part) => definition
                 .part(*part)
-                .is_some_and(|part| part.rules.colors[color_index]),
+                .is_some_and(|part| part.rules.colors()[color_index]),
             crate::card::SpellForm::Combined(parts) => parts.iter().any(|part| {
                 definition
                     .part(*part)
-                    .is_some_and(|part| part.rules.colors[color_index])
+                    .is_some_and(|part| part.rules.colors()[color_index])
             }),
         }
     }
@@ -3893,27 +3886,43 @@ impl Game {
     fn stack_trigger_event_object(&self, object: &StackObject) -> Option<TriggerEventObject> {
         let definition = self.catalog.get(object.card.definition)?;
         let signature = object.signature.as_ref()?;
-        let part = match signature.form() {
-            crate::card::SpellForm::Part(part) => definition.part(*part)?,
-            crate::card::SpellForm::Combined(parts) => definition.part(*parts.first()?)?,
-        };
-        let mut colors = [false; 5];
-        match signature.form() {
-            crate::card::SpellForm::Part(_) => colors = part.rules.colors,
+        let (types, colors, subtypes) = match signature.form() {
+            crate::card::SpellForm::Part(part) => {
+                let part = definition.part(*part)?;
+                (
+                    part.rules.kind().types(),
+                    part.rules.colors(),
+                    Cow::Borrowed(part.rules.subtypes()),
+                )
+            }
             crate::card::SpellForm::Combined(parts) => {
-                for part in parts.iter().filter_map(|part| definition.part(*part)) {
-                    for (combined, present) in colors.iter_mut().zip(part.rules.colors) {
+                parts.first()?;
+                let mut types = [false; CardType::COUNT];
+                let mut colors = [false; 5];
+                let mut subtypes = Vec::new();
+                for part in parts {
+                    let part = definition.part(*part)?;
+                    for (combined, present) in types.iter_mut().zip(part.rules.kind().types()) {
                         *combined |= present;
                     }
+                    for (combined, present) in colors.iter_mut().zip(part.rules.colors()) {
+                        *combined |= present;
+                    }
+                    for subtype in part.rules.subtypes() {
+                        if !subtypes.contains(subtype) {
+                            subtypes.push(*subtype);
+                        }
+                    }
                 }
+                (types, colors, Cow::Owned(subtypes))
             }
-        }
+        };
         Some(TriggerEventObject {
             id: object.id,
-            kind: part.rules.kind,
+            types,
             controller: object.controller,
             colors,
-            subtypes: part.rules.subtypes,
+            subtypes,
         })
     }
 
@@ -3943,7 +3952,7 @@ impl Game {
                             // including the permanent's own controller.
                             (permanent.controller == player || !self.has_hexproof(permanent))
                                 && !self
-                                    .is_protected_from_colors(permanent, behavior.rules().colors)
+                                    .is_protected_from_colors(permanent, behavior.rules().colors())
                         }),
                     Target::Player(_) | Target::Card(_) | Target::Spell(_) => true,
                 })
@@ -4020,9 +4029,9 @@ impl Game {
                 .iter()
                 .filter(|permanent| {
                     self.power(permanent).is_some()
-                        && self
-                            .effective_rules(permanent)
-                            .is_some_and(|rules| rules.colors.iter().filter(|on| **on).count() == 1)
+                        && self.effective_rules(permanent).is_some_and(|rules| {
+                            rules.colors().iter().filter(|on| **on).count() == 1
+                        })
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
@@ -4033,7 +4042,7 @@ impl Game {
                     self.power(permanent).is_some()
                         && !self
                             .effective_rules(permanent)
-                            .is_some_and(|rules| rules.colors[2])
+                            .is_some_and(|rules| rules.colors()[2])
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
@@ -4045,7 +4054,7 @@ impl Game {
                         && !self.is_artifact_permanent(permanent)
                         && !self
                             .effective_rules(permanent)
-                            .is_some_and(|rules| rules.colors[2])
+                            .is_some_and(|rules| rules.colors()[2])
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
@@ -4120,7 +4129,7 @@ impl Game {
                         .iter()
                         .filter(|permanent| {
                             self.effective_rules(permanent)
-                                .is_some_and(|rules| rules.colors[1])
+                                .is_some_and(|rules| rules.colors()[1])
                         })
                         .map(|permanent| vec![Target::Permanent(permanent.card.id)]),
                 );
@@ -4141,7 +4150,7 @@ impl Game {
                         .iter()
                         .filter(|permanent| {
                             self.effective_rules(permanent)
-                                .is_some_and(|rules| rules.colors[3])
+                                .is_some_and(|rules| rules.colors()[3])
                         })
                         .map(|permanent| vec![Target::Permanent(permanent.card.id)]),
                 );
@@ -4561,7 +4570,7 @@ impl Game {
 
     fn permanent_mana_value(&self, permanent: &Permanent) -> u16 {
         self.effective_rules(permanent)
-            .map_or(0, |rules| mana_cost_value(rules.mana_cost))
+            .map_or(0, |rules| rules.printed_mana_cost().mana_value())
     }
 
     fn stack_spell_mana_value(&self, object: &StackObject) -> u16 {
@@ -4574,11 +4583,11 @@ impl Game {
         match signature.form() {
             crate::card::SpellForm::Part(part) => definition
                 .part(*part)
-                .and_then(|part| part.mana_cost)
+                .and_then(CardPart::mana_cost)
                 .map_or(0, mana_cost_value),
             crate::card::SpellForm::Combined(parts) => parts
                 .iter()
-                .filter_map(|part| definition.part(*part).and_then(|part| part.mana_cost))
+                .filter_map(|part| definition.part(*part).and_then(CardPart::mana_cost))
                 .map(mana_cost_value)
                 .fold(0, u16::saturating_add),
         }
@@ -4607,12 +4616,12 @@ impl Game {
         };
         let land_rules = definition
             .part(presented)
-            .filter(|part| part.rules.kind == CardKind::Land)
+            .filter(|part| part.rules.kind() == CardKind::Land)
             .map(|part| part.rules)
             .expect("land play option references a land part");
         let card = remove_card(&mut self.players[player.index()].hand, card_id)
             .expect("legal land action references a card in hand");
-        let tapped = match land_rules.land_entry {
+        let tapped = match land_rules.land_entry_procedure() {
             LandEntry::Untapped => false,
             // A shock land arrives tapped and the decision below untaps it if
             // the player pays. Printed, the payment is a replacement and the
@@ -4667,7 +4676,7 @@ impl Game {
             .last()
             .expect("the played land is on the battlefield");
         let entered_event = self.trigger_event_object(entered);
-        self.capture_battlefield_triggers(CommittedTriggerEvent::ZoneChanged {
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
             object: entered_event,
             from: ZoneKind::Hand,
             to: ZoneKind::Battlefield,
@@ -4675,7 +4684,7 @@ impl Game {
         // A second legendary land can arrive this way without the stack ever
         // being involved, so the legend rule has to run here too.
         self.apply_legend_rule();
-        if let LandEntry::PayLifeOrTapped(life) = land_rules.land_entry {
+        if let LandEntry::PayLifeOrTapped(life) = land_rules.land_entry_procedure() {
             self.queue_shock_land_decision(player, permanent_id, life);
         }
     }
@@ -4967,7 +4976,14 @@ impl Game {
             })
             .and_then(|(definition, option)| {
                 Self::spell_ability(definition, option).map(|(origin, ability)| {
-                    let followup = Self::spell_custom_followup(definition, option, ability.id);
+                    let AbilityOrigin::Printed {
+                        ability: ability_id,
+                        ..
+                    } = origin
+                    else {
+                        unreachable!("a printed spell clause has a printed origin")
+                    };
+                    let followup = Self::spell_custom_followup(definition, option, ability_id);
                     (origin, ability, followup)
                 })
             });
@@ -5019,7 +5035,7 @@ impl Game {
             definition,
             targets,
         });
-        self.capture_battlefield_triggers(CommittedTriggerEvent::SpellCast { object: cast_event });
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::SpellCast { object: cast_event });
     }
 
     fn pass_priority(&mut self, _player: PlayerId) {
@@ -5112,7 +5128,7 @@ impl Game {
                 .catalog
                 .get(object.card.definition)
                 .and_then(|definition| definition.part(presented))
-                .and_then(|part| part.rules.starting_loyalty)
+                .and_then(|part| part.rules.starting_loyalty())
                 .map(|loyalty| i16::try_from(loyalty).unwrap_or(i16::MAX));
             let (permanent_card, _zone_change) = self.zone_change_card(object.card.clone());
             self.battlefield.push(Permanent {
@@ -5166,7 +5182,7 @@ impl Game {
                 .last()
                 .expect("the resolving permanent spell just entered");
             let entered_event = self.trigger_event_object(entered);
-            self.capture_battlefield_triggers(CommittedTriggerEvent::ZoneChanged {
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
                 object: entered_event,
                 from: ZoneKind::Stack,
                 to: ZoneKind::Battlefield,
@@ -5218,11 +5234,14 @@ impl Game {
                     .get(card.definition)
                     .is_some_and(|definition| match behavior {
                         CardBehavior::LifebaneZombie => {
-                            let colors = definition.rules.colors;
-                            definition.rules.kind.is_creature() && (colors[0] || colors[4])
+                            let colors = definition.rules.colors();
+                            definition.rules.kind().is_creature() && (colors[0] || colors[4])
                         }
                         CardBehavior::SinCollector => {
-                            matches!(definition.rules.kind, CardKind::Instant | CardKind::Sorcery)
+                            matches!(
+                                definition.rules.kind(),
+                                CardKind::Instant | CardKind::Sorcery
+                            )
                         }
                         _ => false,
                     })
@@ -5302,7 +5321,10 @@ impl Game {
                 .iter()
                 .filter(|card| {
                     self.catalog.get(card.definition).is_some_and(|definition| {
-                        matches!(definition.rules.kind, CardKind::Instant | CardKind::Sorcery)
+                        matches!(
+                            definition.rules.kind(),
+                            CardKind::Instant | CardKind::Sorcery
+                        )
                     })
                 })
                 .cloned()
@@ -5817,12 +5839,9 @@ impl Game {
             }
             ObjectPredicateDef::Any
             | ObjectPredicateDef::Source
-            | ObjectPredicateDef::Land
-            | ObjectPredicateDef::Creature
-            | ObjectPredicateDef::Artifact
+            | ObjectPredicateDef::HasType(_)
             | ObjectPredicateDef::Spell
             | ObjectPredicateDef::NoncreatureSpell
-            | ObjectPredicateDef::CardKind(_)
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::Subtype(_) => false,
         }
@@ -6107,7 +6126,7 @@ impl Game {
                 if let Some(Target::Permanent(target)) = object.first_target()
                     && let Some(index) = self.battlefield.iter().position(|permanent| {
                         permanent.card.id == target
-                            && !self.is_protected_from_colors(permanent, behavior.rules().colors)
+                            && !self.is_protected_from_colors(permanent, behavior.rules().colors())
                     })
                 {
                     let controller = self.battlefield[index].controller;
@@ -6195,7 +6214,7 @@ impl Game {
                         .iter()
                         .filter(|card| {
                             self.catalog.get(card.definition).is_some_and(|definition| {
-                                let kind = definition.rules.kind;
+                                let kind = definition.rules.kind();
                                 !kind.is_creature() && kind != CardKind::Land
                             })
                         })
@@ -6222,7 +6241,7 @@ impl Game {
                 let (lands, rest): (Vec<_>, Vec<_>) = revealed.into_iter().partition(|card| {
                     self.catalog
                         .get(card.definition)
-                        .is_some_and(|definition| definition.rules.kind == CardKind::Land)
+                        .is_some_and(|definition| definition.rules.kind() == CardKind::Land)
                 });
                 for card in lands {
                     let (card, _zone_change) = self.zone_change_card(card);
@@ -6237,7 +6256,7 @@ impl Game {
                     .iter()
                     .filter(|card| {
                         self.catalog.get(card.definition).is_some_and(|definition| {
-                            let kind = definition.rules.kind;
+                            let kind = definition.rules.kind();
                             kind.is_creature() || kind == CardKind::Land
                         })
                     })
@@ -6560,7 +6579,7 @@ impl Game {
 
     fn is_nonbasic_land(&self, permanent: &Permanent) -> bool {
         self.effective_rules(permanent).is_some_and(|rules| {
-            rules.kind == CardKind::Land && !rules.has_supertype(CardSupertype::Basic)
+            rules.kind() == CardKind::Land && !rules.has_supertype(CardSupertype::Basic)
         })
     }
 
@@ -6569,6 +6588,20 @@ impl Game {
             .is_some_and(CardKind::is_artifact)
             || (permanent.factory_animated
                 && self.copiable_behavior(permanent) == Some(CardBehavior::MishrasFactory))
+    }
+
+    fn permanent_has_type(&self, permanent: &Permanent, card_type: CardType) -> bool {
+        match card_type {
+            CardType::Creature => self.base_stats(permanent).is_some(),
+            CardType::Artifact => self.is_artifact_permanent(permanent),
+            CardType::Land
+            | CardType::Enchantment
+            | CardType::Planeswalker
+            | CardType::Instant
+            | CardType::Sorcery => self
+                .permanent_kind(permanent)
+                .is_some_and(|kind| kind.has_type(card_type)),
+        }
     }
 
     /// Resolves the printed rules currently supplying baseline permanent
@@ -6600,14 +6633,19 @@ impl Game {
         let blood_moon_applies = self.blood_moon_active() && self.is_nonbasic_land(permanent);
         TriggerEventObject {
             id: permanent.card.id,
-            kind: rules.kind,
+            types: {
+                let mut types = rules.kind().types();
+                types[CardType::Creature.index()] = self.base_stats(permanent).is_some();
+                types[CardType::Artifact.index()] = self.is_artifact_permanent(permanent);
+                types
+            },
             controller: permanent.controller,
-            colors: rules.colors,
-            subtypes: if blood_moon_applies {
+            colors: rules.colors(),
+            subtypes: Cow::Borrowed(if blood_moon_applies {
                 &["Mountain"]
             } else {
-                rules.subtypes
-            },
+                rules.subtypes()
+            }),
         }
     }
 
@@ -6659,34 +6697,34 @@ impl Game {
         let mut abilities = Vec::new();
         if !blood_moon_applies && let Some(rules) = self.effective_rules(permanent) {
             let (definition, part) = Self::effective_rules_source(permanent);
-            abilities.extend(
-                rules
-                    .ability_clauses()
-                    .iter()
-                    .map(|ability| EffectiveAbility {
-                        origin: AbilityOrigin::Printed {
-                            definition,
-                            part,
-                            ability: ability.id,
-                        },
-                        ability: *ability,
-                    }),
-            );
+            abilities.extend(rules.indexed_abilities().map(|attached| EffectiveAbility {
+                origin: AbilityOrigin::Printed {
+                    definition,
+                    part,
+                    ability: attached.id,
+                },
+                ability: attached.definition,
+            }));
         }
         if blood_moon_applies {
             abilities.push(EffectiveAbility {
                 origin: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
-                ability: intrinsic_basic_land_mana_ability(BasicLandType::Mountain),
+                ability: EvergreenAbilityDef::mountain(),
             });
         }
         abilities.extend(
             self.static_applied_effects(permanent)
                 .into_iter()
-                .filter_map(|(source, effect)| match effect {
+                .filter_map(|applied| match applied.effect {
                     AppliedEffectDef::GrantAbility(ability) => Some(EffectiveAbility {
                         origin: AbilityOrigin::Granted {
-                            source,
-                            ability: ability.id,
+                            source: applied.source,
+                            source_definition: applied.source_definition,
+                            source_part: applied.source_part,
+                            source_ability: applied.source_ability,
+                            grant: applied
+                                .grant
+                                .expect("a granted ability has a structural grant identity"),
                         },
                         ability: *ability,
                     }),
@@ -6698,16 +6736,14 @@ impl Game {
         abilities
     }
 
-    fn static_applied_effects(
-        &self,
-        affected: &Permanent,
-    ) -> Vec<(GameObjectId, AppliedEffectDef)> {
+    fn static_applied_effects(&self, affected: &Permanent) -> Vec<StaticAppliedEffect> {
         let mut applied = Vec::new();
         let mut blood_moon_active = None;
         for source in &self.battlefield {
             let Some(rules) = self.effective_rules(source) else {
                 continue;
             };
+            let (source_definition, source_part) = Self::effective_rules_source(source);
             let supplies_static_effect = rules.ability_clauses().iter().any(|ability| {
                 ability.implementation.is_executable()
                     && matches!(ability.definition, DeclarativeAbilityDef::Static(_))
@@ -6715,19 +6751,34 @@ impl Game {
             if !supplies_static_effect {
                 continue;
             }
-            if rules.kind == CardKind::Land
+            if rules.kind() == CardKind::Land
                 && !rules.has_supertype(CardSupertype::Basic)
                 && *blood_moon_active.get_or_insert_with(|| self.blood_moon_active())
             {
                 continue;
             }
-            for ability in rules.ability_clauses() {
-                if !ability.implementation.is_executable()
-                    || !matches!(ability.definition, DeclarativeAbilityDef::Static(_))
+            for attached in rules.indexed_abilities() {
+                if !attached.definition.implementation.is_executable()
+                    || !matches!(
+                        attached.definition.definition,
+                        DeclarativeAbilityDef::Static(_)
+                    )
                 {
                     continue;
                 }
-                self.collect_static_applied_effects(ability.effect, source, affected, &mut applied);
+                let mut traversal = StaticEffectTraversal {
+                    source,
+                    source_definition,
+                    source_part,
+                    source_ability: attached.id,
+                    affected,
+                    next_grant: 0,
+                };
+                self.collect_static_applied_effects(
+                    attached.definition.effect,
+                    &mut traversal,
+                    &mut applied,
+                );
             }
         }
         applied
@@ -6736,24 +6787,46 @@ impl Game {
     fn collect_static_applied_effects(
         &self,
         effect: EffectDef,
-        source: &Permanent,
-        affected: &Permanent,
-        applied: &mut Vec<(GameObjectId, AppliedEffectDef)>,
+        traversal: &mut StaticEffectTraversal<'_>,
+        applied: &mut Vec<StaticAppliedEffect>,
     ) {
         match effect {
             EffectDef::Sequence(effects) => {
                 for effect in effects {
-                    self.collect_static_applied_effects(*effect, source, affected, applied);
+                    self.collect_static_applied_effects(*effect, traversal, applied);
                 }
             }
             EffectDef::Apply {
                 recipient,
                 effect,
-                duration:
+                duration,
+            } => {
+                let grant = if matches!(effect, AppliedEffectDef::GrantAbility(_)) {
+                    let grant = GrantId::from_index(traversal.next_grant)
+                        .expect("one static ability contains at most 256 grant sites");
+                    traversal.next_grant += 1;
+                    Some(grant)
+                } else {
+                    None
+                };
+                if matches!(
+                    duration,
                     EffectDurationDef::WhileSourceRemainsInZone
-                    | EffectDurationDef::UntilSourceLeavesZone,
-            } if self.static_recipient_matches(recipient, source, affected) => {
-                applied.push((source.card.id, effect));
+                        | EffectDurationDef::UntilSourceLeavesZone
+                ) && self.static_recipient_matches(
+                    recipient,
+                    traversal.source,
+                    traversal.affected,
+                ) {
+                    applied.push(StaticAppliedEffect {
+                        source: traversal.source.card.id,
+                        source_definition: traversal.source_definition,
+                        source_part: traversal.source_part,
+                        source_ability: traversal.source_ability,
+                        grant,
+                        effect,
+                    });
+                }
             }
             _ => {}
         }
@@ -6823,7 +6896,7 @@ impl Game {
     }
 
     fn permanent_kind(&self, permanent: &Permanent) -> Option<CardKind> {
-        self.effective_rules(permanent).map(|rules| rules.kind)
+        self.effective_rules(permanent).map(CardRules::kind)
     }
 
     fn effective_behavior(&self, permanent: &Permanent) -> Option<CardBehavior> {
@@ -6880,7 +6953,7 @@ impl Game {
         {
             return self
                 .effective_rules(permanent)
-                .map_or([false; 5], |rules| rules.colors);
+                .map_or([false; 5], CardRules::colors);
         }
         if let Some(stack) = self.stack.iter().find(|stack| stack.id == object) {
             return self
@@ -6891,14 +6964,14 @@ impl Game {
             return match retired {
                 RetiredObject::Permanent { permanent, .. } => self
                     .effective_rules(permanent)
-                    .map_or([false; 5], |rules| rules.colors),
+                    .map_or([false; 5], CardRules::colors),
                 RetiredObject::Stack(stack) => self
                     .stack_trigger_event_object(stack)
                     .map_or([false; 5], |event| event.colors),
                 RetiredObject::Card(card) => self
                     .catalog
                     .get(card.definition)
-                    .map_or([false; 5], |definition| definition.rules.colors),
+                    .map_or([false; 5], |definition| definition.rules.colors()),
             };
         }
         self.players
@@ -6906,13 +6979,13 @@ impl Game {
             .flat_map(|player| player.hand.iter())
             .find(|card| card.id == object)
             .and_then(|card| self.catalog.get(card.definition))
-            .map_or([false; 5], |definition| definition.rules.colors)
+            .map_or([false; 5], |definition| definition.rules.colors())
     }
 
     fn combat_is_protected(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
         let blocker_colors = self
             .effective_rules(blocker)
-            .map_or([false; 5], |rules| rules.colors);
+            .map_or([false; 5], CardRules::colors);
         self.is_protected_from_colors(attacker, blocker_colors)
     }
 
@@ -7490,7 +7563,11 @@ impl Game {
     }
 
     fn base_stats(&self, permanent: &Permanent) -> Option<crate::CreatureStats> {
-        let behavior = self.effective_behavior(permanent);
+        // Once Factory's animation ability resolves, removing its printed
+        // abilities does not end the continuous animation effect. In
+        // particular, Blood Moon changes its land subtype and abilities but
+        // leaves the active artifact-creature types and 2/2 base stats intact.
+        let behavior = self.copiable_behavior(permanent);
         if behavior == Some(CardBehavior::MishrasFactory) && permanent.factory_animated {
             Some(crate::CreatureStats {
                 power: 2,
@@ -7498,7 +7575,7 @@ impl Game {
             })
         } else {
             self.effective_rules(permanent)
-                .and_then(|rules| rules.creature_stats)
+                .and_then(CardRules::creature_stats)
         }
     }
 
@@ -7526,7 +7603,7 @@ impl Game {
     fn crusade_bonus(&self, permanent: &Permanent) -> i16 {
         if !self
             .effective_rules(permanent)
-            .is_some_and(|rules| rules.colors[0])
+            .is_some_and(|rules| rules.colors()[0])
         {
             return 0;
         }
@@ -7540,7 +7617,7 @@ impl Game {
     fn static_power_toughness_bonus(&self, permanent: &Permanent) -> (i16, i16) {
         self.static_applied_effects(permanent).into_iter().fold(
             (0_i16, 0_i16),
-            |(power, toughness), (_, effect)| match effect {
+            |(power, toughness), applied| match applied.effect {
                 AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(power_bonus),
                     toughness: ValueDef::Constant(toughness_bonus),
@@ -8159,9 +8236,9 @@ impl Game {
                             .zip(self.effective_rules(blocker_permanent))
                             .is_some_and(|(attacker, blocker)| {
                                 attacker
-                                    .colors
+                                    .colors()
                                     .into_iter()
-                                    .zip(blocker.colors)
+                                    .zip(blocker.colors())
                                     .any(|(attacker, blocker)| attacker && blocker)
                             });
                         let can_block = !(*unblockable
@@ -8488,7 +8565,7 @@ impl Game {
                 .find(|permanent| permanent.card.id == id)
                 .expect("the observed permanent remains on the battlefield")
                 .tapped = true;
-            self.capture_battlefield_triggers(CommittedTriggerEvent::BecomesTapped {
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::BecomesTapped {
                 object: event,
             });
         }
@@ -8594,8 +8671,8 @@ impl Game {
             for &source in damage_sources {
                 self.capture_battlefield_triggers_from_snapshot(
                     &listeners,
-                    CommittedTriggerEvent::DamagedCreatureDied {
-                        object: snapshot.object,
+                    &CommittedTriggerEvent::DamagedCreatureDied {
+                        object: snapshot.object.clone(),
                         source,
                     },
                 );
@@ -8624,8 +8701,8 @@ impl Game {
                 from: ZoneKind::Battlefield,
                 to,
             };
-            self.capture_battlefield_triggers_from_snapshot(&listeners, event);
-            self.capture_custom_source_triggers(&permanent, &snapshot.abilities, event);
+            self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
+            self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
             self.record_battlefield_exit(&permanent, destination);
             let owner = permanent.card.owner;
             let (card, _zone_change) = self.zone_change_card(permanent.card);
@@ -8697,8 +8774,8 @@ impl Game {
             from: ZoneKind::Battlefield,
             to: ZoneKind::Exile,
         };
-        self.capture_battlefield_triggers_from_snapshot(&listeners, event);
-        self.capture_custom_source_triggers(&permanent, &snapshot.abilities, event);
+        self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
+        self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
         self.record_battlefield_exit(&permanent, BattlefieldExit::Exile);
         let owner = permanent.card.owner;
         let (card, _zone_change) = self.zone_change_card(permanent.card);
@@ -8721,8 +8798,8 @@ impl Game {
             from: ZoneKind::Battlefield,
             to: ZoneKind::Hand,
         };
-        self.capture_battlefield_triggers_from_snapshot(&listeners, event);
-        self.capture_custom_source_triggers(&permanent, &snapshot.abilities, event);
+        self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
+        self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
         self.record_battlefield_exit(&permanent, BattlefieldExit::Hand);
         let owner = permanent.card.owner;
         let (card, _zone_change) = self.zone_change_card(permanent.card);
@@ -9064,7 +9141,7 @@ impl Game {
 
         if self.result.is_none() {
             if self.step != Step::Upkeep {
-                self.capture_battlefield_triggers(CommittedTriggerEvent::StepBegins {
+                self.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
                     step: Self::turn_step_def(self.step),
                     player: self.active_player,
                 });
@@ -9143,7 +9220,7 @@ impl Game {
     #[allow(clippy::too_many_lines)]
     fn handle_upkeep_triggers(&mut self) {
         let player = self.active_player;
-        self.capture_battlefield_triggers(CommittedTriggerEvent::StepBegins {
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
             step: TurnStepDef::Upkeep,
             player,
         });
