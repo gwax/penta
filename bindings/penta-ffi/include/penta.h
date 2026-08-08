@@ -26,7 +26,7 @@ extern "C" {
 /* An in-progress game. Opaque. */
 typedef struct PentaGame PentaGame;
 
-/* The engine crate version, e.g. "0.3.0". Static; never free. */
+/* The engine crate version, e.g. "0.6.0". Static; never free. */
 const char *penta_engine_version(void);
 
 /* The protocol version the JSON shapes follow. */

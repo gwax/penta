@@ -1,8 +1,11 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::casting::CastChoices;
-use crate::{GameObjectId, PlayOptionId, PlayerId};
+use crate::card::BasicLandType;
+use crate::casting::{CastChoices, TargetSelection};
+use crate::{
+    AbilityId, CardDefinitionId, CardPartId, GameObjectId, GrantId, PlayOptionId, PlayerId,
+};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ManaColor {
@@ -17,8 +20,40 @@ pub enum ManaColor {
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Target {
     Player(PlayerId),
+    /// A card object in a non-battlefield, non-stack zone. The object ID is
+    /// the current zone incarnation, so moving the card makes this target
+    /// illegal without conflating it with the new object created there.
+    Card(GameObjectId),
     Permanent(GameObjectId),
     Spell(GameObjectId),
+}
+
+/// The stable origin of an effective ability on a game object.
+///
+/// Printed IDs are local to one card part, so copied abilities freeze their
+/// effective card definition as well as the part and clause ID. Intrinsic land
+/// abilities are identified by the subtype that grants them. A granted origin
+/// records the granting object, the effective card definition and part that
+/// supplied its positional source clause, and the grant site inside that
+/// clause; it is provenance, not an executable definition. Stack objects
+/// separately freeze the effective text, target declarations, and resolver
+/// they received at creation. Pair this with the affected object's
+/// [`GameObjectId`] to identify one ability in a game.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum AbilityOrigin {
+    Printed {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+    },
+    IntrinsicBasicLand(BasicLandType),
+    Granted {
+        source: GameObjectId,
+        source_definition: CardDefinitionId,
+        source_part: CardPartId,
+        source_ability: AbilityId,
+        grant: GrantId,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -54,6 +89,7 @@ pub enum Action {
     },
     ActivateManaAbility {
         source: GameObjectId,
+        ability: AbilityOrigin,
         color: ManaColor,
     },
     PayLifeForMana,
@@ -64,7 +100,8 @@ pub enum Action {
     },
     ActivateAbility {
         source: GameObjectId,
-        target: Option<Target>,
+        ability: AbilityOrigin,
+        targets: Vec<TargetSelection>,
         sacrifice: Option<GameObjectId>,
     },
     DeclareAttacker {

@@ -35,6 +35,14 @@ work exposes a missing field, relationship, index, or query pattern, update the
 refresh builder, both skills, and the documented schema together, then rebuild
 and validate the cache. Avoid expanding them for isolated one-off questions.
 
+## Protocol versioning
+
+A branch or pull request containing one or more incompatible protocol changes
+must set the protocol version to exactly one greater than the target branch's
+version. Do not bump it again for additional incompatible changes or
+intermediate commits in the same branch or pull request. After rebasing,
+re-check the target branch's protocol version and adjust if it changed.
+
 ## Validation
 
 Use the root `Makefile` as the canonical entry point; `make help` lists the

@@ -12,6 +12,39 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
+## 0.6.0 — protocol 3
+
+### Changed
+
+- Activated, mana, and triggered actions identify the exact printed,
+  intrinsic, or granted ability that created them. Triggered abilities become
+  independent stack objects with frozen source information and may be answered
+  before they resolve; mana abilities remain immediate.
+- Trigger placement now follows active-player/nonactive-player order, with
+  each player explicitly ordering and targeting their own simultaneous
+  triggers before priority returns. This intentionally changes replay and
+  policy outcomes for lines such as answering Ankh of Mishra or City of Brass
+  damage before it resolves.
+- Card rules text and implementation coverage now belong to ordered ability
+  clauses. Card-level `Complete`, `Partial`, and `MetadataOnly` status is
+  derived from those clauses, exposed as `implementationStatus`, and used by
+  the browser's coverage messaging instead of the internal execution gate.
+- Common keyword and fixed-mana clauses come from the reusable
+  `card::abilities` library. Printed lands with basic land types keep explicit,
+  executable mana clauses but are marked partial until those abilities are
+  derived intrinsically from the types; Blood Moon's synthesized Mountain
+  ability remains intrinsic. Each produced mana value retains its restrictions
+  and spell/ability riders.
+- Bespoke engine dispatch is now an optional `CardRules` hook. Declarative and
+  metadata-only cards no longer require a `CardBehavior` identity.
+- Catalog and browser hand JSON now serialize cards with no mana cost as
+  `"manaCost": null`; a printed `{0}` remains a mana-cost object whose
+  `generic` value is zero.
+
+All incompatible wire changes above ship together as protocol 3. A protocol
+number identifies the compatibility boundary for a release, branch, or pull
+request; it does not increment once per field or intermediate commit.
+
 ## 0.5.0 — protocol 2
 
 ### Added

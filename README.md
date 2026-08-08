@@ -5,8 +5,8 @@
 `penta` is a deterministic, headless simulator for two-player constructed
 Magic: The Gathering, built for writing AI bots against.
 
-The current bot wire contract is protocol 2 and the engine crate is version
-0.3.0. Old School remains the default at compatibility entry points; callers
+The current bot wire contract is protocol 3 and the engine crate is version
+0.6.0. Old School remains the default at compatibility entry points; callers
 select ISD–RTR Standard explicitly with the `"isd-rtr-standard"` format slug.
 
 **Want to write a bot?** You can drive the engine from Python, C, C++, or
@@ -66,8 +66,10 @@ extension boundaries.
   `src/card/sets/y<year>/<set>.rs` give each set its own module. Its `CARDS`
   records declare canonical cards whose rules live there, while
   `ADDITIONAL_PRINTINGS` references those definitions for reprints and
-  alternate-art variants without duplicating their rules. An adjacent status
-  comment says which parts of each canonical card the engine implements today.
+  alternate-art variants without duplicating their rules. Ordered ability
+  clauses own both their rules text and implementation; aggregate Complete,
+  Partial, or MetadataOnly coverage is derived from those clauses, whose
+  non-declarative implementations explain any remaining gaps in place.
 - `decks/<format>/` contains the built-in decklists as YAML mappings from
   canonical card names to copy counts. `src/decks.rs` compiles those files into
   the binary, so the engine and browser build do not need runtime filesystem
@@ -95,7 +97,7 @@ The engine currently supports:
 - deck validation and seeded, reproducible setup
 - hidden-information-safe observations and deterministic legal actions
 - the priority-bearing turn skeleton, active player, and priority passing
-- the stack and last-in-first-out spell resolution
+- the stack and last-in-first-out spell and non-mana ability resolution
 - basic and nonbasic land plays, five-color and colorless mana sources, and EC
   phase-boundary mana burn
 - player damage, concession, and empty-library loss conditions
@@ -131,11 +133,12 @@ shared path.
 The POC is playable end to end, but it is not yet a general implementation of
 the Comprehensive Rules. Fireball supports its multi-target additional cost
 and even damage division, Fork can choose new targets for its copy, and combat
-damage uses the current player-selected assignment rules. Non-mana activated
-abilities generally resolve atomically, while Chaos Orb uses the stack so its
-source can be removed in response. Simple upkeep/entry triggers still resolve
-atomically. These constraints are explicit extension points rather than silent
-support for cards outside the POC.
+damage uses the current player-selected assignment rules. Supported non-mana
+activated and triggered abilities become independent stack objects with frozen
+source, target, and event information; simultaneous triggers are explicitly
+ordered and targeted before priority returns. Mana abilities remain immediate
+and never use the stack. Unsupported clauses stay visible in the catalog's
+derived coverage instead of silently pretending to work.
 
 ## Built-in decks
 
