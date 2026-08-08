@@ -88,6 +88,8 @@ export type Action = {
   manaSourceIds?: number[];
   decisionId?: number | null;
   decisionOptionIds?: number[];
+  /** Hand-card IDs in one legal London-mulligan bottom combination. */
+  bottomCardIds: number[];
 };
 
 export type OpponentAction = {

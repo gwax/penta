@@ -35,6 +35,11 @@ import {
   turnPhases,
   type FormatId,
 } from "./game-config";
+import {
+  buildMulliganBottomPicker,
+  resolveMulliganBottomAction,
+  toggleMulliganBottomCard,
+} from "./mulligan-actions.mjs";
 
 const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
 
@@ -171,6 +176,7 @@ export function GameClient({
     decisionId: number | null;
     options: number[];
   }>({ decisionId: null, options: [] });
+  const [mulliganBottomSelection, setMulliganBottomSelection] = useState<number[]>([]);
   const pendingActionRef = useRef<Action | null>(null);
   const dragDropped = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -319,6 +325,7 @@ export function GameClient({
     setDraggingCardId(null);
     setDragOverTarget(null);
     setHoverPaymentAction(null);
+    setMulliganBottomSelection([]);
     pendingActionRef.current = null;
   }, [presentSnapshot]);
 
@@ -778,6 +785,20 @@ export function GameClient({
         : [...current, target],
     );
   };
+  const mulliganBottomPicker = buildMulliganBottomPicker(state?.actions ?? []);
+  const mulliganBottomRequired = mulliganBottomPicker?.required ?? 0;
+  const isMulliganBottomCandidate = (id: number) =>
+    mulliganBottomPicker?.candidateCardIds.includes(id) ?? false;
+  const choosingMulliganBottom = mulliganBottomPicker !== null;
+  const chosenMulliganBottomAction = resolveMulliganBottomAction(
+    mulliganBottomPicker,
+    mulliganBottomSelection,
+  );
+  const toggleMulliganBottomSelection = (id: number) => {
+    setMulliganBottomSelection((current) =>
+      toggleMulliganBottomCard(mulliganBottomPicker, current, id),
+    );
+  };
   const panelActions = (() => {
     if (!state) return [];
     const sourceActions = state.actions.filter(
@@ -791,6 +812,7 @@ export function GameClient({
     );
     return state.actions.filter((action) => {
       if (action.kind === "danger") return false;
+      if (mulliganBottomPicker?.actions.includes(action)) return false;
       if (state.decision && action.decisionId === state.decision.id) return false;
       if (!actionMatchesSelectedX(action)) return false;
       // Splitting damage is the only thing the game is waiting for, so it is
@@ -851,10 +873,10 @@ export function GameClient({
   const humanPermanents =
     state?.battlefield.filter((card) => card.owner === "human") ?? [];
 
-  const cardActions = (id: number) =>
-    watchingOpponent
-      ? 0
-      : state?.actions.filter(
+  const cardActions = (id: number) => {
+    if (watchingOpponent) return 0;
+    if (choosingMulliganBottom) return isMulliganBottomCandidate(id) ? 1 : 0;
+    return state?.actions.filter(
           (action) =>
             action.cardId === id ||
             (action.cardId === selectedCard &&
@@ -862,6 +884,7 @@ export function GameClient({
               actionMatchesSelectedX(action)) ||
             (action.cardId === selectedBlocker && action.targetCardId === id),
         ).length ?? 0;
+  };
   const dragTargetActionsForCard = (id: number) =>
     state?.actions.filter(
       (action) =>
@@ -905,7 +928,7 @@ export function GameClient({
     prepareAction(action);
   };
   const cardIsDraggable = (id: number) => {
-    if (watchingOpponent) return false;
+    if (watchingOpponent || choosingMulliganBottom) return false;
     if (
       declaringBlockers &&
       state?.battlefield.some((card) => card.owner === "human" && card.id === id) &&
@@ -1080,6 +1103,10 @@ export function GameClient({
   };
 
   const selectCard = (id: number) => {
+    if (choosingMulliganBottom) {
+      toggleMulliganBottomSelection(id);
+      return;
+    }
     if (declaringBlockers) {
       const blockerOptions =
         state?.actions.filter(
@@ -1646,7 +1673,9 @@ export function GameClient({
               <div className="turn-status">
                 <strong>
                   {strip.pregame
-                    ? "Keep or mull"
+                    ? choosingMulliganBottom
+                      ? "Finish mulligan"
+                      : "Keep or mull"
                     : strip.active === "You"
                       ? "Your turn"
                       : "Opponent’s turn"}
@@ -1714,6 +1743,8 @@ export function GameClient({
               isDraggable={cardIsDraggable}
               isTargetable={isTargetable}
               selectedCard={selectedCard}
+              selectedCardIds={mulliganBottomSelection}
+              mulliganBottoming={choosingMulliganBottom}
               previewManaSourceIds={previewedPayment?.manaSourceIds ?? []}
               onSelect={selectCard}
               onDragStartCard={beginCardDrag}
@@ -1736,6 +1767,8 @@ export function GameClient({
                     ? actionStepsRemaining > 0
                       ? `${actionStepsRemaining} action${actionStepsRemaining === 1 ? "" : "s"}`
                       : "New turn"
+                    : choosingMulliganBottom
+                      ? `Choose ${mulliganBottomRequired} ${mulliganBottomRequired === 1 ? "card" : "cards"}`
                     : assigningDamageFor != null
                       ? `Assign ${cardName(state, assigningDamageFor)} damage`
                     : declaringBlockers
@@ -1766,6 +1799,51 @@ export function GameClient({
               )}
             </div>
             <div className="action-list">
+              {choosingMulliganBottom && (
+                <div
+                  className="engine-decision mulligan-bottom-picker"
+                  role="group"
+                  aria-label="Choose cards to put on the bottom of your library"
+                >
+                  <div className="target-prompt" role="status">
+                    <strong>Put cards on the bottom</strong>
+                    <span>
+                      Select {mulliganBottomRequired} from your hand, one at a time.
+                      You can change your choices before confirming.
+                    </span>
+                  </div>
+                  <div className="decision-options">
+                    {state.human.hand
+                      .filter((card) => isMulliganBottomCandidate(card.id))
+                      .map((card) => (
+                        <button
+                          key={card.id}
+                          className={mulliganBottomSelection.includes(card.id) ? "is-selected" : ""}
+                          aria-pressed={mulliganBottomSelection.includes(card.id)}
+                          onClick={() => toggleMulliganBottomSelection(card.id)}
+                          disabled={watchingOpponent}
+                        >
+                          <strong>{card.name}</strong>
+                          <small>Hand</small>
+                        </button>
+                      ))}
+                  </div>
+                  <button
+                    className="finalize-decision"
+                    disabled={!chosenMulliganBottomAction || watchingOpponent}
+                    onClick={() => {
+                      if (chosenMulliganBottomAction) prepareAction(chosenMulliganBottomAction);
+                    }}
+                  >
+                    <strong>
+                      Put {mulliganBottomRequired === 1 ? "card" : "cards"} on bottom
+                    </strong>
+                    <small>
+                      {mulliganBottomSelection.length} / {mulliganBottomRequired} selected
+                    </small>
+                  </button>
+                </div>
+              )}
               {state.decision && (
                 <div className="engine-decision" role="group" aria-label={state.decision.prompt}>
                   <div className="target-prompt" role="status">
@@ -2541,6 +2619,8 @@ function HandZone({
   isDraggable,
   isTargetable,
   selectedCard,
+  selectedCardIds,
+  mulliganBottoming,
   previewManaSourceIds,
   onSelect,
   onDragStartCard,
@@ -2554,6 +2634,8 @@ function HandZone({
   isDraggable(id: number): boolean;
   isTargetable(id: number): boolean;
   selectedCard: number | null;
+  selectedCardIds: number[];
+  mulliganBottoming: boolean;
   previewManaSourceIds: number[];
   onSelect(id: number): void;
   onDragStartCard(id: number): void;
@@ -2609,7 +2691,12 @@ function HandZone({
                 actionable={actionCount(card.id) > 0}
                 draggableAction={isDraggable(card.id)}
                 targetable={isTargetable(card.id)}
-                selected={selectedCard === card.id}
+                selected={selectedCard === card.id || selectedCardIds.includes(card.id)}
+                actionAriaLabel={
+                  mulliganBottoming
+                    ? `Select ${card.name} to put on the bottom of your library`
+                    : undefined
+                }
                 onSelect={onSelect}
                 previewMana={previewManaSourceIds.includes(card.id)}
                 onDragStartCard={onDragStartCard}
@@ -2638,6 +2725,7 @@ function GameCard({
   animating = false,
   previewMana = false,
   dragOverTarget = false,
+  actionAriaLabel,
   onSelect,
   onDragStartCard,
   onDragEndCard,
@@ -2660,6 +2748,7 @@ function GameCard({
   animating?: boolean;
   previewMana?: boolean;
   dragOverTarget?: boolean;
+  actionAriaLabel?: string;
   onSelect(id: number): void;
   onDragStartCard?(id: number): void;
   onDragEndCard?(): void;
@@ -2770,7 +2859,7 @@ function GameCard({
           targetable
             ? `Target ${card.name}`
             : actionable
-              ? `Choose an action for ${card.name}`
+              ? actionAriaLabel ?? `Choose an action for ${card.name}`
               : `Inspect ${card.name}`
         }
         aria-describedby={previewPosition ? previewId : undefined}

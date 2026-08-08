@@ -925,6 +925,15 @@ impl WebGame {
                         Action::ChooseDecision { options, .. } => options.clone(),
                         _ => Vec::new(),
                     },
+                    // Mulligan combinations remain part of the stable bot
+                    // protocol, but the browser groups them into one picker.
+                    // These IDs let it stage individual card choices and
+                    // submit the matching atomic engine action on confirmation.
+                    "bottomCardIds": match action {
+                        Action::BottomCards { cards } =>
+                            cards.iter().map(|card| card.0).collect::<Vec<_>>(),
+                        _ => Vec::new(),
+                    },
                 })
             })
             .collect::<Vec<_>>();
