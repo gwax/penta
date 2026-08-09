@@ -1278,8 +1278,7 @@ button {
   background: #e3b39d;
 }
 
-.card-artifact,
-.card-artifactcreature {
+.card-artifact {
   background: #c7c4b9;
 }
 
@@ -1407,8 +1406,7 @@ button {
     linear-gradient(25deg, #662c22, #aa5139);
 }
 
-.card-artifact .card-art,
-.card-artifactcreature .card-art {
+.card-artifact .card-art {
   color: #4f4b42;
   background: linear-gradient(25deg, #77756d, #c4bda8);
 }

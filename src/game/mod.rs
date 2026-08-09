@@ -10,12 +10,11 @@ use crate::action::{
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CardBehavior, CardCatalog, CardDefinition,
-    CardEffectStatus, CardKind, CardPart, CardRules, CardSet, CardSupertype, CardType,
-    CharacteristicContext, ColorDef, DeclarativeAbilityDef, EffectDef, EffectDurationDef,
-    EffectRecipientDef, KeywordAbility, LandEntry, ManaCost, ManaKindDef, ManaSelectionDef,
-    ManaSpendEffectDef, ObjectPredicateDef, PlayActionKind, PlayOptionDef, PlayerRelation,
-    TargetPredicate, TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
-    applicable_part_ids,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
+    CharacteristicContext, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
+    KeywordAbility, LandEntry, ManaCost, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
+    PlayActionKind, PlayOptionDef, PlayerRelation, TargetPredicate, TargetSlotDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -344,7 +343,7 @@ impl TriggerContext {
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct TriggerEventObject {
     id: GameObjectId,
-    types: [bool; CardType::COUNT],
+    types: CardTypeSet,
     controller: PlayerId,
     colors: [bool; 5],
     subtypes: Cow<'static, [&'static str]>,
@@ -1776,7 +1775,7 @@ impl Game {
                 spend_effects,
             }) => {
                 let mana = Mana::from_ability(
-                    Self::mana_color_from_def(kind),
+                    kind,
                     ManaSource {
                         object: source.object,
                         ability: source.ability,
@@ -1987,12 +1986,14 @@ impl Game {
         match predicate {
             ObjectPredicateDef::Any => true,
             ObjectPredicateDef::Source => object.id == source,
-            ObjectPredicateDef::HasType(card_type) => object.types[card_type.index()],
+            ObjectPredicateDef::HasType(card_type) => object.types.contains(card_type),
             ObjectPredicateDef::Spell => is_spell,
             ObjectPredicateDef::NoncreatureSpell => {
-                is_spell && !object.types[CardType::Creature.index()]
+                is_spell && !object.types.contains(CardType::Creature)
             }
-            ObjectPredicateDef::Color(color) => object.colors[color.index()],
+            ObjectPredicateDef::Color(color) => color
+                .color_index()
+                .is_some_and(|index| object.colors[index]),
             ObjectPredicateDef::Subtype(subtype) => object.subtypes.contains(&subtype),
             ObjectPredicateDef::ManaValueAtMost(limit) => object.mana_value <= u16::from(limit),
             ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {
@@ -2024,7 +2025,9 @@ impl Game {
                         .iter()
                         .filter(|permanent| {
                             (self.power(permanent).is_some()
-                                || self.permanent_kind(permanent) == Some(CardKind::Planeswalker))
+                                || self
+                                    .permanent_types(permanent)
+                                    .is_some_and(|types| types.contains(CardType::Planeswalker)))
                                 && self.permanent_can_be_targeted_by(permanent, controller, source)
                         })
                         .map(|permanent| Target::Permanent(permanent.card.id)),
@@ -3423,7 +3426,7 @@ impl Game {
                     .filter(|option| match &option.form {
                         crate::card::SpellForm::Part(part) => definition
                             .part(*part)
-                            .is_some_and(|part| part.rules.kind() == CardKind::Land),
+                            .is_some_and(|part| part.rules.has_type(CardType::Land)),
                         crate::card::SpellForm::Combined(_) => false,
                     })
                     .map(|option| Action::PlayLand {
@@ -3452,13 +3455,13 @@ impl Game {
                 let behavior = Self::play_option_behavior(definition, option)
                     .unwrap_or(CardBehavior::Unsupported);
                 let spell_ability = Self::spell_ability(definition, option);
-                let Some(kind) = Self::play_option_kind(definition, option) else {
+                let Some(types) = Self::play_option_types(definition, option) else {
                     continue;
                 };
                 // Metadata-only creatures retain baseline casting/combat. A
                 // metadata-only noncreature spell or modal branch must not be
                 // exposed as a legal action that would silently do nothing.
-                if option.effect_status == CardEffectStatus::MetadataOnly && !kind.is_creature() {
+                if option.effect_status == CardEffectStatus::MetadataOnly && !types.is_creature() {
                     continue;
                 }
                 let part_has_flash = match &option.form {
@@ -3473,7 +3476,7 @@ impl Game {
                         })
                     }),
                 };
-                if kind != CardKind::Instant
+                if !types.contains(CardType::Instant)
                     && !part_has_flash
                     && (player != self.active_player
                         || !self.step.is_main()
@@ -3557,12 +3560,24 @@ impl Game {
         }
     }
 
-    fn play_option_kind(definition: &CardDefinition, option: &PlayOptionDef) -> Option<CardKind> {
-        let first = match &option.form {
-            crate::card::SpellForm::Part(part) => *part,
-            crate::card::SpellForm::Combined(parts) => *parts.first()?,
-        };
-        definition.part(first).map(|part| part.rules.kind())
+    fn play_option_types(
+        definition: &CardDefinition,
+        option: &PlayOptionDef,
+    ) -> Option<CardTypeSet> {
+        match &option.form {
+            crate::card::SpellForm::Part(part) => {
+                definition.part(*part).map(|part| part.rules.types())
+            }
+            crate::card::SpellForm::Combined(parts) => {
+                let mut combined = CardTypeSet::empty();
+                let mut found = false;
+                for part in parts {
+                    combined = combined.union(definition.part(*part)?.rules.types());
+                    found = true;
+                }
+                found.then_some(combined)
+            }
+        }
     }
 
     fn play_option_behavior(
@@ -3806,19 +3821,19 @@ impl Game {
                 .filter(|object| {
                     object.kind == StackObjectKind::Spell
                         && self
-                            .stack_spell_kind(object)
-                            .is_some_and(|kind| !kind.is_creature())
+                            .stack_spell_types(object)
+                            .is_some_and(|types| !types.is_creature())
                 })
                 .map(|object| Target::Spell(object.id))
                 .collect(),
         }
     }
 
-    fn stack_spell_kind(&self, object: &StackObject) -> Option<CardKind> {
+    fn stack_spell_types(&self, object: &StackObject) -> Option<CardTypeSet> {
         let definition = self.catalog.get(object.card.definition)?;
         let signature = object.signature.as_ref()?;
         let option = definition.play_option(signature.play_option())?;
-        Self::play_option_kind(definition, option)
+        Self::play_option_types(definition, option)
     }
 
     fn stack_spell_has_color(&self, object: &StackObject, color_index: usize) -> bool {
@@ -3880,15 +3895,13 @@ impl Game {
     ) -> Option<TriggerEventObject> {
         let definition = self.catalog.get(definition)?;
         let parts = applicable_part_ids(definition, context).ok()?;
-        let mut types = [false; CardType::COUNT];
+        let mut types = CardTypeSet::empty();
         let mut colors = [false; 5];
         let mut subtypes = Vec::new();
         let mut mana_value = 0;
         for part in parts {
             let part = definition.part(part)?;
-            for (combined, present) in types.iter_mut().zip(part.rules.kind().types()) {
-                *combined |= present;
-            }
+            types = types.union(part.rules.types());
             for (combined, present) in colors.iter_mut().zip(part.rules.colors()) {
                 *combined |= present;
             }
@@ -4067,10 +4080,9 @@ impl Game {
                 .iter()
                 .filter(|object| {
                     object.kind == StackObjectKind::Spell
-                        && matches!(
-                            self.stack_spell_kind(object),
-                            Some(CardKind::Instant | CardKind::Sorcery)
-                        )
+                        && self.stack_spell_types(object).is_some_and(|types| {
+                            types.contains(CardType::Instant) || types.contains(CardType::Sorcery)
+                        })
                 })
                 .map(|object| vec![Target::Spell(object.id)])
                 .collect(),
@@ -4082,11 +4094,11 @@ impl Game {
                 .filter(|object| {
                     object.kind == StackObjectKind::Spell
                         && self
-                            .stack_spell_kind(object)
-                            .is_some_and(|kind| match behavior {
-                                CardBehavior::EssenceScatter => kind.is_creature(),
-                                CardBehavior::Dispel => kind == CardKind::Instant,
-                                _ => !kind.is_creature(),
+                            .stack_spell_types(object)
+                            .is_some_and(|types| match behavior {
+                                CardBehavior::EssenceScatter => types.is_creature(),
+                                CardBehavior::Dispel => types.contains(CardType::Instant),
+                                _ => !types.is_creature(),
                             })
                 })
                 .map(|object| vec![Target::Spell(object.id)])
@@ -4597,7 +4609,7 @@ impl Game {
         };
         let land_rules = definition
             .part(presented)
-            .filter(|part| part.rules.kind() == CardKind::Land)
+            .filter(|part| part.rules.has_type(CardType::Land))
             .map(|part| part.rules)
             .expect("land play option references a land part");
         let card = remove_card(&mut self.players[player.index()].hand, card_id)
@@ -4770,8 +4782,8 @@ impl Game {
             .filter(|option| option.action == PlayActionKind::CastSpell)?;
         let behavior =
             Self::play_option_behavior(definition, option).unwrap_or(CardBehavior::Unsupported);
-        let kind = Self::play_option_kind(definition, option)?;
-        if option.effect_status == CardEffectStatus::MetadataOnly && !kind.is_creature() {
+        let types = Self::play_option_types(definition, option)?;
+        if option.effect_status == CardEffectStatus::MetadataOnly && !types.is_creature() {
             return None;
         }
 
@@ -5074,10 +5086,10 @@ impl Game {
         let behavior = self
             .behavior(definition)
             .unwrap_or(CardBehavior::Unsupported);
-        let spell_kind = self
-            .stack_spell_kind(&object)
-            .unwrap_or_else(|| behavior.kind());
-        if spell_kind.is_permanent() {
+        let spell_types = self
+            .stack_spell_types(&object)
+            .unwrap_or_else(|| behavior.types());
+        if spell_types.is_permanent() {
             let chosen_player = match object.first_target() {
                 Some(Target::Player(player)) => Some(player),
                 // "Choose an opponent" has exactly one answer with two players,
@@ -5192,7 +5204,7 @@ impl Game {
             self.resolve_spell_effect(&object, behavior);
         }
         let card_id = object.id;
-        if !spell_kind.is_permanent() && !object.is_copy {
+        if !spell_types.is_permanent() && !object.is_copy {
             let owner = object.card.owner;
             let (card, _zone_change) = self.zone_change_card(object.card);
             if behavior == CardBehavior::Recall {
@@ -5226,13 +5238,12 @@ impl Game {
                     .is_some_and(|definition| match behavior {
                         CardBehavior::LifebaneZombie => {
                             let colors = definition.rules.colors();
-                            definition.rules.kind().is_creature() && (colors[0] || colors[4])
+                            definition.rules.has_type(CardType::Creature)
+                                && (colors[0] || colors[4])
                         }
                         CardBehavior::SinCollector => {
-                            matches!(
-                                definition.rules.kind(),
-                                CardKind::Instant | CardKind::Sorcery
-                            )
+                            definition.rules.has_type(CardType::Instant)
+                                || definition.rules.has_type(CardType::Sorcery)
                         }
                         _ => false,
                     })
@@ -5310,10 +5321,8 @@ impl Game {
                 .iter()
                 .filter(|card| {
                     self.catalog.get(card.definition).is_some_and(|definition| {
-                        matches!(
-                            definition.rules.kind(),
-                            CardKind::Instant | CardKind::Sorcery
-                        )
+                        definition.rules.has_type(CardType::Instant)
+                            || definition.rules.has_type(CardType::Sorcery)
                     })
                 })
                 .cloned()
@@ -5392,7 +5401,7 @@ impl Game {
                 restrictions,
                 spend_effects,
             }) => {
-                let color = Self::mana_color_from_def(kind);
+                let color = kind;
                 let source = object
                     .source
                     .zip(object.ability_origin())
@@ -5561,28 +5570,6 @@ impl Game {
                 // families are execution seams until a supported card needs
                 // their concrete rules procedure.
             }
-        }
-    }
-
-    const fn mana_color_from_def(kind: ManaKindDef) -> ManaColor {
-        match kind {
-            ManaKindDef::White => ManaColor::White,
-            ManaKindDef::Blue => ManaColor::Blue,
-            ManaKindDef::Black => ManaColor::Black,
-            ManaKindDef::Red => ManaColor::Red,
-            ManaKindDef::Green => ManaColor::Green,
-            ManaKindDef::Colorless => ManaColor::Colorless,
-        }
-    }
-
-    const fn mana_kind_from_color(color: ManaColor) -> ManaKindDef {
-        match color {
-            ManaColor::White => ManaKindDef::White,
-            ManaColor::Blue => ManaKindDef::Blue,
-            ManaColor::Black => ManaKindDef::Black,
-            ManaColor::Red => ManaKindDef::Red,
-            ManaColor::Green => ManaKindDef::Green,
-            ManaColor::Colorless => ManaKindDef::Colorless,
         }
     }
 
@@ -6021,15 +6008,11 @@ impl Game {
                     .battlefield
                     .iter()
                     .filter(|permanent| {
-                        matches!(
-                            self.permanent_kind(permanent),
-                            Some(
-                                CardKind::Creature
-                                    | CardKind::Artifact
-                                    | CardKind::ArtifactCreature
-                                    | CardKind::Enchantment
-                            )
-                        )
+                        self.permanent_types(permanent).is_some_and(|types| {
+                            types.contains(CardType::Creature)
+                                || types.contains(CardType::Artifact)
+                                || types.contains(CardType::Enchantment)
+                        })
                     })
                     .map(|permanent| permanent.card.id)
                     .collect::<Vec<_>>();
@@ -6311,8 +6294,8 @@ impl Game {
                         .iter()
                         .filter(|card| {
                             self.catalog.get(card.definition).is_some_and(|definition| {
-                                let kind = definition.rules.kind();
-                                !kind.is_creature() && kind != CardKind::Land
+                                !definition.rules.has_type(CardType::Creature)
+                                    && !definition.rules.has_type(CardType::Land)
                             })
                         })
                         .cloned()
@@ -6338,7 +6321,7 @@ impl Game {
                 let (lands, rest): (Vec<_>, Vec<_>) = revealed.into_iter().partition(|card| {
                     self.catalog
                         .get(card.definition)
-                        .is_some_and(|definition| definition.rules.kind() == CardKind::Land)
+                        .is_some_and(|definition| definition.rules.has_type(CardType::Land))
                 });
                 for card in lands {
                     let (card, _zone_change) = self.zone_change_card(card);
@@ -6353,8 +6336,8 @@ impl Game {
                     .iter()
                     .filter(|card| {
                         self.catalog.get(card.definition).is_some_and(|definition| {
-                            let kind = definition.rules.kind();
-                            kind.is_creature() || kind == CardKind::Land
+                            definition.rules.has_type(CardType::Creature)
+                                || definition.rules.has_type(CardType::Land)
                         })
                     })
                     .cloned()
@@ -6446,17 +6429,15 @@ impl Game {
 
     fn resolve_balance(&mut self) {
         let mut tasks = Vec::new();
-        for kind in [CardKind::Land, CardKind::Creature] {
+        for card_type in [CardType::Land, CardType::Creature] {
             let counts = [PlayerId::One, PlayerId::Two].map(|player| {
                 self.battlefield
                     .iter()
                     .filter(|permanent| {
                         permanent.controller == player
-                            && if kind == CardKind::Creature {
-                                self.power(permanent).is_some()
-                            } else {
-                                self.permanent_kind(permanent) == Some(CardKind::Land)
-                            }
+                            && self
+                                .permanent_types(permanent)
+                                .is_some_and(|types| types.contains(card_type))
                     })
                     .count()
             });
@@ -6467,11 +6448,9 @@ impl Game {
                     .iter()
                     .filter(|permanent| {
                         permanent.controller == player
-                            && if kind == CardKind::Creature {
-                                self.power(permanent).is_some()
-                            } else {
-                                self.permanent_kind(permanent) == Some(CardKind::Land)
-                            }
+                            && self
+                                .permanent_types(permanent)
+                                .is_some_and(|types| types.contains(card_type))
                     })
                     .map(|permanent| permanent.card.clone())
                     .collect::<Vec<_>>();
@@ -6481,7 +6460,7 @@ impl Game {
                         player,
                         prompt: format!(
                             "Choose {count} {} to sacrifice to Balance",
-                            if kind == CardKind::Land {
+                            if card_type == CardType::Land {
                                 "land(s)"
                             } else {
                                 "creature(s)"
@@ -6602,7 +6581,9 @@ impl Game {
                     if self.is_protected_from_colors(&self.battlefield[index], source_colors) {
                         return;
                     }
-                    if self.permanent_kind(&self.battlefield[index]) == Some(CardKind::Planeswalker)
+                    if self
+                        .permanent_types(&self.battlefield[index])
+                        .is_some_and(|types| types.contains(CardType::Planeswalker))
                     {
                         let loyalty_loss = i16::try_from(amount).unwrap_or(i16::MAX);
                         if let Some(loyalty) = &mut self.battlefield[index].loyalty {
@@ -6647,7 +6628,9 @@ impl Game {
                 .iter()
                 .filter(|permanent| {
                     self.power(permanent).is_some()
-                        || self.permanent_kind(permanent) == Some(CardKind::Planeswalker)
+                        || self
+                            .permanent_types(permanent)
+                            .is_some_and(|types| types.contains(CardType::Planeswalker))
                 })
                 .map(|permanent| Target::Permanent(permanent.card.id)),
         );
@@ -6676,15 +6659,13 @@ impl Game {
 
     fn is_nonbasic_land(&self, permanent: &Permanent) -> bool {
         self.effective_rules(permanent).is_some_and(|rules| {
-            rules.kind() == CardKind::Land && !rules.has_supertype(CardSupertype::Basic)
+            rules.has_type(CardType::Land) && !rules.has_supertype(CardSupertype::Basic)
         })
     }
 
     fn is_artifact_permanent(&self, permanent: &Permanent) -> bool {
-        self.permanent_kind(permanent)
-            .is_some_and(CardKind::is_artifact)
-            || (permanent.factory_animated
-                && self.copiable_behavior(permanent) == Some(CardBehavior::MishrasFactory))
+        self.permanent_types(permanent)
+            .is_some_and(|types| types.contains(CardType::Artifact))
     }
 
     /// Resolves the printed rules currently supplying baseline permanent
@@ -6716,12 +6697,9 @@ impl Game {
         let blood_moon_applies = self.blood_moon_active() && self.is_nonbasic_land(permanent);
         TriggerEventObject {
             id: permanent.card.id,
-            types: {
-                let mut types = rules.kind().types();
-                types[CardType::Creature.index()] = self.base_stats(permanent).is_some();
-                types[CardType::Artifact.index()] = self.is_artifact_permanent(permanent);
-                types
-            },
+            types: self
+                .permanent_types(permanent)
+                .expect("a battlefield object has effective types"),
             controller: permanent.controller,
             colors: rules.colors(),
             subtypes: Cow::Borrowed(if blood_moon_applies {
@@ -6793,7 +6771,7 @@ impl Game {
         if blood_moon_applies {
             abilities.push(EffectiveAbility {
                 origin: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
-                ability: abilities::tap_for(ManaKindDef::Red),
+                ability: abilities::tap_for(ManaColor::Red),
             });
         }
         abilities.extend(
@@ -6835,7 +6813,7 @@ impl Game {
             if !supplies_static_effect {
                 continue;
             }
-            if rules.kind() == CardKind::Land
+            if rules.has_type(CardType::Land)
                 && !rules.has_supertype(CardSupertype::Basic)
                 && *blood_moon_active.get_or_insert_with(|| self.blood_moon_active())
             {
@@ -7037,8 +7015,14 @@ impl Game {
             )
     }
 
-    fn permanent_kind(&self, permanent: &Permanent) -> Option<CardKind> {
-        self.effective_rules(permanent).map(CardRules::kind)
+    fn permanent_types(&self, permanent: &Permanent) -> Option<CardTypeSet> {
+        let mut types = self.effective_rules(permanent)?.types();
+        if permanent.factory_animated
+            && self.copiable_behavior(permanent) == Some(CardBehavior::MishrasFactory)
+        {
+            types = types.with(CardType::Artifact).with(CardType::Creature);
+        }
+        Some(types)
     }
 
     fn effective_behavior(&self, permanent: &Permanent) -> Option<CardBehavior> {
@@ -7063,15 +7047,17 @@ impl Game {
 
     fn is_protected_from_colors(&self, permanent: &Permanent, source_colors: [bool; 5]) -> bool {
         [
-            ColorDef::White,
-            ColorDef::Blue,
-            ColorDef::Black,
-            ColorDef::Red,
-            ColorDef::Green,
+            ManaColor::White,
+            ManaColor::Blue,
+            ManaColor::Black,
+            ManaColor::Red,
+            ManaColor::Green,
         ]
         .into_iter()
         .any(|color| {
-            source_colors[color.index()]
+            source_colors[color
+                .color_index()
+                .expect("the iteration contains only colors")]
                 && self.permanent_has_executable_keyword(
                     permanent,
                     KeywordAbility::ProtectionFrom(color),
@@ -7166,11 +7152,8 @@ impl Game {
             match ability.effect {
                 EffectDef::AddMana(effect) => {
                     let colors: Vec<_> = match effect.mana {
-                        ManaSelectionDef::One(kind) => vec![Self::mana_color_from_def(kind)],
-                        ManaSelectionDef::Choice(kinds) => kinds
-                            .iter()
-                            .map(|kind| Self::mana_color_from_def(*kind))
-                            .collect(),
+                        ManaSelectionDef::One(kind) => vec![kind],
+                        ManaSelectionDef::Choice(kinds) => kinds.to_vec(),
                     };
                     activations.extend(colors.into_iter().map(|color| ManaAbilityActivation {
                         source: permanent.card.id,
@@ -7190,7 +7173,7 @@ impl Game {
                         ability: effective.origin,
                         color,
                         costs: definition.costs,
-                        effect: AddManaEffectDef::one(Self::mana_kind_from_color(color)),
+                        effect: AddManaEffectDef::one(color),
                     }));
                 }
                 EffectDef::None
@@ -7230,7 +7213,9 @@ impl Game {
             .iter()
             .filter(|candidate| {
                 candidate.controller == permanent.controller.opponent()
-                    && self.permanent_kind(candidate) == Some(CardKind::Land)
+                    && self
+                        .permanent_types(candidate)
+                        .is_some_and(|types| types.contains(CardType::Land))
             })
             .flat_map(|candidate| self.colors_permanent_could_produce(candidate, visiting))
             .filter(|color| *color != ManaColor::Colorless)
@@ -7262,9 +7247,9 @@ impl Game {
             }
             match effective.ability.effect {
                 EffectDef::AddMana(effect) => match effect.mana {
-                    ManaSelectionDef::One(kind) => colors.push(Self::mana_color_from_def(kind)),
+                    ManaSelectionDef::One(kind) => colors.push(kind),
                     ManaSelectionDef::Choice(kinds) => {
-                        colors.extend(kinds.iter().map(|kind| Self::mana_color_from_def(*kind)));
+                        colors.extend_from_slice(kinds);
                     }
                 },
                 EffectDef::Special(_)
@@ -7738,7 +7723,9 @@ impl Game {
     fn controls_any_land_type(&self, player: PlayerId, types: [bool; 5]) -> bool {
         self.battlefield.iter().any(|permanent| {
             if permanent.controller != player
-                || self.permanent_kind(permanent) != Some(CardKind::Land)
+                || !self
+                    .permanent_types(permanent)
+                    .is_some_and(|card_types| card_types.contains(CardType::Land))
             {
                 return false;
             }
@@ -9166,7 +9153,9 @@ impl Game {
             .filter(|permanent| {
                 permanent.controller == player
                     && permanent.tapped
-                    && self.permanent_kind(permanent) == Some(CardKind::Land)
+                    && self
+                        .permanent_types(permanent)
+                        .is_some_and(|types| types.contains(CardType::Land))
             })
             .map(|permanent| permanent.card.id)
             .collect();
@@ -9377,7 +9366,10 @@ impl Game {
         let restricted_lands: Vec<_> = self
             .battlefield
             .iter()
-            .filter(|permanent| self.permanent_kind(permanent) == Some(CardKind::Land))
+            .filter(|permanent| {
+                self.permanent_types(permanent)
+                    .is_some_and(|types| types.contains(CardType::Land))
+            })
             .map(|permanent| permanent.card.id)
             .collect();
         let restricted_creatures: Vec<_> = self
@@ -9470,7 +9462,7 @@ impl Game {
                         && self
                             .catalog
                             .get(permanent.card.definition)
-                            .is_some_and(|card| card.set == CardSet::ArabianNights)
+                            .is_some_and(|card| card.debut_set == CardSet::ArabianNights)
                 })
                 .map(|permanent| permanent.card.id)
                 .collect();

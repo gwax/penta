@@ -5,7 +5,7 @@
 
 use super::model::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, BasicLandType,
-    ColorDef, EffectDef, KeywordAbility, ManaKindDef,
+    EffectDef, KeywordAbility, ManaColor,
 };
 
 /// Why a printed basic-land-type mana clause is not yet fully modeled.
@@ -116,27 +116,28 @@ pub const fn mountainwalk() -> AbilityDef {
 }
 
 #[must_use]
-pub const fn protection_from(color: ColorDef) -> AbilityDef {
+pub const fn protection_from(color: ManaColor) -> AbilityDef {
     let text = match color {
-        ColorDef::White => "Protection from white",
-        ColorDef::Blue => "Protection from blue",
-        ColorDef::Black => "Protection from black",
-        ColorDef::Red => "Protection from red",
-        ColorDef::Green => "Protection from green",
+        ManaColor::White => "Protection from white",
+        ManaColor::Blue => "Protection from blue",
+        ManaColor::Black => "Protection from black",
+        ManaColor::Red => "Protection from red",
+        ManaColor::Green => "Protection from green",
+        ManaColor::Colorless => "Protection from colorless",
     };
     keyword(text, KeywordAbility::ProtectionFrom(color))
 }
 
 /// A common mana ability that taps its source to add one fixed kind of mana.
 #[must_use]
-pub const fn tap_for(mana: ManaKindDef) -> AbilityDef {
+pub const fn tap_for(mana: ManaColor) -> AbilityDef {
     let text = match mana {
-        ManaKindDef::White => "{T}: Add {W}.",
-        ManaKindDef::Blue => "{T}: Add {U}.",
-        ManaKindDef::Black => "{T}: Add {B}.",
-        ManaKindDef::Red => "{T}: Add {R}.",
-        ManaKindDef::Green => "{T}: Add {G}.",
-        ManaKindDef::Colorless => "{T}: Add {C}.",
+        ManaColor::White => "{T}: Add {W}.",
+        ManaColor::Blue => "{T}: Add {U}.",
+        ManaColor::Black => "{T}: Add {B}.",
+        ManaColor::Red => "{T}: Add {R}.",
+        ManaColor::Green => "{T}: Add {G}.",
+        ManaColor::Colorless => "{T}: Add {C}.",
     };
     AbilityDef::activated_mana(
         text,
@@ -150,7 +151,7 @@ pub const fn tap_for(mana: ManaKindDef) -> AbilityDef {
 /// from the object's current types instead of relying on a separate clause.
 #[must_use]
 pub const fn basic_land_type_mana(land_type: BasicLandType) -> AbilityDef {
-    tap_for(land_type.mana_kind()).with_implementation(AbilityImplementationDef::CustomPartial {
+    tap_for(land_type.mana_color()).with_implementation(AbilityImplementationDef::CustomPartial {
         behavior: None,
         explanation: BASIC_LAND_TYPE_MANA_EXPLANATION,
     })
@@ -163,18 +164,18 @@ mod tests {
     };
     use crate::card::{
         AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, BasicLandType,
-        CardRules, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaCost, ManaKindDef,
+        CardRules, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost,
     };
 
     #[test]
     fn tap_for_builds_a_complete_executable_mana_ability() {
         let cases = [
-            (ManaKindDef::White, "{T}: Add {W}."),
-            (ManaKindDef::Blue, "{T}: Add {U}."),
-            (ManaKindDef::Black, "{T}: Add {B}."),
-            (ManaKindDef::Red, "{T}: Add {R}."),
-            (ManaKindDef::Green, "{T}: Add {G}."),
-            (ManaKindDef::Colorless, "{T}: Add {C}."),
+            (ManaColor::White, "{T}: Add {W}."),
+            (ManaColor::Blue, "{T}: Add {U}."),
+            (ManaColor::Black, "{T}: Add {B}."),
+            (ManaColor::Red, "{T}: Add {R}."),
+            (ManaColor::Green, "{T}: Add {G}."),
+            (ManaColor::Colorless, "{T}: Add {C}."),
         ];
 
         for (mana, text) in cases {
@@ -198,7 +199,7 @@ mod tests {
     fn basic_land_type_mana_is_an_executable_partial_wrapper() {
         for land_type in BasicLandType::ALL {
             let ability = basic_land_type_mana(land_type);
-            let complete = tap_for(land_type.mana_kind());
+            let complete = tap_for(land_type.mana_color());
 
             assert_eq!(ability.text, complete.text);
             assert_eq!(ability.definition, complete.definition);
@@ -218,7 +219,7 @@ mod tests {
     fn keyword_presence_is_distinct_from_executable_keyword_support() {
         static KEYWORDS: [AbilityDef; 2] = [flying(), first_strike()];
         let rules =
-            CardRules::new_creature(ManaCost::default(), &[], 1, 1, "").with_abilities(&KEYWORDS);
+            CardRules::new_creature(ManaCost::default(), &[], 1, 1).with_abilities(&KEYWORDS);
 
         assert!(rules.has_keyword(KeywordAbility::Flying));
         assert!(rules.has_executable_keyword(KeywordAbility::Flying));

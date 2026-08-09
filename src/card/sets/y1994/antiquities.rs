@@ -2,17 +2,18 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    EffectDef, EffectDurationDef, EffectRecipientDef, ManaCost, ManaKindDef, ObjectPredicateDef,
+    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
     PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
+use crate::mana_cost;
 
 pub(in crate::card::sets) static ATOG: CardRecord = CardRecord::new(
     cards::ATOG,
     "Atog",
     CardArt::new("2249fc40-4412-48fd-800a-7ea3678aee3f", "Jesper Myrfors"),
     CardSet::Antiquities,
-    CardRules::new_creature(ManaCost::new(1, 1), &["Atog"], 1, 2, "").with_abilities(&[
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Atog"], 1, 2).with_abilities(&[
         AbilityDef::custom_partial(
             "Sacrifice an artifact: This creature gets +2/+2 until end of turn.",
             CardBehavior::Atog,
@@ -29,7 +30,7 @@ pub(in crate::card::sets) static DETONATE: CardRecord = CardRecord::new(
         "Randy Asplund-Faith",
     ),
     CardSet::Antiquities,
-    CardRules::new_sorcery(ManaCost::with_x(1), "").with_abilities(&[
+    CardRules::new_sorcery(mana_cost!("{X}{R}")).with_abilities(&[
         AbilityDef::custom_partial(
             "Destroy target artifact with mana value X. It can't be regenerated. Detonate deals X damage to that artifact's controller.",
             CardBehavior::Detonate,
@@ -43,17 +44,17 @@ pub(in crate::card::sets) static SU_CHI: CardRecord = CardRecord::new(
     "Su-Chi",
     CardArt::new("a64d4f93-0c04-4078-aec0-7e9de92f260f", "Christopher Rush"),
     CardSet::Antiquities,
-    CardRules::new_artifact_creature(ManaCost::new(4, 0), &["Construct"], 4, 4, "").with_abilities(
-        &[AbilityDef::triggered(
+    CardRules::new_artifact_creature(mana_cost!("{4}"), &["Construct"], 4, 4).with_abilities(&[
+        AbilityDef::triggered(
             "When this creature dies, add {C}{C}{C}{C}.",
             TriggerEventDef::ZoneChanged {
                 object: ObjectPredicateDef::Source,
                 from: Some(ZoneKind::Battlefield),
                 to: Some(ZoneKind::Graveyard),
             },
-            EffectDef::AddMana(AddManaEffectDef::one(ManaKindDef::Colorless).with_amount(4)),
-        )],
-    ),
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_amount(4)),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static MISHRA_S_FACTORY: CardRecord = CardRecord::new(
@@ -61,12 +62,12 @@ pub(in crate::card::sets) static MISHRA_S_FACTORY: CardRecord = CardRecord::new(
     "Mishra's Factory",
     CardArt::new("a696c5b6-f216-454d-8029-74e84bbd1428", "Kaja Foglio & Phil Foglio"),
     CardSet::Antiquities,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
         .with_abilities(&[
-            abilities::tap_for(ManaKindDef::Colorless),
+            abilities::tap_for(ManaColor::Colorless),
             AbilityDef::activated(
                 "{1}: This land becomes a 2/2 Assembly-Worker artifact creature until end of turn. It's still a land.",
-                &[AbilityCostDef::Mana(ManaCost::new(1, 0))],
+                &[AbilityCostDef::Mana(mana_cost!("{1}"))],
                 EffectDef::Special("Animate this land as a 2/2 Assembly-Worker artifact creature"),
             )
             .with_implementation(AbilityImplementationDef::CustomPartial {
@@ -104,7 +105,7 @@ pub(in crate::card::sets) static ORCISH_MECHANICS: CardRecord = CardRecord::new(
     "Orcish Mechanics",
     CardArt::new("5e34fc6b-5f00-4a22-9ee2-afc1caf99961", "Pete Venters"),
     CardSet::Antiquities,
-    CardRules::new_creature(ManaCost::new(2, 1), &["Orc"], 1, 1, "")
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Orc"], 1, 1)
         .with_abilities(&[
             AbilityDef::activated(
                 "{T}, Sacrifice an artifact: This creature deals 2 damage to any target.",
@@ -141,8 +142,8 @@ pub(in crate::card::sets) static STRIP_MINE: CardRecord = CardRecord::new(
     "Strip Mine",
     CardArt::new("e7880157-7f27-4f1b-9cdc-ab36a6252376", "Daniel Gelon"),
     CardSet::Antiquities,
-    CardRules::new_land(&[], "").with_abilities(&[
-        abilities::tap_for(ManaKindDef::Colorless),
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
         AbilityDef::activated(
             "{T}, Sacrifice this land: Destroy target land.",
             &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
@@ -170,7 +171,7 @@ pub(in crate::card::sets) static TRISKELION: CardRecord = CardRecord::new(
     "Triskelion",
     CardArt::new("a79c99e1-722a-44b6-8fa3-2be3f0c193d8", "Douglas Shuler"),
     CardSet::Antiquities,
-    CardRules::new_artifact_creature(ManaCost::new(6, 0), &["Construct"], 1, 1, "")
+    CardRules::new_artifact_creature(mana_cost!("{6}"), &["Construct"], 1, 1)
         .with_abilities(&[
             AbilityDef::replacement(
                 "This creature enters with three +1/+1 counters on it.",
@@ -211,7 +212,7 @@ pub(in crate::card::sets) static IVORY_TOWER: CardRecord = CardRecord::new(
         "Margaret Organ-Kean",
     ),
     CardSet::Antiquities,
-    CardRules::new_artifact(ManaCost::new(1, 0), "").with_abilities(&[
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
         AbilityDef::triggered(
             "At the beginning of your upkeep, you gain X life, where X is the number of cards in your hand minus 4.",
             TriggerEventDef::StepBegins {
@@ -234,11 +235,11 @@ pub(in crate::card::sets) static MISHRA_S_WORKSHOP: CardRecord = CardRecord::new
     "Mishra's Workshop",
     CardArt::new("135de5c7-6ac9-4b68-8f1a-97f120a4b125", "Kaja Foglio"),
     CardSet::Antiquities,
-    CardRules::new_land(&[], "").with_abilities(&[
+    CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::activated_mana(
             "{T}: Add {C}{C}{C}. Spend this mana only to cast artifact spells.",
             &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaKindDef::Colorless).with_amount(3)),
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_amount(3)),
         )
         .with_implementation(AbilityImplementationDef::CustomPartial {
             behavior: None,
@@ -253,11 +254,10 @@ pub(in crate::card::sets) static ARGOTHIAN_PIXIES: CardRecord = CardRecord::new(
     CardArt::new("5712e87a-2381-4f5b-a853-6973841f9bf1", "Amy Weber"),
     CardSet::Antiquities,
     CardRules::new_creature(
-        ManaCost::colored(1, 0, 0, 0, 0, 1),
+        mana_cost!("{1}{G}"),
         &["Faerie"],
         2,
         1,
-        "",
     )
     .with_abilities(&[AbilityDef::custom_partial(
         "This creature can't be blocked by artifact creatures.\nPrevent all damage that would be dealt to this creature by artifact creatures.",
@@ -271,7 +271,7 @@ pub(in crate::card::sets) static HURKYLS_RECALL: CardRecord = CardRecord::new(
     "Hurkyl's Recall",
     CardArt::new("f32373dd-06d8-45d1-8777-3b1411bcb30a", "NéNé Thomas"),
     CardSet::Antiquities,
-    CardRules::new_instant(ManaCost::colored(1, 0, 1, 0, 0, 0), "")
+    CardRules::new_instant(mana_cost!("{1}{U}"))
         .with_abilities(&[AbilityDef::custom_partial(
             "Return all artifacts target player owns to their hand.",
             CardBehavior::HurkylsRecall,
@@ -284,27 +284,22 @@ pub(in crate::card::sets) static SAGE_OF_LAT_NAM: CardRecord = CardRecord::new(
     "Sage of Lat-Nam",
     CardArt::new("b4ff60ce-073c-46b8-807c-8b40467b960c", "Pete Venters"),
     CardSet::Antiquities,
-    CardRules::new_creature(
-        ManaCost::colored(1, 0, 1, 0, 0, 0),
-        &["Human", "Artificer"],
-        1,
-        2,
-        "",
-    )
-    .with_abilities(&[AbilityDef::activated(
-        "{T}, Sacrifice an artifact: Draw a card.",
-        &[
-            AbilityCostDef::TapSource,
-            AbilityCostDef::SacrificePermanent {
-                object: ObjectPredicateDef::HasType(CardType::Artifact),
-                controller: PlayerRelation::You,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Human", "Artificer"], 1, 2).with_abilities(&[
+        AbilityDef::activated(
+            "{T}, Sacrifice an artifact: Draw a card.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::HasType(CardType::Artifact),
+                    controller: PlayerRelation::You,
+                },
+            ],
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
             },
-        ],
-        EffectDef::DrawCards {
-            recipient: EffectRecipientDef::Controller,
-            amount: ValueDef::Constant(1),
-        },
-    )]),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static TETRAVUS: CardRecord = CardRecord::new(
@@ -312,7 +307,7 @@ pub(in crate::card::sets) static TETRAVUS: CardRecord = CardRecord::new(
     "Tetravus",
     CardArt::new("23eb19f9-2e8f-4bf0-9bf8-868e6da70e2d", "Mark Tedin"),
     CardSet::Antiquities,
-    CardRules::new_artifact_creature(ManaCost::new(6, 0), &["Construct"], 1, 1, "")
+    CardRules::new_artifact_creature(mana_cost!("{6}"), &["Construct"], 1, 1)
     .with_abilities(&[
         abilities::flying(),
         AbilityDef::replacement(
@@ -343,7 +338,8 @@ static ENERGY_FLUX_GRANTED_ABILITY: AbilityDef = AbilityDef::triggered(
     EffectDef::Special("Sacrifice this artifact unless its controller pays {2}"),
 )
 .with_implementation(AbilityImplementationDef::NotImplemented {
-    explanation: "The per-artifact upkeep trigger and its unless-payment branch are not executed yet.",
+    explanation:
+        "The per-artifact upkeep trigger and its unless-payment branch are not executed yet.",
 });
 
 pub(in crate::card::sets) static ENERGY_FLUX: CardRecord = CardRecord::new(
@@ -351,7 +347,7 @@ pub(in crate::card::sets) static ENERGY_FLUX: CardRecord = CardRecord::new(
     "Energy Flux",
     CardArt::new("bd1f624b-e8f2-462f-838a-7cb9e8fda988", "Kaja Foglio"),
     CardSet::Antiquities,
-    CardRules::new_enchantment(ManaCost::colored(2, 0, 1, 0, 0, 0), "")
+    CardRules::new_enchantment(mana_cost!("{2}{U}"))
     .with_abilities(&[AbilityDef::static_ability(
         "All artifacts have \"At the beginning of your upkeep, sacrifice this artifact unless you pay {2}.\"",
         EffectDef::Apply {

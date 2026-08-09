@@ -4,41 +4,37 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaCost, ManaKindDef,
+    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
     abilities, cards,
 };
 use crate::ids::TargetSlotId;
+use crate::mana_cost;
 
 pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new(
     cards::ARBOR_ELF,
     "Arbor Elf",
     CardArt::new("b7d6b117-0c14-4455-92fc-29555ee75d97", "rk post"),
     CardSet::Magic2013,
-    CardRules::new_creature(
-        ManaCost::colored(0, 0, 0, 0, 0, 1),
-        &["Elf", "Druid"],
-        1,
-        1,
-        "",
-    )
-    .with_abilities(&[AbilityDef::activated(
-        "{T}: Untap target Forest.",
-        &[AbilityCostDef::TapSource],
-        EffectDef::Untap {
-            object: EffectRecipientDef::Target(TargetSlotId(0)),
-        },
-    )
-    .with_targets(&[AbilityTargetDef::exactly_one(
-        TargetSlotId(0),
-        "Forest",
-        AbilityTargetPredicate::Object {
-            object: ObjectPredicateDef::Subtype("Forest"),
-            zones: &[ZoneKind::Battlefield],
-            controller: None,
-            owner: None,
-        },
-    )])]),
+    CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Druid"], 1, 1).with_abilities(&[
+        AbilityDef::activated(
+            "{T}: Untap target Forest.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "Forest",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Subtype("Forest"),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
+    ]),
 );
 
 pub(in crate::card::sets) static AUGUR_OF_BOLAS: CardRecord = CardRecord::new(
@@ -47,11 +43,10 @@ pub(in crate::card::sets) static AUGUR_OF_BOLAS: CardRecord = CardRecord::new(
     CardArt::new("2e6ec8a6-ad88-45c9-ab4b-dd7de2418bb7", "Slawomir Maniak"),
     CardSet::Magic2013,
     CardRules::new_creature(
-        ManaCost::colored(1, 0, 1, 0, 0, 0),
+        mana_cost!("{1}{U}"),
         &["Merfolk", "Wizard"],
         1,
         3,
-        "",
     )
     .with_abilities(&[
         AbilityDef::triggered(
@@ -76,13 +71,15 @@ pub(in crate::card::sets) static DISCIPLE_OF_BOLAS: CardRecord = CardRecord::new
     CardArt::new("c4dd57f8-27bc-4ad9-a79e-48a68af33b02", "Slawomir Maniak"),
     CardSet::Magic2013,
     CardRules::new_creature(
-        ManaCost::colored(3, 0, 0, 1, 0, 0),
+        mana_cost!("{3}{B}"),
         &["Human", "Wizard"],
         2,
         1,
-        "When this creature enters, sacrifice another creature. You gain X life and draw X cards, where X is that creature's power.",
     )
-    .metadata_only(),
+    .with_ability(AbilityDef::not_implemented(
+        "When this creature enters, sacrifice another creature. You gain X life and draw X cards, where X is that creature's power.",
+        "Printed rules are cataloged but are not executed by the engine.",
+    )),
 );
 
 pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new(
@@ -90,11 +87,13 @@ pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new(
     "Duress",
     CardArt::new("f7201d43-ae2e-4faa-a508-8555079c3bc7", "Steven Belledin"),
     CardSet::Magic2013,
-    CardRules::new_sorcery(
-        ManaCost::colored(0, 0, 0, 1, 0, 0),
-        "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card.",
-    )
-    .with_special_behavior(CardBehavior::Duress),
+    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(
+        AbilityDef::custom_full(
+            "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card.",
+            CardBehavior::Duress,
+            "Implemented by the named card-local special behavior.",
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static ESSENCE_SCATTER: CardRecord = CardRecord::new(
@@ -102,11 +101,11 @@ pub(in crate::card::sets) static ESSENCE_SCATTER: CardRecord = CardRecord::new(
     "Essence Scatter",
     CardArt::new("fcd965f9-bdaa-4434-a9c8-53fc57e997db", "Jon Foster"),
     CardSet::Magic2013,
-    CardRules::new_instant(
-        ManaCost::colored(1, 0, 1, 0, 0, 0),
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::custom_full(
         "Counter target creature spell.",
-    )
-    .with_special_behavior(CardBehavior::EssenceScatter),
+        CardBehavior::EssenceScatter,
+        "Implemented by the named card-local special behavior.",
+    )),
 );
 
 pub(in crate::card::sets) static FLAMES_OF_THE_FIREBRAND: CardRecord = CardRecord::new(
@@ -114,11 +113,12 @@ pub(in crate::card::sets) static FLAMES_OF_THE_FIREBRAND: CardRecord = CardRecor
     "Flames of the Firebrand",
     CardArt::new("aca215b1-7b98-49ce-afae-eeb61058125a", "Steve Argyle"),
     CardSet::Magic2013,
-    CardRules::new_sorcery(
-        ManaCost::colored(2, 0, 0, 0, 1, 0),
-        "Flames of the Firebrand deals 3 damage divided as you choose among one, two, or three targets.",
-    )
-    .metadata_only(),
+    CardRules::new_sorcery(mana_cost!("{2}{R}")).with_ability(
+        AbilityDef::not_implemented(
+            "Flames of the Firebrand deals 3 damage divided as you choose among one, two, or three targets.",
+            "Printed rules are cataloged but are not executed by the engine.",
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
@@ -127,11 +127,10 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
     CardArt::new("7e380b99-0173-4083-a4a2-222ad98b904a", "Erica Yang"),
     CardSet::Magic2013,
     CardRules::new_creature(
-        ManaCost::colored(1, 0, 0, 0, 0, 1),
+        mana_cost!("{1}{G}"),
         &["Boar"],
         2,
         2,
-        "",
     )
     .with_abilities(&[
         AbilityDef::not_implemented(
@@ -140,7 +139,7 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
         ),
         AbilityDef::activated(
             "{R}: This creature gains haste until end of turn. (It can attack and {T} this turn.)",
-            &[AbilityCostDef::Mana(ManaCost::new(0, 1))],
+            &[AbilityCostDef::Mana(mana_cost!("{R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::GrantAbility(&abilities::haste()),
@@ -155,7 +154,7 @@ pub(in crate::card::sets) static GLACIAL_FORTRESS: CardRecord = CardRecord::new(
     "Glacial Fortress",
     CardArt::new("bc9d29ee-1a21-4c3e-99c1-f815d40e8f19", "Franz Vohwinkel"),
     CardSet::Magic2013,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::TappedUnlessControlsLandType([
         true, true, false, false, false,
     ]))
@@ -172,8 +171,8 @@ pub(in crate::card::sets) static GLACIAL_FORTRESS: CardRecord = CardRecord::new(
             "{T}: Add {W} or {U}.",
             &[AbilityCostDef::TapSource],
             EffectDef::AddMana(AddManaEffectDef::choice(&[
-                ManaKindDef::White,
-                ManaKindDef::Blue,
+                ManaColor::White,
+                ManaColor::Blue,
             ])),
         ),
     ]),
@@ -185,13 +184,15 @@ pub(in crate::card::sets) static JACE_MEMORY_ADEPT: CardRecord = CardRecord::new
     CardArt::new("96b2a335-2f01-4ba7-a037-453dbb1045e9", "D. Alexander Gregory"),
     CardSet::Magic2013,
     CardRules::new_planeswalker(
-        ManaCost::colored(3, 0, 2, 0, 0, 0),
+        mana_cost!("{3}{U}{U}"),
         &["Jace"],
         4,
-        "+1: Draw a card. Target player mills a card.\n0: Target player mills ten cards.\n−7: Any number of target players each draw twenty cards.",
     )
     .with_supertype(CardSupertype::Legendary)
-    .metadata_only(),
+    .with_ability(AbilityDef::not_implemented(
+        "+1: Draw a card. Target player mills a card.\n0: Target player mills ten cards.\n−7: Any number of target players each draw twenty cards.",
+        "Printed rules are cataloged but are not executed by the engine.",
+    )),
 );
 
 /// Mutilate scales with your Swamps, and reads the same count twice.
@@ -206,23 +207,21 @@ pub(in crate::card::sets) static MUTILATE: CardRecord = CardRecord::new(
     "Mutilate",
     CardArt::new("c48bc86b-df0a-4a9c-8aad-c3ffb742a5ff", "Tyler Jacobson"),
     CardSet::Magic2013,
-    CardRules::new_sorcery(ManaCost::colored(2, 0, 0, 2, 0, 0), "").with_abilities(&[
-        AbilityDef::spell(
-            "All creatures get -1/-1 until end of turn for each Swamp you control.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Negate(&SWAMPS_YOU_CONTROL),
-                    toughness: ValueDef::Negate(&SWAMPS_YOU_CONTROL),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+    CardRules::new_sorcery(mana_cost!("{2}{B}{B}")).with_abilities(&[AbilityDef::spell(
+        "All creatures get -1/-1 until end of turn for each Swamp you control.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::Any,
             },
-        ),
-    ]),
+            effect: AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Negate(&SWAMPS_YOU_CONTROL),
+                toughness: ValueDef::Negate(&SWAMPS_YOU_CONTROL),
+            },
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+    )]),
 );
 
 pub(in crate::card::sets) static NEGATE: CardRecord = CardRecord::new(
@@ -230,11 +229,11 @@ pub(in crate::card::sets) static NEGATE: CardRecord = CardRecord::new(
     "Negate",
     CardArt::new("8da17a86-3666-46b8-932e-daafd6a0cd69", "Jeremy Jarvis"),
     CardSet::Magic2013,
-    CardRules::new_instant(
-        ManaCost::colored(1, 0, 1, 0, 0, 0),
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::custom_full(
         "Counter target noncreature spell.",
-    )
-    .with_special_behavior(CardBehavior::Negate),
+        CardBehavior::Negate,
+        "Implemented by the named card-local special behavior.",
+    )),
 );
 
 pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
@@ -242,7 +241,7 @@ pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
     "Oblivion Ring",
     CardArt::new("1e2a73ec-39be-4d23-8c25-17d7c174dcee", "Franz Vohwinkel"),
     CardSet::Magic2013,
-    CardRules::new_enchantment(ManaCost::colored(2, 1, 0, 0, 0, 0), "").with_abilities(&[
+    CardRules::new_enchantment(mana_cost!("{2}{W}")).with_abilities(&[
         AbilityDef::triggered(
             "When this enchantment enters, exile another target nonland permanent.",
             TriggerEventDef::ZoneChanged {
@@ -280,14 +279,7 @@ pub(in crate::card::sets) static RHOX_FAITHMENDER: CardRecord = CardRecord::new(
     "Rhox Faithmender",
     CardArt::new("85ea185a-7b38-49f3-be73-be8180fb6295", "Wesley Burt"),
     CardSet::Magic2013,
-    CardRules::new_creature(
-        ManaCost::colored(3, 1, 0, 0, 0, 0),
-        &["Rhino", "Monk"],
-        1,
-        5,
-        "",
-    )
-    .with_abilities(&[
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Rhino", "Monk"], 1, 5).with_abilities(&[
         abilities::lifelink().with_text(
             "Lifelink (Damage dealt by this creature also causes you to gain that much life.)",
         ),
@@ -303,7 +295,7 @@ pub(in crate::card::sets) static ROOTBOUND_CRAG: CardRecord = CardRecord::new(
     "Rootbound Crag",
     CardArt::new("76364643-bfcb-4c50-9224-bf9e35648ddf", "Matt Stewart"),
     CardSet::Magic2013,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::TappedUnlessControlsLandType([
         false, false, false, true, true,
     ]))
@@ -320,8 +312,8 @@ pub(in crate::card::sets) static ROOTBOUND_CRAG: CardRecord = CardRecord::new(
             "{T}: Add {R} or {G}.",
             &[AbilityCostDef::TapSource],
             EffectDef::AddMana(AddManaEffectDef::choice(&[
-                ManaKindDef::Red,
-                ManaKindDef::Green,
+                ManaColor::Red,
+                ManaColor::Green,
             ])),
         ),
     ]),
@@ -332,26 +324,24 @@ pub(in crate::card::sets) static SIGN_IN_BLOOD: CardRecord = CardRecord::new(
     "Sign in Blood",
     CardArt::new("64f6600b-36c4-43bd-8c01-cfbca402ecd6", "Howard Lyon"),
     CardSet::Magic2013,
-    CardRules::new_sorcery(ManaCost::colored(0, 0, 0, 2, 0, 0), "").with_abilities(&[
-        AbilityDef::spell(
-            "Target player draws two cards and loses 2 life.",
-            EffectDef::Sequence(&[
-                EffectDef::DrawCards {
-                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                    amount: ValueDef::Constant(2),
-                },
-                EffectDef::LoseLife {
-                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                    amount: ValueDef::Constant(2),
-                },
-            ]),
-        )
-        .with_targets(&[AbilityTargetDef::exactly_one(
-            TargetSlotId(0),
-            "player",
-            AbilityTargetPredicate::Player(PlayerRelation::Any),
-        )]),
-    ]),
+    CardRules::new_sorcery(mana_cost!("{B}{B}")).with_abilities(&[AbilityDef::spell(
+        "Target player draws two cards and loses 2 life.",
+        EffectDef::Sequence(&[
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                amount: ValueDef::Constant(2),
+            },
+            EffectDef::LoseLife {
+                recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                amount: ValueDef::Constant(2),
+            },
+        ]),
+    )
+    .with_targets(&[AbilityTargetDef::exactly_one(
+        TargetSlotId(0),
+        "player",
+        AbilityTargetPredicate::Player(PlayerRelation::Any),
+    )])]),
 );
 
 pub(in crate::card::sets) static SUNPETAL_GROVE: CardRecord = CardRecord::new(
@@ -359,7 +349,7 @@ pub(in crate::card::sets) static SUNPETAL_GROVE: CardRecord = CardRecord::new(
     "Sunpetal Grove",
     CardArt::new("15663129-9deb-4c34-84a0-f94cf1a723f0", "Jason Chan"),
     CardSet::Magic2013,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::TappedUnlessControlsLandType([
         true, false, false, false, true,
     ]))
@@ -376,8 +366,8 @@ pub(in crate::card::sets) static SUNPETAL_GROVE: CardRecord = CardRecord::new(
             "{T}: Add {G} or {W}.",
             &[AbilityCostDef::TapSource],
             EffectDef::AddMana(AddManaEffectDef::choice(&[
-                ManaKindDef::Green,
-                ManaKindDef::White,
+                ManaColor::Green,
+                ManaColor::White,
             ])),
         ),
     ]),
@@ -388,14 +378,7 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
     "Thragtusk",
     CardArt::new("28667c8b-d02c-4e57-a050-1549207b65d1", "Nils Hamm"),
     CardSet::Magic2013,
-    CardRules::new_creature(
-        ManaCost::colored(4, 0, 0, 0, 0, 1),
-        &["Beast"],
-        5,
-        3,
-        "",
-    )
-    .with_abilities(&[
+    CardRules::new_creature(mana_cost!("{4}{G}"), &["Beast"], 5, 3).with_abilities(&[
         AbilityDef::triggered(
             "When this creature enters, you gain 5 life.",
             TriggerEventDef::ZoneChanged {
@@ -421,11 +404,10 @@ pub(in crate::card::sets) static THUNDERMAW_HELLKITE: CardRecord = CardRecord::n
     CardArt::new("d0476e0f-61df-46a6-aaf1-8ee79c701160", "Svetlin Velinov"),
     CardSet::Magic2013,
     CardRules::new_creature(
-        ManaCost::colored(3, 0, 0, 0, 2, 0),
+        mana_cost!("{3}{R}{R}"),
         &["Dragon"],
         5,
         5,
-        "",
     )
     .with_abilities(&[
         abilities::flying(),
@@ -444,14 +426,8 @@ pub(in crate::card::sets) static VAMPIRE_NIGHTHAWK: CardRecord = CardRecord::new
     "Vampire Nighthawk",
     CardArt::new("9ba96d96-8d9e-47c8-ab39-17479564aadf", "Jason Chan"),
     CardSet::Magic2013,
-    CardRules::new_creature(
-        ManaCost::colored(1, 0, 0, 2, 0, 0),
-        &["Vampire", "Shaman"],
-        2,
-        3,
-        "",
-    )
-    .with_abilities(&[
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Vampire", "Shaman"], 2, 3)
+        .with_abilities(&[
         abilities::flying(),
         abilities::deathtouch().with_text(
             "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)",
@@ -467,7 +443,7 @@ pub(in crate::card::sets) static VOLCANIC_STRENGTH: CardRecord = CardRecord::new
     "Volcanic Strength",
     CardArt::new("f1963f08-1765-4f3e-92be-479773de47a0", "Izzy"),
     CardSet::Magic2013,
-    CardRules::new_enchantment(ManaCost::colored(1, 0, 0, 0, 1, 0), "")
+    CardRules::new_enchantment(mana_cost!("{1}{R}"))
         .with_subtypes(&["Aura"])
         .with_abilities(&[
         AbilityDef::spell(
@@ -512,39 +488,34 @@ pub(in crate::card::sets) static WAR_PRIEST_OF_THUNE: CardRecord = CardRecord::n
     "War Priest of Thune",
     CardArt::new("d28eb320-aea7-466e-8718-de8652a2b191", "Izzy"),
     CardSet::Magic2013,
-    CardRules::new_creature(
-        ManaCost::colored(1, 1, 0, 0, 0, 0),
-        &["Human", "Cleric"],
-        2,
-        2,
-        "",
-    )
-    .with_abilities(&[AbilityDef::triggered(
-        "When this creature enters, you may destroy target enchantment.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::Source,
-            from: None,
-            to: Some(ZoneKind::Battlefield),
-        },
-        EffectDef::Destroy {
-            object: EffectRecipientDef::Target(TargetSlotId(0)),
-            can_regenerate: true,
-        },
-    )
-    .with_targets(&[AbilityTargetDef {
-        id: TargetSlotId(0),
-        label: "enchantment",
-        predicate: AbilityTargetPredicate::Object {
-            object: ObjectPredicateDef::HasType(CardType::Enchantment),
-            zones: &[ZoneKind::Battlefield],
-            controller: None,
-            owner: None,
-        },
-        // "You may" is an optional target: declining to choose one is how the
-        // trigger does nothing, so the minimum is zero rather than one.
-        minimum: 0,
-        maximum: 1,
-    }])]),
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Cleric"], 2, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "When this creature enters, you may destroy target enchantment.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                can_regenerate: true,
+            },
+        )
+        .with_targets(&[AbilityTargetDef {
+            id: TargetSlotId(0),
+            label: "enchantment",
+            predicate: AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Enchantment),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+            // "You may" is an optional target: declining to choose one is how the
+            // trigger does nothing, so the minimum is zero rather than one.
+            minimum: 0,
+            maximum: 1,
+        }]),
+    ]),
 );
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARBOR_ELF,

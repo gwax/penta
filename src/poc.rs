@@ -122,7 +122,7 @@ mod tests {
                 card.art.as_ref().map(|art| art.scryfall_id),
                 Some(scryfall_id)
             );
-            assert_eq!(card.set, set);
+            assert_eq!(card.debut_set, set);
         }
     }
 

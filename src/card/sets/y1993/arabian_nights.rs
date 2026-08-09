@@ -1,16 +1,17 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, CardArt, CardBehavior,
-    CardRules, CardSet, EffectDef, EffectRecipientDef, ManaCost, ManaKindDef, ObjectPredicateDef,
+    CardRules, CardSet, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
     PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, abilities, cards,
 };
+use crate::mana_cost;
 
 pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new(
     cards::CITY_OF_BRASS,
     "City of Brass",
     CardArt::new("f4e32327-380d-471e-813b-4c27477787ce", "Mark Tedin"),
     CardSet::ArabianNights,
-    CardRules::new_land(&[], "").with_abilities(&[
+    CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::triggered(
             "Whenever this land becomes tapped, it deals 1 damage to you.",
             TriggerEventDef::BecomesTapped(ObjectPredicateDef::Source),
@@ -23,11 +24,11 @@ pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new(
             "{T}: Add one mana of any color.",
             &[AbilityCostDef::TapSource],
             EffectDef::AddMana(AddManaEffectDef::choice(&[
-                ManaKindDef::White,
-                ManaKindDef::Blue,
-                ManaKindDef::Black,
-                ManaKindDef::Red,
-                ManaKindDef::Green,
+                ManaColor::White,
+                ManaColor::Blue,
+                ManaColor::Black,
+                ManaColor::Red,
+                ManaColor::Green,
             ])),
         ),
     ]),
@@ -38,7 +39,7 @@ pub(in crate::card::sets) static ERHNAM_DJINN: CardRecord = CardRecord::new(
     "Erhnam Djinn",
     CardArt::new("42bc0c3f-0a52-4bdc-83da-6484bf3102f3", "Ken Meyer, Jr."),
     CardSet::ArabianNights,
-    CardRules::new_creature(ManaCost::colored(3, 0, 0, 0, 0, 1), &["Djinn"], 4, 5, "")
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Djinn"], 4, 5)
     .with_abilities(&[AbilityDef::custom_partial(
         "At the beginning of your upkeep, target non-Wall creature an opponent controls gains forestwalk until your next upkeep. (It can't be blocked as long as defending player controls a Forest.)",
         CardBehavior::ErhnamDjinn,
@@ -51,8 +52,8 @@ pub(in crate::card::sets) static JUZAM_DJINN: CardRecord = CardRecord::new(
     "Juzám Djinn",
     CardArt::new("31bf3f14-b5df-498b-a1bb-965885c82401", "Mark Tedin"),
     CardSet::ArabianNights,
-    CardRules::new_creature(ManaCost::colored(2, 0, 0, 2, 0, 0), &["Djinn"], 5, 5, "")
-        .with_abilities(&[AbilityDef::triggered(
+    CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Djinn"], 5, 5).with_abilities(&[
+        AbilityDef::triggered(
             "At the beginning of your upkeep, this creature deals 1 damage to you.",
             TriggerEventDef::StepBegins {
                 step: TurnStepDef::Upkeep,
@@ -62,7 +63,8 @@ pub(in crate::card::sets) static JUZAM_DJINN: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
             },
-        )]),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord::new(
@@ -70,8 +72,8 @@ pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord:
     "Library of Alexandria",
     CardArt::new("ee266113-34ce-4189-84e7-ee2c86a2722c", "Mark Poole"),
     CardSet::ArabianNights,
-    CardRules::new_land(&[], "").with_abilities(&[
-        abilities::tap_for(ManaKindDef::Colorless),
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
         AbilityDef::activated(
             "{T}: Draw a card. Activate only if you have exactly seven cards in hand.",
             &[AbilityCostDef::TapSource],
@@ -92,21 +94,20 @@ pub(in crate::card::sets) static SERENDIB_EFREET: CardRecord = CardRecord::new(
     "Serendib Efreet",
     CardArt::new("cf56e862-3169-4f63-acd0-731080fa32f2", "Anson Maddocks"),
     CardSet::ArabianNights,
-    CardRules::new_creature(ManaCost::colored(2, 0, 1, 0, 0, 0), &["Efreet"], 3, 4, "")
-        .with_abilities(&[
-            abilities::flying(),
-            AbilityDef::triggered(
-                "At the beginning of your upkeep, this creature deals 1 damage to you.",
-                TriggerEventDef::StepBegins {
-                    step: TurnStepDef::Upkeep,
-                    player: PlayerRelation::You,
-                },
-                EffectDef::DealDamage {
-                    recipient: EffectRecipientDef::Controller,
-                    amount: ValueDef::Constant(1),
-                },
-            ),
-        ]),
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Efreet"], 3, 4).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, this creature deals 1 damage to you.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new(
@@ -114,7 +115,7 @@ pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new(
     "City in a Bottle",
     CardArt::new("9598b346-a47d-4c4c-9571-156824e86b9c", "Drew Tucker"),
     CardSet::ArabianNights,
-    CardRules::new_artifact(ManaCost::new(2, 0), "").with_abilities(&[
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::custom_partial(
             "Whenever one or more other nontoken permanents with a name originally printed in the Arabian Nights expansion are on the battlefield, their controllers sacrifice them.\nPlayers can't cast spells or play lands with a name originally printed in the Arabian Nights expansion.",
             CardBehavior::CityInABottle,
@@ -128,7 +129,7 @@ pub(in crate::card::sets) static KIRD_APE: CardRecord = CardRecord::new(
     "Kird Ape",
     CardArt::new("ebe8845e-df1c-481c-949c-aab84af99a05", "Ken Meyer, Jr."),
     CardSet::ArabianNights,
-    CardRules::new_creature(ManaCost::new(0, 1), &["Ape"], 1, 1, "")
+    CardRules::new_creature(mana_cost!("{R}"), &["Ape"], 1, 1)
     .with_abilities(&[AbilityDef::custom_full(
         "This creature gets +1/+2 as long as you control a Forest.",
         CardBehavior::KirdApe,

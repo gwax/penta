@@ -4,11 +4,11 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt,
     CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType,
-    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaCost,
-    ManaKindDef, ObjectPredicateDef, PlayOptionDef, SpellForm, ValueDef, ZoneKind, abilities,
-    cards,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
+    ObjectPredicateDef, PlayOptionDef, SpellForm, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
+use crate::mana_cost;
 
 pub(in crate::card::sets) static HELLRIDER: CardRecord = CardRecord::new(
     cards::HELLRIDER,
@@ -16,11 +16,10 @@ pub(in crate::card::sets) static HELLRIDER: CardRecord = CardRecord::new(
     CardArt::new("0ec8d800-7f06-44e0-b22d-cdff0a9b153d", "Svetlin Velinov"),
     CardSet::DarkAscension,
     CardRules::new_creature(
-        ManaCost::colored(2, 0, 0, 0, 2, 0),
+        mana_cost!("{2}{R}{R}"),
         &["Devil"],
         3,
         3,
-        "",
     )
     .with_abilities(&[
         abilities::haste(),
@@ -33,13 +32,15 @@ pub(in crate::card::sets) static HELLRIDER: CardRecord = CardRecord::new(
 
 const fn huntmaster_front_rules() -> CardRules {
     CardRules::new_creature(
-        ManaCost::colored(2, 0, 0, 0, 1, 1),
+        mana_cost!("{2}{R}{G}"),
         &["Human", "Werewolf"],
         2,
         2,
-        "Whenever this creature enters or transforms into Huntmaster of the Fells, create a 2/2 green Wolf creature token and you gain 2 life.\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
     )
-    .metadata_only()
+    .with_ability(AbilityDef::not_implemented(
+        "Whenever this creature enters or transforms into Huntmaster of the Fells, create a 2/2 green Wolf creature token and you gain 2 life.\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+        "Printed rules are cataloged but are not executed by the engine.",
+    ))
 }
 
 static HUNTMASTER_BACK_ABILITIES: [AbilityDef; 2] = [
@@ -51,8 +52,8 @@ static HUNTMASTER_BACK_ABILITIES: [AbilityDef; 2] = [
 ];
 
 const fn huntmaster_back_rules() -> CardRules {
-    CardRules::new_creature_without_mana_cost(&["Werewolf"], 4, 4, "")
-        .printed_colors([false, false, false, true, true])
+    CardRules::new_creature_without_mana_cost(&["Werewolf"], 4, 4)
+        .printed_colors(&[ManaColor::Red, ManaColor::Green])
         .with_abilities(&HUNTMASTER_BACK_ABILITIES)
 }
 
@@ -95,7 +96,7 @@ pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new
     "Ray of Revelation",
     CardArt::new("d7e2c5a4-cf92-46bd-9033-8036436488cb", "Cliff Childs"),
     CardSet::DarkAscension,
-    CardRules::new_instant(ManaCost::colored(1, 1, 0, 0, 0, 0), "").with_abilities(&[
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[
         AbilityDef::spell(
             "Destroy target enchantment.",
             EffectDef::Destroy {
@@ -126,11 +127,10 @@ pub(in crate::card::sets) static STRANGLEROOT_GEIST: CardRecord = CardRecord::ne
     CardArt::new("bf1fb137-205c-480f-b6dc-dfa137793ae3", "Jason Chan"),
     CardSet::DarkAscension,
     CardRules::new_creature(
-        ManaCost::colored(0, 0, 0, 0, 0, 2),
+        mana_cost!("{G}{G}"),
         &["Spirit"],
         2,
         1,
-        "",
     )
     .with_abilities(&[
         abilities::haste(),
@@ -145,7 +145,7 @@ pub(in crate::card::sets) static TRAGIC_SLIP: CardRecord = CardRecord::new(
     "Tragic Slip",
     CardArt::new("09666671-601e-4fca-bdfb-fb288bf2672c", "Christopher Moeller"),
     CardSet::DarkAscension,
-    CardRules::new_instant(ManaCost::colored(0, 0, 0, 1, 0, 0), "").with_abilities(&[
+    CardRules::new_instant(mana_cost!("{B}")).with_abilities(&[
         AbilityDef::spell(
             "Target creature gets -1/-1 until end of turn.",
             EffectDef::Apply {
@@ -179,10 +179,10 @@ pub(in crate::card::sets) static VAULT_OF_THE_ARCHANGEL: CardRecord = CardRecord
     "Vault of the Archangel",
     CardArt::new("35a65437-430a-42ef-854f-6e66f8e1a04a", "John Avon"),
     CardSet::DarkAscension,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::Untapped)
     .with_abilities(&[
-        abilities::tap_for(ManaKindDef::Colorless),
+        abilities::tap_for(ManaColor::Colorless),
         AbilityDef::not_implemented(
             "{2}{W}{B}, {T}: Creatures you control gain deathtouch and lifelink until end of turn.",
             "The deathtouch- and lifelink-granting activated ability is not executed.",

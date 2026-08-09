@@ -2,17 +2,18 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, EffectDef, EffectDurationDef,
-    EffectRecipientDef, ManaCost, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef,
-    ZoneKind, abilities, cards,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::TargetSlotId;
+use crate::mana_cost;
 
 pub(in crate::card::sets) static BALL_LIGHTNING: CardRecord = CardRecord::new(
     cards::BALL_LIGHTNING,
     "Ball Lightning",
     CardArt::new("c1ba83ab-83f5-421d-bba1-0f925870b5c8", "Quinton Hoover"),
     CardSet::TheDark,
-    CardRules::new_creature(ManaCost::new(0, 3), &["Elemental"], 6, 1, "")
+    CardRules::new_creature(mana_cost!("{R}{R}{R}"), &["Elemental"], 6, 1)
     .with_abilities(&[
         abilities::trample().with_text(
             "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)",
@@ -38,7 +39,7 @@ pub(in crate::card::sets) static BLOOD_MOON: CardRecord = CardRecord::new(
     "Blood Moon",
     CardArt::new("78373616-e2d6-4ccf-998f-09f02bea45b4", "Tom Wänerstrand"),
     CardSet::TheDark,
-    CardRules::new_enchantment(ManaCost::new(2, 1), "").with_abilities(&[
+    CardRules::new_enchantment(mana_cost!("{2}{R}")).with_abilities(&[
         AbilityDef::static_ability(
             "Nonbasic lands are Mountains.",
             EffectDef::Apply {
@@ -65,7 +66,7 @@ pub(in crate::card::sets) static GOBLIN_DIGGING_TEAM: CardRecord = CardRecord::n
     "Goblin Digging Team",
     CardArt::new("8a538b9d-351e-40bb-be11-9ba08c16352b", "Ron Spencer"),
     CardSet::TheDark,
-    CardRules::new_creature(ManaCost::new(0, 1), &["Goblin"], 1, 1, "").with_abilities(&[
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin"], 1, 1).with_abilities(&[
         AbilityDef::not_implemented(
             "{T}, Sacrifice this creature: Destroy target Wall.",
             "The activated sacrifice ability and Wall targeting are not implemented.",
@@ -78,7 +79,7 @@ pub(in crate::card::sets) static GOBLINS_OF_THE_FLARG: CardRecord = CardRecord::
     "Goblins of the Flarg",
     CardArt::new("fd333b18-b896-4ab8-9c46-eed4efdd94f2", "Tom Wänerstrand"),
     CardSet::TheDark,
-    CardRules::new_creature(ManaCost::new(0, 1), &["Goblin", "Warrior"], 1, 1, "")
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin", "Warrior"], 1, 1)
         .with_abilities(&[
             abilities::mountainwalk().with_text(
                 "Mountainwalk (This creature can't be blocked as long as defending player controls a Mountain.)",
@@ -95,7 +96,7 @@ pub(in crate::card::sets) static FELLWAR_STONE: CardRecord = CardRecord::new(
     "Fellwar Stone",
     CardArt::new("dc47e322-f8b8-4685-b035-fda0cc433e6b", "Quinton Hoover"),
     CardSet::TheDark,
-    CardRules::new_artifact(ManaCost::new(2, 0), "").with_abilities(&[AbilityDef::activated_mana(
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[AbilityDef::activated_mana(
         "{T}: Add one mana of any color that a land an opponent controls could produce.",
         &[AbilityCostDef::TapSource],
         EffectDef::Special("Add one mana of a color an opponent's land could produce"),
@@ -111,7 +112,7 @@ pub(in crate::card::sets) static MAZE_OF_ITH: CardRecord = CardRecord::new(
     "Maze of Ith",
     CardArt::new("42dcceee-2a47-4eaa-a6a3-2931b3d50244", "Anson Maddocks"),
     CardSet::TheDark,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
         .with_abilities(&[
             AbilityDef::activated(
                 "{T}: Untap target attacking creature. Prevent all combat damage that would be dealt to and dealt by that creature this turn.",
@@ -146,13 +147,11 @@ pub(in crate::card::sets) static DUST_TO_DUST: CardRecord = CardRecord::new(
     "Dust to Dust",
     CardArt::new("ade075fd-73ee-4d12-a2da-48e5938043af", "Drew Tucker"),
     CardSet::TheDark,
-    CardRules::new_sorcery(ManaCost::colored(1, 2, 0, 0, 0, 0), "").with_abilities(&[
-        AbilityDef::custom_full(
-            "Exile two target artifacts.",
-            CardBehavior::DustToDust,
-            "Artifact targeting and exile are implemented by the legacy spell resolver.",
-        ),
-    ]),
+    CardRules::new_sorcery(mana_cost!("{1}{W}{W}")).with_abilities(&[AbilityDef::custom_full(
+        "Exile two target artifacts.",
+        CardBehavior::DustToDust,
+        "Artifact targeting and exile are implemented by the legacy spell resolver.",
+    )]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

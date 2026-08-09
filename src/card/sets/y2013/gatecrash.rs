@@ -3,21 +3,23 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, BasicLandType,
-    CardArt, CardRules, CardSet, CardSupertype, EffectDef, EffectRecipientDef, LandEntry, ManaCost,
+    CardArt, CardRules, CardSet, CardSupertype, EffectDef, EffectRecipientDef, LandEntry,
     ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
+use crate::mana_cost;
 
 pub(in crate::card::sets) static ASSEMBLE_THE_LEGION: CardRecord = CardRecord::new(
     cards::ASSEMBLE_THE_LEGION,
     "Assemble the Legion",
     CardArt::new("43675ed7-ece1-4414-965e-9ebadcbf3dfb", "Eric Deschamps"),
     CardSet::Gatecrash,
-    CardRules::new_enchantment(
-        ManaCost::colored(3, 1, 0, 0, 1, 0),
-        "At the beginning of your upkeep, put a muster counter on this enchantment. Then create a 1/1 red and white Soldier creature token with haste for each muster counter on this enchantment.",
-    )
-    .metadata_only(),
+    CardRules::new_enchantment(mana_cost!("{3}{R}{W}")).with_ability(
+        AbilityDef::not_implemented(
+            "At the beginning of your upkeep, put a muster counter on this enchantment. Then create a 1/1 red and white Soldier creature token with haste for each muster counter on this enchantment.",
+            "Printed rules are cataloged but are not executed by the engine.",
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static AURELIAS_FURY: CardRecord = CardRecord::new(
@@ -25,11 +27,12 @@ pub(in crate::card::sets) static AURELIAS_FURY: CardRecord = CardRecord::new(
     "Aurelia's Fury",
     CardArt::new("1a3465b6-ee7f-4553-bbf1-85fae9734b67", "Tyler Jacobson"),
     CardSet::Gatecrash,
-    CardRules::new_instant(
-        ManaCost::variable(0, 1, 0, 0, 1, 0, 1),
-        "Aurelia's Fury deals X damage divided as you choose among any number of targets. Tap each creature dealt damage this way. Players dealt damage this way can't cast noncreature spells this turn.",
-    )
-    .metadata_only(),
+    CardRules::new_instant(mana_cost!("{X}{R}{W}")).with_ability(
+        AbilityDef::not_implemented(
+            "Aurelia's Fury deals X damage divided as you choose among any number of targets. Tap each creature dealt damage this way. Players dealt damage this way can't cast noncreature spells this turn.",
+            "Printed rules are cataloged but are not executed by the engine.",
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static AURELIA_THE_WARLEADER: CardRecord = CardRecord::new(
@@ -38,11 +41,10 @@ pub(in crate::card::sets) static AURELIA_THE_WARLEADER: CardRecord = CardRecord:
     CardArt::new("4ec18e35-05e4-4bfc-b32b-c3e71c95a71d", "Slawomir Maniak"),
     CardSet::Gatecrash,
     CardRules::new_creature(
-        ManaCost::colored(2, 2, 0, 0, 2, 0),
+        mana_cost!("{2}{R}{R}{W}{W}"),
         &["Angel"],
         3,
         4,
-        "",
     )
     .with_supertype(CardSupertype::Legendary)
     .with_abilities(&[
@@ -61,11 +63,12 @@ pub(in crate::card::sets) static BLIND_OBEDIENCE: CardRecord = CardRecord::new(
     "Blind Obedience",
     CardArt::new("07c3e78d-d917-4552-842f-feff99c059e0", "Seb McKinnon"),
     CardSet::Gatecrash,
-    CardRules::new_enchantment(
-        ManaCost::colored(1, 1, 0, 0, 0, 0),
-        "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)\nArtifacts and creatures your opponents control enter tapped.",
-    )
-    .metadata_only(),
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        AbilityDef::not_implemented(
+            "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)\nArtifacts and creatures your opponents control enter tapped.",
+            "Printed rules are cataloged but are not executed by the engine.",
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
@@ -73,11 +76,12 @@ pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
     "Boros Charm",
     CardArt::new("d4ddf9cc-40a7-4b4f-bb51-b08171453c9a", "Zoltan Boros"),
     CardSet::Gatecrash,
-    CardRules::new_instant(
-        ManaCost::colored(0, 1, 0, 0, 1, 0),
-        "Choose one —\n• Boros Charm deals 4 damage to target player or planeswalker.\n• Permanents you control gain indestructible until end of turn.\n• Target creature gains double strike until end of turn.",
-    )
-    .metadata_only(),
+    CardRules::new_instant(mana_cost!("{R}{W}")).with_ability(
+        AbilityDef::not_implemented(
+            "Choose one —\n• Boros Charm deals 4 damage to target player or planeswalker.\n• Permanents you control gain indestructible until end of turn.\n• Target creature gains double strike until end of turn.",
+            "Printed rules are cataloged but are not executed by the engine.",
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static BOROS_RECKONER: CardRecord = CardRecord::new(
@@ -86,13 +90,15 @@ pub(in crate::card::sets) static BOROS_RECKONER: CardRecord = CardRecord::new(
     CardArt::new("82a18b07-38b8-4854-9735-3cfe83b11bf1", "Howard Lyon"),
     CardSet::Gatecrash,
     CardRules::new_creature(
-        ManaCost::white_red_hybrid(3),
+        mana_cost!("{R/W}{R/W}{R/W}"),
         &["Minotaur", "Wizard"],
         3,
         3,
-        "Whenever this creature is dealt damage, it deals that much damage to any target.\n{R/W}: This creature gains first strike until end of turn.",
     )
-    .metadata_only(),
+    .with_ability(AbilityDef::not_implemented(
+        "Whenever this creature is dealt damage, it deals that much damage to any target.\n{R/W}: This creature gains first strike until end of turn.",
+        "Printed rules are cataloged but are not executed by the engine.",
+    )),
 );
 
 pub(in crate::card::sets) static DOMRI_RADE: CardRecord = CardRecord::new(
@@ -101,13 +107,15 @@ pub(in crate::card::sets) static DOMRI_RADE: CardRecord = CardRecord::new(
     CardArt::new("21b48170-99dd-440f-9954-fc229d6094d3", "Tyler Jacobson"),
     CardSet::Gatecrash,
     CardRules::new_planeswalker(
-        ManaCost::colored(1, 0, 0, 0, 1, 1),
+        mana_cost!("{1}{R}{G}"),
         &["Domri"],
         3,
-        "+1: Look at the top card of your library. If it's a creature card, you may reveal it and put it into your hand.\n−2: Target creature you control fights another target creature.\n−7: You get an emblem with \"Creatures you control have double strike, trample, hexproof, and haste.\"",
     )
     .with_supertype(CardSupertype::Legendary)
-    .metadata_only(),
+    .with_ability(AbilityDef::not_implemented(
+        "+1: Look at the top card of your library. If it's a creature card, you may reveal it and put it into your hand.\n−2: Target creature you control fights another target creature.\n−7: You get an emblem with \"Creatures you control have double strike, trample, hexproof, and haste.\"",
+        "Printed rules are cataloged but are not executed by the engine.",
+    )),
 );
 
 pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::new(
@@ -116,11 +124,10 @@ pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::ne
     CardArt::new("382048ec-0bf5-49a5-90d5-f80fbda08962", "Charles Urbach"),
     CardSet::Gatecrash,
     CardRules::new_creature(
-        ManaCost::colored(2, 0, 0, 0, 1, 1),
+        mana_cost!("{2}{R}{G}"),
         &["Beast"],
         4,
         4,
-        "",
     )
     .with_abilities(&[
         abilities::trample(),
@@ -138,7 +145,7 @@ pub(in crate::card::sets) static GODLESS_SHRINE: CardRecord = CardRecord::new(
     "Godless Shrine",
     CardArt::new("6fd672bb-18cf-44e3-8dda-5310b1e0fffe", "Cliff Childs"),
     CardSet::Gatecrash,
-    CardRules::new_land(&["Plains", "Swamp"], "")
+    CardRules::new_land(&["Plains", "Swamp"])
     .land_entry(LandEntry::PayLifeOrTapped(2))
     .with_abilities(&[
         AbilityDef::replacement(
@@ -160,11 +167,10 @@ pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord:
     CardArt::new("4cc198d8-1f27-482d-8f5d-21e02c59797a", "Svetlin Velinov"),
     CardSet::Gatecrash,
     CardRules::new_creature(
-        ManaCost::colored(1, 2, 0, 2, 0, 0),
+        mana_cost!("{1}{W}{W}{B}{B}"),
         &["Spirit", "Advisor"],
         5,
         5,
-        "",
     )
     .with_supertype(CardSupertype::Legendary)
     .with_abilities(&[
@@ -205,7 +211,7 @@ pub(in crate::card::sets) static SACRED_FOUNDRY: CardRecord = CardRecord::new(
     "Sacred Foundry",
     CardArt::new("0a26d900-c652-4f9c-8681-a35c5f8b1937", "Sam Burley"),
     CardSet::Gatecrash,
-    CardRules::new_land(&["Mountain", "Plains"], "")
+    CardRules::new_land(&["Mountain", "Plains"])
     .land_entry(LandEntry::PayLifeOrTapped(2))
     .with_abilities(&[
         AbilityDef::replacement(
@@ -227,11 +233,10 @@ pub(in crate::card::sets) static SEPULCHRAL_PRIMORDIAL: CardRecord = CardRecord:
     CardArt::new("eb0865cd-d9b4-43ea-87d2-ad5c65fc0459", "Stephan Martiniere"),
     CardSet::Gatecrash,
     CardRules::new_creature(
-        ManaCost::colored(5, 0, 0, 2, 0, 0),
+        mana_cost!("{5}{B}{B}"),
         &["Avatar"],
         5,
         4,
-        "",
     )
     .with_abilities(&[
         abilities::intimidate().with_text(
@@ -251,7 +256,7 @@ pub(in crate::card::sets) static STOMPING_GROUND: CardRecord = CardRecord::new(
     "Stomping Ground",
     CardArt::new("f29f3415-971c-4a5d-aae9-3893f4bdab1e", "David Palumbo"),
     CardSet::Gatecrash,
-    CardRules::new_land(&["Mountain", "Forest"], "")
+    CardRules::new_land(&["Mountain", "Forest"])
     .land_entry(LandEntry::PayLifeOrTapped(2))
     .with_abilities(&[
         AbilityDef::replacement(

@@ -1,17 +1,18 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    CardArt, CardBehavior, CardRules, CardSet, ColorDef, EffectDef, EffectRecipientDef, ManaCost,
-    ValueDef, abilities, cards,
+    CardArt, CardBehavior, CardRules, CardSet, EffectDef, EffectRecipientDef, ManaColor, ValueDef,
+    abilities, cards,
 };
 use crate::ids::TargetSlotId;
+use crate::mana_cost;
 
 pub(in crate::card::sets) static GOBLIN_GRENADE: CardRecord = CardRecord::new(
     cards::GOBLIN_GRENADE,
     "Goblin Grenade",
     CardArt::new("8837eaba-9602-4f63-9897-85583fcdcf51", "Ron Spencer"),
     CardSet::FallenEmpires,
-    CardRules::new_sorcery(ManaCost::new(0, 1), "").with_abilities(&[
+    CardRules::new_sorcery(mana_cost!("{R}")).with_abilities(&[
         AbilityDef::custom_full(
             "As an additional cost to cast this spell, sacrifice a Goblin.\nGoblin Grenade deals 5 damage to any target.",
             CardBehavior::GoblinGrenade,
@@ -25,13 +26,11 @@ pub(in crate::card::sets) static HYMN_TO_TOURACH: CardRecord = CardRecord::new(
     "Hymn to Tourach",
     CardArt::new("eb9273ea-9a41-42e3-8c9c-0d50b127a818", "Susan Van Camp"),
     CardSet::FallenEmpires,
-    CardRules::new_sorcery(ManaCost::colored(0, 0, 0, 2, 0, 0), "").with_abilities(&[
-        AbilityDef::custom_partial(
-            "Target player discards two cards at random.",
-            CardBehavior::HymnToTourach,
-            "The spell always affects the opponent instead of selecting its target player.",
-        ),
-    ]),
+    CardRules::new_sorcery(mana_cost!("{B}{B}")).with_abilities(&[AbilityDef::custom_partial(
+        "Target player discards two cards at random.",
+        CardBehavior::HymnToTourach,
+        "The spell always affects the opponent instead of selecting its target player.",
+    )]),
 );
 
 pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::new(
@@ -40,11 +39,10 @@ pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::n
     CardArt::new("f04b8356-2384-4743-80dd-f15ca7ec65f7", "Melissa A. Benson"),
     CardSet::FallenEmpires,
     CardRules::new_creature(
-        ManaCost::colored(0, 1, 0, 0, 0, 0),
+        mana_cost!("{W}"),
         &["Human", "Soldier"],
         1,
         1,
-        "",
     )
     .with_abilities(&[
         AbilityDef::replacement(
@@ -77,7 +75,8 @@ pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::n
         )
         .with_implementation(AbilityImplementationDef::CustomPartial {
             behavior: Some(CardBehavior::IcatianJavelineers),
-            explanation: "Target selection and damage resolution do not account for protection from white.",
+            explanation:
+                "Target selection and damage resolution do not account for protection from white.",
         }),
     ]),
 );
@@ -87,24 +86,18 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
     "Order of Leitbur",
     CardArt::new("ebd6e51e-f042-4673-a898-291607105829", "Bryon Wackwitz"),
     CardSet::FallenEmpires,
-    CardRules::new_creature(
-        ManaCost::colored(0, 2, 0, 0, 0, 0),
-        &["Human", "Cleric", "Knight"],
-        2,
-        1,
-        "",
-    )
-    .with_abilities(&[
-        abilities::protection_from(ColorDef::Black),
-        AbilityDef::not_implemented(
-            "{W}: This creature gains first strike until end of turn.",
-            "Granting first strike until end of turn is not implemented.",
-        ),
-        AbilityDef::not_implemented(
-            "{W}{W}: This creature gets +1/+0 until end of turn.",
-            "The activated power boost is not implemented.",
-        ),
-    ]),
+    CardRules::new_creature(mana_cost!("{W}{W}"), &["Human", "Cleric", "Knight"], 2, 1)
+        .with_abilities(&[
+            abilities::protection_from(ManaColor::Black),
+            AbilityDef::not_implemented(
+                "{W}: This creature gains first strike until end of turn.",
+                "Granting first strike until end of turn is not implemented.",
+            ),
+            AbilityDef::not_implemented(
+                "{W}{W}: This creature gets +1/+0 until end of turn.",
+                "The activated power boost is not implemented.",
+            ),
+        ]),
 );
 
 pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord::new(
@@ -112,15 +105,8 @@ pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord
     "Order of the Ebon Hand",
     CardArt::new("9e51f5d8-a7cc-4720-8af5-e002bcfd78a0", "Melissa A. Benson"),
     CardSet::FallenEmpires,
-    CardRules::new_creature(
-        ManaCost::colored(0, 0, 0, 2, 0, 0),
-        &["Cleric", "Knight"],
-        2,
-        1,
-        "",
-    )
-    .with_abilities(&[
-        abilities::protection_from(ColorDef::White),
+    CardRules::new_creature(mana_cost!("{B}{B}"), &["Cleric", "Knight"], 2, 1).with_abilities(&[
+        abilities::protection_from(ManaColor::White),
         AbilityDef::not_implemented(
             "{B}: This creature gains first strike until end of turn.",
             "Granting first strike until end of turn is not implemented.",

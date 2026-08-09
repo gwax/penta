@@ -5,11 +5,12 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
     CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, DoubleFacedKind,
-    EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaCost, ManaKindDef,
-    ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef, ValueDef,
-    ZoneKind, abilities, cards,
+    EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef,
+    PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
+use crate::mana_cost;
 
 pub(in crate::card::sets) static AVACYNS_PILGRIM: CardRecord = CardRecord::new(
     cards::AVACYNS_PILGRIM,
@@ -19,14 +20,8 @@ pub(in crate::card::sets) static AVACYNS_PILGRIM: CardRecord = CardRecord::new(
         "Jana Schirmer & Johannes Voss",
     ),
     CardSet::Innistrad,
-    CardRules::new_creature(
-        ManaCost::colored(0, 0, 0, 0, 0, 1),
-        &["Human", "Monk"],
-        1,
-        1,
-        "",
-    )
-    .with_abilities(&[abilities::tap_for(ManaKindDef::White)]),
+    CardRules::new_creature(mana_cost!("{G}"), &["Human", "Monk"], 1, 1)
+        .with_abilities(&[abilities::tap_for(ManaColor::White)]),
 );
 
 pub(in crate::card::sets) static BLASPHEMOUS_ACT: CardRecord = CardRecord::new(
@@ -34,7 +29,7 @@ pub(in crate::card::sets) static BLASPHEMOUS_ACT: CardRecord = CardRecord::new(
     "Blasphemous Act",
     CardArt::new("509ce648-fb76-486d-8b39-183e368b7cb7", "Daarken"),
     CardSet::Innistrad,
-    CardRules::new_sorcery(ManaCost::colored(8, 0, 0, 0, 1, 0), "").with_abilities(&[
+    CardRules::new_sorcery(mana_cost!("{8}{R}")).with_abilities(&[
         AbilityDef::not_implemented(
             "This spell costs {1} less to cast for each creature on the battlefield.",
             "Cost reduction that scales with the board is not implemented, so the spell always costs its printed {8}{R}.",
@@ -58,7 +53,7 @@ pub(in crate::card::sets) static CLIFFTOP_RETREAT: CardRecord = CardRecord::new(
     "Clifftop Retreat",
     CardArt::new("fd7e1bf9-bd6a-48e3-9331-178e5142c06a", "John Avon"),
     CardSet::Innistrad,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::TappedUnlessControlsLandType([
         true, false, false, true, false,
     ]))
@@ -75,8 +70,8 @@ pub(in crate::card::sets) static CLIFFTOP_RETREAT: CardRecord = CardRecord::new(
             "{T}: Add {R} or {W}.",
             &[AbilityCostDef::TapSource],
             EffectDef::AddMana(AddManaEffectDef::choice(&[
-                ManaKindDef::Red,
-                ManaKindDef::White,
+                ManaColor::Red,
+                ManaColor::White,
             ])),
         ),
     ]),
@@ -87,33 +82,37 @@ pub(in crate::card::sets) static DISSIPATE: CardRecord = CardRecord::new(
     "Dissipate",
     CardArt::new("5d778082-bcdb-423a-b16f-57ac0d4dace7", "Tomasz Jedruszek"),
     CardSet::Innistrad,
-    CardRules::new_instant(
-        ManaCost::colored(1, 0, 2, 0, 0, 0),
-        "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
-    )
-    .with_special_behavior(CardBehavior::Dissipate),
+    CardRules::new_instant(mana_cost!("{1}{U}{U}")).with_ability(
+        AbilityDef::custom_full(
+            "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+            CardBehavior::Dissipate,
+            "Implemented by the named card-local special behavior.",
+        ),
+    ),
 );
 
 const fn garruk_front_rules() -> CardRules {
     CardRules::new_planeswalker(
-        ManaCost::colored(3, 0, 0, 0, 0, 1),
+        mana_cost!("{3}{G}"),
         &["Garruk"],
         3,
-        "When Garruk has two or fewer loyalty counters on him, transform him.\n0: Garruk deals 3 damage to target creature. That creature deals damage equal to its power to him.\n0: Create a 2/2 green Wolf creature token.",
     )
     .with_supertype(CardSupertype::Legendary)
-    .metadata_only()
+    .with_ability(AbilityDef::not_implemented(
+        "When Garruk has two or fewer loyalty counters on him, transform him.\n0: Garruk deals 3 damage to target creature. That creature deals damage equal to its power to him.\n0: Create a 2/2 green Wolf creature token.",
+        "Printed rules are cataloged but are not executed by the engine.",
+    ))
 }
 
 fn garruk_composition() -> CardComposition {
     let front = garruk_front_rules();
-    let back = CardRules::new_planeswalker_without_mana_cost(
-        &["Garruk"],
-        "+1: Create a 1/1 black Wolf creature token with deathtouch.\n−1: Sacrifice a creature. If you do, search your library for a creature card, reveal it, put it into your hand, then shuffle.\n−3: Creatures you control gain trample and get +X/+X until end of turn, where X is the number of creature cards in your graveyard.",
-    )
+    let back = CardRules::new_planeswalker_without_mana_cost(&["Garruk"])
     .with_supertype(CardSupertype::Legendary)
-    .printed_colors([false, false, true, false, true])
-    .metadata_only();
+    .printed_colors(&[ManaColor::Black, ManaColor::Green])
+    .with_ability(AbilityDef::not_implemented(
+        "+1: Create a 1/1 black Wolf creature token with deathtouch.\n−1: Sacrifice a creature. If you do, search your library for a creature card, reveal it, put it into your hand, then shuffle.\n−3: Creatures you control gain trample and get +X/+X until end of turn, where X is the number of creature cards in your graveyard.",
+        "Printed rules are cataloged but are not executed by the engine.",
+    ));
     CardComposition {
         parts: vec![
             CardPart::new(CardPartId::PRIMARY, "Garruk Relentless", front),
@@ -150,10 +149,10 @@ pub(in crate::card::sets) static GAVONY_TOWNSHIP: CardRecord = CardRecord::new(
     "Gavony Township",
     CardArt::new("b5f73443-2fe8-424f-8e71-fc7ce1f3a3eb", "Peter Mohrbacher"),
     CardSet::Innistrad,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
         .land_entry(LandEntry::Untapped)
         .with_abilities(&[
-            abilities::tap_for(ManaKindDef::Colorless),
+            abilities::tap_for(ManaColor::Colorless),
             AbilityDef::not_implemented(
                 "{2}{G}{W}, {T}: Put a +1/+1 counter on each creature you control.",
                 "The counter-placing activated ability is not executed.",
@@ -166,10 +165,10 @@ pub(in crate::card::sets) static GHOST_QUARTER: CardRecord = CardRecord::new(
     "Ghost Quarter",
     CardArt::new("1c6456ed-0ffb-4d22-b252-5775076030ce", "Peter Mohrbacher"),
     CardSet::Innistrad,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::Untapped)
     .with_abilities(&[
-        abilities::tap_for(ManaKindDef::Colorless),
+        abilities::tap_for(ManaColor::Colorless),
         AbilityDef::not_implemented(
             "{T}, Sacrifice this land: Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle.",
             "The land-destruction activated ability and optional search are not executed.",
@@ -182,7 +181,7 @@ pub(in crate::card::sets) static ISOLATED_CHAPEL: CardRecord = CardRecord::new(
     "Isolated Chapel",
     CardArt::new("b3c1a371-5ded-4a3a-bf96-503c4f1a665d", "Cliff Childs"),
     CardSet::Innistrad,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::TappedUnlessControlsLandType([
         true, false, true, false, false,
     ]))
@@ -199,8 +198,8 @@ pub(in crate::card::sets) static ISOLATED_CHAPEL: CardRecord = CardRecord::new(
             "{T}: Add {W} or {B}.",
             &[AbilityCostDef::TapSource],
             EffectDef::AddMana(AddManaEffectDef::choice(&[
-                ManaKindDef::White,
-                ManaKindDef::Black,
+                ManaColor::White,
+                ManaColor::Black,
             ])),
         ),
     ]),
@@ -211,10 +210,10 @@ pub(in crate::card::sets) static KESSIG_WOLF_RUN: CardRecord = CardRecord::new(
     "Kessig Wolf Run",
     CardArt::new("4a8447fe-7368-470a-911a-1083ec6cc831", "Eytan Zana"),
     CardSet::Innistrad,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
         .land_entry(LandEntry::Untapped)
         .with_abilities(&[
-            abilities::tap_for(ManaKindDef::Colorless),
+            abilities::tap_for(ManaColor::Colorless),
             AbilityDef::not_implemented(
                 "{X}{R}{G}, {T}: Target creature gets +X/+0 and gains trample until end of turn.",
                 "The targeted power and trample activated ability is not executed.",
@@ -228,13 +227,15 @@ pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::n
     CardArt::new("ac506c17-adc8-49c6-9d8d-43db7cb1ec9d", "Steve Argyle"),
     CardSet::Innistrad,
     CardRules::new_planeswalker(
-        ManaCost::colored(1, 0, 0, 2, 0, 0),
+        mana_cost!("{1}{B}{B}"),
         &["Liliana"],
         3,
-        "+1: Each player discards a card.\n−2: Target player sacrifices a creature.\n−6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
     )
     .with_supertype(CardSupertype::Legendary)
-    .metadata_only(),
+    .with_ability(AbilityDef::not_implemented(
+        "+1: Each player discards a card.\n−2: Target player sacrifices a creature.\n−6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
+        "Printed rules are cataloged but are not executed by the engine.",
+    )),
 );
 
 pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
@@ -242,10 +243,10 @@ pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
     "Moorland Haunt",
     CardArt::new("1d5569e3-278c-4cf3-860e-712010333fe6", "James Paick"),
     CardSet::Innistrad,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::Untapped)
     .with_abilities(&[
-        abilities::tap_for(ManaKindDef::Colorless),
+        abilities::tap_for(ManaColor::Colorless),
         AbilityDef::not_implemented(
             "{W}{U}, {T}, Exile a creature card from your graveyard: Create a 1/1 white Spirit creature token with flying.",
             "The graveyard cost and token-creating activated ability are not executed.",
@@ -258,11 +259,13 @@ pub(in crate::card::sets) static MULCH: CardRecord = CardRecord::new(
     "Mulch",
     CardArt::new("52a1dabd-82df-4814-9d64-bf7bf9c1018d", "Christopher Moeller"),
     CardSet::Innistrad,
-    CardRules::new_sorcery(
-        ManaCost::colored(1, 0, 0, 0, 0, 1),
-        "Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard.",
-    )
-    .with_special_behavior(CardBehavior::Mulch),
+    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(
+        AbilityDef::custom_full(
+            "Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard.",
+            CardBehavior::Mulch,
+            "Implemented by the named card-local special behavior.",
+        ),
+    ),
 );
 
 static INSTANT_OR_SORCERY_CARD: [ObjectPredicateDef; 2] = [
@@ -287,11 +290,10 @@ pub(in crate::card::sets) static SNAPCASTER_MAGE: CardRecord = CardRecord::new(
     CardArt::new("9e5b279e-4670-4a1e-87d0-3cab7e4f9e58", "Volkan Baǵa"),
     CardSet::Innistrad,
     CardRules::new_creature(
-        ManaCost::colored(1, 0, 1, 0, 0, 0),
+        mana_cost!("{1}{U}"),
         &["Human", "Wizard"],
         2,
         1,
-        "",
     )
     .with_abilities(&[
         abilities::flash(),
@@ -322,7 +324,7 @@ pub(in crate::card::sets) static SULFUR_FALLS: CardRecord = CardRecord::new(
     "Sulfur Falls",
     CardArt::new("4968b65d-50e5-4d7e-b78b-cdada1cbf7a7", "Cliff Childs"),
     CardSet::Innistrad,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::TappedUnlessControlsLandType([
         false, true, false, true, false,
     ]))
@@ -339,8 +341,8 @@ pub(in crate::card::sets) static SULFUR_FALLS: CardRecord = CardRecord::new(
             "{T}: Add {U} or {R}.",
             &[AbilityCostDef::TapSource],
             EffectDef::AddMana(AddManaEffectDef::choice(&[
-                ManaKindDef::Blue,
-                ManaKindDef::Red,
+                ManaColor::Blue,
+                ManaColor::Red,
             ])),
         ),
     ]),
@@ -351,7 +353,7 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
     "Think Twice",
     CardArt::new("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco"),
     CardSet::Innistrad,
-    CardRules::new_instant(ManaCost::colored(1, 0, 1, 0, 0, 0), "").with_abilities(&[
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
         AbilityDef::spell(
             "Draw a card.",
             EffectDef::DrawCards {
@@ -371,7 +373,7 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
     "Unburial Rites",
     CardArt::new("2794c82b-e5ce-4369-894e-bf56c6402ae1", "Ryan Pancoast"),
     CardSet::Innistrad,
-    CardRules::new_sorcery(ManaCost::colored(4, 0, 0, 1, 0, 0), "").with_abilities(&[
+    CardRules::new_sorcery(mana_cost!("{4}{B}")).with_abilities(&[
         AbilityDef::spell(
             "Return target creature card from your graveyard to the battlefield.",
             EffectDef::MoveToZone {
@@ -401,28 +403,26 @@ pub(in crate::card::sets) static URGENT_EXORCISM: CardRecord = CardRecord::new(
     "Urgent Exorcism",
     CardArt::new("516a437c-a2ee-43c6-876c-1a63a455c97c", "Svetlin Velinov"),
     CardSet::Innistrad,
-    CardRules::new_instant(ManaCost::colored(1, 1, 0, 0, 0, 0), "").with_abilities(&[
-        AbilityDef::spell(
-            "Destroy target Spirit or enchantment.",
-            EffectDef::Destroy {
-                object: EffectRecipientDef::Target(TargetSlotId(0)),
-                can_regenerate: true,
-            },
-        )
-        .with_targets(&[AbilityTargetDef::exactly_one(
-            TargetSlotId(0),
-            "Spirit or enchantment",
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::AnyOf(&[
-                    ObjectPredicateDef::Subtype("Spirit"),
-                    ObjectPredicateDef::HasType(CardType::Enchantment),
-                ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: None,
-                owner: None,
-            },
-        )]),
-    ]),
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[AbilityDef::spell(
+        "Destroy target Spirit or enchantment.",
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetSlotId(0)),
+            can_regenerate: true,
+        },
+    )
+    .with_targets(&[AbilityTargetDef::exactly_one(
+        TargetSlotId(0),
+        "Spirit or enchantment",
+        AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::Subtype("Spirit"),
+                ObjectPredicateDef::HasType(CardType::Enchantment),
+            ]),
+            zones: &[ZoneKind::Battlefield],
+            controller: None,
+            owner: None,
+        },
+    )])]),
 );
 
 pub(in crate::card::sets) static WOODLAND_CEMETERY: CardRecord = CardRecord::new(
@@ -430,7 +430,7 @@ pub(in crate::card::sets) static WOODLAND_CEMETERY: CardRecord = CardRecord::new
     "Woodland Cemetery",
     CardArt::new("67139101-ec5e-434b-be3a-21338cc33840", "Lars Grant-West"),
     CardSet::Innistrad,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::TappedUnlessControlsLandType([
         false, false, true, false, true,
     ]))
@@ -447,8 +447,8 @@ pub(in crate::card::sets) static WOODLAND_CEMETERY: CardRecord = CardRecord::new
             "{T}: Add {B} or {G}.",
             &[AbilityCostDef::TapSource],
             EffectDef::AddMana(AddManaEffectDef::choice(&[
-                ManaKindDef::Black,
-                ManaKindDef::Green,
+                ManaColor::Black,
+                ManaColor::Green,
             ])),
         ),
     ]),

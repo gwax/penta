@@ -8,7 +8,7 @@ pub(in crate::card::sets) static VOLCANIC_ISLAND: CardRecord = CardRecord::new(
     "Volcanic Island",
     CardArt::new("0324641d-af55-4c53-b4dc-c8262e967da5", "Brian Snõddy"),
     CardSet::Beta,
-    CardRules::new_land(&["Island", "Mountain"], "").with_abilities(&[
+    CardRules::new_land(&["Island", "Mountain"]).with_abilities(&[
         abilities::basic_land_type_mana(BasicLandType::Island),
         abilities::basic_land_type_mana(BasicLandType::Mountain),
     ]),

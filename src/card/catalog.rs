@@ -1442,7 +1442,7 @@ mod tests {
 
     fn split_definition(fused: Option<PlayOptionId>) -> CardDefinition {
         let mut card = definition(1, "Left // Right", CardSet::Alpha);
-        let spell_rules = crate::CardRules::new_instant(ManaCost::default(), "");
+        let spell_rules = crate::CardRules::new_instant(ManaCost::default());
         card.rules = spell_rules;
         card.parts[0].rules = spell_rules;
         card.parts
@@ -1543,7 +1543,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(catalog.get(id).unwrap().set, CardSet::Alpha);
+        assert_eq!(catalog.get(id).unwrap().debut_set, CardSet::Alpha);
         assert!(catalog.is_allowed_in(id, Format::OldSchool9394));
         assert!(catalog.is_allowed_in(id, Format::IsdRtrStandard));
     }
@@ -1614,7 +1614,7 @@ mod tests {
 
     #[test]
     fn incoherent_rules_cannot_enter_the_catalog() {
-        let invalid_rules = crate::CardRules::new_land(&[], "")
+        let invalid_rules = crate::CardRules::new_land(&[])
             .with_printed_mana_cost_for_test(PrintedManaCost::Cost(ManaCost::default()));
 
         let mut invalid_compatibility_view = definition(1, "Test Card", CardSet::Alpha);
@@ -1643,7 +1643,7 @@ mod tests {
     #[test]
     fn compatibility_rules_must_match_the_primary_part() {
         let mut card = definition(1, "Test Card", CardSet::Alpha);
-        card.rules = crate::CardRules::new_artifact(ManaCost::default(), "");
+        card.rules = crate::CardRules::new_artifact(ManaCost::default());
 
         assert_eq!(
             error(card),

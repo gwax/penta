@@ -1,3 +1,7 @@
+use std::error::Error;
+use std::fmt;
+use std::str::FromStr;
+
 use crate::ids::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, MeldRecipeId,
     ModeId, PlayOptionId, TargetSlotId,
@@ -288,50 +292,147 @@ pub enum PlayerRelation {
     EventPlayer,
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ColorDef {
+/// One of the five colors of Magic, or colorless mana.
+///
+/// The same vocabulary is used by card characteristics, mana-producing
+/// effects, and the runtime mana pool. `Colorless` is a mana type rather than
+/// a color, so it has no index in a card's five-color characteristic set.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ManaColor {
     White,
     Blue,
     Black,
     Red,
     Green,
+    Colorless,
 }
 
-impl ColorDef {
+impl ManaColor {
+    pub const COLORS: [Self; 5] = [Self::White, Self::Blue, Self::Black, Self::Red, Self::Green];
+
+    pub const ALL: [Self; 6] = [
+        Self::White,
+        Self::Blue,
+        Self::Black,
+        Self::Red,
+        Self::Green,
+        Self::Colorless,
+    ];
+
     #[must_use]
-    pub const fn index(self) -> usize {
+    pub const fn color_index(self) -> Option<usize> {
         match self {
-            Self::White => 0,
-            Self::Blue => 1,
-            Self::Black => 2,
-            Self::Red => 3,
-            Self::Green => 4,
+            Self::White => Some(0),
+            Self::Blue => Some(1),
+            Self::Black => Some(2),
+            Self::Red => Some(3),
+            Self::Green => Some(4),
+            Self::Colorless => None,
         }
     }
 }
 
-/// One card type tested by membership rather than by an exact stored type-line
-/// shape. For example, an artifact creature has both `Artifact` and
-/// `Creature`, while [`CardKind::ArtifactCreature`] remains the compact current
-/// representation used by card records.
+/// The colors an object has as a characteristic.
+///
+/// Colorless is represented by the empty set, not by a sixth flag. The
+/// protocol-facing [`CardRules::colors`] method continues to project this as
+/// `[white, blue, black, red, green]` for compatibility.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct ColorSet(u8);
+
+impl ColorSet {
+    #[must_use]
+    pub const fn empty() -> Self {
+        Self(0)
+    }
+
+    #[must_use]
+    /// # Panics
+    ///
+    /// Panics if `colors` contains [`ManaColor::Colorless`], which is a mana
+    /// type rather than a color characteristic.
+    pub const fn from_colors(colors: &[ManaColor]) -> Self {
+        let mut result = Self::empty();
+        let mut index = 0;
+        while index < colors.len() {
+            result = result.with(colors[index]);
+            index += 1;
+        }
+        result
+    }
+
+    #[must_use]
+    /// # Panics
+    ///
+    /// Panics if `color` is [`ManaColor::Colorless`]. A colorless object is
+    /// represented by an empty set.
+    pub const fn with(mut self, color: ManaColor) -> Self {
+        let Some(index) = color.color_index() else {
+            panic!("colorless is not a color characteristic");
+        };
+        self.0 |= 1 << index;
+        self
+    }
+
+    #[must_use]
+    pub const fn contains(self, color: ManaColor) -> bool {
+        let Some(index) = color.color_index() else {
+            return false;
+        };
+        self.0 & (1 << index) != 0
+    }
+
+    #[must_use]
+    pub const fn is_colorless(self) -> bool {
+        self.0 == 0
+    }
+
+    #[must_use]
+    pub const fn to_flags(self) -> [bool; 5] {
+        [
+            self.contains(ManaColor::White),
+            self.contains(ManaColor::Blue),
+            self.contains(ManaColor::Black),
+            self.contains(ManaColor::Red),
+            self.contains(ManaColor::Green),
+        ]
+    }
+}
+
+/// One atomic card type. A card's type line is represented by a
+/// [`CardTypeSet`], so combinations such as artifact creatures, enchantment
+/// creatures, artifact lands, and land creatures do not require bespoke enum
+/// variants.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CardType {
-    Land,
-    Creature,
     Artifact,
+    Creature,
     Enchantment,
-    Planeswalker,
     Instant,
+    Land,
+    Planeswalker,
     Sorcery,
 }
 
 impl CardType {
     pub const COUNT: usize = 7;
     pub const ALL: [Self; Self::COUNT] = [
-        Self::Land,
+        Self::Artifact,
         Self::Creature,
+        Self::Enchantment,
+        Self::Instant,
+        Self::Land,
+        Self::Planeswalker,
+        Self::Sorcery,
+    ];
+
+    /// Conventional type-line order for the combinations the catalog can
+    /// currently express. This is deliberately independent of bit indexes.
+    pub const DISPLAY_ORDER: [Self; Self::COUNT] = [
         Self::Artifact,
         Self::Enchantment,
+        Self::Land,
+        Self::Creature,
         Self::Planeswalker,
         Self::Instant,
         Self::Sorcery,
@@ -340,14 +441,127 @@ impl CardType {
     #[must_use]
     pub const fn index(self) -> usize {
         match self {
-            Self::Land => 0,
+            Self::Artifact => 0,
             Self::Creature => 1,
-            Self::Artifact => 2,
-            Self::Enchantment => 3,
-            Self::Planeswalker => 4,
-            Self::Instant => 5,
+            Self::Enchantment => 2,
+            Self::Instant => 3,
+            Self::Land => 4,
+            Self::Planeswalker => 5,
             Self::Sorcery => 6,
         }
+    }
+
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Artifact => "Artifact",
+            Self::Creature => "Creature",
+            Self::Enchantment => "Enchantment",
+            Self::Instant => "Instant",
+            Self::Land => "Land",
+            Self::Planeswalker => "Planeswalker",
+            Self::Sorcery => "Sorcery",
+        }
+    }
+}
+
+/// A const-friendly set of card types stored on one card part.
+#[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
+pub struct CardTypeSet(u32);
+
+impl CardTypeSet {
+    pub const EMPTY: Self = Self(0);
+
+    #[must_use]
+    pub const fn empty() -> Self {
+        Self::EMPTY
+    }
+
+    #[must_use]
+    pub const fn single(card_type: CardType) -> Self {
+        Self(1 << card_type.index())
+    }
+
+    #[must_use]
+    pub const fn with(mut self, card_type: CardType) -> Self {
+        self.0 |= 1 << card_type.index();
+        self
+    }
+
+    #[must_use]
+    pub const fn union(self, other: Self) -> Self {
+        Self(self.0 | other.0)
+    }
+
+    #[must_use]
+    pub const fn intersects(self, other: Self) -> bool {
+        self.0 & other.0 != 0
+    }
+
+    #[must_use]
+    pub const fn contains(self, card_type: CardType) -> bool {
+        self.0 & (1 << card_type.index()) != 0
+    }
+
+    #[must_use]
+    pub const fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+
+    #[must_use]
+    pub const fn is_creature(self) -> bool {
+        self.contains(CardType::Creature)
+    }
+
+    #[must_use]
+    pub const fn is_artifact(self) -> bool {
+        self.contains(CardType::Artifact)
+    }
+
+    #[must_use]
+    pub const fn is_permanent(self) -> bool {
+        self.contains(CardType::Artifact)
+            || self.contains(CardType::Creature)
+            || self.contains(CardType::Enchantment)
+            || self.contains(CardType::Land)
+            || self.contains(CardType::Planeswalker)
+    }
+
+    /// Compatibility spelling used by the existing protocol `kind` field.
+    ///
+    /// Current single-type cards retain names such as `Instant`; an artifact
+    /// creature retains `ArtifactCreature`. New combinations are represented
+    /// by concatenating their card types in rules-defined type-line order.
+    #[must_use]
+    pub fn kind_name(self) -> String {
+        CardType::DISPLAY_ORDER
+            .into_iter()
+            .filter(|card_type| self.contains(*card_type))
+            .map(CardType::name)
+            .collect()
+    }
+
+    #[must_use]
+    pub fn type_name(self) -> String {
+        CardType::DISPLAY_ORDER
+            .into_iter()
+            .filter(|card_type| self.contains(*card_type))
+            .map(CardType::name)
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+}
+
+impl fmt::Debug for CardTypeSet {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_set()
+            .entries(
+                CardType::DISPLAY_ORDER
+                    .into_iter()
+                    .filter(|card_type| self.contains(*card_type)),
+            )
+            .finish()
     }
 }
 
@@ -359,7 +573,7 @@ pub enum ObjectPredicateDef {
     HasType(CardType),
     Spell,
     NoncreatureSpell,
-    Color(ColorDef),
+    Color(ManaColor),
     Subtype(&'static str),
     /// Mana value at most this much, for "with mana value N or less".
     ManaValueAtMost(u8),
@@ -432,16 +646,6 @@ pub enum AbilityCostDef {
     Special(&'static str),
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ManaKindDef {
-    White,
-    Blue,
-    Black,
-    Red,
-    Green,
-    Colorless,
-}
-
 /// A basic land subtype used by type-changing effects and mana provenance.
 ///
 /// Card definitions intentionally list an executable stand-in for the mana
@@ -480,13 +684,13 @@ impl BasicLandType {
     }
 
     #[must_use]
-    pub const fn mana_kind(self) -> ManaKindDef {
+    pub const fn mana_color(self) -> ManaColor {
         match self {
-            Self::Plains => ManaKindDef::White,
-            Self::Island => ManaKindDef::Blue,
-            Self::Swamp => ManaKindDef::Black,
-            Self::Mountain => ManaKindDef::Red,
-            Self::Forest => ManaKindDef::Green,
+            Self::Plains => ManaColor::White,
+            Self::Island => ManaColor::Blue,
+            Self::Swamp => ManaColor::Black,
+            Self::Mountain => ManaColor::Red,
+            Self::Forest => ManaColor::Green,
         }
     }
 
@@ -507,8 +711,8 @@ impl BasicLandType {
 /// the pool.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ManaSelectionDef {
-    One(ManaKindDef),
-    Choice(&'static [ManaKindDef]),
+    One(ManaColor),
+    Choice(&'static [ManaColor]),
 }
 
 /// A restriction carried by produced mana until that mana is spent.
@@ -540,7 +744,7 @@ pub struct AddManaEffectDef {
 
 impl AddManaEffectDef {
     #[must_use]
-    pub const fn one(mana: ManaKindDef) -> Self {
+    pub const fn one(mana: ManaColor) -> Self {
         Self {
             mana: ManaSelectionDef::One(mana),
             amount: 1,
@@ -550,7 +754,7 @@ impl AddManaEffectDef {
     }
 
     #[must_use]
-    pub const fn choice(mana: &'static [ManaKindDef]) -> Self {
+    pub const fn choice(mana: &'static [ManaColor]) -> Self {
         Self {
             mana: ManaSelectionDef::Choice(mana),
             amount: 1,
@@ -942,7 +1146,7 @@ pub enum KeywordAbility {
     Intimidate,
     Undying,
     Mountainwalk,
-    ProtectionFrom(ColorDef),
+    ProtectionFrom(ManaColor),
 }
 
 /// The rules category and structural procedure of an ability. Text and
@@ -1006,24 +1210,6 @@ impl AbilityImplementationDef {
     }
 
     #[must_use]
-    pub const fn with_custom_behavior(self, behavior: CardBehavior) -> Self {
-        match self {
-            Self::CustomFull { explanation, .. } => Self::CustomFull {
-                behavior: Some(behavior),
-                explanation,
-            },
-            Self::CustomPartial { explanation, .. } => Self::CustomPartial {
-                behavior: Some(behavior),
-                explanation,
-            },
-            Self::Definition | Self::NotImplemented { .. } => Self::CustomFull {
-                behavior: Some(behavior),
-                explanation: "Implemented by the named card-local special behavior.",
-            },
-        }
-    }
-
-    #[must_use]
     pub const fn is_executable(self) -> bool {
         !matches!(self, Self::NotImplemented { .. })
     }
@@ -1045,9 +1231,6 @@ pub struct AbilityDef {
 }
 
 impl AbilityDef {
-    const LEGACY_EXPLANATION: &'static str =
-        "Legacy aggregate rules text has not been assigned an implementation.";
-
     #[must_use]
     pub const fn spell(text: &'static str, effect: EffectDef) -> Self {
         Self::defined(
@@ -1175,19 +1358,6 @@ impl AbilityDef {
             implementation: AbilityImplementationDef::CustomFull {
                 behavior: Some(behavior),
                 explanation,
-            },
-        }
-    }
-
-    #[must_use]
-    pub const fn legacy(text: &'static str) -> Self {
-        Self {
-            text,
-            activation_text: None,
-            definition: DeclarativeAbilityDef::Legacy,
-            effect: EffectDef::None,
-            implementation: AbilityImplementationDef::NotImplemented {
-                explanation: Self::LEGACY_EXPLANATION,
             },
         }
     }
@@ -1488,7 +1658,7 @@ impl CardComposition {
     pub fn single(name: impl Into<String>, rules: CardRules) -> Self {
         let printed_mana_cost = rules.printed_mana_cost;
         let name = name.into();
-        let is_land = rules.kind == CardKind::Land;
+        let is_land = rules.has_type(CardType::Land);
         let effect_status = match rules.implementation_status() {
             ImplementationStatus::MetadataOnly => CardEffectStatus::MetadataOnly,
             ImplementationStatus::Complete | ImplementationStatus::Partial => {
@@ -1548,7 +1718,7 @@ pub struct CardDefinition {
     ///
     /// Rules that care where a card debuted, such as City in a Bottle, use
     /// this field. Format legality instead considers every known `printing`.
-    pub set: CardSet,
+    pub debut_set: CardSet,
     pub printings: Vec<CardPrinting>,
     /// Compatibility view of the primary/front part. Contextual rules should
     /// use `parts` once the game engine is part-aware.
@@ -1564,7 +1734,7 @@ impl CardDefinition {
     pub fn new(
         id: CardDefinitionId,
         name: impl Into<String>,
-        set: CardSet,
+        debut_set: CardSet,
         is_basic_land: bool,
         behavior: CardBehavior,
     ) -> Self {
@@ -1579,8 +1749,8 @@ impl CardDefinition {
             id,
             name,
             art: None,
-            set,
-            printings: vec![CardPrinting::new(id, set)],
+            debut_set,
+            printings: vec![CardPrinting::new(id, debut_set)],
             rules,
             parts: composition.parts,
             structure: composition.structure,
@@ -1590,7 +1760,7 @@ impl CardDefinition {
 
     #[must_use]
     pub const fn is_basic_land(&self) -> bool {
-        matches!(self.rules.kind, CardKind::Land) && self.rules.has_supertype(CardSupertype::Basic)
+        self.rules.has_type(CardType::Land) && self.rules.has_supertype(CardSupertype::Basic)
     }
 
     #[must_use]
@@ -1731,18 +1901,6 @@ pub enum CardBehavior {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum CardKind {
-    Land,
-    Creature,
-    Artifact,
-    ArtifactCreature,
-    Enchantment,
-    Planeswalker,
-    Instant,
-    Sorcery,
-}
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CardSupertype {
     Basic,
     Legendary,
@@ -1816,70 +1974,6 @@ pub enum CardEffectStatus {
     MetadataOnly,
 }
 
-impl CardKind {
-    #[must_use]
-    pub const fn type_name(self) -> &'static str {
-        match self {
-            Self::Land => "Land",
-            Self::Creature => "Creature",
-            Self::Artifact => "Artifact",
-            Self::ArtifactCreature => "Artifact Creature",
-            Self::Enchantment => "Enchantment",
-            Self::Planeswalker => "Planeswalker",
-            Self::Instant => "Instant",
-            Self::Sorcery => "Sorcery",
-        }
-    }
-
-    #[must_use]
-    pub const fn is_creature(self) -> bool {
-        matches!(self, Self::Creature | Self::ArtifactCreature)
-    }
-
-    #[must_use]
-    pub const fn is_artifact(self) -> bool {
-        matches!(self, Self::Artifact | Self::ArtifactCreature)
-    }
-
-    #[must_use]
-    pub const fn has_type(self, card_type: CardType) -> bool {
-        match card_type {
-            CardType::Land => matches!(self, Self::Land),
-            CardType::Creature => self.is_creature(),
-            CardType::Artifact => self.is_artifact(),
-            CardType::Enchantment => matches!(self, Self::Enchantment),
-            CardType::Planeswalker => matches!(self, Self::Planeswalker),
-            CardType::Instant => matches!(self, Self::Instant),
-            CardType::Sorcery => matches!(self, Self::Sorcery),
-        }
-    }
-
-    #[must_use]
-    pub const fn types(self) -> [bool; CardType::COUNT] {
-        let mut types = [false; CardType::COUNT];
-        let mut index = 0;
-        while index < CardType::COUNT {
-            let card_type = CardType::ALL[index];
-            types[index] = self.has_type(card_type);
-            index += 1;
-        }
-        types
-    }
-
-    #[must_use]
-    pub const fn is_permanent(self) -> bool {
-        matches!(
-            self,
-            Self::Land
-                | Self::Creature
-                | Self::Artifact
-                | Self::ArtifactCreature
-                | Self::Enchantment
-                | Self::Planeswalker
-        )
-    }
-}
-
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub struct ManaCost {
     pub generic: u16,
@@ -1894,7 +1988,232 @@ pub struct ManaCost {
     pub x_multiplier: u16,
 }
 
+/// Why a symbolic mana-cost string could not be represented by [`ManaCost`].
+///
+/// Penta accepts the canonical braced notation used by Oracle, such as
+/// `{2}{G}{G}` or `{X}{R}`. Symbols outside the engine's current mana model
+/// are rejected instead of being approximated.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ManaCostParseError {
+    pub offset: usize,
+    pub kind: ManaCostParseErrorKind,
+}
+
+impl ManaCostParseError {
+    const fn new(offset: usize, kind: ManaCostParseErrorKind) -> Self {
+        Self { offset, kind }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ManaCostParseErrorKind {
+    Empty,
+    ExpectedOpeningBrace,
+    UnterminatedSymbol,
+    EmptySymbol,
+    InvalidSymbol,
+    DuplicateGenericSymbol,
+    Overflow,
+}
+
+impl fmt::Display for ManaCostParseError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let problem = match self.kind {
+            ManaCostParseErrorKind::Empty => "a mana cost cannot be empty",
+            ManaCostParseErrorKind::ExpectedOpeningBrace => {
+                "each mana symbol must start with an opening brace"
+            }
+            ManaCostParseErrorKind::UnterminatedSymbol => {
+                "a mana symbol is missing its closing brace"
+            }
+            ManaCostParseErrorKind::EmptySymbol => "a mana symbol cannot be empty",
+            ManaCostParseErrorKind::InvalidSymbol => {
+                "the mana symbol is invalid or unsupported by the current engine"
+            }
+            ManaCostParseErrorKind::DuplicateGenericSymbol => {
+                "a mana cost may contain only one numeric generic symbol"
+            }
+            ManaCostParseErrorKind::Overflow => "the mana cost exceeds the supported numeric range",
+        };
+        write!(formatter, "{problem} at byte {}", self.offset)
+    }
+}
+
+impl Error for ManaCostParseError {}
+
 impl ManaCost {
+    /// Parses canonical braced mana symbols without allocating.
+    ///
+    /// This is `const` so [`crate::mana_cost!`] can validate literals during
+    /// compilation. Runtime callers will usually prefer `str::parse`, which
+    /// uses the same parser through [`FromStr`]. An empty string is invalid:
+    /// a card with no mana cost is represented by [`PrintedManaCost::None`],
+    /// while `{0}` is a real, payable printed cost.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`ManaCostParseError`] at the first malformed or currently
+    /// unsupported symbol, duplicate numeric symbol, or numeric overflow.
+    #[allow(clippy::too_many_lines)]
+    pub const fn parse_symbols(symbols: &str) -> Result<Self, ManaCostParseError> {
+        let bytes = symbols.as_bytes();
+        if bytes.is_empty() {
+            return Err(ManaCostParseError::new(0, ManaCostParseErrorKind::Empty));
+        }
+
+        let mut cost = Self {
+            generic: 0,
+            white: 0,
+            blue: 0,
+            black: 0,
+            red: 0,
+            green: 0,
+            white_red_hybrid: 0,
+            variable_x: false,
+            x_multiplier: 0,
+        };
+        let mut offset = 0;
+        let mut saw_generic = false;
+
+        while offset < bytes.len() {
+            if bytes[offset] != b'{' {
+                return Err(ManaCostParseError::new(
+                    offset,
+                    ManaCostParseErrorKind::ExpectedOpeningBrace,
+                ));
+            }
+            let symbol_start = offset + 1;
+            let mut symbol_end = symbol_start;
+            while symbol_end < bytes.len() && bytes[symbol_end] != b'}' {
+                symbol_end += 1;
+            }
+            if symbol_end == bytes.len() {
+                return Err(ManaCostParseError::new(
+                    offset,
+                    ManaCostParseErrorKind::UnterminatedSymbol,
+                ));
+            }
+            if symbol_end == symbol_start {
+                return Err(ManaCostParseError::new(
+                    symbol_start,
+                    ManaCostParseErrorKind::EmptySymbol,
+                ));
+            }
+
+            let symbol_len = symbol_end - symbol_start;
+            if symbol_len == 1 {
+                let parsed = match bytes[symbol_start] {
+                    b'W' => Self::checked_increment(cost.white),
+                    b'U' => Self::checked_increment(cost.blue),
+                    b'B' => Self::checked_increment(cost.black),
+                    b'R' => Self::checked_increment(cost.red),
+                    b'G' => Self::checked_increment(cost.green),
+                    b'X' => Self::checked_increment(cost.x_multiplier),
+                    b'0'..=b'9' => {
+                        if saw_generic {
+                            return Err(ManaCostParseError::new(
+                                symbol_start,
+                                ManaCostParseErrorKind::DuplicateGenericSymbol,
+                            ));
+                        }
+                        saw_generic = true;
+                        Ok((bytes[symbol_start] - b'0') as u16)
+                    }
+                    _ => Err(ManaCostParseErrorKind::InvalidSymbol),
+                };
+                let value = match parsed {
+                    Ok(value) => value,
+                    Err(kind) => return Err(ManaCostParseError::new(symbol_start, kind)),
+                };
+                match bytes[symbol_start] {
+                    b'W' => cost.white = value,
+                    b'U' => cost.blue = value,
+                    b'B' => cost.black = value,
+                    b'R' => cost.red = value,
+                    b'G' => cost.green = value,
+                    b'X' => {
+                        cost.variable_x = true;
+                        cost.x_multiplier = value;
+                    }
+                    b'0'..=b'9' => cost.generic = value,
+                    _ => {}
+                }
+            } else if symbol_len == 3
+                && bytes[symbol_start] == b'R'
+                && bytes[symbol_start + 1] == b'/'
+                && bytes[symbol_start + 2] == b'W'
+            {
+                cost.white_red_hybrid = match Self::checked_increment(cost.white_red_hybrid) {
+                    Ok(value) => value,
+                    Err(kind) => return Err(ManaCostParseError::new(symbol_start, kind)),
+                };
+            } else {
+                let first = bytes[symbol_start];
+                if !first.is_ascii_digit() {
+                    return Err(ManaCostParseError::new(
+                        symbol_start,
+                        ManaCostParseErrorKind::InvalidSymbol,
+                    ));
+                }
+                if saw_generic {
+                    return Err(ManaCostParseError::new(
+                        symbol_start,
+                        ManaCostParseErrorKind::DuplicateGenericSymbol,
+                    ));
+                }
+                if first == b'0' {
+                    return Err(ManaCostParseError::new(
+                        symbol_start,
+                        ManaCostParseErrorKind::InvalidSymbol,
+                    ));
+                }
+                let mut value = 0_u16;
+                let mut digit = symbol_start;
+                while digit < symbol_end {
+                    let byte = bytes[digit];
+                    if !byte.is_ascii_digit() {
+                        return Err(ManaCostParseError::new(
+                            digit,
+                            ManaCostParseErrorKind::InvalidSymbol,
+                        ));
+                    }
+                    value = match value.checked_mul(10) {
+                        Some(value) => value,
+                        None => {
+                            return Err(ManaCostParseError::new(
+                                symbol_start,
+                                ManaCostParseErrorKind::Overflow,
+                            ));
+                        }
+                    };
+                    value = match value.checked_add((byte - b'0') as u16) {
+                        Some(value) => value,
+                        None => {
+                            return Err(ManaCostParseError::new(
+                                symbol_start,
+                                ManaCostParseErrorKind::Overflow,
+                            ));
+                        }
+                    };
+                    digit += 1;
+                }
+                cost.generic = value;
+                saw_generic = true;
+            }
+
+            offset = symbol_end + 1;
+        }
+
+        Ok(cost)
+    }
+
+    const fn checked_increment(value: u16) -> Result<u16, ManaCostParseErrorKind> {
+        match value.checked_add(1) {
+            Some(value) => Ok(value),
+            None => Err(ManaCostParseErrorKind::Overflow),
+        }
+    }
+
     /// Mana value with each `{X}` treated as zero.
     #[must_use]
     pub const fn mana_value(self) -> u16 {
@@ -2013,6 +2332,39 @@ impl ManaCost {
     }
 }
 
+impl FromStr for ManaCost {
+    type Err = ManaCostParseError;
+
+    fn from_str(symbols: &str) -> Result<Self, Self::Err> {
+        Self::parse_symbols(symbols)
+    }
+}
+
+/// Builds a [`ManaCost`] from canonical braced symbols and validates the
+/// literal at compile time.
+///
+/// ```
+/// # use penta::{ManaCost, mana_cost};
+/// const COST: ManaCost = mana_cost!("{2}{G}{G}");
+/// assert_eq!(COST.generic, 2);
+/// assert_eq!(COST.green, 2);
+/// ```
+///
+/// ```compile_fail
+/// # use penta::{ManaCost, mana_cost};
+/// const COST: ManaCost = mana_cost!("2GG");
+/// ```
+#[macro_export]
+macro_rules! mana_cost {
+    ($symbols:literal) => {{
+        const COST: $crate::ManaCost = match $crate::ManaCost::parse_symbols($symbols) {
+            Ok(cost) => cost,
+            Err(_) => panic!("invalid mana cost literal"),
+        };
+        COST
+    }};
+}
+
 /// How a land enters the battlefield before replacement effects are applied.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum LandEntry {
@@ -2020,23 +2372,6 @@ pub enum LandEntry {
     Tapped,
     TappedUnlessControlsLandType([bool; 5]),
     PayLifeOrTapped(u8),
-}
-
-/// A named alternative to a card's primary printed mana cost.
-///
-/// This covers split-card halves and their fused cost without forcing the
-/// initial game implementation to expose every casting mode immediately.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct AlternateManaCost {
-    pub label: &'static str,
-    pub cost: ManaCost,
-}
-
-impl AlternateManaCost {
-    #[must_use]
-    pub const fn new(label: &'static str, cost: ManaCost) -> Self {
-        Self { label, cost }
-    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -2058,11 +2393,9 @@ pub struct ActivatedAbilityText {
 
 /// Const-friendly storage for the ordered rules clauses of one card part.
 ///
-/// Most legacy records begin as one custom clause. Migrated cards use an
-/// inline promoted slice, preserving source order without heap allocation.
+/// A card with one clause stores it inline; cards with several clauses use a
+/// promoted static slice, preserving source order without heap allocation.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-// `One` keeps legacy card construction const-friendly without preserving a
-// second card-level rules-text field. Migrated records use the slice variant.
 #[allow(clippy::large_enum_variant)]
 pub enum CardAbilityList {
     None,
@@ -2094,48 +2427,51 @@ impl CardAbilityList {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct CardRules {
-    kind: CardKind,
+    card_types: CardTypeSet,
     supertypes: [bool; CardSupertype::COUNT],
     subtypes: &'static [&'static str],
     printed_mana_cost: PrintedManaCost,
-    alternate_mana_costs: &'static [AlternateManaCost],
     land_entry: LandEntry,
     starting_loyalty: Option<u16>,
     creature_stats: Option<CreatureStats>,
     /// Ordered printed rules clauses. Definitions repeat abilities granted by
     /// basic land subtypes so a card's behavior is visible in one place.
     abilities: CardAbilityList,
-    /// Printed colors in `[white, blue, black, red, green]` order.
-    colors: [bool; 5],
+    colors: ColorSet,
 }
 
 impl CardRules {
-    const fn base(kind: CardKind, printed_mana_cost: PrintedManaCost, text: &'static str) -> Self {
+    const fn base(card_types: CardTypeSet, printed_mana_cost: PrintedManaCost) -> Self {
         let mana_cost = match printed_mana_cost {
             PrintedManaCost::None => ManaCost::new(0, 0),
             PrintedManaCost::Cost(cost) => cost,
         };
+        let mut colors = ColorSet::empty();
+        if mana_cost.white > 0 || mana_cost.white_red_hybrid > 0 {
+            colors = colors.with(ManaColor::White);
+        }
+        if mana_cost.blue > 0 {
+            colors = colors.with(ManaColor::Blue);
+        }
+        if mana_cost.black > 0 {
+            colors = colors.with(ManaColor::Black);
+        }
+        if mana_cost.red > 0 || mana_cost.white_red_hybrid > 0 {
+            colors = colors.with(ManaColor::Red);
+        }
+        if mana_cost.green > 0 {
+            colors = colors.with(ManaColor::Green);
+        }
         Self {
-            kind,
+            card_types,
             supertypes: [false; CardSupertype::COUNT],
             subtypes: &[],
             printed_mana_cost,
-            alternate_mana_costs: &[],
             land_entry: LandEntry::Untapped,
             starting_loyalty: None,
             creature_stats: None,
-            abilities: if text.is_empty() {
-                CardAbilityList::None
-            } else {
-                CardAbilityList::One(AbilityDef::legacy(text))
-            },
-            colors: [
-                mana_cost.white > 0 || mana_cost.white_red_hybrid > 0,
-                mana_cost.blue > 0,
-                mana_cost.black > 0,
-                mana_cost.red > 0 || mana_cost.white_red_hybrid > 0,
-                mana_cost.green > 0,
-            ],
+            abilities: CardAbilityList::None,
+            colors,
         }
     }
 
@@ -2145,9 +2481,11 @@ impl CardRules {
         subtypes: &'static [&'static str],
         power: i16,
         toughness: i16,
-        text: &'static str,
     ) -> Self {
-        let mut rules = Self::base(CardKind::Creature, PrintedManaCost::Cost(mana_cost), text);
+        let mut rules = Self::base(
+            CardTypeSet::single(CardType::Creature),
+            PrintedManaCost::Cost(mana_cost),
+        );
         rules.subtypes = subtypes;
         rules.creature_stats = Some(CreatureStats { power, toughness });
         rules
@@ -2158,9 +2496,11 @@ impl CardRules {
         subtypes: &'static [&'static str],
         power: i16,
         toughness: i16,
-        text: &'static str,
     ) -> Self {
-        let mut rules = Self::base(CardKind::Creature, PrintedManaCost::None, text);
+        let mut rules = Self::base(
+            CardTypeSet::single(CardType::Creature),
+            PrintedManaCost::None,
+        );
         rules.subtypes = subtypes;
         rules.creature_stats = Some(CreatureStats { power, toughness });
         rules
@@ -2172,12 +2512,10 @@ impl CardRules {
         subtypes: &'static [&'static str],
         power: i16,
         toughness: i16,
-        text: &'static str,
     ) -> Self {
         let mut rules = Self::base(
-            CardKind::ArtifactCreature,
+            CardTypeSet::single(CardType::Artifact).with(CardType::Creature),
             PrintedManaCost::Cost(mana_cost),
-            text,
         );
         rules.subtypes = subtypes;
         rules.creature_stats = Some(CreatureStats { power, toughness });
@@ -2189,53 +2527,69 @@ impl CardRules {
         subtypes: &'static [&'static str],
         power: i16,
         toughness: i16,
-        text: &'static str,
     ) -> Self {
-        let mut rules = Self::base(CardKind::ArtifactCreature, PrintedManaCost::None, text);
+        let mut rules = Self::base(
+            CardTypeSet::single(CardType::Artifact).with(CardType::Creature),
+            PrintedManaCost::None,
+        );
         rules.subtypes = subtypes;
         rules.creature_stats = Some(CreatureStats { power, toughness });
         rules
     }
 
     #[must_use]
-    pub const fn new_land(subtypes: &'static [&'static str], text: &'static str) -> Self {
-        let mut rules = Self::base(CardKind::Land, PrintedManaCost::None, text);
+    pub const fn new_land(subtypes: &'static [&'static str]) -> Self {
+        let mut rules = Self::base(CardTypeSet::single(CardType::Land), PrintedManaCost::None);
         rules.subtypes = subtypes;
         rules
     }
 
     #[must_use]
-    pub const fn new_artifact(mana_cost: ManaCost, text: &'static str) -> Self {
-        Self::base(CardKind::Artifact, PrintedManaCost::Cost(mana_cost), text)
-    }
-
-    #[must_use]
-    pub const fn new_enchantment(mana_cost: ManaCost, text: &'static str) -> Self {
+    pub const fn new_artifact(mana_cost: ManaCost) -> Self {
         Self::base(
-            CardKind::Enchantment,
+            CardTypeSet::single(CardType::Artifact),
             PrintedManaCost::Cost(mana_cost),
-            text,
         )
     }
 
     #[must_use]
-    pub const fn new_instant(mana_cost: ManaCost, text: &'static str) -> Self {
-        Self::base(CardKind::Instant, PrintedManaCost::Cost(mana_cost), text)
+    pub const fn new_enchantment(mana_cost: ManaCost) -> Self {
+        Self::base(
+            CardTypeSet::single(CardType::Enchantment),
+            PrintedManaCost::Cost(mana_cost),
+        )
     }
 
     #[must_use]
-    pub const fn new_instant_without_mana_cost(text: &'static str) -> Self {
-        Self::base(CardKind::Instant, PrintedManaCost::None, text)
+    pub const fn new_instant(mana_cost: ManaCost) -> Self {
+        Self::base(
+            CardTypeSet::single(CardType::Instant),
+            PrintedManaCost::Cost(mana_cost),
+        )
     }
 
     #[must_use]
-    pub const fn new_sorcery(mana_cost: ManaCost, text: &'static str) -> Self {
-        Self::base(CardKind::Sorcery, PrintedManaCost::Cost(mana_cost), text)
+    pub const fn new_instant_without_mana_cost() -> Self {
+        Self::base(
+            CardTypeSet::single(CardType::Instant),
+            PrintedManaCost::None,
+        )
     }
 
     #[must_use]
-    pub const fn new_sorcery_without_mana_cost(text: &'static str) -> Self {
-        Self::base(CardKind::Sorcery, PrintedManaCost::None, text)
+    pub const fn new_sorcery(mana_cost: ManaCost) -> Self {
+        Self::base(
+            CardTypeSet::single(CardType::Sorcery),
+            PrintedManaCost::Cost(mana_cost),
+        )
+    }
+
+    #[must_use]
+    pub const fn new_sorcery_without_mana_cost() -> Self {
+        Self::base(
+            CardTypeSet::single(CardType::Sorcery),
+            PrintedManaCost::None,
+        )
     }
 
     #[must_use]
@@ -2243,12 +2597,10 @@ impl CardRules {
         mana_cost: ManaCost,
         subtypes: &'static [&'static str],
         starting_loyalty: u16,
-        text: &'static str,
     ) -> Self {
         let mut rules = Self::base(
-            CardKind::Planeswalker,
+            CardTypeSet::single(CardType::Planeswalker),
             PrintedManaCost::Cost(mana_cost),
-            text,
         );
         rules.subtypes = subtypes;
         rules.starting_loyalty = Some(starting_loyalty);
@@ -2258,18 +2610,30 @@ impl CardRules {
     /// Creates a planeswalker back face, which has neither a printed mana cost
     /// nor a printed starting-loyalty value.
     #[must_use]
-    pub const fn new_planeswalker_without_mana_cost(
-        subtypes: &'static [&'static str],
-        text: &'static str,
-    ) -> Self {
-        let mut rules = Self::base(CardKind::Planeswalker, PrintedManaCost::None, text);
+    pub const fn new_planeswalker_without_mana_cost(subtypes: &'static [&'static str]) -> Self {
+        let mut rules = Self::base(
+            CardTypeSet::single(CardType::Planeswalker),
+            PrintedManaCost::None,
+        );
         rules.subtypes = subtypes;
         rules
     }
 
     #[must_use]
-    pub const fn kind(&self) -> CardKind {
-        self.kind
+    pub const fn types(&self) -> CardTypeSet {
+        self.card_types
+    }
+
+    #[must_use]
+    pub const fn has_type(&self, card_type: CardType) -> bool {
+        self.card_types.contains(card_type)
+    }
+
+    /// Compatibility spelling for clients that still expose one `kind`
+    /// string instead of a collection of card types.
+    #[must_use]
+    pub fn kind_name(&self) -> String {
+        self.card_types.kind_name()
     }
 
     #[must_use]
@@ -2285,11 +2649,6 @@ impl CardRules {
     #[must_use]
     pub const fn mana_cost(&self) -> Option<ManaCost> {
         self.printed_mana_cost.as_option()
-    }
-
-    #[must_use]
-    pub const fn alternate_mana_costs(&self) -> &'static [AlternateManaCost] {
-        self.alternate_mana_costs
     }
 
     #[must_use]
@@ -2309,7 +2668,17 @@ impl CardRules {
 
     #[must_use]
     pub const fn colors(&self) -> [bool; 5] {
+        self.colors.to_flags()
+    }
+
+    #[must_use]
+    pub const fn color_set(&self) -> ColorSet {
         self.colors
+    }
+
+    #[must_use]
+    pub const fn has_color(&self, color: ManaColor) -> bool {
+        self.colors.contains(color)
     }
 
     /// Returns a concise explanation when internal or compatibility code has
@@ -2317,27 +2686,37 @@ impl CardRules {
     /// characteristics.
     #[must_use]
     pub(super) const fn coherence_error(&self) -> Option<&'static str> {
-        if matches!(self.kind, CardKind::Land)
-            && !matches!(self.printed_mana_cost, PrintedManaCost::None)
+        if self.card_types.is_empty() {
+            return Some("a card part must have at least one card type");
+        }
+        let instant = self.has_type(CardType::Instant);
+        let sorcery = self.has_type(CardType::Sorcery);
+        if instant && sorcery {
+            return Some("one card part cannot be both an instant and a sorcery");
+        }
+        if (instant || sorcery) && self.card_types.is_permanent() {
+            return Some("an instant or sorcery cannot also be a permanent card type");
+        }
+        if self.has_type(CardType::Land) && !matches!(self.printed_mana_cost, PrintedManaCost::None)
         {
             return Some("a land cannot have a printed mana cost");
         }
-        if self.kind.is_creature() && self.creature_stats.is_none() {
+        if self.has_type(CardType::Creature) && self.creature_stats.is_none() {
             return Some("a creature must have power and toughness");
         }
-        if !self.kind.is_creature() && self.creature_stats.is_some() {
+        if !self.has_type(CardType::Creature) && self.creature_stats.is_some() {
             return Some("a noncreature cannot have creature power and toughness");
         }
-        if !matches!(self.kind, CardKind::Planeswalker) && self.starting_loyalty.is_some() {
+        if !self.has_type(CardType::Planeswalker) && self.starting_loyalty.is_some() {
             return Some("a nonplaneswalker cannot have starting loyalty");
         }
-        if matches!(self.kind, CardKind::Planeswalker)
+        if self.has_type(CardType::Planeswalker)
             && matches!(self.printed_mana_cost, PrintedManaCost::Cost(_))
             && self.starting_loyalty.is_none()
         {
             return Some("a castable planeswalker face must have starting loyalty");
         }
-        if !matches!(self.kind, CardKind::Land) && !matches!(self.land_entry, LandEntry::Untapped) {
+        if !self.has_type(CardType::Land) && !matches!(self.land_entry, LandEntry::Untapped) {
             return Some("nonland rules cannot declare a land-entry procedure");
         }
         None
@@ -2352,30 +2731,9 @@ impl CardRules {
         self
     }
 
-    /// Marks printed effects that are cataloged but not executed by the game
-    /// engine yet. Lands can still use declarative entry/mana metadata and
-    /// creatures can still be cast as their baseline bodies.
-    ///
-    /// # Panics
-    ///
-    /// Panics unless this rule set contains the one legacy aggregate clause
-    /// created from type-specific constructor text. Explicit clause lists must declare
-    /// implementation coverage on each clause instead.
     #[must_use]
-    pub const fn metadata_only(mut self) -> Self {
-        self.abilities = match self.abilities {
-            CardAbilityList::None => panic!(
-                "metadata_only() requires legacy rules text; explicit clauses own their coverage"
-            ),
-            CardAbilityList::One(ability) => CardAbilityList::One(ability.with_implementation(
-                AbilityImplementationDef::NotImplemented {
-                    explanation: "Printed rules are cataloged but are not executed by the engine.",
-                },
-            )),
-            CardAbilityList::Many(_) => panic!(
-                "metadata_only() cannot follow with_abilities(); set implementation coverage on each clause"
-            ),
-        };
+    pub const fn with_ability(mut self, ability: AbilityDef) -> Self {
+        self.abilities = CardAbilityList::One(ability);
         self
     }
 
@@ -2389,64 +2747,11 @@ impl CardRules {
         self
     }
 
-    /// Compatibility bridge for legacy one-clause records. New definitions
-    /// put the behavior directly in the implementation of the clause it
-    /// executes.
-    ///
-    /// # Panics
-    ///
-    /// Panics unless exactly one custom clause can own the behavior.
-    #[must_use]
-    pub const fn with_special_behavior(mut self, behavior: CardBehavior) -> Self {
-        self.abilities = match self.abilities {
-            CardAbilityList::One(mut ability) => {
-                ability.implementation = ability.implementation.with_custom_behavior(behavior);
-                CardAbilityList::One(ability)
-            }
-            CardAbilityList::Many(abilities) if abilities.len() == 1 => {
-                let mut ability = abilities[0];
-                ability.implementation = ability.implementation.with_custom_behavior(behavior);
-                CardAbilityList::One(ability)
-            }
-            CardAbilityList::None | CardAbilityList::Many(_) => {
-                panic!("with_special_behavior() requires exactly one custom ability clause")
-            }
-        };
-        self
-    }
-
     #[must_use]
     pub fn special_behavior(&self) -> Option<CardBehavior> {
         self.ability_clauses()
             .iter()
             .find_map(|ability| ability.implementation.custom_behavior())
-    }
-
-    /// Marks the part's one legacy aggregate clause as only partially
-    /// implemented. Migrated multi-clause cards put coverage on each clause.
-    ///
-    /// # Panics
-    ///
-    /// Panics unless this rule set contains the one legacy aggregate clause
-    /// created from type-specific constructor text. Explicit clause lists must declare
-    /// implementation coverage on each clause instead.
-    #[must_use]
-    pub const fn partial(mut self, explanation: &'static str) -> Self {
-        self.abilities = match self.abilities {
-            CardAbilityList::One(ability) => CardAbilityList::One(ability.with_implementation(
-                AbilityImplementationDef::CustomPartial {
-                    behavior: ability.implementation.custom_behavior(),
-                    explanation,
-                },
-            )),
-            CardAbilityList::None => {
-                panic!("partial() requires legacy rules text; explicit clauses own their coverage")
-            }
-            CardAbilityList::Many(_) => panic!(
-                "partial() cannot follow with_abilities(); set implementation coverage on each clause"
-            ),
-        };
-        self
     }
 
     #[must_use]
@@ -2501,7 +2806,7 @@ impl CardRules {
     pub fn implementation_status(&self) -> ImplementationStatus {
         // Playing a land and casting/using a modeled creature body are shared,
         // executable rules even when every card-specific clause is deferred.
-        let mut has_full = self.kind == CardKind::Land || self.creature_stats.is_some();
+        let mut has_full = self.has_type(CardType::Land) || self.creature_stats.is_some();
         let mut has_partial = false;
         let mut has_unimplemented = false;
         for ability in self.ability_clauses() {
@@ -2555,7 +2860,8 @@ impl CardRules {
         .filter(|supertype| self.has_supertype(*supertype))
         .map(CardSupertype::name)
         .collect::<Vec<_>>();
-        words.push(self.kind.type_name());
+        let type_name = self.card_types.type_name();
+        words.push(&type_name);
         let mut line = words.join(" ");
         if !self.subtypes.is_empty() {
             line.push_str(" — ");
@@ -2567,24 +2873,14 @@ impl CardRules {
     /// Overrides colors supplied by a color indicator or another printed
     /// characteristic that cannot be derived from the mana cost.
     #[must_use]
-    pub const fn printed_colors(mut self, colors: [bool; 5]) -> Self {
-        self.colors = colors;
+    pub const fn printed_colors(mut self, colors: &'static [ManaColor]) -> Self {
+        self.colors = ColorSet::from_colors(colors);
         self
     }
 
     #[must_use]
-    pub const fn alternate_costs(mut self, costs: &'static [AlternateManaCost]) -> Self {
-        self.alternate_mana_costs = costs;
-        let mut index = 0;
-        while index < costs.len() {
-            let cost = costs[index].cost;
-            self.colors[0] = self.colors[0] || cost.white > 0 || cost.white_red_hybrid > 0;
-            self.colors[1] = self.colors[1] || cost.blue > 0;
-            self.colors[2] = self.colors[2] || cost.black > 0;
-            self.colors[3] = self.colors[3] || cost.red > 0 || cost.white_red_hybrid > 0;
-            self.colors[4] = self.colors[4] || cost.green > 0;
-            index += 1;
-        }
+    pub const fn with_type(mut self, card_type: CardType) -> Self {
+        self.card_types = self.card_types.with(card_type);
         self
     }
 
@@ -2592,11 +2888,11 @@ impl CardRules {
     ///
     /// # Panics
     ///
-    /// Panics when called on rules for a nonland card kind.
+    /// Panics when called on rules without the land card type.
     #[must_use]
     pub const fn land_entry(mut self, land_entry: LandEntry) -> Self {
         assert!(
-            matches!(self.kind, CardKind::Land),
+            self.has_type(CardType::Land),
             "land_entry() is only valid for land rules"
         );
         self.land_entry = land_entry;
@@ -2623,22 +2919,24 @@ impl CardRules {
 
     pub(super) const fn unsupported() -> Self {
         Self::base(
-            CardKind::Artifact,
+            CardTypeSet::single(CardType::Artifact),
             PrintedManaCost::None,
-            "Rules text is not implemented.",
         )
-        .metadata_only()
+        .with_ability(AbilityDef::not_implemented(
+            "Rules text is not implemented.",
+            "The card's printed rules have not been cataloged or implemented.",
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        AbilityCostDef, AbilityDef, AddManaEffectDef, AlternateManaCost, CardBehavior,
-        CardComposition, CardDefinition, CardEffectStatus, CardKind, CardPart, CardPrinting,
-        CardPrintingId, CardRules, CardSet, CreatureStats, EffectDef, ImplementationStatus,
-        LandEntry, ManaCost, ManaKindDef, ManaRestrictionDef, ObjectPredicateDef, PrintedManaCost,
-        TriggerEventDef,
+        AbilityCostDef, AbilityDef, AddManaEffectDef, CardBehavior, CardComposition,
+        CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardRules,
+        CardSet, CardType, CardTypeSet, CreatureStats, EffectDef, ImplementationStatus, LandEntry,
+        ManaColor, ManaCost, ManaCostParseErrorKind, ManaRestrictionDef, ObjectPredicateDef,
+        PrintedManaCost, TriggerEventDef,
     };
     use crate::{AbilityId, CardDefinitionId, CardPartId};
 
@@ -2680,37 +2978,76 @@ mod tests {
 
     #[test]
     fn planeswalkers_are_permanents() {
-        assert!(CardKind::Planeswalker.is_permanent());
-        assert!(!CardKind::Planeswalker.is_creature());
+        let types = CardTypeSet::single(CardType::Planeswalker);
+        assert!(types.is_permanent());
+        assert!(!types.is_creature());
     }
 
     #[test]
     fn artifact_creatures_have_both_card_types() {
-        assert!(CardKind::ArtifactCreature.has_type(super::CardType::Artifact));
-        assert!(CardKind::ArtifactCreature.has_type(super::CardType::Creature));
-        assert!(!CardKind::ArtifactCreature.has_type(super::CardType::Enchantment));
+        let rules = CardRules::new_artifact_creature(mana_cost!("{3}"), &["Golem"], 3, 3);
+        assert!(rules.has_type(CardType::Artifact));
+        assert!(rules.has_type(CardType::Creature));
+        assert!(!rules.has_type(CardType::Enchantment));
+        assert_eq!(rules.kind_name(), "ArtifactCreature");
+        assert_eq!(rules.type_line(), "Artifact Creature — Golem");
+    }
+
+    #[test]
+    fn composable_types_cover_magic_card_type_combinations() {
+        let enchantment_creature = CardRules::new_creature(mana_cost!("{1}{G}"), &["Dryad"], 2, 2)
+            .with_type(CardType::Enchantment);
+        assert_eq!(
+            enchantment_creature.type_line(),
+            "Enchantment Creature — Dryad"
+        );
+
+        let artifact_land = CardRules::new_land(&[]).with_type(CardType::Artifact);
+        assert_eq!(artifact_land.type_line(), "Artifact Land");
+
+        let land_creature = CardRules::new_creature_without_mana_cost(&["Forest", "Dryad"], 1, 1)
+            .with_type(CardType::Land);
+        assert_eq!(land_creature.type_line(), "Land Creature — Forest Dryad");
+        assert_eq!(
+            CardComposition::single("Land creature", land_creature).play_options[0].action,
+            super::PlayActionKind::PlayLand
+        );
     }
 
     #[test]
     fn white_red_hybrid_costs_have_both_printed_colors() {
-        let rules = CardRules::new_creature(ManaCost::white_red_hybrid(3), &[], 1, 1, "");
+        let rules = CardRules::new_creature(mana_cost!("{R/W}{R/W}{R/W}"), &[], 1, 1);
         assert_eq!(rules.colors(), [true, false, false, true, false]);
     }
 
     #[test]
-    fn alternate_costs_extend_the_cards_printed_colors() {
-        static ALTERNATES: [AlternateManaCost; 2] = [
-            AlternateManaCost::new("Burn", ManaCost::colored(1, 0, 0, 0, 1, 0)),
-            AlternateManaCost::new("Fuse", ManaCost::colored(3, 0, 1, 0, 1, 0)),
-        ];
-        let rules = CardRules::new_instant(ManaCost::colored(2, 0, 1, 0, 0, 0), "")
-            .alternate_costs(&ALTERNATES);
-        assert_eq!(rules.colors(), [false, true, false, true, false]);
+    fn symbolic_mana_costs_parse_at_compile_time_and_runtime() {
+        const COMPILED: ManaCost = mana_cost!("{2}{G}{G}");
+        assert_eq!(COMPILED, "{2}{G}{G}".parse().unwrap());
+        assert_eq!(COMPILED.generic, 2);
+        assert_eq!(COMPILED.green, 2);
+        assert_eq!(mana_cost!("{X}{X}{U}").x_multiplier, 2);
+        assert_eq!(mana_cost!("{0}"), ManaCost::default());
+    }
+
+    #[test]
+    fn symbolic_mana_costs_reject_invalid_or_unsupported_notation() {
+        for (symbols, expected) in [
+            ("", ManaCostParseErrorKind::Empty),
+            ("2GG", ManaCostParseErrorKind::ExpectedOpeningBrace),
+            ("{2", ManaCostParseErrorKind::UnterminatedSymbol),
+            ("{}", ManaCostParseErrorKind::EmptySymbol),
+            ("{C}", ManaCostParseErrorKind::InvalidSymbol),
+            ("{2}{3}", ManaCostParseErrorKind::DuplicateGenericSymbol),
+            ("{65536}", ManaCostParseErrorKind::Overflow),
+        ] {
+            assert_eq!(ManaCost::parse_symbols(symbols).unwrap_err().kind, expected);
+        }
     }
 
     #[test]
     fn clause_implementation_drives_the_ordinary_play_option_gate() {
-        let implemented = CardRules::new_instant(ManaCost::default(), "");
+        let implemented = CardRules::new_instant(ManaCost::default());
         assert_eq!(
             ImplementationStatus::default(),
             ImplementationStatus::Complete
@@ -2720,16 +3057,21 @@ mod tests {
             CardEffectStatus::Implemented
         );
 
-        let uncategorized = CardRules::new_instant(
-            ManaCost::default(),
-            "Legacy text with no assigned implementation.",
-        );
+        let uncategorized =
+            CardRules::new_instant(ManaCost::default()).with_ability(AbilityDef::not_implemented(
+                "Text with no assigned implementation.",
+                "The card-specific ability is not executed.",
+            ));
         assert_eq!(
             uncategorized.implementation_status(),
             ImplementationStatus::MetadataOnly
         );
-        let custom = CardRules::new_instant(ManaCost::default(), "A card-local effect.")
-            .with_special_behavior(CardBehavior::LightningBolt);
+        let custom =
+            CardRules::new_instant(ManaCost::default()).with_ability(AbilityDef::custom_full(
+                "A card-local effect.",
+                CardBehavior::LightningBolt,
+                "Implemented by the named card-local special behavior.",
+            ));
         assert_eq!(
             custom.implementation_status(),
             ImplementationStatus::Complete
@@ -2737,7 +3079,10 @@ mod tests {
         assert_eq!(custom.special_behavior(), Some(CardBehavior::LightningBolt));
 
         let metadata_only =
-            CardRules::new_instant(ManaCost::default(), "A deferred spell effect.").metadata_only();
+            CardRules::new_instant(ManaCost::default()).with_ability(AbilityDef::not_implemented(
+                "A deferred spell effect.",
+                "The card-specific ability is not executed.",
+            ));
         assert_eq!(
             metadata_only.implementation_status(),
             ImplementationStatus::MetadataOnly
@@ -2758,11 +3103,13 @@ mod tests {
             ImplementationStatus::MetadataOnly
         );
 
-        let partial = CardRules::new_enchantment(
-            ManaCost::default(),
-            "A custom clause with one deferred rider.",
-        )
-        .partial("One rider is deferred.");
+        let partial = CardRules::new_enchantment(ManaCost::default()).with_ability(
+            AbilityDef::custom_partial(
+                "A custom clause with one deferred rider.",
+                CardBehavior::LightningBolt,
+                "One rider is deferred.",
+            ),
+        );
         assert_eq!(
             partial.ability_clauses()[0].implementation.explanation(),
             Some("One rider is deferred.")
@@ -2779,7 +3126,7 @@ mod tests {
 
     #[test]
     fn vanilla_creature_body_is_complete() {
-        let rules = CardRules::new_creature(ManaCost::default(), &[], 2, 2, "");
+        let rules = CardRules::new_creature(ManaCost::default(), &[], 2, 2);
 
         assert_eq!(
             rules.implementation_status(),
@@ -2789,7 +3136,7 @@ mod tests {
 
     #[test]
     fn creature_body_with_an_unimplemented_clause_is_partial() {
-        let rules = CardRules::new_creature(ManaCost::default(), &[], 2, 2, "")
+        let rules = CardRules::new_creature(ManaCost::default(), &[], 2, 2)
             .with_abilities(&DEFERRED_CLAUSE);
 
         assert_eq!(rules.implementation_status(), ImplementationStatus::Partial);
@@ -2802,7 +3149,7 @@ mod tests {
     #[test]
     fn noncreature_with_only_an_unimplemented_clause_is_metadata_only() {
         let rules =
-            CardRules::new_enchantment(ManaCost::default(), "").with_abilities(&DEFERRED_CLAUSE);
+            CardRules::new_enchantment(ManaCost::default()).with_abilities(&DEFERRED_CLAUSE);
 
         assert_eq!(
             rules.implementation_status(),
@@ -2815,39 +3162,10 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "metadata_only() cannot follow with_abilities()")]
-    fn metadata_only_rejects_explicit_clause_lists() {
-        let _ = CardRules::new_enchantment(ManaCost::default(), "")
-            .with_abilities(&DEFERRED_CLAUSE)
-            .metadata_only();
-    }
-
-    #[test]
-    #[should_panic(expected = "metadata_only() requires legacy rules text")]
-    fn metadata_only_rejects_missing_legacy_clause() {
-        let _ = CardRules::new_enchantment(ManaCost::default(), "").metadata_only();
-    }
-
-    #[test]
-    #[should_panic(expected = "partial() cannot follow with_abilities()")]
-    fn partial_rejects_explicit_clause_lists() {
-        let _ = CardRules::new_enchantment(ManaCost::default(), "")
-            .with_abilities(&DEFERRED_CLAUSE)
-            .partial("This explanation belongs on the clause.");
-    }
-
-    #[test]
-    #[should_panic(expected = "partial() requires legacy rules text")]
-    fn partial_rejects_missing_legacy_clause() {
-        let _ = CardRules::new_enchantment(ManaCost::default(), "")
-            .partial("There is no clause to receive this explanation.");
-    }
-
-    #[test]
     fn no_mana_cost_is_distinct_from_a_printed_zero_cost() {
-        let rules = CardRules::new_sorcery(ManaCost::default(), "");
+        let rules = CardRules::new_sorcery(ManaCost::default());
         let zero = CardPart::new(CardPartId::PRIMARY, "Zero", rules);
-        let no_cost_rules = CardRules::new_sorcery_without_mana_cost("");
+        let no_cost_rules = CardRules::new_sorcery_without_mana_cost();
         let none = CardPart::new(CardPartId::PRIMARY, "None", no_cost_rules);
 
         assert_eq!(
@@ -2865,9 +3183,8 @@ mod tests {
 
     #[test]
     fn typed_rules_expose_coherent_kind_specific_characteristics() {
-        let creature =
-            CardRules::new_creature(ManaCost::colored(2, 0, 0, 0, 0, 1), &["Bear"], 2, 2, "");
-        assert_eq!(creature.kind(), CardKind::Creature);
+        let creature = CardRules::new_creature(mana_cost!("{2}{G}"), &["Bear"], 2, 2);
+        assert_eq!(creature.types(), CardTypeSet::single(CardType::Creature));
         assert_eq!(creature.subtypes(), &["Bear"]);
         assert_eq!(
             creature.creature_stats(),
@@ -2880,8 +3197,8 @@ mod tests {
         assert_eq!(creature.land_entry_procedure(), LandEntry::Untapped);
         assert_eq!(creature.coherence_error(), None);
 
-        let land = CardRules::new_land(&["Forest"], "");
-        assert_eq!(land.kind(), CardKind::Land);
+        let land = CardRules::new_land(&["Forest"]);
+        assert_eq!(land.types(), CardTypeSet::single(CardType::Land));
         assert_eq!(land.printed_mana_cost(), PrintedManaCost::None);
         assert_eq!(land.creature_stats(), None);
         assert_eq!(land.coherence_error(), None);
@@ -2890,24 +3207,27 @@ mod tests {
     #[test]
     fn coherence_validation_covers_kind_specific_invariants() {
         let mut creature_without_stats =
-            CardRules::new_creature(ManaCost::default(), &["Bear"], 2, 2, "");
+            CardRules::new_creature(ManaCost::default(), &["Bear"], 2, 2);
         creature_without_stats.creature_stats = None;
 
-        let mut instant_with_stats = CardRules::new_instant(ManaCost::default(), "");
+        let mut instant_with_stats = CardRules::new_instant(ManaCost::default());
         instant_with_stats.creature_stats = Some(CreatureStats {
             power: 1,
             toughness: 1,
         });
 
-        let mut instant_with_loyalty = CardRules::new_instant(ManaCost::default(), "");
+        let mut instant_with_loyalty = CardRules::new_instant(ManaCost::default());
         instant_with_loyalty.starting_loyalty = Some(3);
 
         let mut planeswalker_without_loyalty =
-            CardRules::new_planeswalker(ManaCost::default(), &["Test"], 3, "");
+            CardRules::new_planeswalker(ManaCost::default(), &["Test"], 3);
         planeswalker_without_loyalty.starting_loyalty = None;
 
-        let mut instant_with_land_entry = CardRules::new_instant(ManaCost::default(), "");
+        let mut instant_with_land_entry = CardRules::new_instant(ManaCost::default());
         instant_with_land_entry.land_entry = LandEntry::Tapped;
+
+        let permanent_instant =
+            CardRules::new_instant(ManaCost::default()).with_type(CardType::Artifact);
 
         for (rules, expected) in [
             (
@@ -2930,6 +3250,10 @@ mod tests {
                 instant_with_land_entry,
                 "nonland rules cannot declare a land-entry procedure",
             ),
+            (
+                permanent_instant,
+                "an instant or sorcery cannot also be a permanent card type",
+            ),
         ] {
             assert_eq!(rules.coherence_error(), Some(expected));
         }
@@ -2938,13 +3262,13 @@ mod tests {
     #[test]
     #[should_panic(expected = "land_entry() is only valid for land rules")]
     fn nonlands_cannot_declare_a_land_entry_procedure() {
-        let _ = CardRules::new_instant(ManaCost::default(), "").land_entry(LandEntry::Tapped);
+        let _ = CardRules::new_instant(ManaCost::default()).land_entry(LandEntry::Tapped);
     }
 
     #[test]
     fn ability_category_is_explicit_and_not_inferred_from_effect() {
         const COSTS: &[AbilityCostDef] = &[AbilityCostDef::TapSource];
-        const ADD_MANA: EffectDef = EffectDef::AddMana(AddManaEffectDef::one(ManaKindDef::Green));
+        const ADD_MANA: EffectDef = EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green));
         const MANA_ABILITY: AbilityDef = AbilityDef::activated_mana("Add green.", COSTS, ADD_MANA);
         const ORDINARY_TRIGGER: AbilityDef = AbilityDef::triggered(
             "Add green when this dies.",
@@ -2968,7 +3292,7 @@ mod tests {
         assert!(!TURN_FACE_UP.uses_stack());
 
         let rules =
-            CardRules::new_creature(ManaCost::default(), &[], 1, 1, "").with_abilities(&ABILITIES);
+            CardRules::new_creature(ManaCost::default(), &[], 1, 1).with_abilities(&ABILITIES);
         let attached = rules.indexed_abilities().collect::<Vec<_>>();
         assert_eq!(attached[0].id, AbilityId::PRIMARY);
         assert_eq!(attached[1].id, AbilityId(1));
@@ -2980,7 +3304,7 @@ mod tests {
         const RESTRICTIONS: &[ManaRestrictionDef] = &[ManaRestrictionDef::CastSpell(
             ObjectPredicateDef::HasType(super::CardType::Artifact),
         )];
-        let workshop_mana = AddManaEffectDef::one(ManaKindDef::Colorless)
+        let workshop_mana = AddManaEffectDef::one(ManaColor::Colorless)
             .with_amount(3)
             .with_restrictions(RESTRICTIONS);
 
