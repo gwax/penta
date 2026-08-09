@@ -5,6 +5,15 @@ members = [".", "wasm", "bindings/penta-ffi"]
 exclude = ["bindings/penta-py"]
 resolver = "3"
 
+# Tests run optimized: the engine's slow tier plays whole games, and an
+# unoptimized build makes that roughly twenty times slower for no added
+# coverage. Debug assertions and overflow checks stay on, so the invariant
+# checks scattered through the rules engine still fire.
+[profile.quick-test]
+inherits = "release"
+debug-assertions = true
+overflow-checks = true
+
 [package]
 name = "penta"
 version = "0.6.0"

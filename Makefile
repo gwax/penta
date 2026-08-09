@@ -26,9 +26,9 @@ endef
 
 define run_rust_tests
 	if [ -n "$$RUST_TEST_FILTER" ]; then \
-		cargo test --locked $(1) "$$RUST_TEST_FILTER" $(2); \
+		cargo test --locked --profile quick-test $(1) "$$RUST_TEST_FILTER" $(2); \
 	else \
-		cargo test --locked $(1) $(2); \
+		cargo test --locked --profile quick-test $(1) $(2); \
 	fi
 endef
 
@@ -36,6 +36,7 @@ endef
 	lint lint-rust lint-web lint-infra lint-infra-available lint-python-binding \
 	test test-rust test-rust-full test-rust-slow \
 	test-engine test-engine-unit test-engine-integration test-policy test-wasm-rust \
+	test-rust-budget \
 	build-wasm build-web \
 	test-web test-web-fast test-web-unit test-web-full \
 	test-web-wasm test-web-wasm-full test-web-wasm-slow \
@@ -101,7 +102,25 @@ test-rust-slow: ## Run only ignored Rust simulation sweeps.
 	$(call run_rust_tests,--workspace --all-targets,-- --ignored)
 
 test-rust-full: ## Run every normal and slow Rust test in one pass.
-	cargo test --locked --workspace --all-targets -- --include-ignored
+	cargo test --locked --profile quick-test --workspace --all-targets -- --include-ignored
+
+# Seconds the Rust suite may spend *running*. Compilation is excluded: it is
+# bounded by the job timeout and says nothing about whether a test got slow.
+RUST_TEST_BUDGET_SECONDS ?= 120
+
+test-rust-budget: ## Fail when the Rust suite runs longer than its time budget.
+	cargo test --locked --profile quick-test --workspace --all-targets --no-run
+	@start=$$(date +%s); \
+	cargo test --locked --profile quick-test --workspace --all-targets -- --include-ignored; \
+	status=$$?; \
+	elapsed=$$(($$(date +%s) - start)); \
+	echo "Rust tests ran in $${elapsed}s (budget $(RUST_TEST_BUDGET_SECONDS)s)"; \
+	if [ $$status -ne 0 ]; then exit $$status; fi; \
+	if [ $$elapsed -gt $(RUST_TEST_BUDGET_SECONDS) ]; then \
+		echo "Rust tests exceeded their $(RUST_TEST_BUDGET_SECONDS)s budget." >&2; \
+		echo "Profile the slow test rather than raising the budget by reflex." >&2; \
+		exit 1; \
+	fi
 
 build-wasm: ## Build the release WASM module and generated bindings.
 	./scripts/build-wasm.sh
@@ -159,7 +178,7 @@ test-slow: test-rust-slow test-web-wasm-slow ## Run only simulation-heavy suites
 
 check-fast: fmt-rust lint test-rust typecheck-web test-web-fast ## Run the broad checkpoint without slow tests or a production web build.
 
-check-rust: fmt-rust lint-rust test-rust-full ## Run the complete root Rust workspace gate.
+check-rust: fmt-rust lint-rust test-rust-budget ## Run the complete root Rust workspace gate.
 
 check-web: lint-web typecheck-web test-web-full ## Run the complete web gate.
 
