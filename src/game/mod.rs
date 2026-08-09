@@ -2155,6 +2155,7 @@ impl Game {
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
+            | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
@@ -6218,6 +6219,7 @@ impl Game {
                 ..
             })
             | EffectDef::EntersTapped
+            | EffectDef::MultiplyEventAmount(_)
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing mana and the remaining declarative effect
@@ -7949,6 +7951,7 @@ impl Game {
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
+                | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::ChooseCreatureType { .. }
                 | EffectDef::Apply { .. }
@@ -8033,6 +8036,7 @@ impl Game {
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
+                | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::ChooseCreatureType { .. }
                 | EffectDef::Apply { .. }
@@ -10135,6 +10139,7 @@ impl Game {
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
+            | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::ChooseCreatureType { .. }
@@ -10364,17 +10369,50 @@ impl Game {
         self.finish_untap_choices();
     }
 
-    /// Commits every life gain in one place so triggered abilities observe
-    /// spells, lifelink, and card-specific drains through the same event path.
-    /// Gaining nothing is not a life-gain event.
+    /// Commits every life gain in one place so replacement and triggered
+    /// abilities observe spells, lifelink, and card-specific drains through
+    /// the same event path. Gaining nothing is not a life-gain event.
     fn gain_life(&mut self, player: PlayerId, amount: u16) {
         if amount == 0 {
             return;
         }
+        let amount = amount.saturating_mul(self.life_gain_multiplier(player));
         self.players[player.index()].life = self.players[player.index()]
             .life
             .saturating_add(i16::try_from(amount).unwrap_or(i16::MAX));
         self.capture_battlefield_triggers(&CommittedTriggerEvent::LifeGained { player, amount });
+    }
+
+    /// How much a life gain is scaled by the replacement effects on the
+    /// battlefield. CR 616.1 lets the affected player order these, but the
+    /// order of pure multipliers cannot change their product.
+    fn life_gain_multiplier(&self, player: PlayerId) -> u16 {
+        let mut multiplier = 1u16;
+        for permanent in &self.battlefield {
+            self.for_each_effective_ability(permanent, |effective| {
+                let ability = effective.ability;
+                let DeclarativeAbilityDef::Replacement(definition) = ability.definition else {
+                    return;
+                };
+                let ReplacementEventDef::WouldGainLife(relation) = definition.event else {
+                    return;
+                };
+                let EffectDef::MultiplyEventAmount(factor) = ability.effect else {
+                    return;
+                };
+                if ability.implementation.is_executable()
+                    && self.player_relation_matches(
+                        player,
+                        relation,
+                        permanent.controller,
+                        TriggerContext::empty(),
+                    )
+                {
+                    multiplier = multiplier.saturating_mul(u16::from(factor));
+                }
+            });
+        }
+        multiplier
     }
 
     /// Life loss that is not damage: no source deals it, nothing that

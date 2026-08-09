@@ -478,6 +478,7 @@ mod tests {
             }
             EffectDef::None
             | EffectDef::EntersTapped
+            | EffectDef::MultiplyEventAmount(_)
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
         }
@@ -600,6 +601,7 @@ mod tests {
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
+            | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
@@ -668,6 +670,7 @@ mod tests {
                         | EffectDef::AddCounters { .. }
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::EntersTapped
+                        | EffectDef::MultiplyEventAmount(_)
                         | EffectDef::MoveToZone { .. }
                         | EffectDef::ChooseCreatureType { .. }
                         | EffectDef::Apply { .. }
@@ -712,6 +715,10 @@ mod tests {
                                 object: EffectRecipientDef::Source,
                                 zone: ZoneKind::Battlefield,
                             }
+                }
+                ReplacementEventDef::WouldGainLife(_) => {
+                    battlefield_only(definition.source_zones)
+                        && matches!(ability.effect, EffectDef::MultiplyEventAmount(_))
                 }
                 ReplacementEventDef::Special(_) => false,
             },
@@ -758,6 +765,7 @@ mod tests {
             | EffectDef::Counter { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::EntersTapped
+            | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }

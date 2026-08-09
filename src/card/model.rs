@@ -981,6 +981,9 @@ pub enum EffectDef {
         effect: &'static EffectDef,
     },
     EntersTapped,
+    /// Multiplies the amount of the event a replacement ability is replacing.
+    /// This means nothing outside a replacement whose event carries an amount.
+    MultiplyEventAmount(u8),
     MoveToZone {
         object: EffectRecipientDef,
         zone: ZoneKind,
@@ -1251,6 +1254,9 @@ pub enum ReplacementEventDef {
         to: ZoneKind,
         cause: ZoneMoveCauseDef,
     },
+    /// A player would gain life, matched relative to the replacement
+    /// ability's controller.
+    WouldGainLife(PlayerRelation),
     /// Entry replacement effects whose exact event is already identified by
     /// their effect primitive (for example, enters tapped or choosing a
     /// creature type as an object enters).

@@ -666,6 +666,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::Counter { .. }
         | super::EffectDef::AddCounters { .. }
         | super::EffectDef::EntersTapped
+        | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Apply { .. }
@@ -700,6 +701,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::Counter { .. }
         | super::EffectDef::AddCounters { .. }
         | super::EffectDef::EntersTapped
+        | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Apply { .. }

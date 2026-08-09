@@ -5,8 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
     CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    abilities, cards,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEventDef, TriggerEventDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -283,9 +283,10 @@ pub(in crate::card::sets) static RHOX_FAITHMENDER: CardRecord = CardRecord::new(
         abilities::lifelink().with_text(
             "Lifelink (Damage dealt by this creature also causes you to gain that much life.)",
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::replacement_for(
             "If you would gain life, you gain twice that much life instead.",
-            "The life-gain replacement effect is not executed.",
+            ReplacementEventDef::WouldGainLife(PlayerRelation::You),
+            EffectDef::MultiplyEventAmount(2),
         ),
     ]),
 );

@@ -10376,3 +10376,35 @@ fn archangel_of_thune_grows_the_team_on_its_own_lifelink_damage() {
     // one per point of life.
     assert_eq!(game.players[0].life, 23);
 }
+
+#[test]
+fn rhox_faithmender_doubles_your_life_gain_but_not_your_opponent_s() {
+    for (gainer, expected) in [(PlayerId::One, 8), (PlayerId::Two, 4)] {
+        let mut game = ready_game();
+        game.battlefield
+            .push(creature(10_000, cards::RHOX_FAITHMENDER, PlayerId::One));
+        let before = game.players[gainer.index()].life;
+
+        game.gain_life(gainer, 4);
+
+        assert_eq!(
+            game.players[gainer.index()].life - before,
+            expected,
+            "life gained by {gainer}",
+        );
+    }
+}
+
+#[test]
+fn two_faithmenders_multiply_together_rather_than_adding() {
+    let mut game = ready_game();
+    for id in [10_000, 10_001] {
+        game.battlefield
+            .push(creature(id, cards::RHOX_FAITHMENDER, PlayerId::One));
+    }
+    let before = game.players[0].life;
+
+    game.gain_life(PlayerId::One, 3);
+
+    assert_eq!(game.players[0].life - before, 12);
+}
