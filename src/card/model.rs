@@ -867,6 +867,10 @@ pub enum ValueDef {
     /// How many objects match, for the "for each" clauses. Held by reference
     /// so that `ValueDef` stays small enough to embed freely.
     CountMatchingObjects(&'static ObjectQueryDef),
+    /// One when at least one object matches, zero otherwise. "As long as you
+    /// control a Mountain" is a condition rather than a count, so counting
+    /// matches would pay a second Mountain twice.
+    AnyMatchingObject(&'static ObjectQueryDef),
     /// The negation of another value, so a "for each" penalty can reuse the
     /// same count a bonus would.
     Negate(&'static ValueDef),

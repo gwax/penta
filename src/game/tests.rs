@@ -10461,3 +10461,34 @@ fn a_card_in_hand_is_not_offered_its_flashback_cost() {
 
     assert_eq!(options, vec![PlayOptionId::DEFAULT]);
 }
+
+#[test]
+fn flinthoof_boar_grows_for_a_mountain_you_control_and_only_once() {
+    let mut game = ready_game();
+    let boar = creature(10_000, cards::FLINTHOOF_BOAR, PlayerId::One);
+    let boar_id = boar.card.id;
+    game.battlefield.push(boar);
+    // The opponent's Mountain is not one you control.
+    game.battlefield
+        .push(creature(10_001, cards::MOUNTAIN, PlayerId::Two));
+
+    let stats = |game: &Game| {
+        let boar = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == boar_id)
+            .expect("still there");
+        (game.power(boar), game.toughness(boar))
+    };
+    assert_eq!(stats(&game), (Some(2), Some(2)), "printed 2/2");
+
+    game.battlefield
+        .push(creature(10_002, cards::MOUNTAIN, PlayerId::One));
+    assert_eq!(stats(&game), (Some(3), Some(3)));
+
+    // "As long as you control a Mountain" is a condition, so a second one
+    // adds nothing.
+    game.battlefield
+        .push(creature(10_003, cards::MOUNTAIN, PlayerId::One));
+    assert_eq!(stats(&game), (Some(3), Some(3)));
+}

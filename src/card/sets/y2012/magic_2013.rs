@@ -121,21 +121,30 @@ pub(in crate::card::sets) static FLAMES_OF_THE_FIREBRAND: CardRecord = CardRecor
     ),
 );
 
+/// A second Mountain does not make the bonus bigger, so this is asked as a
+/// condition rather than counted.
+static MOUNTAIN_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::Subtype("Mountain"),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::You,
+};
+
 pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
     cards::FLINTHOOF_BOAR,
     "Flinthoof Boar",
     CardArt::new("7e380b99-0173-4083-a4a2-222ad98b904a", "Erica Yang"),
     CardSet::Magic2013,
-    CardRules::new_creature(
-        mana_cost!("{1}{G}"),
-        &["Boar"],
-        2,
-        2,
-    )
-    .with_abilities(&[
-        AbilityDef::not_implemented(
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Boar"], 2, 2).with_abilities(&[
+        AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control a Mountain.",
-            "A static power and toughness bonus conditioned on the board is not implemented; the runtime applies constant bonuses only.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::AnyMatchingObject(&MOUNTAIN_YOU_CONTROL),
+                    toughness: ValueDef::AnyMatchingObject(&MOUNTAIN_YOU_CONTROL),
+                },
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
         ),
         AbilityDef::activated(
             "{R}: This creature gains haste until end of turn. (It can attack and {T} this turn.)",

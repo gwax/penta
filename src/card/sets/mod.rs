@@ -564,8 +564,15 @@ mod tests {
                 };
                 let battlefield_effect_is_supported = match effect {
                     AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
-                        matches!(power, crate::card::ValueDef::Constant(_))
-                            && matches!(toughness, crate::card::ValueDef::Constant(_))
+                        // The static bonus path evaluates exactly these two.
+                        let supported = |value| {
+                            matches!(
+                                value,
+                                crate::card::ValueDef::Constant(_)
+                                    | crate::card::ValueDef::AnyMatchingObject(_)
+                            )
+                        };
+                        supported(power) && supported(toughness)
                     }
                     AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
                     AppliedEffectDef::CannotBeCountered | AppliedEffectDef::Special(_) => false,

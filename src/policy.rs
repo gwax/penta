@@ -283,6 +283,7 @@ impl HandcraftedPolicy {
             | ValueDef::TriggerEventAmount
             | ValueDef::CardsInHandAbove { .. }
             | ValueDef::CountMatchingObjects(_)
+            | ValueDef::AnyMatchingObject(_)
             | ValueDef::CountersOnSource(_)
             | ValueDef::Negate(_) => None,
         }

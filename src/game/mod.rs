@@ -15,9 +15,9 @@ use crate::card::{
     CardType, CardTypeSet, CharacteristicContext, CounterKind, DeclarativeAbilityDef,
     DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry,
     ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
-    PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation, ReplacementEventDef, SpellForm,
-    TargetPredicate, TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, abilities, applicable_part_ids,
+    ObjectQueryDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
+    ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZoneMoveCauseDef, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -6362,6 +6362,11 @@ impl Game {
                 i32::try_from(self.effect_recipients(recipient, object, context).len())
                     .unwrap_or(i32::MAX)
             }
+            ValueDef::AnyMatchingObject(query) => i32::from(self.any_battlefield_object_matches(
+                query,
+                object.source.unwrap_or(object.id),
+                object.controller,
+            )),
             ValueDef::Negate(inner) => self.effect_value(*inner, object, context).saturating_neg(),
         }
     }
@@ -8844,25 +8849,55 @@ impl Game {
         i16::try_from(permanent.counters(CounterKind::PlusOnePlusOne)).unwrap_or(i16::MAX)
     }
 
+    /// Whether any permanent on the battlefield matches, which is what an "as
+    /// long as you control a ..." clause asks. `controller` is whoever the
+    /// query's player relation is measured against.
+    fn any_battlefield_object_matches(
+        &self,
+        query: &ObjectQueryDef,
+        source: GameObjectId,
+        controller: PlayerId,
+    ) -> bool {
+        self.battlefield.iter().any(|permanent| {
+            self.player_relation_matches(
+                permanent.controller,
+                query.controller,
+                controller,
+                TriggerContext::empty(),
+            ) && self.trigger_object_matches(
+                query.object,
+                &self.trigger_event_object(permanent),
+                source,
+                false,
+            )
+        })
+    }
+
     fn static_power_toughness_bonus(&self, permanent: &Permanent) -> (i16, i16) {
         let mut total = (0_i16, 0_i16);
         let result = self.visit_static_applied_effects(permanent, |applied| {
-            if let AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(power_bonus),
-                toughness: ValueDef::Constant(toughness_bonus),
-            } = applied.effect
-            {
+            if let AppliedEffectDef::ModifyPowerToughness { power, toughness } = applied.effect {
+                // A static bonus is measured from its own source's controller,
+                // not from whoever it is being applied to.
+                let controller = self
+                    .controller_of_object(applied.source)
+                    .unwrap_or(permanent.controller);
+                let bonus = |value: ValueDef| -> i16 {
+                    let amount = match value {
+                        ValueDef::Constant(amount) => amount,
+                        ValueDef::AnyMatchingObject(query) => i32::from(
+                            self.any_battlefield_object_matches(query, applied.source, controller),
+                        ),
+                        // Everything else stays a seam; the boundary test
+                        // rejects a card that reaches for one.
+                        _ => 0,
+                    };
+                    i16::try_from(amount.clamp(i32::from(i16::MIN), i32::from(i16::MAX)))
+                        .expect("the static bonus was clamped to i16")
+                };
                 total = (
-                    total.0.saturating_add(
-                        i16::try_from(power_bonus.clamp(i32::from(i16::MIN), i32::from(i16::MAX)))
-                            .expect("the static power bonus was clamped to i16"),
-                    ),
-                    total.1.saturating_add(
-                        i16::try_from(
-                            toughness_bonus.clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
-                        )
-                        .expect("the static toughness bonus was clamped to i16"),
-                    ),
+                    total.0.saturating_add(bonus(power)),
+                    total.1.saturating_add(bonus(toughness)),
                 );
             }
             ControlFlow::Continue(())
