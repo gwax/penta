@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt;
+use std::ops::ControlFlow;
 
 use crate::Format;
 use crate::action::{
@@ -1963,7 +1964,7 @@ impl Game {
     fn battlefield_trigger_listeners(&self) -> Vec<BattlefieldTriggerListener> {
         let mut listeners = Vec::new();
         for permanent in &self.battlefield {
-            for effective in self.effective_abilities(permanent) {
+            self.for_each_effective_ability(permanent, |effective| {
                 let ability = effective.ability;
                 // Fully declarative and fully implemented custom triggers use
                 // the shared stack. Partial custom clauses may still describe
@@ -1974,7 +1975,7 @@ impl Game {
                     AbilityImplementationDef::Definition
                         | AbilityImplementationDef::CustomFull { .. }
                 ) {
-                    continue;
+                    return;
                 }
                 let (definition, uses_stack) = match ability.definition {
                     DeclarativeAbilityDef::TriggeredMana(definition) => (definition, false),
@@ -1986,10 +1987,10 @@ impl Game {
                     | DeclarativeAbilityDef::Replacement(_)
                     | DeclarativeAbilityDef::SpecialAction(_)
                     | DeclarativeAbilityDef::Keyword(_)
-                    | DeclarativeAbilityDef::Legacy => continue,
+                    | DeclarativeAbilityDef::Legacy => return,
                 };
                 if !definition.source_zones.contains(&ZoneKind::Battlefield) {
-                    continue;
+                    return;
                 }
                 let source = AbilitySourceRef {
                     object: permanent.card.id,
@@ -2013,7 +2014,7 @@ impl Game {
                         context: TriggerContext::empty(),
                     },
                 });
-            }
+            });
         }
         listeners
     }
@@ -2191,10 +2192,8 @@ impl Game {
         permanent: &Permanent,
         origin: AbilityOrigin,
     ) -> FrozenActivatedAbility {
-        let effective = self
-            .effective_abilities(permanent)
-            .into_iter()
-            .find(|effective| effective.origin == origin);
+        let effective =
+            self.find_effective_ability(permanent, |effective| effective.origin == origin);
         let fallback_definition = Self::effective_rules_source(permanent).0;
         let presentation_definition =
             Self::ability_presentation_definition(origin, fallback_definition);
@@ -4532,15 +4531,37 @@ impl Game {
             .filter(|permanent| permanent.controller == player)
         {
             let mut has_declarative_activation = false;
-            for effective in self.effective_abilities(permanent) {
+            let (definition, part) = Self::effective_rules_source(permanent);
+            let fallback_origin = AbilityOrigin::Printed {
+                definition,
+                part,
+                ability: AbilityId::PRIMARY,
+            };
+            let mut fallback_target_slot = TargetSlotId(0);
+            let mut activated = [None; 2];
+            let mut activated_count = 0;
+            self.for_each_effective_ability(permanent, |effective| {
                 let ability = effective.ability;
                 let DeclarativeAbilityDef::Activated(definition) = ability.definition else {
-                    continue;
+                    return;
                 };
+                let target_slot = definition
+                    .targets
+                    .first()
+                    .map_or(TargetSlotId(0), |target| target.id);
+                if effective.origin == fallback_origin {
+                    fallback_target_slot = target_slot;
+                }
+                if ability.implementation.is_executable() {
+                    if let Some(slot) = activated.get_mut(activated_count) {
+                        *slot = Some((effective.origin, target_slot));
+                    }
+                    activated_count += 1;
+                }
                 if ability.implementation != AbilityImplementationDef::Definition
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)
                 {
-                    continue;
+                    return;
                 }
                 has_declarative_activation = true;
                 let taps_source = definition.costs.contains(&AbilityCostDef::TapSource);
@@ -4560,22 +4581,19 @@ impl Game {
                         | AbilityCostDef::Special(_) => true,
                     })
                 {
-                    continue;
+                    return;
                 }
-                let sacrifice_costs = definition
-                    .costs
-                    .iter()
-                    .filter_map(|cost| match cost {
-                        AbilityCostDef::SacrificePermanent { object, controller } => {
-                            Some((*object, *controller))
-                        }
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>();
-                if sacrifice_costs.len() > 1 {
-                    continue;
+                let mut sacrifice_costs = definition.costs.iter().filter_map(|cost| match cost {
+                    AbilityCostDef::SacrificePermanent { object, controller } => {
+                        Some((*object, *controller))
+                    }
+                    _ => None,
+                });
+                let sacrifice_cost = sacrifice_costs.next();
+                if sacrifice_costs.next().is_some() {
+                    return;
                 }
-                let sacrifice_choices = sacrifice_costs.first().map_or_else(
+                let sacrifice_choices = sacrifice_cost.map_or_else(
                     || vec![None],
                     |(predicate, relation)| {
                         self.battlefield
@@ -4583,11 +4601,11 @@ impl Game {
                             .filter(|candidate| {
                                 self.player_relation_matches(
                                     candidate.controller,
-                                    *relation,
+                                    relation,
                                     player,
                                     TriggerContext::empty(),
                                 ) && Self::trigger_object_matches(
-                                    *predicate,
+                                    predicate,
                                     &self.trigger_event_object(candidate),
                                     permanent.card.id,
                                     false,
@@ -4598,7 +4616,7 @@ impl Game {
                     },
                 );
                 if sacrifice_choices.is_empty() {
-                    continue;
+                    return;
                 }
                 for selections in self.legal_ability_target_selections(
                     definition.targets,
@@ -4615,34 +4633,14 @@ impl Game {
                         });
                     }
                 }
-            }
+            });
             if has_declarative_activation {
                 continue;
             }
-            let ability = self.activated_ability_origin(permanent, 0);
-            let secondary_ability = self.activated_ability_origin(permanent, 1);
-            let target_slot_for = |origin| {
-                self.effective_abilities(permanent)
-                    .into_iter()
-                    .find(|effective| effective.origin == origin)
-                    .and_then(|effective| match effective.ability.definition {
-                        DeclarativeAbilityDef::Activated(definition) => {
-                            definition.targets.first().map(|target| target.id)
-                        }
-                        DeclarativeAbilityDef::Spell(_)
-                        | DeclarativeAbilityDef::ActivatedMana(_)
-                        | DeclarativeAbilityDef::TriggeredMana(_)
-                        | DeclarativeAbilityDef::Triggered(_)
-                        | DeclarativeAbilityDef::Static(_)
-                        | DeclarativeAbilityDef::Replacement(_)
-                        | DeclarativeAbilityDef::SpecialAction(_)
-                        | DeclarativeAbilityDef::Keyword(_)
-                        | DeclarativeAbilityDef::Legacy => None,
-                    })
-                    .unwrap_or(TargetSlotId(0))
-            };
-            let ability_target_slot = target_slot_for(ability);
-            let secondary_target_slot = target_slot_for(secondary_ability);
+            let (ability, ability_target_slot) =
+                activated[0].unwrap_or((fallback_origin, fallback_target_slot));
+            let (secondary_ability, secondary_target_slot) =
+                activated[1].unwrap_or((fallback_origin, fallback_target_slot));
             match self.effective_behavior(permanent) {
                 Some(CardBehavior::Atog) => {
                     actions.extend(
@@ -7240,52 +7238,98 @@ impl Game {
     /// basic lands and dual lands explicitly list their mana abilities. Blood
     /// Moon is the one currently modeled type-changing effect that must
     /// synthesize an intrinsic ability because it removes the printed clauses.
-    fn effective_abilities(&self, permanent: &Permanent) -> Vec<EffectiveAbility> {
+    fn visit_effective_abilities(
+        &self,
+        permanent: &Permanent,
+        mut visitor: impl FnMut(EffectiveAbility) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
         let blood_moon_applies = self.is_nonbasic_land(permanent) && self.blood_moon_active();
-        let mut abilities = Vec::new();
         if !blood_moon_applies && let Some(rules) = self.effective_rules(permanent) {
             let (definition, part) = Self::effective_rules_source(permanent);
-            abilities.extend(rules.indexed_abilities().map(|attached| EffectiveAbility {
-                origin: AbilityOrigin::Printed {
-                    definition,
-                    part,
-                    ability: attached.id,
-                },
-                ability: attached.definition,
-            }));
+            for attached in rules.indexed_abilities() {
+                if visitor(EffectiveAbility {
+                    origin: AbilityOrigin::Printed {
+                        definition,
+                        part,
+                        ability: attached.id,
+                    },
+                    ability: attached.definition,
+                })
+                .is_break()
+                {
+                    return ControlFlow::Break(());
+                }
+            }
         }
-        if blood_moon_applies {
-            abilities.push(EffectiveAbility {
+        if blood_moon_applies
+            && visitor(EffectiveAbility {
                 origin: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
                 ability: abilities::tap_for(ManaColor::Red),
-            });
+            })
+            .is_break()
+        {
+            return ControlFlow::Break(());
         }
-        abilities.extend(
-            self.static_applied_effects(permanent)
-                .into_iter()
-                .filter_map(|applied| match applied.effect {
-                    AppliedEffectDef::GrantAbility(ability) => Some(EffectiveAbility {
-                        origin: AbilityOrigin::Granted {
-                            source: applied.source,
-                            source_definition: applied.source_definition,
-                            source_part: applied.source_part,
-                            source_ability: applied.source_ability,
-                            grant: applied
-                                .grant
-                                .expect("a granted ability has a structural grant identity"),
-                        },
-                        ability: *ability,
-                    }),
-                    AppliedEffectDef::CannotBeCountered
-                    | AppliedEffectDef::ModifyPowerToughness { .. }
-                    | AppliedEffectDef::Special(_) => None,
-                }),
-        );
+
+        self.visit_static_applied_effects(permanent, |applied| match applied.effect {
+            AppliedEffectDef::GrantAbility(ability) => visitor(EffectiveAbility {
+                origin: AbilityOrigin::Granted {
+                    source: applied.source,
+                    source_definition: applied.source_definition,
+                    source_part: applied.source_part,
+                    source_ability: applied.source_ability,
+                    grant: applied
+                        .grant
+                        .expect("a granted ability has a structural grant identity"),
+                },
+                ability: *ability,
+            }),
+            AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::ModifyPowerToughness { .. }
+            | AppliedEffectDef::Special(_) => ControlFlow::Continue(()),
+        })
+    }
+
+    fn for_each_effective_ability(
+        &self,
+        permanent: &Permanent,
+        mut visitor: impl FnMut(EffectiveAbility),
+    ) {
+        let result = self.visit_effective_abilities(permanent, |effective| {
+            visitor(effective);
+            ControlFlow::Continue(())
+        });
+        debug_assert!(result.is_continue());
+    }
+
+    fn find_effective_ability(
+        &self,
+        permanent: &Permanent,
+        mut predicate: impl FnMut(EffectiveAbility) -> bool,
+    ) -> Option<EffectiveAbility> {
+        let mut found = None;
+        let _ = self.visit_effective_abilities(permanent, |effective| {
+            if predicate(effective) {
+                found = Some(effective);
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        });
+        found
+    }
+
+    fn effective_abilities(&self, permanent: &Permanent) -> Vec<EffectiveAbility> {
+        let mut abilities = Vec::new();
+        self.for_each_effective_ability(permanent, |effective| abilities.push(effective));
         abilities
     }
 
-    fn static_applied_effects(&self, affected: &Permanent) -> Vec<StaticAppliedEffect> {
-        let mut applied = Vec::new();
+    fn visit_static_applied_effects(
+        &self,
+        affected: &Permanent,
+        mut visitor: impl FnMut(StaticAppliedEffect) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
         let mut blood_moon_active = None;
         for source in &self.battlefield {
             let Some(rules) = self.effective_rules(source) else {
@@ -7322,27 +7366,34 @@ impl Game {
                     affected,
                     next_grant: 0,
                 };
-                self.collect_static_applied_effects(
-                    attached.definition.effect,
-                    &mut traversal,
-                    &mut applied,
-                );
+                if self
+                    .visit_static_effect(attached.definition.effect, &mut traversal, &mut visitor)
+                    .is_break()
+                {
+                    return ControlFlow::Break(());
+                }
             }
         }
-        applied
+        ControlFlow::Continue(())
     }
 
-    fn collect_static_applied_effects(
+    fn visit_static_effect(
         &self,
         effect: EffectDef,
         traversal: &mut StaticEffectTraversal<'_>,
-        applied: &mut Vec<StaticAppliedEffect>,
-    ) {
+        visitor: &mut impl FnMut(StaticAppliedEffect) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
         match effect {
             EffectDef::Sequence(effects) => {
                 for effect in effects {
-                    self.collect_static_applied_effects(*effect, traversal, applied);
+                    if self
+                        .visit_static_effect(*effect, traversal, visitor)
+                        .is_break()
+                    {
+                        return ControlFlow::Break(());
+                    }
                 }
+                ControlFlow::Continue(())
             }
             EffectDef::Apply {
                 recipient,
@@ -7366,17 +7417,19 @@ impl Game {
                     traversal.source,
                     traversal.affected,
                 ) {
-                    applied.push(StaticAppliedEffect {
+                    visitor(StaticAppliedEffect {
                         source: traversal.source.card.id,
                         source_definition: traversal.source_definition,
                         source_part: traversal.source_part,
                         source_ability: traversal.source_ability,
                         grant,
                         effect,
-                    });
+                    })
+                } else {
+                    ControlFlow::Continue(())
                 }
             }
-            _ => {}
+            _ => ControlFlow::Continue(()),
         }
     }
 
@@ -7519,25 +7572,30 @@ impl Game {
     /// aggregate definitions fall back to their historic primary identity;
     /// migrated multi-ability cards retain the exact clause chosen by the
     /// action (for example, Factory's animate and pump abilities).
+    #[cfg(test)]
     fn activated_ability_origin(&self, permanent: &Permanent, index: usize) -> AbilityOrigin {
-        self.effective_abilities(permanent)
-            .into_iter()
-            .filter(|effective| {
-                effective.ability.implementation.is_executable()
-                    && matches!(
-                        effective.ability.definition,
-                        DeclarativeAbilityDef::Activated(_)
-                    )
-            })
-            .nth(index)
-            .map_or(
-                AbilityOrigin::Printed {
-                    definition: Self::effective_rules_source(permanent).0,
-                    part: Self::effective_rules_source(permanent).1,
-                    ability: AbilityId::PRIMARY,
-                },
-                |effective| effective.origin,
-            )
+        let mut activated_index = 0;
+        self.find_effective_ability(permanent, |effective| {
+            if !effective.ability.implementation.is_executable()
+                || !matches!(
+                    effective.ability.definition,
+                    DeclarativeAbilityDef::Activated(_)
+                )
+            {
+                return false;
+            }
+            let matches = activated_index == index;
+            activated_index += 1;
+            matches
+        })
+        .map_or(
+            AbilityOrigin::Printed {
+                definition: Self::effective_rules_source(permanent).0,
+                part: Self::effective_rules_source(permanent).1,
+                ability: AbilityId::PRIMARY,
+            },
+            |effective| effective.origin,
+        )
     }
 
     fn permanent_types(&self, permanent: &Permanent) -> Option<CardTypeSet> {
@@ -7647,13 +7705,13 @@ impl Game {
 
     fn mana_ability_activations(&self, permanent: &Permanent) -> Vec<ManaAbilityActivation> {
         let mut activations = Vec::new();
-        for effective in self.effective_abilities(permanent) {
+        self.for_each_effective_ability(permanent, |effective| {
             let ability = effective.ability;
             if !ability.implementation.is_executable() {
-                continue;
+                return;
             }
             let DeclarativeAbilityDef::ActivatedMana(definition) = ability.definition else {
-                continue;
+                return;
             };
             let taps_source = definition.costs.contains(&AbilityCostDef::TapSource);
             let sacrifices_source = definition.costs.contains(&AbilityCostDef::SacrificeSource);
@@ -7672,21 +7730,29 @@ impl Game {
                     matches!(cost, AbilityCostDef::PayLife(amount) if self.players[permanent.controller.index()].life < i16::try_from(*amount).unwrap_or(i16::MAX))
                 })
             {
-                continue;
+                return;
             }
             match ability.effect {
                 EffectDef::AddMana(effect) => {
-                    let colors: Vec<_> = match effect.mana {
-                        ManaSelectionDef::One(kind) => vec![kind],
-                        ManaSelectionDef::Choice(kinds) => kinds.to_vec(),
+                    let mut add_activation = |color| {
+                        activations.push(ManaAbilityActivation {
+                            source: permanent.card.id,
+                            ability: effective.origin,
+                            color,
+                            costs: definition.costs,
+                            effect,
+                        });
                     };
-                    activations.extend(colors.into_iter().map(|color| ManaAbilityActivation {
-                        source: permanent.card.id,
-                        ability: effective.origin,
-                        color,
-                        costs: definition.costs,
-                        effect,
-                    }));
+                    match effect.mana {
+                        ManaSelectionDef::One(color) => {
+                            add_activation(color);
+                        }
+                        ManaSelectionDef::Choice(colors) => {
+                            for color in colors {
+                                add_activation(*color);
+                            }
+                        }
+                    }
                 }
                 EffectDef::Special(_)
                     if self.effective_behavior(permanent) == Some(CardBehavior::FellwarStone) =>
@@ -7722,7 +7788,7 @@ impl Game {
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_) => {}
             }
-        }
+        });
         activations
     }
 
@@ -7763,14 +7829,14 @@ impl Game {
         }
         visiting.push(permanent.card.id);
         let mut colors = Vec::new();
-        for effective in self.effective_abilities(permanent) {
+        self.for_each_effective_ability(permanent, |effective| {
             if !effective.ability.implementation.is_executable()
                 || !matches!(
                     effective.ability.definition,
                     DeclarativeAbilityDef::ActivatedMana(_)
                 )
             {
-                continue;
+                return;
             }
             match effective.ability.effect {
                 EffectDef::AddMana(effect) => match effect.mana {
@@ -7805,7 +7871,7 @@ impl Game {
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_) => {}
             }
-        }
+        });
         visiting.pop();
         colors.sort_unstable();
         colors.dedup();
@@ -8162,9 +8228,7 @@ impl Game {
                     .iter()
                     .find(|permanent| permanent.card.id == *source)?;
                 if let Some(definition) = self
-                    .effective_abilities(permanent)
-                    .into_iter()
-                    .find(|effective| effective.origin == *ability)
+                    .find_effective_ability(permanent, |effective| effective.origin == *ability)
                     .and_then(|effective| match effective.ability.definition {
                         DeclarativeAbilityDef::Activated(definition) => Some(definition),
                         DeclarativeAbilityDef::Spell(_)
@@ -8522,27 +8586,30 @@ impl Game {
     }
 
     fn static_power_toughness_bonus(&self, permanent: &Permanent) -> (i16, i16) {
-        self.static_applied_effects(permanent).into_iter().fold(
-            (0_i16, 0_i16),
-            |(power, toughness), applied| match applied.effect {
-                AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(power_bonus),
-                    toughness: ValueDef::Constant(toughness_bonus),
-                } => (
-                    power.saturating_add(
+        let mut total = (0_i16, 0_i16);
+        let result = self.visit_static_applied_effects(permanent, |applied| {
+            if let AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(power_bonus),
+                toughness: ValueDef::Constant(toughness_bonus),
+            } = applied.effect
+            {
+                total = (
+                    total.0.saturating_add(
                         i16::try_from(power_bonus.clamp(i32::from(i16::MIN), i32::from(i16::MAX)))
                             .expect("the static power bonus was clamped to i16"),
                     ),
-                    toughness.saturating_add(
+                    total.1.saturating_add(
                         i16::try_from(
                             toughness_bonus.clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
                         )
                         .expect("the static toughness bonus was clamped to i16"),
                     ),
-                ),
-                _ => (power, toughness),
-            },
-        )
+                );
+            }
+            ControlFlow::Continue(())
+        });
+        debug_assert!(result.is_continue());
+        total
     }
 
     fn power(&self, permanent: &Permanent) -> Option<i16> {
@@ -8644,15 +8711,14 @@ impl Game {
     ) -> bool {
         permanent.temporary_keywords.contains(&expected)
             || self
-                .effective_abilities(permanent)
-                .into_iter()
-                .any(|effective| {
+                .find_effective_ability(permanent, |effective| {
                     effective.ability.implementation.is_executable()
                         && matches!(
                             effective.ability.definition,
                             DeclarativeAbilityDef::Keyword(actual) if actual == expected
                         )
                 })
+                .is_some()
     }
 
     fn source_controller_with_keyword(
@@ -8730,9 +8796,7 @@ impl Game {
             .next()
             .copied();
         let declarative = self
-            .effective_abilities(source_permanent)
-            .into_iter()
-            .find(|effective| effective.origin == ability)
+            .find_effective_ability(source_permanent, |effective| effective.origin == ability)
             .map(|effective| effective.ability)
             .filter(|ability| {
                 ability.implementation == AbilityImplementationDef::Definition
