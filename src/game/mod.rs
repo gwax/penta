@@ -1506,6 +1506,32 @@ impl Game {
         Ok(id)
     }
 
+    /// Puts a card into a player's graveyard directly, as a simulation and
+    /// test entry point. Nothing died and nothing resolved, so no trigger sees
+    /// this.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ZoneError::UnknownCard`] when the definition is not cataloged.
+    ///
+    /// # Panics
+    ///
+    /// Panics if building one card from one definition yields no card.
+    pub fn put_into_graveyard(
+        &mut self,
+        player: PlayerId,
+        definition: CardDefinitionId,
+    ) -> Result<GameObjectId, ZoneError> {
+        let built = self.build_zone(player, &[definition])?;
+        let card = built
+            .into_iter()
+            .next()
+            .expect("build_zone returns one card for one definition");
+        let id = card.id;
+        self.players[player.index()].graveyard.push(card);
+        Ok(id)
+    }
+
     /// Replaces a library with exactly these cards, top card first. Behaves
     /// like [`Self::set_hand`] in every other respect.
     ///

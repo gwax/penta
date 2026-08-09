@@ -170,6 +170,7 @@ export function GameClient({
   const [setupDismissible, setSetupDismissible] = useState(false);
   const [seed, setSeed] = useState(9394);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
+  const [graveyardOpen, setGraveyardOpen] = useState(false);
   const [selectedTargetCard, setSelectedTargetCard] = useState<number | null>(null);
   const [selectedTargetPlayer, setSelectedTargetPlayer] = useState<Owner | null>(null);
   const [selectedTargetStackId, setSelectedTargetStackId] = useState<number | null>(null);
@@ -1040,10 +1041,10 @@ export function GameClient({
       ) ?? false));
 
   const selectedSource = state?.battlefield
-    .concat(state.human.hand)
+    .concat(state.human.hand, state.human.graveyard)
     .find((card) => card.id === selectedCard);
   const actionMenuSource = state?.battlefield
-    .concat(state.human.hand)
+    .concat(state.human.hand, state.human.graveyard)
     .find((card) => card.id === cardActionMenu);
   const xPickerSource = state?.human.hand.find((card) => card.id === xPickerCard);
   const xPickerValues = Array.from(
@@ -1781,6 +1782,8 @@ export function GameClient({
               </button>
               <PlayerBar
                 player={state.human}
+                graveyardOpen={graveyardOpen}
+                onToggleGraveyard={() => setGraveyardOpen((open) => !open)}
                 targetable={isPlayerTargetable("human")}
                 selected={
                   fireballTargets.includes(playerTargetKey("human")) ||
@@ -1792,6 +1795,16 @@ export function GameClient({
                 onDropTarget={() => handleTargetDrop(playerTargetKey("human"))}
               />
             </div>
+
+            {graveyardOpen && (
+              <GraveyardStrip
+                cards={state.human.graveyard}
+                cardArtMode={cardArtMode}
+                actionCount={cardActions}
+                selectedCard={selectedCard}
+                onSelect={selectCard}
+              />
+            )}
 
             <HandZone
               cards={state.human.hand}
@@ -2315,6 +2328,8 @@ function PlayerBar({
   opponent = false,
   targetable = false,
   selected = false,
+  graveyardOpen = false,
+  onToggleGraveyard,
   onTarget,
   onDragOverTarget,
   onDragLeaveTarget,
@@ -2324,6 +2339,8 @@ function PlayerBar({
   opponent?: boolean;
   targetable?: boolean;
   selected?: boolean;
+  graveyardOpen?: boolean;
+  onToggleGraveyard?(): void;
   onTarget?(): void;
   onDragOverTarget?(): void;
   onDragLeaveTarget?(): void;
@@ -2338,7 +2355,19 @@ function PlayerBar({
       </div>
       <div className="zone-counts">
         <span title="Library">LIB {player.library}</span>
-        <span title="Graveyard">GY {player.graveyard.length}</span>
+        {onToggleGraveyard ? (
+          <button
+            type="button"
+            className="zone-count-button"
+            title="Graveyard"
+            aria-expanded={graveyardOpen}
+            onClick={onToggleGraveyard}
+          >
+            GY {player.graveyard.length}
+          </button>
+        ) : (
+          <span title="Graveyard">GY {player.graveyard.length}</span>
+        )}
       </div>
       <ManaPool mana={player.mana} />
       <div className="life-total">
@@ -2754,6 +2783,44 @@ function CardPile({
       })}
       {cards.length > 1 && !visuallyExpanded && (
         <span className="card-pile-count" aria-hidden="true">{cards.length}</span>
+      )}
+    </div>
+  );
+}
+
+/// The graveyard as selectable cards rather than a bare count. Flashback is
+/// cast from here, and the action panel only offers a card's actions once that
+/// card is selected, so an unrendered graveyard made those casts unreachable.
+function GraveyardStrip({
+  cards,
+  cardArtMode,
+  actionCount,
+  selectedCard,
+  onSelect,
+}: {
+  cards: Card[];
+  cardArtMode: CardArtMode;
+  actionCount(id: number): number;
+  selectedCard: number | null;
+  onSelect(id: number): void;
+}) {
+  return (
+    <div className="graveyard-strip" aria-label="Your graveyard">
+      {cards.length === 0 ? (
+        <p className="graveyard-empty">Your graveyard is empty.</p>
+      ) : (
+        cards.map((card) => (
+          <GameCard
+            key={card.id}
+            card={card}
+            cardArtMode={cardArtMode}
+            zone="graveyard"
+            actionable={actionCount(card.id) > 0}
+            selected={card.id === selectedCard}
+            onSelect={onSelect}
+            compact
+          />
+        ))
       )}
     </div>
   );

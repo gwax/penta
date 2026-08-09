@@ -725,6 +725,42 @@ button {
   font-size: 11px;
 }
 
+.zone-count-button {
+  appearance: none;
+  border: 1px solid #4a4436;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 1px 5px;
+  cursor: pointer;
+}
+
+.zone-count-button:hover,
+.zone-count-button[aria-expanded="true"] {
+  border-color: #b9a86a;
+  color: #e8dfc4;
+}
+
+/* Opened from the graveyard counter. Scrolls on its own so a long graveyard
+   never widens the table. */
+.graveyard-strip {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding: 6px 8px;
+  border: 1px solid #3d382c;
+  border-radius: 6px;
+  background: rgba(20, 18, 14, 0.6);
+}
+
+.graveyard-empty {
+  margin: 0;
+  color: #aaa18f;
+  font-size: 12px;
+}
+
 /* Reserved for three pips whether or not any are held, so tapping lands to
    pay for something does not shove the row it sits in around. */
 .mana-pool {

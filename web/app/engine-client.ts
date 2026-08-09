@@ -51,25 +51,41 @@ export function publishDevHandle(
   if (typeof window === "undefined") {
     return;
   }
-  const cheatOf = (game: EngineGame) =>
-    (game as { dev_put_onto_battlefield?: (seat: string, card: string) => void })
-      .dev_put_onto_battlefield;
+  type Cheat = (seat: string, card: string) => void;
+  const cheatOf = (game: EngineGame, name: string) =>
+    (game as unknown as Record<string, Cheat | undefined>)[name];
   const game = currentGame();
-  if (!game || typeof cheatOf(game) !== "function") {
+  if (!game || typeof cheatOf(game, "dev_put_onto_battlefield") !== "function") {
     return;
   }
+  // Resolve the game on each call: dealing a new one frees the old WASM
+  // object, and a handle holding it would fault.
+  const invoke = (name: string, seat: string, cardName: string, done: string) => {
+    const live = currentGame();
+    const cheat = live && cheatOf(live, name);
+    if (!live || typeof cheat !== "function") {
+      return "no game in play";
+    }
+    cheat.call(live, seat, cardName);
+    refresh();
+    return done;
+  };
   (window as unknown as { penta: unknown }).penta = {
     put(seat: "human" | "bot", cardName: string) {
-      // Resolve the game on each call: dealing a new one frees the old
-      // WASM object, and a handle holding it would fault.
-      const live = currentGame();
-      const cheat = live && cheatOf(live);
-      if (!live || typeof cheat !== "function") {
-        return "no game in play";
-      }
-      cheat.call(live, seat, cardName);
-      refresh();
-      return `put ${cardName} onto ${seat}'s battlefield`;
+      return invoke(
+        "dev_put_onto_battlefield",
+        seat,
+        cardName,
+        `put ${cardName} onto ${seat}'s battlefield`,
+      );
+    },
+    bury(seat: "human" | "bot", cardName: string) {
+      return invoke(
+        "dev_put_into_graveyard",
+        seat,
+        cardName,
+        `put ${cardName} into ${seat}'s graveyard`,
+      );
     },
   };
 }

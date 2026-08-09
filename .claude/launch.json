@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "penta-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "/Users/lacker/penta/web", "run", "dev"],
+      "port": 17524
+    }
+  ]
+}

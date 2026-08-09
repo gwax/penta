@@ -139,7 +139,7 @@ export type PlayerState = {
   };
   hand?: Card[];
   handSize?: number;
-  graveyard: string[];
+  graveyard: Card[];
 };
 
 export type DecisionOption = {

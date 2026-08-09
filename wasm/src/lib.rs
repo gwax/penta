@@ -407,6 +407,34 @@ impl WebGame {
         Ok(())
     }
 
+    /// Puts a named card straight into a seat's graveyard, for testing zones
+    /// the browser cannot otherwise reach. Compiled only with `dev-cheats`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error when the seat name is unknown, no card has
+    /// that name, or the game cannot take another object.
+    #[cfg(feature = "dev-cheats")]
+    pub fn dev_put_into_graveyard(&mut self, seat: &str, card_name: &str) -> Result<(), JsValue> {
+        let player = match seat {
+            "human" => self.human,
+            "bot" => self.human.opponent(),
+            other => {
+                return Err(js_error(format!(
+                    "seat must be \"human\" or \"bot\", got {other:?}"
+                )));
+            }
+        };
+        let definition = self
+            .catalog
+            .find_by_name(card_name)
+            .ok_or_else(|| js_error(format!("no card named {card_name:?}")))?;
+        self.game
+            .put_into_graveyard(player, definition)
+            .map_err(|error| js_error(error.to_string()))?;
+        Ok(())
+    }
+
     fn advance_until_human_choice(&mut self) -> Result<(), JsValue> {
         for _ in 0..BOT_ACTION_LIMIT {
             let Some(player) = self.game.decision_player() else {
@@ -1045,33 +1073,37 @@ impl WebGame {
                 })
             })
             .collect::<Vec<_>>();
+        // The hand and the graveyard both draw real cards in the browser, and
+        // flashback means a graveyard card can carry actions of its own, so
+        // both zones need the same shape rather than a list of names.
+        let card_in_zone = |id: penta::GameObjectId, definition: CardDefinitionId| {
+            let card = self.catalog.get(definition);
+            let art = card.and_then(|card| card.art.as_ref());
+            let creature_stats = card.and_then(|card| card.rules.creature_stats());
+            json!({
+                "id": id.0,
+                "name": self.card_name(definition),
+                "art": card_art_value(art),
+                "kind": card.map_or("unknown".into(), |card| {
+                    card.rules.kind_name().to_ascii_lowercase()
+                }),
+                "typeLine": card.map_or_else(String::new, |card| card.rules.type_line()),
+                "implementationStatus": card.map_or("complete", |card| {
+                    implementation_status_name(card.implementation_status())
+                }),
+                "isLand": card.is_some_and(|card| card.rules.has_type(penta::CardType::Land)),
+                "manaCost": hand_mana_cost_value(card),
+                "rulesText": card.map_or_else(String::new, |card| {
+                    card.rules.rules_text().into_owned()
+                }),
+                "power": creature_stats.map(|stats| stats.power),
+                "toughness": creature_stats.map(|stats| stats.toughness),
+            })
+        };
         let hand = observation
             .hand
             .iter()
-            .map(|(id, definition)| {
-                let card = self.catalog.get(*definition);
-                let art = card.and_then(|card| card.art.as_ref());
-                let creature_stats = card.and_then(|card| card.rules.creature_stats());
-                json!({
-                    "id": id.0,
-                    "name": self.card_name(*definition),
-                    "art": card_art_value(art),
-                    "kind": card.map_or("unknown".into(), |card| {
-                        card.rules.kind_name().to_ascii_lowercase()
-                    }),
-                    "typeLine": card.map_or_else(String::new, |card| card.rules.type_line()),
-                    "implementationStatus": card.map_or("complete", |card| {
-                        implementation_status_name(card.implementation_status())
-                    }),
-                    "isLand": card.is_some_and(|card| card.rules.has_type(penta::CardType::Land)),
-                    "manaCost": hand_mana_cost_value(card),
-                    "rulesText": card.map_or_else(String::new, |card| {
-                        card.rules.rules_text().into_owned()
-                    }),
-                    "power": creature_stats.map(|stats| stats.power),
-                    "toughness": creature_stats.map(|stats| stats.toughness),
-                })
-            })
+            .map(|(id, definition)| card_in_zone(*id, *definition))
             .collect::<Vec<_>>();
         let stack = observation
             .stack
@@ -1163,7 +1195,7 @@ impl WebGame {
             observation.graveyards[player.index()]
                 .iter()
                 .rev()
-                .map(|(_, definition)| self.card_name(*definition))
+                .map(|(id, definition)| card_in_zone(*id, *definition))
                 .collect::<Vec<_>>()
         };
         let result = self.game.result().map(|result| match result {
