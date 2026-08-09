@@ -11448,3 +11448,79 @@ fn izzet_staticaster_hits_every_copy_of_the_creature_it_names() {
         "the Angel shares no name"
     );
 }
+
+#[test]
+fn oblivion_ring_gives_back_exactly_what_it_took() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    // A second creature the Ring never touched, to prove the link is
+    // specific rather than a sweep of the exile zone.
+    game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.players[1]
+        .exile
+        .push(card(10_050, cards::MOUNTAIN, PlayerId::Two));
+
+    let ring = game
+        .put_onto_battlefield(PlayerId::One, cards::OBLIVION_RING)
+        .expect("cataloged");
+    let drain = |game: &mut Game| {
+        for _ in 0..10 {
+            if game.stack.is_empty()
+                && game.pending_triggers.is_empty()
+                && game.pending_decisions.is_empty()
+            {
+                break;
+            }
+            if let Some(decision) = game
+                .pending_decisions
+                .first()
+                .map(|pending| pending.observation.clone())
+            {
+                let options = decision
+                    .options
+                    .iter()
+                    .filter(|option| option.card == Some((angel, cards::SERRA_ANGEL)))
+                    .map(|option| option.id)
+                    .chain(decision.options.iter().map(|option| option.id))
+                    .take(decision.minimum.max(1))
+                    .collect::<Vec<_>>();
+                game.apply(
+                    decision.player,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options,
+                    },
+                )
+                .unwrap();
+                continue;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+    };
+    drain(&mut game);
+
+    assert!(
+        !game.battlefield.iter().any(|p| p.card.id == angel),
+        "the Angel was exiled"
+    );
+
+    game.destroy_permanent(ring);
+    drain(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .map(|permanent| permanent.card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SAVANNAH_LIONS, cards::SERRA_ANGEL],
+        "the Angel came back and the unrelated exiled Mountain stayed put"
+    );
+    assert_eq!(game.players[1].exile.len(), 1, "the Mountain is untouched");
+}

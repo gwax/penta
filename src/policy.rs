@@ -270,6 +270,8 @@ impl HandcraftedPolicy {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }

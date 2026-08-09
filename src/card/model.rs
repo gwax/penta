@@ -1054,6 +1054,15 @@ pub enum EffectDef {
         effect: &'static EffectDef,
     },
     EntersTapped,
+    /// Exiles, remembering which object sent it there so a later clause can
+    /// bring it back. This is the Oblivion Ring shape.
+    ExileLinkedToSource {
+        object: EffectRecipientDef,
+    },
+    /// Returns everything this ability's source exiled, to the named zone.
+    ReturnLinkedExiles {
+        zone: ZoneKind,
+    },
     /// A static prohibition: no spell or ability an opponent controls can
     /// make this ability's controller sacrifice a permanent.
     CannotBeForcedToSacrifice,

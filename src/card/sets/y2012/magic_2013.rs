@@ -258,9 +258,8 @@ pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
                 from: None,
                 to: Some(ZoneKind::Battlefield),
             },
-            EffectDef::MoveToZone {
+            EffectDef::ExileLinkedToSource {
                 object: EffectRecipientDef::Target(TargetSlotId(0)),
-                zone: ZoneKind::Exile,
             },
         )
         .with_targets(&[AbilityTargetDef::exactly_one(
@@ -276,9 +275,16 @@ pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
                 owner: None,
             },
         )]),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "When this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
-            "Returning the specific card this permanent exiled requires remembering that link, which is not implemented.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: Some(ZoneKind::Battlefield),
+                to: None,
+            },
+            EffectDef::ReturnLinkedExiles {
+                zone: ZoneKind::Battlefield,
+            },
         ),
     ]),
 );

@@ -463,11 +463,16 @@ mod tests {
             EffectDef::SacrificeOfChoice { player, object } => {
                 shared_effect_recipient(player) && shared_object_predicate(object)
             }
+            // Only the two destinations the return path knows.
+            EffectDef::ReturnLinkedExiles { zone } => {
+                matches!(zone, ZoneKind::Battlefield | ZoneKind::Hand)
+            }
             EffectDef::Tap { object }
             | EffectDef::Untap { object }
             | EffectDef::Destroy { object, .. }
             | EffectDef::Sacrifice { object }
             | EffectDef::Counter { object }
+            | EffectDef::ExileLinkedToSource { object }
             | EffectDef::AddCounters { object, .. }
             | EffectDef::Attach { object } => shared_effect_recipient(object),
             // Only the two destinations counter_spell_into knows.
@@ -639,7 +644,11 @@ mod tests {
                     && duration == EffectDurationDef::WhileSourceRemainsInZone;
                 battlefield_effect || stack_source_effect
             }
-            EffectDef::None
+            // Neither linked-exile effect is a static ability; both
+            // execute from the stack.
+            EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::None
             | EffectDef::AddMana(_)
             | EffectDef::DealDamage { .. }
             | EffectDef::GainLife { .. }
@@ -730,6 +739,8 @@ mod tests {
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::EntersTapped
                         | EffectDef::CannotBeForcedToSacrifice
+                        | EffectDef::ExileLinkedToSource { .. }
+                        | EffectDef::ReturnLinkedExiles { .. }
                         | EffectDef::ReduceGenericCostBy(_)
                         | EffectDef::MultiplyEventAmount(_)
                         | EffectDef::MoveToZone { .. }
@@ -829,6 +840,8 @@ mod tests {
             | EffectDef::AddCounters { .. }
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }

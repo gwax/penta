@@ -894,6 +894,9 @@ pub struct Game {
     /// turn begins rather than in cleanup, so a morbid spell cast during the
     /// end step still sees the creature that died in combat.
     creature_died_this_turn: bool,
+    /// Cards exiled by an object that promises to bring them back, paired
+    /// with whatever exiled them. Oblivion Ring is the shape.
+    linked_exiles: Vec<(GameObjectId, GameObjectId)>,
     blockers_declared: bool,
     untap_pending: bool,
     pregame: Option<Pregame>,
@@ -1034,6 +1037,7 @@ impl Game {
             step: Step::Upkeep,
             attackers_declared: false,
             creature_died_this_turn: false,
+            linked_exiles: Vec::new(),
             blockers_declared: false,
             untap_pending: false,
             pregame: Some(Pregame::Mulligan(PlayerId::One)),
@@ -2279,6 +2283,8 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
@@ -6619,6 +6625,30 @@ impl Game {
                     }
                 }
             }
+            EffectDef::ExileLinkedToSource { object: recipient } => {
+                let source = object.source.unwrap_or(object.id);
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Permanent(id) = target
+                        && let Some(exiled) = self.exile_permanent_returning_card(id)
+                    {
+                        self.linked_exiles.push((source, exiled));
+                    }
+                }
+            }
+            EffectDef::ReturnLinkedExiles { zone } => {
+                let source = object.source.unwrap_or(object.id);
+                let returning = self
+                    .linked_exiles
+                    .iter()
+                    .filter(|(exiled_by, _)| *exiled_by == source)
+                    .map(|(_, card)| *card)
+                    .collect::<Vec<_>>();
+                self.linked_exiles
+                    .retain(|(exiled_by, _)| *exiled_by != source);
+                for card in returning {
+                    self.return_exiled_card(card, zone);
+                }
+            }
             EffectDef::Counter { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context) {
                     if let Target::Spell(spell) = target {
@@ -8543,6 +8573,8 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::ExileLinkedToSource { .. }
+                | EffectDef::ReturnLinkedExiles { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
@@ -8632,6 +8664,8 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::ExileLinkedToSource { .. }
+                | EffectDef::ReturnLinkedExiles { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
@@ -10819,6 +10853,44 @@ impl Game {
         self.players[owner.index()].exile.push(card);
     }
 
+    /// Exiles a permanent and reports the object it became in exile, so the
+    /// clause that promised to return it can remember which card that is.
+    fn exile_permanent_returning_card(&mut self, id: GameObjectId) -> Option<GameObjectId> {
+        let owner = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .map(|permanent| permanent.card.owner)?;
+        let before = self.players[owner.index()].exile.len();
+        self.exile_permanent(id);
+        self.players[owner.index()]
+            .exile
+            .get(before)
+            .map(|card| card.id)
+    }
+
+    /// Brings a linked exile back. A card that is no longer in exile has
+    /// moved on, and nothing follows it.
+    fn return_exiled_card(&mut self, id: GameObjectId, zone: ZoneKind) {
+        let Some(owner) = [PlayerId::One, PlayerId::Two].into_iter().find(|player| {
+            self.players[player.index()]
+                .exile
+                .iter()
+                .any(|card| card.id == id)
+        }) else {
+            return;
+        };
+        let Some(card) = remove_card(&mut self.players[owner.index()].exile, id) else {
+            return;
+        };
+        if zone == ZoneKind::Battlefield {
+            self.put_card_onto_battlefield_from(card, ZoneKind::Exile, owner);
+        } else {
+            let (card, _zone_change) = self.zone_change_card(card);
+            self.players[owner.index()].hand.push(card);
+        }
+    }
+
     fn return_permanent_to_hand(&mut self, id: GameObjectId) {
         let listeners = self.battlefield_trigger_listeners();
         let Some(index) = self
@@ -10946,6 +11018,8 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
