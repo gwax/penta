@@ -368,7 +368,9 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
     "Think Twice",
     CardArt::new("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco"),
     CardSet::Innistrad,
-    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
+    CardRules::new_instant(mana_cost!("{1}{U}"))
+        .with_flashback(mana_cost!("{2}{U}"))
+        .with_abilities(&[
         AbilityDef::spell(
             "Draw a card.",
             EffectDef::DrawCards {
@@ -376,9 +378,8 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
                 amount: ValueDef::Constant(1),
             },
         ),
-        AbilityDef::not_implemented(
+        abilities::flashback(
             "Flashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-            "Casting from the graveyard for a flashback cost is not implemented.",
         ),
     ]),
 );
@@ -388,7 +389,9 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
     "Unburial Rites",
     CardArt::new("2794c82b-e5ce-4369-894e-bf56c6402ae1", "Ryan Pancoast"),
     CardSet::Innistrad,
-    CardRules::new_sorcery(mana_cost!("{4}{B}")).with_abilities(&[
+    CardRules::new_sorcery(mana_cost!("{4}{B}"))
+        .with_flashback(mana_cost!("{3}{W}"))
+        .with_abilities(&[
         AbilityDef::spell(
             "Return target creature card from your graveyard to the battlefield.",
             EffectDef::MoveToZone {
@@ -406,9 +409,8 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
                 owner: Some(PlayerRelation::You),
             },
         )]),
-        AbilityDef::not_implemented(
+        abilities::flashback(
             "Flashback {3}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-            "Casting from the graveyard for a flashback cost is not implemented.",
         ),
     ]),
 );

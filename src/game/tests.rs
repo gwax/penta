@@ -10408,3 +10408,56 @@ fn two_faithmenders_multiply_together_rather_than_adding() {
 
     assert_eq!(game.players[0].life - before, 12);
 }
+
+#[test]
+fn think_twice_can_be_flashed_back_once_and_then_is_gone() {
+    let mut game = ready_game();
+    game.players[0]
+        .graveyard
+        .push(card(10_000, cards::THINK_TWICE, PlayerId::One));
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 2;
+    let hand_before = game.players[0].hand.len();
+
+    let flashback = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(10_000)))
+        .expect("a card in the graveyard offers its flashback option");
+    game.apply(PlayerId::One, flashback).unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[0].hand.len(), hand_before + 1, "it drew");
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "a flashback spell does not return to the graveyard"
+    );
+    assert_eq!(game.players[0].exile.len(), 1);
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { .. })),
+        "an exiled card cannot be flashed back again",
+    );
+}
+
+#[test]
+fn a_card_in_hand_is_not_offered_its_flashback_cost() {
+    let mut game = ready_game();
+    let think_twice = card(10_000, cards::THINK_TWICE, PlayerId::One);
+    game.players[0].hand.push(think_twice);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 2;
+
+    let options = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { choices, .. } => Some(choices.play_option()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(options, vec![PlayOptionId::DEFAULT]);
+}

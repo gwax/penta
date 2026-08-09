@@ -15,9 +15,9 @@ use crate::card::{
     CardType, CardTypeSet, CharacteristicContext, CounterKind, DeclarativeAbilityDef,
     DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry,
     ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
-    PlayActionKind, PlayOptionDef, PlayerRelation, ReplacementEventDef, SpellForm, TargetPredicate,
-    TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
-    applicable_part_ids,
+    PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation, ReplacementEventDef, SpellForm,
+    TargetPredicate, TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZoneMoveCauseDef, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -3905,7 +3905,14 @@ impl Game {
     #[allow(clippy::too_many_lines)]
     fn add_spell_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
         let state = &self.players[player.index()];
-        for card in &state.hand {
+        // A card in the graveyard offers only its flashback option, and a card
+        // in hand offers everything else.
+        let castable = state
+            .hand
+            .iter()
+            .map(|card| (card, false))
+            .chain(state.graveyard.iter().map(|card| (card, true)));
+        for (card, from_graveyard) in castable {
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
             };
@@ -3913,6 +3920,9 @@ impl Game {
                 .play_options
                 .iter()
                 .filter(|option| option.action == PlayActionKind::CastSpell)
+                .filter(|option| {
+                    (option.restriction == PlayRestriction::Flashback) == from_graveyard
+                })
             {
                 // A declarative card intentionally has no custom behavior.
                 // `Unsupported` is only a local neutral value for the legacy
@@ -5392,34 +5402,25 @@ impl Game {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn validated_cast_signature(
-        &self,
-        player: PlayerId,
-        card_id: GameObjectId,
-        choices: &CastChoices,
-    ) -> Option<(CastSignature, ManaCost, CardBehavior)> {
-        let card = self.players[player.index()]
-            .hand
-            .iter()
-            .find(|card| card.id == card_id)?;
-        let definition = self.catalog.get(card.definition)?;
-        let option = definition
-            .play_option(choices.play_option())
-            .filter(|option| option.action == PlayActionKind::CastSpell)?;
-        let behavior =
-            Self::play_option_behavior(definition, option).unwrap_or(CardBehavior::Unsupported);
-        let types = Self::play_option_types(definition, option)?;
-        if option.effect_status == CardEffectStatus::MetadataOnly && !types.is_creature() {
-            return None;
-        }
+    /// Whether the chosen play option is the card's flashback option, which
+    /// decides both the zone it is cast from and where it goes afterwards.
+    fn play_option_is_flashback(&self, definition: CardDefinitionId, option: PlayOptionId) -> bool {
+        self.catalog
+            .get(definition)
+            .and_then(|definition| definition.play_option(option))
+            .is_some_and(|option| option.restriction == PlayRestriction::Flashback)
+    }
 
+    /// Whether the chosen modes suit the play option: the right number, in
+    /// ascending order, without repeats unless the card allows them, and all
+    /// of them actually executable.
+    fn mode_selection_is_valid(option: &PlayOptionDef, choices: &CastChoices) -> bool {
         match &option.modes {
-            None if !choices.modes().is_empty() => return None,
-            None => {}
+            None => choices.modes().is_empty(),
             Some(mode_set) => {
                 let count = choices.modes().len();
                 if count < usize::from(mode_set.minimum) || count > usize::from(mode_set.maximum) {
-                    return None;
+                    return false;
                 }
                 if !mode_set.may_repeat {
                     let unique = choices
@@ -5428,20 +5429,76 @@ impl Game {
                         .copied()
                         .collect::<std::collections::HashSet<_>>();
                     if unique.len() != count {
-                        return None;
+                        return false;
                     }
                 }
                 if choices.modes().windows(2).any(|pair| pair[0] > pair[1]) {
-                    return None;
+                    return false;
                 }
-                if choices.modes().iter().any(|selected| {
-                    !mode_set.modes.iter().any(|mode| {
+                choices.modes().iter().all(|selected| {
+                    mode_set.modes.iter().any(|mode| {
                         mode.id == *selected && mode.effect_status == CardEffectStatus::Implemented
                     })
-                }) {
-                    return None;
-                }
+                })
             }
+        }
+    }
+
+    /// Whether the chosen targets fill the play option's own declared slots,
+    /// used by cards whose targeting comes from the option rather than from a
+    /// declarative spell clause.
+    fn declared_slot_selection_is_valid(
+        &self,
+        declared_slots: &[TargetSlotDef],
+        choices: &CastChoices,
+    ) -> bool {
+        if declared_slots.len() != choices.targets().len() {
+            return false;
+        }
+        declared_slots
+            .iter()
+            .zip(choices.targets())
+            .all(|(slot, selection)| {
+                let count = selection.targets().len();
+                slot.id == selection.slot()
+                    && count >= usize::from(slot.minimum)
+                    && count <= usize::from(slot.maximum)
+                    && selection
+                        .targets()
+                        .iter()
+                        .all(|target| self.target_matches(slot.predicate, *target))
+            })
+    }
+
+    fn validated_cast_signature(
+        &self,
+        player: PlayerId,
+        card_id: GameObjectId,
+        choices: &CastChoices,
+    ) -> Option<(CastSignature, ManaCost, CardBehavior)> {
+        let state = &self.players[player.index()];
+        let card = state
+            .hand
+            .iter()
+            .chain(state.graveyard.iter())
+            .find(|card| card.id == card_id)?;
+        let definition = self.catalog.get(card.definition)?;
+        let option = definition
+            .play_option(choices.play_option())
+            .filter(|option| option.action == PlayActionKind::CastSpell)?;
+        let in_graveyard = state.graveyard.iter().any(|card| card.id == card_id);
+        if (option.restriction == PlayRestriction::Flashback) != in_graveyard {
+            return None;
+        }
+        let behavior =
+            Self::play_option_behavior(definition, option).unwrap_or(CardBehavior::Unsupported);
+        let types = Self::play_option_types(definition, option)?;
+        if option.effect_status == CardEffectStatus::MetadataOnly && !types.is_creature() {
+            return None;
+        }
+
+        if !Self::mode_selection_is_valid(option, choices) {
+            return None;
         }
 
         let mut cost = configured_mana_cost(option, choices.costs())?;
@@ -5504,23 +5561,8 @@ impl Game {
                 return None;
             }
             cost = add_generic(cost, fireball_extra_cost(behavior, flat_targets.len()));
-        } else {
-            if declared_slots.len() != choices.targets().len() {
-                return None;
-            }
-            for (slot, selection) in declared_slots.iter().zip(choices.targets()) {
-                let count = selection.targets().len();
-                if slot.id != selection.slot()
-                    || count < usize::from(slot.minimum)
-                    || count > usize::from(slot.maximum)
-                    || selection
-                        .targets()
-                        .iter()
-                        .any(|target| !self.target_matches(slot.predicate, *target))
-                {
-                    return None;
-                }
-            }
+        } else if !self.declared_slot_selection_is_valid(&declared_slots, choices) {
+            return None;
         }
         let payment_purpose = ManaPaymentPurpose::Spell {
             object: card_id,
@@ -5592,8 +5634,21 @@ impl Game {
             .expect("validated casting choices remain valid while paying costs");
         let targets = signature.iter_targets().copied().collect::<Vec<_>>();
         let x = signature.x();
-        let card = remove_card(&mut self.players[player.index()].hand, card_id)
-            .expect("legal cast action references a card in hand");
+        let flashback = self.players[player.index()]
+            .hand
+            .iter()
+            .chain(self.players[player.index()].graveyard.iter())
+            .find(|card| card.id == card_id)
+            .is_some_and(|card| {
+                self.play_option_is_flashback(card.definition, signature.play_option())
+            });
+        let source_zone = if flashback {
+            &mut self.players[player.index()].graveyard
+        } else {
+            &mut self.players[player.index()].hand
+        };
+        let card = remove_card(source_zone, card_id)
+            .expect("legal cast action references a card in its casting zone");
         // A spell is first proposed on the stack, then mana abilities may be
         // activated and costs are paid. The operation cannot fail after the
         // validated signature above, so keeping the provisional object local
@@ -5827,8 +5882,15 @@ impl Game {
         let card_id = object.id;
         if !spell_types.is_permanent() && !object.is_copy {
             let owner = object.card.owner;
+            // A flashback spell exiles itself instead of returning to the
+            // graveyard it was cast from, which is what keeps it from being
+            // flashed back again.
+            let exiles = behavior == CardBehavior::Recall
+                || object.signature.as_ref().is_some_and(|signature| {
+                    self.play_option_is_flashback(definition, signature.play_option())
+                });
             let (card, _zone_change) = self.zone_change_card(object.card);
-            if behavior == CardBehavior::Recall {
+            if exiles {
                 self.players[owner.index()].exile.push(card);
             } else {
                 self.players[owner.index()].graveyard.push(card);

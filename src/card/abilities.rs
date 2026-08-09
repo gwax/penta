@@ -54,6 +54,22 @@ pub const fn double_strike() -> AbilityDef {
     keyword("Double strike", KeywordAbility::DoubleStrike)
 }
 
+/// The printed flashback clause. The cost itself lives on
+/// [`crate::card::CardRules::with_flashback`], which is what gives the card a
+/// second play option; this clause only carries the text.
+#[must_use]
+pub const fn flashback(text: &'static str) -> AbilityDef {
+    AbilityDef::static_ability(
+        text,
+        EffectDef::Special("Cast this card from your graveyard for its flashback cost"),
+    )
+    .with_source_zones(&[ZoneKind::Graveyard])
+    .with_implementation(AbilityImplementationDef::CustomFull {
+        behavior: None,
+        explanation: "The flashback play option is implemented by the shared casting path.",
+    })
+}
+
 #[must_use]
 pub const fn banding() -> AbilityDef {
     unsupported_keyword(

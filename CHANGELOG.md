@@ -12,10 +12,15 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
-## 0.6.0 — protocol 3
+## 0.6.0 — protocol 5
 
 ### Changed
 
+- Flashback. A card in its owner's graveyard can offer a second cast play
+  option, so `legal_actions` now reports `CastSpell` for objects outside the
+  hand; a bot that assumed every castable card was in hand needs updating.
+  Play options carry a new `"flashback"` restriction, and a spell cast that way
+  exiles itself instead of returning to the graveyard.
 - Activated, mana, and triggered actions identify the exact printed,
   intrinsic, or granted ability that created them. Triggered abilities become
   independent stack objects with frozen source information and may be answered

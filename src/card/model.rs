@@ -254,6 +254,9 @@ pub enum PlayActionKind {
 pub enum PlayRestriction {
     Normal,
     FromHandOnly,
+    /// Cast from the graveyard for an alternative cost, exiling the card as it
+    /// leaves the stack. This is flashback, CR 702.34.
+    Flashback,
 }
 
 /// A catalog-level description of what can occupy one target slot.
@@ -2071,6 +2074,7 @@ impl CardComposition {
                 CardEffectStatus::Implemented
             }
         };
+        let name_for_flashback = name.clone();
         let part = CardPart::new(CardPartId::PRIMARY, name.clone(), rules);
         let mut option = if is_land {
             PlayOptionDef::play_land(
@@ -2091,12 +2095,27 @@ impl CardComposition {
         if let Some(modes) = rules.presentation_spell_modes() {
             option = option.with_modes(modes);
         }
+        let mut play_options = vec![option];
+        if let Some(cost) = rules.flashback_cost() {
+            let mut flashback = PlayOptionDef::cast(
+                PlayOptionId(1),
+                format!("{name_for_flashback} with flashback"),
+                SpellForm::Part(CardPartId::PRIMARY),
+                cost,
+                effect_status,
+            );
+            flashback.restriction = PlayRestriction::Flashback;
+            if let Some(modes) = rules.presentation_spell_modes() {
+                flashback = flashback.with_modes(modes);
+            }
+            play_options.push(flashback);
+        }
         Self {
             parts: vec![part],
             structure: CardStructure::Single {
                 main: CardPartId::PRIMARY,
             },
-            play_options: vec![option],
+            play_options,
         }
     }
 }
@@ -2889,6 +2908,10 @@ pub struct CardRules {
     /// basic land subtypes so a card's behavior is visible in one place.
     abilities: CardAbilityList,
     colors: ColorSet,
+    /// The cost this card can be cast for from its owner's graveyard. The
+    /// printed clause still carries the reminder text; this is what gives
+    /// casting a second play option to offer.
+    flashback: Option<ManaCost>,
 }
 
 impl CardRules {
@@ -2923,7 +2946,21 @@ impl CardRules {
             creature_stats: None,
             abilities: CardAbilityList::None,
             colors,
+            flashback: None,
         }
+    }
+
+    /// Declares the flashback cost the printed clause names. The clause itself
+    /// stays in the ability list so the reminder text is still cataloged.
+    #[must_use]
+    pub const fn with_flashback(mut self, cost: ManaCost) -> Self {
+        self.flashback = Some(cost);
+        self
+    }
+
+    #[must_use]
+    pub const fn flashback_cost(&self) -> Option<ManaCost> {
+        self.flashback
     }
 
     #[must_use]

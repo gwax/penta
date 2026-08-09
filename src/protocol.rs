@@ -41,7 +41,7 @@ use crate::{
 /// spell choices, public counterability and permanent-choice state, and
 /// enables previously metadata-only cards whose actions now appear in
 /// legal-action lists.
-pub const PROTOCOL_VERSION: u32 = 4;
+pub const PROTOCOL_VERSION: u32 = 5;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -916,6 +916,7 @@ fn play_option_json(option: &PlayOptionDef) -> Value {
         "restriction": match option.restriction {
             PlayRestriction::Normal => "normal",
             PlayRestriction::FromHandOnly => "fromHandOnly",
+            PlayRestriction::Flashback => "flashback",
         },
         "modes": option.modes.as_ref().map(|modes| json!({
             "minimum": modes.minimum,
