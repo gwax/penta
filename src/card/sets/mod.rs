@@ -5,6 +5,7 @@
 //! or metadata-only. Reprints and alternate-art variants point back to that
 //! canonical record from their own set module.
 
+mod tokens;
 mod y1993;
 mod y1994;
 mod y2011;
@@ -40,6 +41,7 @@ impl SetModule {
 /// introduced by that module; `additional_printings` contains reprints and
 /// further variants of definitions introduced elsewhere.
 const SET_MODULES: &[SetModule] = &[
+    SetModule::new(CardSet::Token, tokens::CARDS, tokens::ADDITIONAL_PRINTINGS),
     SetModule::new(
         CardSet::Alpha,
         y1993::alpha::CARDS,
@@ -420,6 +422,9 @@ mod tests {
             | EffectDef::Counter { object }
             | EffectDef::AddPlusOneCounters { object, .. }
             | EffectDef::Attach { object } => shared_effect_recipient(object),
+            // A token needs no recipient: it is created under the resolving
+            // object's controller.
+            EffectDef::CreateToken { .. } => true,
             EffectDef::OptionalManaPayment { effect, .. } => shared_stack_effect(*effect),
             EffectDef::Apply {
                 recipient,
@@ -539,6 +544,7 @@ mod tests {
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Attach { .. }
+            | EffectDef::CreateToken { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
@@ -594,6 +600,7 @@ mod tests {
                         | EffectDef::Tap { .. }
                         | EffectDef::Untap { .. }
                         | EffectDef::Attach { .. }
+                        | EffectDef::CreateToken { .. }
                         | EffectDef::Destroy { .. }
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::Counter { .. }
@@ -676,6 +683,7 @@ mod tests {
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Attach { .. }
+            | EffectDef::CreateToken { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
@@ -696,10 +704,20 @@ mod tests {
             .chain(Format::IsdRtrStandard.rules().allowed_sets)
             .copied()
             .collect::<Vec<_>>();
+        // Tokens are registered like a set so a client can resolve one by
+        // definition, but they are deliberately in no format's card pool, so
+        // they are not part of this correspondence.
         let registered_sets = SET_MODULES
             .iter()
             .map(|module| module.set)
+            .filter(|set| *set != CardSet::Token)
             .collect::<Vec<_>>();
+        for format in [Format::OldSchool9394, Format::IsdRtrStandard] {
+            assert!(
+                !format.rules().allowed_sets.contains(&CardSet::Token),
+                "no format may allow the token set"
+            );
+        }
 
         assert_eq!(registered_sets, expected_sets);
         assert_eq!(registered_sets.len(), 20);
@@ -729,13 +747,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 244);
+        assert_eq!(records.len(), 245);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=244).collect::<Vec<_>>()
+            (1..=245).collect::<Vec<_>>()
         );
         assert_eq!(
             records
@@ -775,7 +793,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 244);
+        assert_eq!(records.len(), 245);
 
         for record in records {
             let definition = record.definition();

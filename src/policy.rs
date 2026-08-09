@@ -220,6 +220,7 @@ impl HandcraftedPolicy {
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
+            | EffectDef::CreateToken { .. }
             | EffectDef::Special(_) => {}
         }
     }

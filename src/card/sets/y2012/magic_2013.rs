@@ -391,9 +391,17 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
                 amount: ValueDef::Constant(5),
             },
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "When this creature leaves the battlefield, create a 3/3 green Beast creature token.",
-            "Creating creature tokens is not implemented.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: Some(ZoneKind::Battlefield),
+                to: None,
+            },
+            EffectDef::CreateToken {
+                token: cards::BEAST_TOKEN_3_3_GREEN,
+                count: 1,
+            },
         ),
     ]),
 );

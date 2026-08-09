@@ -29,6 +29,10 @@ pub enum CardSet {
     Gatecrash,
     DragonsMaze,
     Magic2014,
+    /// Tokens are game objects rather than printed cards. They live in the
+    /// catalog so a client can look one up by definition, and belong to no
+    /// set a format allows, so they are never deck-legal.
+    Token,
 }
 
 /// Stable identity of one exact printing of a card.
@@ -887,6 +891,12 @@ pub enum EffectDef {
     },
     Untap {
         object: EffectRecipientDef,
+    },
+    /// Puts token copies of `token` onto the battlefield under the resolving
+    /// object's controller.
+    CreateToken {
+        token: CardDefinitionId,
+        count: u8,
     },
     /// An Aura spell attaching itself to what it enchants. The permanent the
     /// spell becomes is what attaches, so this is only meaningful on the spell

@@ -8039,3 +8039,86 @@ fn underworld_connections_lends_its_land_a_draw_ability() {
     assert_eq!(game.players[0].library.len(), library_before - 1);
     assert_eq!(game.players[0].life, 19, "one life paid");
 }
+
+#[test]
+fn thragtusk_leaves_a_beast_behind() {
+    let mut game = ready_game();
+    let tusk = card(10_001, cards::THRAGTUSK, PlayerId::One);
+    game.players[0].hand.push(tusk.clone());
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.colorless = 4;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(tusk.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut game);
+    assert_eq!(game.players[0].life, 25, "the entry trigger gained 5");
+
+    let tusk_id = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::THRAGTUSK)
+        .expect("the tusk is on the battlefield")
+        .card
+        .id;
+    game.destroy_permanent_without_regeneration(tusk_id);
+    game.check_state_based_actions();
+    // Placing a captured trigger on the stack, and resolving it, happen as the
+    // game processes actions, so the test has to keep playing rather than only
+    // poking the engine.
+    for _ in 0..12 {
+        if game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::BEAST_TOKEN_3_3_GREEN)
+        {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let beast = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::BEAST_TOKEN_3_3_GREEN)
+        .expect("a Beast token replaced it");
+    assert_eq!(game.power(beast), Some(3));
+    assert_eq!(game.toughness(beast), Some(3));
+    assert_eq!(beast.controller, PlayerId::One);
+}
+
+#[test]
+fn a_token_ceases_to_exist_rather_than_reaching_a_graveyard() {
+    let mut game = ready_game();
+    game.create_token(PlayerId::One, cards::BEAST_TOKEN_3_3_GREEN);
+    let token_id = game.battlefield[0].card.id;
+    assert!(game.players[0].graveyard.is_empty());
+
+    game.destroy_permanent_without_regeneration(token_id);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield.is_empty(),
+        "the token left the battlefield"
+    );
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "and ceased to exist rather than landing in a graveyard"
+    );
+}
+
+#[test]
+fn a_token_is_never_deck_legal() {
+    let catalog = poc::catalog().expect("catalog builds");
+    for format in [Format::OldSchool9394, Format::IsdRtrStandard] {
+        assert!(
+            !catalog.is_allowed_in(cards::BEAST_TOKEN_3_3_GREEN, format),
+            "a token belongs to no format's card pool"
+        );
+    }
+}

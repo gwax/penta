@@ -1804,6 +1804,7 @@ impl Game {
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
+            | EffectDef::CreateToken { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing and non-mana primitives need a dedicated
@@ -5475,6 +5476,11 @@ impl Game {
                     }
                 }
             }
+            EffectDef::CreateToken { token, count } => {
+                for _ in 0..count {
+                    self.create_token(object.controller, token);
+                }
+            }
             EffectDef::Untap { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context) {
                     if let Target::Permanent(id) = target
@@ -6945,6 +6951,45 @@ impl Game {
             })
     }
 
+    /// Whether a definition is a token rather than a printed card.
+    fn is_token(&self, definition: CardDefinitionId) -> bool {
+        self.catalog
+            .get(definition)
+            .is_some_and(|card| card.debut_set == CardSet::Token)
+    }
+
+    /// Puts one token onto the battlefield under `controller`.
+    ///
+    /// A token is a real permanent built from a catalog definition that no
+    /// format allows, so it can be looked up and rendered like any other card
+    /// while never being deck-legal.
+    fn create_token(&mut self, controller: PlayerId, token: CardDefinitionId) {
+        let Some(definition) = self.catalog.get(token) else {
+            return;
+        };
+        let presented = definition.primary_part_id();
+        // A token has no physical card behind it, which is exactly what an
+        // unbacked object is.
+        let card = self.unbacked_object(token, controller, CharacteristicSource::Card(token));
+        let permanent = Permanent::entering(
+            card,
+            presented,
+            controller,
+            self.turns_started[controller.index()],
+        );
+        self.battlefield.push(permanent);
+        let entered = self
+            .battlefield
+            .last()
+            .expect("the token just created is on the battlefield");
+        let entered_event = self.trigger_event_object(entered);
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
+            object: entered_event,
+            from: ZoneKind::Stack,
+            to: ZoneKind::Battlefield,
+        });
+    }
+
     /// What an Aura is attached to, if it is on the battlefield and attached.
     fn attached_host(&self, aura: GameObjectId) -> Option<GameObjectId> {
         self.battlefield
@@ -7185,6 +7230,7 @@ impl Game {
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
                 | EffectDef::Attach { .. }
+                | EffectDef::CreateToken { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::Counter { .. }
@@ -7266,6 +7312,7 @@ impl Game {
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
                 | EffectDef::Attach { .. }
+                | EffectDef::CreateToken { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::Counter { .. }
@@ -8845,6 +8892,11 @@ impl Game {
             self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
             self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
             self.record_battlefield_exit(&permanent, destination);
+            // 111.7: a token that leaves the battlefield ceases to exist. The
+            // exit and everything watching for it still happened.
+            if self.is_token(permanent.card.definition) {
+                continue;
+            }
             let owner = permanent.card.owner;
             let (card, _zone_change) = self.zone_change_card(permanent.card);
             if exile_instead {
@@ -8926,6 +8978,9 @@ impl Game {
         self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
         self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
         self.record_battlefield_exit(&permanent, BattlefieldExit::Exile);
+        if self.is_token(permanent.card.definition) {
+            return;
+        }
         let owner = permanent.card.owner;
         let (card, _zone_change) = self.zone_change_card(permanent.card);
         self.players[owner.index()].exile.push(card);
@@ -8950,6 +9005,9 @@ impl Game {
         self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
         self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
         self.record_battlefield_exit(&permanent, BattlefieldExit::Hand);
+        if self.is_token(permanent.card.definition) {
+            return;
+        }
         let owner = permanent.card.owner;
         let (card, _zone_change) = self.zone_change_card(permanent.card);
         self.players[owner.index()].hand.push(card);

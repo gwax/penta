@@ -246,3 +246,8 @@ pub const WAR_PRIEST_OF_THUNE: CardDefinitionId = CardDefinitionId(241);
 pub const WARLEADERS_HELIX: CardDefinitionId = CardDefinitionId(242);
 pub const WOODLAND_CEMETERY: CardDefinitionId = CardDefinitionId(243);
 pub const ZEALOUS_CONSCRIPTS: CardDefinitionId = CardDefinitionId(244);
+
+/// Token definitions. Tokens are game objects rather than printed cards; they
+/// live in the catalog so a client can look one up by definition, and belong
+/// to no set any format allows, so they are never deck-legal.
+pub const BEAST_TOKEN_3_3_GREEN: CardDefinitionId = CardDefinitionId(245);
