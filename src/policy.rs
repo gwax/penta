@@ -104,6 +104,9 @@ struct DeclarativeSpellProfile {
     damage: Option<u16>,
     cards_drawn: Option<u16>,
     effect_kinds: u8,
+    /// Whether the activation taps its own source. A land that taps to pump
+    /// is spending the mana it could have made.
+    taps_source: bool,
 }
 
 impl DeclarativeSpellProfile {
@@ -597,6 +600,7 @@ impl HandcraftedPolicy {
         ability: AbilityOrigin,
         targets: &[crate::TargetSelection],
         sacrifice: Option<GameObjectId>,
+        x: u16,
     ) -> i32 {
         let source_definition = Self::permanent_definition(observation, source);
         let behavior = source_definition.and_then(|id| self.behavior(id));
@@ -662,6 +666,22 @@ impl HandcraftedPolicy {
                 7_200 + target_score
             }
             None if declarative.is_some_and(|profile| profile.cards_drawn.is_some()) => 6_500,
+            // The same reasoning as Mishra's Factory, one step more general:
+            // an ability that taps its source to pump spends whatever that
+            // source was going to do, so it only pays for itself on a
+            // creature already in combat -- and never for X of zero.
+            None if declarative.is_some_and(|profile| {
+                profile.taps_source && profile.has(DeclarativeSpellProfile::APPLIES)
+            }) && !Self::target_is_fighting(observation, target) =>
+            {
+                -100
+            }
+            None if declarative.is_some_and(|profile| {
+                profile.taps_source && profile.has(DeclarativeSpellProfile::APPLIES)
+            }) =>
+            {
+                5_200 + target_score + i32::from(x) * 100
+            }
             None if declarative
                 .is_some_and(|profile| profile.has(DeclarativeSpellProfile::APPLIES)) =>
             {
@@ -707,6 +727,9 @@ impl HandcraftedPolicy {
             return None;
         }
         let mut profile = DeclarativeSpellProfile::default();
+        if let DeclarativeAbilityDef::Activated(definition) = ability.definition {
+            profile.taps_source = definition.costs.contains(&AbilityCostDef::TapSource);
+        }
         Self::collect_spell_effect_profile(ability.effect, 0, &mut profile);
         Some(profile)
     }
@@ -1003,8 +1026,8 @@ impl HandcraftedPolicy {
                 ability,
                 targets,
                 sacrifice,
-                ..
-            } => self.score_ability(observation, *source, *ability, targets, *sacrifice),
+                x,
+            } => self.score_ability(observation, *source, *ability, targets, *sacrifice, *x),
             Action::DeclareAttacker { attacker } => self.score_attack(observation, *attacker),
             Action::DeclareBlocker { blocker, attacker } => {
                 Self::score_block(observation, *blocker, *attacker)
