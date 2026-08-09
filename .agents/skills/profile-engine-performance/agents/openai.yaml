@@ -1,0 +1,4 @@
+interface:
+  display_name: "Profile Engine Performance"
+  short_description: "Profile and attribute Penta engine hotspots"
+  default_prompt: "Use $profile-engine-performance to capture a deterministic Penta engine profile, attribute its hotspots, and compare it with a baseline."

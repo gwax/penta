@@ -42,7 +42,7 @@ endef
 	lint lint-rust lint-web lint-infra lint-infra-available lint-python-binding \
 	test test-rust test-rust-full test-rust-slow \
 	test-engine test-engine-unit test-engine-integration test-policy test-wasm-rust \
-	test-rust-budget \
+	test-profile-attribution test-rust-budget \
 	build-profile-engine profile-engine profile-engine-all profile-engine-open \
 	build-wasm build-web \
 	test-web test-web-fast test-web-unit test-web-full \
@@ -133,6 +133,10 @@ test-rust-budget: ## Fail when the Rust suite runs longer than its time budget.
 		exit 1; \
 	fi
 
+test-profile-attribution: ## Test the repository-local Samply attribution analyzer.
+	python3 -m unittest discover \
+		-s .agents/skills/profile-engine-performance/tests -p 'test_*.py'
+
 build-profile-engine: ## Build the optimized engine workloads with profiling symbols.
 	cargo build --locked --profile profiling --bin penta-match --bin policy_sanity
 
@@ -195,17 +199,17 @@ test-web: test-web-fast test-web-render ## Run the normal web tests.
 test-web-full: build-web ## Run every discovered web test unfiltered.
 	cd web && CI=true node --test $(WEB_ROOT_TESTS) $(WEB_WASM_FAST_SUITES) $(WEB_WASM_SLOW_SUITES)
 
-test: test-rust test-web ## Run normal Rust and web tests.
+test: test-rust test-profile-attribution test-web ## Run normal Rust, tooling, and web tests.
 
 test-slow: test-rust-slow test-web-wasm-slow ## Run only simulation-heavy suites.
 
-check-fast: fmt-rust lint test-rust typecheck-web test-web-fast ## Run the broad checkpoint without slow tests or a production web build.
+check-fast: fmt-rust lint test-rust test-profile-attribution typecheck-web test-web-fast ## Run the broad checkpoint without slow tests or a production web build.
 
 check-rust: fmt-rust lint-rust test-rust-budget ## Run the complete root Rust workspace gate.
 
 check-web: lint-web typecheck-web test-web-full ## Run the complete web gate.
 
-check: check-rust check-web lint-infra-available ## Run the complete engine, web, and tooling gate.
+check: check-rust check-web lint-infra-available test-profile-attribution ## Run the complete engine, web, and tooling gate.
 
 check-bindings-c: ## Build and smoke-test only the C ABI.
 	./scripts/check-bindings.sh c

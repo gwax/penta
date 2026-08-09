@@ -12,7 +12,11 @@ fn repo_root() -> PathBuf {
 }
 
 /// Every skill the repository ships, by directory name.
-const SKILLS: [&str; 2] = ["query-magic-references", "refresh-magic-references"];
+const SKILLS: [&str; 3] = [
+    "profile-engine-performance",
+    "query-magic-references",
+    "refresh-magic-references",
+];
 
 #[test]
 fn claude_reads_the_same_repository_instructions_as_codex() {
@@ -169,11 +173,16 @@ fn markdown_link_targets(line: &str) -> Vec<&str> {
 
 /// A skill that shells out to a script is only useful if the script is there.
 #[test]
-fn the_reference_script_the_skills_invoke_exists() {
-    let script = Path::new(".agents/skills/refresh-magic-references/scripts/reference_material.py");
-    assert!(
-        repo_root().join(script).is_file(),
-        "both skills invoke {}, by a path written from the repository root",
-        script.display()
-    );
+fn the_scripts_the_skills_invoke_exist() {
+    for script in [
+        ".agents/skills/profile-engine-performance/scripts/profile_attribution.py",
+        ".agents/skills/refresh-magic-references/scripts/reference_material.py",
+    ] {
+        let script = Path::new(script);
+        assert!(
+            repo_root().join(script).is_file(),
+            "a skill invokes {}, by a path written from the repository root",
+            script.display()
+        );
+    }
 }
