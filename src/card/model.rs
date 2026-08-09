@@ -852,6 +852,13 @@ impl AddManaEffectDef {
 /// last-known-information selection to the runtime source reference.
 /// A set of objects described the way [`EffectRecipientDef::MatchingObjects`]
 /// describes one, so a count and a sweep name their subject identically.
+/// The two branches of a conditional value.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ConditionalValueDef {
+    pub then: ValueDef,
+    pub otherwise: ValueDef,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ObjectQueryDef {
     pub object: ObjectPredicateDef,
@@ -882,6 +889,9 @@ pub enum ValueDef {
     Negate(&'static ValueDef),
     /// How many counters of one kind sit on the ability's own source.
     CountersOnSource(CounterKind),
+    /// The morbid condition. Held by reference so that `ValueDef` stays one
+    /// word wide; a second inline value would grow everything embedding it.
+    IfCreatureDiedThisTurn(&'static ConditionalValueDef),
 }
 
 /// An object or player affected by an effect. Targets are chosen when a spell

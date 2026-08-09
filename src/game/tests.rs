@@ -11020,3 +11020,46 @@ fn izzet_charm_lets_a_paying_controller_keep_the_spell() {
     );
     assert_eq!(game.players[1].mana_pool.colorless, 0, "the two was spent");
 }
+
+#[test]
+fn tragic_slip_is_a_minus_one_until_something_dies() {
+    for morbid in [false, true] {
+        let mut game = ready_game();
+        game.battlefield
+            .push(creature(10_000, cards::SERRA_ANGEL, PlayerId::Two));
+        if morbid {
+            game.battlefield
+                .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+            game.destroy_permanent(CardInstanceId(10_001));
+        }
+        let slip = card(10_002, cards::TRAGIC_SLIP, PlayerId::One);
+        game.players[0].hand.push(slip.clone());
+        game.players[0].mana_pool.black = 1;
+
+        game.apply(
+            PlayerId::One,
+            cast_action(
+                slip.id,
+                vec![Target::Permanent(CardInstanceId(10_000))],
+                Vec::new(),
+                0,
+            ),
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+
+        let angel = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == CardInstanceId(10_000));
+        if morbid {
+            assert!(angel.is_none(), "a 4/4 does not survive -13/-13");
+        } else {
+            let angel = angel.expect("a 4/4 shrugs off -1/-1");
+            assert_eq!(
+                (game.power(angel), game.toughness(angel)),
+                (Some(3), Some(3))
+            );
+        }
+    }
+}

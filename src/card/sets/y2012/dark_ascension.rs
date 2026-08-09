@@ -2,11 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure,
-    CardType, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry,
-    ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef,
-    ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
+    AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
+    CardStructure, CardType, ConditionalValueDef, DoubleFacedKind, EffectDef, EffectDurationDef,
+    EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation,
+    SpellForm, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -151,6 +151,13 @@ pub(in crate::card::sets) static STRANGLEROOT_GEIST: CardRecord = CardRecord::ne
     ]),
 );
 
+/// Morbid replaces the amount rather than adding a second effect, so both
+/// printed clauses come down to which number this picks.
+const TRAGIC_SLIP_AMOUNT: ValueDef = ValueDef::IfCreatureDiedThisTurn(&ConditionalValueDef {
+    then: ValueDef::Constant(-13),
+    otherwise: ValueDef::Constant(-1),
+});
+
 pub(in crate::card::sets) static TRAGIC_SLIP: CardRecord = CardRecord::new(
     cards::TRAGIC_SLIP,
     "Tragic Slip",
@@ -162,8 +169,8 @@ pub(in crate::card::sets) static TRAGIC_SLIP: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetSlotId(0)),
                 effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(-1),
-                    toughness: ValueDef::Constant(-1),
+                    power: TRAGIC_SLIP_AMOUNT,
+                    toughness: TRAGIC_SLIP_AMOUNT,
                 },
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
@@ -178,10 +185,14 @@ pub(in crate::card::sets) static TRAGIC_SLIP: CardRecord = CardRecord::new(
                 owner: None,
             },
         )]),
-        AbilityDef::not_implemented(
+        AbilityDef::static_ability(
             "Morbid — That creature gets -13/-13 until end of turn instead if a creature died this turn.",
-            "Morbid conditions that depend on a creature having died this turn are not implemented, so the spell always applies -1/-1.",
-        ),
+            EffectDef::Special("Apply -13/-13 instead if a creature died this turn"),
+        )
+        .with_implementation(AbilityImplementationDef::CustomFull {
+            behavior: None,
+            explanation: "The morbid amount is chosen by the value on the preceding clause.",
+        }),
     ]),
 );
 

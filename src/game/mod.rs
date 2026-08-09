@@ -877,6 +877,10 @@ pub struct Game {
     consecutive_passes: u8,
     step: Step,
     attackers_declared: bool,
+    /// Whether a creature has died so far this turn, for morbid. Cleared as a
+    /// turn begins rather than in cleanup, so a morbid spell cast during the
+    /// end step still sees the creature that died in combat.
+    creature_died_this_turn: bool,
     blockers_declared: bool,
     untap_pending: bool,
     pregame: Option<Pregame>,
@@ -1016,6 +1020,7 @@ impl Game {
             consecutive_passes: 0,
             step: Step::Upkeep,
             attackers_declared: false,
+            creature_died_this_turn: false,
             blockers_declared: false,
             untap_pending: false,
             pregame: Some(Pregame::Mulligan(PlayerId::One)),
@@ -6595,6 +6600,14 @@ impl Game {
                 object.source.unwrap_or(object.id),
                 object.controller,
             )),
+            ValueDef::IfCreatureDiedThisTurn(branches) => {
+                let chosen = if self.creature_died_this_turn {
+                    branches.then
+                } else {
+                    branches.otherwise
+                };
+                self.effect_value(chosen, object, context)
+            }
             ValueDef::Negate(inner) => self.effect_value(*inner, object, context).saturating_neg(),
         }
     }
@@ -10323,6 +10336,10 @@ impl Game {
             })
             .collect::<Vec<_>>();
 
+        self.creature_died_this_turn |=
+            exits.iter().any(|(_, snapshot, _, exile_instead, _, _)| {
+                !exile_instead && snapshot.object.types.is_creature()
+            });
         for (_, snapshot, damage_sources, exile_instead, _, _) in &exits {
             if *exile_instead {
                 continue;
@@ -11011,6 +11028,7 @@ impl Game {
         }
         self.active_player = next_player;
         self.turns_started[self.active_player.index()] += 1;
+        self.creature_died_this_turn = false;
         self.step = Step::Upkeep;
         self.players[self.active_player.index()].land_played_this_turn = false;
         for permanent in &mut self.battlefield {
