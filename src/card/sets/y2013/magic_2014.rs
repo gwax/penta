@@ -20,9 +20,23 @@ pub(in crate::card::sets) static ARCHANGEL_OF_THUNE: CardRecord = CardRecord::ne
         abilities::lifelink().with_text(
             "Lifelink (Damage dealt by this creature also causes you to gain that much life.)",
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "Whenever you gain life, put a +1/+1 counter on each creature you control.",
-            "The life-gain trigger is not executed.",
+            TriggerEventDef::LifeGained(PlayerRelation::You),
+            EffectDef::AddCounters {
+                kind: CounterKind::PlusOnePlusOne,
+                object: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::You,
+                },
+                // One counter however much life arrived, and one trigger for
+                // each separate gain.
+                amount: ValueDef::Constant(1),
+            },
         ),
     ]),
 );

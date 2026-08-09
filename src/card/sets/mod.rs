@@ -504,7 +504,9 @@ mod tests {
             TriggerEventDef::BecomesTapped(object)
             | TriggerEventDef::Attacks(object)
             | TriggerEventDef::SpellCast(object) => shared_object_predicate(object),
-            TriggerEventDef::StepBegins { .. } | TriggerEventDef::DamagedCreatureDied => true,
+            TriggerEventDef::StepBegins { .. }
+            | TriggerEventDef::LifeGained(_)
+            | TriggerEventDef::DamagedCreatureDied => true,
             TriggerEventDef::AbilityActivated(_)
             | TriggerEventDef::DamageDealt { .. }
             | TriggerEventDef::ManaAdded(_)

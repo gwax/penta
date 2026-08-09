@@ -410,6 +410,10 @@ enum CommittedTriggerEvent {
     BecomesTapped {
         object: TriggerEventObject,
     },
+    LifeGained {
+        player: PlayerId,
+        amount: u16,
+    },
     Attacks {
         object: TriggerEventObject,
     },
@@ -427,7 +431,7 @@ enum CommittedTriggerEvent {
 }
 
 impl CommittedTriggerEvent {
-    const fn context(&self) -> TriggerContext {
+    fn context(&self) -> TriggerContext {
         match self {
             Self::ZoneChanged { object, .. }
             | Self::BecomesTapped { object }
@@ -437,6 +441,12 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: None,
+            },
+            Self::LifeGained { player, amount } => TriggerContext {
+                object: None,
+                object_controller: None,
+                event_player: Some(*player),
+                amount: Some(i32::from(*amount)),
             },
             Self::SpellCast { object } => TriggerContext {
                 object: Some(object.id),
@@ -2289,6 +2299,15 @@ impl Game {
             ) => self.trigger_object_matches(predicate, object, source, false),
             (TriggerEventDef::Attacks(predicate), CommittedTriggerEvent::Attacks { object }) => {
                 self.trigger_object_matches(predicate, object, source, false)
+            }
+            (
+                TriggerEventDef::LifeGained(relation),
+                CommittedTriggerEvent::LifeGained { player, .. },
+            ) => {
+                let controller = self
+                    .current_or_last_known_controller(source)
+                    .unwrap_or(*player);
+                self.player_relation_matches(*player, relation, controller, event.context())
             }
             (
                 TriggerEventDef::SpellCast(predicate),
@@ -6049,11 +6068,10 @@ impl Game {
                     .effect_value(amount, object, context)
                     .max(0)
                     .try_into()
-                    .unwrap_or(i16::MAX);
+                    .unwrap_or(u16::MAX);
                 for target in self.effect_recipients(recipient, object, context) {
                     if let Target::Player(player) = target {
-                        self.players[player.index()].life =
-                            self.players[player.index()].life.saturating_add(amount);
+                        self.gain_life(player, amount);
                     }
                 }
             }
@@ -6732,10 +6750,7 @@ impl Game {
             }
             CardBehavior::DrainLife => {
                 self.damage_target(object.first_target(), object.x());
-                self.players[object.controller.index()].life = self.players
-                    [object.controller.index()]
-                .life
-                .saturating_add(i16::try_from(object.x()).unwrap_or(i16::MAX));
+                self.gain_life(object.controller, object.x());
             }
             CardBehavior::Earthquake => {
                 for player in [PlayerId::One, PlayerId::Two] {
@@ -6797,10 +6812,7 @@ impl Game {
                 {
                     let life = self.permanent_mana_value(permanent);
                     self.destroy_permanent(target);
-                    self.players[object.controller.index()].life = self.players
-                        [object.controller.index()]
-                    .life
-                    .saturating_add(i16::try_from(life).unwrap_or(i16::MAX));
+                    self.gain_life(object.controller, life);
                 }
             }
             CardBehavior::SwordsToPlowshares => {
@@ -7246,9 +7258,7 @@ impl Game {
             && amount > 0
             && let Some(controller) = lifelink_controller
         {
-            self.players[controller.index()].life = self.players[controller.index()]
-                .life
-                .saturating_add(i16::try_from(amount).unwrap_or(i16::MAX));
+            self.gain_life(controller, amount);
         }
     }
 
@@ -10354,8 +10364,17 @@ impl Game {
         self.finish_untap_choices();
     }
 
+    /// Commits every life gain in one place so triggered abilities observe
+    /// spells, lifelink, and card-specific drains through the same event path.
+    /// Gaining nothing is not a life-gain event.
     fn gain_life(&mut self, player: PlayerId, amount: u16) {
-        self.players[player.index()].life += i16::try_from(amount).unwrap_or(i16::MAX);
+        if amount == 0 {
+            return;
+        }
+        self.players[player.index()].life = self.players[player.index()]
+            .life
+            .saturating_add(i16::try_from(amount).unwrap_or(i16::MAX));
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::LifeGained { player, amount });
     }
 
     /// Life loss that is not damage: no source deals it, nothing that

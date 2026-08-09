@@ -10337,3 +10337,42 @@ fn boros_charm_double_strike_hits_an_unblocked_player_twice() {
         "a 2/1 double striker deals two damage twice"
     );
 }
+
+#[test]
+fn archangel_of_thune_grows_the_team_on_its_own_lifelink_damage() {
+    let mut game = ready_game();
+    let mut angel = creature(10_000, cards::ARCHANGEL_OF_THUNE, PlayerId::One);
+    angel.attacking = true;
+    game.battlefield = vec![angel];
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+    game.battlefield
+        .push(creature(10_002, cards::SERRA_ANGEL, PlayerId::Two));
+
+    game.deal_combat_damage();
+    for _ in 0..8 {
+        if game.stack.is_empty()
+            && game.pending_triggers.is_empty()
+            && game.pending_decisions.is_empty()
+        {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let counters = |id: u32| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == CardInstanceId(id))
+            .map(|permanent| permanent.counters[CounterKind::PlusOnePlusOne.index()])
+    };
+    assert_eq!(counters(10_000), Some(1), "the Angel counts itself");
+    assert_eq!(counters(10_001), Some(1));
+    assert_eq!(counters(10_002), Some(0), "not the opponent's creature");
+    // Lifelink gained 3, and the trigger is one counter per gain rather than
+    // one per point of life.
+    assert_eq!(game.players[0].life, 23);
+}

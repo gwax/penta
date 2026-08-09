@@ -1059,6 +1059,9 @@ pub enum TriggerEventDef {
         recipient: EffectRecipientDef,
     },
     ManaAdded(PlayerRelation),
+    /// A player gained life. The amount is available as
+    /// [`ValueDef::TriggerEventAmount`].
+    LifeGained(PlayerRelation),
     /// A creature dealt damage by this ability's source this turn died.
     DamagedCreatureDied,
     Special(&'static str),
