@@ -89,9 +89,14 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{W}{W}"), &["Human", "Cleric", "Knight"], 2, 1)
         .with_abilities(&[
             abilities::protection_from(ManaColor::Black),
-            AbilityDef::not_implemented(
+            AbilityDef::activated(
                 "{W}: This creature gains first strike until end of turn.",
-                "Granting first strike until end of turn is not implemented.",
+                &[AbilityCostDef::Mana(mana_cost!("{W}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::GrantAbility(&abilities::first_strike()),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
             ),
             AbilityDef::activated(
                 "{W}{W}: This creature gets +1/+0 until end of turn.",
@@ -115,9 +120,14 @@ pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{B}{B}"), &["Cleric", "Knight"], 2, 1).with_abilities(&[
         abilities::protection_from(ManaColor::White),
-        AbilityDef::not_implemented(
+        AbilityDef::activated(
             "{B}: This creature gains first strike until end of turn.",
-            "Granting first strike until end of turn is not implemented.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::GrantAbility(&abilities::first_strike()),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
         ),
         AbilityDef::activated(
             "{B}{B}: This creature gets +1/+0 until end of turn.",

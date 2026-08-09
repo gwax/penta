@@ -10084,12 +10084,37 @@ fn order_of_leitbur_can_pump_itself() {
         .expect("cataloged");
     game.players[0].mana_pool.white = 2;
 
-    let activate = game
+    // The Order also grants itself first strike for {W}; the pump is the
+    // later printed clause.
+    let mut activations = game
         .legal_actions(PlayerId::One)
         .into_iter()
-        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == order))
-        .expect("the pump is activatable");
-    game.apply(PlayerId::One, activate).unwrap();
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability: AbilityOrigin::Printed { ability, .. },
+                ..
+            } if source == order => Some((ability, source)),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    activations.sort_by_key(|(ability, _)| *ability);
+    assert_eq!(activations.len(), 2, "first strike and the pump");
+    let (pump, source) = activations[1];
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source,
+            ability: AbilityOrigin::Printed {
+                definition: cards::ORDER_OF_LEITBUR,
+                part: CardPartId::PRIMARY,
+                ability: pump,
+            },
+            targets: Vec::new(),
+            sacrifice: None,
+        },
+    )
+    .unwrap();
     pass_priority_pair(&mut game);
 
     let order = game
@@ -10827,5 +10852,38 @@ fn azorius_charm_puts_an_attacker_back_on_top_of_its_library() {
         game.players[1].library.last().map(|card| card.definition),
         Some(cards::SERRA_ANGEL),
         "on top, not shuffled in",
+    );
+}
+
+#[test]
+fn an_order_can_buy_first_strike_and_win_a_trade_it_would_have_lost() {
+    let mut game = ready_game();
+    let mut order = creature(10_000, cards::ORDER_OF_THE_EBON_HAND, PlayerId::One);
+    order.attacking = true;
+    let order_id = order.card.id;
+    game.battlefield.push(order);
+    // Another 2/1: without first strike the two would kill each other.
+    let mut blocker = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
+    blocker.blocking = Some(order_id);
+    game.battlefield.push(blocker);
+    game.players[0].mana_pool.black = 1;
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == order_id))
+        .expect("the first-strike ability is activatable");
+    game.apply(PlayerId::One, activate).unwrap();
+    pass_priority_pair(&mut game);
+
+    game.deal_combat_damage();
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>(),
+        vec![order_id],
+        "the Order struck first and took nothing back"
     );
 }
