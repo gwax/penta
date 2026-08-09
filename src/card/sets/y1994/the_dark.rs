@@ -67,10 +67,19 @@ pub(in crate::card::sets) static GOBLIN_DIGGING_TEAM: CardRecord = CardRecord::n
     CardArt::new("8a538b9d-351e-40bb-be11-9ba08c16352b", "Ron Spencer"),
     CardSet::TheDark,
     CardRules::new_creature(mana_cost!("{R}"), &["Goblin"], 1, 1).with_abilities(&[
-        AbilityDef::not_implemented(
+        AbilityDef::activated(
             "{T}, Sacrifice this creature: Destroy target Wall.",
-            "The activated sacrifice ability and Wall targeting are not implemented.",
-        ),
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                can_regenerate: true,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "Wall",
+            ObjectPredicateDef::Subtype("Wall"),
+        )]),
     ]),
 );
 

@@ -321,7 +321,8 @@ mod tests {
             | ObjectPredicateDef::Subtype(_)
             | ObjectPredicateDef::ManaValueAtMost(_)
             | ObjectPredicateDef::PowerAtLeast(_)
-            | ObjectPredicateDef::ControlledBy(_) => true,
+            | ObjectPredicateDef::ControlledBy(_)
+            | ObjectPredicateDef::Supertype(_) => true,
         }
     }
 

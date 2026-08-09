@@ -9953,3 +9953,74 @@ fn order_of_leitbur_can_pump_itself() {
     assert_eq!(game.power(order), Some(3), "2/1 plus one power");
     assert_eq!(game.toughness(order), Some(1), "toughness is unchanged");
 }
+
+#[test]
+fn encroaching_wastes_spares_basic_lands() {
+    // A Mountain is Basic and safe; a dual land is not.
+    for (definition, legal) in [(cards::MOUNTAIN, false), (cards::TUNDRA, true)] {
+        let mut game = ready_game();
+        let wastes = game
+            .put_onto_battlefield(PlayerId::One, cards::ENCROACHING_WASTES)
+            .expect("cataloged");
+        game.battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == wastes)
+            .unwrap()
+            .entered_controller_turn = game.turns_started[0] - 1;
+        let target = game
+            .put_onto_battlefield(PlayerId::Two, definition)
+            .expect("cataloged");
+        game.players[0].mana_pool.colorless = 4;
+
+        let offered = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } if source == wastes => Some(
+                    targets
+                        .iter()
+                        .flat_map(TargetSelection::targets)
+                        .copied()
+                        .collect::<Vec<_>>(),
+                ),
+                _ => None,
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+        assert_eq!(
+            offered.contains(&Target::Permanent(target)),
+            legal,
+            "{definition:?} should be {}",
+            if legal {
+                "destroyable"
+            } else {
+                "protected by Basic"
+            }
+        );
+    }
+}
+
+#[test]
+fn goblin_digging_team_only_hits_walls() {
+    let mut game = ready_game();
+    let team = game
+        .put_onto_battlefield(PlayerId::One, cards::GOBLIN_DIGGING_TEAM)
+        .expect("cataloged");
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == team)
+        .unwrap()
+        .entered_controller_turn = game.turns_started[0] - 1;
+    // Savannah Lions is a Cat, not a Wall, so there is nothing to point at.
+    game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == team)
+        }),
+        "with no Wall in play the ability has no legal target"
+    );
+}

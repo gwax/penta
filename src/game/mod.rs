@@ -359,6 +359,7 @@ struct TriggerEventObject {
     /// Current power where one exists: a battlefield creature reports what it
     /// is now, not what it was printed as.
     power: Option<i16>,
+    supertypes: [bool; CardSupertype::COUNT],
 }
 
 /// The object or procedure a mana payment is paying for. Restrictions are
@@ -2327,6 +2328,7 @@ impl Game {
             ObjectPredicateDef::PowerAtLeast(minimum) => {
                 object.power.is_some_and(|power| power >= minimum)
             }
+            ObjectPredicateDef::Supertype(supertype) => object.supertypes[supertype.index()],
             ObjectPredicateDef::ControlledBy(relation) => {
                 self.controller_of_object(source).is_some_and(|controller| {
                     self.player_relation_matches(
@@ -4343,6 +4345,7 @@ impl Game {
         let mut subtypes = Vec::new();
         let mut mana_value = 0;
         let mut power = None;
+        let mut supertypes = [false; CardSupertype::COUNT];
         for part in parts {
             let part = definition.part(part)?;
             types = types.union(part.rules.types());
@@ -4358,6 +4361,9 @@ impl Game {
             if let Some(stats) = part.rules.creature_stats() {
                 power = Some(stats.power);
             }
+            for supertype in CardSupertype::ALL {
+                supertypes[supertype.index()] |= part.rules.has_supertype(supertype);
+            }
         }
         Some(TriggerEventObject {
             id,
@@ -4367,6 +4373,7 @@ impl Game {
             subtypes: Cow::Owned(subtypes),
             mana_value,
             power,
+            supertypes,
         })
     }
 
@@ -6434,7 +6441,8 @@ impl Game {
             | ObjectPredicateDef::Subtype(_)
             | ObjectPredicateDef::ManaValueAtMost(_)
             | ObjectPredicateDef::PowerAtLeast(_)
-            | ObjectPredicateDef::ControlledBy(_) => false,
+            | ObjectPredicateDef::ControlledBy(_)
+            | ObjectPredicateDef::Supertype(_) => false,
         }
     }
 
@@ -7233,6 +7241,13 @@ impl Game {
             }),
             mana_value: self.permanent_mana_value(permanent),
             power: self.power_ignoring_static_effects(permanent),
+            supertypes: {
+                let mut supertypes = [false; CardSupertype::COUNT];
+                for supertype in CardSupertype::ALL {
+                    supertypes[supertype.index()] = rules.has_supertype(supertype);
+                }
+                supertypes
+            },
         }
     }
 

@@ -587,6 +587,8 @@ pub enum ObjectPredicateDef {
     /// Controlled by a player in this relation to the ability's controller,
     /// for "a creature you control" and "whenever you cast".
     ControlledBy(PlayerRelation),
+    /// Carries this supertype. Negate it for "nonbasic".
+    Supertype(CardSupertype),
     All(&'static [ObjectPredicateDef]),
     AnyOf(&'static [ObjectPredicateDef]),
     Not(&'static ObjectPredicateDef),
@@ -1813,6 +1815,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::Not(_)
         | ObjectPredicateDef::Special(_) => false,
     }
@@ -2299,7 +2302,9 @@ pub enum CardSupertype {
 }
 
 impl CardSupertype {
-    const COUNT: usize = 4;
+    pub const COUNT: usize = 4;
+
+    pub const ALL: [Self; Self::COUNT] = [Self::Basic, Self::Legendary, Self::Snow, Self::World];
 
     #[must_use]
     pub const fn index(self) -> usize {

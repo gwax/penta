@@ -2,10 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
-    CardBehavior, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, LandEntry,
-    ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities,
-    cards,
+    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
+    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, EffectDef,
+    EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -81,10 +81,26 @@ pub(in crate::card::sets) static ENCROACHING_WASTES: CardRecord = CardRecord::ne
         .land_entry(LandEntry::Untapped)
         .with_abilities(&[
             abilities::tap_for(ManaColor::Colorless),
-            AbilityDef::not_implemented(
+            AbilityDef::activated(
                 "{4}, {T}, Sacrifice this land: Destroy target nonbasic land.",
-                "The land-destruction activated ability is not executed.",
-            ),
+                &[
+                    AbilityCostDef::Mana(mana_cost!("{4}")),
+                    AbilityCostDef::TapSource,
+                    AbilityCostDef::SacrificeSource,
+                ],
+                EffectDef::Destroy {
+                    object: EffectRecipientDef::Target(TargetSlotId(0)),
+                    can_regenerate: true,
+                },
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+                TargetSlotId(0),
+                "nonbasic land",
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Basic)),
+                ]),
+            )]),
         ]),
 );
 
