@@ -2250,16 +2250,16 @@ impl Game {
             ) => {
                 from.is_none_or(|expected| expected == *actual_from)
                     && to.is_none_or(|expected| expected == *actual_to)
-                    && Self::trigger_object_matches(predicate, object, source, false)
+                    && self.trigger_object_matches(predicate, object, source, false)
             }
             (
                 TriggerEventDef::BecomesTapped(predicate),
                 CommittedTriggerEvent::BecomesTapped { object },
-            ) => Self::trigger_object_matches(predicate, object, source, false),
+            ) => self.trigger_object_matches(predicate, object, source, false),
             (
                 TriggerEventDef::SpellCast(predicate),
                 CommittedTriggerEvent::SpellCast { object },
-            ) => Self::trigger_object_matches(predicate, object, source, true),
+            ) => self.trigger_object_matches(predicate, object, source, true),
             (
                 TriggerEventDef::StepBegins { step, player },
                 CommittedTriggerEvent::StepBegins {
@@ -2289,7 +2289,24 @@ impl Game {
         }
     }
 
+    /// Who controls an object, whether it is still on the battlefield or has
+    /// left and is only remembered.
+    fn controller_of_object(&self, object: GameObjectId) -> Option<PlayerId> {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+            .map(|permanent| permanent.controller)
+            .or_else(|| match self.retired_objects.get(&object) {
+                Some(RetiredObject::Permanent { permanent, .. }) => Some(permanent.controller),
+                Some(RetiredObject::Stack(object)) => Some(object.controller),
+                Some(RetiredObject::Card(_)) | None => None,
+            })
+    }
+
+    /// Whether `object` satisfies `predicate`. `source` is the ability's own
+    /// object, which is what a controller relation is measured against.
     fn trigger_object_matches(
+        &self,
         predicate: ObjectPredicateDef,
         object: &TriggerEventObject,
         source: GameObjectId,
@@ -2311,14 +2328,24 @@ impl Game {
             ObjectPredicateDef::PowerAtLeast(minimum) => {
                 object.power.is_some_and(|power| power >= minimum)
             }
-            ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {
-                Self::trigger_object_matches(*predicate, object, source, is_spell)
-            }),
-            ObjectPredicateDef::AnyOf(predicates) => predicates.iter().any(|predicate| {
-                Self::trigger_object_matches(*predicate, object, source, is_spell)
-            }),
+            ObjectPredicateDef::ControlledBy(relation) => {
+                self.controller_of_object(source).is_some_and(|controller| {
+                    self.player_relation_matches(
+                        object.controller,
+                        relation,
+                        controller,
+                        TriggerContext::empty(),
+                    )
+                })
+            }
+            ObjectPredicateDef::All(predicates) => predicates
+                .iter()
+                .all(|predicate| self.trigger_object_matches(*predicate, object, source, is_spell)),
+            ObjectPredicateDef::AnyOf(predicates) => predicates
+                .iter()
+                .any(|predicate| self.trigger_object_matches(*predicate, object, source, is_spell)),
             ObjectPredicateDef::Not(predicate) => {
-                !Self::trigger_object_matches(*predicate, object, source, is_spell)
+                !self.trigger_object_matches(*predicate, object, source, is_spell)
             }
             ObjectPredicateDef::Special(_) => false,
         }
@@ -2397,7 +2424,7 @@ impl Game {
                         context,
                     )
                 }) && self.permanent_can_be_targeted_by(permanent, controller, source)
-                    && Self::trigger_object_matches(object, &characteristics, source, false))
+                    && self.trigger_object_matches(object, &characteristics, source, false))
                 .then_some(Target::Permanent(permanent.card.id))
             }));
         }
@@ -2421,7 +2448,7 @@ impl Game {
                             context,
                         )
                     })
-                    && Self::trigger_object_matches(object, &characteristics, source, true))
+                    && self.trigger_object_matches(object, &characteristics, source, true))
                 .then_some(Target::Spell(stack_object.id))
             }));
         }
@@ -2490,7 +2517,7 @@ impl Game {
         else {
             return false;
         };
-        Self::trigger_object_matches(predicate, &object, source, false)
+        self.trigger_object_matches(predicate, &object, source, false)
     }
 
     fn player_relation_matches(
@@ -4597,7 +4624,7 @@ impl Game {
                                     *relation,
                                     player,
                                     TriggerContext::empty(),
-                                ) && Self::trigger_object_matches(
+                                ) && self.trigger_object_matches(
                                     *predicate,
                                     &self.trigger_event_object(candidate),
                                     permanent.card.id,
@@ -6297,7 +6324,7 @@ impl Game {
                     controller,
                     object.controller,
                     context,
-                ) && Self::trigger_object_matches(predicate, &characteristics, source, false))
+                ) && self.trigger_object_matches(predicate, &characteristics, source, false))
                 .then_some(Target::Permanent(permanent.card.id))
             }));
         }
@@ -6311,7 +6338,7 @@ impl Game {
                         object.controller,
                         context,
                     )
-                    && Self::trigger_object_matches(predicate, &characteristics, source, true))
+                    && self.trigger_object_matches(predicate, &characteristics, source, true))
                 .then_some(Target::Spell(candidate.id))
             }));
         }
@@ -6408,7 +6435,8 @@ impl Game {
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::Subtype(_)
             | ObjectPredicateDef::ManaValueAtMost(_)
-            | ObjectPredicateDef::PowerAtLeast(_) => false,
+            | ObjectPredicateDef::PowerAtLeast(_)
+            | ObjectPredicateDef::ControlledBy(_) => false,
         }
     }
 
@@ -7415,7 +7443,7 @@ impl Game {
                 _ => &[],
             })
             .all(|slot| match slot.predicate {
-                AbilityTargetPredicate::Object { object, .. } => Self::trigger_object_matches(
+                AbilityTargetPredicate::Object { object, .. } => self.trigger_object_matches(
                     object,
                     &self.trigger_event_object(host),
                     aura.card.id,
@@ -7512,7 +7540,7 @@ impl Game {
                         source.controller,
                         TriggerContext::empty(),
                     )
-                    && Self::trigger_object_matches(
+                    && self.trigger_object_matches(
                         object,
                         &self.trigger_event_object(affected),
                         source.card.id,
@@ -7922,7 +7950,7 @@ impl Game {
                     .payment_object(purpose)
                     .is_some_and(|(object, is_spell)| {
                         is_spell
-                            && Self::trigger_object_matches(*predicate, &object, object.id, true)
+                            && self.trigger_object_matches(*predicate, &object, object.id, true)
                     }),
                 ManaRestrictionDef::CastCreatureSpellOfChosenType => {
                     let Some(source) = mana.source else {
@@ -7943,7 +7971,7 @@ impl Game {
                     .payment_object(purpose)
                     .is_some_and(|(object, is_spell)| {
                         !is_spell
-                            && Self::trigger_object_matches(*predicate, &object, object.id, false)
+                            && self.trigger_object_matches(*predicate, &object, object.id, false)
                     }),
                 ManaRestrictionDef::Special(_) => false,
             })

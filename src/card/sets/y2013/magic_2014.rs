@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
-    CardBehavior, CardRules, CardSet, EffectDef, EffectRecipientDef, LandEntry, ManaColor,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    CardBehavior, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, LandEntry,
+    ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -144,12 +145,53 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
     "Primeval Bounty",
     CardArt::new("e750d55d-d5e8-4abe-99cf-f6b8ba86cf16", "Christine Choi"),
     CardSet::Magic2014,
-    CardRules::new_enchantment(mana_cost!("{5}{G}")).with_ability(
-        AbilityDef::not_implemented(
-            "Whenever you cast a creature spell, create a 3/3 green Beast creature token.\nWhenever you cast a noncreature spell, put three +1/+1 counters on target creature you control.\nLandfall — Whenever a land you control enters, you gain 3 life.",
-            "Printed rules are cataloged but are not executed by the engine.",
+    CardRules::new_enchantment(mana_cost!("{5}{G}")).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever you cast a creature spell, create a 3/3 green Beast creature token.",
+            TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            EffectDef::CreateToken {
+                token: cards::BEAST_TOKEN_3_3_GREEN,
+                count: 1,
+            },
         ),
-    ),
+        AbilityDef::triggered(
+            "Whenever you cast a noncreature spell, put three +1/+1 counters on target creature you control.",
+            TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::NoncreatureSpell,
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            EffectDef::AddPlusOneCounters {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                amount: ValueDef::Constant(3),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "creature you control",
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ]),
+        )]),
+        AbilityDef::triggered(
+            "Landfall — Whenever a land you control enters, you gain 3 life.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ]),
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(3),
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static QUICKEN: CardRecord = CardRecord::new(

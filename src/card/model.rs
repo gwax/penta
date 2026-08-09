@@ -584,6 +584,9 @@ pub enum ObjectPredicateDef {
     /// Power at least this much, for "power N or greater". Reads current
     /// power on the battlefield, so a pumped creature qualifies.
     PowerAtLeast(i16),
+    /// Controlled by a player in this relation to the ability's controller,
+    /// for "a creature you control" and "whenever you cast".
+    ControlledBy(PlayerRelation),
     All(&'static [ObjectPredicateDef]),
     AnyOf(&'static [ObjectPredicateDef]),
     Not(&'static ObjectPredicateDef),
@@ -1809,6 +1812,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Not(_)
         | ObjectPredicateDef::Special(_) => false,
     }

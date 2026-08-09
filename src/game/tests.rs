@@ -9624,3 +9624,74 @@ fn boros_charm_burns_a_player_for_four() {
         "it is a targeted burn, not a sweep"
     );
 }
+
+#[test]
+fn primeval_bounty_makes_a_beast_only_for_its_controller() {
+    for (caster, expect_token) in [(PlayerId::One, true), (PlayerId::Two, false)] {
+        let mut game = ready_game();
+        game.put_onto_battlefield(PlayerId::One, cards::PRIMEVAL_BOUNTY)
+            .expect("cataloged");
+        let lions = card(10_001, cards::SAVANNAH_LIONS, caster);
+        game.players[caster.index()].hand.push(lions.clone());
+        game.players[caster.index()].mana_pool.white = 1;
+        // A creature spell is sorcery-speed, so the caster needs the turn.
+        game.active_player = caster;
+        game.priority = caster;
+
+        game.apply(caster, cast_action(lions.id, Vec::new(), Vec::new(), 0))
+            .unwrap();
+        for _ in 0..8 {
+            if game
+                .battlefield
+                .iter()
+                .any(|p| p.card.definition == cards::BEAST_TOKEN_3_3_GREEN)
+            {
+                break;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+
+        let made_token = game
+            .battlefield
+            .iter()
+            .any(|p| p.card.definition == cards::BEAST_TOKEN_3_3_GREEN);
+        assert_eq!(
+            made_token,
+            expect_token,
+            "a creature cast by {caster} should {} a Beast",
+            if expect_token { "make" } else { "not make" }
+        );
+    }
+}
+
+#[test]
+fn primeval_bounty_gains_life_only_for_its_own_lands() {
+    for (lander, expect_life) in [(PlayerId::One, 23), (PlayerId::Two, 20)] {
+        let mut game = ready_game();
+        game.put_onto_battlefield(PlayerId::One, cards::PRIMEVAL_BOUNTY)
+            .expect("cataloged");
+        game.players[lander.index()]
+            .hand
+            .push(card(10_002, cards::FOREST, lander));
+        game.players[lander.index()].land_played_this_turn = false;
+        game.play_land(lander, CardInstanceId(10_002), PlayOptionId::DEFAULT);
+        for _ in 0..8 {
+            if game.players[0].life != 20 {
+                break;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+        assert_eq!(
+            game.players[0].life,
+            expect_life,
+            "a land played by {lander} should {} life",
+            if expect_life > 20 { "gain" } else { "not gain" }
+        );
+    }
+}
