@@ -57,6 +57,7 @@ fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Perm
         power_bonus: 0,
         toughness_bonus: 0,
         attacking: false,
+        unblockable_this_turn: false,
         blocked: false,
         blocking: None,
         chosen_player: None,
@@ -11840,4 +11841,93 @@ fn obzedat_blinks_itself_and_comes_back_hasty_next_upkeep() {
         "and it can attack straight away"
     );
     assert!(game.players[0].exile.is_empty());
+}
+
+#[test]
+fn aetherling_dodges_a_blocker_and_comes_back_at_the_end_step() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let aetherling = game
+        .put_onto_battlefield(PlayerId::One, cards::AETHERLING)
+        .expect("cataloged");
+    let wall = game
+        .put_onto_battlefield(PlayerId::Two, cards::WALL_OF_STONE)
+        .expect("cataloged");
+    game.players[0].mana_pool.blue = 2;
+
+    let activate = |game: &mut Game, index: usize| {
+        let mut printed = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::ActivateAbility {
+                    ability: AbilityOrigin::Printed { ability, .. },
+                    source,
+                    ..
+                } if source == aetherling => Some(ability),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        printed.sort_unstable();
+        printed.dedup();
+        let ability = printed[index];
+        game.apply(
+            PlayerId::One,
+            Action::ActivateAbility {
+                source: aetherling,
+                ability: AbilityOrigin::Printed {
+                    definition: cards::AETHERLING,
+                    part: CardPartId::PRIMARY,
+                    ability,
+                },
+                targets: Vec::new(),
+                sacrifice: None,
+                x: 0,
+            },
+        )
+        .unwrap();
+        pass_priority_pair(game);
+    };
+
+    // The unblockable ability is the second printed clause.
+    activate(&mut game, 1);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == aetherling)
+        .expect("still there")
+        .attacking = true;
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::DeclareBlocker { blocker, .. } if *blocker == wall)
+        ),
+        "nothing can block it this turn"
+    );
+
+    // The first clause blinks it until the end step.
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+    activate(&mut game, 0);
+    assert!(
+        !game.battlefield.iter().any(|p| p.card.id == aetherling),
+        "it left for exile"
+    );
+
+    game.advance_step();
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::AETHERLING),
+        "and returned at the end step"
+    );
 }

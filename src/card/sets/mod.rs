@@ -475,6 +475,7 @@ mod tests {
             | EffectDef::Sacrifice { object }
             | EffectDef::Counter { object }
             | EffectDef::ExileLinkedToSource { object }
+            | EffectDef::MakeUnblockableThisTurn { object }
             | EffectDef::AddCounters { object, .. }
             | EffectDef::Attach { object } => shared_effect_recipient(object),
             // Only the two destinations counter_spell_into knows.
@@ -653,6 +654,7 @@ mod tests {
             | EffectDef::May(_)
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
@@ -749,6 +751,7 @@ mod tests {
                         | EffectDef::GrantFlashToNextSorcery
                         | EffectDef::ExileLinkedToSource { .. }
                         | EffectDef::ReturnLinkedExiles { .. }
+                        | EffectDef::MakeUnblockableThisTurn { .. }
                         | EffectDef::AtNextStep { .. }
                         | EffectDef::ReduceGenericCostBy(_)
                         | EffectDef::MultiplyEventAmount(_)
@@ -852,6 +855,7 @@ mod tests {
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)

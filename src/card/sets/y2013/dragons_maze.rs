@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
+    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus, CardPart,
     CardRules, CardSet, CardStructure, CardSupertype, CardType, EffectDef, EffectDurationDef,
     EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm,
-    TargetPredicate, TargetSlotDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    TargetPredicate, TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -22,10 +23,58 @@ pub(in crate::card::sets) static AETHERLING: CardRecord = CardRecord::new(
         4,
         5,
     )
-    .with_ability(AbilityDef::not_implemented(
-        "{U}: Exile this creature. Return it to the battlefield under its owner's control at the beginning of the next end step.\n{U}: This creature can't be blocked this turn.\n{1}: This creature gets +1/-1 until end of turn.\n{1}: This creature gets -1/+1 until end of turn.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    .with_abilities(&[
+        AbilityDef::activated(
+            "{U}: Exile this creature. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+            &[AbilityCostDef::Mana(mana_cost!("{U}"))],
+            EffectDef::Sequence(&[
+                EffectDef::ExileLinkedToSource {
+                    object: EffectRecipientDef::Source,
+                },
+                // The next end step belongs to whoever's turn it is, which
+                // may well be the opponent.
+                EffectDef::AtNextStep {
+                    step: TurnStepDef::End,
+                    player: PlayerRelation::Any,
+                    effect: &EffectDef::ReturnLinkedExiles {
+                        zone: ZoneKind::Battlefield,
+                        grant: None,
+                    },
+                },
+            ]),
+        ),
+        AbilityDef::activated(
+            "{U}: This creature can't be blocked this turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{U}"))],
+            EffectDef::MakeUnblockableThisTurn {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+        AbilityDef::activated(
+            "{1}: This creature gets +1/-1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(1),
+                    toughness: ValueDef::Constant(-1),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated(
+            "{1}: This creature gets -1/+1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(-1),
+                    toughness: ValueDef::Constant(1),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static BLOOD_BARON_OF_VIZKOPA: CardRecord = CardRecord::new(

@@ -674,6 +674,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::GrantFlashToNextSorcery
         | super::EffectDef::ExileLinkedToSource { .. }
         | super::EffectDef::ReturnLinkedExiles { .. }
+        | super::EffectDef::MakeUnblockableThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::MoveToZone { .. }
@@ -718,6 +719,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::GrantFlashToNextSorcery
         | super::EffectDef::ExileLinkedToSource { .. }
         | super::EffectDef::ReturnLinkedExiles { .. }
+        | super::EffectDef::MakeUnblockableThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::MoveToZone { .. }

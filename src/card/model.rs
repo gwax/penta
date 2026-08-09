@@ -1093,6 +1093,10 @@ pub enum EffectDef {
         zone: ZoneKind,
         grant: Option<KeywordAbility>,
     },
+    /// Makes an object unblockable for the rest of the turn.
+    MakeUnblockableThisTurn {
+        object: EffectRecipientDef,
+    },
     /// Queues an effect for the next time that step begins.
     AtNextStep {
         step: TurnStepDef,

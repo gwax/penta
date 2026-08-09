@@ -108,6 +108,9 @@ struct Permanent {
     power_bonus: i16,
     toughness_bonus: i16,
     attacking: bool,
+    /// Whether nothing may block this creature for the rest of the turn.
+    /// Cleared in cleanup with the other until-end-of-turn state.
+    unblockable_this_turn: bool,
     /// Whether this attacker was blocked. A blocked creature stays blocked
     /// even if every blocker leaves, so this cannot be recomputed from the
     /// blockers still on the battlefield.
@@ -177,6 +180,7 @@ impl Permanent {
             power_bonus: 0,
             toughness_bonus: 0,
             attacking: false,
+            unblockable_this_turn: false,
             blocked: false,
             blocking: None,
             chosen_player: None,
@@ -2312,6 +2316,7 @@ impl Game {
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
@@ -5612,6 +5617,7 @@ impl Game {
             power_bonus: 0,
             toughness_bonus: 0,
             attacking: false,
+            unblockable_this_turn: false,
             blocked: false,
             blocking: None,
             chosen_player: None,
@@ -6286,6 +6292,7 @@ impl Game {
                 power_bonus: 0,
                 toughness_bonus: 0,
                 attacking: false,
+                unblockable_this_turn: false,
                 blocked: false,
                 blocking: None,
                 chosen_player,
@@ -6753,6 +6760,18 @@ impl Game {
                     .retain(|(exiled_by, _)| *exiled_by != source);
                 for card in returning {
                     self.return_exiled_card(card, zone, grant);
+                }
+            }
+            EffectDef::MakeUnblockableThisTurn { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Permanent(id) = target
+                        && let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == id)
+                    {
+                        permanent.unblockable_this_turn = true;
+                    }
                 }
             }
             EffectDef::AtNextStep {
@@ -8696,6 +8715,7 @@ impl Game {
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::AtNextStep { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
@@ -8790,6 +8810,7 @@ impl Game {
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
+                | EffectDef::MakeUnblockableThisTurn { .. }
                 | EffectDef::AtNextStep { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
@@ -10315,6 +10336,7 @@ impl Game {
                                     .any(|(attacker, blocker)| attacker && blocker)
                             });
                         let can_block = !(*unblockable
+                            || attacker_permanent.unblockable_this_turn
                             || self.blocking_is_prevented(attacker_permanent, blocker_permanent)
                             || *flying && !blocker_can_block_flying
                             || intimidate
@@ -10926,6 +10948,7 @@ impl Game {
             power_bonus: 0,
             toughness_bonus: 0,
             attacking: false,
+            unblockable_this_turn: false,
             blocked: false,
             blocking: None,
             chosen_player: None,
@@ -11247,6 +11270,7 @@ impl Game {
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
@@ -11842,6 +11866,7 @@ impl Game {
             permanent.power_bonus = 0;
             permanent.toughness_bonus = 0;
             permanent.temporary_keywords.clear();
+            permanent.unblockable_this_turn = false;
             permanent.destroy_at_end = false;
             permanent.factory_animated = false;
             permanent.dragon_whelp_activations = 0;

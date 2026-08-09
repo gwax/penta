@@ -275,6 +275,7 @@ impl HandcraftedPolicy {
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
@@ -338,6 +339,13 @@ impl HandcraftedPolicy {
 
     /// Whether an ability's target is attacking or blocking right now, which
     /// is the only time a until-end-of-turn pump changes anything.
+    fn source_is_attacking(observation: &PlayerObservation, source: GameObjectId) -> bool {
+        observation
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.id == source && permanent.attacking)
+    }
+
     fn target_is_fighting(observation: &PlayerObservation, target: Option<Target>) -> bool {
         let Some(Target::Permanent(id)) = target else {
             return false;
@@ -620,26 +628,7 @@ impl HandcraftedPolicy {
             .flat_map(crate::TargetSelection::targets)
             .next()
             .copied();
-        let target_score = targets
-            .iter()
-            .flat_map(crate::TargetSelection::targets)
-            .copied()
-            .map(|value| {
-                if behavior == Some(CardBehavior::OrcishMechanics) {
-                    Self::damage_target_score(observation, value, 2)
-                } else if behavior == Some(CardBehavior::Triskelion) {
-                    Self::damage_target_score(observation, value, 1)
-                } else if let Some(amount) = declarative.and_then(|profile| profile.damage) {
-                    Self::damage_target_score(observation, value, amount)
-                } else if declarative.is_some_and(|profile| {
-                    profile.has(DeclarativeSpellProfile::REMOVES | DeclarativeSpellProfile::TAPS)
-                }) {
-                    Self::removal_target_score(observation, value)
-                } else {
-                    Self::target_score(observation, value)
-                }
-            })
-            .sum::<i32>();
+        let target_score = Self::ability_target_score(observation, targets, behavior, declarative);
         let sacrifice_cost = sacrifice
             .filter(|card| *card != source)
             .and_then(|card| Self::permanent_definition(observation, card))
@@ -675,6 +664,21 @@ impl HandcraftedPolicy {
                 7_200 + target_score
             }
             None if declarative.is_some_and(|profile| profile.cards_drawn.is_some()) => 6_500,
+            // A bonus that gives with one hand and takes with the other is
+            // only worth mana in spots a greedy policy cannot see, and
+            // exiling your own creature takes it off the board now for a
+            // return later. Both read as waste from here.
+            None if source_definition
+                .is_some_and(|definition| self.ability_is_a_wash(definition, ability)) =>
+            {
+                -100
+            }
+            None if source_definition
+                .is_some_and(|definition| self.ability_only_buys_evasion(definition, ability))
+                && !Self::source_is_attacking(observation, source) =>
+            {
+                -100
+            }
             // The same reasoning as Mishra's Factory, one step more general:
             // an ability that taps its source to pump spends whatever that
             // source was going to do, so it only pays for itself on a
@@ -721,6 +725,108 @@ impl HandcraftedPolicy {
             return -1_000;
         }
         score - sacrifice_cost
+    }
+
+    /// What the chosen targets are worth, read through whatever the ability
+    /// is going to do to them.
+    fn ability_target_score(
+        observation: &PlayerObservation,
+        targets: &[crate::TargetSelection],
+        behavior: Option<CardBehavior>,
+        declarative: Option<DeclarativeSpellProfile>,
+    ) -> i32 {
+        targets
+            .iter()
+            .flat_map(crate::TargetSelection::targets)
+            .copied()
+            .map(|value| {
+                if behavior == Some(CardBehavior::OrcishMechanics) {
+                    Self::damage_target_score(observation, value, 2)
+                } else if behavior == Some(CardBehavior::Triskelion) {
+                    Self::damage_target_score(observation, value, 1)
+                } else if let Some(amount) = declarative.and_then(|profile| profile.damage) {
+                    Self::damage_target_score(observation, value, amount)
+                } else if declarative.is_some_and(|profile| {
+                    profile.has(DeclarativeSpellProfile::REMOVES | DeclarativeSpellProfile::TAPS)
+                }) {
+                    Self::removal_target_score(observation, value)
+                } else {
+                    Self::target_score(observation, value)
+                }
+            })
+            .sum()
+    }
+
+    /// Whether the ability changes nothing a greedy policy can use: a
+    /// power and toughness swap that nets zero, or exiling its own source.
+    fn ability_is_a_wash(&self, definition: CardDefinitionId, origin: AbilityOrigin) -> bool {
+        let AbilityOrigin::Printed {
+            definition: origin_definition,
+            part,
+            ability,
+        } = origin
+        else {
+            return false;
+        };
+        if origin_definition != definition {
+            return false;
+        }
+        self.catalog
+            .get(definition)
+            .and_then(|card| card.part(part))
+            .and_then(|part| part.rules.ability(ability))
+            .is_some_and(|ability| Self::effect_is_a_wash(ability.effect))
+    }
+
+    fn effect_is_a_wash(effect: EffectDef) -> bool {
+        match effect {
+            EffectDef::Sequence(effects) => effects.iter().copied().any(Self::effect_is_a_wash),
+            EffectDef::ExileLinkedToSource {
+                object: EffectRecipientDef::Source,
+            } => true,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect:
+                    crate::card::AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(power),
+                        toughness: ValueDef::Constant(toughness),
+                    },
+                ..
+            } => power + toughness == 0,
+            _ => false,
+        }
+    }
+
+    /// Whether the ability only buys evasion, which is worth nothing until
+    /// the creature is actually attacking.
+    fn ability_only_buys_evasion(
+        &self,
+        definition: CardDefinitionId,
+        origin: AbilityOrigin,
+    ) -> bool {
+        let AbilityOrigin::Printed {
+            definition: origin_definition,
+            part,
+            ability,
+        } = origin
+        else {
+            return false;
+        };
+        if origin_definition != definition {
+            return false;
+        }
+        self.catalog
+            .get(definition)
+            .and_then(|card| card.part(part))
+            .and_then(|part| part.rules.ability(ability))
+            .is_some_and(|ability| {
+                matches!(
+                    ability.effect,
+                    EffectDef::MakeUnblockableThisTurn {
+                        object: EffectRecipientDef::Source
+                    }
+                )
+            })
     }
 
     /// Whether every value in the ability's effect is conditional on the
