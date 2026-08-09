@@ -4,8 +4,9 @@
 //! intrinsic rule, or grant site assigns identity when it attaches the clause.
 
 use super::model::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, BasicLandType,
-    EffectDef, KeywordAbility, ManaColor,
+    AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, AppliedEffectDef,
+    BasicLandType, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ZoneKind,
 };
 
 /// Why a printed basic-land-type mana clause is not yet fully modeled.
@@ -126,6 +127,20 @@ pub const fn protection_from(color: ManaColor) -> AbilityDef {
         ManaColor::Colorless => "Protection from colorless",
     };
     keyword(text, KeywordAbility::ProtectionFrom(color))
+}
+
+/// The static ability carried by a spell that says it can't be countered.
+#[must_use]
+pub const fn cannot_be_countered() -> AbilityDef {
+    AbilityDef::static_ability(
+        "This spell can't be countered.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::CannotBeCountered,
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )
+    .with_source_zones(&[ZoneKind::Stack])
 }
 
 /// A common mana ability that taps its source to add one fixed kind of mana.

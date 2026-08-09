@@ -1032,6 +1032,7 @@ impl WebGame {
                         rules.rules_text().into_owned()
                     }),
                     "owner": if permanent.controller == self.human { "human" } else { "opponent" },
+                    "chosenCreatureType": permanent.chosen_creature_type.as_deref(),
                     "tapped": permanent.tapped,
                     "power": permanent.power,
                     "toughness": permanent.toughness,
@@ -1105,6 +1106,7 @@ impl WebGame {
                     "art": card_art_value(art),
                     "owner": if object.controller == self.human { "human" } else { "opponent" },
                     "kind": format!("{:?}", object.kind),
+                    "counterable": object.counterable,
                     "x": signature.map_or(0, penta::CastSignature::x),
                     "playOptionId": signature.map(|signature| signature.play_option().0),
                     "modeIds": signature.map(|signature| {
@@ -2781,6 +2783,7 @@ mod tests {
         let stack = stack_snapshot["stack"].as_array().unwrap();
         assert_eq!(stack.len(), 1);
         assert_eq!(stack[0]["name"], "Black Lotus");
+        assert_eq!(stack[0]["counterable"], true);
         assert_nested_card_art(&stack[0]);
 
         game.set_autopass(true).unwrap();
@@ -2792,6 +2795,9 @@ mod tests {
             .find(|card| card["name"] == "Black Lotus")
             .expect("Black Lotus resolved to the battlefield");
         assert_nested_card_art(lotus);
+        assert!(lotus.as_object().is_some_and(|card| {
+            card.contains_key("chosenCreatureType") && card["chosenCreatureType"].is_null()
+        }));
     }
 
     #[test]

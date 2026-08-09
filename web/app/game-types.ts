@@ -72,6 +72,7 @@ export type Card = {
     x: boolean;
   } | null;
   owner?: Owner;
+  chosenCreatureType?: string | null;
   tapped?: boolean;
   power?: number | null;
   toughness?: number | null;
@@ -193,6 +194,7 @@ export type GameState = {
     art: CardArtMetadata | null;
     owner: Owner;
     kind: StackObjectKind;
+    counterable?: boolean;
     cardKind: string;
     typeLine?: string;
     implementationStatus: ImplementationStatus;

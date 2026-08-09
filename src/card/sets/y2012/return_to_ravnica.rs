@@ -6,8 +6,8 @@ use crate::card::{
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor, ModeDef, ModeSetDef,
-    ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TargetPredicate, TargetSlotDef,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    ObjectPredicateDef, PlayOptionDef, PlayerRelation, ReplacementEventDef, SpellForm,
+    TargetPredicate, TargetSlotDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, ModeId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -18,15 +18,7 @@ pub(in crate::card::sets) static ABRUPT_DECAY: CardRecord = CardRecord::new(
     CardArt::new("3b1e92b4-6e53-4dba-a572-c67e01965ac5", "Svetlin Velinov"),
     CardSet::ReturnToRavnica,
     CardRules::new_instant(mana_cost!("{B}{G}")).with_abilities(&[
-        AbilityDef::static_ability(
-            "This spell can't be countered.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeCountered,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
-            },
-        )
-        .with_source_zones(&[ZoneKind::Stack]),
+        abilities::cannot_be_countered(),
         AbilityDef::spell(
             "Destroy target nonland permanent with mana value 3 or less.",
             EffectDef::Destroy {
@@ -355,19 +347,16 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
         4,
     )
     .with_abilities(&[
-        AbilityDef::static_ability(
-            "This spell can't be countered.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeCountered,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+        abilities::cannot_be_countered(),
+        AbilityDef::replacement_for(
+            "If a spell or ability an opponent controls causes you to discard this card, put it onto the battlefield instead of putting it into your graveyard.",
+            ReplacementEventDef::WouldBeDiscardedBy(PlayerRelation::Opponent),
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Source,
+                zone: ZoneKind::Battlefield,
             },
         )
-        .with_source_zones(&[ZoneKind::Stack]),
-        AbilityDef::not_implemented(
-            "If a spell or ability an opponent controls causes you to discard this card, put it onto the battlefield instead of putting it into your graveyard.",
-            "Replacing a discard with a battlefield entry is not implemented.",
-        ),
+        .with_source_zones(&[ZoneKind::Hand]),
     ]),
 );
 
@@ -519,11 +508,14 @@ pub(in crate::card::sets) static SUPREME_VERDICT: CardRecord = CardRecord::new(
     "Supreme Verdict",
     CardArt::new("4e9648f9-7a67-4717-bca1-861d1f7fed43", "Sam Burley"),
     CardSet::ReturnToRavnica,
-    CardRules::new_sorcery(mana_cost!("{1}{W}{W}{U}")).with_ability(AbilityDef::custom_full(
-        "This spell can't be countered.\nDestroy all creatures.",
-        CardBehavior::SupremeVerdict,
-        "Implemented by the named card-local special behavior.",
-    )),
+    CardRules::new_sorcery(mana_cost!("{1}{W}{W}{U}")).with_abilities(&[
+        abilities::cannot_be_countered(),
+        AbilityDef::custom_full(
+            "Destroy all creatures.",
+            CardBehavior::SupremeVerdict,
+            "The creature sweep is implemented by the card-local spell resolver.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static SYNCOPATE: CardRecord = CardRecord::new(

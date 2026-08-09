@@ -37,8 +37,11 @@ use crate::{
 /// distinguishes no mana cost from a printed `{0}`; exposes clause-derived
 /// implementation coverage; and preserves structural provenance for granted
 /// abilities. These changes form one compatibility boundary even though they
-/// were developed across several commits.
-pub const PROTOCOL_VERSION: u32 = 3;
+/// were developed across several commits. Version 4 adds executable modal
+/// spell choices, public counterability and permanent-choice state, and
+/// enables previously metadata-only cards whose actions now appear in
+/// legal-action lists.
+pub const PROTOCOL_VERSION: u32 = 4;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -711,6 +714,7 @@ pub fn observation_json_for_format(
             "presentedPartId": permanent.presented.0,
             "name": card_part_name(catalog, permanent.definition, permanent.presented),
             "controller": seat_name(permanent.controller),
+            "chosenCreatureType": permanent.chosen_creature_type.as_deref(),
             "tapped": permanent.tapped,
             "power": permanent.power,
             "toughness": permanent.toughness,
@@ -762,6 +766,7 @@ fn stack_object_json(catalog: &CardCatalog, object: &StackObservation) -> Value 
         "definition": object.definition.0,
         "name": stack_card_name(catalog, object.definition, object.signature.as_ref()),
         "controller": seat_name(object.controller),
+        "counterable": object.counterable,
         "signature": object.signature.as_ref().map(cast_signature_json),
         "targets": object
             .targets
@@ -2153,6 +2158,7 @@ mod tests {
                 definition: crate::card::cards::HUNTMASTER_OF_THE_FELLS,
                 presented: crate::CardPartId(1),
                 controller: PlayerId::One,
+                chosen_creature_type: Some("Werewolf".into()),
                 tapped: false,
                 power: Some(4),
                 toughness: Some(4),
@@ -2174,6 +2180,7 @@ mod tests {
         assert_eq!(value["battlefield"][0]["objectId"], 30);
         assert_eq!(value["battlefield"][0]["presentedPartId"], 1);
         assert_eq!(value["battlefield"][0]["name"], "Ravager of the Fells");
+        assert_eq!(value["battlefield"][0]["chosenCreatureType"], "Werewolf");
         assert_eq!(
             card_part_name(
                 &catalog,
@@ -2200,6 +2207,7 @@ mod tests {
             ability_text: None,
             definition: crate::card::cards::TURN_BURN,
             controller: PlayerId::One,
+            counterable: true,
             targets: signature.iter_targets().copied().collect(),
             chosen_permanents: Vec::new(),
             x: signature.x(),
@@ -2209,6 +2217,7 @@ mod tests {
 
         assert_eq!(value["objectId"], 40);
         assert_eq!(value["stackId"], 40);
+        assert_eq!(value["counterable"], true);
         assert!(value["sourceObjectId"].is_null());
         assert!(value["source"].is_null());
         assert_eq!(value["signature"]["playOptionId"], 2);
@@ -2232,6 +2241,7 @@ mod tests {
             ability_text: None,
             definition: crate::card::cards::TURN_BURN,
             controller: PlayerId::One,
+            counterable: true,
             targets: Vec::new(),
             chosen_permanents: Vec::new(),
             x: 0,
@@ -2247,6 +2257,7 @@ mod tests {
             ability_text: None,
             definition: crate::card::cards::MISHRA_S_FACTORY,
             controller: PlayerId::One,
+            counterable: true,
             targets: Vec::new(),
             chosen_permanents: Vec::new(),
             x: 0,
@@ -2277,6 +2288,7 @@ mod tests {
             ),
             definition: crate::card::cards::ANKH_OF_MISHRA,
             controller: PlayerId::Two,
+            counterable: true,
             targets: Vec::new(),
             chosen_permanents: Vec::new(),
             x: 0,

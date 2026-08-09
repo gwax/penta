@@ -49,6 +49,8 @@ pub struct PermanentObservation {
     /// characteristics. Changing faces does not change `id`.
     pub presented: CardPartId,
     pub controller: PlayerId,
+    /// Public choice associated with permanents such as Cavern of Souls.
+    pub chosen_creature_type: Option<String>,
     pub tapped: bool,
     pub power: Option<i16>,
     pub toughness: Option<i16>,
@@ -73,6 +75,9 @@ pub struct StackObservation {
     pub ability_text: Option<String>,
     pub definition: CardDefinitionId,
     pub controller: PlayerId,
+    /// Public resolution constraint. An uncounterable object remains a legal
+    /// target for counter spells, but those effects cannot remove it.
+    pub counterable: bool,
     /// Locked spell form, modes, costs, X, and target slots. Activated
     /// abilities have no cast signature.
     pub signature: Option<CastSignature>,

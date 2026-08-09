@@ -306,6 +306,7 @@ fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError>
             &mut additional_costs,
         )?;
         validate_modes_and_targets(definition, option, &mut modes)?;
+        validate_semantic_spell_modes(definition, option)?;
     }
 
     validate_fused_option(definition)
@@ -349,7 +350,13 @@ fn validate_attached_ability(
         ability_id,
         ability.effect,
         &mut Vec::new(),
-    )
+    )?;
+    if let DeclarativeAbilityDef::Spell(spell) = ability.definition {
+        for mode in spell.modes {
+            validate_granted_abilities(definition, part, ability_id, mode.effect, &mut Vec::new())?;
+        }
+    }
+    Ok(())
 }
 
 fn validate_granted_abilities(
@@ -392,7 +399,14 @@ fn validate_granted_abilities(
 }
 
 fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilityValidationError> {
-    let grant_sites = ability_grant_sites(ability.effect);
+    let mut grant_sites = ability_grant_sites(ability.effect);
+    if let DeclarativeAbilityDef::Spell(spell) = ability.definition {
+        grant_sites = spell
+            .modes
+            .iter()
+            .map(|mode| ability_grant_sites(mode.effect))
+            .fold(grant_sites, usize::saturating_add);
+    }
     if grant_sites > usize::from(u8::MAX) + 1 {
         return Err(GrantedAbilityValidationError::TooManyGrantSites { count: grant_sites });
     }
@@ -444,7 +458,13 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
     if is_mana_ability && !targets.is_empty() {
         return Err(GrantedAbilityValidationError::ManaAbilityHasTargets);
     }
-    validate_ability_targets(targets)
+    validate_ability_targets(targets)?;
+    if let DeclarativeAbilityDef::Spell(spell) = ability.definition {
+        for mode in spell.modes {
+            validate_ability_targets(mode.targets)?;
+        }
+    }
+    Ok(())
 }
 
 fn top_level_ability_error(
@@ -549,6 +569,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::AddPlusOneCounters { .. }
         | super::EffectDef::EntersTapped
         | super::EffectDef::MoveToZone { .. }
+        | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Apply { .. }
         | super::EffectDef::Special(_) => {}
     }
@@ -581,6 +602,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::AddPlusOneCounters { .. }
         | super::EffectDef::EntersTapped
         | super::EffectDef::MoveToZone { .. }
+        | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Apply { .. }
         | super::EffectDef::Special(_) => 0,
     }
@@ -797,6 +819,117 @@ fn validate_modes_and_targets(
                         second_mode: Some(mode.id),
                     });
                 }
+            }
+        }
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_lines)]
+fn validate_semantic_spell_modes(
+    definition: &CardDefinition,
+    option: &PlayOptionDef,
+) -> Result<(), CatalogError> {
+    if option.action != PlayActionKind::CastSpell {
+        return Ok(());
+    }
+    let SpellForm::Part(part_id) = &option.form else {
+        return Ok(());
+    };
+    let Some(part) = definition.part(*part_id) else {
+        return Ok(());
+    };
+    let semantic_modes = part
+        .rules
+        .ability_clauses()
+        .iter()
+        .filter(|ability| ability.implementation.is_executable())
+        .filter_map(|ability| match ability.definition {
+            DeclarativeAbilityDef::Spell(spell) => Some(spell.modes),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+    if semantic_modes.is_empty() {
+        return Ok(());
+    }
+
+    let mut semantic_ids = HashSet::new();
+    for mode in &semantic_modes {
+        if !semantic_ids.insert(mode.id) {
+            return Err(CatalogError::DuplicateModeId {
+                definition: definition.id,
+                mode: mode.id,
+            });
+        }
+    }
+
+    let presentation_modes = option.modes.as_ref();
+    for semantic in &semantic_modes {
+        if presentation_modes
+            .is_none_or(|modes| !modes.modes.iter().any(|mode| mode.id == semantic.id))
+        {
+            return Err(CatalogError::MissingPresentationSpellMode {
+                definition: definition.id,
+                option: option.id,
+                mode: semantic.id,
+            });
+        }
+    }
+    let Some(presentation_modes) = presentation_modes else {
+        unreachable!("every semantic mode found a presentation mode")
+    };
+    for presentation in &presentation_modes.modes {
+        let Some(semantic) = semantic_modes
+            .iter()
+            .find(|semantic| semantic.id == presentation.id)
+        else {
+            return Err(CatalogError::MissingSemanticSpellMode {
+                definition: definition.id,
+                option: option.id,
+                mode: presentation.id,
+            });
+        };
+        for semantic_target in semantic.targets {
+            let Some(presentation_target) = presentation
+                .targets
+                .iter()
+                .find(|target| target.id == semantic_target.id)
+            else {
+                return Err(CatalogError::MissingPresentationSpellModeTarget {
+                    definition: definition.id,
+                    option: option.id,
+                    mode: semantic.id,
+                    target: semantic_target.id,
+                });
+            };
+            if (presentation_target.minimum, presentation_target.maximum)
+                != (semantic_target.minimum, semantic_target.maximum)
+            {
+                return Err(CatalogError::MismatchedSpellModeTargetCardinality {
+                    definition: definition.id,
+                    option: option.id,
+                    mode: semantic.id,
+                    target: semantic_target.id,
+                    presentation_minimum: presentation_target.minimum,
+                    presentation_maximum: presentation_target.maximum,
+                    semantic_minimum: semantic_target.minimum,
+                    semantic_maximum: semantic_target.maximum,
+                });
+            }
+        }
+        for presentation_target in &presentation.targets {
+            if !semantic
+                .targets
+                .iter()
+                .any(|target| target.id == presentation_target.id)
+            {
+                return Err(CatalogError::MissingSemanticSpellModeTarget {
+                    definition: definition.id,
+                    option: option.id,
+                    mode: semantic.id,
+                    target: presentation_target.id,
+                });
             }
         }
     }
@@ -1098,6 +1231,38 @@ pub enum CatalogError {
         maximum: u8,
         available: usize,
     },
+    MissingPresentationSpellMode {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+    },
+    MissingSemanticSpellMode {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+    },
+    MissingPresentationSpellModeTarget {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        target: TargetSlotId,
+    },
+    MissingSemanticSpellModeTarget {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        target: TargetSlotId,
+    },
+    MismatchedSpellModeTargetCardinality {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        target: TargetSlotId,
+        presentation_minimum: u8,
+        presentation_maximum: u8,
+        semantic_minimum: u8,
+        semantic_maximum: u8,
+    },
     DuplicateAlternativeCostId {
         definition: CardDefinitionId,
         cost: AlternativeCostId,
@@ -1345,6 +1510,53 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "play option {option:?} of card definition {definition:?} allows {maximum} modes without repetition but defines only {available}"
             ),
+            Self::MissingPresentationSpellMode {
+                definition,
+                option,
+                mode,
+            } => write!(
+                formatter,
+                "semantic spell mode {mode:?} has no presentation counterpart in play option {option:?} of card definition {definition:?}"
+            ),
+            Self::MissingSemanticSpellMode {
+                definition,
+                option,
+                mode,
+            } => write!(
+                formatter,
+                "presentation mode {mode:?} has no semantic spell counterpart in play option {option:?} of card definition {definition:?}"
+            ),
+            Self::MissingPresentationSpellModeTarget {
+                definition,
+                option,
+                mode,
+                target,
+            } => write!(
+                formatter,
+                "semantic target {target:?} of spell mode {mode:?} has no presentation counterpart in play option {option:?} of card definition {definition:?}"
+            ),
+            Self::MissingSemanticSpellModeTarget {
+                definition,
+                option,
+                mode,
+                target,
+            } => write!(
+                formatter,
+                "presentation target {target:?} of spell mode {mode:?} has no semantic counterpart in play option {option:?} of card definition {definition:?}"
+            ),
+            Self::MismatchedSpellModeTargetCardinality {
+                definition,
+                option,
+                mode,
+                target,
+                presentation_minimum,
+                presentation_maximum,
+                semantic_minimum,
+                semantic_maximum,
+            } => write!(
+                formatter,
+                "target {target:?} of spell mode {mode:?} in play option {option:?} of card definition {definition:?} has presentation cardinality {presentation_minimum}..={presentation_maximum} but semantic cardinality {semantic_minimum}..={semantic_maximum}"
+            ),
             Self::DuplicateAlternativeCostId { definition, cost } => write!(
                 formatter,
                 "card definition {definition:?} defines alternative cost {cost:?} more than once"
@@ -1406,7 +1618,7 @@ mod tests {
         AppliedEffectDef, CardBehavior, CardDefinition, CardEffectStatus, CardPart, CardPrinting,
         CardPrintingId, CardSet, CardStructure, DoubleFacedKind, EffectDef, EffectDurationDef,
         EffectRecipientDef, ManaCost, ModeDef, ModeSetDef, PlayOptionDef, PlayerRelation,
-        PrintedManaCost, SpellForm, TargetPredicate, TargetSlotDef,
+        PrintedManaCost, SpellForm, SpellModeDef, TargetPredicate, TargetSlotDef,
     };
     use crate::{
         AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, Format,
@@ -1440,6 +1652,43 @@ mod tests {
             targets,
             effect_status: CardEffectStatus::MetadataOnly,
         }
+    }
+
+    fn semantic_target(id: u8, minimum: u8, maximum: u8) -> AbilityTargetDef {
+        AbilityTargetDef {
+            id: TargetSlotId(id),
+            label: "target",
+            predicate: AbilityTargetPredicate::AnyTarget,
+            minimum,
+            maximum,
+        }
+    }
+
+    fn semantic_mode(id: u8, targets: Vec<AbilityTargetDef>) -> SpellModeDef {
+        SpellModeDef::new(ModeId(id), EffectDef::None)
+            .with_targets(Box::leak(targets.into_boxed_slice()))
+    }
+
+    fn semantic_modal_definition(
+        semantic_modes: Vec<SpellModeDef>,
+        presentation_modes: Option<ModeSetDef>,
+    ) -> CardDefinition {
+        let semantic_modes = Box::leak(semantic_modes.into_boxed_slice());
+        let abilities = Box::leak(
+            vec![AbilityDef::modal_spell("Choose one.", semantic_modes)].into_boxed_slice(),
+        );
+        let rules = crate::CardRules::new_instant(ManaCost::default()).with_abilities(abilities);
+        let mut card = definition(1, "Test Modal Spell", CardSet::Alpha);
+        set_primary_rules(&mut card, &rules);
+        card.play_options = vec![PlayOptionDef::cast(
+            PlayOptionId::DEFAULT,
+            "Test Modal Spell",
+            SpellForm::Part(CardPartId::PRIMARY),
+            ManaCost::default(),
+            CardEffectStatus::Implemented,
+        )];
+        card.play_options[0].modes = presentation_modes;
+        card
     }
 
     fn split_definition(fused: Option<PlayOptionId>) -> CardDefinition {
@@ -2165,6 +2414,108 @@ mod tests {
                 maximum: 1,
             }
         );
+    }
+
+    #[test]
+    fn semantic_spell_modes_require_matching_presentation_mode_ids() {
+        let valid = semantic_modal_definition(
+            vec![semantic_mode(2, Vec::new())],
+            Some(ModeSetDef::choose_one(vec![mode(2, Vec::new())])),
+        );
+        CardCatalog::new([valid]).unwrap();
+
+        let missing_presentation =
+            semantic_modal_definition(vec![semantic_mode(2, Vec::new())], None);
+        assert_eq!(
+            error(missing_presentation),
+            CatalogError::MissingPresentationSpellMode {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(2),
+            }
+        );
+
+        let missing_semantic = semantic_modal_definition(
+            vec![semantic_mode(2, Vec::new())],
+            Some(ModeSetDef::choose_one(vec![
+                mode(2, Vec::new()),
+                mode(3, Vec::new()),
+            ])),
+        );
+        assert_eq!(
+            error(missing_semantic),
+            CatalogError::MissingSemanticSpellMode {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(3),
+            }
+        );
+    }
+
+    #[test]
+    fn semantic_spell_mode_targets_require_matching_ids_and_cardinalities() {
+        let valid = semantic_modal_definition(
+            vec![semantic_mode(2, vec![semantic_target(7, 1, 1)])],
+            Some(ModeSetDef::choose_one(vec![mode(2, vec![target(7, 1, 1)])])),
+        );
+        CardCatalog::new([valid]).unwrap();
+
+        let missing_presentation = semantic_modal_definition(
+            vec![semantic_mode(2, vec![semantic_target(7, 1, 1)])],
+            Some(ModeSetDef::choose_one(vec![mode(2, Vec::new())])),
+        );
+        assert_eq!(
+            error(missing_presentation),
+            CatalogError::MissingPresentationSpellModeTarget {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(2),
+                target: TargetSlotId(7),
+            }
+        );
+
+        let missing_semantic = semantic_modal_definition(
+            vec![semantic_mode(2, Vec::new())],
+            Some(ModeSetDef::choose_one(vec![mode(2, vec![target(7, 1, 1)])])),
+        );
+        assert_eq!(
+            error(missing_semantic),
+            CatalogError::MissingSemanticSpellModeTarget {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(2),
+                target: TargetSlotId(7),
+            }
+        );
+
+        let mismatched_cardinality = semantic_modal_definition(
+            vec![semantic_mode(2, vec![semantic_target(7, 1, 1)])],
+            Some(ModeSetDef::choose_one(vec![mode(2, vec![target(7, 0, 1)])])),
+        );
+        assert_eq!(
+            error(mismatched_cardinality),
+            CatalogError::MismatchedSpellModeTargetCardinality {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(2),
+                target: TargetSlotId(7),
+                presentation_minimum: 0,
+                presentation_maximum: 1,
+                semantic_minimum: 1,
+                semantic_maximum: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn metadata_only_presentation_modes_do_not_require_semantic_modes() {
+        let mut card = definition(1, "Metadata-Only Modal Spell", CardSet::Alpha);
+        card.play_options[0].modes = Some(ModeSetDef::choose_one(vec![
+            mode(2, vec![target(7, 1, 1)]),
+            mode(3, Vec::new()),
+        ]));
+
+        CardCatalog::new([card]).unwrap();
     }
 
     #[test]

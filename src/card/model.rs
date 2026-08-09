@@ -927,6 +927,11 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         zone: ZoneKind,
     },
+    /// Choose and store a creature type for an object as it enters. This is a
+    /// replacement procedure rather than a resolving stack effect.
+    ChooseCreatureType {
+        object: EffectRecipientDef,
+    },
     Apply {
         recipient: EffectRecipientDef,
         effect: AppliedEffectDef,
@@ -983,12 +988,19 @@ pub enum TriggerEventDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SpellAbilityDef {
     pub targets: &'static [AbilityTargetDef],
+    /// Rules-bearing modes keyed to the presentation modes on the spell's
+    /// play option. Targets and effects live here so selecting a mode freezes
+    /// executable semantics, not just a label.
+    pub modes: &'static [SpellModeDef],
 }
 
 impl SpellAbilityDef {
     #[must_use]
     pub const fn new() -> Self {
-        Self { targets: &[] }
+        Self {
+            targets: &[],
+            modes: &[],
+        }
     }
 
     #[must_use]
@@ -996,11 +1008,46 @@ impl SpellAbilityDef {
         self.targets = targets;
         self
     }
+
+    #[must_use]
+    pub const fn with_modes(mut self, modes: &'static [SpellModeDef]) -> Self {
+        self.modes = modes;
+        self
+    }
 }
 
 impl Default for SpellAbilityDef {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Executable semantics for one mode of a spell ability.
+///
+/// [`ModeDef`] remains the owned catalog/presentation shape used in cast
+/// choices. This definition is the static rules payload that is selected and
+/// frozen on the stack with the cast signature.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SpellModeDef {
+    pub id: ModeId,
+    pub targets: &'static [AbilityTargetDef],
+    pub effect: EffectDef,
+}
+
+impl SpellModeDef {
+    #[must_use]
+    pub const fn new(id: ModeId, effect: EffectDef) -> Self {
+        Self {
+            id,
+            targets: &[],
+            effect,
+        }
+    }
+
+    #[must_use]
+    pub const fn with_targets(mut self, targets: &'static [AbilityTargetDef]) -> Self {
+        self.targets = targets;
+        self
     }
 }
 
@@ -1075,6 +1122,20 @@ pub struct StaticAbilityDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ReplacementAbilityDef {
     pub source_zones: &'static [ZoneKind],
+    pub event: ReplacementEventDef,
+}
+
+/// The event changed by a replacement ability.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ReplacementEventDef {
+    /// A card would be discarded by a spell or ability controlled by the
+    /// named player relative to the card's controller in its current zone.
+    WouldBeDiscardedBy(PlayerRelation),
+    /// Entry replacement effects whose exact event is already identified by
+    /// their effect primitive (for example, enters tapped or choosing a
+    /// creature type as an object enters).
+    EntersBattlefield,
+    Special(&'static str),
 }
 
 impl ReplacementAbilityDef {
@@ -1082,7 +1143,14 @@ impl ReplacementAbilityDef {
     pub const fn new() -> Self {
         Self {
             source_zones: &[ZoneKind::Battlefield],
+            event: ReplacementEventDef::EntersBattlefield,
         }
+    }
+
+    #[must_use]
+    pub const fn with_event(mut self, event: ReplacementEventDef) -> Self {
+        self.event = event;
+        self
     }
 }
 
@@ -1251,6 +1319,15 @@ impl AbilityDef {
     }
 
     #[must_use]
+    pub const fn modal_spell(text: &'static str, modes: &'static [SpellModeDef]) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::Spell(SpellAbilityDef::new().with_modes(modes)),
+            EffectDef::None,
+        )
+    }
+
+    #[must_use]
     pub const fn activated_mana(
         text: &'static str,
         costs: &'static [AbilityCostDef],
@@ -1321,6 +1398,19 @@ impl AbilityDef {
         Self::defined(
             text,
             DeclarativeAbilityDef::Replacement(ReplacementAbilityDef::new()),
+            effect,
+        )
+    }
+
+    #[must_use]
+    pub const fn replacement_for(
+        text: &'static str,
+        event: ReplacementEventDef,
+        effect: EffectDef,
+    ) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::Replacement(ReplacementAbilityDef::new().with_event(event)),
             effect,
         )
     }
