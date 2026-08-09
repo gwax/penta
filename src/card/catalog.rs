@@ -655,6 +655,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::DealDamage { .. }
         | super::EffectDef::GainLife { .. }
         | super::EffectDef::DrawCards { .. }
+        | super::EffectDef::DiscardCards { .. }
         | super::EffectDef::LoseLife { .. }
         | super::EffectDef::Tap { .. }
         | super::EffectDef::Untap { .. }
@@ -688,6 +689,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::DealDamage { .. }
         | super::EffectDef::GainLife { .. }
         | super::EffectDef::DrawCards { .. }
+        | super::EffectDef::DiscardCards { .. }
         | super::EffectDef::LoseLife { .. }
         | super::EffectDef::Tap { .. }
         | super::EffectDef::Untap { .. }

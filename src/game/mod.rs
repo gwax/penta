@@ -716,6 +716,11 @@ enum DecisionContinuation {
         victim: PlayerId,
         cause: ZoneMoveCause,
     },
+    /// A discard an effect demanded, chosen by the discarding player.
+    DiscardToEffect {
+        player: PlayerId,
+        cause: ZoneMoveCause,
+    },
     /// Holds the revealed cards while the caster decides which to keep; they
     /// have already left the library, so the continuation must place them all.
     GrislySalvage {
@@ -2105,6 +2110,7 @@ impl Game {
             | EffectDef::DealDamage { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
+            | EffectDef::DiscardCards { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
@@ -3282,6 +3288,33 @@ impl Game {
         );
     }
 
+    /// Asks `player` to pick the cards an effect makes them discard. A hand
+    /// too small to cover the demand simply goes away in full, and an empty
+    /// hand raises no decision at all.
+    fn queue_effect_discard(&mut self, player: PlayerId, amount: i32, cause: ZoneMoveCause) {
+        let hand = self.players[player.index()].hand.clone();
+        let count = usize::try_from(amount).unwrap_or(0).min(hand.len());
+        if count == 0 {
+            return;
+        }
+        if count == hand.len() {
+            let cards = hand.iter().map(|card| card.id).collect::<Vec<_>>();
+            self.discard_cards_with_cause(player, &cards, cause);
+            return;
+        }
+        let options = self.card_decision_options(&hand, DecisionZone::Hand);
+        self.queue_decision(
+            player,
+            format!("Choose {count} card(s) to discard"),
+            DecisionVisibility::Private,
+            DecisionPreference::LowerCardValue,
+            count..=count,
+            false,
+            options,
+            DecisionContinuation::DiscardToEffect { player, cause },
+        );
+    }
+
     fn queue_time_vault_decision(&mut self, permanent: GameObjectId, remaining: Vec<GameObjectId>) {
         let card = self
             .battlefield
@@ -3566,6 +3599,16 @@ impl Game {
                     self.players[player.index()].hand.push(card);
                 }
                 self.bury_cards(player, to_graveyard);
+            }
+            DecisionContinuation::DiscardToEffect { player, cause } => {
+                let discarded = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                self.discard_cards_with_cause(player, &discarded, cause);
             }
             DecisionContinuation::Duress { victim, cause } => {
                 let Some(option) = pending
@@ -5990,6 +6033,17 @@ impl Game {
                     }
                 }
             }
+            EffectDef::DiscardCards { recipient, amount } => {
+                let amount = self.effect_value(amount, object, context).max(0);
+                let cause = ZoneMoveCause::Effect {
+                    controller: object.controller,
+                };
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Player(player) = target {
+                        self.queue_effect_discard(player, amount, cause);
+                    }
+                }
+            }
             EffectDef::LoseLife { recipient, amount } => {
                 let amount = self
                     .effect_value(amount, object, context)
@@ -7828,6 +7882,7 @@ impl Game {
                 | EffectDef::DealDamage { .. }
                 | EffectDef::GainLife { .. }
                 | EffectDef::DrawCards { .. }
+                | EffectDef::DiscardCards { .. }
                 | EffectDef::LoseLife { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
@@ -7911,6 +7966,7 @@ impl Game {
                 | EffectDef::DealDamage { .. }
                 | EffectDef::GainLife { .. }
                 | EffectDef::DrawCards { .. }
+                | EffectDef::DiscardCards { .. }
                 | EffectDef::LoseLife { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
@@ -9936,6 +9992,7 @@ impl Game {
             | EffectDef::DealDamage { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
+            | EffectDef::DiscardCards { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }

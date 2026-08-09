@@ -280,9 +280,18 @@ pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
                     "creature",
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )]),
-                AbilityDef::unimplemented_spell(
+                AbilityDef::spell(
                     "Draw two cards, then discard two cards",
-                    "Printed mode is cataloged but is not executed by the engine.",
+                    EffectDef::Sequence(&[
+                        EffectDef::DrawCards {
+                            recipient: EffectRecipientDef::Controller,
+                            amount: ValueDef::Constant(2),
+                        },
+                        EffectDef::DiscardCards {
+                            recipient: EffectRecipientDef::Controller,
+                            amount: ValueDef::Constant(2),
+                        },
+                    ]),
                 ),
             ],
         ),

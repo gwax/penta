@@ -931,6 +931,12 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// Each recipient chooses that many cards from their own hand and
+    /// discards them. A player holding fewer cards discards their whole hand.
+    DiscardCards {
+        recipient: EffectRecipientDef,
+        amount: ValueDef,
+    },
     LoseLife {
         recipient: EffectRecipientDef,
         amount: ValueDef,

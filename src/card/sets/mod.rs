@@ -444,6 +444,7 @@ mod tests {
             EffectDef::DealDamage { recipient, .. }
             | EffectDef::GainLife { recipient, .. }
             | EffectDef::DrawCards { recipient, .. }
+            | EffectDef::DiscardCards { recipient, .. }
             | EffectDef::LoseLife { recipient, .. } => shared_effect_recipient(recipient),
             EffectDef::Tap { object }
             | EffectDef::Untap { object }
@@ -583,6 +584,7 @@ mod tests {
             | EffectDef::DealDamage { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
+            | EffectDef::DiscardCards { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
@@ -650,6 +652,7 @@ mod tests {
                         | EffectDef::DealDamage { .. }
                         | EffectDef::GainLife { .. }
                         | EffectDef::DrawCards { .. }
+                        | EffectDef::DiscardCards { .. }
                         | EffectDef::LoseLife { .. }
                         | EffectDef::Tap { .. }
                         | EffectDef::Untap { .. }
@@ -740,6 +743,7 @@ mod tests {
             | EffectDef::DealDamage { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
+            | EffectDef::DiscardCards { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }

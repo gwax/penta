@@ -775,7 +775,12 @@ fn metadata_only_noncreature_spells_are_hidden_but_baseline_cards_remain_playabl
         })
         .collect::<Vec<_>>();
 
-    assert_eq!(cast_cards, vec![CardInstanceId(10_003)]);
+    // Izzet Charm is only partial, and the play gate follows the modes that
+    // do work: its loot mode needs no target and is castable on an empty board.
+    assert_eq!(
+        cast_cards,
+        vec![CardInstanceId(10_003), CardInstanceId(10_005)]
+    );
     assert!(actions.contains(&Action::PlayLand {
         card: CardInstanceId(10_004),
         option: PlayOptionId::DEFAULT,
@@ -9550,6 +9555,81 @@ fn izzet_charm_deals_two_damage_in_its_implemented_mode() {
     pass_priority_pair(&mut game);
 
     assert!(game.battlefield.is_empty());
+}
+
+#[test]
+fn izzet_charm_loots_by_drawing_two_then_discarding_two_of_choice() {
+    let mut game = ready_game();
+    let charm = card(10_001, cards::IZZET_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
+    // One card already in hand, so the two drawn cards leave a choice of
+    // three rather than a forced discard of everything.
+    let keeper = card(10_002, cards::BLACK_LOTUS, PlayerId::One);
+    game.players[0].hand.push(keeper.clone());
+    let library_before = game.players[0].library.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(charm.id, ModeId(2), TargetSlotId(0), Vec::new()),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        library_before - 2,
+        "both cards were drawn"
+    );
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the discard is the caster's choice");
+    assert_eq!((decision.minimum, decision.maximum), (2, 2));
+    let discards = decision
+        .options
+        .iter()
+        .filter(|option| option.card != Some((keeper.id, cards::BLACK_LOTUS)))
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    assert_eq!(discards.len(), 2, "the drawn cards are discardable");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: discards,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(game.players[0].hand.len(), 1);
+    assert_eq!(game.players[0].hand[0].id, keeper.id, "the Lotus was kept");
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        3,
+        "two cards and the charm"
+    );
+}
+
+#[test]
+fn a_discard_with_no_choice_left_needs_no_decision() {
+    let mut game = ready_game();
+    let charm = card(10_001, cards::IZZET_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(charm.id, ModeId(2), TargetSlotId(0), Vec::new()),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    // Exactly the two drawn cards are in hand, so there is nothing to choose.
+    assert!(game.players[0].hand.is_empty());
+    assert!(game.pending_decisions.is_empty());
 }
 
 #[test]
