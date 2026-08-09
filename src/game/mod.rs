@@ -1125,6 +1125,34 @@ impl Game {
             })
     }
 
+    /// How many counters of one kind an object has, using last-known
+    /// information once it has left the battlefield. An ability whose cost
+    /// sacrificed its own source still reads the counters it had.
+    fn current_or_last_known_counters(&self, object: GameObjectId, kind: CounterKind) -> u16 {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+            .map_or_else(
+                || match self.retired_objects.get(&object) {
+                    Some(RetiredObject::Permanent { permanent, .. }) => permanent.counters(kind),
+                    Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => 0,
+                },
+                |permanent| permanent.counters(kind),
+            )
+    }
+
+    /// The values a predicate can read while matching, where the only context
+    /// is the ability's source. Anything wider stays outside the boundary.
+    fn value_from_source(&self, value: ValueDef, source: GameObjectId) -> Option<i32> {
+        match value {
+            ValueDef::Constant(amount) => Some(amount),
+            ValueDef::CountersOnSource(kind) => {
+                Some(i32::from(self.current_or_last_known_counters(source, kind)))
+            }
+            _ => None,
+        }
+    }
+
     fn current_or_last_known_toughness(&self, object: GameObjectId) -> Option<i16> {
         self.battlefield
             .iter()
@@ -2459,6 +2487,9 @@ impl Game {
                 .is_some_and(|index| object.colors[index]),
             ObjectPredicateDef::Subtype(subtype) => object.subtypes.contains(&subtype),
             ObjectPredicateDef::ManaValueAtMost(limit) => object.mana_value <= u16::from(limit),
+            ObjectPredicateDef::ManaValueEqualTo(value) => self
+                .value_from_source(value, source)
+                .is_some_and(|value| value == i32::from(object.mana_value)),
             ObjectPredicateDef::PowerAtLeast(minimum) => {
                 object.power.is_some_and(|power| power >= minimum)
             }
@@ -6563,14 +6594,9 @@ impl Game {
                 .and_then(|source| self.current_or_last_known_toughness(source))
                 .map_or(0, i32::from),
             ValueDef::TriggerEventAmount => context.amount.unwrap_or(0),
-            ValueDef::CountersOnSource(kind) => object
-                .source
-                .and_then(|source| {
-                    self.battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == source)
-                })
-                .map_or(0, |permanent| i32::from(permanent.counters(kind))),
+            ValueDef::CountersOnSource(kind) => object.source.map_or(0, |source| {
+                i32::from(self.current_or_last_known_counters(source, kind))
+            }),
             ValueDef::CardsInHandAbove { player, threshold } => {
                 let player = [PlayerId::One, PlayerId::Two]
                     .into_iter()
@@ -6892,6 +6918,7 @@ impl Game {
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::Subtype(_)
             | ObjectPredicateDef::ManaValueAtMost(_)
+            | ObjectPredicateDef::ManaValueEqualTo(_)
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)

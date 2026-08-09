@@ -272,12 +272,36 @@ pub(in crate::card::sets) static RATCHET_BOMB: CardRecord = CardRecord::new(
     "Ratchet Bomb",
     CardArt::new("3e9045df-3eff-4236-9bbb-77537b302e27", "Austin Hsu"),
     CardSet::Magic2014,
-    CardRules::new_artifact(mana_cost!("{2}")).with_ability(
-        AbilityDef::not_implemented(
-            "{T}: Put a charge counter on this artifact.\n{T}, Sacrifice this artifact: Destroy each nonland permanent with mana value equal to the number of charge counters on this artifact.",
-            "Printed rules are cataloged but are not executed by the engine.",
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::activated(
+            "{T}: Put a charge counter on this artifact.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Charge,
+                amount: ValueDef::Constant(1),
+            },
         ),
-    ),
+        AbilityDef::activated(
+            "{T}, Sacrifice this artifact: Destroy each nonland permanent with mana value equal to the number of charge counters on this artifact.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            EffectDef::Destroy {
+                object: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                        // The Bomb is already gone by the time this resolves,
+                        // so the count comes from last-known information.
+                        ObjectPredicateDef::ManaValueEqualTo(ValueDef::CountersOnSource(
+                            CounterKind::Charge,
+                        )),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                can_regenerate: true,
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new(

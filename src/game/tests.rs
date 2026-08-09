@@ -11063,3 +11063,73 @@ fn tragic_slip_is_a_minus_one_until_something_dies() {
         }
     }
 }
+
+#[test]
+fn ratchet_bomb_sweeps_the_mana_value_it_ticked_up_to() {
+    let mut game = ready_game();
+    let bomb = game
+        .put_onto_battlefield(PlayerId::One, cards::RATCHET_BOMB)
+        .expect("cataloged");
+    // Savannah Lions costs one, Serra Angel five, and a land is spared
+    // whatever the count.
+    game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::MOUNTAIN)
+        .expect("cataloged");
+
+    let activate = |game: &Game, index: usize| {
+        let mut actions = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::ActivateAbility {
+                    source,
+                    ability: AbilityOrigin::Printed { ability, .. },
+                    ..
+                } if source == bomb => Some((
+                    ability,
+                    Action::ActivateAbility {
+                        source,
+                        ability: AbilityOrigin::Printed {
+                            definition: cards::RATCHET_BOMB,
+                            part: CardPartId::PRIMARY,
+                            ability,
+                        },
+                        targets: Vec::new(),
+                        sacrifice: None,
+                    },
+                )),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        actions.sort_by_key(|(ability, _)| *ability);
+        actions.get(index).map(|(_, action)| action.clone())
+    };
+
+    // Tick to one charge counter.
+    let tick = activate(&game, 0).expect("the charge ability is activatable");
+    game.apply(PlayerId::One, tick).unwrap();
+    pass_priority_pair(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bomb)
+        .expect("still there")
+        .tapped = false;
+
+    let detonate = activate(&game, 1).expect("the sweep ability is activatable");
+    game.apply(PlayerId::One, detonate).unwrap();
+    pass_priority_pair(&mut game);
+
+    let left = game
+        .battlefield
+        .iter()
+        .map(|permanent| permanent.card.definition)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        left,
+        vec![cards::SERRA_ANGEL, cards::MOUNTAIN],
+        "only the one-drop matched the single charge counter"
+    );
+}

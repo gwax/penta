@@ -584,6 +584,9 @@ pub enum ObjectPredicateDef {
     Subtype(&'static str),
     /// Mana value at most this much, for "with mana value N or less".
     ManaValueAtMost(u8),
+    /// Mana value exactly this much, where the number is read off the
+    /// ability's own source rather than printed on the card.
+    ManaValueEqualTo(ValueDef),
     /// Power at least this much, for "power N or greater". Reads current
     /// power on the battlefield, so a pumped creature qualifies.
     PowerAtLeast(i16),
@@ -1908,6 +1911,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
+        | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -2414,12 +2418,18 @@ pub enum CounterKind {
     PlusOnePlusOne,
     Javelin,
     Muster,
+    Charge,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 3;
+    pub const COUNT: usize = 4;
 
-    pub const ALL: [Self; Self::COUNT] = [Self::PlusOnePlusOne, Self::Javelin, Self::Muster];
+    pub const ALL: [Self; Self::COUNT] = [
+        Self::PlusOnePlusOne,
+        Self::Javelin,
+        Self::Muster,
+        Self::Charge,
+    ];
 
     #[must_use]
     pub const fn index(self) -> usize {
@@ -2427,6 +2437,7 @@ impl CounterKind {
             Self::PlusOnePlusOne => 0,
             Self::Javelin => 1,
             Self::Muster => 2,
+            Self::Charge => 3,
         }
     }
 
@@ -2436,6 +2447,7 @@ impl CounterKind {
             Self::PlusOnePlusOne => "+1/+1",
             Self::Javelin => "javelin",
             Self::Muster => "muster",
+            Self::Charge => "charge",
         }
     }
 }

@@ -320,6 +320,7 @@ mod tests {
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::Subtype(_)
             | ObjectPredicateDef::ManaValueAtMost(_)
+            | ObjectPredicateDef::ManaValueEqualTo(_)
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
