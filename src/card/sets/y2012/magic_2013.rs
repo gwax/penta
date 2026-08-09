@@ -115,9 +115,23 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
         &["Boar"],
         2,
         2,
-        "This creature gets +1/+1 as long as you control a Mountain.\n{R}: This creature gains haste until end of turn. (It can attack and {T} this turn.)",
+        "",
     )
-    .metadata_only(),
+    .with_abilities(&[
+        AbilityDef::not_implemented(
+            "This creature gets +1/+1 as long as you control a Mountain.",
+            "A static power and toughness bonus conditioned on the board is not implemented; the runtime applies constant bonuses only.",
+        ),
+        AbilityDef::activated(
+            "{R}: This creature gains haste until end of turn. (It can attack and {T} this turn.)",
+            &[AbilityCostDef::Mana(ManaCost::new(0, 1))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::GrantAbility(&abilities::haste()),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static GLACIAL_FORTRESS: CardRecord = CardRecord::new(

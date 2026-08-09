@@ -7827,3 +7827,41 @@ fn counterflux_counters_theirs_and_survives_theirs() {
         "their Counterspell resolved and did nothing"
     );
 }
+
+#[test]
+fn flinthoof_boar_can_buy_haste_the_turn_it_arrives() {
+    let mut game = ready_game();
+    let mut boar = creature(10_000, cards::FLINTHOOF_BOAR, PlayerId::One);
+    // Summoning sick: it entered on the turn now in progress.
+    boar.entered_controller_turn = game.turns_started[0];
+    game.battlefield.push(boar);
+    game.players[0].mana_pool.red = 1;
+    let boar_id = CardInstanceId(10_000);
+
+    assert!(
+        !game.can_attack(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == boar_id)
+                .unwrap()
+        ),
+        "summoning sick before the ability"
+    );
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == boar_id),
+        )
+        .expect("the haste ability is activatable");
+    game.apply(PlayerId::One, activate).unwrap();
+    pass_priority_pair(&mut game);
+
+    let boar = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == boar_id)
+        .expect("the boar is still there");
+    assert!(game.can_attack(boar), "it bought haste until end of turn");
+}
