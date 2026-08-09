@@ -581,6 +581,9 @@ pub enum ObjectPredicateDef {
     Subtype(&'static str),
     /// Mana value at most this much, for "with mana value N or less".
     ManaValueAtMost(u8),
+    /// Power at least this much, for "power N or greater". Reads current
+    /// power on the battlefield, so a pumped creature qualifies.
+    PowerAtLeast(i16),
     All(&'static [ObjectPredicateDef]),
     AnyOf(&'static [ObjectPredicateDef]),
     Not(&'static ObjectPredicateDef),
@@ -1805,6 +1808,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
+        | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::Not(_)
         | ObjectPredicateDef::Special(_) => false,
     }

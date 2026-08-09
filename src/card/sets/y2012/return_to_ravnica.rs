@@ -484,11 +484,21 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
                 "creature",
                 ObjectPredicateDef::HasType(CardType::Creature),
             )]),
-            // Needs a power predicate to say "power 5 or greater".
-            AbilityDef::unimplemented_spell(
+            AbilityDef::spell(
                 "Exile a creature with power 5 or greater",
-                "Printed mode is cataloged but is not executed by the engine.",
-            ),
+                EffectDef::MoveToZone {
+                    object: EffectRecipientDef::Target(TargetSlotId(1)),
+                    zone: ZoneKind::Exile,
+                },
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+                TargetSlotId(1),
+                "creature with power 5 or greater",
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::PowerAtLeast(5),
+                ]),
+            )]),
             AbilityDef::spell(
                 "Create a 2/2 white Knight creature token with vigilance",
                 EffectDef::CreateToken {

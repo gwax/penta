@@ -9538,3 +9538,62 @@ fn selesnya_charm_can_instead_make_a_knight() {
     assert_eq!(knight.controller, PlayerId::One);
     assert!(game.permanent_has_executable_keyword(knight, KeywordAbility::Vigilance));
 }
+
+#[test]
+fn selesnya_charm_exiles_only_a_big_creature() {
+    // Juzam Djinn is 5/5 and qualifies; Serra Angel is 4/4 and does not.
+    for (definition, legal) in [(cards::JUZAM_DJINN, true), (cards::SERRA_ANGEL, false)] {
+        let mut game = ready_game();
+        game.battlefield
+            .push(creature(10_000, definition, PlayerId::Two));
+        let charm = card(10_001, cards::SELESNYA_CHARM, PlayerId::One);
+        game.players[0].hand.push(charm.clone());
+        game.players[0].mana_pool.green = 1;
+        game.players[0].mana_pool.white = 1;
+
+        let action = cast_mode(
+            charm.id,
+            ModeId(1),
+            TargetSlotId(1),
+            vec![Target::Permanent(CardInstanceId(10_000))],
+        );
+        assert_eq!(
+            game.legal_actions(PlayerId::One).contains(&action),
+            legal,
+            "{definition:?} should be {}",
+            if legal { "exilable" } else { "too small" }
+        );
+        if !legal {
+            continue;
+        }
+        game.apply(PlayerId::One, action).unwrap();
+        pass_priority_pair(&mut game);
+        assert!(game.battlefield.is_empty());
+        assert_eq!(game.players[1].exile[0].definition, definition);
+    }
+}
+
+#[test]
+fn selesnya_charm_reads_current_power_not_printed_power() {
+    // A 4/4 pumped to 6/6 by the charm's own first mode qualifies for the
+    // second, which is why the predicate reads live power.
+    let mut game = ready_game();
+    let mut angel = creature(10_000, cards::SERRA_ANGEL, PlayerId::Two);
+    angel.power_bonus = 2;
+    game.battlefield.push(angel);
+    let charm = card(10_001, cards::SELESNYA_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.white = 1;
+
+    let action = cast_mode(
+        charm.id,
+        ModeId(1),
+        TargetSlotId(1),
+        vec![Target::Permanent(CardInstanceId(10_000))],
+    );
+    assert!(
+        game.legal_actions(PlayerId::One).contains(&action),
+        "a 4/4 pumped to 6/6 is now big enough"
+    );
+}

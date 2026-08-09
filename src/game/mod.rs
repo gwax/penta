@@ -355,6 +355,9 @@ struct TriggerEventObject {
     colors: [bool; 5],
     subtypes: Cow<'static, [&'static str]>,
     mana_value: u16,
+    /// Current power where one exists: a battlefield creature reports what it
+    /// is now, not what it was printed as.
+    power: Option<i16>,
 }
 
 /// The object or procedure a mana payment is paying for. Restrictions are
@@ -1551,7 +1554,7 @@ impl Game {
                     controller: permanent.controller,
                     chosen_creature_type: permanent.chosen_creature_type.clone(),
                     tapped: permanent.tapped,
-                    power: self.power(permanent),
+                    power: self.power_ignoring_static_effects(permanent),
                     toughness: self.toughness(permanent),
                     damage: permanent.damage,
                     attacking: permanent.attacking,
@@ -2305,6 +2308,9 @@ impl Game {
                 .is_some_and(|index| object.colors[index]),
             ObjectPredicateDef::Subtype(subtype) => object.subtypes.contains(&subtype),
             ObjectPredicateDef::ManaValueAtMost(limit) => object.mana_value <= u16::from(limit),
+            ObjectPredicateDef::PowerAtLeast(minimum) => {
+                object.power.is_some_and(|power| power >= minimum)
+            }
             ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {
                 Self::trigger_object_matches(*predicate, object, source, is_spell)
             }),
@@ -4310,6 +4316,7 @@ impl Game {
         let mut colors = [false; 5];
         let mut subtypes = Vec::new();
         let mut mana_value = 0;
+        let mut power = None;
         for part in parts {
             let part = definition.part(part)?;
             types = types.union(part.rules.types());
@@ -4322,6 +4329,9 @@ impl Game {
                 }
             }
             mana_value += part.rules.mana_cost().map_or(0, ManaCost::mana_value);
+            if let Some(stats) = part.rules.creature_stats() {
+                power = Some(stats.power);
+            }
         }
         Some(TriggerEventObject {
             id,
@@ -4330,6 +4340,7 @@ impl Game {
             colors,
             subtypes: Cow::Owned(subtypes),
             mana_value,
+            power,
         })
     }
 
@@ -6396,7 +6407,8 @@ impl Game {
             | ObjectPredicateDef::NoncreatureSpell
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::Subtype(_)
-            | ObjectPredicateDef::ManaValueAtMost(_) => false,
+            | ObjectPredicateDef::ManaValueAtMost(_)
+            | ObjectPredicateDef::PowerAtLeast(_) => false,
         }
     }
 
@@ -7194,6 +7206,7 @@ impl Game {
                 rules.subtypes()
             }),
             mana_value: self.permanent_mana_value(permanent),
+            power: self.power_ignoring_static_effects(permanent),
         }
     }
 
@@ -7212,7 +7225,7 @@ impl Game {
             object: self.trigger_event_object(permanent),
             abilities,
             last_known: PermanentLastKnownInformation {
-                power: self.power(permanent),
+                power: self.power_ignoring_static_effects(permanent),
                 toughness: self.toughness(permanent),
                 keywords,
             },
@@ -8545,9 +8558,24 @@ impl Game {
         )
     }
 
+    /// Power without continuous static bonuses.
+    ///
+    /// Characteristics handed to a predicate cannot use full `power`: static
+    /// effects are resolved by matching each source against the affected
+    /// permanent's characteristics, so asking for power there would re-enter
+    /// this computation forever. A `PowerAtLeast` predicate therefore sees
+    /// counters and until-end-of-turn pumps but not a Crusade-style static.
+    fn power_ignoring_static_effects(&self, permanent: &Permanent) -> Option<i16> {
+        self.power_parts(permanent, 0)
+    }
+
     fn power(&self, permanent: &Permanent) -> Option<i16> {
+        let (static_power, _) = self.static_power_toughness_bonus(permanent);
+        self.power_parts(permanent, static_power)
+    }
+
+    fn power_parts(&self, permanent: &Permanent, static_power: i16) -> Option<i16> {
         self.base_stats(permanent).map(|stats| {
-            let (static_power, _) = self.static_power_toughness_bonus(permanent);
             let conditional_bonus = match self.effective_behavior(permanent) {
                 Some(CardBehavior::KirdApe)
                     if self.controls_land_type(permanent.controller, BasicLandType::Forest) =>

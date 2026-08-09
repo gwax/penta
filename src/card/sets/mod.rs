@@ -319,7 +319,8 @@ mod tests {
             | ObjectPredicateDef::NoncreatureSpell
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::Subtype(_)
-            | ObjectPredicateDef::ManaValueAtMost(_) => true,
+            | ObjectPredicateDef::ManaValueAtMost(_)
+            | ObjectPredicateDef::PowerAtLeast(_) => true,
         }
     }
 
