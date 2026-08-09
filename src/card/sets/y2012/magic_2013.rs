@@ -212,11 +212,37 @@ pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
     "Oblivion Ring",
     CardArt::new("1e2a73ec-39be-4d23-8c25-17d7c174dcee", "Franz Vohwinkel"),
     CardSet::Magic2013,
-    CardRules::new_enchantment(
-        ManaCost::colored(2, 1, 0, 0, 0, 0),
-        "When this enchantment enters, exile another target nonland permanent.\nWhen this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
-    )
-    .metadata_only(),
+    CardRules::new_enchantment(ManaCost::colored(2, 1, 0, 0, 0, 0), "").with_abilities(&[
+        AbilityDef::triggered(
+            "When this enchantment enters, exile another target nonland permanent.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                zone: ZoneKind::Exile,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "another nonland permanent",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
+        AbilityDef::not_implemented(
+            "When this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+            "Returning the specific card this permanent exiled requires remembering that link, which is not implemented.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static RHOX_FAITHMENDER: CardRecord = CardRecord::new(

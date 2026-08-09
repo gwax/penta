@@ -5598,6 +5598,20 @@ impl Game {
     /// Moves one object to a zone. Only the moves a supported card actually
     /// makes are handled; the rest stay seams rather than guesses.
     fn move_target_to_zone(&mut self, target: Target, zone: ZoneKind) {
+        if let Target::Permanent(id) = target {
+            // Leaving the battlefield has its own procedure: last-known
+            // information, exit events, and the triggers watching for them.
+            match zone {
+                ZoneKind::Exile => self.exile_permanent(id),
+                ZoneKind::Hand => self.return_permanent_to_hand(id),
+                ZoneKind::Graveyard => self.destroy_permanent_without_regeneration(id),
+                // Bottoming a permanent needs a battlefield exit destination
+                // the event vocabulary does not have yet.
+                ZoneKind::Library | ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {
+                }
+            }
+            return;
+        }
         let Target::Card(id) = target else {
             return;
         };

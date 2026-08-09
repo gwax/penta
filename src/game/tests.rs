@@ -7627,3 +7627,55 @@ fn unburial_rites_reanimates_from_your_own_graveyard() {
         "the angel left the graveyard, though the Rites itself arrives there"
     );
 }
+
+#[test]
+fn oblivion_ring_exiles_another_nonland_permanent() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SERRA_ANGEL, PlayerId::Two));
+    // A land is not a legal target, and neither is the Ring itself.
+    game.battlefield
+        .push(creature(10_002, cards::MOUNTAIN, PlayerId::Two));
+    let ring = card(10_001, cards::OBLIVION_RING, PlayerId::One);
+    game.players[0].hand.push(ring.clone());
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.colorless = 2;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(ring.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the entry trigger asks for its target");
+    let offered: Vec<_> = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(_, definition)| definition))
+        .collect();
+    assert_eq!(
+        offered,
+        vec![cards::SERRA_ANGEL],
+        "neither the land nor the Ring itself is offered"
+    );
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decision.options[0].id],
+        },
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[1].exile[0].definition, cards::SERRA_ANGEL);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::SERRA_ANGEL)
+    );
+}
