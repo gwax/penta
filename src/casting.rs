@@ -171,9 +171,10 @@ impl CastChoices {
 
 /// The immutable casting choices carried by a spell on the stack.
 ///
-/// Modes are an ordered vector rather than a set because order and repetition
-/// can matter. Copying a spell clones this complete value; a copy effect such
-/// as Fork may then replace only target values through [`Self::copy_with_targets`].
+/// Modes are stored in canonical printed order, with repeated IDs preserving
+/// multiplicity. Copying a spell clones this complete value; a copy effect
+/// such as Fork may then replace only target values through
+/// [`Self::copy_with_targets`].
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct CastSignature {
     play_option: PlayOptionId,

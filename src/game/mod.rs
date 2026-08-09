@@ -9,12 +9,14 @@ use crate::action::{
 };
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardBehavior, CardCatalog, CardDefinition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
-    CharacteristicContext, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
-    KeywordAbility, LandEntry, ManaCost, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
-    PlayActionKind, PlayOptionDef, PlayerRelation, TargetPredicate, TargetSlotDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, abilities, applicable_part_ids,
+    AddManaEffectDef, AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardBehavior, CardCatalog,
+    CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype,
+    CardType, CardTypeSet, CharacteristicContext, DeclarativeAbilityDef, DoubleFacedKind,
+    EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry, ManaCost,
+    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, PlayActionKind,
+    PlayOptionDef, PlayerRelation, ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
+    applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -107,6 +109,7 @@ struct Permanent {
     attacking: bool,
     blocking: Option<GameObjectId>,
     chosen_player: Option<PlayerId>,
+    chosen_creature_type: Option<String>,
     destroy_at_end: bool,
     temporary_keywords: Vec<KeywordAbility>,
     factory_animated: bool,
@@ -172,6 +175,7 @@ impl Permanent {
             attacking: false,
             blocking: None,
             chosen_player: None,
+            chosen_creature_type: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
             factory_animated: false,
@@ -239,10 +243,13 @@ struct StackAbilityPayload {
     origin: AbilityOrigin,
     presentation_definition: CardDefinitionId,
     text: Option<&'static str>,
-    target_defs: &'static [AbilityTargetDef],
+    target_defs: Vec<AbilityTargetDef>,
     targets: Vec<TargetSelection>,
     context: TriggerContext,
     resolver: StackAbilityResolver,
+    /// Selected declarative mode effects frozen in canonical printed order.
+    /// Repeated modes remain repeated procedures.
+    mode_effects: Vec<EffectDef>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -348,6 +355,23 @@ struct TriggerEventObject {
     colors: [bool; 5],
     subtypes: Cow<'static, [&'static str]>,
     mana_value: u16,
+}
+
+/// The object or procedure a mana payment is paying for. Restrictions are
+/// evaluated against this frozen purpose both while planning mana abilities
+/// and when selecting the exact mana units to spend.
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum ManaPaymentPurpose {
+    Spell {
+        object: GameObjectId,
+        definition: CardDefinitionId,
+        controller: PlayerId,
+        form: SpellForm,
+    },
+    Ability {
+        source: GameObjectId,
+    },
+    Other,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -579,6 +603,7 @@ struct PlannedManaActivation {
     ability: AbilityOrigin,
     color: ManaColor,
     production: ManaPool,
+    benefits_payment: bool,
     flexibility: usize,
     order: usize,
 }
@@ -586,7 +611,7 @@ struct PlannedManaActivation {
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct FlexibleManaSource {
     source: GameObjectId,
-    outputs: Vec<(AbilityOrigin, ManaColor, ManaPool)>,
+    outputs: Vec<(AbilityOrigin, ManaColor, ManaPool, bool)>,
     order: usize,
 }
 
@@ -608,6 +633,30 @@ enum BalanceAction {
     Discard,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum BalancePhase {
+    Lands,
+    Hands,
+    Creatures,
+}
+
+impl BalancePhase {
+    const fn next(self) -> Option<Self> {
+        match self {
+            Self::Lands => Some(Self::Hands),
+            Self::Hands => Some(Self::Creatures),
+            Self::Creatures => None,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ZoneMoveCause {
+    Rules,
+    Cost,
+    Effect { controller: PlayerId },
+}
+
 #[derive(Clone, Debug)]
 struct BalanceTask {
     player: PlayerId,
@@ -616,6 +665,7 @@ struct BalanceTask {
     cards: Vec<CardInstance>,
     count: usize,
     action: BalanceAction,
+    cause: ZoneMoveCause,
 }
 
 /// Where a countered spell ends up.
@@ -659,6 +709,7 @@ enum DecisionContinuation {
     },
     Duress {
         victim: PlayerId,
+        cause: ZoneMoveCause,
     },
     /// Holds the revealed cards while the caster decides which to keep; they
     /// have already left the library, so the continuation must place them all.
@@ -667,6 +718,8 @@ enum DecisionContinuation {
         revealed: Vec<CardInstance>,
     },
     Balance {
+        controller: PlayerId,
+        phase: BalancePhase,
         task: BalanceTask,
         remaining: Vec<BalanceTask>,
     },
@@ -704,6 +757,12 @@ enum DecisionContinuation {
         player: PlayerId,
         permanent: GameObjectId,
         life: u8,
+    },
+    ChooseCreatureType {
+        player: PlayerId,
+        permanent: Box<Permanent>,
+        entry: LandEntry,
+        choices: Vec<String>,
     },
     TriggerOrder {
         batch: TriggerPlacementBatch,
@@ -1490,6 +1549,7 @@ impl Game {
                     definition: permanent.card.definition,
                     presented: permanent.presented,
                     controller: permanent.controller,
+                    chosen_creature_type: permanent.chosen_creature_type.clone(),
                     tapped: permanent.tapped,
                     power: self.power(permanent),
                     toughness: self.toughness(permanent),
@@ -1513,6 +1573,7 @@ impl Game {
                     ability_text: object.ability_text().map(str::to_owned),
                     definition: object.presentation_definition(),
                     controller: object.controller,
+                    counterable: self.can_be_countered(object),
                     signature: object.signature.clone(),
                     targets: object.targets(),
                     chosen_permanents: object.chosen_permanents.clone(),
@@ -1593,12 +1654,7 @@ impl Game {
     }
 
     fn discard_cards(&mut self, player: PlayerId, cards: &[GameObjectId]) {
-        for id in cards {
-            if let Some(card) = remove_card(&mut self.players[player.index()].hand, *id) {
-                let (card, _zone_change) = self.zone_change_card(card);
-                self.players[player.index()].graveyard.push(card);
-            }
-        }
+        self.discard_cards_with_cause(player, cards, ZoneMoveCause::Rules);
         self.cleanup_pending = false;
         self.complete_cleanup();
         if self.result.is_none() {
@@ -1607,6 +1663,198 @@ impl Game {
                 turn: self.turn,
                 active_player: self.active_player,
                 step: self.step,
+            });
+        }
+    }
+
+    fn zone_move_replacement_destination(
+        &self,
+        card: &CardInstance,
+        from: ZoneKind,
+        to: ZoneKind,
+        actual_cause: ZoneMoveCause,
+    ) -> Option<ZoneKind> {
+        let characteristic_context = match from {
+            ZoneKind::Library => CharacteristicContext::Library,
+            ZoneKind::Hand => CharacteristicContext::Hand,
+            ZoneKind::Graveyard => CharacteristicContext::Graveyard,
+            ZoneKind::Exile => CharacteristicContext::Exile,
+            ZoneKind::Command => CharacteristicContext::Command,
+            ZoneKind::Battlefield | ZoneKind::Stack => return None,
+        };
+        let replacement_controller = card.owner;
+        let definition = self.catalog.get(card.definition)?;
+        let parts = applicable_part_ids(definition, &characteristic_context).ok()?;
+        for part in parts {
+            let Some(part) = definition.part(part) else {
+                continue;
+            };
+            for ability in part.rules.ability_clauses() {
+                let DeclarativeAbilityDef::Replacement(replacement) = ability.definition else {
+                    continue;
+                };
+                let ReplacementEventDef::WouldMove {
+                    from: event_from,
+                    to: event_to,
+                    cause,
+                } = replacement.event
+                else {
+                    continue;
+                };
+                let cause_matches = match cause {
+                    ZoneMoveCauseDef::Any => true,
+                    ZoneMoveCauseDef::EffectControlledBy(relation) => {
+                        let ZoneMoveCause::Effect { controller } = actual_cause else {
+                            continue;
+                        };
+                        self.player_relation_matches(
+                            controller,
+                            relation,
+                            replacement_controller,
+                            TriggerContext::empty(),
+                        )
+                    }
+                };
+                if event_from == from
+                    && event_to == to
+                    && cause_matches
+                    && ability.implementation.is_executable()
+                    && replacement.source_zones.contains(&from)
+                    && let EffectDef::MoveToZone {
+                        object: EffectRecipientDef::Source,
+                        zone,
+                    } = ability.effect
+                {
+                    return Some(zone);
+                }
+            }
+        }
+        None
+    }
+
+    fn put_card_onto_battlefield_from(
+        &mut self,
+        card: CardInstance,
+        from: ZoneKind,
+        controller: PlayerId,
+    ) -> CardInstance {
+        let definition = self
+            .catalog
+            .get(card.definition)
+            .expect("a card in hand remains cataloged");
+        let presented = applicable_part_ids(definition, &CharacteristicContext::Hand)
+            .ok()
+            .and_then(|parts| parts.first().copied())
+            .unwrap_or(CardPartId::PRIMARY);
+        let starting_loyalty = definition
+            .part(presented)
+            .and_then(|part| part.rules.starting_loyalty())
+            .map(|loyalty| i16::try_from(loyalty).unwrap_or(i16::MAX));
+        let (card, _zone_change) = self.zone_change_card(card);
+        let entered_card = card.clone();
+        let mut permanent = Permanent::entering(
+            card,
+            presented,
+            controller,
+            self.turns_started[controller.index()],
+        );
+        permanent.loyalty = starting_loyalty;
+        self.battlefield.push(permanent);
+        let entered = self
+            .battlefield
+            .last()
+            .expect("the replacement put a permanent onto the battlefield");
+        let entered_event = self.trigger_event_object(entered);
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
+            object: entered_event,
+            from,
+            to: ZoneKind::Battlefield,
+        });
+        self.apply_legend_rule();
+        entered_card
+    }
+
+    /// Moves a card between non-stack zones after applying replacement
+    /// abilities printed on that card. The replacement is selected before the
+    /// old object leaves its source zone, so its source-zone characteristics
+    /// remain available while matching the proposed move.
+    fn move_card_from_nonbattlefield_zone(
+        &mut self,
+        id: GameObjectId,
+        expected_from: ZoneKind,
+        requested_to: ZoneKind,
+        cause: ZoneMoveCause,
+    ) -> Option<(CardInstance, ZoneKind)> {
+        let (from, card) = self
+            .card_in_nonbattlefield_zone(id)
+            .map(|(zone, card)| (zone, card.clone()))?;
+        if from != expected_from {
+            return None;
+        }
+        let destination = self
+            .zone_move_replacement_destination(&card, from, requested_to, cause)
+            .unwrap_or(requested_to);
+        if matches!(destination, ZoneKind::Stack | ZoneKind::Command) {
+            return None;
+        }
+
+        let owner = card.owner;
+        let cards = match from {
+            ZoneKind::Library => &mut self.players[owner.index()].library,
+            ZoneKind::Hand => &mut self.players[owner.index()].hand,
+            ZoneKind::Graveyard => &mut self.players[owner.index()].graveyard,
+            ZoneKind::Exile => &mut self.players[owner.index()].exile,
+            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => return None,
+        };
+        let card = remove_card(cards, id)?;
+        let card = if destination == ZoneKind::Battlefield {
+            self.put_card_onto_battlefield_from(card, from, owner)
+        } else {
+            let (card, _zone_change) = self.zone_change_card(card);
+            match destination {
+                ZoneKind::Library => self.players[owner.index()].library.push(card.clone()),
+                ZoneKind::Hand => self.players[owner.index()].hand.push(card.clone()),
+                ZoneKind::Graveyard => self.players[owner.index()].graveyard.push(card.clone()),
+                ZoneKind::Exile => self.players[owner.index()].exile.push(card.clone()),
+                ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {
+                    unreachable!("unsupported destinations returned before removing the card")
+                }
+            }
+            card
+        };
+        Some((card, destination))
+    }
+
+    fn discard_cards_with_cause(
+        &mut self,
+        player: PlayerId,
+        cards: &[GameObjectId],
+        cause: ZoneMoveCause,
+    ) {
+        let mut discarded = Vec::new();
+        for id in cards {
+            if !self.players[player.index()]
+                .hand
+                .iter()
+                .any(|card| card.id == *id)
+            {
+                continue;
+            }
+            let Some((card, _destination)) = self.move_card_from_nonbattlefield_zone(
+                *id,
+                ZoneKind::Hand,
+                ZoneKind::Graveyard,
+                cause,
+            ) else {
+                continue;
+            };
+            let definition = card.definition;
+            discarded.push((card.id, definition));
+        }
+        if !discarded.is_empty() {
+            self.events.push(GameEvent::CardsDiscarded {
+                player,
+                cards: discarded,
             });
         }
     }
@@ -1864,6 +2112,7 @@ impl Game {
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
+            | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing and non-mana primitives need a dedicated
@@ -2502,10 +2751,11 @@ impl Game {
                 origin: trigger.source.ability,
                 presentation_definition: trigger.definition,
                 text: Some(trigger.text),
-                target_defs: trigger.target_defs,
+                target_defs: trigger.target_defs.to_vec(),
                 targets: trigger.targets,
                 context: trigger.context,
                 resolver: trigger.resolver,
+                mode_effects: Vec::new(),
             }),
             controller: trigger.controller,
             signature: None,
@@ -2707,14 +2957,15 @@ impl Game {
         let declarative_slots = spell
             .ability
             .as_ref()
-            .map(|ability| ability.target_defs)
+            .map(|ability| ability.target_defs.clone())
             .filter(|slots| !slots.is_empty())
             .or_else(|| {
                 Self::spell_ability(definition, option).and_then(|(_, ability)| {
                     let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
                         return None;
                     };
-                    (!spell.targets.is_empty()).then_some(spell.targets)
+                    Self::selected_spell_target_defs(spell, signature.modes())
+                        .filter(|targets| !targets.is_empty())
                 })
             });
         if let Some(slots) = declarative_slots {
@@ -2892,6 +3143,10 @@ impl Game {
                 .copy_with_targets(targets)
                 .expect("copy replacement retains target slots and cardinality")
         });
+        // Effects attached by mana spent on the original spell are not
+        // copiable values. The copy keeps printed static abilities through
+        // its definition, but it was not paid for with that mana.
+        spell.applied_effects.clear();
         spell.is_copy = true;
         self.stack.push(spell);
     }
@@ -2921,10 +3176,11 @@ impl Game {
                 origin: frozen.origin,
                 presentation_definition: frozen.presentation_definition,
                 text: frozen.text,
-                target_defs: frozen.target_defs,
+                target_defs: frozen.target_defs.to_vec(),
                 targets,
                 context: TriggerContext::empty(),
                 resolver: frozen.resolver,
+                mode_effects: Vec::new(),
             }),
             controller,
             signature: None,
@@ -2963,7 +3219,13 @@ impl Game {
             .collect()
     }
 
-    fn queue_balance_task(&mut self, task: BalanceTask, remaining: Vec<BalanceTask>) {
+    fn queue_balance_task(
+        &mut self,
+        controller: PlayerId,
+        phase: BalancePhase,
+        task: BalanceTask,
+        remaining: Vec<BalanceTask>,
+    ) {
         let options = self.card_decision_options(&task.cards, task.zone);
         self.queue_decision(
             task.player,
@@ -2977,7 +3239,12 @@ impl Game {
             task.count..=task.count,
             false,
             options,
-            DecisionContinuation::Balance { task, remaining },
+            DecisionContinuation::Balance {
+                controller,
+                phase,
+                task,
+                remaining,
+            },
         );
     }
 
@@ -3171,6 +3438,23 @@ impl Game {
                     self.check_life_totals();
                 }
             }
+            DecisionContinuation::ChooseCreatureType {
+                player,
+                mut permanent,
+                entry,
+                choices,
+            } => {
+                let Some(selected) = options
+                    .first()
+                    .and_then(|option| usize::try_from(*option).ok())
+                    .and_then(|index| choices.get(index))
+                    .cloned()
+                else {
+                    return;
+                };
+                permanent.chosen_creature_type = Some(selected);
+                self.finish_land_entry(player, *permanent, entry);
+            }
             DecisionContinuation::OptionalManaPayment {
                 player,
                 cost,
@@ -3249,7 +3533,7 @@ impl Game {
                 }
                 self.bury_cards(player, to_graveyard);
             }
-            DecisionContinuation::Duress { victim } => {
+            DecisionContinuation::Duress { victim, cause } => {
                 let Some(option) = pending
                     .observation
                     .options
@@ -3261,10 +3545,7 @@ impl Game {
                 let Some((card, _)) = option.card else {
                     return;
                 };
-                if let Some(card) = remove_card(&mut self.players[victim.index()].hand, card) {
-                    let (card, _zone_change) = self.zone_change_card(card);
-                    self.players[victim.index()].graveyard.push(card);
-                }
+                self.discard_cards_with_cause(victim, &[card], cause);
             }
             DecisionContinuation::Tutor => {
                 let found = pending
@@ -3290,16 +3571,14 @@ impl Game {
                 card,
                 choices,
             } => {
-                for option in &pending.observation.options {
-                    if options.contains(&option.id)
-                        && let Some((card, _)) = option.card
-                        && let Some(card) =
-                            remove_card(&mut self.players[player.index()].hand, card)
-                    {
-                        let (card, _zone_change) = self.zone_change_card(card);
-                        self.players[player.index()].graveyard.push(card);
-                    }
-                }
+                let discarded = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                self.discard_cards_with_cause(player, &discarded, ZoneMoveCause::Cost);
                 self.finish_cast_spell(player, card, &choices, &[]);
             }
             DecisionContinuation::RecallReturn { player } => {
@@ -3315,9 +3594,13 @@ impl Game {
                 }
             }
             DecisionContinuation::Balance {
+                controller,
+                phase,
                 task,
                 mut remaining,
             } => {
+                let mut discards = Vec::new();
+                let mut sacrifices = Vec::new();
                 for option in &pending.observation.options {
                     if !options.contains(&option.id) {
                         continue;
@@ -3326,20 +3609,17 @@ impl Game {
                         continue;
                     };
                     match task.action {
-                        BalanceAction::Sacrifice => self.destroy_permanent(card),
-                        BalanceAction::Discard => {
-                            if let Some(card) =
-                                remove_card(&mut self.players[task.player.index()].hand, card)
-                            {
-                                let (card, _zone_change) = self.zone_change_card(card);
-                                self.players[task.player.index()].graveyard.push(card);
-                            }
-                        }
+                        BalanceAction::Sacrifice => sacrifices.push(card),
+                        BalanceAction::Discard => discards.push(card),
                     }
                 }
+                self.destroy_permanents(&sacrifices, false);
+                self.discard_cards_with_cause(task.player, &discards, task.cause);
                 if !remaining.is_empty() {
                     let next = remaining.remove(0);
-                    self.queue_balance_task(next, remaining);
+                    self.queue_balance_task(controller, phase, next, remaining);
+                } else if let Some(next) = phase.next() {
+                    self.queue_balance_phase(controller, next);
                 }
             }
             DecisionContinuation::TimeVault {
@@ -3544,6 +3824,12 @@ impl Game {
                 {
                     continue;
                 }
+                let payment_purpose = ManaPaymentPurpose::Spell {
+                    object: card.id,
+                    definition: card.definition,
+                    controller: player,
+                    form: option.form.clone(),
+                };
 
                 for modes in Self::implemented_mode_selections(option) {
                     let declared_slots = Self::target_slots_for(option, &modes);
@@ -3552,7 +3838,7 @@ impl Game {
                             continue;
                         };
                         let max_x = if cost.variable_x {
-                            self.maximum_x(player, cost)
+                            self.maximum_x_for(player, cost, &payment_purpose)
                         } else {
                             0
                         };
@@ -3566,8 +3852,12 @@ impl Game {
                                 let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
                                     unreachable!("spell_ability returns a spell clause")
                                 };
+                                let Some(targets) = Self::selected_spell_target_defs(spell, &modes)
+                                else {
+                                    continue;
+                                };
                                 self.legal_ability_target_selections(
-                                    spell.targets,
+                                    &targets,
                                     player,
                                     card.id,
                                     TriggerContext::empty(),
@@ -3584,7 +3874,8 @@ impl Game {
                                     .sum();
                                 let payable_cost =
                                     add_generic(cost, fireball_extra_cost(behavior, target_count));
-                                if !self.can_pay_cost(player, payable_cost, x) {
+                                if !self.can_pay_cost_for(player, payable_cost, x, &payment_purpose)
+                                {
                                     continue;
                                 }
                                 let sacrifice_choices = if behavior == CardBehavior::GoblinGrenade {
@@ -3683,6 +3974,42 @@ impl Game {
             })
     }
 
+    fn selected_spell_target_defs(
+        spell: crate::card::SpellAbilityDef,
+        selected_modes: &[ModeId],
+    ) -> Option<Vec<AbilityTargetDef>> {
+        let mut targets = spell.targets().to_vec();
+        if spell.modal().is_none() {
+            return selected_modes.is_empty().then_some(targets);
+        }
+        for selected in selected_modes {
+            let mode = spell.mode(*selected)?;
+            let DeclarativeAbilityDef::Spell(mode_spell) = mode.definition else {
+                return None;
+            };
+            targets.extend_from_slice(mode_spell.targets());
+        }
+        Some(targets)
+    }
+
+    fn selected_spell_mode_effects(
+        spell: crate::card::SpellAbilityDef,
+        selected_modes: &[ModeId],
+    ) -> Option<Vec<EffectDef>> {
+        if spell.modal().is_none() {
+            return selected_modes.is_empty().then_some(Vec::new());
+        }
+        let mut selected = selected_modes.to_vec();
+        selected.sort_by_key(|mode| mode.index());
+        selected
+            .into_iter()
+            .map(|mode| {
+                let mode = spell.mode(mode)?;
+                (mode.implementation == AbilityImplementationDef::Definition).then_some(mode.effect)
+            })
+            .collect()
+    }
+
     fn spell_custom_followup(
         definition: &CardDefinition,
         option: &PlayOptionDef,
@@ -3700,6 +4027,47 @@ impl Game {
                     .then(|| attached.definition.implementation.custom_behavior())
                     .flatten()
             })
+    }
+
+    fn frozen_spell_payload(
+        &self,
+        definition_id: CardDefinitionId,
+        signature: &CastSignature,
+    ) -> Option<StackAbilityPayload> {
+        let definition = self.catalog.get(definition_id)?;
+        let option = definition.play_option(signature.play_option())?;
+        let (origin, ability) = Self::spell_ability(definition, option)?;
+        let AbilityOrigin::Printed {
+            ability: ability_id,
+            ..
+        } = origin
+        else {
+            unreachable!("a printed spell clause has a printed origin")
+        };
+        let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
+            unreachable!("spell_ability returns a spell clause")
+        };
+        let followup = Self::spell_custom_followup(definition, option, ability_id);
+        let target_defs = Self::selected_spell_target_defs(spell, signature.modes())
+            .expect("validated modes select declared spell targets");
+        let mode_effects = Self::selected_spell_mode_effects(spell, signature.modes())
+            .expect("validated modes select declared spell branches");
+        Some(StackAbilityPayload {
+            origin,
+            presentation_definition: definition_id,
+            text: Some(ability.text),
+            target_defs,
+            targets: signature.targets().to_vec(),
+            context: TriggerContext::empty(),
+            resolver: followup.map_or_else(
+                || Self::ability_resolver(&ability),
+                |behavior| StackAbilityResolver::DeclarativeWithCustomFollowup {
+                    effect: ability.effect,
+                    behavior,
+                },
+            ),
+            mode_effects,
+        })
     }
 
     fn uses_legacy_behavior_targets(definition: &CardDefinition, option: &PlayOptionDef) -> bool {
@@ -3726,6 +4094,8 @@ impl Game {
             .filter(|mode| mode.effect_status == CardEffectStatus::Implemented)
             .map(|mode| mode.id)
             .collect::<Vec<_>>();
+        let mut implemented = implemented;
+        implemented.sort_unstable();
         mode_id_selections(
             &implemented,
             usize::from(mode_set.minimum),
@@ -3822,7 +4192,7 @@ impl Game {
 
     fn legal_ability_target_selections(
         &self,
-        slots: &'static [AbilityTargetDef],
+        slots: &[AbilityTargetDef],
         controller: PlayerId,
         source: GameObjectId,
         context: TriggerContext,
@@ -3894,25 +4264,6 @@ impl Game {
         let signature = object.signature.as_ref()?;
         let option = definition.play_option(signature.play_option())?;
         Self::play_option_types(definition, option)
-    }
-
-    fn stack_spell_has_color(&self, object: &StackObject, color_index: usize) -> bool {
-        let Some(definition) = self.catalog.get(object.card.definition) else {
-            return false;
-        };
-        let Some(signature) = &object.signature else {
-            return false;
-        };
-        match signature.form() {
-            crate::card::SpellForm::Part(part) => definition
-                .part(*part)
-                .is_some_and(|part| part.rules.colors()[color_index]),
-            crate::card::SpellForm::Combined(parts) => parts.iter().any(|part| {
-                definition
-                    .part(*part)
-                    .is_some_and(|part| part.rules.colors()[color_index])
-            }),
-        }
     }
 
     fn stack_spell_enters_tapped(&self, object: &StackObject) -> bool {
@@ -4169,48 +4520,6 @@ impl Game {
                 .filter(|object| object.kind == StackObjectKind::Spell)
                 .map(|object| vec![Target::Spell(object.id)])
                 .collect(),
-            CardBehavior::RedElementalBlast => {
-                let mut targets = self
-                    .stack
-                    .iter()
-                    .filter(|object| {
-                        object.kind == StackObjectKind::Spell
-                            && self.stack_spell_has_color(object, 1)
-                    })
-                    .map(|object| vec![Target::Spell(object.id)])
-                    .collect::<Vec<_>>();
-                targets.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|permanent| {
-                            self.effective_rules(permanent)
-                                .is_some_and(|rules| rules.colors()[1])
-                        })
-                        .map(|permanent| vec![Target::Permanent(permanent.card.id)]),
-                );
-                targets
-            }
-            CardBehavior::BlueElementalBlast => {
-                let mut targets = self
-                    .stack
-                    .iter()
-                    .filter(|object| {
-                        object.kind == StackObjectKind::Spell
-                            && self.stack_spell_has_color(object, 3)
-                    })
-                    .map(|object| vec![Target::Spell(object.id)])
-                    .collect::<Vec<_>>();
-                targets.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|permanent| {
-                            self.effective_rules(permanent)
-                                .is_some_and(|rules| rules.colors()[3])
-                        })
-                        .map(|permanent| vec![Target::Permanent(permanent.card.id)]),
-                );
-                targets
-            }
             _ => vec![Vec::new()],
         }
     }
@@ -4622,6 +4931,22 @@ impl Game {
     }
 
     fn permanent_mana_value(&self, permanent: &Permanent) -> u16 {
+        // A transforming double-faced permanent keeps the mana value of its
+        // front face while its back face is up. A permanent merely copying a
+        // back face is not itself that transforming double-faced card, so its
+        // copied characteristics continue through the ordinary path below.
+        if permanent.copied_from.is_none()
+            && let Some(definition) = self.catalog.get(permanent.card.definition)
+            && let CardStructure::DoubleFaced {
+                front,
+                kind: DoubleFacedKind::Transforming,
+                ..
+            } = &definition.structure
+        {
+            return definition
+                .part(*front)
+                .map_or(0, |part| part.rules.printed_mana_cost().mana_value());
+        }
         self.effective_rules(permanent)
             .map_or(0, |rules| rules.printed_mana_cost().mana_value())
     }
@@ -4672,9 +4997,10 @@ impl Game {
             .filter(|part| part.rules.has_type(CardType::Land))
             .map(|part| part.rules)
             .expect("land play option references a land part");
+        let entry = land_rules.land_entry_procedure();
         let card = remove_card(&mut self.players[player.index()].hand, card_id)
             .expect("legal land action references a card in hand");
-        let tapped = match land_rules.land_entry_procedure() {
+        let tapped = match entry {
             LandEntry::Untapped => false,
             // A shock land arrives tapped and the decision below untaps it if
             // the player pays. Printed, the payment is a replacement and the
@@ -4689,7 +5015,7 @@ impl Game {
         let (card, _zone_change) = self.zone_change_card(card);
         let permanent_id = card.id;
         self.players[player.index()].land_played_this_turn = true;
-        self.battlefield.push(Permanent {
+        let permanent = Permanent {
             card,
             presented,
             controller: player,
@@ -4702,6 +5028,7 @@ impl Game {
             attacking: false,
             blocking: None,
             chosen_player: None,
+            chosen_creature_type: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
             factory_animated: false,
@@ -4718,13 +5045,27 @@ impl Game {
             forestwalk_until_upkeep_of: None,
             damage_sources: Vec::new(),
             deathtouch_damage: false,
-        });
+        };
         self.consecutive_passes = 0;
         self.events.push(GameEvent::LandPlayed {
             player,
             card: permanent_id,
             definition: definition_id,
         });
+
+        // "As this enters" choices are replacement effects: the choice is
+        // part of the entry procedure, so neither the permanent nor an ETB
+        // snapshot exists until the player has made it.
+        if self.permanent_chooses_creature_type(&permanent) {
+            self.queue_creature_type_choice(player, permanent, entry);
+        } else {
+            self.finish_land_entry(player, permanent, entry);
+        }
+    }
+
+    fn finish_land_entry(&mut self, player: PlayerId, permanent: Permanent, entry: LandEntry) {
+        let permanent_id = permanent.card.id;
+        self.battlefield.push(permanent);
         let entered = self
             .battlefield
             .last()
@@ -4738,9 +5079,98 @@ impl Game {
         // A second legendary land can arrive this way without the stack ever
         // being involved, so the legend rule has to run here too.
         self.apply_legend_rule();
-        if let LandEntry::PayLifeOrTapped(life) = land_rules.land_entry_procedure() {
+        if let LandEntry::PayLifeOrTapped(life) = entry
+            && self
+                .battlefield
+                .iter()
+                .any(|candidate| candidate.card.id == permanent_id)
+        {
             self.queue_shock_land_decision(player, permanent_id, life);
         }
+    }
+
+    fn permanent_chooses_creature_type(&self, permanent: &Permanent) -> bool {
+        self.effective_abilities(permanent).iter().any(|effective| {
+            effective.ability.implementation.is_executable()
+                && matches!(
+                    effective.ability.definition,
+                    DeclarativeAbilityDef::Replacement(definition)
+                        if definition.event == ReplacementEventDef::EntersBattlefield
+                )
+                && effective.ability.effect
+                    == EffectDef::ChooseCreatureType {
+                        object: EffectRecipientDef::Source,
+                    }
+        })
+    }
+
+    fn creature_type_choices(&self, player: PlayerId) -> Vec<String> {
+        let mut counts = CREATURE_TYPES
+            .iter()
+            .map(|creature_type| ((*creature_type).into(), 0))
+            .collect::<BTreeMap<String, usize>>();
+        for card in &self.players[player.index()].hand {
+            let Some(definition) = self.catalog.get(card.definition) else {
+                continue;
+            };
+            for part in &definition.parts {
+                if part.rules.has_type(CardType::Creature) {
+                    for subtype in part.rules.subtypes() {
+                        if let Some(count) = counts.get_mut(*subtype) {
+                            *count += 1;
+                        }
+                    }
+                }
+            }
+        }
+        let mut choices = counts.into_iter().collect::<Vec<_>>();
+        choices.sort_by(|(left_name, left_count), (right_name, right_count)| {
+            right_count
+                .cmp(left_count)
+                .then_with(|| left_name.cmp(right_name))
+        });
+        choices.into_iter().map(|(name, _)| name).collect()
+    }
+
+    fn queue_creature_type_choice(
+        &mut self,
+        player: PlayerId,
+        permanent: Permanent,
+        entry: LandEntry,
+    ) {
+        let mut choices = self.creature_type_choices(player);
+        // The complete game vocabulary always contains creature types. Keep a
+        // legal fallback so a deliberately tiny test catalog cannot strand
+        // the land in an unfinished entry procedure.
+        if choices.is_empty() {
+            choices.push("Human".into());
+        }
+        let options = choices
+            .iter()
+            .enumerate()
+            .map(|(index, creature_type)| DecisionOption {
+                id: u32::try_from(index).unwrap_or(u32::MAX),
+                label: creature_type.clone(),
+                card: None,
+                ability_text: None,
+                zone: DecisionZone::None,
+            })
+            .collect();
+        self.queue_decision(
+            player,
+            "Choose a creature type",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::ChooseCreatureType {
+                player,
+                permanent: Box::new(permanent),
+                entry,
+                choices,
+            },
+        );
     }
 
     /// Shock lands: pay the life to have it enter untapped, or leave it tapped.
@@ -4865,6 +5295,9 @@ impl Game {
                         return None;
                     }
                 }
+                if choices.modes().windows(2).any(|pair| pair[0] > pair[1]) {
+                    return None;
+                }
                 if choices.modes().iter().any(|selected| {
                     !mode_set.modes.iter().any(|mode| {
                         mode.id == *selected && mode.effect_status == CardEffectStatus::Implemented
@@ -4877,7 +5310,13 @@ impl Game {
 
         let mut cost = configured_mana_cost(option, choices.costs())?;
         if cost.variable_x {
-            if choices.x() > self.maximum_x(player, cost) {
+            let payment_purpose = ManaPaymentPurpose::Spell {
+                object: card_id,
+                definition: definition.id,
+                controller: player,
+                form: option.form.clone(),
+            };
+            if choices.x() > self.maximum_x_for(player, cost, &payment_purpose) {
                 return None;
             }
         } else if choices.x() != 0 {
@@ -4889,10 +5328,11 @@ impl Game {
             let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
                 unreachable!("spell_ability returns a spell clause")
             };
-            if spell.targets.len() != choices.targets().len() {
+            let target_defs = Self::selected_spell_target_defs(spell, choices.modes())?;
+            if target_defs.len() != choices.targets().len() {
                 return None;
             }
-            for (slot, selection) in spell.targets.iter().zip(choices.targets()) {
+            for (slot, selection) in target_defs.iter().zip(choices.targets()) {
                 let count = selection.targets().len();
                 let legal = self.ability_targets_matching(
                     slot.predicate,
@@ -4946,7 +5386,13 @@ impl Game {
                 }
             }
         }
-        if !self.can_pay_cost(player, cost, choices.x()) {
+        let payment_purpose = ManaPaymentPurpose::Spell {
+            object: card_id,
+            definition: definition.id,
+            controller: player,
+            form: option.form.clone(),
+        };
+        if !self.can_pay_cost_for(player, cost, choices.x(), &payment_purpose) {
             return None;
         }
 
@@ -5020,60 +5466,32 @@ impl Game {
         let (card, _zone_change) = self.zone_change_card(card);
         let stack_id = card.id;
         let definition = card.definition;
-        let frozen_spell_ability = self
-            .catalog
-            .get(definition)
-            .and_then(|definition| {
-                definition
-                    .play_option(signature.play_option())
-                    .map(|option| (definition, option))
-            })
-            .and_then(|(definition, option)| {
-                Self::spell_ability(definition, option).map(|(origin, ability)| {
-                    let AbilityOrigin::Printed {
-                        ability: ability_id,
-                        ..
-                    } = origin
-                    else {
-                        unreachable!("a printed spell clause has a printed origin")
-                    };
-                    let followup = Self::spell_custom_followup(definition, option, ability_id);
-                    (origin, ability, followup)
-                })
-            });
+        let frozen_spell_ability = self.frozen_spell_payload(definition, &signature);
         let mut stack_object = StackObject {
             id: stack_id,
             kind: StackObjectKind::Spell,
             card,
             source: None,
-            ability: frozen_spell_ability.map(|(origin, ability, followup)| {
-                let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
-                    unreachable!("spell_ability returns a spell clause")
-                };
-                StackAbilityPayload {
-                    origin,
-                    presentation_definition: definition,
-                    text: Some(ability.text),
-                    target_defs: spell.targets,
-                    targets: signature.targets().to_vec(),
-                    context: TriggerContext::empty(),
-                    resolver: followup.map_or_else(
-                        || Self::ability_resolver(&ability),
-                        |behavior| StackAbilityResolver::DeclarativeWithCustomFollowup {
-                            effect: ability.effect,
-                            behavior,
-                        },
-                    ),
-                }
-            }),
+            ability: frozen_spell_ability,
             controller: player,
             signature: Some(signature),
             chosen_permanents: Vec::new(),
             applied_effects: Vec::new(),
             is_copy: false,
         };
-        self.activate_mana_for_cost(player, cost, x);
-        let spent_mana = self.pay_player_cost(player, cost, x);
+        let payment_purpose = ManaPaymentPurpose::Spell {
+            object: stack_id,
+            definition,
+            controller: player,
+            form: stack_object
+                .signature
+                .as_ref()
+                .expect("a spell has a cast signature")
+                .form()
+                .clone(),
+        };
+        self.activate_mana_for_cost_avoiding_for(player, cost, x, None, &payment_purpose);
+        let spent_mana = self.pay_player_cost_for(player, cost, x, &payment_purpose);
         Self::apply_spent_mana_to_spell(&mut stack_object, &spent_mana);
         for sacrificed in sacrifices {
             self.sacrifice_permanent(*sacrificed);
@@ -5199,6 +5617,7 @@ impl Game {
                 attacking: false,
                 blocking: None,
                 chosen_player,
+                chosen_creature_type: None,
                 destroy_at_end: false,
                 temporary_keywords: Vec::new(),
                 factory_animated: false,
@@ -5339,17 +5758,29 @@ impl Game {
         if self.stack_ability_fizzles(object) {
             return;
         }
-        let (resolver, context) = object
+        let (resolver, context, mode_effects) = object
             .ability
             .as_ref()
-            .map(|ability| (ability.resolver, ability.context))
+            .map(|ability| {
+                (
+                    ability.resolver,
+                    ability.context,
+                    ability.mode_effects.as_slice(),
+                )
+            })
             .expect("ability stack objects freeze their complete payload");
         match resolver {
             StackAbilityResolver::Declarative(effect) => {
                 self.resolve_effect_def(effect, object, context);
+                for effect in mode_effects {
+                    self.resolve_effect_def(*effect, object, context);
+                }
             }
             StackAbilityResolver::DeclarativeWithCustomFollowup { effect, behavior } => {
                 self.resolve_effect_def(effect, object, context);
+                for effect in mode_effects {
+                    self.resolve_effect_def(*effect, object, context);
+                }
                 self.resolve_custom_spell_followup(object, behavior);
             }
             StackAbilityResolver::Custom(behavior) => match object.kind {
@@ -5618,7 +6049,13 @@ impl Game {
                 zone,
             } => {
                 for target in self.effect_recipients(recipient, object, context) {
-                    self.move_target_to_zone(target, zone);
+                    self.move_target_to_zone(
+                        target,
+                        zone,
+                        ZoneMoveCause::Effect {
+                            controller: object.controller,
+                        },
+                    );
                 }
             }
             // An Aura attaches as its spell becomes a permanent, which is
@@ -5630,6 +6067,7 @@ impl Game {
                 ..
             })
             | EffectDef::EntersTapped
+            | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing mana and the remaining declarative effect
                 // families are execution seams until a supported card needs
@@ -5681,7 +6119,7 @@ impl Game {
 
     /// Moves one object to a zone. Only the moves a supported card actually
     /// makes are handled; the rest stay seams rather than guesses.
-    fn move_target_to_zone(&mut self, target: Target, zone: ZoneKind) {
+    fn move_target_to_zone(&mut self, target: Target, zone: ZoneKind, cause: ZoneMoveCause) {
         if let Target::Permanent(id) = target {
             // Leaving the battlefield has its own procedure: last-known
             // information, exit events, and the triggers watching for them.
@@ -5699,49 +6137,13 @@ impl Game {
         let Target::Card(id) = target else {
             return;
         };
-        let Some((from, card)) = self.card_in_nonbattlefield_zone(id) else {
+        let Some(from) = self
+            .card_in_nonbattlefield_zone(id)
+            .map(|(from, _card)| from)
+        else {
             return;
         };
-        let owner = card.owner;
-        let cards = match from {
-            ZoneKind::Library => &mut self.players[owner.index()].library,
-            ZoneKind::Hand => &mut self.players[owner.index()].hand,
-            ZoneKind::Graveyard => &mut self.players[owner.index()].graveyard,
-            ZoneKind::Exile => &mut self.players[owner.index()].exile,
-            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => return,
-        };
-        let Some(card) = remove_card(cards, id) else {
-            return;
-        };
-        let (card, _zone_change) = self.zone_change_card(card);
-        match zone {
-            ZoneKind::Battlefield => {
-                let presented = self
-                    .catalog
-                    .get(card.definition)
-                    .map_or(CardPartId::PRIMARY, CardDefinition::primary_part_id);
-                let permanent =
-                    Permanent::entering(card, presented, owner, self.turns_started[owner.index()]);
-                self.battlefield.push(permanent);
-                // The card really did enter, so anything watching for that has
-                // to see it, exactly as a resolving permanent spell would.
-                let entered = self
-                    .battlefield
-                    .last()
-                    .expect("the card just pushed is on the battlefield");
-                let entered_event = self.trigger_event_object(entered);
-                self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
-                    object: entered_event,
-                    from,
-                    to: ZoneKind::Battlefield,
-                });
-            }
-            ZoneKind::Hand => self.players[owner.index()].hand.push(card),
-            ZoneKind::Graveyard => self.players[owner.index()].graveyard.push(card),
-            ZoneKind::Exile => self.players[owner.index()].exile.push(card),
-            ZoneKind::Library => self.players[owner.index()].library.push(card),
-            ZoneKind::Stack | ZoneKind::Command => {}
-        }
+        let _ = self.move_card_from_nonbattlefield_zone(id, from, zone, cause);
     }
 
     fn resolve_applied_effect(
@@ -6241,17 +6643,6 @@ impl Game {
                     }
                 }
             }
-            CardBehavior::SupremeVerdict => {
-                // Unlike Wrath of God, the Verdict does not say "they can't be
-                // regenerated", so a regeneration shield still saves.
-                let creatures: Vec<_> = self
-                    .battlefield
-                    .iter()
-                    .filter(|permanent| self.power(permanent).is_some())
-                    .map(|permanent| permanent.card.id)
-                    .collect::<Vec<_>>();
-                self.destroy_permanents(&creatures, true);
-            }
             CardBehavior::DivineOffering => {
                 if let Some(Target::Permanent(target)) = object.first_target()
                     && let Some(permanent) = self
@@ -6280,11 +6671,6 @@ impl Game {
                     self.players[controller.index()].life += life;
                 }
             }
-            CardBehavior::RedElementalBlast => match object.first_target() {
-                Some(Target::Spell(target)) => self.counter_spell(target),
-                Some(Target::Permanent(target)) => self.destroy_permanent(target),
-                Some(Target::Player(_) | Target::Card(_)) | None => {}
-            },
             CardBehavior::Negate | CardBehavior::EssenceScatter | CardBehavior::Dispel => {
                 if let Some(Target::Spell(target)) = object.first_target() {
                     self.counter_spell(target);
@@ -6295,11 +6681,6 @@ impl Game {
                     self.counter_spell_into(target, CounteredSpellZone::Exile);
                 }
             }
-            CardBehavior::BlueElementalBlast => match object.first_target() {
-                Some(Target::Spell(target)) => self.counter_spell(target),
-                Some(Target::Permanent(target)) => self.destroy_permanent(target),
-                Some(Target::Player(_) | Target::Card(_)) | None => {}
-            },
             CardBehavior::Detonate => {
                 if let Some(Target::Permanent(target)) = object.first_target()
                     && let Some(controller) = self.permanent_controller(target)
@@ -6316,7 +6697,7 @@ impl Game {
                     self.queue_fork_decision(object.controller, original);
                 }
             }
-            CardBehavior::WheelOfFortune => self.resolve_wheel_of_fortune(),
+            CardBehavior::WheelOfFortune => self.resolve_wheel_of_fortune(object.controller),
             CardBehavior::Timetwister => self.resolve_timetwister(),
             CardBehavior::TimeWalk => self.extra_turns.push(object.controller),
             CardBehavior::Channel => self.channel_active[object.controller.index()] = true,
@@ -6376,7 +6757,12 @@ impl Game {
                         1..=1,
                         false,
                         options,
-                        DecisionContinuation::Duress { victim },
+                        DecisionContinuation::Duress {
+                            victim,
+                            cause: ZoneMoveCause::Effect {
+                                controller: object.controller,
+                            },
+                        },
                     );
                 }
             }
@@ -6421,11 +6807,23 @@ impl Game {
                     DecisionContinuation::GrislySalvage { player, revealed },
                 );
             }
-            CardBehavior::HymnToTourach => self.discard_random(object.controller.opponent(), 2),
+            CardBehavior::HymnToTourach => self.discard_random(
+                object.controller.opponent(),
+                2,
+                ZoneMoveCause::Effect {
+                    controller: object.controller,
+                },
+            ),
             CardBehavior::MindTwist => {
-                self.discard_random(object.controller.opponent(), object.x());
+                self.discard_random(
+                    object.controller.opponent(),
+                    object.x(),
+                    ZoneMoveCause::Effect {
+                        controller: object.controller,
+                    },
+                );
             }
-            CardBehavior::Balance => self.resolve_balance(),
+            CardBehavior::Balance => self.resolve_balance(object.controller),
             CardBehavior::Regrowth => {
                 if let Some(card) = self.players[object.controller.index()].graveyard.pop() {
                     let (card, _zone_change) = self.zone_change_card(card);
@@ -6472,91 +6870,113 @@ impl Game {
         }
     }
 
-    fn discard_random(&mut self, player: PlayerId, count: u16) {
+    fn discard_random(&mut self, player: PlayerId, count: u16, cause: ZoneMoveCause) {
         self.rng.shuffle(&mut self.players[player.index()].hand);
         let hand_count = u16::try_from(self.players[player.index()].hand.len()).unwrap_or(u16::MAX);
         let discard_count = count.min(hand_count);
-        let mut discarded = Vec::with_capacity(usize::from(discard_count));
-        for _ in 0..usize::from(discard_count) {
-            if let Some(card) = self.players[player.index()].hand.pop() {
-                let (card, _zone_change) = self.zone_change_card(card);
-                discarded.push((card.id, card.definition));
-                self.players[player.index()].graveyard.push(card);
-            }
-        }
-        if !discarded.is_empty() {
-            self.events.push(GameEvent::CardsDiscarded {
-                player,
-                cards: discarded,
-            });
-        }
+        let discarded = self.players[player.index()]
+            .hand
+            .iter()
+            .rev()
+            .take(usize::from(discard_count))
+            .map(|card| card.id)
+            .collect::<Vec<_>>();
+        self.discard_cards_with_cause(player, &discarded, cause);
     }
 
-    fn resolve_balance(&mut self) {
+    fn resolve_balance(&mut self, controller: PlayerId) {
+        self.queue_balance_phase(controller, BalancePhase::Lands);
+    }
+
+    fn queue_balance_phase(&mut self, controller: PlayerId, phase: BalancePhase) {
+        let mut tasks = self.balance_tasks(controller, phase);
+        if tasks.is_empty() {
+            if let Some(next) = phase.next() {
+                self.queue_balance_phase(controller, next);
+            }
+            return;
+        }
+        let first = tasks.remove(0);
+        self.queue_balance_task(controller, phase, first, tasks);
+    }
+
+    fn balance_tasks(&self, controller: PlayerId, phase: BalancePhase) -> Vec<BalanceTask> {
         let mut tasks = Vec::new();
-        for card_type in [CardType::Land, CardType::Creature] {
-            let counts = [PlayerId::One, PlayerId::Two].map(|player| {
-                self.battlefield
-                    .iter()
-                    .filter(|permanent| {
-                        permanent.controller == player
-                            && self
-                                .permanent_types(permanent)
-                                .is_some_and(|types| types.contains(card_type))
-                    })
-                    .count()
-            });
-            let keep = counts[0].min(counts[1]);
-            for player in [PlayerId::One, PlayerId::Two] {
-                let cards = self
-                    .battlefield
-                    .iter()
-                    .filter(|permanent| {
-                        permanent.controller == player
-                            && self
-                                .permanent_types(permanent)
-                                .is_some_and(|types| types.contains(card_type))
-                    })
-                    .map(|permanent| permanent.card.clone())
-                    .collect::<Vec<_>>();
-                let count = cards.len().saturating_sub(keep);
+        if phase == BalancePhase::Hands {
+            let keep = self.players[0].hand.len().min(self.players[1].hand.len());
+            for player in [self.active_player, self.active_player.opponent()] {
+                let count = self.players[player.index()].hand.len().saturating_sub(keep);
                 if count > 0 {
                     tasks.push(BalanceTask {
                         player,
-                        prompt: format!(
-                            "Choose {count} {} to sacrifice to Balance",
-                            if card_type == CardType::Land {
-                                "land(s)"
-                            } else {
-                                "creature(s)"
-                            }
-                        ),
-                        zone: DecisionZone::Battlefield,
-                        cards,
+                        prompt: format!("Choose {count} card(s) to discard to Balance"),
+                        zone: DecisionZone::Hand,
+                        cards: self.players[player.index()].hand.clone(),
                         count,
-                        action: BalanceAction::Sacrifice,
+                        action: BalanceAction::Discard,
+                        cause: ZoneMoveCause::Effect { controller },
                     });
                 }
             }
+            return tasks;
         }
-        let keep = self.players[0].hand.len().min(self.players[1].hand.len());
-        for player in [PlayerId::One, PlayerId::Two] {
-            let count = self.players[player.index()].hand.len().saturating_sub(keep);
+
+        let card_type = match phase {
+            BalancePhase::Lands => CardType::Land,
+            BalancePhase::Creatures => CardType::Creature,
+            BalancePhase::Hands => unreachable!("the hand phase returned above"),
+        };
+        let counts = [self.active_player, self.active_player.opponent()].map(|player| {
+            self.battlefield
+                .iter()
+                .filter(|permanent| {
+                    permanent.controller == player
+                        && if card_type == CardType::Creature {
+                            self.power(permanent).is_some()
+                        } else {
+                            self.permanent_types(permanent)
+                                .is_some_and(|types| types.contains(CardType::Land))
+                        }
+                })
+                .count()
+        });
+        let keep = counts[0].min(counts[1]);
+        for player in [self.active_player, self.active_player.opponent()] {
+            let cards = self
+                .battlefield
+                .iter()
+                .filter(|permanent| {
+                    permanent.controller == player
+                        && if card_type == CardType::Creature {
+                            self.power(permanent).is_some()
+                        } else {
+                            self.permanent_types(permanent)
+                                .is_some_and(|types| types.contains(CardType::Land))
+                        }
+                })
+                .map(|permanent| permanent.card.clone())
+                .collect::<Vec<_>>();
+            let count = cards.len().saturating_sub(keep);
             if count > 0 {
                 tasks.push(BalanceTask {
                     player,
-                    prompt: format!("Choose {count} card(s) to discard to Balance"),
-                    zone: DecisionZone::Hand,
-                    cards: self.players[player.index()].hand.clone(),
+                    prompt: format!(
+                        "Choose {count} {} to sacrifice to Balance",
+                        if card_type == CardType::Land {
+                            "land(s)"
+                        } else {
+                            "creature(s)"
+                        }
+                    ),
+                    zone: DecisionZone::Battlefield,
+                    cards,
                     count,
-                    action: BalanceAction::Discard,
+                    action: BalanceAction::Sacrifice,
+                    cause: ZoneMoveCause::Effect { controller },
                 });
             }
         }
-        if !tasks.is_empty() {
-            let first = tasks.remove(0);
-            self.queue_balance_task(first, tasks);
-        }
+        tasks
     }
 
     fn resolve_timetwister(&mut self) {
@@ -6574,13 +6994,14 @@ impl Game {
         }
     }
 
-    fn resolve_wheel_of_fortune(&mut self) {
+    fn resolve_wheel_of_fortune(&mut self, controller: PlayerId) {
         for player in [PlayerId::One, PlayerId::Two] {
-            let hand = std::mem::take(&mut self.players[player.index()].hand);
-            for card in hand {
-                let (card, _zone_change) = self.zone_change_card(card);
-                self.players[player.index()].graveyard.push(card);
-            }
+            let hand = self.players[player.index()]
+                .hand
+                .iter()
+                .map(|card| card.id)
+                .collect::<Vec<_>>();
+            self.discard_cards_with_cause(player, &hand, ZoneMoveCause::Effect { controller });
         }
         let can_draw = [
             self.players[0].library.len() >= 7,
@@ -6977,7 +7398,7 @@ impl Game {
             .iter()
             .filter(|ability| matches!(ability.effect, EffectDef::Attach { .. }))
             .flat_map(|ability| match ability.definition {
-                DeclarativeAbilityDef::Spell(spell) => spell.targets,
+                DeclarativeAbilityDef::Spell(spell) => spell.targets(),
                 _ => &[],
             })
             .all(|slot| match slot.predicate {
@@ -7297,6 +7718,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
                 | EffectDef::MoveToZone { .. }
+                | EffectDef::ChooseCreatureType { .. }
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_) => {}
             }
@@ -7379,6 +7801,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
                 | EffectDef::MoveToZone { .. }
+                | EffectDef::ChooseCreatureType { .. }
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_) => {}
             }
@@ -7435,11 +7858,161 @@ impl Game {
         );
     }
 
-    fn pay_player_cost(&mut self, player: PlayerId, cost: ManaCost, x: u16) -> Vec<Mana> {
+    fn payment_object(&self, purpose: &ManaPaymentPurpose) -> Option<(TriggerEventObject, bool)> {
+        match purpose {
+            ManaPaymentPurpose::Spell {
+                object,
+                definition,
+                controller,
+                form,
+            } => self
+                .printed_trigger_event_object(
+                    *object,
+                    *definition,
+                    *controller,
+                    &CharacteristicContext::Stack { form: form.clone() },
+                )
+                .map(|object| (object, true)),
+            ManaPaymentPurpose::Ability { source } => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == *source)
+                .map(|permanent| (self.trigger_event_object(permanent), false))
+                .or_else(|| match self.retired_objects.get(source) {
+                    Some(RetiredObject::Permanent { permanent, .. }) => {
+                        Some((self.trigger_event_object(permanent), false))
+                    }
+                    Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => None,
+                }),
+            ManaPaymentPurpose::Other => None,
+        }
+    }
+
+    fn chosen_creature_type_for_mana_source(&self, source: GameObjectId) -> Option<&str> {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+            .and_then(|permanent| permanent.chosen_creature_type.as_deref())
+            .or_else(|| match self.retired_objects.get(&source) {
+                Some(RetiredObject::Permanent { permanent, .. }) => {
+                    permanent.chosen_creature_type.as_deref()
+                }
+                Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => None,
+            })
+    }
+
+    fn mana_can_pay_for(&self, mana: Mana, purpose: &ManaPaymentPurpose) -> bool {
+        mana.restrictions
+            .iter()
+            .all(|restriction| match restriction {
+                ManaRestrictionDef::CastSpell(predicate) => self
+                    .payment_object(purpose)
+                    .is_some_and(|(object, is_spell)| {
+                        is_spell
+                            && Self::trigger_object_matches(*predicate, &object, object.id, true)
+                    }),
+                ManaRestrictionDef::CastCreatureSpellOfChosenType => {
+                    let Some(source) = mana.source else {
+                        return false;
+                    };
+                    let Some(chosen) = self.chosen_creature_type_for_mana_source(source.object)
+                    else {
+                        return false;
+                    };
+                    self.payment_object(purpose)
+                        .is_some_and(|(object, is_spell)| {
+                            is_spell
+                                && object.types.contains(CardType::Creature)
+                                && object.subtypes.contains(&chosen)
+                        })
+                }
+                ManaRestrictionDef::ActivateAbility(predicate) => self
+                    .payment_object(purpose)
+                    .is_some_and(|(object, is_spell)| {
+                        !is_spell
+                            && Self::trigger_object_matches(*predicate, &object, object.id, false)
+                    }),
+                ManaRestrictionDef::Special(_) => false,
+            })
+    }
+
+    fn mana_has_spend_effect_for(mana: Mana, purpose: &ManaPaymentPurpose) -> bool {
+        mana.spend_effects.iter().any(|effect| {
+            matches!(
+                (purpose, effect),
+                (
+                    ManaPaymentPurpose::Spell { .. },
+                    ManaSpendEffectDef::ApplyToPaidSpell(_)
+                ) | (
+                    ManaPaymentPurpose::Ability { .. },
+                    ManaSpendEffectDef::ApplyToPaidAbility(_)
+                )
+            )
+        })
+    }
+
+    fn eligible_mana_pool(&self, player: PlayerId, purpose: &ManaPaymentPurpose) -> ManaPool {
+        let aggregate = self.players[player.index()].mana_pool;
+        let mut eligible = ManaPool::default();
+        let mut tracked = ManaPool::default();
+        for mana in &self.players[player.index()].mana {
+            if tracked.amount(mana.color) >= aggregate.amount(mana.color) {
+                continue;
+            }
+            tracked.add_color(mana.color, 1);
+            if self.mana_can_pay_for(*mana, purpose) {
+                eligible.add_color(mana.color, 1);
+            }
+        }
+        // Compatibility callers and tests may still write aggregate pools
+        // directly. Any units without per-mana records are unrestricted.
+        for color in [
+            ManaColor::White,
+            ManaColor::Blue,
+            ManaColor::Black,
+            ManaColor::Red,
+            ManaColor::Green,
+            ManaColor::Colorless,
+        ] {
+            eligible.add_color(
+                color,
+                aggregate
+                    .amount(color)
+                    .saturating_sub(tracked.amount(color)),
+            );
+        }
+        eligible
+    }
+
+    fn pay_player_cost_for(
+        &mut self,
+        player: PlayerId,
+        cost: ManaCost,
+        x: u16,
+        purpose: &ManaPaymentPurpose,
+    ) -> Vec<Mana> {
         self.reconcile_mana(player);
-        let before = self.players[player.index()].mana_pool;
-        pay_cost(&mut self.players[player.index()].mana_pool, cost, x);
-        let after = self.players[player.index()].mana_pool;
+        let before = self.eligible_mana_pool(player, purpose);
+        let mut after = before;
+        let has_eligible_spend_effect = |color| {
+            self.players[player.index()].mana.iter().any(|mana| {
+                mana.color == color
+                    && self.mana_can_pay_for(*mana, purpose)
+                    && Self::mana_has_spend_effect_for(*mana, purpose)
+            })
+        };
+        let mut hybrid_order = [ManaColor::Red, ManaColor::White];
+        hybrid_order.sort_by_key(|color| !has_eligible_spend_effect(*color));
+        let mut generic_order = [
+            ManaColor::Colorless,
+            ManaColor::Green,
+            ManaColor::Black,
+            ManaColor::Red,
+            ManaColor::White,
+            ManaColor::Blue,
+        ];
+        generic_order.sort_by_key(|color| !has_eligible_spend_effect(*color));
+        pay_cost_with_orders(&mut after, cost, x, &hybrid_order, &generic_order);
         let mut spent = Vec::new();
         for color in [
             ManaColor::White,
@@ -7451,16 +8024,33 @@ impl Game {
         ] {
             let count = before.amount(color).saturating_sub(after.amount(color));
             for _ in 0..count {
-                if let Some(index) = self.players[player.index()]
+                let index = self.players[player.index()]
                     .mana
                     .iter()
-                    .position(|mana| mana.color == color)
-                {
+                    .enumerate()
+                    .filter(|(_, mana)| {
+                        mana.color == color && self.mana_can_pay_for(**mana, purpose)
+                    })
+                    .max_by_key(|(_, mana)| {
+                        (
+                            Self::mana_has_spend_effect_for(**mana, purpose),
+                            !mana.restrictions.is_empty(),
+                        )
+                    })
+                    .map(|(index, _)| index);
+                if let Some(index) = index {
                     spent.push(self.players[player.index()].mana.remove(index));
                 }
+                self.players[player.index()]
+                    .mana_pool
+                    .remove_color(color, 1);
             }
         }
         spent
+    }
+
+    fn pay_player_cost(&mut self, player: PlayerId, cost: ManaCost, x: u16) -> Vec<Mana> {
+        self.pay_player_cost_for(player, cost, x, &ManaPaymentPurpose::Other)
     }
 
     fn apply_spent_mana_to_spell(object: &mut StackObject, spent: &[Mana]) {
@@ -7504,7 +8094,18 @@ impl Game {
     }
 
     fn can_pay_cost(&self, player: PlayerId, cost: ManaCost, x: u16) -> bool {
-        self.assigned_mana_activations(player, cost, x).is_some()
+        self.can_pay_cost_for(player, cost, x, &ManaPaymentPurpose::Other)
+    }
+
+    fn can_pay_cost_for(
+        &self,
+        player: PlayerId,
+        cost: ManaCost,
+        x: u16,
+        purpose: &ManaPaymentPurpose,
+    ) -> bool {
+        self.assigned_mana_activations_for(player, cost, x, purpose)
+            .is_some()
     }
 
     /// Returns the mana sources the engine's default payment policy would tap
@@ -7512,13 +8113,17 @@ impl Game {
     /// action still performs the authoritative payment and validation.
     #[must_use]
     pub fn mana_sources_for_action(&self, player: PlayerId, action: &Action) -> Vec<GameObjectId> {
-        let Some((cost, x, avoid)) = self.mana_requirement(action) else {
+        let Some((cost, x, avoid, purpose)) = self.mana_requirement(player, action) else {
             return Vec::new();
         };
-        self.plan_mana_sources(player, cost, x, avoid)
+        self.plan_mana_sources(player, cost, x, avoid, &purpose)
     }
 
-    fn mana_requirement(&self, action: &Action) -> Option<(ManaCost, u16, Option<GameObjectId>)> {
+    fn mana_requirement(
+        &self,
+        player: PlayerId,
+        action: &Action,
+    ) -> Option<(ManaCost, u16, Option<GameObjectId>, ManaPaymentPurpose)> {
         match action {
             Action::CastSpell { card, choices, .. } => {
                 let definition = self
@@ -7538,6 +8143,12 @@ impl Game {
                     ),
                     choices.x(),
                     None,
+                    ManaPaymentPurpose::Spell {
+                        object: *card,
+                        definition: definition.id,
+                        controller: player,
+                        form: option.form.clone(),
+                    },
                 ))
             }
             Action::ActivateAbility {
@@ -7582,6 +8193,7 @@ impl Game {
                             || self.effective_behavior(permanent)
                                 == Some(CardBehavior::MishrasFactory))
                         .then_some(*source),
+                        ManaPaymentPurpose::Ability { source: *source },
                     ));
                 }
 
@@ -7601,7 +8213,12 @@ impl Game {
                     _ => return None,
                 };
                 let avoid = (behavior == CardBehavior::MishrasFactory).then_some(*source);
-                Some((cost, 0, avoid))
+                Some((
+                    cost,
+                    0,
+                    avoid,
+                    ManaPaymentPurpose::Ability { source: *source },
+                ))
             }
             _ => None,
         }
@@ -7613,21 +8230,23 @@ impl Game {
         cost: ManaCost,
         x: u16,
         avoid: Option<GameObjectId>,
+        purpose: &ManaPaymentPurpose,
     ) -> Vec<GameObjectId> {
-        self.plan_mana_activations(player, cost, x, avoid)
+        self.plan_mana_activations_for(player, cost, x, avoid, purpose)
             .unwrap_or_default()
             .into_iter()
             .map(|activation| activation.source)
             .collect()
     }
 
-    fn assigned_mana_activations(
+    fn assigned_mana_activations_for(
         &self,
         player: PlayerId,
         cost: ManaCost,
         x: u16,
+        purpose: &ManaPaymentPurpose,
     ) -> Option<Vec<PlannedManaActivation>> {
-        let mut pool = self.players[player.index()].mana_pool;
+        let mut pool = self.eligible_mana_pool(player, purpose);
         let mut assigned = Vec::new();
         let mut flexible = Vec::new();
         for (order, permanent) in self
@@ -7636,26 +8255,51 @@ impl Game {
             .filter(|permanent| permanent.controller == player)
             .enumerate()
         {
-            let outputs = self
+            let mut activations = self
                 .mana_ability_activations(permanent)
                 .into_iter()
+                .filter(|activation| {
+                    Self::mana_for_activation(*activation)
+                        .first()
+                        .is_some_and(|mana| self.mana_can_pay_for(*mana, purpose))
+                })
+                .collect::<Vec<_>>();
+            // When several outputs are legal, prefer one whose spend rider
+            // benefits this payment. Players can still manually choose a
+            // different mana ability before casting.
+            activations.sort_by_key(|activation| {
+                let benefits_payment = Self::mana_for_activation(*activation)
+                    .first()
+                    .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, purpose));
+                let pays_colored_symbol = mana_cost_amount(cost, activation.color) > 0
+                    || cost.white_red_hybrid > 0
+                        && matches!(activation.color, ManaColor::White | ManaColor::Red);
+                (!benefits_payment, !pays_colored_symbol)
+            });
+            let outputs = activations
+                .into_iter()
                 .map(|activation| {
+                    let benefits_payment = Self::mana_for_activation(activation)
+                        .first()
+                        .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, purpose));
                     (
                         activation.ability,
                         activation.color,
                         Self::mana_production(activation),
+                        benefits_payment,
                     )
                 })
                 .collect::<Vec<_>>();
             match outputs.as_slice() {
                 [] => {}
-                [(ability, color, production)] => {
+                [(ability, color, production, benefits_payment)] => {
                     pool.add(*production);
                     assigned.push(PlannedManaActivation {
                         source: permanent.card.id,
                         ability: *ability,
                         color: *color,
                         production: *production,
+                        benefits_payment: *benefits_payment,
                         flexibility: 1,
                         order,
                     });
@@ -7676,15 +8320,16 @@ impl Game {
         Some(assigned)
     }
 
-    fn plan_mana_activations(
+    fn plan_mana_activations_for(
         &self,
         player: PlayerId,
         cost: ManaCost,
         x: u16,
         avoid: Option<GameObjectId>,
+        purpose: &ManaPaymentPurpose,
     ) -> Option<Vec<PlannedManaActivation>> {
-        let mut available = self.assigned_mana_activations(player, cost, x)?;
-        let mut pool = self.players[player.index()].mana_pool;
+        let mut available = self.assigned_mana_activations_for(player, cost, x, purpose)?;
+        let mut pool = self.eligible_mana_pool(player, purpose);
         let mut selected = Vec::new();
 
         for color in colored_mana() {
@@ -7697,6 +8342,7 @@ impl Game {
                     .min_by_key(|(_, activation)| {
                         (
                             Some(activation.source) == avoid,
+                            !activation.benefits_payment,
                             activation.flexibility,
                             activation.production.total(),
                             activation.order,
@@ -7719,6 +8365,7 @@ impl Game {
                 .min_by_key(|(_, activation)| {
                     (
                         Some(activation.source) == avoid,
+                        !activation.benefits_payment,
                         activation.flexibility,
                         activation.production.total(),
                         activation.order,
@@ -7740,6 +8387,7 @@ impl Game {
                 .min_by_key(|(_, activation)| {
                     (
                         Some(activation.source) == avoid,
+                        !activation.benefits_payment,
                         activation.color != ManaColor::Colorless,
                         activation.production.total(),
                         activation.order,
@@ -7755,7 +8403,7 @@ impl Game {
         Some(selected)
     }
 
-    fn maximum_x(&self, player: PlayerId, cost: ManaCost) -> u16 {
+    fn maximum_x_for(&self, player: PlayerId, cost: ManaCost, purpose: &ManaPaymentPurpose) -> u16 {
         let maximum = self.players[player.index()]
             .mana_pool
             .total()
@@ -7774,7 +8422,7 @@ impl Game {
             );
         (0..=maximum)
             .rev()
-            .find(|x| self.can_pay_cost(player, cost, *x))
+            .find(|x| self.can_pay_cost_for(player, cost, *x, purpose))
             .unwrap_or(0)
     }
 
@@ -7789,8 +8437,25 @@ impl Game {
         x: u16,
         avoid: Option<GameObjectId>,
     ) {
+        self.activate_mana_for_cost_avoiding_for(
+            player,
+            cost,
+            x,
+            avoid,
+            &ManaPaymentPurpose::Other,
+        );
+    }
+
+    fn activate_mana_for_cost_avoiding_for(
+        &mut self,
+        player: PlayerId,
+        cost: ManaCost,
+        x: u16,
+        avoid: Option<GameObjectId>,
+        purpose: &ManaPaymentPurpose,
+    ) {
         let plan = self
-            .plan_mana_activations(player, cost, x, avoid)
+            .plan_mana_activations_for(player, cost, x, avoid, purpose)
             .expect("a legal payment has a complete mana activation plan");
         for activation in plan {
             self.activate_mana_source(
@@ -8735,7 +9400,13 @@ impl Game {
                 );
                 match self.effective_behavior(&self.battlefield[attacker_index]) {
                     Some(CardBehavior::HypnoticSpecter) => {
-                        self.discard_random(self.active_player.opponent(), 1);
+                        self.discard_random(
+                            self.active_player.opponent(),
+                            1,
+                            ZoneMoveCause::Effect {
+                                controller: self.active_player,
+                            },
+                        );
                     }
                     Some(CardBehavior::WhirlingDervish) => {
                         self.battlefield[attacker_index].plus_one_counters = self.battlefield
@@ -8990,6 +9661,7 @@ impl Game {
             attacking: false,
             blocking: None,
             chosen_player: None,
+            chosen_creature_type: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
             factory_animated: false,
@@ -9110,37 +9782,90 @@ impl Game {
         })
     }
 
-    /// Whether a spell on the stack can be countered at all. Supreme Verdict
-    /// says it cannot, and says so on the card rather than in the engine.
-    /// Whether a spell on the stack can be countered at all.
-    ///
-    /// A card says so on itself, with a static clause applying
-    /// `CannotBeCountered` to its own spell. Supreme Verdict still says it
-    /// through its legacy custom behavior and is named here until it migrates
-    /// to clauses like the rest.
-    fn can_be_countered(&self, object: &StackObject) -> bool {
-        if self.behavior(object.card.definition) == Some(CardBehavior::SupremeVerdict) {
-            return false;
+    fn effect_applies_to_source(
+        effect: EffectDef,
+        expected: AppliedEffectDef,
+        duration: EffectDurationDef,
+    ) -> bool {
+        match effect {
+            EffectDef::Sequence(effects) => effects
+                .iter()
+                .any(|effect| Self::effect_applies_to_source(*effect, expected, duration)),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect,
+                duration: actual_duration,
+            } => effect == expected && actual_duration == duration,
+            EffectDef::None
+            | EffectDef::AddMana(_)
+            | EffectDef::DealDamage { .. }
+            | EffectDef::GainLife { .. }
+            | EffectDef::DrawCards { .. }
+            | EffectDef::LoseLife { .. }
+            | EffectDef::Tap { .. }
+            | EffectDef::Untap { .. }
+            | EffectDef::Attach { .. }
+            | EffectDef::Destroy { .. }
+            | EffectDef::Sacrifice { .. }
+            | EffectDef::Counter { .. }
+            | EffectDef::AddPlusOneCounters { .. }
+            | EffectDef::OptionalManaPayment { .. }
+            | EffectDef::EntersTapped
+            | EffectDef::MoveToZone { .. }
+            | EffectDef::CreateToken { .. }
+            | EffectDef::ChooseCreatureType { .. }
+            | EffectDef::Apply { .. }
+            | EffectDef::Special(_) => false,
         }
-        let printed_uncounterable = self
-            .catalog
-            .get(object.card.definition)
-            .into_iter()
-            .flat_map(|definition| definition.parts.iter())
-            .flat_map(|part| part.rules.ability_clauses().iter())
-            .any(|ability| {
-                ability.implementation.is_executable()
-                    && matches!(ability.definition, DeclarativeAbilityDef::Static(_))
-                    && matches!(
-                        ability.effect,
-                        EffectDef::Apply {
-                            recipient: EffectRecipientDef::Source,
-                            effect: AppliedEffectDef::CannotBeCountered,
-                            ..
-                        }
-                    )
-            });
-        !printed_uncounterable
+    }
+
+    fn stack_spell_has_static_effect(
+        &self,
+        object: &StackObject,
+        expected: AppliedEffectDef,
+    ) -> bool {
+        let Some(signature) = &object.signature else {
+            return false;
+        };
+        let Some(definition) = self.catalog.get(object.card.definition) else {
+            return false;
+        };
+        let Ok(parts) = applicable_part_ids(
+            definition,
+            &CharacteristicContext::Stack {
+                form: signature.form().clone(),
+            },
+        ) else {
+            return false;
+        };
+        parts.into_iter().any(|part| {
+            definition.part(part).is_some_and(|part| {
+                part.rules.ability_clauses().iter().any(|ability| {
+                    ability.implementation.is_executable()
+                        && matches!(
+                            ability.definition,
+                            DeclarativeAbilityDef::Static(definition)
+                                if definition.source_zones.contains(&ZoneKind::Stack)
+                        )
+                        && Self::effect_applies_to_source(
+                            ability.effect,
+                            expected,
+                            EffectDurationDef::WhileSourceRemainsInZone,
+                        )
+                })
+            })
+        })
+    }
+
+    /// Whether a spell on the stack can be countered at all. Printed static
+    /// abilities and effects carried by mana converge here; neither changes
+    /// whether the spell is a legal target.
+    fn can_be_countered(&self, object: &StackObject) -> bool {
+        !self.stack_spell_has_static_effect(object, AppliedEffectDef::CannotBeCountered)
+            && !object
+                .applied_effects
+                .iter()
+                .any(|applied| applied.effect == AppliedEffectDef::CannotBeCountered)
     }
 
     fn counter_spell(&mut self, id: GameObjectId) {
@@ -9156,12 +9881,7 @@ impl Game {
         // "Can't be countered" is not "can't be targeted": a Counterspell may
         // legally target Supreme Verdict, resolve, and accomplish nothing. So
         // this is the only place that checks, and the target lists do not.
-        if !self.can_be_countered(&self.stack[index])
-            || self.stack[index]
-                .applied_effects
-                .iter()
-                .any(|applied| applied.effect == AppliedEffectDef::CannotBeCountered)
-        {
+        if !self.can_be_countered(&self.stack[index]) {
             return;
         }
         let object = self.stack.remove(index);
@@ -9834,14 +10554,10 @@ fn assign_flexible_mana_outputs(
     x: u16,
     assignment: &mut Vec<PlannedManaActivation>,
 ) -> bool {
-    if can_pay(pool, cost, x) {
-        return true;
-    }
-
     let Some(source) = sources.get(index) else {
-        return false;
+        return can_pay(pool, cost, x);
     };
-    for (ability, color, output) in &source.outputs {
+    for (ability, color, output, benefits_payment) in &source.outputs {
         let mut next = pool;
         next.add(*output);
         assignment.push(PlannedManaActivation {
@@ -9849,6 +10565,7 @@ fn assign_flexible_mana_outputs(
             ability: *ability,
             color: *color,
             production: *output,
+            benefits_payment: *benefits_payment,
             flexibility: source.outputs.len(),
             order: source.order,
         });
@@ -9860,20 +10577,50 @@ fn assign_flexible_mana_outputs(
     false
 }
 
+#[cfg(test)]
 fn pay_cost(pool: &mut ManaPool, cost: ManaCost, x: u16) {
+    pay_cost_with_orders(
+        pool,
+        cost,
+        x,
+        &[ManaColor::Red, ManaColor::White],
+        &[
+            ManaColor::Colorless,
+            ManaColor::Green,
+            ManaColor::Black,
+            ManaColor::Red,
+            ManaColor::White,
+            ManaColor::Blue,
+        ],
+    );
+}
+
+fn pay_cost_with_orders(
+    pool: &mut ManaPool,
+    cost: ManaCost,
+    x: u16,
+    hybrid_order: &[ManaColor],
+    generic_order: &[ManaColor],
+) {
     for color in colored_mana() {
         pool.remove_color(color, mana_cost_amount(cost, color));
     }
-    let red_hybrid = pool.red.min(cost.white_red_hybrid);
-    pool.remove_color(ManaColor::Red, red_hybrid);
-    pool.remove_color(
-        ManaColor::White,
-        cost.white_red_hybrid.saturating_sub(red_hybrid),
-    );
-    pay_generic(
+    let mut hybrid_remaining = cost.white_red_hybrid;
+    for color in hybrid_order {
+        debug_assert!(matches!(color, ManaColor::Red | ManaColor::White));
+        let spent = pool.amount(*color).min(hybrid_remaining);
+        pool.remove_color(*color, spent);
+        hybrid_remaining -= spent;
+        if hybrid_remaining == 0 {
+            break;
+        }
+    }
+    debug_assert_eq!(hybrid_remaining, 0);
+    pay_generic_in_order(
         pool,
         cost.generic
             .saturating_add(x.saturating_mul(cost.x_multiplier)),
+        generic_order,
     );
 }
 
@@ -9962,8 +10709,8 @@ fn repeated_mode_selections(modes: &[ModeId], count: usize) -> Vec<Vec<ModeId>> 
         return vec![Vec::new()];
     }
     let mut result = Vec::new();
-    for mode in modes {
-        for mut tail in repeated_mode_selections(modes, count - 1) {
+    for (index, mode) in modes.iter().enumerate() {
+        for mut tail in repeated_mode_selections(&modes[index..], count - 1) {
             let mut choice = vec![*mode];
             choice.append(&mut tail);
             result.push(choice);
@@ -9980,18 +10727,11 @@ fn fireball_extra_cost(behavior: CardBehavior, target_count: usize) -> u16 {
     }
 }
 
-fn pay_generic(pool: &mut ManaPool, amount: u16) {
+fn pay_generic_in_order(pool: &mut ManaPool, amount: u16, order: &[ManaColor]) {
     let mut remaining = amount;
-    for color in [
-        ManaColor::Colorless,
-        ManaColor::Green,
-        ManaColor::Black,
-        ManaColor::Red,
-        ManaColor::White,
-        ManaColor::Blue,
-    ] {
-        let spent = pool.amount(color).min(remaining);
-        pool.remove_color(color, spent);
+    for color in order {
+        let spent = pool.amount(*color).min(remaining);
+        pool.remove_color(*color, spent);
         remaining -= spent;
         if remaining == 0 {
             break;

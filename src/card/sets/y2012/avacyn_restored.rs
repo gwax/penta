@@ -2,8 +2,8 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, AppliedEffectDef,
-    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, EffectDef, LandEntry, ManaColor,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior,
+    CardRules, CardSet, CardSupertype, EffectDef, EffectRecipientDef, LandEntry, ManaColor,
     ManaRestrictionDef, ManaSpendEffectDef, abilities, cards,
 };
 use crate::mana_cost;
@@ -39,11 +39,10 @@ pub(in crate::card::sets) static CAVERN_OF_SOULS: CardRecord = CardRecord::new(
     .with_abilities(&[
         AbilityDef::replacement(
             "As this land enters, choose a creature type.",
-            EffectDef::Special("Choose and store a creature type for this permanent"),
-        )
-        .with_implementation(AbilityImplementationDef::NotImplemented {
-            explanation: "The creature-type choice is represented but is not executed.",
-        }),
+            EffectDef::ChooseCreatureType {
+                object: EffectRecipientDef::Source,
+            },
+        ),
         abilities::tap_for(ManaColor::Colorless),
         AbilityDef::activated_mana(
             "{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered.",
@@ -59,10 +58,7 @@ pub(in crate::card::sets) static CAVERN_OF_SOULS: CardRecord = CardRecord::new(
                 .with_restrictions(&CAVERN_COLORED_MANA_RESTRICTIONS)
                 .with_spend_effects(&CAVERN_COLORED_MANA_SPEND_EFFECTS),
             ),
-        )
-        .with_implementation(AbilityImplementationDef::NotImplemented {
-            explanation: "The restricted colored mana and cannot-be-countered rider are represented but not executed.",
-        }),
+        ),
     ]),
 );
 

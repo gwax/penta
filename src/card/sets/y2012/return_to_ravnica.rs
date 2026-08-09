@@ -3,13 +3,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor, ModeDef, ModeSetDef,
-    ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TargetPredicate, TargetSlotDef,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry,
+    ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef, abilities, cards,
 };
-use crate::ids::{CardPartId, ModeId, PlayOptionId, TargetSlotId};
+use crate::ids::TargetSlotId;
 use crate::mana_cost;
 
 pub(in crate::card::sets) static ABRUPT_DECAY: CardRecord = CardRecord::new(
@@ -18,15 +17,7 @@ pub(in crate::card::sets) static ABRUPT_DECAY: CardRecord = CardRecord::new(
     CardArt::new("3b1e92b4-6e53-4dba-a572-c67e01965ac5", "Svetlin Velinov"),
     CardSet::ReturnToRavnica,
     CardRules::new_instant(mana_cost!("{B}{G}")).with_abilities(&[
-        AbilityDef::static_ability(
-            "This spell can't be countered.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeCountered,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
-            },
-        )
-        .with_source_zones(&[ZoneKind::Stack]),
+        abilities::cannot_be_countered(),
         AbilityDef::spell(
             "Destroy target nonland permanent with mana value 3 or less.",
             EffectDef::Destroy {
@@ -235,73 +226,41 @@ pub(in crate::card::sets) static HALLOWED_FOUNTAIN: CardRecord = CardRecord::new
     ]),
 );
 
-const fn izzet_charm_rules() -> CardRules {
-    CardRules::new_instant(mana_cost!("{U}{R}")).with_ability(
-        AbilityDef::not_implemented(
-            "Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
-    )
-}
-
-fn izzet_charm_composition() -> CardComposition {
-    let rules = izzet_charm_rules();
-    let modes = ModeSetDef::choose_one(vec![
-        ModeDef {
-            id: ModeId(0),
-            label: "Counter a noncreature spell unless its controller pays {2}".into(),
-            targets: vec![TargetSlotDef::exactly_one(
-                TargetSlotId(0),
-                "noncreature spell",
-                TargetPredicate::NoncreatureSpell,
-            )],
-            effect_status: CardEffectStatus::MetadataOnly,
-        },
-        ModeDef {
-            id: ModeId(1),
-            label: "Deal 2 damage to a creature".into(),
-            targets: vec![TargetSlotDef::exactly_one(
-                TargetSlotId(1),
-                "creature",
-                TargetPredicate::CreaturePermanent,
-            )],
-            effect_status: CardEffectStatus::MetadataOnly,
-        },
-        ModeDef {
-            id: ModeId(2),
-            label: "Draw two cards, then discard two cards".into(),
-            targets: Vec::new(),
-            effect_status: CardEffectStatus::MetadataOnly,
-        },
-    ]);
-    CardComposition {
-        parts: vec![CardPart::new(CardPartId::PRIMARY, "Izzet Charm", rules)],
-        structure: CardStructure::Single {
-            main: CardPartId::PRIMARY,
-        },
-        play_options: vec![
-            PlayOptionDef::cast(
-                PlayOptionId::DEFAULT,
-                "Izzet Charm",
-                SpellForm::Part(CardPartId::PRIMARY),
-                rules
-                    .mana_cost()
-                    .expect("Izzet Charm has a printed mana cost"),
-                CardEffectStatus::MetadataOnly,
-            )
-            .with_modes(modes),
-        ],
-    }
-}
-
 pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
     cards::IZZET_CHARM,
     "Izzet Charm",
     CardArt::new("1e3a5af6-5423-442b-a207-364e97a871d8", "Zoltan Boros"),
     CardSet::ReturnToRavnica,
-    izzet_charm_rules(),
-)
-.with_composition(izzet_charm_composition);
+    CardRules::new_instant(mana_cost!("{U}{R}")).with_ability(
+        AbilityDef::choose_one_spell(
+            "Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.",
+            &[
+                AbilityDef::unimplemented_spell(
+                    "Counter a noncreature spell unless its controller pays {2}",
+                    "Printed mode is cataloged but is not executed by the engine.",
+                )
+                .with_targets(&[AbilityTargetDef::exactly_one_spell(
+                    TargetSlotId(0),
+                    "noncreature spell",
+                    ObjectPredicateDef::NoncreatureSpell,
+                )]),
+                AbilityDef::unimplemented_spell(
+                    "Deal 2 damage to a creature",
+                    "Printed mode is cataloged but is not executed by the engine.",
+                )
+                .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+                    TargetSlotId(1),
+                    "creature",
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )]),
+                AbilityDef::unimplemented_spell(
+                    "Draw two cards, then discard two cards",
+                    "Printed mode is cataloged but is not executed by the engine.",
+                ),
+            ],
+        ),
+    ),
+);
 
 pub(in crate::card::sets) static IZZET_STATICASTER: CardRecord = CardRecord::new(
     cards::IZZET_STATICASTER,
@@ -355,19 +314,20 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
         4,
     )
     .with_abilities(&[
-        AbilityDef::static_ability(
-            "This spell can't be countered.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeCountered,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+        abilities::cannot_be_countered(),
+        AbilityDef::replacement_for(
+            "If a spell or ability an opponent controls causes you to discard this card, put it onto the battlefield instead of putting it into your graveyard.",
+            ReplacementEventDef::WouldMove {
+                from: ZoneKind::Hand,
+                to: ZoneKind::Graveyard,
+                cause: ZoneMoveCauseDef::EffectControlledBy(PlayerRelation::Opponent),
+            },
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Source,
+                zone: ZoneKind::Battlefield,
             },
         )
-        .with_source_zones(&[ZoneKind::Stack]),
-        AbilityDef::not_implemented(
-            "If a spell or ability an opponent controls causes you to discard this card, put it onto the battlefield instead of putting it into your graveyard.",
-            "Replacing a discard with a battlefield entry is not implemented.",
-        ),
+        .with_source_zones(&[ZoneKind::Hand]),
     ]),
 );
 
@@ -519,11 +479,20 @@ pub(in crate::card::sets) static SUPREME_VERDICT: CardRecord = CardRecord::new(
     "Supreme Verdict",
     CardArt::new("4e9648f9-7a67-4717-bca1-861d1f7fed43", "Sam Burley"),
     CardSet::ReturnToRavnica,
-    CardRules::new_sorcery(mana_cost!("{1}{W}{W}{U}")).with_ability(AbilityDef::custom_full(
-        "This spell can't be countered.\nDestroy all creatures.",
-        CardBehavior::SupremeVerdict,
-        "Implemented by the named card-local special behavior.",
-    )),
+    CardRules::new_sorcery(mana_cost!("{1}{W}{W}{U}")).with_abilities(&[
+        abilities::cannot_be_countered(),
+        AbilityDef::spell(
+            "Destroy all creatures.",
+            EffectDef::Destroy {
+                object: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                can_regenerate: true,
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static SYNCOPATE: CardRecord = CardRecord::new(

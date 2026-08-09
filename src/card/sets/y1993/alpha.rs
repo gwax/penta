@@ -176,11 +176,28 @@ pub(in crate::card::sets) static RED_ELEMENTAL_BLAST: CardRecord = CardRecord::n
     "Red Elemental Blast",
     CardArt::new("776ad9be-3309-4f1d-9f27-6219d9477662", "Richard Thomas"),
     CardSet::Alpha,
-    CardRules::new_instant(mana_cost!("{R}")).with_abilities(&[AbilityDef::custom_full(
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::choose_one_spell(
         "Choose one —\n• Counter target blue spell.\n• Destroy target blue permanent.",
-        CardBehavior::RedElementalBlast,
-        "The modal counter-or-destroy effect is implemented by the card-local spell resolver.",
-    )]),
+        &[
+            AbilityDef::counter_target(
+                "Counter target blue spell",
+                &AbilityTargetDef::exactly_one_spell(
+                    TargetSlotId(0),
+                    "blue spell",
+                    ObjectPredicateDef::Color(ManaColor::Blue),
+                ),
+            ),
+            AbilityDef::destroy_target(
+                "Destroy target blue permanent",
+                &AbilityTargetDef::exactly_one_permanent(
+                    TargetSlotId(0),
+                    "blue permanent",
+                    ObjectPredicateDef::Color(ManaColor::Blue),
+                ),
+                true,
+            ),
+        ],
+    )),
 );
 
 pub(in crate::card::sets) static SHATTER: CardRecord = CardRecord::new(
@@ -854,11 +871,28 @@ pub(in crate::card::sets) static BLUE_ELEMENTAL_BLAST: CardRecord = CardRecord::
     "Blue Elemental Blast",
     CardArt::new("20d666ef-39bf-4fbf-8201-5f1056539da2", "Richard Thomas"),
     CardSet::Alpha,
-    CardRules::new_instant(mana_cost!("{U}")).with_abilities(&[AbilityDef::custom_full(
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::choose_one_spell(
         "Choose one —\n• Counter target red spell.\n• Destroy target red permanent.",
-        CardBehavior::BlueElementalBlast,
-        "The modal counter-or-destroy effect is implemented by the card-local spell resolver.",
-    )]),
+        &[
+            AbilityDef::counter_target(
+                "Counter target red spell",
+                &AbilityTargetDef::exactly_one_spell(
+                    TargetSlotId(0),
+                    "red spell",
+                    ObjectPredicateDef::Color(ManaColor::Red),
+                ),
+            ),
+            AbilityDef::destroy_target(
+                "Destroy target red permanent",
+                &AbilityTargetDef::exactly_one_permanent(
+                    TargetSlotId(0),
+                    "red permanent",
+                    ObjectPredicateDef::Color(ManaColor::Red),
+                ),
+                true,
+            ),
+        ],
+    )),
 );
 
 pub(in crate::card::sets) static CHANNEL: CardRecord = CardRecord::new(
@@ -1418,7 +1452,7 @@ pub(in crate::card::sets) static WRATH_OF_GOD: CardRecord = CardRecord::new(
     "Wrath of God",
     CardArt::new("a2788d69-6a3a-42f0-8736-cc6b57755ecd", "Quinton Hoover"),
     CardSet::Alpha,
-    CardRules::new_sorcery(mana_cost!("{2}{W}{W}")).with_abilities(&[AbilityDef::spell(
+    CardRules::new_sorcery(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::spell(
         "Destroy all creatures. They can't be regenerated.",
         EffectDef::Destroy {
             object: EffectRecipientDef::MatchingObjects {
@@ -1428,7 +1462,7 @@ pub(in crate::card::sets) static WRATH_OF_GOD: CardRecord = CardRecord::new(
             },
             can_regenerate: false,
         },
-    )]),
+    )),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

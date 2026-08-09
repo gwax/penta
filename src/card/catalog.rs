@@ -4,8 +4,9 @@ use std::fmt;
 use std::sync::Arc;
 
 use super::{
-    AbilityDef, AbilityTargetDef, CardDefinition, CardPrinting, CardPrintingId, CardSet,
-    CardStructure, DeclarativeAbilityDef, PlayActionKind, PlayOptionDef, SpellForm, TargetSlotDef,
+    AbilityDef, AbilityImplementationDef, AbilityTargetDef, CardDefinition, CardEffectStatus,
+    CardPrinting, CardPrintingId, CardSet, CardStructure, DeclarativeAbilityDef, EffectDef,
+    ModeSetDef, PlayActionKind, PlayOptionDef, SpellForm, TargetSlotDef,
 };
 use crate::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, Format, GrantId,
@@ -288,7 +289,6 @@ fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError>
     }
 
     let mut play_options = HashSet::new();
-    let mut modes = HashSet::new();
     let mut alternative_costs = HashSet::new();
     let mut additional_costs = HashSet::new();
     for option in &definition.play_options {
@@ -305,7 +305,8 @@ fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError>
             &mut alternative_costs,
             &mut additional_costs,
         )?;
-        validate_modes_and_targets(definition, option, &mut modes)?;
+        validate_modes_and_targets(definition, option)?;
+        validate_semantic_spell_presentation(definition, option)?;
     }
 
     validate_fused_option(definition)
@@ -321,6 +322,17 @@ fn validate_abilities(
             definition: definition.id,
             part,
             count: abilities.len(),
+        });
+    }
+    let spell_count = abilities
+        .iter()
+        .filter(|ability| matches!(ability.definition, DeclarativeAbilityDef::Spell(_)))
+        .count();
+    if spell_count > 1 {
+        return Err(CatalogError::MultipleSpellAbilities {
+            definition: definition.id,
+            part,
+            count: spell_count,
         });
     }
 
@@ -349,7 +361,85 @@ fn validate_attached_ability(
         ability_id,
         ability.effect,
         &mut Vec::new(),
-    )
+    )?;
+    if let DeclarativeAbilityDef::Spell(spell) = ability.definition {
+        let Some(modal) = spell.modal() else {
+            return Ok(());
+        };
+        if ability.implementation != AbilityImplementationDef::Definition
+            || ability.effect != EffectDef::None
+        {
+            return Err(CatalogError::InvalidModalSpellParent {
+                definition: definition.id,
+                part,
+                ability: ability_id,
+            });
+        }
+        if modal.modes.len() > usize::from(u8::MAX) + 1 {
+            return Err(CatalogError::TooManySpellModes {
+                definition: definition.id,
+                part,
+                ability: ability_id,
+                count: modal.modes.len(),
+            });
+        }
+        if modal.modes.is_empty()
+            || modal.minimum > modal.maximum
+            || modal.maximum == 0
+            || (!modal.may_repeat && usize::from(modal.maximum) > modal.modes.len())
+        {
+            return Err(CatalogError::InvalidModalSpellSelection {
+                definition: definition.id,
+                part,
+                ability: ability_id,
+                minimum: modal.minimum,
+                maximum: modal.maximum,
+                may_repeat: modal.may_repeat,
+                available: modal.modes.len(),
+            });
+        }
+        for (index, mode) in modal.modes.iter().enumerate() {
+            let mode_id = ModeId::from_index(index)
+                .expect("the spell mode count was validated before assigning positional IDs");
+            let DeclarativeAbilityDef::Spell(mode_spell) = mode.definition else {
+                return Err(CatalogError::NonSpellMode {
+                    definition: definition.id,
+                    part,
+                    ability: ability_id,
+                    mode: mode_id,
+                });
+            };
+            if mode_spell.modal().is_some() {
+                return Err(CatalogError::NestedModalSpellMode {
+                    definition: definition.id,
+                    part,
+                    ability: ability_id,
+                    mode: mode_id,
+                });
+            }
+            if mode.implementation.is_executable()
+                && mode.implementation != AbilityImplementationDef::Definition
+            {
+                return Err(CatalogError::CustomSpellModeImplementation {
+                    definition: definition.id,
+                    part,
+                    ability: ability_id,
+                    mode: mode_id,
+                });
+            }
+            if let Err(problem) = validate_ability_definition(mode) {
+                return Err(CatalogError::InvalidSpellMode {
+                    definition: definition.id,
+                    part,
+                    ability: ability_id,
+                    mode: mode_id,
+                    problem,
+                });
+            }
+            validate_granted_abilities(definition, part, ability_id, mode.effect, &mut Vec::new())?;
+        }
+    }
+    Ok(())
 }
 
 fn validate_granted_abilities(
@@ -392,7 +482,16 @@ fn validate_granted_abilities(
 }
 
 fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilityValidationError> {
-    let grant_sites = ability_grant_sites(ability.effect);
+    let mut grant_sites = ability_grant_sites(ability.effect);
+    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
+        && let Some(modal) = spell.modal()
+    {
+        grant_sites = modal
+            .modes
+            .iter()
+            .map(|mode| ability_grant_sites(mode.effect))
+            .fold(grant_sites, usize::saturating_add);
+    }
     if grant_sites > usize::from(u8::MAX) + 1 {
         return Err(GrantedAbilityValidationError::TooManyGrantSites { count: grant_sites });
     }
@@ -413,7 +512,7 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
     }
 
     let (source_zones, targets, is_mana_ability) = match &ability.definition {
-        DeclarativeAbilityDef::Spell(spell) => (None, spell.targets, false),
+        DeclarativeAbilityDef::Spell(spell) => (None, spell.targets(), false),
         DeclarativeAbilityDef::ActivatedMana(activated) => {
             (Some(activated.source_zones), activated.targets, true)
         }
@@ -444,7 +543,8 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
     if is_mana_ability && !targets.is_empty() {
         return Err(GrantedAbilityValidationError::ManaAbilityHasTargets);
     }
-    validate_ability_targets(targets)
+    validate_ability_targets(targets)?;
+    Ok(())
 }
 
 fn top_level_ability_error(
@@ -549,6 +649,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::AddPlusOneCounters { .. }
         | super::EffectDef::EntersTapped
         | super::EffectDef::MoveToZone { .. }
+        | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Apply { .. }
         | super::EffectDef::Special(_) => {}
     }
@@ -581,6 +682,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::AddPlusOneCounters { .. }
         | super::EffectDef::EntersTapped
         | super::EffectDef::MoveToZone { .. }
+        | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Apply { .. }
         | super::EffectDef::Special(_) => 0,
     }
@@ -713,7 +815,6 @@ fn validate_cost_ids(
 fn validate_modes_and_targets(
     definition: &CardDefinition,
     option: &PlayOptionDef,
-    definition_modes: &mut HashSet<ModeId>,
 ) -> Result<(), CatalogError> {
     let mut option_slots = HashMap::new();
     validate_target_slots(definition, option, None, &option.targets, &mut option_slots)?;
@@ -721,45 +822,32 @@ fn validate_modes_and_targets(
     let Some(mode_set) = &option.modes else {
         return Ok(());
     };
-    if mode_set.modes.is_empty() {
-        return Err(CatalogError::EmptyModeSet {
-            definition: definition.id,
-            option: option.id,
-        });
-    }
-    if mode_set.minimum > mode_set.maximum {
-        return Err(CatalogError::InvalidModeBounds {
-            definition: definition.id,
-            option: option.id,
-            minimum: mode_set.minimum,
-            maximum: mode_set.maximum,
-        });
-    }
-    if mode_set.maximum == 0 {
-        return Err(CatalogError::ZeroModeMaximum {
-            definition: definition.id,
-            option: option.id,
-        });
-    }
-    if !mode_set.may_repeat && usize::from(mode_set.maximum) > mode_set.modes.len() {
-        return Err(CatalogError::TooManyModesWithoutRepetition {
-            definition: definition.id,
-            option: option.id,
-            maximum: mode_set.maximum,
-            available: mode_set.modes.len(),
-        });
-    }
+    validate_mode_selection_bounds(definition, option, mode_set)?;
 
     let modes_can_coexist = mode_set.maximum > 1;
-    let mut coexisting_mode_slots = HashMap::new();
+    let mut option_modes = HashSet::new();
     for mode in &mode_set.modes {
-        if !definition_modes.insert(mode.id) {
+        if !option_modes.insert(mode.id) {
             return Err(CatalogError::DuplicateModeId {
                 definition: definition.id,
+                option: option.id,
                 mode: mode.id,
             });
         }
+    }
 
+    let mut coexisting_mode_slots = HashMap::new();
+    for (index, mode) in mode_set.modes.iter().enumerate() {
+        let expected = ModeId::from_index(index)
+            .expect("validated mode sets cannot exceed the positional ID range");
+        if mode.id != expected {
+            return Err(CatalogError::NonPositionalModeId {
+                definition: definition.id,
+                option: option.id,
+                expected,
+                actual: mode.id,
+            });
+        }
         let mut mode_slots = HashMap::new();
         validate_target_slots(
             definition,
@@ -798,6 +886,235 @@ fn validate_modes_and_targets(
                     });
                 }
             }
+        }
+    }
+    Ok(())
+}
+
+fn validate_mode_selection_bounds(
+    definition: &CardDefinition,
+    option: &PlayOptionDef,
+    mode_set: &ModeSetDef,
+) -> Result<(), CatalogError> {
+    if mode_set.modes.is_empty() {
+        return Err(CatalogError::EmptyModeSet {
+            definition: definition.id,
+            option: option.id,
+        });
+    }
+    if mode_set.modes.len() > usize::from(u8::MAX) + 1 {
+        return Err(CatalogError::TooManyModes {
+            definition: definition.id,
+            option: option.id,
+            count: mode_set.modes.len(),
+        });
+    }
+    if mode_set.minimum > mode_set.maximum {
+        return Err(CatalogError::InvalidModeBounds {
+            definition: definition.id,
+            option: option.id,
+            minimum: mode_set.minimum,
+            maximum: mode_set.maximum,
+        });
+    }
+    if mode_set.maximum == 0 {
+        return Err(CatalogError::ZeroModeMaximum {
+            definition: definition.id,
+            option: option.id,
+        });
+    }
+    if !mode_set.may_repeat && usize::from(mode_set.maximum) > mode_set.modes.len() {
+        return Err(CatalogError::TooManyModesWithoutRepetition {
+            definition: definition.id,
+            option: option.id,
+            maximum: mode_set.maximum,
+            available: mode_set.modes.len(),
+        });
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_lines)]
+fn validate_semantic_spell_presentation(
+    definition: &CardDefinition,
+    option: &PlayOptionDef,
+) -> Result<(), CatalogError> {
+    if option.action != PlayActionKind::CastSpell {
+        return Ok(());
+    }
+    let SpellForm::Part(part_id) = &option.form else {
+        return Ok(());
+    };
+    let Some(part) = definition.part(*part_id) else {
+        return Ok(());
+    };
+    let Some(ability) = part
+        .rules
+        .ability_clauses()
+        .iter()
+        .find(|ability| matches!(ability.definition, DeclarativeAbilityDef::Spell(_)))
+    else {
+        return Ok(());
+    };
+    let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
+        unreachable!("the selected ability was checked as a spell")
+    };
+    let Some(modal) = spell.modal() else {
+        if ability.implementation.is_executable() && option.modes.is_some() {
+            return Err(CatalogError::UnexpectedPresentationSpellModes {
+                definition: definition.id,
+                option: option.id,
+            });
+        }
+        return Ok(());
+    };
+    if !option.targets.is_empty() {
+        return Err(CatalogError::UnexpectedModalSpellTargets {
+            definition: definition.id,
+            option: option.id,
+            count: option.targets.len(),
+        });
+    }
+    let semantic_modes = modal.modes;
+
+    let presentation_modes = option.modes.as_ref();
+    for (index, _semantic) in semantic_modes.iter().enumerate() {
+        let mode = ModeId::from_index(index)
+            .expect("attached ability validation limits positional spell mode IDs");
+        if presentation_modes
+            .is_none_or(|modes| !modes.modes.iter().any(|candidate| candidate.id == mode))
+        {
+            return Err(CatalogError::MissingPresentationSpellMode {
+                definition: definition.id,
+                option: option.id,
+                mode,
+            });
+        }
+    }
+    let Some(presentation_modes) = presentation_modes else {
+        unreachable!("every semantic mode found a presentation mode")
+    };
+    if (
+        presentation_modes.minimum,
+        presentation_modes.maximum,
+        presentation_modes.may_repeat,
+    ) != (modal.minimum, modal.maximum, modal.may_repeat)
+    {
+        return Err(CatalogError::MismatchedSpellModeSelection {
+            definition: definition.id,
+            option: option.id,
+            presentation_minimum: presentation_modes.minimum,
+            presentation_maximum: presentation_modes.maximum,
+            presentation_may_repeat: presentation_modes.may_repeat,
+            semantic_minimum: modal.minimum,
+            semantic_maximum: modal.maximum,
+            semantic_may_repeat: modal.may_repeat,
+        });
+    }
+    for presentation in &presentation_modes.modes {
+        let Some(semantic) = semantic_modes.get(presentation.id.index()) else {
+            return Err(CatalogError::MissingSemanticSpellMode {
+                definition: definition.id,
+                option: option.id,
+                mode: presentation.id,
+            });
+        };
+        let DeclarativeAbilityDef::Spell(semantic_spell) = semantic.definition else {
+            unreachable!("attached ability validation requires plain spell modes")
+        };
+        if presentation.label != semantic.text {
+            return Err(CatalogError::MismatchedSpellModeLabel {
+                definition: definition.id,
+                option: option.id,
+                mode: presentation.id,
+                presentation: presentation.label.clone(),
+                semantic: semantic.text,
+            });
+        }
+        let expected_status =
+            if ability.implementation.is_executable() && semantic.implementation.is_executable() {
+                CardEffectStatus::Implemented
+            } else {
+                CardEffectStatus::MetadataOnly
+            };
+        if presentation.effect_status != expected_status {
+            return Err(CatalogError::MismatchedSpellModeImplementation {
+                definition: definition.id,
+                option: option.id,
+                mode: presentation.id,
+                presentation: presentation.effect_status,
+                semantic: expected_status,
+            });
+        }
+        for (position, (semantic_target, presentation_target)) in semantic_spell
+            .targets()
+            .iter()
+            .zip(&presentation.targets)
+            .enumerate()
+        {
+            let Some(expected) = semantic_target.presentation() else {
+                return Err(CatalogError::UnpresentableSpellModeTarget {
+                    definition: definition.id,
+                    option: option.id,
+                    mode: presentation.id,
+                    target: semantic_target.id,
+                });
+            };
+            if presentation_target.id != expected.id {
+                return Err(CatalogError::MismatchedSpellModeTargetPresentation {
+                    definition: definition.id,
+                    option: option.id,
+                    mode: presentation.id,
+                    position,
+                    presentation: presentation_target.clone(),
+                    semantic: expected,
+                });
+            }
+            if (presentation_target.minimum, presentation_target.maximum)
+                != (semantic_target.minimum, semantic_target.maximum)
+            {
+                return Err(CatalogError::MismatchedSpellModeTargetCardinality {
+                    definition: definition.id,
+                    option: option.id,
+                    mode: presentation.id,
+                    target: semantic_target.id,
+                    presentation_minimum: presentation_target.minimum,
+                    presentation_maximum: presentation_target.maximum,
+                    semantic_minimum: semantic_target.minimum,
+                    semantic_maximum: semantic_target.maximum,
+                });
+            }
+            if (
+                presentation_target.label.as_str(),
+                presentation_target.predicate,
+            ) != (expected.label.as_str(), expected.predicate)
+            {
+                return Err(CatalogError::MismatchedSpellModeTargetPresentation {
+                    definition: definition.id,
+                    option: option.id,
+                    mode: presentation.id,
+                    position,
+                    presentation: presentation_target.clone(),
+                    semantic: expected,
+                });
+            }
+        }
+        if let Some(semantic_target) = semantic_spell.targets().get(presentation.targets.len()) {
+            return Err(CatalogError::MissingPresentationSpellModeTarget {
+                definition: definition.id,
+                option: option.id,
+                mode: presentation.id,
+                target: semantic_target.id,
+            });
+        }
+        if let Some(presentation_target) = presentation.targets.get(semantic_spell.targets().len())
+        {
+            return Err(CatalogError::MissingSemanticSpellModeTarget {
+                definition: definition.id,
+                option: option.id,
+                mode: presentation.id,
+                target: presentation_target.id,
+            });
         }
     }
     Ok(())
@@ -983,6 +1300,56 @@ pub enum CatalogError {
         part: CardPartId,
         count: usize,
     },
+    MultipleSpellAbilities {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        count: usize,
+    },
+    InvalidModalSpellParent {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+    },
+    TooManySpellModes {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        count: usize,
+    },
+    InvalidModalSpellSelection {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        minimum: u8,
+        maximum: u8,
+        may_repeat: bool,
+        available: usize,
+    },
+    NonSpellMode {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        mode: ModeId,
+    },
+    NestedModalSpellMode {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        mode: ModeId,
+    },
+    CustomSpellModeImplementation {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        mode: ModeId,
+    },
+    InvalidSpellMode {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        mode: ModeId,
+        problem: GrantedAbilityValidationError,
+    },
     TooManyAbilityGrantSites {
         definition: CardDefinitionId,
         part: CardPartId,
@@ -1076,11 +1443,23 @@ pub enum CatalogError {
     },
     DuplicateModeId {
         definition: CardDefinitionId,
+        option: PlayOptionId,
         mode: ModeId,
+    },
+    NonPositionalModeId {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        expected: ModeId,
+        actual: ModeId,
     },
     EmptyModeSet {
         definition: CardDefinitionId,
         option: PlayOptionId,
+    },
+    TooManyModes {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        count: usize,
     },
     InvalidModeBounds {
         definition: CardDefinitionId,
@@ -1097,6 +1476,85 @@ pub enum CatalogError {
         option: PlayOptionId,
         maximum: u8,
         available: usize,
+    },
+    UnexpectedPresentationSpellModes {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+    },
+    UnexpectedModalSpellTargets {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        count: usize,
+    },
+    MissingPresentationSpellMode {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+    },
+    MissingSemanticSpellMode {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+    },
+    MissingPresentationSpellModeTarget {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        target: TargetSlotId,
+    },
+    MissingSemanticSpellModeTarget {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        target: TargetSlotId,
+    },
+    MismatchedSpellModeTargetCardinality {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        target: TargetSlotId,
+        presentation_minimum: u8,
+        presentation_maximum: u8,
+        semantic_minimum: u8,
+        semantic_maximum: u8,
+    },
+    UnpresentableSpellModeTarget {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        target: TargetSlotId,
+    },
+    MismatchedSpellModeTargetPresentation {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        position: usize,
+        presentation: TargetSlotDef,
+        semantic: TargetSlotDef,
+    },
+    MismatchedSpellModeSelection {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        presentation_minimum: u8,
+        presentation_maximum: u8,
+        presentation_may_repeat: bool,
+        semantic_minimum: u8,
+        semantic_maximum: u8,
+        semantic_may_repeat: bool,
+    },
+    MismatchedSpellModeImplementation {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        presentation: CardEffectStatus,
+        semantic: CardEffectStatus,
+    },
+    MismatchedSpellModeLabel {
+        definition: CardDefinitionId,
+        option: PlayOptionId,
+        mode: ModeId,
+        presentation: String,
+        semantic: &'static str,
     },
     DuplicateAlternativeCostId {
         definition: CardDefinitionId,
@@ -1193,6 +1651,80 @@ impl fmt::Display for CatalogError {
             } => write!(
                 formatter,
                 "part {part:?} of card definition {definition:?} defines {count} abilities, but positional ability IDs support at most 256"
+            ),
+            Self::MultipleSpellAbilities {
+                definition,
+                part,
+                count,
+            } => write!(
+                formatter,
+                "part {part:?} of card definition {definition:?} defines {count} spell abilities, but one castable card part must have at most one"
+            ),
+            Self::InvalidModalSpellParent {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "modal spell ability {ability:?} on part {part:?} of card definition {definition:?} must be a targetless declarative wrapper with no effect of its own"
+            ),
+            Self::TooManySpellModes {
+                definition,
+                part,
+                ability,
+                count,
+            } => write!(
+                formatter,
+                "spell ability {ability:?} on part {part:?} of card definition {definition:?} defines {count} modes, but positional mode IDs support at most 256"
+            ),
+            Self::InvalidModalSpellSelection {
+                definition,
+                part,
+                ability,
+                minimum,
+                maximum,
+                may_repeat,
+                available,
+            } => write!(
+                formatter,
+                "spell ability {ability:?} on part {part:?} of card definition {definition:?} declares {available} modes with selection bounds {minimum}..={maximum} (repeat={may_repeat}), which cannot produce a legal selection"
+            ),
+            Self::NonSpellMode {
+                definition,
+                part,
+                ability,
+                mode,
+            } => write!(
+                formatter,
+                "mode {mode:?} of spell ability {ability:?} on part {part:?} of card definition {definition:?} is not an ordinary spell ability"
+            ),
+            Self::NestedModalSpellMode {
+                definition,
+                part,
+                ability,
+                mode,
+            } => write!(
+                formatter,
+                "mode {mode:?} of spell ability {ability:?} on part {part:?} of card definition {definition:?} is itself modal"
+            ),
+            Self::CustomSpellModeImplementation {
+                definition,
+                part,
+                ability,
+                mode,
+            } => write!(
+                formatter,
+                "mode {mode:?} of spell ability {ability:?} on part {part:?} of card definition {definition:?} uses a custom implementation, but modal branches currently require declarative effects"
+            ),
+            Self::InvalidSpellMode {
+                definition,
+                part,
+                ability,
+                mode,
+                problem,
+            } => write!(
+                formatter,
+                "mode {mode:?} of spell ability {ability:?} on part {part:?} of card definition {definition:?} {problem}"
             ),
             Self::TooManyAbilityGrantSites {
                 definition,
@@ -1315,13 +1847,34 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "play option {option:?} of card definition {definition:?} has a combined spell form but is not its declared fused split option"
             ),
-            Self::DuplicateModeId { definition, mode } => write!(
+            Self::DuplicateModeId {
+                definition,
+                option,
+                mode,
+            } => write!(
                 formatter,
-                "card definition {definition:?} defines mode {mode:?} more than once"
+                "play option {option:?} of card definition {definition:?} defines mode {mode:?} more than once"
+            ),
+            Self::NonPositionalModeId {
+                definition,
+                option,
+                expected,
+                actual,
+            } => write!(
+                formatter,
+                "mode position {expected:?} in play option {option:?} of card definition {definition:?} uses ID {actual:?}; mode IDs must match printed position"
             ),
             Self::EmptyModeSet { definition, option } => write!(
                 formatter,
                 "play option {option:?} of card definition {definition:?} has a mode set with no modes"
+            ),
+            Self::TooManyModes {
+                definition,
+                option,
+                count,
+            } => write!(
+                formatter,
+                "play option {option:?} of card definition {definition:?} defines {count} modes, but positional mode IDs support at most 256"
             ),
             Self::InvalidModeBounds {
                 definition,
@@ -1344,6 +1897,118 @@ impl fmt::Display for CatalogError {
             } => write!(
                 formatter,
                 "play option {option:?} of card definition {definition:?} allows {maximum} modes without repetition but defines only {available}"
+            ),
+            Self::UnexpectedPresentationSpellModes { definition, option } => write!(
+                formatter,
+                "play option {option:?} of card definition {definition:?} presents mode choices for an executable nonmodal spell"
+            ),
+            Self::UnexpectedModalSpellTargets {
+                definition,
+                option,
+                count,
+            } => write!(
+                formatter,
+                "play option {option:?} of card definition {definition:?} presents {count} top-level targets for a semantic modal spell; targets must belong to its mode branches"
+            ),
+            Self::MissingPresentationSpellMode {
+                definition,
+                option,
+                mode,
+            } => write!(
+                formatter,
+                "semantic spell mode {mode:?} has no presentation counterpart in play option {option:?} of card definition {definition:?}"
+            ),
+            Self::MissingSemanticSpellMode {
+                definition,
+                option,
+                mode,
+            } => write!(
+                formatter,
+                "presentation mode {mode:?} has no semantic spell counterpart in play option {option:?} of card definition {definition:?}"
+            ),
+            Self::MissingPresentationSpellModeTarget {
+                definition,
+                option,
+                mode,
+                target,
+            } => write!(
+                formatter,
+                "semantic target {target:?} of spell mode {mode:?} has no presentation counterpart in play option {option:?} of card definition {definition:?}"
+            ),
+            Self::MissingSemanticSpellModeTarget {
+                definition,
+                option,
+                mode,
+                target,
+            } => write!(
+                formatter,
+                "presentation target {target:?} of spell mode {mode:?} has no semantic counterpart in play option {option:?} of card definition {definition:?}"
+            ),
+            Self::MismatchedSpellModeTargetCardinality {
+                definition,
+                option,
+                mode,
+                target,
+                presentation_minimum,
+                presentation_maximum,
+                semantic_minimum,
+                semantic_maximum,
+            } => write!(
+                formatter,
+                "target {target:?} of spell mode {mode:?} in play option {option:?} of card definition {definition:?} has presentation cardinality {presentation_minimum}..={presentation_maximum} but semantic cardinality {semantic_minimum}..={semantic_maximum}"
+            ),
+            Self::UnpresentableSpellModeTarget {
+                definition,
+                option,
+                mode,
+                target,
+            } => write!(
+                formatter,
+                "semantic target {target:?} of spell mode {mode:?} in play option {option:?} of card definition {definition:?} cannot be represented by the presentation target vocabulary"
+            ),
+            Self::MismatchedSpellModeTargetPresentation {
+                definition,
+                option,
+                mode,
+                position,
+                presentation,
+                semantic,
+            } => write!(
+                formatter,
+                "target at position {position} of spell mode {mode:?} in play option {option:?} of card definition {definition:?} presents {presentation:?} but its semantic target projects to {semantic:?}"
+            ),
+            Self::MismatchedSpellModeSelection {
+                definition,
+                option,
+                presentation_minimum,
+                presentation_maximum,
+                presentation_may_repeat,
+                semantic_minimum,
+                semantic_maximum,
+                semantic_may_repeat,
+            } => write!(
+                formatter,
+                "spell modes in play option {option:?} of card definition {definition:?} present {presentation_minimum}..={presentation_maximum} (repeat={presentation_may_repeat}) but declare {semantic_minimum}..={semantic_maximum} (repeat={semantic_may_repeat})"
+            ),
+            Self::MismatchedSpellModeImplementation {
+                definition,
+                option,
+                mode,
+                presentation,
+                semantic,
+            } => write!(
+                formatter,
+                "spell mode {mode:?} in play option {option:?} of card definition {definition:?} presents {presentation:?} but its semantic branch is {semantic:?}"
+            ),
+            Self::MismatchedSpellModeLabel {
+                definition,
+                option,
+                mode,
+                presentation,
+                semantic,
+            } => write!(
+                formatter,
+                "spell mode {mode:?} in play option {option:?} of card definition {definition:?} is labeled {presentation:?} but its semantic branch is labeled {semantic:?}"
             ),
             Self::DuplicateAlternativeCostId { definition, cost } => write!(
                 formatter,
@@ -1426,7 +2091,7 @@ mod tests {
     fn target(id: u8, minimum: u8, maximum: u8) -> TargetSlotDef {
         TargetSlotDef {
             id: TargetSlotId(id),
-            label: format!("target {id}"),
+            label: "target".into(),
             predicate: TargetPredicate::AnyTarget,
             minimum,
             maximum,
@@ -1436,10 +2101,60 @@ mod tests {
     fn mode(id: u8, targets: Vec<TargetSlotDef>) -> ModeDef {
         ModeDef {
             id: ModeId(id),
-            label: format!("mode {id}"),
+            label: "test mode".into(),
             targets,
             effect_status: CardEffectStatus::MetadataOnly,
         }
+    }
+
+    fn semantic_target(id: u8, minimum: u8, maximum: u8) -> AbilityTargetDef {
+        AbilityTargetDef {
+            id: TargetSlotId(id),
+            label: "target",
+            predicate: AbilityTargetPredicate::AnyTarget,
+            minimum,
+            maximum,
+        }
+    }
+
+    fn semantic_mode(targets: Vec<AbilityTargetDef>) -> AbilityDef {
+        AbilityDef::spell("test mode", EffectDef::None)
+            .with_targets(Box::leak(targets.into_boxed_slice()))
+    }
+
+    fn semantic_modal_definition(
+        semantic_modes: Vec<AbilityDef>,
+        presentation_modes: Option<ModeSetDef>,
+    ) -> CardDefinition {
+        let semantic_modes = Box::leak(semantic_modes.into_boxed_slice());
+        semantic_spell_definition(
+            &AbilityDef::choose_one_spell("Choose one.", semantic_modes),
+            presentation_modes,
+        )
+    }
+
+    fn semantic_spell_definition(
+        ability: &AbilityDef,
+        mut presentation_modes: Option<ModeSetDef>,
+    ) -> CardDefinition {
+        let abilities = Box::leak(vec![*ability].into_boxed_slice());
+        let rules = crate::CardRules::new_instant(ManaCost::default()).with_abilities(abilities);
+        let mut card = definition(1, "Test Modal Spell", CardSet::Alpha);
+        set_primary_rules(&mut card, &rules);
+        card.play_options = vec![PlayOptionDef::cast(
+            PlayOptionId::DEFAULT,
+            "Test Modal Spell",
+            SpellForm::Part(CardPartId::PRIMARY),
+            ManaCost::default(),
+            CardEffectStatus::Implemented,
+        )];
+        if let Some(modes) = &mut presentation_modes {
+            for mode in &mut modes.modes {
+                mode.effect_status = CardEffectStatus::Implemented;
+            }
+        }
+        card.play_options[0].modes = presentation_modes;
+        card
     }
 
     fn split_definition(fused: Option<PlayOptionId>) -> CardDefinition {
@@ -1660,7 +2375,7 @@ mod tests {
     fn ability_ids_follow_clause_order_within_each_card_part() {
         static ABILITIES: [AbilityDef; 2] = [
             AbilityDef::spell("first", EffectDef::None),
-            AbilityDef::spell("second", EffectDef::None),
+            AbilityDef::not_implemented("second", "Only positional identity matters here."),
         ];
         let mut card = definition(1, "Test Card", CardSet::Alpha);
         let rules = card.rules.with_abilities(&ABILITIES);
@@ -1670,6 +2385,26 @@ mod tests {
         assert_eq!(attached[0].id, AbilityId(0));
         assert_eq!(attached[1].id, AbilityId(1));
         CardCatalog::new(vec![card]).expect("ordered clauses receive distinct positional IDs");
+    }
+
+    #[test]
+    fn one_card_part_cannot_define_multiple_spell_abilities() {
+        static ABILITIES: [AbilityDef; 2] = [
+            AbilityDef::spell("first", EffectDef::None),
+            AbilityDef::spell("second", EffectDef::None),
+        ];
+        let mut card = definition(1, "Test Card", CardSet::Alpha);
+        let rules = card.rules.with_abilities(&ABILITIES);
+        set_primary_rules(&mut card, &rules);
+
+        assert_eq!(
+            error(card),
+            CatalogError::MultipleSpellAbilities {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                count: 2,
+            }
+        );
     }
 
     #[test]
@@ -2061,7 +2796,7 @@ mod tests {
     }
 
     #[test]
-    fn mode_and_cost_ids_are_unique_across_a_definition() {
+    fn mode_ids_are_positional_per_option_and_cost_ids_are_unique_per_definition() {
         let modes = ModeSetDef::choose_one(vec![mode(3, Vec::new()), mode(3, Vec::new())]);
         let mut duplicate_mode = definition(1, "Test Card", CardSet::Alpha);
         duplicate_mode.play_options[0].modes = Some(modes);
@@ -2069,7 +2804,21 @@ mod tests {
             error(duplicate_mode),
             CatalogError::DuplicateModeId {
                 definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
                 mode: ModeId(3),
+            }
+        );
+
+        let mut nonpositional_mode = definition(1, "Test Card", CardSet::Alpha);
+        nonpositional_mode.play_options[0].modes =
+            Some(ModeSetDef::choose_one(vec![mode(3, Vec::new())]));
+        assert_eq!(
+            error(nonpositional_mode),
+            CatalogError::NonPositionalModeId {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                expected: ModeId(0),
+                actual: ModeId(3),
             }
         );
 
@@ -2165,6 +2914,269 @@ mod tests {
                 maximum: 1,
             }
         );
+    }
+
+    #[test]
+    fn semantic_spell_modes_require_matching_presentation_mode_ids() {
+        let valid = semantic_modal_definition(
+            vec![semantic_mode(Vec::new())],
+            Some(ModeSetDef::choose_one(vec![mode(0, Vec::new())])),
+        );
+        CardCatalog::new([valid]).unwrap();
+
+        let missing_presentation = semantic_modal_definition(vec![semantic_mode(Vec::new())], None);
+        assert_eq!(
+            error(missing_presentation),
+            CatalogError::MissingPresentationSpellMode {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(0),
+            }
+        );
+
+        let missing_semantic = semantic_modal_definition(
+            vec![semantic_mode(Vec::new())],
+            Some(ModeSetDef::choose_one(vec![
+                mode(0, Vec::new()),
+                mode(1, Vec::new()),
+            ])),
+        );
+        assert_eq!(
+            error(missing_semantic),
+            CatalogError::MissingSemanticSpellMode {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(1),
+            }
+        );
+    }
+
+    #[test]
+    fn semantic_modal_spell_selection_must_be_possible() {
+        let definition = semantic_spell_definition(
+            &AbilityDef::modal_spell("Choose one.", &[], 1, 1, false),
+            None,
+        );
+
+        assert_eq!(
+            error(definition),
+            CatalogError::InvalidModalSpellSelection {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId(0),
+                minimum: 1,
+                maximum: 1,
+                may_repeat: false,
+                available: 0,
+            }
+        );
+    }
+
+    #[test]
+    fn executable_nonmodal_spells_reject_presentation_modes() {
+        let definition = semantic_spell_definition(
+            &AbilityDef::spell("Do the thing.", EffectDef::None),
+            Some(ModeSetDef::choose_one(vec![mode(0, Vec::new())])),
+        );
+
+        assert_eq!(
+            error(definition),
+            CatalogError::UnexpectedPresentationSpellModes {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+            }
+        );
+    }
+
+    #[test]
+    fn semantic_modal_spells_keep_targets_on_their_branches() {
+        let mut definition = semantic_modal_definition(
+            vec![semantic_mode(Vec::new())],
+            Some(ModeSetDef::choose_one(vec![mode(0, Vec::new())])),
+        );
+        definition.play_options[0].targets = vec![target(7, 1, 1)];
+
+        assert_eq!(
+            error(definition),
+            CatalogError::UnexpectedModalSpellTargets {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                count: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn semantic_spell_mode_selection_rules_cannot_drift_from_presentation() {
+        let mismatched = semantic_modal_definition(
+            vec![semantic_mode(Vec::new()), semantic_mode(Vec::new())],
+            Some(ModeSetDef {
+                minimum: 1,
+                maximum: 2,
+                may_repeat: true,
+                modes: vec![mode(0, Vec::new()), mode(1, Vec::new())],
+            }),
+        );
+
+        assert_eq!(
+            error(mismatched),
+            CatalogError::MismatchedSpellModeSelection {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                presentation_minimum: 1,
+                presentation_maximum: 2,
+                presentation_may_repeat: true,
+                semantic_minimum: 1,
+                semantic_maximum: 1,
+                semantic_may_repeat: false,
+            }
+        );
+    }
+
+    #[test]
+    fn executable_spell_mode_branches_are_declarative() {
+        let custom_mode = AbilityDef::spell("Custom mode", EffectDef::None).with_implementation(
+            AbilityImplementationDef::CustomFull {
+                behavior: Some(CardBehavior::LightningBolt),
+                explanation: "test custom branch",
+            },
+        );
+        let definition = semantic_modal_definition(
+            vec![custom_mode],
+            Some(ModeSetDef::choose_one(vec![mode(0, Vec::new())])),
+        );
+
+        assert_eq!(
+            error(definition),
+            CatalogError::CustomSpellModeImplementation {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId(0),
+                mode: ModeId(0),
+            }
+        );
+    }
+
+    #[test]
+    fn semantic_spell_mode_targets_require_matching_ids_and_cardinalities() {
+        let valid = semantic_modal_definition(
+            vec![semantic_mode(vec![semantic_target(7, 1, 1)])],
+            Some(ModeSetDef::choose_one(vec![mode(0, vec![target(7, 1, 1)])])),
+        );
+        CardCatalog::new([valid]).unwrap();
+
+        let missing_presentation = semantic_modal_definition(
+            vec![semantic_mode(vec![semantic_target(7, 1, 1)])],
+            Some(ModeSetDef::choose_one(vec![mode(0, Vec::new())])),
+        );
+        assert_eq!(
+            error(missing_presentation),
+            CatalogError::MissingPresentationSpellModeTarget {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(0),
+                target: TargetSlotId(7),
+            }
+        );
+
+        let missing_semantic = semantic_modal_definition(
+            vec![semantic_mode(Vec::new())],
+            Some(ModeSetDef::choose_one(vec![mode(0, vec![target(7, 1, 1)])])),
+        );
+        assert_eq!(
+            error(missing_semantic),
+            CatalogError::MissingSemanticSpellModeTarget {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(0),
+                target: TargetSlotId(7),
+            }
+        );
+
+        let mismatched_cardinality = semantic_modal_definition(
+            vec![semantic_mode(vec![semantic_target(7, 1, 1)])],
+            Some(ModeSetDef::choose_one(vec![mode(0, vec![target(7, 0, 1)])])),
+        );
+        assert_eq!(
+            error(mismatched_cardinality),
+            CatalogError::MismatchedSpellModeTargetCardinality {
+                definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
+                mode: ModeId(0),
+                target: TargetSlotId(7),
+                presentation_minimum: 0,
+                presentation_maximum: 1,
+                semantic_minimum: 1,
+                semantic_maximum: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn semantic_spell_mode_presentation_matches_branch_order_and_predicates() {
+        let reordered = semantic_modal_definition(
+            vec![semantic_mode(vec![
+                semantic_target(7, 1, 1),
+                semantic_target(8, 1, 1),
+            ])],
+            Some(ModeSetDef::choose_one(vec![mode(
+                0,
+                vec![target(8, 1, 1), target(7, 1, 1)],
+            )])),
+        );
+        assert!(matches!(
+            error(reordered),
+            CatalogError::MismatchedSpellModeTargetPresentation {
+                mode: ModeId(0),
+                position: 0,
+                ..
+            }
+        ));
+
+        let mut wrong_predicate = semantic_modal_definition(
+            vec![semantic_mode(vec![semantic_target(7, 1, 1)])],
+            Some(ModeSetDef::choose_one(vec![mode(0, vec![target(7, 1, 1)])])),
+        );
+        wrong_predicate.play_options[0]
+            .modes
+            .as_mut()
+            .unwrap()
+            .modes[0]
+            .targets[0]
+            .predicate = TargetPredicate::Player;
+        assert!(matches!(
+            error(wrong_predicate),
+            CatalogError::MismatchedSpellModeTargetPresentation {
+                mode: ModeId(0),
+                position: 0,
+                ..
+            }
+        ));
+
+        let mut wrong_label = semantic_modal_definition(
+            vec![semantic_mode(Vec::new())],
+            Some(ModeSetDef::choose_one(vec![mode(0, Vec::new())])),
+        );
+        wrong_label.play_options[0].modes.as_mut().unwrap().modes[0].label =
+            "different mode".into();
+        assert!(matches!(
+            error(wrong_label),
+            CatalogError::MismatchedSpellModeLabel {
+                mode: ModeId(0),
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn metadata_only_presentation_modes_do_not_require_semantic_modes() {
+        let mut card = definition(1, "Metadata-Only Modal Spell", CardSet::Alpha);
+        card.play_options[0].modes = Some(ModeSetDef::choose_one(vec![
+            mode(0, vec![target(7, 1, 1)]),
+            mode(1, Vec::new()),
+        ]));
+
+        CardCatalog::new([card]).unwrap();
     }
 
     #[test]

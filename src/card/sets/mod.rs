@@ -173,6 +173,7 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::AugurOfBolas => &y2012::magic_2013::AUGUR_OF_BOLAS.rules,
         CardBehavior::BlackVise => &y1993::alpha::BLACK_VISE.rules,
         CardBehavior::BloodBaronOfVizkopa => &y2013::dragons_maze::BLOOD_BARON_OF_VIZKOPA.rules,
+        CardBehavior::BlueElementalBlast => &y1993::alpha::BLUE_ELEMENTAL_BLAST.rules,
         CardBehavior::BloodMoon => &y1994::the_dark::BLOOD_MOON.rules,
         CardBehavior::ChainLightning => &y1994::legends::CHAIN_LIGHTNING.rules,
         CardBehavior::Detonate => &y1994::antiquities::DETONATE.rules,
@@ -180,7 +181,6 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::Fork => &y1993::alpha::FORK.rules,
         CardBehavior::GlassesOfUrza => &y1993::alpha::GLASSES_OF_URZA.rules,
         CardBehavior::LightningBolt => &y1993::alpha::LIGHTNING_BOLT.rules,
-        CardBehavior::RedElementalBlast => &y1993::alpha::RED_ELEMENTAL_BLAST.rules,
         CardBehavior::Smoke => &y1993::alpha::SMOKE.rules,
         CardBehavior::StoneGiant => &y1993::alpha::STONE_GIANT.rules,
         CardBehavior::WinterOrb => &y1993::alpha::WINTER_ORB.rules,
@@ -190,6 +190,7 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::IronclawOrcs => &y1993::alpha::IRONCLAW_ORCS.rules,
         CardBehavior::MishrasFactory => &y1994::antiquities::MISHRA_S_FACTORY.rules,
         CardBehavior::OrcishMechanics => &y1994::antiquities::ORCISH_MECHANICS.rules,
+        CardBehavior::RedElementalBlast => &y1993::alpha::RED_ELEMENTAL_BLAST.rules,
         CardBehavior::WheelOfFortune => &y1993::alpha::WHEEL_OF_FORTUNE.rules,
         CardBehavior::Juggernaut => &y1993::alpha::JUGGERNAUT.rules,
         CardBehavior::ManaVault => &y1993::alpha::MANA_VAULT.rules,
@@ -198,7 +199,6 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::SwordsToPlowshares => &y1993::alpha::SWORDS_TO_PLOWSHARES.rules,
         CardBehavior::TimeWalk => &y1993::alpha::TIME_WALK.rules,
         CardBehavior::Balance => &y1993::alpha::BALANCE.rules,
-        CardBehavior::BlueElementalBlast => &y1993::alpha::BLUE_ELEMENTAL_BLAST.rules,
         CardBehavior::Channel => &y1993::alpha::CHANNEL.rules,
         CardBehavior::Crusade => &y1993::alpha::CRUSADE.rules,
         CardBehavior::DemonicTutor => &y1993::alpha::DEMONIC_TUTOR.rules,
@@ -267,8 +267,8 @@ mod tests {
         CardPrinting, CardPrintingId, CardStructure, CardSupertype, DeclarativeAbilityDef,
         DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus,
         KeywordAbility, ManaColor, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
-        ObjectPredicateDef, PlayActionKind, PlayRestriction, SpellForm, TargetPredicate,
-        TriggerEventDef, ZoneKind, abilities, cards,
+        ObjectPredicateDef, PlayActionKind, PlayRestriction, PlayerRelation, ReplacementEventDef,
+        SpellForm, TargetPredicate, TriggerEventDef, ZoneKind, ZoneMoveCauseDef, abilities, cards,
     };
     use crate::{AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ModeId, PlayOptionId};
 
@@ -371,6 +371,20 @@ mod tests {
         )
     }
 
+    fn shared_zone_move_cause(cause: ZoneMoveCauseDef) -> bool {
+        matches!(
+            cause,
+            ZoneMoveCauseDef::Any
+                | ZoneMoveCauseDef::EffectControlledBy(
+                    PlayerRelation::Any
+                        | PlayerRelation::You
+                        | PlayerRelation::Opponent
+                        | PlayerRelation::ActivePlayer
+                        | PlayerRelation::NonactivePlayer
+                )
+        )
+    }
+
     fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool) -> bool {
         let EffectDef::AddMana(mana) = effect else {
             return false;
@@ -381,10 +395,23 @@ mod tests {
         };
         selection_is_supported
             && mana.amount > 0
-            // Mana stores these annotations, but payment does not enforce
-            // restrictions yet and only paid-spell riders have a partial path.
-            && mana.restrictions.is_empty()
-            && mana.spend_effects.is_empty()
+            && mana
+                .restrictions
+                .iter()
+                .copied()
+                .all(|restriction| match restriction {
+                    ManaRestrictionDef::CastSpell(object) => shared_object_predicate(object),
+                    ManaRestrictionDef::CastCreatureSpellOfChosenType => true,
+                    ManaRestrictionDef::ActivateAbility(_) | ManaRestrictionDef::Special(_) => {
+                        false
+                    }
+                })
+            && mana.spend_effects.iter().all(|effect| {
+                matches!(
+                    effect,
+                    ManaSpendEffectDef::ApplyToPaidSpell(AppliedEffectDef::CannotBeCountered)
+                )
+            })
     }
 
     fn shared_resolving_apply(
@@ -443,7 +470,10 @@ mod tests {
                         | ZoneKind::Library
                 ) && shared_effect_recipient(object)
             }
-            EffectDef::None | EffectDef::EntersTapped | EffectDef::Special(_) => false,
+            EffectDef::None
+            | EffectDef::EntersTapped
+            | EffectDef::ChooseCreatureType { .. }
+            | EffectDef::Special(_) => false,
         }
     }
 
@@ -497,17 +527,21 @@ mod tests {
             })
     }
 
-    fn shared_static_effect(effect: EffectDef) -> bool {
+    fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef) -> bool {
         match effect {
             EffectDef::Sequence(effects) => {
-                !effects.is_empty() && effects.iter().copied().all(shared_static_effect)
+                !effects.is_empty()
+                    && effects
+                        .iter()
+                        .copied()
+                        .all(|effect| shared_static_effect(source_zones, effect))
             }
             EffectDef::Apply {
                 recipient,
                 effect,
                 duration,
             } => {
-                let recipient_is_supported = match recipient {
+                let battlefield_recipient_is_supported = match recipient {
                     EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent => true,
                     EffectRecipientDef::MatchingObjects { object, zones, .. } => {
                         zones == [ZoneKind::Battlefield] && shared_object_predicate(object)
@@ -519,7 +553,7 @@ mod tests {
                     | EffectRecipientDef::ControllerOfTriggeringObject
                     | EffectRecipientDef::EventPlayer => false,
                 };
-                let applied_effect_is_supported = match effect {
+                let battlefield_effect_is_supported = match effect {
                     AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
                         matches!(power, crate::card::ValueDef::Constant(_))
                             && matches!(toughness, crate::card::ValueDef::Constant(_))
@@ -527,13 +561,19 @@ mod tests {
                     AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
                     AppliedEffectDef::CannotBeCountered | AppliedEffectDef::Special(_) => false,
                 };
-                recipient_is_supported
-                    && applied_effect_is_supported
+                let battlefield_effect = battlefield_only(source_zones)
+                    && battlefield_recipient_is_supported
+                    && battlefield_effect_is_supported
                     && matches!(
                         duration,
                         EffectDurationDef::WhileSourceRemainsInZone
                             | EffectDurationDef::UntilSourceLeavesZone
-                    )
+                    );
+                let stack_source_effect = source_zones == [ZoneKind::Stack]
+                    && recipient == EffectRecipientDef::Source
+                    && effect == AppliedEffectDef::CannotBeCountered
+                    && duration == EffectDurationDef::WhileSourceRemainsInZone;
+                battlefield_effect || stack_source_effect
             }
             EffectDef::None
             | EffectDef::AddMana(_)
@@ -552,6 +592,7 @@ mod tests {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
+            | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
         }
     }
@@ -560,12 +601,22 @@ mod tests {
         zones == [ZoneKind::Battlefield]
     }
 
+    #[allow(clippy::too_many_lines)]
     fn shared_definition_ability(ability: &AbilityDef) -> bool {
         if ability.implementation != AbilityImplementationDef::Definition {
             return false;
         }
         match ability.definition {
-            DeclarativeAbilityDef::Spell(_) => shared_stack_effect(ability.effect),
+            DeclarativeAbilityDef::Spell(definition) => {
+                if let Some(modal) = definition.modal() {
+                    modal.modes.iter().all(|mode| {
+                        mode.implementation != AbilityImplementationDef::Definition
+                            || shared_definition_ability(mode)
+                    })
+                } else {
+                    shared_stack_effect(ability.effect)
+                }
+            }
             DeclarativeAbilityDef::ActivatedMana(definition) => {
                 battlefield_only(definition.source_zones)
                     && definition.costs.iter().any(|cost| {
@@ -608,6 +659,7 @@ mod tests {
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::EntersTapped
                         | EffectDef::MoveToZone { .. }
+                        | EffectDef::ChooseCreatureType { .. }
                         | EffectDef::Apply { .. }
                         | EffectDef::Special(_) => false,
                     }
@@ -627,26 +679,32 @@ mod tests {
                     && shared_stack_effect(ability.effect)
             }
             DeclarativeAbilityDef::Static(definition) => {
-                // A spell that says it cannot be countered is a static ability
-                // whose source sits on the stack, not the battlefield, and the
-                // runtime reads it there when a counter tries to resolve.
-                let uncounterable_spell = definition.source_zones == [ZoneKind::Stack]
-                    && matches!(
-                        ability.effect,
-                        EffectDef::Apply {
-                            recipient: EffectRecipientDef::Source,
-                            effect: AppliedEffectDef::CannotBeCountered,
-                            ..
-                        }
-                    );
-                uncounterable_spell
-                    || (battlefield_only(definition.source_zones)
-                        && shared_static_effect(ability.effect))
+                shared_static_effect(definition.source_zones, ability.effect)
             }
-            DeclarativeAbilityDef::Replacement(definition) => {
-                battlefield_only(definition.source_zones)
-                    && ability.effect == EffectDef::EntersTapped
-            }
+            DeclarativeAbilityDef::Replacement(definition) => match definition.event {
+                ReplacementEventDef::EntersBattlefield => {
+                    battlefield_only(definition.source_zones)
+                        && matches!(
+                            ability.effect,
+                            EffectDef::EntersTapped
+                                | EffectDef::ChooseCreatureType {
+                                    object: EffectRecipientDef::Source,
+                                }
+                        )
+                }
+                ReplacementEventDef::WouldMove { from, to, cause } => {
+                    definition.source_zones == [from]
+                        && from == ZoneKind::Hand
+                        && to == ZoneKind::Graveyard
+                        && shared_zone_move_cause(cause)
+                        && ability.effect
+                            == EffectDef::MoveToZone {
+                                object: EffectRecipientDef::Source,
+                                zone: ZoneKind::Battlefield,
+                            }
+                }
+                ReplacementEventDef::Special(_) => false,
+            },
             DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),
             DeclarativeAbilityDef::SpecialAction(_) | DeclarativeAbilityDef::Legacy => false,
         }
@@ -690,6 +748,7 @@ mod tests {
             | EffectDef::AddPlusOneCounters { .. }
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
+            | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {}
         }
@@ -1373,6 +1432,22 @@ mod tests {
                         );
                     }
                     assert_nested_definition_abilities(&definition.name, ability.effect);
+                    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
+                        && let Some(modal) = spell.modal()
+                    {
+                        for mode in modal.modes {
+                            if mode.implementation == AbilityImplementationDef::Definition {
+                                assert!(
+                                    shared_definition_ability(mode),
+                                    "{} {:?} ability {:?} contains a modal Definition branch outside the shared runtime boundary: {mode:?}",
+                                    definition.name,
+                                    part.id,
+                                    ability_id,
+                                );
+                            }
+                            assert_nested_definition_abilities(&definition.name, mode.effect);
+                        }
+                    }
                 }
             }
         }

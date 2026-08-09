@@ -13,12 +13,14 @@ pub mod cards;
 mod behavior;
 mod catalog;
 mod characteristics;
+mod creature_types;
 mod model;
 mod record;
 mod sets;
 
 pub use catalog::{CardCatalog, CatalogError, GrantedAbilityValidationError};
 pub use characteristics::{CharacteristicContext, CharacteristicError, applicable_part_ids};
+pub use creature_types::CREATURE_TYPES;
 pub use model::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivatedAbilityDef, ActivatedAbilityText, AddManaEffectDef, AdditionalCostDef,
@@ -28,11 +30,12 @@ pub use model::{
     CardType, CardTypeSet, ColorSet, CreatureStats, DeclarativeAbilityDef, DoubleFacedKind,
     EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus, KeywordAbility,
     LandEntry, ManaColor, ManaCost, ManaCostParseError, ManaCostParseErrorKind, ManaRestrictionDef,
-    ManaSelectionDef, ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef, MeldResultDef, ModeDef,
-    ModeSetDef, ObjectPredicateDef, ObjectQueryDef, PlayActionKind, PlayOptionDef, PlayRestriction,
-    PlayerRelation, PrintedManaCost, ReplacementAbilityDef, SpecialActionDef, SpellAbilityDef,
-    SpellForm, StaticAbilityDef, TargetPredicate, TargetSlotDef, TriggerEventDef,
-    TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind,
+    ManaSelectionDef, ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef, MeldResultDef,
+    ModalSpellDef, ModeDef, ModeSetDef, ObjectPredicateDef, ObjectQueryDef, PlayActionKind,
+    PlayOptionDef, PlayRestriction, PlayerRelation, PrintedManaCost, ReplacementAbilityDef,
+    ReplacementEventDef, SpecialActionDef, SpellAbilityDef, SpellForm, StaticAbilityDef,
+    TargetPredicate, TargetSlotDef, TriggerEventDef, TriggeredAbilityDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

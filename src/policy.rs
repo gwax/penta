@@ -5,7 +5,8 @@ use std::fmt;
 
 use crate::card::{
     AbilityCostDef, BasicLandType, CardBehavior, CardCatalog, CardSupertype, CardType, CardTypeSet,
-    DeclarativeAbilityDef, EffectDef, ValueDef,
+    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    SpellForm, ValueDef, ZoneKind,
 };
 use crate::game::{
     DecisionObservation, DecisionPreference, Game, GameResult, PlayerObservation, Step,
@@ -110,6 +111,7 @@ impl DeclarativeSpellProfile {
     const REMOVES: u8 = 1 << 1;
     const TAPS: u8 = 1 << 2;
     const APPLIES: u8 = 1 << 3;
+    const SWEEPS_CREATURES: u8 = 1 << 4;
 
     fn mark(&mut self, effect_kind: u8) {
         self.effect_kinds |= effect_kind;
@@ -175,15 +177,37 @@ impl HandcraftedPolicy {
     fn declarative_spell_profile(
         &self,
         definition: CardDefinitionId,
-        x: u16,
+        choices: &CastChoices,
     ) -> Option<DeclarativeSpellProfile> {
         let card = self.catalog.get(definition)?;
-        let ability = card.rules.ability_clauses().iter().find(|ability| {
-            ability.implementation.is_executable()
-                && matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
-        })?;
+        let option = card.play_option(choices.play_option())?;
+        let SpellForm::Part(part) = option.form else {
+            return None;
+        };
+        let ability = card
+            .part(part)?
+            .rules
+            .ability_clauses()
+            .iter()
+            .find(|ability| {
+                ability.implementation.is_executable()
+                    && matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
+            })?;
+        let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
+            unreachable!("the selected ability is a spell ability")
+        };
         let mut profile = DeclarativeSpellProfile::default();
-        Self::collect_spell_effect_profile(ability.effect, x, &mut profile);
+        Self::collect_spell_effect_profile(ability.effect, choices.x(), &mut profile);
+        if spell.modal().is_none() {
+            return choices.modes().is_empty().then_some(profile);
+        }
+        for selected in choices.modes() {
+            let mode = spell.mode(*selected)?;
+            if mode.implementation != crate::AbilityImplementationDef::Definition {
+                return None;
+            }
+            Self::collect_spell_effect_profile(mode.effect, choices.x(), &mut profile);
+        }
         Some(profile)
     }
 
@@ -205,7 +229,20 @@ impl HandcraftedPolicy {
                 profile.cards_drawn = Self::policy_value(amount, x);
             }
             EffectDef::Counter { .. } => profile.mark(DeclarativeSpellProfile::COUNTERS),
-            EffectDef::Destroy { .. } => profile.mark(DeclarativeSpellProfile::REMOVES),
+            EffectDef::Destroy { object, .. } => {
+                profile.mark(DeclarativeSpellProfile::REMOVES);
+                if let EffectRecipientDef::MatchingObjects {
+                    object,
+                    zones,
+                    controller,
+                } = object
+                    && object == ObjectPredicateDef::HasType(CardType::Creature)
+                    && zones == [ZoneKind::Battlefield]
+                    && controller == PlayerRelation::Any
+                {
+                    profile.mark(DeclarativeSpellProfile::SWEEPS_CREATURES);
+                }
+            }
             EffectDef::Tap { .. } | EffectDef::Untap { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);
             }
@@ -221,6 +258,7 @@ impl HandcraftedPolicy {
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
+            | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
         }
     }
@@ -281,7 +319,7 @@ impl HandcraftedPolicy {
         })
     }
 
-    fn counter_target_score(&self, observation: &PlayerObservation, target: Target) -> i32 {
+    fn counter_target_score(observation: &PlayerObservation, target: Target) -> i32 {
         match target {
             Target::Spell(id) => observation
                 .stack
@@ -290,8 +328,7 @@ impl HandcraftedPolicy {
                 .map_or(-10_000, |object| {
                     if object.controller == observation.viewer {
                         -10_000
-                    } else if self.behavior(object.definition) == Some(CardBehavior::SupremeVerdict)
-                    {
+                    } else if !object.counterable {
                         // Legal to target, but it would accomplish nothing.
                         -10_000
                     } else if observation.stack.iter().any(|counter| {
@@ -457,7 +494,7 @@ impl HandcraftedPolicy {
     ) -> i32 {
         let definition = Self::hand_definition(observation, card);
         let behavior = definition.and_then(|id| self.behavior(id));
-        let declarative = definition.and_then(|id| self.declarative_spell_profile(id, choices.x()));
+        let declarative = definition.and_then(|id| self.declarative_spell_profile(id, choices));
         let kind = definition
             .and_then(|id| self.catalog.get(id))
             .map(|card| card.rules.types());
@@ -473,12 +510,13 @@ impl HandcraftedPolicy {
             _ => declarative.and_then(|profile| profile.damage),
         };
         let cards_drawn = declarative.and_then(|profile| profile.cards_drawn);
-        let counters = declarative
-            .is_some_and(|profile| profile.has(DeclarativeSpellProfile::COUNTERS))
-            || matches!(behavior, Some(CardBehavior::RedElementalBlast));
+        let counters =
+            declarative.is_some_and(|profile| profile.has(DeclarativeSpellProfile::COUNTERS));
         let removes = declarative
             .is_some_and(|profile| profile.has(DeclarativeSpellProfile::REMOVES))
             || Self::is_hostile_removal(behavior);
+        let sweeps_creatures = declarative
+            .is_some_and(|profile| profile.has(DeclarativeSpellProfile::SWEEPS_CREATURES));
         let target_score: i32 = choices
             .iter_targets()
             .map(|target| {
@@ -503,7 +541,7 @@ impl HandcraftedPolicy {
                         Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => -10_000,
                     }
                 } else if counters {
-                    self.counter_target_score(observation, *target)
+                    Self::counter_target_score(observation, *target)
                 } else if removes {
                     Self::removal_target_score(observation, *target)
                 } else {
@@ -515,18 +553,17 @@ impl HandcraftedPolicy {
             })
             .sum();
         let base = match behavior {
-            Some(CardBehavior::RedElementalBlast) => 8_900,
             Some(CardBehavior::SwordsToPlowshares) => 8_400,
             Some(CardBehavior::TimeWalk) => 8_300,
             Some(CardBehavior::GoblinGrenade) => 8_500,
             Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => 8_000,
             Some(CardBehavior::PillarOfFlame) => 7_800,
-            Some(CardBehavior::SupremeVerdict) => Self::sweeper_score(observation),
             Some(CardBehavior::Fireball) => 7_900 + i32::from(x) * 20,
             Some(CardBehavior::Detonate | CardBehavior::ChaosOrb) => 7_400,
             Some(CardBehavior::Fork) => 7_300,
             Some(CardBehavior::WheelOfFortune) => 6_600,
             Some(behavior) if behavior.types().is_permanent() => 6_800,
+            _ if sweeps_creatures => Self::sweeper_score(observation),
             _ if cards_drawn.is_some_and(|amount| amount >= 3) => 9_200,
             _ if counters => 8_900,
             _ if removes => 8_400,

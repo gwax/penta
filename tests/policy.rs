@@ -1,4 +1,4 @@
-use penta::game::PermanentObservation;
+use penta::game::{PermanentObservation, StackObjectKind, StackObservation};
 use penta::poc;
 use penta::{
     AbilityId, AbilityOrigin, Action, BasicLandType, CardInstanceId, CardPartId, CastChoices, Game,
@@ -56,6 +56,7 @@ fn permanent(
         definition,
         presented: CardPartId::PRIMARY,
         controller,
+        chosen_creature_type: None,
         tapped: false,
         power,
         toughness,
@@ -105,6 +106,92 @@ fn handcrafted_does_not_float_unneeded_mana_in_its_main_phase() {
         policy.choose_action(&observation),
         Some(Action::PassPriority)
     );
+}
+
+#[test]
+fn handcrafted_does_not_counter_a_publicly_uncounterable_spell() {
+    let catalog = poc::catalog().unwrap();
+    let counterspell = CardInstanceId(1);
+    let abrupt_decay = CardInstanceId(2);
+    let cast_counterspell = Action::CastSpell {
+        card: counterspell,
+        choices: CastChoices::default().with_targets(vec![TargetSelection::single(
+            TargetSlotId(0),
+            Target::Spell(abrupt_decay),
+        )]),
+        sacrifices: Vec::new(),
+    };
+    let mut observation =
+        policy_observation(Vec::new(), vec![Action::PassPriority, cast_counterspell]);
+    observation.hand = vec![(counterspell, poc::cards::COUNTERSPELL)];
+    observation.stack.push(StackObservation {
+        id: abrupt_decay,
+        kind: StackObjectKind::Spell,
+        source: None,
+        ability: None,
+        ability_text: None,
+        definition: poc::cards::ABRUPT_DECAY,
+        controller: PlayerId::Two,
+        counterable: false,
+        signature: None,
+        targets: Vec::new(),
+        chosen_permanents: Vec::new(),
+        x: 0,
+    });
+    let mut policy = HandcraftedPolicy::new(catalog);
+
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(Action::PassPriority)
+    );
+}
+
+#[test]
+fn handcrafted_scores_declarative_creature_sweepers_by_the_board_swing() {
+    let catalog = poc::catalog().unwrap();
+    for definition in [poc::cards::WRATH_OF_GOD, poc::cards::SUPREME_VERDICT] {
+        let card = CardInstanceId(10);
+        let cast = Action::CastSpell {
+            card,
+            choices: CastChoices::default(),
+            sacrifices: Vec::new(),
+        };
+        let mut behind = policy_observation(
+            vec![
+                permanent(
+                    1,
+                    poc::cards::SAVANNAH_LIONS,
+                    PlayerId::One,
+                    Some(2),
+                    Some(1),
+                ),
+                permanent(2, poc::cards::ATOG, PlayerId::Two, Some(1), Some(2)),
+                permanent(3, poc::cards::SU_CHI, PlayerId::Two, Some(4), Some(4)),
+            ],
+            vec![Action::PassPriority, cast.clone()],
+        );
+        behind.hand = vec![(card, definition)];
+        let mut policy = HandcraftedPolicy::new(catalog.clone());
+        assert_eq!(policy.choose_action(&behind), Some(cast.clone()));
+
+        let mut ahead = policy_observation(
+            vec![
+                permanent(
+                    4,
+                    poc::cards::SAVANNAH_LIONS,
+                    PlayerId::One,
+                    Some(2),
+                    Some(1),
+                ),
+                permanent(5, poc::cards::SU_CHI, PlayerId::One, Some(4), Some(4)),
+                permanent(6, poc::cards::ATOG, PlayerId::Two, Some(1), Some(2)),
+            ],
+            vec![Action::PassPriority, cast],
+        );
+        ahead.hand = vec![(card, definition)];
+        let mut policy = HandcraftedPolicy::new(catalog.clone());
+        assert_eq!(policy.choose_action(&ahead), Some(Action::PassPriority));
+    }
 }
 
 #[test]
