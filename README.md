@@ -5,7 +5,7 @@
 `penta` is a deterministic, headless simulator for two-player constructed
 Magic: The Gathering, built for writing AI bots against.
 
-The current development bot wire contract is protocol 6; the engine crate
+The current development bot wire contract is protocol 7; the engine crate
 remains version 0.6.0 while these changes are unreleased. Old School remains
 the default at compatibility entry points; callers select ISD–RTR Standard
 explicitly with the `"isd-rtr-standard"` format slug.

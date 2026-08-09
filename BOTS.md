@@ -5,7 +5,7 @@ ships Eternal Central Old School 93/94 and the final pre-Theros ISD–RTR
 Standard format. This guide is for writing a program that plays it: from
 Python, C, C++, or Rust, against the included bots or against itself.
 
-This guide describes the current development wire contract, protocol 6. The
+This guide describes the current development wire contract, protocol 7. The
 engine crate remains version 0.6.0 while these changes are unreleased. Old
 School remains the default for compatibility; new integrations should record
 and pass an explicit format slug with each game.
