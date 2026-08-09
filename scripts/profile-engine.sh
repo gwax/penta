@@ -5,14 +5,14 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 mode="${1:-record}"
 
 if [[ $# -gt 1 ]]; then
-    echo "usage: $0 [record|record-all|open]" >&2
+    echo "usage: $0 [benchmark|record|record-all|open]" >&2
     exit 2
 fi
 
 case "$mode" in
-    record | record-all | open) ;;
+    benchmark | record | record-all | open) ;;
     *)
-        echo "usage: $0 [record|record-all|open]" >&2
+        echo "usage: $0 [benchmark|record|record-all|open]" >&2
         exit 2
         ;;
 esac
@@ -63,35 +63,24 @@ is_u64() {
     (( 10#$suffix <= 8446744073709551615 ))
 }
 
-if ! command -v samply >/dev/null 2>&1; then
-    echo "samply is required to record an engine profile" >&2
-    echo "install it with: cargo install --locked samply" >&2
-    exit 1
-fi
-
-samply_record_help="$(samply record --help)"
-if [[ "$samply_record_help" == *"--presymbolicate"* ]]; then
-    symbolication_flag="--presymbolicate"
-elif [[ "$samply_record_help" == *"--unstable-presymbolicate"* ]]; then
-    # Samply 0.13 writes a symbol sidecar; newer releases fold the same data
-    # into the saved profile behind the stable spelling above.
-    symbolication_flag="--unstable-presymbolicate"
-else
-    echo "this Samply version cannot save symbol information with a profile" >&2
-    exit 1
-fi
-
-resolve_profile_binary() {
+resolve_binary() {
     local binary_name="$1"
+    local cargo_profile="$2"
+    local profile_args=()
     local build_messages
     local executable
 
+    if [[ "$cargo_profile" == "release" ]]; then
+        profile_args=(--release)
+    else
+        profile_args=(--profile "$cargo_profile")
+    fi
     if ! build_messages="$(
         cd "$repo_root"
-        cargo build --locked --profile profiling --bin "$binary_name" \
+        cargo build --locked "${profile_args[@]}" --bin "$binary_name" \
             --message-format=json-render-diagnostics
     )"; then
-        echo "could not build profiling workload: $binary_name" >&2
+        echo "could not build $cargo_profile workload: $binary_name" >&2
         return 1
     fi
 
@@ -101,14 +90,14 @@ resolve_profile_binary() {
             | tail -n 1
     )"
     if [[ -z "$executable" ]]; then
-        echo "Cargo did not report the profiling workload path: $binary_name" >&2
+        echo "Cargo did not report the $cargo_profile workload path: $binary_name" >&2
         return 1
     fi
     printf '%s\n' "$executable"
 }
 
 workload_args=()
-if [[ "$mode" == "record" ]]; then
+if [[ "$mode" == "benchmark" || "$mode" == "record" ]]; then
     profile_games="${PROFILE_GAMES-4000}"
     profile_seed="${PROFILE_SEED-1}"
     if ! is_u64 "$profile_games" || [[ ! "$profile_games" =~ [1-9] ]]; then
@@ -135,7 +124,66 @@ else
     workload_description="the both-format policy gauntlet"
 fi
 
-profile_binary="$(resolve_profile_binary "$binary_name")"
+if [[ "$mode" == "benchmark" ]]; then
+    benchmark_runs="${BENCHMARK_RUNS-10}"
+    benchmark_warmup="${BENCHMARK_WARMUP-1}"
+    benchmark_output="${BENCHMARK_OUTPUT-}"
+    if ! is_u64 "$benchmark_runs" || [[ ! "$benchmark_runs" =~ [1-9] ]]; then
+        echo "BENCHMARK_RUNS must be a positive integer, got: $benchmark_runs" >&2
+        exit 2
+    fi
+    if ! is_u64 "$benchmark_warmup"; then
+        echo "BENCHMARK_WARMUP must be a non-negative integer, got: $benchmark_warmup" >&2
+        exit 2
+    fi
+    if ! command -v hyperfine >/dev/null 2>&1; then
+        echo "hyperfine is required to benchmark engine throughput" >&2
+        echo "install it with: cargo install --locked hyperfine" >&2
+        exit 1
+    fi
+
+    benchmark_binary="$(resolve_binary "$binary_name" release)"
+    if [[ ! -x "$benchmark_binary" ]]; then
+        echo "release workload not found: $benchmark_binary" >&2
+        exit 1
+    fi
+
+    hyperfine_args=(--warmup "$benchmark_warmup" --runs "$benchmark_runs")
+    if [[ -n "$benchmark_output" ]]; then
+        if [[ "$benchmark_output" != /* ]]; then
+            benchmark_output="$repo_root/$benchmark_output"
+        fi
+        mkdir -p "$(dirname "$benchmark_output")"
+        hyperfine_args+=(--export-json "$benchmark_output")
+    fi
+
+    echo "Verifying deterministic output for $workload_description"
+    "$benchmark_binary" "${workload_args[@]}"
+    printf -v benchmark_command '%q ' "$benchmark_binary" "${workload_args[@]}"
+    echo "Benchmarking $workload_description with $benchmark_runs measured run(s)"
+    hyperfine --shell=bash "${hyperfine_args[@]}" "$benchmark_command"
+    exit
+fi
+
+if ! command -v samply >/dev/null 2>&1; then
+    echo "samply is required to record an engine profile" >&2
+    echo "install it with: cargo install --locked samply" >&2
+    exit 1
+fi
+
+samply_record_help="$(samply record --help)"
+if [[ "$samply_record_help" == *"--presymbolicate"* ]]; then
+    symbolication_flag="--presymbolicate"
+elif [[ "$samply_record_help" == *"--unstable-presymbolicate"* ]]; then
+    # Samply 0.13 writes a symbol sidecar; newer releases fold the same data
+    # into the saved profile behind the stable spelling above.
+    symbolication_flag="--unstable-presymbolicate"
+else
+    echo "this Samply version cannot save symbol information with a profile" >&2
+    exit 1
+fi
+
+profile_binary="$(resolve_binary "$binary_name" profiling)"
 if [[ ! -x "$profile_binary" ]]; then
     echo "profiling workload not found: $profile_binary" >&2
     exit 1

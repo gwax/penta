@@ -3,6 +3,9 @@ PATTERN ?=
 PROFILE_GAMES ?= 4000
 PROFILE_SEED ?= 1
 PROFILE_OUTPUT ?=
+BENCHMARK_RUNS ?= 10
+BENCHMARK_WARMUP ?= 1
+BENCHMARK_OUTPUT ?=
 override RUST_TEST_FILTER := $(value FILTER)
 override TEST_PATTERN := $(value PATTERN)
 export RUST_TEST_FILTER
@@ -10,6 +13,9 @@ export TEST_PATTERN
 export PROFILE_GAMES
 export PROFILE_SEED
 export PROFILE_OUTPUT
+export BENCHMARK_RUNS
+export BENCHMARK_WARMUP
+export BENCHMARK_OUTPUT
 
 WEB_WASM_CONTRACT_SUITE := tests/wasm-contract.suite.mjs
 WEB_WASM_CASTING_SUITE := tests/wasm-casting.suite.mjs
@@ -43,7 +49,7 @@ endef
 	test test-rust test-rust-full test-rust-slow \
 	test-engine test-engine-unit test-engine-integration test-policy test-wasm-rust \
 	test-profile-attribution test-rust-budget \
-	build-profile-engine profile-engine profile-engine-all profile-engine-open \
+	build-profile-engine benchmark-engine profile-engine profile-engine-all profile-engine-open \
 	build-wasm build-web \
 	test-web test-web-fast test-web-unit test-web-full \
 	test-web-wasm test-web-wasm-full test-web-wasm-slow \
@@ -58,10 +64,13 @@ help: ## List the available validation and build targets.
 	@printf '\nOptional filters:\n'
 	@printf '  FILTER=<substring>           Narrow a Rust test target.\n'
 	@printf '  PATTERN=<regular-expression> Narrow a browser/WASM test target.\n'
-	@printf '\nProfiling options:\n'
-	@printf '  PROFILE_GAMES=<count>        Number of deterministic games to profile.\n'
+	@printf '\nEngine performance options:\n'
+	@printf '  PROFILE_GAMES=<count>        Number of deterministic games to run.\n'
 	@printf '  PROFILE_SEED=<number>        First deterministic game seed.\n'
 	@printf '  PROFILE_OUTPUT=<path>        Saved Samply profile (defaults depend on workload).\n'
+	@printf '  BENCHMARK_WARMUP=<count>     Hyperfine warmup runs (default: 1).\n'
+	@printf '  BENCHMARK_RUNS=<count>       Hyperfine measured runs (default: 10).\n'
+	@printf '  BENCHMARK_OUTPUT=<path>      Optional Hyperfine JSON export.\n'
 
 doctor: ## Verify the local toolchain and exact generator versions.
 	./scripts/doctor.sh
@@ -139,6 +148,9 @@ test-profile-attribution: ## Test the repository-local Samply attribution analyz
 
 build-profile-engine: ## Build the optimized engine workloads with profiling symbols.
 	cargo build --locked --profile profiling --bin penta-match --bin policy_sanity
+
+benchmark-engine: ## Benchmark deterministic native-engine throughput with Hyperfine.
+	./scripts/profile-engine.sh benchmark
 
 profile-engine: ## Record a deterministic engine CPU profile with Samply.
 	./scripts/profile-engine.sh record

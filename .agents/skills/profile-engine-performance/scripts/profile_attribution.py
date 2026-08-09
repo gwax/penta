@@ -17,6 +17,9 @@ class ProfileError(RuntimeError):
     """A saved profile cannot be analyzed reliably."""
 
 
+SUPPORTED_PROFILE_SCHEMAS = {(24, 49)}
+
+
 @dataclass(frozen=True)
 class Frame:
     library: str
@@ -31,7 +34,7 @@ class Attribution:
     symbols_path: Path | None
     product: str
     threads: list[str]
-    duration_ms: float
+    profile_span_ms: float
     total_weight: float
     raw_leaf_libraries: Counter[str] = field(default_factory=Counter)
     raw_leaf_functions: Counter[str] = field(default_factory=Counter)
@@ -66,6 +69,267 @@ def load_json(path: Path) -> dict[str, Any]:
     return document
 
 
+def validate_columnar_table(
+    thread: dict[str, Any],
+    table_name: str,
+    columns: tuple[str, ...],
+    profile_path: Path,
+) -> dict[str, Any]:
+    table = thread.get(table_name)
+    if not isinstance(table, dict):
+        raise ProfileError(f"{profile_path}: {table_name} must be an object")
+    length = table.get("length")
+    if not isinstance(length, int) or isinstance(length, bool) or length < 0:
+        raise ProfileError(f"{profile_path}: {table_name}.length must be non-negative")
+    for column in columns:
+        values = table.get(column)
+        if not isinstance(values, list) or len(values) != length:
+            raise ProfileError(
+                f"{profile_path}: {table_name}.{column} must contain {length} values"
+            )
+    return table
+
+
+def validate_profile_document(profile: dict[str, Any], profile_path: Path) -> None:
+    meta = profile.get("meta")
+    if not isinstance(meta, dict):
+        raise ProfileError(f"{profile_path}: meta must be an object")
+    schema = (meta.get("version"), meta.get("preprocessedProfileVersion"))
+    if schema not in SUPPORTED_PROFILE_SCHEMAS:
+        supported = ", ".join(
+            f"{version}/{processed}"
+            for version, processed in sorted(SUPPORTED_PROFILE_SCHEMAS)
+        )
+        raise ProfileError(
+            f"{profile_path}: unsupported Firefox processed-profile schema "
+            f"{schema[0]}/{schema[1]} (supported: {supported}); the capture may still "
+            "be valid, so inspect it with `make profile-engine-open` and add a "
+            "representative fixture before extending this analyzer"
+        )
+
+    libraries = profile.get("libs")
+    threads = profile.get("threads")
+    if not isinstance(libraries, list):
+        raise ProfileError(f"{profile_path}: libs must be an array")
+    if not isinstance(threads, list):
+        raise ProfileError(f"{profile_path}: threads must be an array")
+
+    for thread_index, thread in enumerate(threads):
+        if not isinstance(thread, dict):
+            raise ProfileError(f"{profile_path}: threads[{thread_index}] must be an object")
+        samples = thread.get("samples")
+        if not isinstance(samples, dict):
+            continue
+        sample_length = samples.get("length")
+        if (
+            not isinstance(sample_length, int)
+            or isinstance(sample_length, bool)
+            or sample_length < 0
+        ):
+            raise ProfileError(
+                f"{profile_path}: threads[{thread_index}].samples.length "
+                "must be non-negative"
+            )
+        if sample_length == 0:
+            continue
+        if samples.get("weightType") != "samples":
+            raise ProfileError(
+                f"{profile_path}: threads[{thread_index}] uses unsupported sample weights"
+            )
+        for column in ("stack", "time", "weight"):
+            values = samples.get(column)
+            if not isinstance(values, list) or len(values) != sample_length:
+                raise ProfileError(
+                    f"{profile_path}: threads[{thread_index}].samples.{column} "
+                    f"must contain {sample_length} values"
+                )
+        if not all(
+            isinstance(value, (int, float)) and not isinstance(value, bool)
+            for value in samples["time"]
+        ):
+            raise ProfileError(
+                f"{profile_path}: threads[{thread_index}].samples.time must be numeric"
+            )
+        if not all(
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and value >= 0
+            for value in samples["weight"]
+        ):
+            raise ProfileError(
+                f"{profile_path}: threads[{thread_index}].samples.weight must be non-negative"
+            )
+
+        strings = thread.get("stringArray")
+        if not isinstance(strings, list) or not all(
+            isinstance(value, str) for value in strings
+        ):
+            raise ProfileError(
+                f"{profile_path}: threads[{thread_index}].stringArray must contain strings"
+            )
+        stack_table = validate_columnar_table(
+            thread, "stackTable", ("frame", "prefix"), profile_path
+        )
+        frame_table = validate_columnar_table(
+            thread, "frameTable", ("func", "address"), profile_path
+        )
+        func_table = validate_columnar_table(
+            thread, "funcTable", ("name", "resource"), profile_path
+        )
+        resource_table = validate_columnar_table(
+            thread, "resourceTable", ("lib", "name"), profile_path
+        )
+
+        stack_length = stack_table["length"]
+        frame_length = frame_table["length"]
+        func_length = func_table["length"]
+        resource_length = resource_table["length"]
+        if not all(
+            value is None
+            or (
+                isinstance(value, int)
+                and not isinstance(value, bool)
+                and 0 <= value < stack_length
+            )
+            for value in samples["stack"]
+        ):
+            raise ProfileError(f"{profile_path}: sample stack index is out of range")
+        if not all(
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and 0 <= value < frame_length
+            for value in stack_table["frame"]
+        ):
+            raise ProfileError(f"{profile_path}: stack frame index is out of range")
+        if not all(
+            value is None
+            or (
+                isinstance(value, int)
+                and not isinstance(value, bool)
+                and 0 <= value < stack_length
+            )
+            for value in stack_table["prefix"]
+        ):
+            raise ProfileError(f"{profile_path}: stack prefix index is out of range")
+        if not all(
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and 0 <= value < func_length
+            for value in frame_table["func"]
+        ):
+            raise ProfileError(f"{profile_path}: frame function index is out of range")
+        if not all(
+            isinstance(value, int) and not isinstance(value, bool)
+            for value in frame_table["address"]
+        ):
+            raise ProfileError(f"{profile_path}: frame addresses must be integers")
+        if not all(
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and 0 <= value < len(strings)
+            for value in func_table["name"]
+        ):
+            raise ProfileError(f"{profile_path}: function name index is out of range")
+        if not all(
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and (value == -1 or 0 <= value < resource_length)
+            for value in func_table["resource"]
+        ):
+            raise ProfileError(f"{profile_path}: function resource index is out of range")
+        if not all(
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and 0 <= value < len(libraries)
+            for value in resource_table["lib"]
+        ):
+            raise ProfileError(f"{profile_path}: resource library index is out of range")
+        if not all(
+            isinstance(value, int)
+            and not isinstance(value, bool)
+            and 0 <= value < len(strings)
+            for value in resource_table["name"]
+        ):
+            raise ProfileError(f"{profile_path}: resource name index is out of range")
+
+
+def validate_symbols_document(symbols: dict[str, Any], symbols_path: Path) -> None:
+    strings = symbols.get("string_table")
+    data = symbols.get("data")
+    if not isinstance(strings, list) or not all(isinstance(value, str) for value in strings):
+        raise ProfileError(f"{symbols_path}: string_table must contain strings")
+    if not isinstance(data, list):
+        raise ProfileError(f"{symbols_path}: data must be an array")
+
+    for data_index, item in enumerate(data):
+        location = f"{symbols_path}: data[{data_index}]"
+        if not isinstance(item, dict):
+            raise ProfileError(f"{location} must be an object")
+        if not isinstance(item.get("debug_name"), str) or not isinstance(
+            item.get("code_id"), str
+        ):
+            raise ProfileError(f"{location} must identify its binary")
+        table = item.get("symbol_table")
+        addresses = item.get("known_addresses")
+        if not isinstance(table, list) or not isinstance(addresses, list):
+            raise ProfileError(f"{location} must contain symbol and address arrays")
+        for pair in addresses:
+            if (
+                not isinstance(pair, list)
+                or len(pair) != 2
+                or not all(
+                    isinstance(value, int) and not isinstance(value, bool)
+                    for value in pair
+                )
+                or not 0 <= pair[1] < len(table)
+            ):
+                raise ProfileError(f"{location} contains an invalid address mapping")
+        for symbol_index, entry in enumerate(table):
+            entry_location = f"{location}.symbol_table[{symbol_index}]"
+            if not isinstance(entry, dict):
+                raise ProfileError(f"{entry_location} must be an object")
+            expanded = entry.get("frames")
+            symbol = entry.get("symbol")
+            if (
+                not isinstance(symbol, int)
+                or isinstance(symbol, bool)
+                or not 0 <= symbol < len(strings)
+            ):
+                raise ProfileError(f"{entry_location}.symbol is out of range")
+            if expanded is not None:
+                if not isinstance(expanded, list):
+                    raise ProfileError(f"{entry_location}.frames must be an array")
+                for frame in expanded:
+                    if not isinstance(frame, dict):
+                        raise ProfileError(f"{entry_location} contains an invalid inline frame")
+                    function = frame.get("function")
+                    file_name = frame.get("file")
+                    line = frame.get("line")
+                    if (
+                        (
+                            function is not None
+                            and (
+                                not isinstance(function, int)
+                                or isinstance(function, bool)
+                                or not 0 <= function < len(strings)
+                            )
+                        )
+                        or (
+                            file_name is not None
+                            and (
+                                not isinstance(file_name, int)
+                                or isinstance(file_name, bool)
+                                or not 0 <= file_name < len(strings)
+                            )
+                        )
+                        or (
+                            line is not None
+                            and (not isinstance(line, int) or isinstance(line, bool))
+                        )
+                    ):
+                        raise ProfileError(f"{entry_location} contains an invalid inline frame")
+
+
 def symbol_candidates(profile_path: Path) -> list[Path]:
     candidates: list[Path] = []
     text = str(profile_path)
@@ -83,16 +347,20 @@ def load_symbols(
     profile_path: Path, explicit_path: Path | None
 ) -> tuple[Path | None, dict[str, Any] | None]:
     if explicit_path is not None:
-        return explicit_path, load_json(explicit_path)
+        symbols = load_json(explicit_path)
+        validate_symbols_document(symbols, explicit_path)
+        return explicit_path, symbols
     for candidate in symbol_candidates(profile_path):
         if candidate.is_file():
-            return candidate, load_json(candidate)
+            symbols = load_json(candidate)
+            validate_symbols_document(symbols, candidate)
+            return candidate, symbols
     return None, None
 
 
 def table_value(table: dict[str, Any], key: str, index: int) -> Any:
     values = table.get(key, [])
-    if not isinstance(values, list) or index >= len(values):
+    if not isinstance(values, list) or index < 0 or index >= len(values):
         return None
     return values[index]
 
@@ -193,6 +461,8 @@ class SymbolResolver:
         if entry is None:
             return [Frame(library_name, raw_name, file_name, line)]
 
+        symbol = entry.get("symbol")
+        symbol_name = string_value(self.symbol_strings, symbol, raw_name)
         expanded = entry.get("frames")
         if isinstance(expanded, list) and expanded:
             frames = []
@@ -202,7 +472,11 @@ class SymbolResolver:
                 frames.append(
                     Frame(
                         library_name,
-                        string_value(self.symbol_strings, item.get("function")),
+                        string_value(
+                            self.symbol_strings,
+                            item.get("function"),
+                            symbol_name,
+                        ),
                         string_value(
                             self.symbol_strings, item.get("file"), ""
                         )
@@ -213,11 +487,10 @@ class SymbolResolver:
             if frames:
                 return frames
 
-        symbol = entry.get("symbol")
         return [
             Frame(
                 library_name,
-                string_value(self.symbol_strings, symbol, raw_name),
+                symbol_name,
                 file_name,
                 line,
             )
@@ -319,6 +592,7 @@ def analyze(
     focuses: list[str],
 ) -> Attribution:
     profile = load_json(profile_path)
+    validate_profile_document(profile, profile_path)
     product = str(profile.get("meta", {}).get("product") or "penta-match")
     resolved_symbols_path, symbols = load_symbols(profile_path, symbols_path)
     if (
@@ -339,7 +613,7 @@ def analyze(
         symbols_path=resolved_symbols_path,
         product=product,
         threads=[str(thread.get("name") or thread.get("tid") or "unknown") for thread in threads],
-        duration_ms=0.0,
+        profile_span_ms=0.0,
         total_weight=0.0,
         callers={focus: Counter() for focus in focuses},
     )
@@ -363,7 +637,13 @@ def analyze(
             first_physical = True
             leaf_library = "unknown"
             leaf_function = "unknown"
+            visited_stacks: set[int] = set()
             while isinstance(current, int):
+                if current in visited_stacks:
+                    raise ProfileError(
+                        f"cyclic stack prefix at index {current} in {profile_path}"
+                    )
+                visited_stacks.add(current)
                 if not 0 <= current < len(stack_frames):
                     raise ProfileError(f"invalid stack index {current} in {profile_path}")
                 frame_index = stack_frames[current]
@@ -438,7 +718,7 @@ def analyze(
     if result.total_weight <= 0:
         raise ProfileError("profile contains no positive sample weight")
     if observed_times:
-        result.duration_ms = max(observed_times) - min(observed_times)
+        result.profile_span_ms = max(observed_times) - min(observed_times)
     if not result.attributed_self:
         raise ProfileError(
             "symbols were loaded, but no Penta application frames could be attributed"
@@ -460,7 +740,7 @@ def attribution_json(result: Attribution, limit: int) -> dict[str, Any]:
         "symbols": str(result.symbols_path) if result.symbols_path else None,
         "product": result.product,
         "threads": result.threads,
-        "duration_ms": result.duration_ms,
+        "profile_span_ms": result.profile_span_ms,
         "sample_weight": result.total_weight,
         "raw_leaf_libraries": entries(result.raw_leaf_libraries, result.total_weight, limit),
         "raw_leaf_functions": entries(result.raw_leaf_functions, result.total_weight, limit),
@@ -508,7 +788,7 @@ def print_summary(result: Attribution, limit: int) -> None:
     print(f"product={result.product} threads={','.join(result.threads)}")
     print(
         f"sample_weight={format_weight(result.total_weight).strip()} "
-        f"duration_ms={result.duration_ms:.3f}"
+        f"profile_span_ms={result.profile_span_ms:.3f}"
     )
     print_counter("RAW LEAF LIBRARIES", result.raw_leaf_libraries, result.total_weight, limit)
     print_counter("RAW LEAF FUNCTIONS", result.raw_leaf_functions, result.total_weight, limit)
@@ -523,8 +803,13 @@ def print_summary(result: Attribution, limit: int) -> None:
         limit,
     )
     for category, counter in result.system_attribution.items():
+        category_label = {
+            "allocator": "ALLOCATOR CPU",
+            "memory": "MEMORY-OPERATION CPU",
+            "kernel": "KERNEL CPU",
+        }[category]
         print_counter(
-            f"{category.upper()} LEAVES ATTRIBUTED TO APPLICATION",
+            f"{category_label} LEAVES ATTRIBUTED TO APPLICATION",
             counter,
             result.total_weight,
             limit,
@@ -597,8 +882,10 @@ def comparison_json(
         "before": attribution_json(before, limit),
         "after": attribution_json(after, limit),
         "delta": {
-            "duration_ms": after.duration_ms - before.duration_ms,
-            "duration_percent": percent_change(before.duration_ms, after.duration_ms),
+            "profile_span_ms": after.profile_span_ms - before.profile_span_ms,
+            "profile_span_percent": percent_change(
+                before.profile_span_ms, after.profile_span_ms
+            ),
             "sample_weight": after.total_weight - before.total_weight,
             "sample_weight_percent": percent_change(
                 before.total_weight, after.total_weight
@@ -652,9 +939,10 @@ def print_delta_table(title: str, values: list[dict[str, Any]], limit: int) -> N
 def print_comparison(before: Attribution, after: Attribution, limit: int) -> None:
     print(f"COMPARISON {before.profile_path} -> {after.profile_path}")
     print(
-        f"duration_ms={before.duration_ms:.3f} -> {after.duration_ms:.3f} "
-        f"({after.duration_ms - before.duration_ms:+.3f}, "
-        f"{format_percent_change(percent_change(before.duration_ms, after.duration_ms))})"
+        f"profile_span_ms={before.profile_span_ms:.3f} -> "
+        f"{after.profile_span_ms:.3f} "
+        f"({after.profile_span_ms - before.profile_span_ms:+.3f}, "
+        f"{format_percent_change(percent_change(before.profile_span_ms, after.profile_span_ms))})"
     )
     print(
         f"sample_weight={format_weight(before.total_weight).strip()} -> "

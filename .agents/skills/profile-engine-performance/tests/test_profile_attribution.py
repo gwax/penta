@@ -17,17 +17,20 @@ def fixture_documents(native_weight: int, hot_weight: int, end_time: int):
     frame_table = {
         "address": [100, 101, 102, 200],
         "func": [0, 1, 2, 3],
+        "length": 4,
         "line": [None, None, None, None],
     }
     func_table = {
         "fileName": [None, None, None, None],
+        "length": 4,
         "lineNumber": [None, None, None, None],
         "name": [0, 1, 2, 3],
         "resource": [0, 0, 0, 1],
     }
-    resource_table = {"lib": [0, 1], "name": [None, None]}
+    resource_table = {"length": 2, "lib": [0, 1], "name": [0, 3]}
     stack_table = {
         "frame": [0, 1, 3, 2],
+        "length": 4,
         "prefix": [None, 0, 1, 1],
     }
     thread = {
@@ -44,10 +47,16 @@ def fixture_documents(native_weight: int, hot_weight: int, end_time: int):
             "stack": [2, 3],
             "time": [0, end_time],
             "weight": [native_weight, hot_weight],
+            "weightType": "samples",
         },
     }
     profile = {
-        "meta": {"product": "penta-match", "symbolicated": False},
+        "meta": {
+            "preprocessedProfileVersion": 49,
+            "product": "penta-match",
+            "symbolicated": False,
+            "version": 24,
+        },
         "libs": [
             {"debugName": "penta-match", "codeId": "APP"},
             {"debugName": "libsystem_malloc.dylib", "codeId": "MALLOC"},
@@ -69,9 +78,18 @@ def fixture_documents(native_weight: int, hot_weight: int, end_time: int):
                 "code_id": "APP",
                 "known_addresses": [[100, 0], [101, 1], [102, 2]],
                 "symbol_table": [
-                    {"frames": [{"function": 0, "file": 3, "line": 1}]},
-                    {"frames": [{"function": 1, "file": 3, "line": 10}]},
-                    {"frames": [{"function": 2, "file": 3, "line": 20}]},
+                    {
+                        "frames": [{"function": 0, "file": 3, "line": 1}],
+                        "symbol": 0,
+                    },
+                    {
+                        "frames": [{"function": 1, "file": 3, "line": 10}],
+                        "symbol": 1,
+                    },
+                    {
+                        "frames": [{"function": 2, "file": 3, "line": 20}],
+                        "symbol": 2,
+                    },
                 ],
             },
             {
@@ -86,16 +104,25 @@ def fixture_documents(native_weight: int, hot_weight: int, end_time: int):
 
 
 class ProfileAttributionTest(unittest.TestCase):
-    def write_fixture(
-        self, directory: Path, name: str, native_weight: int, hot_weight: int, end_time: int
+    def write_documents(
+        self,
+        directory: Path,
+        name: str,
+        profile: dict,
+        symbols: dict,
     ) -> Path:
-        profile, symbols = fixture_documents(native_weight, hot_weight, end_time)
         profile_path = directory / f"{name}.json.gz"
         with gzip.open(profile_path, "wt", encoding="utf-8") as destination:
             json.dump(profile, destination)
         symbols_path = directory / f"{name}.json.syms.json"
         symbols_path.write_text(json.dumps(symbols), encoding="utf-8")
         return profile_path
+
+    def write_fixture(
+        self, directory: Path, name: str, native_weight: int, hot_weight: int, end_time: int
+    ) -> Path:
+        profile, symbols = fixture_documents(native_weight, hot_weight, end_time)
+        return self.write_documents(directory, name, profile, symbols)
 
     def run_json(self, *arguments: object) -> dict:
         completed = subprocess.run(
@@ -112,9 +139,15 @@ class ProfileAttributionTest(unittest.TestCase):
             result = self.run_json(
                 "summary", profile, "--caller-of", "hot_path", "--top", 20
             )
+            completed = subprocess.run(
+                [sys.executable, str(SCRIPT), "summary", str(profile), "--top", "20"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
 
         self.assertEqual(result["sample_weight"], 5)
-        self.assertEqual(result["duration_ms"], 4)
+        self.assertEqual(result["profile_span_ms"], 4)
         self.assertTrue(result["symbols"].endswith("sample.json.syms.json"))
         self.assertEqual(
             result["system_attribution"]["allocator"][0],
@@ -129,15 +162,17 @@ class ProfileAttributionTest(unittest.TestCase):
             "<penta::game::Game>::legal_actions",
         )
 
-    def test_compare_reports_absolute_and_duration_deltas(self):
+        self.assertIn("ALLOCATOR CPU LEAVES ATTRIBUTED", completed.stdout)
+
+    def test_compare_reports_absolute_and_profile_span_deltas(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             before = self.write_fixture(root, "before", 4, 6, 10)
             after = self.write_fixture(root, "after", 2, 3, 5)
             result = self.run_json("compare", before, after, "--top", 20)
 
-        self.assertEqual(result["delta"]["duration_ms"], -5)
-        self.assertEqual(result["delta"]["duration_percent"], -50)
+        self.assertEqual(result["delta"]["profile_span_ms"], -5)
+        self.assertEqual(result["delta"]["profile_span_percent"], -50)
         self.assertEqual(result["delta"]["sample_weight"], -5)
         self.assertEqual(result["delta"]["sample_weight_percent"], -50)
 
@@ -157,6 +192,83 @@ class ProfileAttributionTest(unittest.TestCase):
         self.assertEqual(completed.returncode, 2)
         self.assertIn("symbol sidecar", completed.stderr)
         self.assertIn("--symbols", completed.stderr)
+
+    def test_unknown_input_schema_fails_with_viewer_guidance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            profile, symbols = fixture_documents(1, 1, 1)
+            profile["meta"]["preprocessedProfileVersion"] = 50
+            profile_path = self.write_documents(
+                Path(temporary), "unknown-schema", profile, symbols
+            )
+            completed = subprocess.run(
+                [sys.executable, str(SCRIPT), "summary", str(profile_path)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("unsupported Firefox processed-profile schema 24/50", completed.stderr)
+        self.assertIn("make profile-engine-open", completed.stderr)
+
+    def test_mismatched_consumed_column_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            profile, symbols = fixture_documents(1, 1, 1)
+            profile["threads"][0]["stackTable"]["prefix"].pop()
+            profile_path = self.write_documents(
+                Path(temporary), "short-prefix", profile, symbols
+            )
+            completed = subprocess.run(
+                [sys.executable, str(SCRIPT), "summary", str(profile_path)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("stackTable.prefix must contain 4 values", completed.stderr)
+
+    def test_out_of_range_sidecar_mapping_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            profile, symbols = fixture_documents(1, 1, 1)
+            symbols["data"][0]["known_addresses"][0][1] = 99
+            profile_path = self.write_documents(
+                Path(temporary), "bad-sidecar", profile, symbols
+            )
+            completed = subprocess.run(
+                [sys.executable, str(SCRIPT), "summary", str(profile_path)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("invalid address mapping", completed.stderr)
+
+    def test_valid_unknown_resource_and_optional_inline_data_are_accepted(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            profile, symbols = fixture_documents(2, 3, 4)
+            profile["threads"][0]["funcTable"]["resource"][2] = -1
+            symbols["data"][0]["symbol_table"][0]["frames"] = []
+            symbols["data"][0]["symbol_table"][1]["frames"][0]["function"] = None
+            profile_path = self.write_documents(
+                Path(temporary), "optional-symbol-data", profile, symbols
+            )
+            result = self.run_json("summary", profile_path, "--top", 20)
+
+        self.assertEqual(result["sample_weight"], 5)
+        self.assertEqual(
+            result["attributed_self"][0],
+            {
+                "name": "<penta::game::Game>::legal_actions",
+                "share_percent": 100.0,
+                "weight": 5,
+            },
+        )
+        self.assertEqual(
+            result["system_attribution"]["allocator"][0]["name"],
+            "<penta::game::Game>::legal_actions",
+        )
 
 
 if __name__ == "__main__":

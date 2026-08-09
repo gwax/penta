@@ -1,4 +1,4 @@
 interface:
   display_name: "Profile Engine Performance"
-  short_description: "Profile and attribute Penta engine hotspots"
-  default_prompt: "Use $profile-engine-performance to capture a deterministic Penta engine profile, attribute its hotspots, and compare it with a baseline."
+  short_description: "Benchmark and profile Penta native engine"
+  default_prompt: "Use $profile-engine-performance to benchmark Penta native-engine throughput, inspect CPU hotspots, and distinguish allocator CPU time from real allocation churn."
