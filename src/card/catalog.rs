@@ -669,6 +669,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::AddCounters { .. }
         | super::EffectDef::EntersTapped
         | super::EffectDef::CannotBeForcedToSacrifice
+        | super::EffectDef::GrantFlashToNextSorcery
         | super::EffectDef::ExileLinkedToSource { .. }
         | super::EffectDef::ReturnLinkedExiles { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
@@ -712,6 +713,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::AddCounters { .. }
         | super::EffectDef::EntersTapped
         | super::EffectDef::CannotBeForcedToSacrifice
+        | super::EffectDef::GrantFlashToNextSorcery
         | super::EffectDef::ExileLinkedToSource { .. }
         | super::EffectDef::ReturnLinkedExiles { .. }
         | super::EffectDef::ReduceGenericCostBy(_)

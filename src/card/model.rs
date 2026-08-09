@@ -1075,6 +1075,9 @@ pub enum EffectDef {
         effect: &'static EffectDef,
     },
     EntersTapped,
+    /// Lets the next sorcery its controller casts this turn be cast as
+    /// though it had flash.
+    GrantFlashToNextSorcery,
     /// An effect its controller may decline. Held by reference so that
     /// `EffectDef` does not grow a recursive inline copy of itself.
     May(&'static EffectDef),

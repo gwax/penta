@@ -903,6 +903,9 @@ pub struct Game {
     /// Cards exiled by an object that promises to bring them back, paired
     /// with whatever exiled them. Oblivion Ring is the shape.
     linked_exiles: Vec<(GameObjectId, GameObjectId)>,
+    /// How many of each player's next sorceries may be cast as though they
+    /// had flash. Quicken grants one, and the grant lapses with the turn.
+    sorcery_flash_grants: [u8; 2],
     blockers_declared: bool,
     untap_pending: bool,
     pregame: Option<Pregame>,
@@ -1044,6 +1047,7 @@ impl Game {
             attackers_declared: false,
             creature_died_this_turn: false,
             linked_exiles: Vec::new(),
+            sorcery_flash_grants: [0; 2],
             blockers_declared: false,
             untap_pending: false,
             pregame: Some(Pregame::Mulligan(PlayerId::One)),
@@ -2290,6 +2294,7 @@ impl Game {
             | EffectDef::May(_)
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::ReduceGenericCostBy(_)
@@ -4307,8 +4312,13 @@ impl Game {
                         })
                     }),
                 };
+                // A granted flash covers the next sorcery whenever it is
+                // cast, so it only matters when the timing would refuse.
+                let granted_flash = types.contains(CardType::Sorcery)
+                    && self.sorcery_flash_grants[player.index()] > 0;
                 if !types.contains(CardType::Instant)
                     && !part_has_flash
+                    && !granted_flash
                     && (player != self.active_player
                         || !self.step.is_main()
                         || !self.stack.is_empty())
@@ -6093,6 +6103,16 @@ impl Game {
         };
         let card = remove_card(source_zone, card_id)
             .expect("legal cast action references a card in its casting zone");
+        // The grant is spent by the next sorcery whatever its timing, so it
+        // is consumed here rather than only when it was needed.
+        if self
+            .catalog
+            .get(card.definition)
+            .is_some_and(|definition| definition.rules.has_type(CardType::Sorcery))
+        {
+            let grants = &mut self.sorcery_flash_grants[player.index()];
+            *grants = grants.saturating_sub(1);
+        }
         // A spell is first proposed on the stack, then mana abilities may be
         // activated and costs are paid. The operation cannot fail after the
         // validated signature above, so keeping the provisional object local
@@ -6684,6 +6704,10 @@ impl Game {
                         self.queue_chosen_sacrifice(player, predicate, source);
                     }
                 }
+            }
+            EffectDef::GrantFlashToNextSorcery => {
+                let grants = &mut self.sorcery_flash_grants[object.controller.index()];
+                *grants = grants.saturating_add(1);
             }
             EffectDef::May(inner) => {
                 self.queue_optional_effect(object.controller, object, context, inner);
@@ -8641,6 +8665,7 @@ impl Game {
                 | EffectDef::May(_)
                 | EffectDef::EntersTapped
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
                 | EffectDef::ReduceGenericCostBy(_)
@@ -8733,6 +8758,7 @@ impl Game {
                 | EffectDef::May(_)
                 | EffectDef::EntersTapped
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
                 | EffectDef::ReduceGenericCostBy(_)
@@ -11132,6 +11158,7 @@ impl Game {
             | EffectDef::May(_)
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::ReduceGenericCostBy(_)
@@ -11559,6 +11586,7 @@ impl Game {
         self.active_player = next_player;
         self.turns_started[self.active_player.index()] += 1;
         self.creature_died_this_turn = false;
+        self.sorcery_flash_grants = [0; 2];
         self.step = Step::Upkeep;
         self.players[self.active_player.index()].land_played_this_turn = false;
         for permanent in &mut self.battlefield {

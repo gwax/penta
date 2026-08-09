@@ -482,9 +482,10 @@ mod tests {
                 matches!(zone, ZoneKind::Graveyard | ZoneKind::Exile)
                     && shared_effect_recipient(object)
             }
-            // A token needs no recipient: it is created under the resolving
-            // object's controller.
-            EffectDef::CreateToken { .. } => true,
+            // Neither needs a recipient: a token is created under the
+            // resolving object's controller, and the flash grant is about its
+            // controller's next spell.
+            EffectDef::CreateToken { .. } | EffectDef::GrantFlashToNextSorcery => true,
             EffectDef::OptionalManaPayment { effect, .. } => shared_stack_effect(*effect),
             EffectDef::Apply {
                 recipient,
@@ -646,9 +647,9 @@ mod tests {
                     && duration == EffectDurationDef::WhileSourceRemainsInZone;
                 battlefield_effect || stack_source_effect
             }
-            // Neither linked-exile effect is a static ability, nor is an
-            // optional one; all execute from the stack.
-            EffectDef::May(_)
+            // None of these is a static ability; all execute from the stack.
+            EffectDef::GrantFlashToNextSorcery
+            | EffectDef::May(_)
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::None
@@ -743,6 +744,7 @@ mod tests {
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::EntersTapped
                         | EffectDef::CannotBeForcedToSacrifice
+                        | EffectDef::GrantFlashToNextSorcery
                         | EffectDef::ExileLinkedToSource { .. }
                         | EffectDef::ReturnLinkedExiles { .. }
                         | EffectDef::ReduceGenericCostBy(_)
@@ -844,6 +846,7 @@ mod tests {
             | EffectDef::AddCounters { .. }
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::ReduceGenericCostBy(_)

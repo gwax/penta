@@ -7834,7 +7834,7 @@ fn tragic_slip_shrinks_a_creature_and_kills_a_small_one() {
 }
 
 #[test]
-fn quicken_still_draws_even_though_its_flash_rider_is_pending() {
+fn quicken_draws_alongside_its_flash_grant() {
     let mut game = ready_game();
     let spell = card(10_001, cards::QUICKEN, PlayerId::One);
     game.players[0].hand.push(spell.clone());
@@ -11707,4 +11707,54 @@ fn angel_of_serenity_takes_from_both_zones_and_returns_to_hand() {
         "both came back to hand rather than to the battlefield"
     );
     assert!(game.players[1].exile.is_empty());
+}
+
+#[test]
+fn quicken_lets_one_sorcery_be_cast_at_instant_speed() {
+    let mut game = ready_game();
+    let quicken = card(10_000, cards::QUICKEN, PlayerId::One);
+    game.players[0].hand.push(quicken.clone());
+    let sorceries = [
+        card(10_001, cards::MIND_TWIST, PlayerId::One),
+        card(10_002, cards::MIND_TWIST, PlayerId::One),
+    ];
+    for sorcery in &sorceries {
+        game.players[0].hand.push(sorcery.clone());
+    }
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.black = 4;
+    // The opponent's turn, where a sorcery is never castable.
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+    game.step = Step::PrecombatMain;
+
+    let castable = |game: &Game, id: CardInstanceId| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == id))
+    };
+    assert!(!castable(&game, sorceries[0].id), "not on their turn");
+
+    game.apply(
+        PlayerId::One,
+        cast_action(quicken.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    // Quicken resolving handed priority back to the active player.
+    game.priority = PlayerId::One;
+    assert!(castable(&game, sorceries[0].id), "the grant covers it");
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == sorceries[0].id))
+        .expect("castable");
+    game.apply(PlayerId::One, cast).unwrap();
+    game.priority = PlayerId::One;
+
+    assert!(
+        !castable(&game, sorceries[1].id),
+        "the grant covered the next sorcery, not every one"
+    );
 }

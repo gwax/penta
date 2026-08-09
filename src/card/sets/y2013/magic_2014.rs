@@ -252,19 +252,18 @@ pub(in crate::card::sets) static QUICKEN: CardRecord = CardRecord::new(
     "Quicken",
     CardArt::new("066bef3d-c785-4b25-9b91-8f676aa9906f", "Aleksi Briclot"),
     CardSet::Magic2014,
-    CardRules::new_instant(mana_cost!("{U}")).with_abilities(&[
-        AbilityDef::not_implemented(
-            "The next sorcery spell you cast this turn can be cast as though it had flash. (It can be cast any time you could cast an instant.)",
-            "Granting flash to a later spell is not implemented.",
-        ),
-        AbilityDef::spell(
-            "Draw a card.",
+    // One spell ability per part, so the card's two sentences are one clause
+    // with a sequence rather than two spell clauses.
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell(
+        "The next sorcery spell you cast this turn can be cast as though it had flash. (It can be cast any time you could cast an instant.)\nDraw a card.",
+        EffectDef::Sequence(&[
+            EffectDef::GrantFlashToNextSorcery,
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
             },
-        ),
-    ]),
+        ]),
+    )),
 );
 
 pub(in crate::card::sets) static RATCHET_BOMB: CardRecord = CardRecord::new(
