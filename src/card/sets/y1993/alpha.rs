@@ -3,10 +3,10 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
     CardSupertype, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, SpellModeDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, abilities, cards,
+    ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
-use crate::ids::{ModeId, TargetSlotId};
+use crate::ids::TargetSlotId;
 use crate::mana_cost;
 
 pub(in crate::card::sets) static ANKH_OF_MISHRA: CardRecord = CardRecord::new(
@@ -171,28 +171,6 @@ pub(in crate::card::sets) static MOUNTAIN: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::basic_land_type_mana(BasicLandType::Mountain)]),
 );
 
-static RED_ELEMENTAL_BLAST_MODES: [SpellModeDef; 2] = [
-    SpellModeDef::counter_target(
-        ModeId(0),
-        "Counter target blue spell",
-        &AbilityTargetDef::exactly_one_spell(
-            TargetSlotId(0),
-            "blue spell",
-            ObjectPredicateDef::Color(ManaColor::Blue),
-        ),
-    ),
-    SpellModeDef::destroy_target(
-        ModeId(1),
-        "Destroy target blue permanent",
-        &AbilityTargetDef::exactly_one_permanent(
-            TargetSlotId(0),
-            "blue permanent",
-            ObjectPredicateDef::Color(ManaColor::Blue),
-        ),
-        true,
-    ),
-];
-
 pub(in crate::card::sets) static RED_ELEMENTAL_BLAST: CardRecord = CardRecord::new(
     cards::RED_ELEMENTAL_BLAST,
     "Red Elemental Blast",
@@ -200,7 +178,25 @@ pub(in crate::card::sets) static RED_ELEMENTAL_BLAST: CardRecord = CardRecord::n
     CardSet::Alpha,
     CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::choose_one_spell(
         "Choose one —\n• Counter target blue spell.\n• Destroy target blue permanent.",
-        &RED_ELEMENTAL_BLAST_MODES,
+        &[
+            AbilityDef::counter_target(
+                "Counter target blue spell",
+                &AbilityTargetDef::exactly_one_spell(
+                    TargetSlotId(0),
+                    "blue spell",
+                    ObjectPredicateDef::Color(ManaColor::Blue),
+                ),
+            ),
+            AbilityDef::destroy_target(
+                "Destroy target blue permanent",
+                &AbilityTargetDef::exactly_one_permanent(
+                    TargetSlotId(0),
+                    "blue permanent",
+                    ObjectPredicateDef::Color(ManaColor::Blue),
+                ),
+                true,
+            ),
+        ],
     )),
 );
 
@@ -870,28 +866,6 @@ pub(in crate::card::sets) static BIRDS_OF_PARADISE: CardRecord = CardRecord::new
     ]),
 );
 
-static BLUE_ELEMENTAL_BLAST_MODES: [SpellModeDef; 2] = [
-    SpellModeDef::counter_target(
-        ModeId(0),
-        "Counter target red spell",
-        &AbilityTargetDef::exactly_one_spell(
-            TargetSlotId(0),
-            "red spell",
-            ObjectPredicateDef::Color(ManaColor::Red),
-        ),
-    ),
-    SpellModeDef::destroy_target(
-        ModeId(1),
-        "Destroy target red permanent",
-        &AbilityTargetDef::exactly_one_permanent(
-            TargetSlotId(0),
-            "red permanent",
-            ObjectPredicateDef::Color(ManaColor::Red),
-        ),
-        true,
-    ),
-];
-
 pub(in crate::card::sets) static BLUE_ELEMENTAL_BLAST: CardRecord = CardRecord::new(
     cards::BLUE_ELEMENTAL_BLAST,
     "Blue Elemental Blast",
@@ -899,7 +873,25 @@ pub(in crate::card::sets) static BLUE_ELEMENTAL_BLAST: CardRecord = CardRecord::
     CardSet::Alpha,
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::choose_one_spell(
         "Choose one —\n• Counter target red spell.\n• Destroy target red permanent.",
-        &BLUE_ELEMENTAL_BLAST_MODES,
+        &[
+            AbilityDef::counter_target(
+                "Counter target red spell",
+                &AbilityTargetDef::exactly_one_spell(
+                    TargetSlotId(0),
+                    "red spell",
+                    ObjectPredicateDef::Color(ManaColor::Red),
+                ),
+            ),
+            AbilityDef::destroy_target(
+                "Destroy target red permanent",
+                &AbilityTargetDef::exactly_one_permanent(
+                    TargetSlotId(0),
+                    "red permanent",
+                    ObjectPredicateDef::Color(ManaColor::Red),
+                ),
+                true,
+            ),
+        ],
     )),
 );
 
@@ -1460,9 +1452,16 @@ pub(in crate::card::sets) static WRATH_OF_GOD: CardRecord = CardRecord::new(
     "Wrath of God",
     CardArt::new("a2788d69-6a3a-42f0-8736-cc6b57755ecd", "Quinton Hoover"),
     CardSet::Alpha,
-    CardRules::new_sorcery(mana_cost!("{2}{W}{W}")).with_ability(abilities::destroy_all_creatures(
+    CardRules::new_sorcery(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::spell(
         "Destroy all creatures. They can't be regenerated.",
-        false,
+        EffectDef::Destroy {
+            object: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::Any,
+            },
+            can_regenerate: false,
+        },
     )),
 );
 

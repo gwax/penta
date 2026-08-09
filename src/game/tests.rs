@@ -815,8 +815,9 @@ fn energy_flux_cannot_be_cast_as_an_inert_enchantment() {
 fn cast_validation_rejects_unrecognized_structured_choices() {
     let definition_id = CardDefinitionId(10_200);
     let option_id = PlayOptionId(7);
-    let implemented_mode = ModeId(2);
-    let metadata_mode = ModeId(3);
+    let implemented_mode = ModeId(0);
+    let metadata_mode = ModeId(1);
+    let second_implemented_mode = ModeId(2);
     let slot_id = TargetSlotId(5);
     let alternative_id = AlternativeCostId(11);
     let additional_id = AdditionalCostId(13);
@@ -856,6 +857,12 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
                 label: "Not implemented".into(),
                 targets: Vec::new(),
                 effect_status: CardEffectStatus::MetadataOnly,
+            },
+            ModeDef {
+                id: second_implemented_mode,
+                label: "Second implemented mode".into(),
+                targets: Vec::new(),
+                effect_status: CardEffectStatus::Implemented,
             },
         ],
     });
@@ -898,11 +905,33 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
     assert_eq!(signature.targets(), valid.targets());
     assert_eq!(cost, ManaCost::new(3, 0));
 
+    let canonical_modes = CastChoices::new(option_id)
+        .with_modes(vec![implemented_mode, second_implemented_mode])
+        .with_costs(CostConfiguration::new(
+            Some(alternative_id),
+            vec![additional_id],
+        ))
+        .with_targets(vec![TargetSelection::single(
+            slot_id,
+            Target::Player(PlayerId::Two),
+        )]);
+    assert!(
+        game.validated_cast_signature(PlayerId::One, card_id, &canonical_modes)
+            .is_some(),
+        "distinct modes are accepted in positional order",
+    );
+
     let invalid = [
         CastChoices::new(PlayOptionId(99)),
         CastChoices::new(option_id),
         CastChoices::new(option_id).with_modes(vec![metadata_mode]),
         CastChoices::new(option_id).with_modes(vec![implemented_mode, implemented_mode]),
+        CastChoices::new(option_id)
+            .with_modes(vec![second_implemented_mode, implemented_mode])
+            .with_targets(vec![TargetSelection::single(
+                slot_id,
+                Target::Player(PlayerId::Two),
+            )]),
         CastChoices::new(option_id)
             .with_modes(vec![implemented_mode])
             .with_costs(CostConfiguration::new(
@@ -935,6 +964,53 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
             "invalid structured choices were accepted: {choices:?}",
         );
     }
+}
+
+#[test]
+fn generated_mode_selections_are_canonical_combinations() {
+    let modes = [ModeId(0), ModeId(1)];
+    assert_eq!(
+        mode_id_selections(&modes, 2, 2, false),
+        vec![vec![ModeId(0), ModeId(1)]],
+    );
+    assert_eq!(
+        mode_id_selections(&modes, 2, 2, true),
+        vec![
+            vec![ModeId(0), ModeId(0)],
+            vec![ModeId(0), ModeId(1)],
+            vec![ModeId(1), ModeId(1)],
+        ],
+    );
+}
+
+#[test]
+fn selected_modal_effects_freeze_multiplicity_in_printed_order() {
+    const FIRST: EffectDef = EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    };
+    const SECOND: EffectDef = EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    };
+    const MODAL: AbilityDef = AbilityDef::modal_spell(
+        "Choose modes.",
+        &[
+            AbilityDef::spell("First mode", FIRST),
+            AbilityDef::spell("Second mode", SECOND),
+        ],
+        1,
+        3,
+        true,
+    );
+    let DeclarativeAbilityDef::Spell(spell) = MODAL.definition else {
+        panic!("the fixture is a modal spell")
+    };
+
+    assert_eq!(
+        Game::selected_spell_mode_effects(spell, &[ModeId(1), ModeId(0), ModeId(1)]),
+        Some(vec![FIRST, SECOND, SECOND]),
+    );
 }
 
 #[test]
@@ -5449,7 +5525,7 @@ fn dust_to_dust_targets(game: &mut Game, mut spell: StackObject) {
 }
 
 #[test]
-fn wrath_and_supreme_verdict_share_the_declarative_creature_sweeper() {
+fn wrath_and_supreme_verdict_use_equivalent_declarative_creature_sweepers() {
     let game = ready_game();
     for (definition, can_regenerate, cannot_be_countered) in [
         (cards::WRATH_OF_GOD, false, false),
@@ -8434,9 +8510,8 @@ fn countering_acceptance_cards_report_complete_shared_implementations() {
             .ability_clauses()
             .iter()
             .find_map(|ability| match ability.definition {
-                DeclarativeAbilityDef::Spell(spell) if !spell.modes.is_empty() => Some(spell),
-                DeclarativeAbilityDef::Spell(_)
-                | DeclarativeAbilityDef::ActivatedMana(_)
+                DeclarativeAbilityDef::Spell(spell) => spell.modal(),
+                DeclarativeAbilityDef::ActivatedMana(_)
                 | DeclarativeAbilityDef::TriggeredMana(_)
                 | DeclarativeAbilityDef::Activated(_)
                 | DeclarativeAbilityDef::Triggered(_)
@@ -8447,7 +8522,13 @@ fn countering_acceptance_cards_report_complete_shared_implementations() {
                 | DeclarativeAbilityDef::Legacy => None,
             })
             .expect("an Elemental Blast has declarative modes");
+        assert_eq!((modal.minimum, modal.maximum), (1, 1));
+        assert!(!modal.may_repeat);
         assert_eq!(modal.modes.len(), 2);
+        assert!(modal.modes.iter().all(|mode| {
+            mode.implementation == AbilityImplementationDef::Definition
+                && matches!(mode.definition, DeclarativeAbilityDef::Spell(spell) if spell.modal().is_none())
+        }));
         assert!(
             modal
                 .modes

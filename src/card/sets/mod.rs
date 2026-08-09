@@ -608,14 +608,13 @@ mod tests {
         }
         match ability.definition {
             DeclarativeAbilityDef::Spell(definition) => {
-                if definition.modes.is_empty() {
-                    shared_stack_effect(ability.effect)
+                if let Some(modal) = definition.modal() {
+                    modal.modes.iter().all(|mode| {
+                        mode.implementation != AbilityImplementationDef::Definition
+                            || shared_definition_ability(mode)
+                    })
                 } else {
-                    (ability.effect == EffectDef::None || shared_stack_effect(ability.effect))
-                        && definition
-                            .modes
-                            .iter()
-                            .all(|mode| shared_stack_effect(mode.effect))
+                    shared_stack_effect(ability.effect)
                 }
             }
             DeclarativeAbilityDef::ActivatedMana(definition) => {
@@ -1433,8 +1432,19 @@ mod tests {
                         );
                     }
                     assert_nested_definition_abilities(&definition.name, ability.effect);
-                    if let DeclarativeAbilityDef::Spell(spell) = ability.definition {
-                        for mode in spell.modes {
+                    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
+                        && let Some(modal) = spell.modal()
+                    {
+                        for mode in modal.modes {
+                            if mode.implementation == AbilityImplementationDef::Definition {
+                                assert!(
+                                    shared_definition_ability(mode),
+                                    "{} {:?} ability {:?} contains a modal Definition branch outside the shared runtime boundary: {mode:?}",
+                                    definition.name,
+                                    part.id,
+                                    ability_id,
+                                );
+                            }
                             assert_nested_definition_abilities(&definition.name, mode.effect);
                         }
                     }

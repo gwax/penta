@@ -247,8 +247,8 @@ struct StackAbilityPayload {
     targets: Vec<TargetSelection>,
     context: TriggerContext,
     resolver: StackAbilityResolver,
-    /// Mode effects selected while casting, in the exact order selected.
-    /// Repeated modes therefore remain repeated procedures.
+    /// Selected declarative mode effects frozen in canonical printed order.
+    /// Repeated modes remain repeated procedures.
     mode_effects: Vec<EffectDef>,
 }
 
@@ -3978,13 +3978,16 @@ impl Game {
         spell: crate::card::SpellAbilityDef,
         selected_modes: &[ModeId],
     ) -> Option<Vec<AbilityTargetDef>> {
-        let mut targets = spell.targets.to_vec();
-        if spell.modes.is_empty() {
+        let mut targets = spell.targets().to_vec();
+        if spell.modal().is_none() {
             return selected_modes.is_empty().then_some(targets);
         }
         for selected in selected_modes {
-            let mode = spell.modes.iter().find(|mode| mode.id == *selected)?;
-            targets.extend_from_slice(mode.targets);
+            let mode = spell.mode(*selected)?;
+            let DeclarativeAbilityDef::Spell(mode_spell) = mode.definition else {
+                return None;
+            };
+            targets.extend_from_slice(mode_spell.targets());
         }
         Some(targets)
     }
@@ -3993,17 +3996,16 @@ impl Game {
         spell: crate::card::SpellAbilityDef,
         selected_modes: &[ModeId],
     ) -> Option<Vec<EffectDef>> {
-        if spell.modes.is_empty() {
+        if spell.modal().is_none() {
             return selected_modes.is_empty().then_some(Vec::new());
         }
-        selected_modes
-            .iter()
-            .map(|selected| {
-                spell
-                    .modes
-                    .iter()
-                    .find(|mode| mode.id == *selected)
-                    .map(|mode| mode.effect)
+        let mut selected = selected_modes.to_vec();
+        selected.sort_by_key(|mode| mode.index());
+        selected
+            .into_iter()
+            .map(|mode| {
+                let mode = spell.mode(mode)?;
+                (mode.implementation == AbilityImplementationDef::Definition).then_some(mode.effect)
             })
             .collect()
     }
@@ -4049,7 +4051,7 @@ impl Game {
         let target_defs = Self::selected_spell_target_defs(spell, signature.modes())
             .expect("validated modes select declared spell targets");
         let mode_effects = Self::selected_spell_mode_effects(spell, signature.modes())
-            .expect("validated modes select declared spell effects");
+            .expect("validated modes select declared spell branches");
         Some(StackAbilityPayload {
             origin,
             presentation_definition: definition_id,
@@ -4092,6 +4094,8 @@ impl Game {
             .filter(|mode| mode.effect_status == CardEffectStatus::Implemented)
             .map(|mode| mode.id)
             .collect::<Vec<_>>();
+        let mut implemented = implemented;
+        implemented.sort_unstable();
         mode_id_selections(
             &implemented,
             usize::from(mode_set.minimum),
@@ -5290,6 +5294,9 @@ impl Game {
                     if unique.len() != count {
                         return None;
                     }
+                }
+                if choices.modes().windows(2).any(|pair| pair[0] > pair[1]) {
+                    return None;
                 }
                 if choices.modes().iter().any(|selected| {
                     !mode_set.modes.iter().any(|mode| {
@@ -7391,7 +7398,7 @@ impl Game {
             .iter()
             .filter(|ability| matches!(ability.effect, EffectDef::Attach { .. }))
             .flat_map(|ability| match ability.definition {
-                DeclarativeAbilityDef::Spell(spell) => spell.targets,
+                DeclarativeAbilityDef::Spell(spell) => spell.targets(),
                 _ => &[],
             })
             .all(|slot| match slot.predicate {
@@ -10702,8 +10709,8 @@ fn repeated_mode_selections(modes: &[ModeId], count: usize) -> Vec<Vec<ModeId>> 
         return vec![Vec::new()];
     }
     let mut result = Vec::new();
-    for mode in modes {
-        for mut tail in repeated_mode_selections(modes, count - 1) {
+    for (index, mode) in modes.iter().enumerate() {
+        for mut tail in repeated_mode_selections(&modes[index..], count - 1) {
             let mut choice = vec![*mode];
             choice.append(&mut tail);
             result.push(choice);

@@ -5,8 +5,8 @@
 
 use super::model::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, AppliedEffectDef,
-    BasicLandType, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, PlayerRelation, ZoneKind,
+    BasicLandType, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ZoneKind,
 };
 
 /// Why a printed basic-land-type mana clause is not yet fully modeled.
@@ -141,24 +141,6 @@ pub const fn cannot_be_countered() -> AbilityDef {
         },
     )
     .with_source_zones(&[ZoneKind::Stack])
-}
-
-/// A spell that destroys every creature. `can_regenerate` captures the only
-/// rules difference between ordinary sweepers and wording such as Wrath of
-/// God's "They can't be regenerated."
-#[must_use]
-pub const fn destroy_all_creatures(text: &'static str, can_regenerate: bool) -> AbilityDef {
-    AbilityDef::spell(
-        text,
-        EffectDef::Destroy {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
-            can_regenerate,
-        },
-    )
 }
 
 /// A common mana ability that taps its source to add one fixed kind of mana.

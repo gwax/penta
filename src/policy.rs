@@ -198,11 +198,14 @@ impl HandcraftedPolicy {
         };
         let mut profile = DeclarativeSpellProfile::default();
         Self::collect_spell_effect_profile(ability.effect, choices.x(), &mut profile);
-        if spell.modes.is_empty() {
+        if spell.modal().is_none() {
             return choices.modes().is_empty().then_some(profile);
         }
         for selected in choices.modes() {
-            let mode = spell.modes.iter().find(|mode| mode.id == *selected)?;
+            let mode = spell.mode(*selected)?;
+            if mode.implementation != crate::AbilityImplementationDef::Definition {
+                return None;
+            }
             Self::collect_spell_effect_profile(mode.effect, choices.x(), &mut profile);
         }
         Some(profile)

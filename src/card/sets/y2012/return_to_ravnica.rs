@@ -5,10 +5,10 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
     CardSupertype, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry,
-    ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEventDef, SpellModeDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities, cards,
+    ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef, abilities, cards,
 };
-use crate::ids::{ModeId, TargetSlotId};
+use crate::ids::TargetSlotId;
 use crate::mana_cost;
 
 pub(in crate::card::sets) static ABRUPT_DECAY: CardRecord = CardRecord::new(
@@ -226,31 +226,6 @@ pub(in crate::card::sets) static HALLOWED_FOUNTAIN: CardRecord = CardRecord::new
     ]),
 );
 
-static IZZET_CHARM_MODES: [SpellModeDef; 3] = [
-    SpellModeDef::new(
-        ModeId(0),
-        "Counter a noncreature spell unless its controller pays {2}",
-        EffectDef::None,
-    )
-    .with_targets(&[AbilityTargetDef::exactly_one_spell(
-        TargetSlotId(0),
-        "noncreature spell",
-        ObjectPredicateDef::NoncreatureSpell,
-    )]),
-    SpellModeDef::new(ModeId(1), "Deal 2 damage to a creature", EffectDef::None).with_targets(&[
-        AbilityTargetDef::exactly_one_permanent(
-            TargetSlotId(1),
-            "creature",
-            ObjectPredicateDef::HasType(CardType::Creature),
-        ),
-    ]),
-    SpellModeDef::new(
-        ModeId(2),
-        "Draw two cards, then discard two cards",
-        EffectDef::None,
-    ),
-];
-
 pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
     cards::IZZET_CHARM,
     "Izzet Charm",
@@ -259,11 +234,31 @@ pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{U}{R}")).with_ability(
         AbilityDef::choose_one_spell(
             "Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.",
-            &IZZET_CHARM_MODES,
-        )
-        .with_implementation(AbilityImplementationDef::NotImplemented {
-            explanation: "Printed rules are cataloged but are not executed by the engine.",
-        }),
+            &[
+                AbilityDef::unimplemented_spell(
+                    "Counter a noncreature spell unless its controller pays {2}",
+                    "Printed mode is cataloged but is not executed by the engine.",
+                )
+                .with_targets(&[AbilityTargetDef::exactly_one_spell(
+                    TargetSlotId(0),
+                    "noncreature spell",
+                    ObjectPredicateDef::NoncreatureSpell,
+                )]),
+                AbilityDef::unimplemented_spell(
+                    "Deal 2 damage to a creature",
+                    "Printed mode is cataloged but is not executed by the engine.",
+                )
+                .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+                    TargetSlotId(1),
+                    "creature",
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )]),
+                AbilityDef::unimplemented_spell(
+                    "Draw two cards, then discard two cards",
+                    "Printed mode is cataloged but is not executed by the engine.",
+                ),
+            ],
+        ),
     ),
 );
 
@@ -486,7 +481,17 @@ pub(in crate::card::sets) static SUPREME_VERDICT: CardRecord = CardRecord::new(
     CardSet::ReturnToRavnica,
     CardRules::new_sorcery(mana_cost!("{1}{W}{W}{U}")).with_abilities(&[
         abilities::cannot_be_countered(),
-        abilities::destroy_all_creatures("Destroy all creatures.", true),
+        AbilityDef::spell(
+            "Destroy all creatures.",
+            EffectDef::Destroy {
+                object: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                can_regenerate: true,
+            },
+        ),
     ]),
 );
 

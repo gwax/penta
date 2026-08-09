@@ -72,9 +72,21 @@ impl PlayOptionId {
     pub const DEFAULT: Self = Self(0);
 }
 
-/// Identity of one rules-text mode, local to its card definition.
+/// Positional identity of one rules-text mode, local to a play option.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ModeId(pub u8);
+
+impl ModeId {
+    #[must_use]
+    pub const fn index(self) -> usize {
+        self.0 as usize
+    }
+
+    #[must_use]
+    pub fn from_index(index: usize) -> Option<Self> {
+        u8::try_from(index).ok().map(Self)
+    }
+}
 
 /// Identity of one independently chosen target slot, local to its card
 /// definition.

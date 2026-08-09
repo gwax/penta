@@ -1044,104 +1044,102 @@ pub enum TriggerEventDef {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct SpellAbilityDef {
-    pub targets: &'static [AbilityTargetDef],
-    /// Rules-bearing modes keyed to the presentation modes on the spell's
-    /// play option. Targets and effects live here so selecting a mode freezes
-    /// executable semantics, not just a label.
-    pub modes: &'static [SpellModeDef],
+pub enum SpellAbilityDef {
+    Nonmodal {
+        targets: &'static [AbilityTargetDef],
+    },
+    Modal(ModalSpellDef),
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ModalSpellDef {
+    /// Each mode is an ordinary spell ability. Its positional index supplies
+    /// the stable [`ModeId`] used by casting and presentation.
+    pub modes: &'static [AbilityDef],
+    pub minimum: u8,
+    pub maximum: u8,
+    /// Some spells explicitly allow the same mode to be chosen more than once.
+    pub may_repeat: bool,
+}
+
+impl ModalSpellDef {
+    #[must_use]
+    pub const fn new(
+        modes: &'static [AbilityDef],
+        minimum: u8,
+        maximum: u8,
+        may_repeat: bool,
+    ) -> Self {
+        Self {
+            modes,
+            minimum,
+            maximum,
+            may_repeat,
+        }
+    }
+
+    #[must_use]
+    pub const fn choose_one(modes: &'static [AbilityDef]) -> Self {
+        Self::new(modes, 1, 1, false)
+    }
 }
 
 impl SpellAbilityDef {
     #[must_use]
     pub const fn new() -> Self {
-        Self {
-            targets: &[],
-            modes: &[],
+        Self::Nonmodal { targets: &[] }
+    }
+
+    /// Adds targets to an ordinary, nonmodal spell definition.
+    ///
+    /// # Panics
+    ///
+    /// Panics for a modal wrapper because each mode declares its own targets.
+    #[must_use]
+    pub const fn with_targets(self, targets: &'static [AbilityTargetDef]) -> Self {
+        match self {
+            Self::Nonmodal { .. } => Self::Nonmodal { targets },
+            Self::Modal(_) => panic!("targets belong on modal spell branches"),
         }
     }
 
     #[must_use]
-    pub const fn with_targets(mut self, targets: &'static [AbilityTargetDef]) -> Self {
-        self.targets = targets;
-        self
+    pub const fn modal_spell(
+        modes: &'static [AbilityDef],
+        minimum: u8,
+        maximum: u8,
+        may_repeat: bool,
+    ) -> Self {
+        Self::Modal(ModalSpellDef::new(modes, minimum, maximum, may_repeat))
+    }
+
+    /// Returns targets declared directly by a nonmodal spell. Modal wrappers
+    /// have no direct targets; selected branches supply them instead.
+    #[must_use]
+    pub const fn targets(self) -> &'static [AbilityTargetDef] {
+        match self {
+            Self::Nonmodal { targets } => targets,
+            Self::Modal(_) => &[],
+        }
     }
 
     #[must_use]
-    pub const fn with_modes(mut self, modes: &'static [SpellModeDef]) -> Self {
-        self.modes = modes;
-        self
+    pub const fn modal(self) -> Option<ModalSpellDef> {
+        match self {
+            Self::Nonmodal { .. } => None,
+            Self::Modal(modal) => Some(modal),
+        }
+    }
+
+    #[must_use]
+    pub fn mode(self, id: ModeId) -> Option<&'static AbilityDef> {
+        self.modal()?.modes.get(id.index())
     }
 }
 
 impl Default for SpellAbilityDef {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-/// Executable semantics for one mode of a spell ability.
-///
-/// [`ModeDef`] remains the owned catalog/presentation shape used in cast
-/// choices. This definition is the static rules payload that is selected and
-/// frozen on the stack with the cast signature.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct SpellModeDef {
-    pub id: ModeId,
-    /// Action-menu wording derived into the card's presentation modes.
-    pub label: &'static str,
-    pub targets: &'static [AbilityTargetDef],
-    pub effect: EffectDef,
-}
-
-impl SpellModeDef {
-    #[must_use]
-    pub const fn new(id: ModeId, label: &'static str, effect: EffectDef) -> Self {
-        Self {
-            id,
-            label,
-            targets: &[],
-            effect,
-        }
-    }
-
-    /// A one-target counter mode. The effect recipient is derived from the
-    /// target declaration so the two cannot drift apart.
-    #[must_use]
-    pub const fn counter_target(
-        id: ModeId,
-        label: &'static str,
-        target: &'static AbilityTargetDef,
-    ) -> Self {
-        Self {
-            id,
-            label,
-            targets: core::slice::from_ref(target),
-            effect: EffectDef::counter_target(target.id),
-        }
-    }
-
-    /// A one-target destroy mode. The effect recipient is derived from the
-    /// target declaration so the two cannot drift apart.
-    #[must_use]
-    pub const fn destroy_target(
-        id: ModeId,
-        label: &'static str,
-        target: &'static AbilityTargetDef,
-        can_regenerate: bool,
-    ) -> Self {
-        Self {
-            id,
-            label,
-            targets: core::slice::from_ref(target),
-            effect: EffectDef::destroy_target(target.id, can_regenerate),
-        }
-    }
-
-    #[must_use]
-    pub const fn with_targets(mut self, targets: &'static [AbilityTargetDef]) -> Self {
-        self.targets = targets;
-        self
     }
 }
 
@@ -1425,13 +1423,52 @@ impl AbilityDef {
         )
     }
 
+    /// A one-target counterspell. The effect recipient is derived from the
+    /// target declaration so the two cannot drift apart.
     #[must_use]
-    pub const fn choose_one_spell(text: &'static str, modes: &'static [SpellModeDef]) -> Self {
+    pub const fn counter_target(text: &'static str, target: &'static AbilityTargetDef) -> Self {
+        Self::spell(text, EffectDef::counter_target(target.id))
+            .with_targets(core::slice::from_ref(target))
+    }
+
+    /// A one-target destroy spell. The effect recipient is derived from the
+    /// target declaration so the two cannot drift apart.
+    #[must_use]
+    pub const fn destroy_target(
+        text: &'static str,
+        target: &'static AbilityTargetDef,
+        can_regenerate: bool,
+    ) -> Self {
+        Self::spell(text, EffectDef::destroy_target(target.id, can_regenerate))
+            .with_targets(core::slice::from_ref(target))
+    }
+
+    #[must_use]
+    pub const fn unimplemented_spell(text: &'static str, explanation: &'static str) -> Self {
+        Self::spell(text, EffectDef::None)
+            .with_implementation(AbilityImplementationDef::NotImplemented { explanation })
+    }
+
+    #[must_use]
+    pub const fn modal_spell(
+        text: &'static str,
+        modes: &'static [AbilityDef],
+        minimum: u8,
+        maximum: u8,
+        may_repeat: bool,
+    ) -> Self {
         Self::defined(
             text,
-            DeclarativeAbilityDef::Spell(SpellAbilityDef::new().with_modes(modes)),
+            DeclarativeAbilityDef::Spell(SpellAbilityDef::modal_spell(
+                modes, minimum, maximum, may_repeat,
+            )),
             EffectDef::None,
         )
+    }
+
+    #[must_use]
+    pub const fn choose_one_spell(text: &'static str, modes: &'static [AbilityDef]) -> Self {
+        Self::modal_spell(text, modes, 1, 1, false)
     }
 
     #[must_use]
@@ -1626,7 +1663,9 @@ impl AbilityDef {
     #[must_use]
     pub const fn with_targets(mut self, targets: &'static [AbilityTargetDef]) -> Self {
         match &mut self.definition {
-            DeclarativeAbilityDef::Spell(definition) => definition.targets = targets,
+            DeclarativeAbilityDef::Spell(definition) => {
+                *definition = definition.with_targets(targets);
+            }
             DeclarativeAbilityDef::ActivatedMana(definition)
             | DeclarativeAbilityDef::Activated(definition) => definition.targets = targets,
             DeclarativeAbilityDef::TriggeredMana(definition)
@@ -1675,6 +1714,44 @@ impl AbilityDef {
                 | DeclarativeAbilityDef::Activated(_)
                 | DeclarativeAbilityDef::Triggered(_)
         )
+    }
+
+    fn own_implementation_status(self) -> ImplementationStatus {
+        match self.implementation {
+            AbilityImplementationDef::Definition | AbilityImplementationDef::CustomFull { .. } => {
+                ImplementationStatus::Complete
+            }
+            AbilityImplementationDef::CustomPartial { .. } => ImplementationStatus::Partial,
+            AbilityImplementationDef::NotImplemented { .. } => ImplementationStatus::MetadataOnly,
+        }
+    }
+
+    fn implementation_status(self) -> ImplementationStatus {
+        let own = self.own_implementation_status();
+        let DeclarativeAbilityDef::Spell(spell) = self.definition else {
+            return own;
+        };
+        let Some(modal) = spell.modal() else {
+            return own;
+        };
+        if !self.implementation.is_executable() {
+            return own;
+        }
+        let mut statuses = modal
+            .modes
+            .iter()
+            .copied()
+            .map(AbilityDef::own_implementation_status);
+        let modes = statuses.next().map_or(own, |first| {
+            statuses.fold(first, ImplementationStatus::combine)
+        });
+        if self.implementation == AbilityImplementationDef::Definition
+            && self.effect == EffectDef::None
+        {
+            modes
+        } else {
+            own.combine(modes)
+        }
     }
 }
 
@@ -1734,7 +1811,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
 }
 
 impl AbilityTargetDef {
-    fn presentation(self) -> Option<TargetSlotDef> {
+    pub(super) fn presentation(self) -> Option<TargetSlotDef> {
         let predicate = match self.predicate {
             AbilityTargetPredicate::AnyTarget => TargetPredicate::AnyTarget,
             AbilityTargetPredicate::Player(_) => TargetPredicate::Player,
@@ -1796,18 +1873,28 @@ impl ModeSetDef {
     }
 }
 
-impl SpellModeDef {
-    fn presentation(self, effect_status: CardEffectStatus) -> Option<ModeDef> {
+impl AbilityDef {
+    fn mode_presentation(self, id: ModeId, outer_is_executable: bool) -> Option<ModeDef> {
+        let DeclarativeAbilityDef::Spell(spell) = self.definition else {
+            return None;
+        };
+        if spell.modal().is_some() {
+            return None;
+        }
         Some(ModeDef {
-            id: self.id,
-            label: self.label.into(),
-            targets: self
-                .targets
+            id,
+            label: self.text.into(),
+            targets: spell
+                .targets()
                 .iter()
                 .copied()
                 .map(AbilityTargetDef::presentation)
                 .collect::<Option<Vec<_>>>()?,
-            effect_status,
+            effect_status: if outer_is_executable && self.implementation.is_executable() {
+                CardEffectStatus::Implemented
+            } else {
+                CardEffectStatus::MetadataOnly
+            },
         })
     }
 }
@@ -2176,7 +2263,7 @@ pub enum CardBehavior {
     SphinxsRevelation,
     StoneGiant,
     /// Legacy dispatch key retained for source compatibility; the card now
-    /// uses the shared declarative creature-sweeper definition.
+    /// uses a declarative creature-sweeper definition.
     SupremeVerdict,
     SwordsToPlowshares,
     TimeWalk,
@@ -3062,20 +3149,28 @@ impl CardRules {
             Some((ability, spell))
         });
         let (ability, spell) = spell_abilities.next()?;
-        if spell_abilities.next().is_some() || spell.modes.is_empty() {
+        let modal = spell.modal()?;
+        if spell_abilities.next().is_some() {
             return None;
         }
-        let effect_status = if ability.implementation.is_executable() {
-            CardEffectStatus::Implemented
-        } else {
-            CardEffectStatus::MetadataOnly
-        };
-        spell
+        let modes = modal
             .modes
             .iter()
-            .map(|mode| (*mode).presentation(effect_status))
-            .collect::<Option<Vec<_>>>()
-            .map(ModeSetDef::choose_one)
+            .copied()
+            .enumerate()
+            .map(|(index, mode)| {
+                mode.mode_presentation(
+                    ModeId::from_index(index)?,
+                    ability.implementation.is_executable(),
+                )
+            })
+            .collect::<Option<Vec<_>>>()?;
+        Some(ModeSetDef {
+            minimum: modal.minimum,
+            maximum: modal.maximum,
+            may_repeat: modal.may_repeat,
+            modes,
+        })
     }
 
     /// Iterates the ordered ability definitions with the positional identity
@@ -3129,11 +3224,10 @@ impl CardRules {
         let mut has_partial = false;
         let mut has_unimplemented = false;
         for ability in self.ability_clauses() {
-            match ability.implementation {
-                AbilityImplementationDef::Definition
-                | AbilityImplementationDef::CustomFull { .. } => has_full = true,
-                AbilityImplementationDef::CustomPartial { .. } => has_partial = true,
-                AbilityImplementationDef::NotImplemented { .. } => has_unimplemented = true,
+            match ability.implementation_status() {
+                ImplementationStatus::Complete => has_full = true,
+                ImplementationStatus::Partial => has_partial = true,
+                ImplementationStatus::MetadataOnly => has_unimplemented = true,
             }
         }
         if has_partial || (has_full && has_unimplemented) {
@@ -3253,10 +3347,10 @@ mod tests {
     use super::{
         AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, CardBehavior,
         CardComposition, CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId,
-        CardRules, CardSet, CardType, CardTypeSet, CreatureStats, EffectDef, EffectRecipientDef,
-        ImplementationStatus, LandEntry, ManaColor, ManaCost, ManaCostParseErrorKind,
-        ManaRestrictionDef, ObjectPredicateDef, PrintedManaCost, SpellModeDef, TargetPredicate,
-        TriggerEventDef,
+        CardRules, CardSet, CardType, CardTypeSet, CreatureStats, DeclarativeAbilityDef, EffectDef,
+        EffectRecipientDef, ImplementationStatus, LandEntry, ManaColor, ManaCost,
+        ManaCostParseErrorKind, ManaRestrictionDef, ObjectPredicateDef, PrintedManaCost,
+        TargetPredicate, TriggerEventDef,
     };
     use crate::{AbilityId, CardDefinitionId, CardPartId, ModeId, TargetSlotId};
 
@@ -3265,33 +3359,33 @@ mod tests {
         "The card-specific ability is not executed.",
     )];
 
-    static TEST_MODAL_MODES: [SpellModeDef; 2] = [
-        SpellModeDef::counter_target(
-            ModeId(0),
-            "Counter target blue spell",
-            &AbilityTargetDef::exactly_one_spell(
-                TargetSlotId(3),
-                "blue spell",
-                ObjectPredicateDef::Color(ManaColor::Blue),
-            ),
-        ),
-        SpellModeDef::destroy_target(
-            ModeId(1),
-            "Destroy target blue permanent",
-            &AbilityTargetDef::exactly_one_permanent(
-                TargetSlotId(4),
-                "blue permanent",
-                ObjectPredicateDef::Color(ManaColor::Blue),
-            ),
-            true,
-        ),
-    ];
-
     #[test]
     fn modal_spell_semantics_derive_their_presentation_modes() {
-        let rules = CardRules::new_instant(ManaCost::default()).with_ability(
-            AbilityDef::choose_one_spell("Choose one.", &TEST_MODAL_MODES),
+        const RULES: CardRules = CardRules::new_instant(crate::mana_cost!("{0}")).with_ability(
+            AbilityDef::choose_one_spell(
+                "Choose one.",
+                &[
+                    AbilityDef::counter_target(
+                        "Counter target blue spell",
+                        &AbilityTargetDef::exactly_one_spell(
+                            TargetSlotId(3),
+                            "blue spell",
+                            ObjectPredicateDef::Color(ManaColor::Blue),
+                        ),
+                    ),
+                    AbilityDef::destroy_target(
+                        "Destroy target blue permanent",
+                        &AbilityTargetDef::exactly_one_permanent(
+                            TargetSlotId(4),
+                            "blue permanent",
+                            ObjectPredicateDef::Color(ManaColor::Blue),
+                        ),
+                        true,
+                    ),
+                ],
+            ),
         );
+        let rules = RULES;
         let composition = CardComposition::single("Test Modal Spell", rules);
         let modes = composition.play_options[0]
             .modes
@@ -3300,6 +3394,8 @@ mod tests {
 
         assert_eq!(modes.minimum, 1);
         assert_eq!(modes.maximum, 1);
+        assert!(!modes.may_repeat);
+        assert_eq!(modes.modes[0].id, ModeId(0));
         assert_eq!(modes.modes[0].label, "Counter target blue spell");
         assert_eq!(modes.modes[0].targets[0].predicate, TargetPredicate::Spell);
         assert_eq!(modes.modes[1].label, "Destroy target blue permanent");
@@ -3308,18 +3404,29 @@ mod tests {
             TargetPredicate::Permanent
         );
         assert_eq!(
-            TEST_MODAL_MODES[0].effect,
+            match rules.ability_clauses()[0].definition {
+                DeclarativeAbilityDef::Spell(spell) => spell.mode(ModeId(0)),
+                _ => None,
+            }
+            .expect("first positional mode")
+            .effect,
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetSlotId(3)),
             }
         );
         assert_eq!(
-            TEST_MODAL_MODES[1].effect,
+            match rules.ability_clauses()[0].definition {
+                DeclarativeAbilityDef::Spell(spell) => spell.mode(ModeId(1)),
+                _ => None,
+            }
+            .expect("second positional mode")
+            .effect,
             EffectDef::Destroy {
                 object: EffectRecipientDef::Target(TargetSlotId(4)),
                 can_regenerate: true,
             }
         );
+        assert_eq!(rules.rules_text(), "Choose one.");
     }
 
     #[test]

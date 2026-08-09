@@ -26,10 +26,10 @@ pub use card::{
     EffectDef, EffectDurationDef, EffectRecipientDef, GrantedAbilityValidationError,
     ImplementationStatus, KeywordAbility, LandEntry, ManaCost, ManaCostParseError,
     ManaCostParseErrorKind, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
-    MeldComponentDef, MeldRecipeDef, MeldResultDef, ModeDef, ModeSetDef, ObjectPredicateDef,
-    PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation, PrintedManaCost,
-    ReplacementAbilityDef, ReplacementEventDef, SpecialActionDef, SpellAbilityDef, SpellForm,
-    SpellModeDef, StaticAbilityDef, TargetPredicate, TargetSlotDef, TriggerEventDef,
+    MeldComponentDef, MeldRecipeDef, MeldResultDef, ModalSpellDef, ModeDef, ModeSetDef,
+    ObjectPredicateDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
+    PrintedManaCost, ReplacementAbilityDef, ReplacementEventDef, SpecialActionDef, SpellAbilityDef,
+    SpellForm, StaticAbilityDef, TargetPredicate, TargetSlotDef, TriggerEventDef,
     TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, applicable_part_ids,
 };
 pub use casting::{

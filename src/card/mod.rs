@@ -30,11 +30,12 @@ pub use model::{
     CardType, CardTypeSet, ColorSet, CreatureStats, DeclarativeAbilityDef, DoubleFacedKind,
     EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus, KeywordAbility,
     LandEntry, ManaColor, ManaCost, ManaCostParseError, ManaCostParseErrorKind, ManaRestrictionDef,
-    ManaSelectionDef, ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef, MeldResultDef, ModeDef,
-    ModeSetDef, ObjectPredicateDef, ObjectQueryDef, PlayActionKind, PlayOptionDef, PlayRestriction,
-    PlayerRelation, PrintedManaCost, ReplacementAbilityDef, ReplacementEventDef, SpecialActionDef,
-    SpellAbilityDef, SpellForm, SpellModeDef, StaticAbilityDef, TargetPredicate, TargetSlotDef,
-    TriggerEventDef, TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    ManaSelectionDef, ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef, MeldResultDef,
+    ModalSpellDef, ModeDef, ModeSetDef, ObjectPredicateDef, ObjectQueryDef, PlayActionKind,
+    PlayOptionDef, PlayRestriction, PlayerRelation, PrintedManaCost, ReplacementAbilityDef,
+    ReplacementEventDef, SpecialActionDef, SpellAbilityDef, SpellForm, StaticAbilityDef,
+    TargetPredicate, TargetSlotDef, TriggerEventDef, TriggeredAbilityDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every
