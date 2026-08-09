@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEventDef, TriggerEventDef,
-    ValueDef, ZoneKind, abilities, cards,
+    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEventDef,
+    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -416,6 +416,13 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The damage and the tap name the same creatures, so both clauses ask the
+/// same question.
+const OPPOSING_FLIERS: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+]);
+
 pub(in crate::card::sets) static THUNDERMAW_HELLKITE: CardRecord = CardRecord::new(
     cards::THUNDERMAW_HELLKITE,
     "Thundermaw Hellkite",
@@ -432,9 +439,30 @@ pub(in crate::card::sets) static THUNDERMAW_HELLKITE: CardRecord = CardRecord::n
         abilities::haste().with_text(
             "Haste (This creature can attack and {T} as soon as it comes under your control.)",
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "When this creature enters, it deals 1 damage to each creature with flying your opponents control. Tap those creatures.",
-            "The enters-the-battlefield damage and tap ability is not executed.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::Sequence(&[
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::MatchingObjects {
+                        object: OPPOSING_FLIERS,
+                        zones: &[ZoneKind::Battlefield],
+                        controller: PlayerRelation::Opponent,
+                    },
+                    amount: ValueDef::Constant(1),
+                },
+                EffectDef::Tap {
+                    object: EffectRecipientDef::MatchingObjects {
+                        object: OPPOSING_FLIERS,
+                        zones: &[ZoneKind::Battlefield],
+                        controller: PlayerRelation::Opponent,
+                    },
+                },
+            ]),
         ),
     ]),
 );

@@ -10758,3 +10758,41 @@ fn celestial_flare_lets_the_targeted_player_pick_which_attacker_dies() {
         "the one they chose is the one that died"
     );
 }
+
+#[test]
+fn thundermaw_hellkite_only_shocks_the_fliers_across_the_table() {
+    let mut game = ready_game();
+    // A flier they control, a ground creature they control, and a flier of
+    // your own: only the first is named.
+    game.battlefield
+        .push(creature(10_000, cards::SERRA_ANGEL, PlayerId::Two));
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two));
+    game.battlefield
+        .push(creature(10_002, cards::SERRA_ANGEL, PlayerId::One));
+
+    game.put_onto_battlefield(PlayerId::One, cards::THUNDERMAW_HELLKITE)
+        .expect("cataloged");
+    for _ in 0..8 {
+        if game.stack.is_empty()
+            && game.pending_triggers.is_empty()
+            && game.pending_decisions.is_empty()
+        {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let state = |id: u32| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == CardInstanceId(id))
+            .map(|permanent| (permanent.damage, permanent.tapped))
+    };
+    assert_eq!(state(10_000), Some((1, true)), "their flier");
+    assert_eq!(state(10_001), Some((0, false)), "their ground creature");
+    assert_eq!(state(10_002), Some((0, false)), "your own flier");
+}

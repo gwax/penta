@@ -323,7 +323,8 @@ mod tests {
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
-            | ObjectPredicateDef::AttackingOrBlocking => true,
+            | ObjectPredicateDef::AttackingOrBlocking
+            | ObjectPredicateDef::HasKeyword(_) => true,
         }
     }
 

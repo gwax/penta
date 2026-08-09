@@ -384,6 +384,14 @@ struct TriggerEventObject {
     /// Whether this object is in combat. Cheap to carry and it cannot feed
     /// back into a characteristic, unlike a keyword or a static bonus.
     attacking_or_blocking: bool,
+    /// Printed and temporary keywords, as a bitmask over
+    /// [`KeywordAbility::simple_index`].
+    ///
+    /// A keyword granted by a static effect is deliberately missing, for the
+    /// same reason power is: resolving static effects matches their sources
+    /// against these characteristics, so reading a granted keyword back here
+    /// would not terminate.
+    keywords: u32,
 }
 
 /// The object or procedure a mana payment is paying for. Restrictions are
@@ -2443,6 +2451,9 @@ impl Game {
             }
             ObjectPredicateDef::Supertype(supertype) => object.supertypes[supertype.index()],
             ObjectPredicateDef::AttackingOrBlocking => object.attacking_or_blocking,
+            ObjectPredicateDef::HasKeyword(keyword) => keyword
+                .simple_index()
+                .is_some_and(|index| object.keywords & (1 << index) != 0),
             ObjectPredicateDef::ControlledBy(relation) => {
                 self.controller_of_object(source).is_some_and(|controller| {
                     self.player_relation_matches(
@@ -4559,9 +4570,18 @@ impl Game {
         let mut mana_value = 0;
         let mut power = None;
         let mut supertypes = [false; CardSupertype::COUNT];
+        let mut keywords = 0;
         for part in parts {
             let part = definition.part(part)?;
             types = types.union(part.rules.types());
+            for ability in part.rules.ability_clauses() {
+                if ability.implementation.is_executable()
+                    && let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
+                    && let Some(index) = keyword.simple_index()
+                {
+                    keywords |= 1 << index;
+                }
+            }
             for (combined, present) in colors.iter_mut().zip(part.rules.colors()) {
                 *combined |= present;
             }
@@ -4586,6 +4606,7 @@ impl Game {
             subtypes: Cow::Owned(subtypes),
             // A card or a spell is nowhere near combat.
             attacking_or_blocking: false,
+            keywords,
             mana_value,
             power,
             supertypes,
@@ -6768,7 +6789,8 @@ impl Game {
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
-            | ObjectPredicateDef::AttackingOrBlocking => false,
+            | ObjectPredicateDef::AttackingOrBlocking
+            | ObjectPredicateDef::HasKeyword(_) => false,
         }
     }
 
@@ -7575,6 +7597,7 @@ impl Game {
             }),
             mana_value: self.permanent_mana_value(permanent),
             power: self.power_ignoring_static_effects(permanent),
+            keywords: Self::keyword_mask_ignoring_static_effects(permanent, rules),
             supertypes: {
                 let mut supertypes = [false; CardSupertype::COUNT];
                 for supertype in CardSupertype::ALL {
@@ -7583,6 +7606,28 @@ impl Game {
                 supertypes
             },
         }
+    }
+
+    /// The keywords an object presents without consulting static effects. See
+    /// [`TriggerEventObject::keywords`] for why granted ones stay out.
+    fn keyword_mask_ignoring_static_effects(permanent: &Permanent, rules: &CardRules) -> u32 {
+        let mut mask = 0;
+        let mut set = |keyword: KeywordAbility| {
+            if let Some(index) = keyword.simple_index() {
+                mask |= 1 << index;
+            }
+        };
+        for keyword in &permanent.temporary_keywords {
+            set(*keyword);
+        }
+        for ability in rules.ability_clauses() {
+            if ability.implementation.is_executable()
+                && let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
+            {
+                set(keyword);
+            }
+        }
+        mask
     }
 
     fn battlefield_exit_snapshot(&self, permanent: &Permanent) -> BattlefieldExitSnapshot {

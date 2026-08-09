@@ -595,6 +595,9 @@ pub enum ObjectPredicateDef {
     /// Currently attacking or blocking. Only a battlefield object can be, so
     /// this never matches a card or a spell.
     AttackingOrBlocking,
+    /// Has this keyword. Protection is not askable this way, because it is a
+    /// keyword per color rather than one keyword.
+    HasKeyword(KeywordAbility),
     All(&'static [ObjectPredicateDef]),
     AnyOf(&'static [ObjectPredicateDef]),
     Not(&'static ObjectPredicateDef),
@@ -1386,6 +1389,34 @@ pub enum KeywordAbility {
     ProtectionFrom(ManaColor),
 }
 
+impl KeywordAbility {
+    /// A dense index for the keywords that carry no parameter, so a set of
+    /// them fits in a bitmask. Protection is excluded: it is really one
+    /// keyword per color.
+    #[must_use]
+    pub const fn simple_index(self) -> Option<u32> {
+        Some(match self {
+            Self::Flying => 0,
+            Self::Trample => 1,
+            Self::Haste => 2,
+            Self::FirstStrike => 3,
+            Self::DoubleStrike => 4,
+            Self::Banding => 5,
+            Self::Vigilance => 6,
+            Self::Defender => 7,
+            Self::Deathtouch => 8,
+            Self::Lifelink => 9,
+            Self::Reach => 10,
+            Self::Flash => 11,
+            Self::Hexproof => 12,
+            Self::Intimidate => 13,
+            Self::Undying => 14,
+            Self::Mountainwalk => 15,
+            Self::ProtectionFrom(_) => return None,
+        })
+    }
+}
+
 /// The rules category and structural procedure of an ability. Text and
 /// implementation coverage live on [`AbilityDef`] so every printed clause has
 /// one canonical text string regardless of how it executes. Identity is
@@ -1863,6 +1894,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::AttackingOrBlocking
+        | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::Not(_)
         | ObjectPredicateDef::Special(_) => false,
     }
