@@ -21,6 +21,7 @@ pub enum CardSet {
     TheDark,
     FallenEmpires,
     Promo1994,
+    FutureSight,
     Innistrad,
     DarkAscension,
     AvacynRestored,
@@ -29,6 +30,7 @@ pub enum CardSet {
     Gatecrash,
     DragonsMaze,
     Magic2014,
+    Theros,
     /// Tokens are game objects rather than printed cards. They live in the
     /// catalog so a client can look one up by definition, and belong to no
     /// set a format allows, so they are never deck-legal.
@@ -735,13 +737,6 @@ pub enum AbilityCostDef {
 }
 
 /// A basic land subtype used by type-changing effects and mana provenance.
-///
-/// Card definitions intentionally list an executable stand-in for the mana
-/// ability a basic land type grants under the comprehensive rules. That clause
-/// is marked partially implemented because it is not yet derived from the
-/// object's type. The runtime only synthesizes a truly intrinsic ability when
-/// an effect such as Blood Moon changes a land's subtype without also supplying
-/// an explicit ability clause.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum BasicLandType {
     Plains,
@@ -772,6 +767,18 @@ impl BasicLandType {
     }
 
     #[must_use]
+    pub const fn from_index(index: usize) -> Option<Self> {
+        match index {
+            0 => Some(Self::Plains),
+            1 => Some(Self::Island),
+            2 => Some(Self::Swamp),
+            3 => Some(Self::Mountain),
+            4 => Some(Self::Forest),
+            _ => None,
+        }
+    }
+
+    #[must_use]
     pub const fn mana_color(self) -> ManaColor {
         match self {
             Self::Plains => ManaColor::White,
@@ -791,6 +798,13 @@ impl BasicLandType {
             Self::Mountain => "Mountain",
             Self::Forest => "Forest",
         }
+    }
+
+    #[must_use]
+    pub fn from_subtype(subtype: &str) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|land_type| land_type.subtype() == subtype)
     }
 }
 
@@ -986,6 +1000,8 @@ pub enum AppliedEffectDef {
     CannotBeCountered,
     /// A creature matching this predicate cannot block the affected creature.
     CannotBeBlockedBy(ObjectPredicateDef),
+    /// Adds land subtypes without removing the object's existing subtypes.
+    AddLandTypes(&'static [BasicLandType]),
     ModifyPowerToughness {
         power: ValueDef,
         toughness: ValueDef,
@@ -1069,6 +1085,18 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         kind: CounterKind,
         amount: ValueDef,
+    },
+    /// On resolution, choose two different basic land-type words and apply
+    /// the resulting indefinite, noncopiable text change to the object.
+    ChangeTextBasicLandType {
+        object: EffectRecipientDef,
+    },
+    /// Replaces the source permanent's copiable values with the target's.
+    /// Some copy effects, such as Thespian's Stage, retain the resolving
+    /// ability as an exception to the copied values.
+    BecomeCopyOf {
+        object: EffectRecipientDef,
+        retain_source_ability: bool,
     },
     OptionalManaPayment {
         cost: ManaCost,
@@ -3075,8 +3103,8 @@ pub struct CardRules {
     land_entry: LandEntry,
     starting_loyalty: Option<u16>,
     creature_stats: Option<CreatureStats>,
-    /// Ordered printed rules clauses. Definitions repeat abilities granted by
-    /// basic land subtypes so a card's behavior is visible in one place.
+    /// Ordered printed rules clauses. Abilities supplied by the rules, such as
+    /// those intrinsic to basic land types, are derived by the game engine.
     abilities: CardAbilityList,
     colors: ColorSet,
     /// The cost this card can be cast for from its owner's graveyard. The
@@ -3574,6 +3602,22 @@ impl CardRules {
         self
     }
 
+    /// Supplies the printed power and toughness after a definition has been
+    /// assembled with the creature card type.
+    ///
+    /// # Panics
+    ///
+    /// Panics when called on rules without the creature card type.
+    #[must_use]
+    pub const fn with_creature_stats(mut self, stats: CreatureStats) -> Self {
+        assert!(
+            self.has_type(CardType::Creature),
+            "with_creature_stats() is only valid for creature rules"
+        );
+        self.creature_stats = Some(stats);
+        self
+    }
+
     /// Declares the procedure used when these land rules enter the battlefield.
     ///
     /// # Panics
@@ -3766,8 +3810,13 @@ mod tests {
         let artifact_land = CardRules::new_land(&[]).with_type(CardType::Artifact);
         assert_eq!(artifact_land.type_line(), "Artifact Land");
 
-        let land_creature = CardRules::new_creature_without_mana_cost(&["Forest", "Dryad"], 1, 1)
-            .with_type(CardType::Land);
+        let land_creature = CardRules::new_land(&[])
+            .with_type(CardType::Creature)
+            .with_subtypes(&["Forest", "Dryad"])
+            .with_creature_stats(CreatureStats {
+                power: 1,
+                toughness: 1,
+            });
         assert_eq!(land_creature.type_line(), "Land Creature — Forest Dryad");
         assert_eq!(
             CardComposition::single("Land creature", land_creature).play_options[0].action,
@@ -4024,6 +4073,15 @@ mod tests {
     #[should_panic(expected = "land_entry() is only valid for land rules")]
     fn nonlands_cannot_declare_a_land_entry_procedure() {
         let _ = CardRules::new_instant(ManaCost::default()).land_entry(LandEntry::Tapped);
+    }
+
+    #[test]
+    #[should_panic(expected = "with_creature_stats() is only valid for creature rules")]
+    fn noncreatures_cannot_declare_creature_stats() {
+        let _ = CardRules::new_land(&[]).with_creature_stats(CreatureStats {
+            power: 1,
+            toughness: 1,
+        });
     }
 
     #[test]
