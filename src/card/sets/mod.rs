@@ -364,6 +364,7 @@ mod tests {
                 | KeywordAbility::FirstStrike
                 | KeywordAbility::DoubleStrike
                 | KeywordAbility::Vigilance
+                | KeywordAbility::Defender
                 | KeywordAbility::Deathtouch
                 | KeywordAbility::Lifelink
                 | KeywordAbility::Reach
@@ -433,7 +434,11 @@ mod tests {
                 ability.implementation == AbilityImplementationDef::Definition
                     && matches!(ability.definition, DeclarativeAbilityDef::Keyword(keyword) if shared_keyword(keyword))
             }
-            AppliedEffectDef::CannotBeCountered | AppliedEffectDef::Special(_) => false,
+            // A blocking restriction is continuous, not an until-end-of-turn
+            // rider a spell hands out.
+            AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::Special(_) => false,
         }
     }
 
@@ -575,6 +580,10 @@ mod tests {
                         supported(power) && supported(toughness)
                     }
                     AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
+                    AppliedEffectDef::CannotBeBlockedBy(predicate) => {
+                        recipient == EffectRecipientDef::Source
+                            && shared_object_predicate(predicate)
+                    }
                     AppliedEffectDef::CannotBeCountered | AppliedEffectDef::Special(_) => false,
                 };
                 let battlefield_effect = battlefield_only(source_zones)
@@ -832,13 +841,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 247);
+        assert_eq!(records.len(), 248);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=247).collect::<Vec<_>>()
+            (1..=248).collect::<Vec<_>>()
         );
         assert_eq!(
             records
@@ -878,7 +887,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 247);
+        assert_eq!(records.len(), 248);
 
         for record in records {
             let definition = record.definition();
@@ -1384,7 +1393,7 @@ mod tests {
         ];
 
         let early_sets = [
-            (CardSet::Alpha, 83, 88, 2_u16),
+            (CardSet::Alpha, 84, 89, 2_u16),
             (CardSet::Beta, 84, 94, 3_u16),
             (CardSet::Unlimited, 84, 94, 3_u16),
             (CardSet::CollectorsEdition, 84, 94, 3_u16),

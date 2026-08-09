@@ -50,6 +50,11 @@ pub const fn first_strike() -> AbilityDef {
 }
 
 #[must_use]
+pub const fn defender() -> AbilityDef {
+    keyword("Defender", KeywordAbility::Defender)
+}
+
+#[must_use]
 pub const fn double_strike() -> AbilityDef {
     keyword("Double strike", KeywordAbility::DoubleStrike)
 }

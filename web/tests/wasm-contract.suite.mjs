@@ -250,10 +250,11 @@ test("the Robots deck and its new card rules are packaged for the browser", asyn
   assert.equal(juggernaut.power, 5);
   assert.equal(juggernaut.toughness, 3);
   assert.match(juggernaut.rulesText, /attacks each combat if able/i);
+  assert.match(juggernaut.rulesText, /can't be blocked by Walls/i);
   assert.equal(
     juggernaut.implementationStatus,
-    "partial",
-    "its body and attack requirement work while the Wall restriction is deferred",
+    "complete",
+    "the body, the attack requirement, and the Wall restriction all execute",
   );
 
   game.free();

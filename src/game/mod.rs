@@ -6445,7 +6445,9 @@ impl Game {
                         permanent.temporary_keywords.push(keyword);
                     }
                 }
-                AppliedEffectDef::CannotBeCountered | AppliedEffectDef::Special(_) => {}
+                AppliedEffectDef::CannotBeCountered
+                | AppliedEffectDef::CannotBeBlockedBy(_)
+                | AppliedEffectDef::Special(_) => {}
             }
         }
         // Current supported Apply effects all last until cleanup. Keeping the
@@ -7545,6 +7547,7 @@ impl Game {
                 ability: *ability,
             }),
             AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::Special(_) => ControlFlow::Continue(()),
         })
@@ -9406,6 +9409,9 @@ impl Game {
     }
 
     fn can_attack(&self, permanent: &Permanent) -> bool {
+        if self.permanent_has_executable_keyword(permanent, KeywordAbility::Defender) {
+            return false;
+        }
         if self.count_behavior(CardBehavior::Moat) > 0 && !self.has_flying(permanent) {
             return false;
         }
@@ -9470,6 +9476,24 @@ impl Game {
         for event in &events {
             self.capture_battlefield_triggers(event);
         }
+    }
+
+    /// Whether a static effect on `attacker` forbids `blocker` from blocking
+    /// it, as Juggernaut forbids Walls.
+    fn blocking_is_prevented(&self, attacker: &Permanent, blocker: &Permanent) -> bool {
+        let characteristics = self.trigger_event_object(blocker);
+        let mut prevented = false;
+        let result = self.visit_static_applied_effects(attacker, |applied| {
+            if let AppliedEffectDef::CannotBeBlockedBy(predicate) = applied.effect
+                && self.trigger_object_matches(predicate, &characteristics, applied.source, false)
+            {
+                prevented = true;
+                return ControlFlow::Break(());
+            }
+            ControlFlow::Continue(())
+        });
+        debug_assert!(result.is_continue() || prevented);
+        prevented
     }
 
     fn blocker_actions(&self, player: PlayerId) -> Vec<Action> {
@@ -9544,6 +9568,7 @@ impl Game {
                                     .any(|(attacker, blocker)| attacker && blocker)
                             });
                         let can_block = !(*unblockable
+                            || self.blocking_is_prevented(attacker_permanent, blocker_permanent)
                             || *flying && !blocker_can_block_flying
                             || intimidate
                                 && !self.is_artifact_permanent(blocker_permanent)

@@ -253,3 +253,8 @@ pub const ZEALOUS_CONSCRIPTS: CardDefinitionId = CardDefinitionId(244);
 pub const BEAST_TOKEN_3_3_GREEN: CardDefinitionId = CardDefinitionId(245);
 pub const KNIGHT_TOKEN_2_2_WHITE: CardDefinitionId = CardDefinitionId(246);
 pub const SOLDIER_TOKEN_1_1_RED_WHITE: CardDefinitionId = CardDefinitionId(247);
+
+/// Definition ids are a wire contract, so they are only ever appended. A card
+/// added to an older set therefore lands after the tokens rather than beside
+/// its set's block.
+pub const WALL_OF_STONE: CardDefinitionId = CardDefinitionId(248);

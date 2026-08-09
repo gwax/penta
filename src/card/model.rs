@@ -914,6 +914,8 @@ pub enum EffectDurationDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AppliedEffectDef {
     CannotBeCountered,
+    /// A creature matching this predicate cannot block the affected creature.
+    CannotBeBlockedBy(ObjectPredicateDef),
     ModifyPowerToughness {
         power: ValueDef,
         toughness: ValueDef,
@@ -1358,6 +1360,7 @@ pub enum KeywordAbility {
     DoubleStrike,
     Banding,
     Vigilance,
+    Defender,
     Deathtouch,
     Lifelink,
     Reach,

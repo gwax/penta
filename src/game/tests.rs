@@ -10170,6 +10170,27 @@ fn goblin_digging_team_only_hits_walls() {
         }),
         "with no Wall in play the ability has no legal target"
     );
+
+    let wall = game
+        .put_onto_battlefield(PlayerId::Two, cards::WALL_OF_STONE)
+        .expect("cataloged");
+    let targets = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == team => Some(
+                targets
+                    .iter()
+                    .flat_map(TargetSelection::targets)
+                    .copied()
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(targets, vec![vec![Target::Permanent(wall)]]);
 }
 
 #[test]
@@ -10491,4 +10512,53 @@ fn flinthoof_boar_grows_for_a_mountain_you_control_and_only_once() {
     game.battlefield
         .push(creature(10_003, cards::MOUNTAIN, PlayerId::One));
     assert_eq!(stats(&game), (Some(3), Some(3)));
+}
+
+#[test]
+fn a_wall_may_block_but_never_attacks_and_never_stops_a_juggernaut() {
+    let mut game = ready_game();
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    let juggernaut = creature(10_000, cards::JUGGERNAUT, PlayerId::One);
+    let juggernaut_id = juggernaut.card.id;
+    game.battlefield.push(juggernaut);
+    let wall = creature(10_001, cards::WALL_OF_STONE, PlayerId::Two);
+    let wall_id = wall.card.id;
+    game.battlefield.push(wall);
+    let lions = creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let lions_id = lions.card.id;
+    game.battlefield.push(lions);
+
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::DeclareAttacker { attacker } if *attacker == wall_id)
+        ),
+        "defender keeps the Wall home",
+    );
+
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: juggernaut_id,
+        },
+    )
+    .unwrap();
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .unwrap();
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    let blocks = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::DeclareBlocker { blocker, .. } => Some(blocker),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        blocks,
+        vec![lions_id],
+        "the Wall cannot block a Juggernaut, but the Lions can"
+    );
 }

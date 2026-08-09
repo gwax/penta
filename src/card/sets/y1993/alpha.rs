@@ -540,10 +540,24 @@ pub(in crate::card::sets) static JUGGERNAUT: CardRecord = CardRecord::new(
             CardBehavior::Juggernaut,
             "The attack requirement is enforced by the combat action generator.",
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::static_ability(
             "This creature can't be blocked by Walls.",
-            "The restriction preventing Walls from blocking this creature is not implemented.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Subtype("Wall")),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
         ),
+    ]),
+);
+
+pub(in crate::card::sets) static WALL_OF_STONE: CardRecord = CardRecord::new(
+    cards::WALL_OF_STONE,
+    "Wall of Stone",
+    CardArt::new("f7fd8b8e-98fd-4b0d-8bb9-06bd25a1e30f", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Wall"], 0, 8).with_abilities(&[
+        abilities::defender().with_text("Defender (This creature can't attack.)"),
     ]),
 );
 
@@ -1540,6 +1554,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TIMETWISTER,
     &TROPICAL_ISLAND,
     &UNDERGROUND_SEA,
+    &WALL_OF_STONE,
     &WHITE_KNIGHT,
     &BERSERK,
     &COPY_ARTIFACT,
