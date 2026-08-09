@@ -413,6 +413,7 @@ mod tests {
             | EffectDef::DrawCards { recipient, .. }
             | EffectDef::LoseLife { recipient, .. } => shared_effect_recipient(recipient),
             EffectDef::Tap { object }
+            | EffectDef::Untap { object }
             | EffectDef::Destroy { object, .. }
             | EffectDef::Sacrifice { object }
             | EffectDef::Counter { object }
@@ -534,6 +535,7 @@ mod tests {
             | EffectDef::DrawCards { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
+            | EffectDef::Untap { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
@@ -587,6 +589,7 @@ mod tests {
                         | EffectDef::DrawCards { .. }
                         | EffectDef::LoseLife { .. }
                         | EffectDef::Tap { .. }
+                        | EffectDef::Untap { .. }
                         | EffectDef::Destroy { .. }
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::Counter { .. }
@@ -667,6 +670,7 @@ mod tests {
             | EffectDef::DrawCards { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
+            | EffectDef::Untap { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }

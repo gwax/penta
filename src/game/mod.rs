@@ -1791,6 +1791,7 @@ impl Game {
             | EffectDef::DrawCards { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
+            | EffectDef::Untap { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
@@ -5449,6 +5450,18 @@ impl Game {
                     }
                 }
             }
+            EffectDef::Untap { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Permanent(id) = target
+                        && let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|candidate| candidate.card.id == id)
+                    {
+                        permanent.tapped = false;
+                    }
+                }
+            }
             EffectDef::Destroy {
                 object: recipient,
                 can_regenerate,
@@ -7104,6 +7117,7 @@ impl Game {
                 | EffectDef::DrawCards { .. }
                 | EffectDef::LoseLife { .. }
                 | EffectDef::Tap { .. }
+                | EffectDef::Untap { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::Counter { .. }
@@ -7181,6 +7195,7 @@ impl Game {
                 | EffectDef::DrawCards { .. }
                 | EffectDef::LoseLife { .. }
                 | EffectDef::Tap { .. }
+                | EffectDef::Untap { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::Counter { .. }

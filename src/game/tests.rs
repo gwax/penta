@@ -7865,3 +7865,50 @@ fn flinthoof_boar_can_buy_haste_the_turn_it_arrives() {
         .expect("the boar is still there");
     assert!(game.can_attack(boar), "it bought haste until end of turn");
 }
+
+#[test]
+fn arbor_elf_untaps_a_forest_but_not_a_mountain() {
+    let mut game = ready_game();
+    let mut elf = creature(10_000, cards::ARBOR_ELF, PlayerId::One);
+    elf.entered_controller_turn = game.turns_started[0] - 1;
+    game.battlefield.push(elf);
+    let mut forest = creature(10_001, cards::FOREST, PlayerId::One);
+    forest.tapped = true;
+    game.battlefield.push(forest);
+    let mut mountain = creature(10_002, cards::MOUNTAIN, PlayerId::One);
+    mountain.tapped = true;
+    game.battlefield.push(mountain);
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == CardInstanceId(10_000))
+        })
+        .expect("the elf can untap something");
+    let Action::ActivateAbility { targets, .. } = &activate else {
+        unreachable!("the action just matched")
+    };
+    assert_eq!(
+        targets
+            .iter()
+            .flat_map(TargetSelection::targets)
+            .copied()
+            .collect::<Vec<_>>(),
+        vec![Target::Permanent(CardInstanceId(10_001))],
+        "only the Forest is a legal target"
+    );
+
+    game.apply(PlayerId::One, activate).unwrap();
+    pass_priority_pair(&mut game);
+
+    let tapped = |game: &Game, id: u32| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == CardInstanceId(id))
+            .expect("still on the battlefield")
+            .tapped
+    };
+    assert!(!tapped(&game, 10_001), "the Forest untapped");
+    assert!(tapped(&game, 10_002), "the Mountain did not");
+}

@@ -679,6 +679,9 @@ pub enum EffectDef {
     Tap {
         object: EffectRecipientDef,
     },
+    Untap {
+        object: EffectRecipientDef,
+    },
     Destroy {
         object: EffectRecipientDef,
         can_regenerate: bool,

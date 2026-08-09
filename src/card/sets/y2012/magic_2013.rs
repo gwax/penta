@@ -20,9 +20,25 @@ pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new(
         &["Elf", "Druid"],
         1,
         1,
-        "{T}: Untap target Forest.",
+        "",
     )
-    .metadata_only(),
+    .with_abilities(&[AbilityDef::activated(
+        "{T}: Untap target Forest.",
+        &[AbilityCostDef::TapSource],
+        EffectDef::Untap {
+            object: EffectRecipientDef::Target(TargetSlotId(0)),
+        },
+    )
+    .with_targets(&[AbilityTargetDef::exactly_one(
+        TargetSlotId(0),
+        "Forest",
+        AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Subtype("Forest"),
+            zones: &[ZoneKind::Battlefield],
+            controller: None,
+            owner: None,
+        },
+    )])]),
 );
 
 pub(in crate::card::sets) static AUGUR_OF_BOLAS: CardRecord = CardRecord::new(

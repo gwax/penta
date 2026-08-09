@@ -206,7 +206,9 @@ impl HandcraftedPolicy {
             }
             EffectDef::Counter { .. } => profile.mark(DeclarativeSpellProfile::COUNTERS),
             EffectDef::Destroy { .. } => profile.mark(DeclarativeSpellProfile::REMOVES),
-            EffectDef::Tap { .. } => profile.mark(DeclarativeSpellProfile::TAPS),
+            EffectDef::Tap { .. } | EffectDef::Untap { .. } => {
+                profile.mark(DeclarativeSpellProfile::TAPS);
+            }
             EffectDef::Apply { .. } => profile.mark(DeclarativeSpellProfile::APPLIES),
             EffectDef::None
             | EffectDef::AddMana(_)
