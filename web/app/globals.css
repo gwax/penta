@@ -744,15 +744,24 @@ button {
 
 /* Opened from the graveyard counter. Scrolls on its own so a long graveyard
    never widens the table. */
+/* Floats over the table rather than taking a row of its own: the hand fans
+   upward into this space, so an in-flow strip would sit behind it. */
 .graveyard-strip {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 8px;
+  z-index: 30;
   display: flex;
   gap: 6px;
-  align-items: flex-start;
+  align-items: center;
+  min-height: 74px;
   overflow-x: auto;
   padding: 6px 8px;
-  border: 1px solid #3d382c;
+  border: 1px solid #6a5f43;
   border-radius: 6px;
-  background: rgba(20, 18, 14, 0.6);
+  background: rgba(16, 15, 12, 0.96);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.5);
 }
 
 .graveyard-empty {
