@@ -5,8 +5,10 @@
 
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
-    AlternativeCastKindDef, AnimationDef, AppliedEffectDef, CardType, CardTypeSet, EffectDef,
-    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ZoneKind,
+    AlternativeCastKindDef, AnimationDef, AppliedEffectDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardType, CardTypeSet, ConditionDef, CostDef, EffectDef,
+    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef,
+    ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEffectDef, ZoneKind,
 };
 
 /// Mishra's Factory's 2/2 Assembly-Worker artifact creature. The card's
@@ -22,6 +24,10 @@ pub static MISHRAS_FACTORY_ANIMATION: AnimationDef = AnimationDef::new(2, 2)
 pub const fn attacks_each_combat_if_able(text: &'static str) -> AbilityDef {
     keyword(text, KeywordAbility::AttacksEachCombatIfAble)
 }
+const ENTER_TAPPED: [ReplacementEffectDef; 1] = [ReplacementEffectDef::ModifyBattlefieldEntry(
+    BattlefieldEntryModificationDef::Tapped,
+)];
+const PAY_TWO_LIFE: [CostDef; 1] = [CostDef::PayLife(2)];
 
 const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
     AbilityDef::keyword(text, keyword)
@@ -223,16 +229,68 @@ pub const fn tap_for(mana: ManaColor) -> AbilityDef {
     )
 }
 
+/// The shared replacement clause printed on shock lands.
+#[must_use]
+pub const fn shock_land_enters() -> AbilityDef {
+    AbilityDef::as_enters(
+        "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
+        ReplacementEffectDef::OptionalPayment {
+            payment: PaymentDef::new(PlayerRelation::You, &PAY_TWO_LIFE),
+            if_paid: &[],
+            if_declined: &ENTER_TAPPED,
+        },
+    )
+}
+
+/// An unconditional battlefield-entry replacement shared by permanents that
+/// enter tapped.
+#[must_use]
+pub const fn enters_tapped(text: &'static str) -> AbilityDef {
+    AbilityDef::as_enters(text, ENTER_TAPPED[0])
+}
+
+/// A shared checkland-style entry clause backed by the general object-query
+/// condition vocabulary.
+#[must_use]
+pub const fn check_land_enters(
+    text: &'static str,
+    land_types: &'static [BasicLandType],
+) -> AbilityDef {
+    enters_tapped_unless_you_control(text, ObjectPredicateDef::HasAnyBasicLandType(land_types))
+}
+
+/// An as-enters clause whose untapped branch depends on any controlled
+/// battlefield object matching `object`.
+#[must_use]
+pub const fn enters_tapped_unless_you_control(
+    text: &'static str,
+    object: ObjectPredicateDef,
+) -> AbilityDef {
+    AbilityDef::as_enters(
+        text,
+        ReplacementEffectDef::Conditional {
+            condition: ConditionDef::Exists(ObjectQueryDef {
+                object,
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::You,
+            }),
+            if_true: &[],
+            if_false: &ENTER_TAPPED,
+        },
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        banding, bloodrush, double_strike, first_strike, flashback, flashback_for_card_mana_cost,
-        flying, intimidate, overload, tap_for,
+        banding, bloodrush, check_land_enters, double_strike, first_strike, flashback,
+        flashback_for_card_mana_cost, flying, intimidate, overload, shock_land_enters, tap_for,
     };
     use crate::card::{
         AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
-        AlternativeCastKindDef, AlternativeCastManaCostDef, CardRules, DeclarativeAbilityDef,
-        EffectDef, KeywordAbility, ManaColor, ManaCost, ZoneKind,
+        AlternativeCastKindDef, AlternativeCastManaCostDef, BasicLandType, CardRules, ConditionDef,
+        CostDef, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost,
+        ObjectPredicateDef, PlayerRelation, ReplacementEffectDef, ZoneKind,
     };
     use crate::mana_cost;
 
@@ -262,6 +320,37 @@ mod tests {
                 EffectDef::AddMana(AddManaEffectDef::one(mana))
             );
         }
+    }
+
+    #[test]
+    fn common_land_entry_abilities_use_shared_conditions_and_costs() {
+        let shock = shock_land_enters();
+        assert!(matches!(
+            shock.effect,
+            EffectDef::Replacement(ReplacementEffectDef::OptionalPayment {
+                payment,
+                if_declined: [_],
+                ..
+            }) if payment.payer == PlayerRelation::You
+                && payment.costs == [CostDef::PayLife(2)]
+        ));
+
+        let check = check_land_enters(
+            "This land enters tapped unless you control a Mountain or a Plains.",
+            &[BasicLandType::Mountain, BasicLandType::Plains],
+        );
+        assert!(matches!(
+            check.effect,
+            EffectDef::Replacement(ReplacementEffectDef::Conditional {
+                condition: ConditionDef::Exists(query),
+                ..
+            }) if query.controller == PlayerRelation::You
+                && matches!(
+                    query.object,
+                    ObjectPredicateDef::HasAnyBasicLandType(types)
+                        if types == [BasicLandType::Mountain, BasicLandType::Plains]
+                )
+        ));
     }
 
     #[test]

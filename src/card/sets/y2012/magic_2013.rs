@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry,
+    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility,
     ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEventDef,
     TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
@@ -163,19 +163,11 @@ pub(in crate::card::sets) static GLACIAL_FORTRESS: CardRecord = CardRecord::new(
     "Glacial Fortress",
     CardArt::new("bc9d29ee-1a21-4c3e-99c1-f815d40e8f19", "Franz Vohwinkel"),
     CardSet::Magic2013,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::TappedUnlessControlsLandType([
-        true, true, false, false, false,
-    ]))
-    .with_abilities(&[
-        AbilityDef::replacement(
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::check_land_enters(
             "This land enters tapped unless you control a Plains or an Island.",
-            EffectDef::Special("Apply the declared conditional land-entry procedure"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The conditional land-entry procedure is implemented by shared land-entry rules.",
-        }),
+            &[BasicLandType::Plains, BasicLandType::Island],
+        ),
         AbilityDef::activated_mana(
             "{T}: Add {W} or {U}.",
             &[AbilityCostDef::TapSource],
@@ -312,19 +304,11 @@ pub(in crate::card::sets) static ROOTBOUND_CRAG: CardRecord = CardRecord::new(
     "Rootbound Crag",
     CardArt::new("76364643-bfcb-4c50-9224-bf9e35648ddf", "Matt Stewart"),
     CardSet::Magic2013,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::TappedUnlessControlsLandType([
-        false, false, false, true, true,
-    ]))
-    .with_abilities(&[
-        AbilityDef::replacement(
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::check_land_enters(
             "This land enters tapped unless you control a Mountain or a Forest.",
-            EffectDef::Special("Apply the declared conditional land-entry procedure"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The conditional land-entry procedure is implemented by shared land-entry rules.",
-        }),
+            &[BasicLandType::Mountain, BasicLandType::Forest],
+        ),
         AbilityDef::activated_mana(
             "{T}: Add {R} or {G}.",
             &[AbilityCostDef::TapSource],
@@ -366,19 +350,11 @@ pub(in crate::card::sets) static SUNPETAL_GROVE: CardRecord = CardRecord::new(
     "Sunpetal Grove",
     CardArt::new("15663129-9deb-4c34-84a0-f94cf1a723f0", "Jason Chan"),
     CardSet::Magic2013,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::TappedUnlessControlsLandType([
-        true, false, false, false, true,
-    ]))
-    .with_abilities(&[
-        AbilityDef::replacement(
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::check_land_enters(
             "This land enters tapped unless you control a Forest or a Plains.",
-            EffectDef::Special("Apply the declared conditional land-entry procedure"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The conditional land-entry procedure is implemented by shared land-entry rules.",
-        }),
+            &[BasicLandType::Forest, BasicLandType::Plains],
+        ),
         AbilityDef::activated_mana(
             "{T}: Add {G} or {W}.",
             &[AbilityCostDef::TapSource],

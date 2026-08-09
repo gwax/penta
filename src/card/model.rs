@@ -582,6 +582,11 @@ pub enum ObjectPredicateDef {
     Any,
     Source,
     HasType(CardType),
+    /// A land with at least one of the listed effective basic land subtypes.
+    ///
+    /// This uses the object's prospective/effective type line, so continuous
+    /// effects such as Blood Moon and Nylea's Presence participate.
+    HasAnyBasicLandType(&'static [BasicLandType]),
     Spell,
     NoncreatureSpell,
     Color(ManaColor),
@@ -722,10 +727,10 @@ impl AbilityTargetDef {
     }
 }
 
-/// A cost paid to activate an ability. The ability category, rather than the
-/// presence of an `AddMana` effect, determines whether it is a mana ability.
+/// One atomic cost. The surrounding rules procedure determines who pays it
+/// and what object, if any, is the source.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum AbilityCostDef {
+pub enum CostDef {
     Mana(ManaCost),
     TapSource,
     UntapSource,
@@ -741,6 +746,9 @@ pub enum AbilityCostDef {
     ExileSource,
     Special(&'static str),
 }
+
+/// Compatibility name for call sites where the costs belong to an ability.
+pub type AbilityCostDef = CostDef;
 
 /// Const-friendly storage for activated-ability costs.
 ///
@@ -1141,6 +1149,98 @@ impl AnimationDef {
     }
 }
 
+/// An event that a replacement ability can modify before it is committed.
+///
+/// Replacement events deliberately have their own vocabulary rather than
+/// reusing [`TriggerEventDef`]: triggers observe events that have already
+/// happened, while replacement abilities inspect and modify prospective
+/// events.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ReplacementEventDef {
+    /// The object carrying this ability would enter the battlefield.
+    SourceEntersBattlefield,
+    /// A matching object would enter the battlefield.
+    ObjectEntersBattlefield {
+        object: ObjectPredicateDef,
+        controller: PlayerRelation,
+    },
+    /// This ability's source would move between the named zones for the
+    /// specified reason. Matching happens before the object leaves `from`.
+    WouldMove {
+        from: ZoneKind,
+        to: ZoneKind,
+        cause: ZoneMoveCauseDef,
+    },
+    /// A player would gain life, matched relative to the replacement
+    /// ability's controller.
+    WouldGainLife(PlayerRelation),
+    /// Compatibility event for existing entry replacements whose exact
+    /// subject is identified by their effect primitive.
+    EntersBattlefield,
+    /// A narrow, named event that is not yet part of the shared vocabulary.
+    Special(&'static str),
+}
+
+/// What is causing a proposed zone move. A controlled effect is matched
+/// relative to the replacement ability's controller; rules and costs do not
+/// have an effect controller and therefore only match [`Self::Any`].
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ZoneMoveCauseDef {
+    Any,
+    EffectControlledBy(PlayerRelation),
+}
+
+/// Costs a player may pay while a replacement effect is modifying an event.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct PaymentDef {
+    pub payer: PlayerRelation,
+    pub costs: &'static [CostDef],
+}
+
+impl PaymentDef {
+    #[must_use]
+    pub const fn new(payer: PlayerRelation, costs: &'static [CostDef]) -> Self {
+        Self { payer, costs }
+    }
+}
+
+/// A reusable condition evaluated in an effect's source and event context.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ConditionDef {
+    /// At least one object matches this zone, controller, and object query.
+    Exists(ObjectQueryDef),
+}
+
+/// A typed modification to the permanent an object would become as it enters
+/// the battlefield.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum BattlefieldEntryModificationDef {
+    Tapped,
+    AddCounters { kind: CounterKind, amount: u16 },
+}
+
+/// Declarative operations performed by a replacement ability.
+///
+/// Branches are slices so complex replacements remain const-friendly and can
+/// be resumed around a player choice without baking card names into the game
+/// engine.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ReplacementEffectDef {
+    None,
+    Sequence(&'static [ReplacementEffectDef]),
+    ModifyBattlefieldEntry(BattlefieldEntryModificationDef),
+    Conditional {
+        condition: ConditionDef,
+        if_true: &'static [ReplacementEffectDef],
+        if_false: &'static [ReplacementEffectDef],
+    },
+    OptionalPayment {
+        payment: PaymentDef,
+        if_paid: &'static [ReplacementEffectDef],
+        if_declined: &'static [ReplacementEffectDef],
+    },
+}
+
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
@@ -1241,7 +1341,6 @@ pub enum EffectDef {
         cost: ManaCost,
         effect: &'static EffectDef,
     },
-    EntersTapped,
     /// Lets the next sorcery its controller casts this turn be cast as
     /// though it had flash.
     GrantFlashToNextSorcery,
@@ -1279,6 +1378,9 @@ pub enum EffectDef {
     /// Multiplies the amount of the event a replacement ability is replacing.
     /// This means nothing outside a replacement whose event carries an amount.
     MultiplyEventAmount(u8),
+    /// An effect interpreted while replacing a prospective event, rather than
+    /// when a spell or ability resolves from the stack.
+    Replacement(ReplacementEffectDef),
     MoveToZone {
         object: EffectRecipientDef,
         zone: ZoneKind,
@@ -1676,35 +1778,6 @@ pub struct ReplacementAbilityDef {
     pub event: ReplacementEventDef,
 }
 
-/// The event changed by a replacement ability.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ReplacementEventDef {
-    /// This ability's source would move between the named zones for the
-    /// specified reason. Matching happens before the object leaves `from`.
-    WouldMove {
-        from: ZoneKind,
-        to: ZoneKind,
-        cause: ZoneMoveCauseDef,
-    },
-    /// A player would gain life, matched relative to the replacement
-    /// ability's controller.
-    WouldGainLife(PlayerRelation),
-    /// Entry replacement effects whose exact event is already identified by
-    /// their effect primitive (for example, enters tapped or choosing a
-    /// creature type as an object enters).
-    EntersBattlefield,
-    Special(&'static str),
-}
-
-/// What is causing a proposed zone move. A controlled effect is matched
-/// relative to the replacement ability's controller; rules and costs do not
-/// have an effect controller and therefore only match [`Self::Any`].
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ZoneMoveCauseDef {
-    Any,
-    EffectControlledBy(PlayerRelation),
-}
-
 impl ReplacementAbilityDef {
     #[must_use]
     pub const fn new() -> Self {
@@ -1717,6 +1790,12 @@ impl ReplacementAbilityDef {
     #[must_use]
     pub const fn with_event(mut self, event: ReplacementEventDef) -> Self {
         self.event = event;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_source_zones(mut self, source_zones: &'static [ZoneKind]) -> Self {
+        self.source_zones = source_zones;
         self
     }
 }
@@ -2073,6 +2152,17 @@ impl AbilityDef {
         )
     }
 
+    /// Defines a replacement ability that modifies how its own source enters
+    /// the battlefield.
+    #[must_use]
+    pub const fn as_enters(text: &'static str, effect: ReplacementEffectDef) -> Self {
+        Self::replacement_for(
+            text,
+            ReplacementEventDef::SourceEntersBattlefield,
+            EffectDef::Replacement(effect),
+        )
+    }
+
     #[must_use]
     pub const fn replacement_for(
         text: &'static str,
@@ -2389,6 +2479,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -3427,15 +3518,6 @@ macro_rules! mana_cost {
     }};
 }
 
-/// How a land enters the battlefield before replacement effects are applied.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum LandEntry {
-    Untapped,
-    Tapped,
-    TappedUnlessControlsLandType([bool; 5]),
-    PayLifeOrTapped(u8),
-}
-
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct CreatureStats {
     pub power: i16,
@@ -3519,7 +3601,6 @@ pub struct CardRules {
     supertypes: [bool; CardSupertype::COUNT],
     subtypes: &'static [&'static str],
     printed_mana_cost: PrintedManaCost,
-    land_entry: LandEntry,
     starting_loyalty: Option<u16>,
     creature_stats: Option<CreatureStats>,
     /// Ordered printed rules clauses. Abilities supplied by the rules, such as
@@ -3555,7 +3636,6 @@ impl CardRules {
             supertypes: [false; CardSupertype::COUNT],
             subtypes: &[],
             printed_mana_cost,
-            land_entry: LandEntry::Untapped,
             starting_loyalty: None,
             creature_stats: None,
             abilities: CardAbilityList::None,
@@ -3740,11 +3820,6 @@ impl CardRules {
     }
 
     #[must_use]
-    pub const fn land_entry_procedure(&self) -> LandEntry {
-        self.land_entry
-    }
-
-    #[must_use]
     pub const fn starting_loyalty(&self) -> Option<u16> {
         self.starting_loyalty
     }
@@ -3803,9 +3878,6 @@ impl CardRules {
             && self.starting_loyalty.is_none()
         {
             return Some("a castable planeswalker face must have starting loyalty");
-        }
-        if !self.has_type(CardType::Land) && !matches!(self.land_entry, LandEntry::Untapped) {
-            return Some("nonland rules cannot declare a land-entry procedure");
         }
         None
     }
@@ -4019,21 +4091,6 @@ impl CardRules {
         self
     }
 
-    /// Declares the procedure used when these land rules enter the battlefield.
-    ///
-    /// # Panics
-    ///
-    /// Panics when called on rules without the land card type.
-    #[must_use]
-    pub const fn land_entry(mut self, land_entry: LandEntry) -> Self {
-        assert!(
-            self.has_type(CardType::Land),
-            "land_entry() is only valid for land rules"
-        );
-        self.land_entry = land_entry;
-        self
-    }
-
     /// Whether the printed clauses declare this keyword, regardless of its
     /// current implementation coverage.
     #[must_use]
@@ -4071,9 +4128,9 @@ mod tests {
         AlternativeCastKindDef, AlternativeCostDef, CardBehavior, CardComposition, CardDefinition,
         CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardRules, CardSet, CardType,
         CardTypeSet, CreatureStats, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
-        ImplementationStatus, LandEntry, ManaColor, ManaCost, ManaCostParseErrorKind,
-        ManaRestrictionDef, ObjectPredicateDef, PlayOptionDef, PrintedManaCost, SpellForm,
-        TargetPredicate, TriggerEventDef,
+        ImplementationStatus, ManaColor, ManaCost, ManaCostParseErrorKind, ManaRestrictionDef,
+        ObjectPredicateDef, PlayOptionDef, PrintedManaCost, SpellForm, TargetPredicate,
+        TriggerEventDef,
     };
     use crate::{
         AbilityId, AlternativeCostId, CardDefinitionId, CardPartId, ModeId, PlayOptionId,
@@ -4508,7 +4565,6 @@ mod tests {
             })
         );
         assert_eq!(creature.starting_loyalty(), None);
-        assert_eq!(creature.land_entry_procedure(), LandEntry::Untapped);
         assert_eq!(creature.coherence_error(), None);
 
         let land = CardRules::new_land(&["Forest"]);
@@ -4537,9 +4593,6 @@ mod tests {
             CardRules::new_planeswalker(ManaCost::default(), &["Test"], 3);
         planeswalker_without_loyalty.starting_loyalty = None;
 
-        let mut instant_with_land_entry = CardRules::new_instant(ManaCost::default());
-        instant_with_land_entry.land_entry = LandEntry::Tapped;
-
         let permanent_instant =
             CardRules::new_instant(ManaCost::default()).with_type(CardType::Artifact);
 
@@ -4561,22 +4614,12 @@ mod tests {
                 "a castable planeswalker face must have starting loyalty",
             ),
             (
-                instant_with_land_entry,
-                "nonland rules cannot declare a land-entry procedure",
-            ),
-            (
                 permanent_instant,
                 "an instant or sorcery cannot also be a permanent card type",
             ),
         ] {
             assert_eq!(rules.coherence_error(), Some(expected));
         }
-    }
-
-    #[test]
-    #[should_panic(expected = "land_entry() is only valid for land rules")]
-    fn nonlands_cannot_declare_a_land_entry_procedure() {
-        let _ = CardRules::new_instant(ManaCost::default()).land_entry(LandEntry::Tapped);
     }
 
     #[test]

@@ -2,11 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
-    EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry, ManaColor,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -81,12 +81,25 @@ pub(in crate::card::sets) static BLIND_OBEDIENCE: CardRecord = CardRecord::new(
     "Blind Obedience",
     CardArt::new("07c3e78d-d917-4552-842f-feff99c059e0", "Seb McKinnon"),
     CardSet::Gatecrash,
-    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_abilities(&[
         AbilityDef::not_implemented(
-            "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)\nArtifacts and creatures your opponents control enter tapped.",
-            "Printed rules are cataloged but are not executed by the engine.",
+            "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)",
+            "The extort trigger and hybrid payment are not implemented.",
         ),
-    ),
+        AbilityDef::replacement_for(
+            "Artifacts and creatures your opponents control enter tapped.",
+            ReplacementEventDef::ObjectEntersBattlefield {
+                object: ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::HasType(CardType::Artifact),
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                ]),
+                controller: PlayerRelation::Opponent,
+            },
+            EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::Tapped,
+            )),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
@@ -229,18 +242,7 @@ pub(in crate::card::sets) static GODLESS_SHRINE: CardRecord = CardRecord::new(
     "Godless Shrine",
     CardArt::new("6fd672bb-18cf-44e3-8dda-5310b1e0fffe", "Cliff Childs"),
     CardSet::Gatecrash,
-    CardRules::new_land(&["Plains", "Swamp"])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .with_ability(
-        AbilityDef::replacement(
-            "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
-            EffectDef::Special("Choose whether to pay 2 life or have this land enter tapped"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The pay-life-or-tapped choice is implemented by the shared land-entry decision path.",
-        }),
-    ),
+    CardRules::new_land(&["Plains", "Swamp"]).with_ability(abilities::shock_land_enters()),
 );
 
 pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord::new(
@@ -310,18 +312,7 @@ pub(in crate::card::sets) static SACRED_FOUNDRY: CardRecord = CardRecord::new(
     "Sacred Foundry",
     CardArt::new("0a26d900-c652-4f9c-8681-a35c5f8b1937", "Sam Burley"),
     CardSet::Gatecrash,
-    CardRules::new_land(&["Mountain", "Plains"])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .with_ability(
-        AbilityDef::replacement(
-            "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
-            EffectDef::Special("Choose whether to pay 2 life or have this land enter tapped"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The pay-life-or-tapped choice is implemented by the shared land-entry decision path.",
-        }),
-    ),
+    CardRules::new_land(&["Mountain", "Plains"]).with_ability(abilities::shock_land_enters()),
 );
 
 pub(in crate::card::sets) static SEPULCHRAL_PRIMORDIAL: CardRecord = CardRecord::new(
@@ -349,18 +340,7 @@ pub(in crate::card::sets) static STOMPING_GROUND: CardRecord = CardRecord::new(
     "Stomping Ground",
     CardArt::new("f29f3415-971c-4a5d-aae9-3893f4bdab1e", "David Palumbo"),
     CardSet::Gatecrash,
-    CardRules::new_land(&["Mountain", "Forest"])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .with_ability(
-        AbilityDef::replacement(
-            "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
-            EffectDef::Special("Choose whether to pay 2 life or have this land enter tapped"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The pay-life-or-tapped choice is implemented by the shared land-entry decision path.",
-        }),
-    ),
+    CardRules::new_land(&["Mountain", "Forest"]).with_ability(abilities::shock_land_enters()),
 );
 
 pub(in crate::card::sets) static THESPIANS_STAGE: CardRecord = CardRecord::new(

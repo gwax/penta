@@ -4,7 +4,7 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType,
-    CountConditionDef, EffectDef, EffectRecipientDef, LandEntry, ManaColor, ManaRestrictionDef,
+    CountConditionDef, EffectDef, EffectRecipientDef, ManaColor, ManaRestrictionDef,
     ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerEventDef,
     TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
@@ -36,9 +36,7 @@ pub(in crate::card::sets) static CAVERN_OF_SOULS: CardRecord = CardRecord::new(
     "Cavern of Souls",
     CardArt::new("1381c8f1-a292-4bdf-b20c-a5c2a169ee84", "Cliff Childs"),
     CardSet::AvacynRestored,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::Untapped)
-    .with_abilities(&[
+    CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::replacement(
             "As this land enters, choose a creature type.",
             EffectDef::ChooseCreatureType {

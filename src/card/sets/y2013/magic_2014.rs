@@ -5,7 +5,7 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AnimationDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
     CardType, ComparisonDef, CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef,
-    LandEntry, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TargetConditionDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TargetConditionDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
@@ -114,31 +114,29 @@ pub(in crate::card::sets) static ENCROACHING_WASTES: CardRecord = CardRecord::ne
     "Encroaching Wastes",
     CardArt::new("1ad5a84b-ae9b-4ed1-a4de-b91bbf8ed0a5", "Noah Bradley"),
     CardSet::Magic2014,
-    CardRules::new_land(&[])
-        .land_entry(LandEntry::Untapped)
-        .with_abilities(&[
-            abilities::tap_for(ManaColor::Colorless),
-            AbilityDef::activated(
-                "{4}, {T}, Sacrifice this land: Destroy target nonbasic land.",
-                &[
-                    AbilityCostDef::Mana(mana_cost!("{4}")),
-                    AbilityCostDef::TapSource,
-                    AbilityCostDef::SacrificeSource,
-                ],
-                EffectDef::Destroy {
-                    object: EffectRecipientDef::Target(TargetSlotId(0)),
-                    can_regenerate: true,
-                },
-            )
-            .with_targets(&[AbilityTargetDef::exactly_one_permanent(
-                TargetSlotId(0),
-                "nonbasic land",
-                ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Land),
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Basic)),
-                ]),
-            )]),
-        ]),
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated(
+            "{4}, {T}, Sacrifice this land: Destroy target nonbasic land.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{4}")),
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificeSource,
+            ],
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                can_regenerate: true,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "nonbasic land",
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Land),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Basic)),
+            ]),
+        )]),
+    ]),
 );
 
 pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
@@ -184,9 +182,7 @@ pub(in crate::card::sets) static MUTAVAULT: CardRecord = CardRecord::new(
     "Mutavault",
     CardArt::new("927ed667-c228-4b96-a9f6-7cbadade8134", "Fred Fields"),
     CardSet::Magic2014,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::Untapped)
-    .with_abilities(&[
+    CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
         AbilityDef::activated(
             "{1}: This land becomes a 2/2 creature with all creature types until end of turn. It's still a land.",

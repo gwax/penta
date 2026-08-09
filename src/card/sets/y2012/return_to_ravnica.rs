@@ -2,11 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
-    ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType,
+    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    PlayerRelation, ReplacementEventDef, TriggerEventDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -261,27 +261,17 @@ pub(in crate::card::sets) static GOLGARI_GUILDGATE: CardRecord = CardRecord::new
     "Golgari Guildgate",
     CardArt::new("8fe2fd1a-f7d3-48b4-bad8-be5ee45d6121", "Eytan Zana"),
     CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Gate"])
-        .land_entry(LandEntry::Tapped)
-        .with_abilities(&[
-            AbilityDef::replacement(
-                "This land enters tapped.",
-                EffectDef::Special("Have this land enter tapped"),
-            )
-            .with_implementation(AbilityImplementationDef::CustomFull {
-                behavior: None,
-                explanation:
-                    "The tapped land-entry procedure is implemented by shared land-entry rules.",
-            }),
-            AbilityDef::activated_mana(
-                "{T}: Add {B} or {G}.",
-                &[AbilityCostDef::TapSource],
-                EffectDef::AddMana(AddManaEffectDef::choice(&[
-                    ManaColor::Black,
-                    ManaColor::Green,
-                ])),
-            ),
-        ]),
+    CardRules::new_land(&["Gate"]).with_abilities(&[
+        abilities::enters_tapped("This land enters tapped."),
+        AbilityDef::activated_mana(
+            "{T}: Add {B} or {G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Black,
+                ManaColor::Green,
+            ])),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static GRISLY_SALVAGE: CardRecord = CardRecord::new(
@@ -303,18 +293,7 @@ pub(in crate::card::sets) static HALLOWED_FOUNTAIN: CardRecord = CardRecord::new
     "Hallowed Fountain",
     CardArt::new("af7091c9-5f98-4078-a42b-c9e057346d9b", "Jung Park"),
     CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Plains", "Island"])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .with_ability(
-        AbilityDef::replacement(
-            "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
-            EffectDef::Special("Choose whether to pay 2 life or have this land enter tapped"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The pay-life-or-tapped choice is implemented by the shared land-entry decision path.",
-        }),
-    ),
+    CardRules::new_land(&["Plains", "Island"]).with_ability(abilities::shock_land_enters()),
 );
 
 pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
@@ -492,18 +471,7 @@ pub(in crate::card::sets) static OVERGROWN_TOMB: CardRecord = CardRecord::new(
     "Overgrown Tomb",
     CardArt::new("1c7d50d6-b63a-4d8c-88fa-1d78ae693a45", "Steven Belledin"),
     CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Swamp", "Forest"])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .with_ability(
-        AbilityDef::replacement(
-            "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
-            EffectDef::Special("Choose whether to pay 2 life or have this land enter tapped"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The pay-life-or-tapped choice is implemented by the shared land-entry decision path.",
-        }),
-    ),
+    CardRules::new_land(&["Swamp", "Forest"]).with_ability(abilities::shock_land_enters()),
 );
 
 pub(in crate::card::sets) static PITHING_NEEDLE: CardRecord = CardRecord::new(
@@ -618,18 +586,7 @@ pub(in crate::card::sets) static STEAM_VENTS: CardRecord = CardRecord::new(
     "Steam Vents",
     CardArt::new("de911c88-f5c8-4955-9fa5-1f28a9b17236", "Yeong-Hao Han"),
     CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Island", "Mountain"])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .with_ability(
-        AbilityDef::replacement(
-            "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
-            EffectDef::Special("Choose whether to pay 2 life or have this land enter tapped"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The pay-life-or-tapped choice is implemented by the shared land-entry decision path.",
-        }),
-    ),
+    CardRules::new_land(&["Island", "Mountain"]).with_ability(abilities::shock_land_enters()),
 );
 
 pub(in crate::card::sets) static SUPREME_VERDICT: CardRecord = CardRecord::new(
@@ -685,18 +642,7 @@ pub(in crate::card::sets) static TEMPLE_GARDEN: CardRecord = CardRecord::new(
     "Temple Garden",
     CardArt::new("b821e604-f9fd-47a4-b5ff-bfb5022834c2", "Volkan Baǵa"),
     CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Forest", "Plains"])
-    .land_entry(LandEntry::PayLifeOrTapped(2))
-    .with_ability(
-        AbilityDef::replacement(
-            "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
-            EffectDef::Special("Choose whether to pay 2 life or have this land enter tapped"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The pay-life-or-tapped choice is implemented by the shared land-entry decision path.",
-        }),
-    ),
+    CardRules::new_land(&["Forest", "Plains"]).with_ability(abilities::shock_land_enters()),
 );
 
 pub(in crate::card::sets) static ULTIMATE_PRICE: CardRecord = CardRecord::new(

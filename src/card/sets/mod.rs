@@ -275,12 +275,12 @@ mod tests {
     use crate::card::{
         AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
         AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardPrinting, CardPrintingId,
-        CardStructure, CardSupertype, ComparisonDef, DeclarativeAbilityDef, DoubleFacedKind,
-        EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus, KeywordAbility,
-        ManaColor, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
-        ObjectQueryDef, PlayActionKind, PlayRestriction, PlayerRelation, ReplacementEventDef,
-        SpellForm, TargetPredicate, TriggerConditionDef, TriggerEventDef, TurnStepDef, ZoneKind,
-        ZoneMoveCauseDef, cards,
+        CardStructure, CardSupertype, ComparisonDef, ConditionDef, DeclarativeAbilityDef,
+        DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus,
+        KeywordAbility, ManaColor, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
+        ObjectPredicateDef, ObjectQueryDef, PlayActionKind, PlayRestriction, PlayerRelation,
+        ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate, TriggerConditionDef,
+        TriggerEventDef, TurnStepDef, ZoneKind, ZoneMoveCauseDef, cards,
     };
     use crate::{
         AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ManaCost, ModeId, PlayOptionId,
@@ -329,6 +329,7 @@ mod tests {
             ObjectPredicateDef::Any
             | ObjectPredicateDef::Source
             | ObjectPredicateDef::HasType(_)
+            | ObjectPredicateDef::HasAnyBasicLandType(_)
             | ObjectPredicateDef::Spell
             | ObjectPredicateDef::NoncreatureSpell
             | ObjectPredicateDef::Color(_)
@@ -593,10 +594,10 @@ mod tests {
                 ) && shared_effect_recipient(object)
             }
             EffectDef::None
-            | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
+            | EffectDef::Replacement(_)
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
         }
@@ -751,8 +752,8 @@ mod tests {
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::OptionalManaPayment { .. }
-            | EffectDef::EntersTapped
             | EffectDef::MultiplyEventAmount(_)
+            | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
@@ -796,6 +797,61 @@ mod tests {
     fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         match condition {
             TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
+        }
+    }
+
+    fn shared_replacement_effect(effect: ReplacementEffectDef) -> bool {
+        match effect {
+            ReplacementEffectDef::None | ReplacementEffectDef::ModifyBattlefieldEntry(_) => true,
+            ReplacementEffectDef::Sequence(effects) => {
+                !effects.is_empty() && effects.iter().copied().all(shared_replacement_effect)
+            }
+            ReplacementEffectDef::Conditional {
+                condition,
+                if_true,
+                if_false,
+            } => {
+                let condition_is_supported = match condition {
+                    ConditionDef::Exists(query) => {
+                        query.zones == [ZoneKind::Battlefield]
+                            && shared_object_predicate(query.object)
+                    }
+                };
+                condition_is_supported
+                    && if_true.iter().copied().all(shared_replacement_effect)
+                    && if_false.iter().copied().all(shared_replacement_effect)
+            }
+            ReplacementEffectDef::OptionalPayment {
+                payment,
+                if_paid,
+                if_declined,
+            } => {
+                let payable_life = payment.costs.iter().try_fold(0_u32, |total, cost| {
+                    let AbilityCostDef::PayLife(amount) = cost else {
+                        return None;
+                    };
+                    total.checked_add(u32::from(*amount))
+                });
+                payment.payer != PlayerRelation::Any
+                    && !payment.costs.is_empty()
+                    && payable_life
+                        .is_some_and(|amount| amount > 0 && i16::try_from(amount).is_ok())
+                    && if_paid.iter().copied().all(shared_replacement_effect)
+                    && if_declined.iter().copied().all(shared_replacement_effect)
+            }
+        }
+    }
+
+    fn shared_replacement_event(event: ReplacementEventDef) -> bool {
+        match event {
+            ReplacementEventDef::SourceEntersBattlefield
+            | ReplacementEventDef::WouldGainLife(_)
+            | ReplacementEventDef::EntersBattlefield => true,
+            ReplacementEventDef::ObjectEntersBattlefield { object, .. } => {
+                shared_object_predicate(object)
+            }
+            ReplacementEventDef::WouldMove { cause, .. } => shared_zone_move_cause(cause),
+            ReplacementEventDef::Special(_) => false,
         }
     }
 
@@ -866,7 +922,6 @@ mod tests {
                         | EffectDef::ChangeTextBasicLandType { .. }
                         | EffectDef::BecomeCopyOf { .. }
                         | EffectDef::OptionalManaPayment { .. }
-                        | EffectDef::EntersTapped
                         | EffectDef::CannotBeForcedToSacrifice
                         | EffectDef::GrantFlashToNextSorcery
                         | EffectDef::ExileLinkedToSource { .. }
@@ -875,6 +930,7 @@ mod tests {
                         | EffectDef::AtNextStep { .. }
                         | EffectDef::ReduceGenericCostBy(_)
                         | EffectDef::MultiplyEventAmount(_)
+                        | EffectDef::Replacement(_)
                         | EffectDef::MoveToZone { .. }
                         | EffectDef::ChooseCreatureType { .. }
                         | EffectDef::Apply { .. }
@@ -910,14 +966,19 @@ mod tests {
                 shared_static_effect(definition.source_zones, ability.effect)
             }
             DeclarativeAbilityDef::Replacement(definition) => match definition.event {
+                ReplacementEventDef::SourceEntersBattlefield
+                | ReplacementEventDef::ObjectEntersBattlefield { .. } => {
+                    battlefield_only(definition.source_zones)
+                        && shared_replacement_event(definition.event)
+                        && matches!(ability.effect, EffectDef::Replacement(effect) if shared_replacement_effect(effect))
+                }
                 ReplacementEventDef::EntersBattlefield => {
                     battlefield_only(definition.source_zones)
                         && matches!(
                             ability.effect,
-                            EffectDef::EntersTapped
-                                | EffectDef::ChooseCreatureType {
-                                    object: EffectRecipientDef::Source,
-                                }
+                            EffectDef::ChooseCreatureType {
+                                object: EffectRecipientDef::Source,
+                            }
                         )
                 }
                 ReplacementEventDef::WouldMove { from, to, cause } => {
@@ -981,7 +1042,6 @@ mod tests {
             | EffectDef::AddCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
-            | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
@@ -989,6 +1049,7 @@ mod tests {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
+            | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
@@ -1558,7 +1619,6 @@ mod tests {
             &y1993::alpha::STONE_GIANT,
             &y1993::alpha::CHAOS_ORB,
             &y1994::antiquities::MISHRA_S_FACTORY,
-            &y1994::antiquities::TRISKELION,
             &y1994::fallen_empires::ICATIAN_JAVELINEERS,
             &y1994::legends::PENDELHAVEN,
             &y1994::the_dark::MAZE_OF_ITH,
@@ -1567,6 +1627,7 @@ mod tests {
             &y1993::alpha::ICY_MANIPULATOR,
             &y1994::antiquities::ORCISH_MECHANICS,
             &y1994::antiquities::STRIP_MINE,
+            &y1994::antiquities::TRISKELION,
             &y1994::legends::RELIC_BARRIER,
         ];
 

@@ -1,8 +1,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, EffectDef, EffectDurationDef,
-    EffectRecipientDef, ManaColor, ValueDef, abilities, cards,
+    AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet,
+    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ReplacementEffectDef,
+    ValueDef, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -45,14 +46,15 @@ pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::n
         1,
     )
     .with_abilities(&[
-        AbilityDef::replacement(
+        AbilityDef::as_enters(
             "This creature enters with a javelin counter on it.",
-            EffectDef::Special("Enter with one javelin counter"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: Some(CardBehavior::IcatianJavelineers),
-            explanation: "The entry counter is applied by the legacy permanent-entry resolver.",
-        }),
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::Javelin,
+                    amount: 1,
+                },
+            ),
+        ),
         AbilityDef::activated(
             "{T}, Remove a javelin counter from this creature: It deals 1 damage to any target.",
             &[
