@@ -11133,3 +11133,36 @@ fn ratchet_bomb_sweeps_the_mana_value_it_ticked_up_to() {
         "only the one-drop matched the single charge counter"
     );
 }
+
+#[test]
+fn sigarda_stops_an_opponents_edict() {
+    for sigarda_out in [false, true] {
+        let mut game = ready_game();
+        let mut attacker = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::Two);
+        attacker.attacking = true;
+        game.battlefield.push(attacker);
+        if sigarda_out {
+            game.battlefield.push(creature(
+                10_003,
+                cards::SIGARDA_HOST_OF_HERONS,
+                PlayerId::Two,
+            ));
+        }
+        let flare = card(10_002, cards::CELESTIAL_FLARE, PlayerId::One);
+        game.players[0].hand.push(flare.clone());
+        game.players[0].mana_pool.white = 2;
+
+        game.apply(
+            PlayerId::One,
+            cast_action(flare.id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+
+        let attacker_survived = game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == CardInstanceId(10_000));
+        assert_eq!(attacker_survived, sigarda_out, "Sigarda out: {sigarda_out}");
+    }
+}

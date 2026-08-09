@@ -125,9 +125,9 @@ pub(in crate::card::sets) static SIGARDA_HOST_OF_HERONS: CardRecord = CardRecord
     .with_abilities(&[
         abilities::flying(),
         abilities::hexproof(),
-        AbilityDef::not_implemented(
+        AbilityDef::static_ability(
             "Spells and abilities your opponents control can't cause you to sacrifice permanents.",
-            "The sacrifice-prevention static ability is not executed.",
+            EffectDef::CannotBeForcedToSacrifice,
         ),
     ]),
 );

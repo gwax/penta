@@ -1024,6 +1024,9 @@ pub enum EffectDef {
         effect: &'static EffectDef,
     },
     EntersTapped,
+    /// A static prohibition: no spell or ability an opponent controls can
+    /// make this ability's controller sacrifice a permanent.
+    CannotBeForcedToSacrifice,
     /// Multiplies the amount of the event a replacement ability is replacing.
     /// This means nothing outside a replacement whose event carries an amount.
     MultiplyEventAmount(u8),

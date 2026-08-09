@@ -2251,6 +2251,7 @@ impl Game {
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
+            | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
@@ -3529,6 +3530,27 @@ impl Game {
             options,
             DecisionContinuation::DiscardToEffect { player, cause },
         );
+    }
+
+    /// Whether a spell or ability an opponent of `player` controls can make
+    /// them sacrifice a permanent. Sigarda says it cannot.
+    fn can_be_forced_to_sacrifice(&self, player: PlayerId, caused_by: PlayerId) -> bool {
+        if caused_by == player {
+            return true;
+        }
+        !self.battlefield.iter().any(|permanent| {
+            permanent.controller == player
+                && self
+                    .find_effective_ability(permanent, |effective| {
+                        effective.ability.implementation.is_executable()
+                            && matches!(
+                                effective.ability.definition,
+                                DeclarativeAbilityDef::Static(_)
+                            )
+                            && effective.ability.effect == EffectDef::CannotBeForcedToSacrifice
+                    })
+                    .is_some()
+        })
     }
 
     /// Asks `player` which matching permanent they control to sacrifice. With
@@ -6477,6 +6499,12 @@ impl Game {
                         Target::Permanent(permanent) => Some(permanent),
                         Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
                     })
+                    .filter(|permanent| {
+                        self.permanent_controller(*permanent)
+                            .is_none_or(|controller| {
+                                self.can_be_forced_to_sacrifice(controller, object.controller)
+                            })
+                    })
                     .collect::<Vec<_>>();
                 self.destroy_permanents(&permanents, false);
             }
@@ -6486,7 +6514,9 @@ impl Game {
             } => {
                 let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context) {
-                    if let Target::Player(player) = target {
+                    if let Target::Player(player) = target
+                        && self.can_be_forced_to_sacrifice(player, object.controller)
+                    {
                         self.queue_chosen_sacrifice(player, predicate, source);
                     }
                 }
@@ -6571,6 +6601,7 @@ impl Game {
                 ..
             })
             | EffectDef::EntersTapped
+            | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {
@@ -8355,6 +8386,7 @@ impl Game {
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
+                | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::ChooseCreatureType { .. }
@@ -8442,6 +8474,7 @@ impl Game {
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
+                | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::ChooseCreatureType { .. }
@@ -10632,6 +10665,7 @@ impl Game {
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
+            | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }

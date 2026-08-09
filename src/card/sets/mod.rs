@@ -496,6 +496,7 @@ mod tests {
             }
             EffectDef::None
             | EffectDef::EntersTapped
+            | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
@@ -561,6 +562,9 @@ mod tests {
 
     fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef) -> bool {
         match effect {
+            // A prohibition applies to the source's controller, and only
+            // while the source is on the battlefield to say so.
+            EffectDef::CannotBeForcedToSacrifice => battlefield_only(source_zones),
             EffectDef::Sequence(effects) => {
                 !effects.is_empty()
                     && effects
@@ -708,6 +712,7 @@ mod tests {
                         | EffectDef::AddCounters { .. }
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::EntersTapped
+                        | EffectDef::CannotBeForcedToSacrifice
                         | EffectDef::MultiplyEventAmount(_)
                         | EffectDef::MoveToZone { .. }
                         | EffectDef::ChooseCreatureType { .. }
@@ -805,6 +810,7 @@ mod tests {
             | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::EntersTapped
+            | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
