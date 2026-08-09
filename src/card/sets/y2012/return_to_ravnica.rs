@@ -70,12 +70,36 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
     "Azorius Charm",
     CardArt::new("26adc211-d089-4102-91e5-225bbeb5f382", "Zoltan Boros"),
     CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{W}{U}")).with_ability(
-        AbilityDef::not_implemented(
-            "Choose one —\n• Creatures you control gain lifelink until end of turn.\n• Draw a card.\n• Put target attacking or blocking creature on top of its owner's library.",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
-    ),
+    CardRules::new_instant(mana_cost!("{W}{U}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one —\n• Creatures you control gain lifelink until end of turn.\n• Draw a card.\n• Put target attacking or blocking creature on top of its owner's library.",
+        &[
+            AbilityDef::spell(
+                "Creatures you control gain lifelink until end of turn",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::MatchingObjects {
+                        object: ObjectPredicateDef::HasType(CardType::Creature),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: PlayerRelation::You,
+                    },
+                    effect: AppliedEffectDef::GrantAbility(&abilities::lifelink()),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::spell(
+                "Draw a card",
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            // Needs a top-of-library destination and an attacking-or-blocking
+            // predicate; the vocabulary has neither yet.
+            AbilityDef::unimplemented_spell(
+                "Put an attacking or blocking creature on top of its owner's library",
+                "Printed mode is cataloged but is not executed by the engine.",
+            ),
+        ],
+    )),
 );
 
 pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
@@ -244,9 +268,12 @@ pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
                     "noncreature spell",
                     ObjectPredicateDef::NoncreatureSpell,
                 )]),
-                AbilityDef::unimplemented_spell(
+                AbilityDef::spell(
                     "Deal 2 damage to a creature",
-                    "Printed mode is cataloged but is not executed by the engine.",
+                    EffectDef::DealDamage {
+                        recipient: EffectRecipientDef::Target(TargetSlotId(1)),
+                        amount: ValueDef::Constant(2),
+                    },
                 )
                 .with_targets(&[AbilityTargetDef::exactly_one_permanent(
                     TargetSlotId(1),

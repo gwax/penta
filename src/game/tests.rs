@@ -9389,3 +9389,94 @@ fn caverns_colorless_mana_is_unrestricted_and_has_no_countering_rider() {
             .any(|card| card.definition == cards::SOL_RING),
     );
 }
+
+/// Casts a modal spell by picking one mode. `slot` is the chosen mode's own
+/// target slot, which is not always zero.
+fn cast_mode(card: GameObjectId, mode: ModeId, slot: TargetSlotId, targets: Vec<Target>) -> Action {
+    let mut choices = CastChoices::default().with_modes(vec![mode]);
+    if !targets.is_empty() {
+        choices = choices.with_targets(vec![TargetSelection::new(slot, targets)]);
+    }
+    Action::CastSpell {
+        card,
+        choices,
+        sacrifices: Vec::new(),
+    }
+}
+
+#[test]
+fn azorius_charm_gives_your_creatures_lifelink_but_not_theirs() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
+    game.battlefield
+        .push(creature(10_002, cards::SERRA_ANGEL, PlayerId::Two));
+    let charm = card(10_001, cards::AZORIUS_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.blue = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(charm.id, ModeId(0), TargetSlotId(0), Vec::new()),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let lifelink = |game: &Game, definition| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .expect("still on the battlefield");
+        game.permanent_has_executable_keyword(permanent, KeywordAbility::Lifelink)
+    };
+    assert!(lifelink(&game, cards::SAVANNAH_LIONS), "yours gains it");
+    assert!(!lifelink(&game, cards::SERRA_ANGEL), "theirs does not");
+}
+
+#[test]
+fn azorius_charm_can_instead_draw_a_card() {
+    let mut game = ready_game();
+    let charm = card(10_001, cards::AZORIUS_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.blue = 1;
+    let before = game.players[0].library.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(charm.id, ModeId(1), TargetSlotId(0), Vec::new()),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[0].library.len(), before - 1);
+    assert_eq!(game.players[0].hand.len(), 1);
+}
+
+#[test]
+fn izzet_charm_deals_two_damage_in_its_implemented_mode() {
+    let mut game = ready_game();
+    // Savannah Lions is 2/1, so two damage kills it.
+    game.battlefield
+        .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::Two));
+    let charm = card(10_001, cards::IZZET_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(
+            charm.id,
+            ModeId(1),
+            TargetSlotId(1),
+            vec![Target::Permanent(CardInstanceId(10_000))],
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.battlefield.is_empty());
+}
