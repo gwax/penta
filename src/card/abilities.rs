@@ -5,8 +5,8 @@
 
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
-    AlternativeCastKindDef, AppliedEffectDef, EffectDef, EffectDurationDef,
-    EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ZoneKind,
+    AlternativeCastKindDef, AppliedEffectDef, EffectDef, EffectDurationDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ManaCost, ZoneKind,
 };
 
 const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
@@ -217,8 +217,8 @@ mod tests {
     };
     use crate::card::{
         AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
-        AlternativeCastKindDef, AlternativeCastManaCostDef, CardRules,
-        DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost, ZoneKind,
+        AlternativeCastKindDef, AlternativeCastManaCostDef, CardRules, DeclarativeAbilityDef,
+        EffectDef, KeywordAbility, ManaColor, ManaCost, ZoneKind,
     };
     use crate::mana_cost;
 

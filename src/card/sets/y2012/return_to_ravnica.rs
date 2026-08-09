@@ -558,21 +558,17 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
         &[
             AbilityDef::spell(
                 "Target creature gets +2/+2 and gains trample until end of turn",
-                EffectDef::Sequence(&[
-                    EffectDef::Apply {
-                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                        effect: AppliedEffectDef::ModifyPowerToughness {
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::ModifyPowerToughness {
                             power: ValueDef::Constant(2),
                             toughness: ValueDef::Constant(2),
                         },
-                        duration: EffectDurationDef::UntilEndOfTurn,
-                    },
-                    EffectDef::Apply {
-                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                        effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
-                        duration: EffectDurationDef::UntilEndOfTurn,
-                    },
-                ]),
+                        AppliedEffectDef::GrantAbility(&abilities::trample()),
+                    ]),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
             )
             .with_targets(&[AbilityTargetDef::exactly_one_permanent(
                 TargetSlotId(0),

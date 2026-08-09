@@ -4560,6 +4560,13 @@ impl Game {
                     let declared_slots = Self::target_slots_for(option, &modes);
                     for costs in self.cost_configurations(definition, card.id, option, source_zone)
                     {
+                        let alternative_kind =
+                            self.selected_alternative_kind(definition, option, card.id, &costs);
+                        if alternative_kind == Some(AlternativeCastKindDef::Overload)
+                            && !modes.is_empty()
+                        {
+                            continue;
+                        }
                         let Some(cost) = self.configured_cast_mana_cost(card.id, option, &costs)
                         else {
                             continue;
@@ -4578,8 +4585,7 @@ impl Game {
                             {
                                 continue;
                             }
-                            let target_choices = if self
-                                .selected_alternative_kind(definition, option, card.id, &costs)
+                            let target_choices = if alternative_kind
                                 == Some(AlternativeCastKindDef::Overload)
                             {
                                 vec![Vec::new()]
@@ -6184,7 +6190,7 @@ impl Game {
     }
 
     fn permanent_chooses_creature_type(&self, permanent: &Permanent) -> bool {
-        self.effective_abilities(permanent).iter().any(|effective| {
+        self.find_effective_ability(permanent, |effective| {
             effective.ability.implementation.is_executable()
                 && matches!(
                     effective.ability.definition,
@@ -6196,6 +6202,7 @@ impl Game {
                         object: EffectRecipientDef::Source,
                     }
         })
+        .is_some()
     }
 
     fn creature_type_choices(&self, player: PlayerId) -> Vec<String> {
@@ -9821,6 +9828,24 @@ impl Game {
                         Some((self.trigger_event_object(permanent), false))
                     }
                     Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => None,
+                })
+                .or_else(|| {
+                    let (zone, card) = self.card_in_nonbattlefield_zone(*source)?;
+                    let context = match zone {
+                        ZoneKind::Library => CharacteristicContext::Library,
+                        ZoneKind::Hand => CharacteristicContext::Hand,
+                        ZoneKind::Graveyard => CharacteristicContext::Graveyard,
+                        ZoneKind::Exile => CharacteristicContext::Exile,
+                        ZoneKind::Command => CharacteristicContext::Command,
+                        ZoneKind::Battlefield | ZoneKind::Stack => return None,
+                    };
+                    self.printed_trigger_event_object(
+                        card.id,
+                        card.definition,
+                        card.owner,
+                        &context,
+                    )
+                    .map(|object| (object, false))
                 }),
             ManaPaymentPurpose::Other => None,
         }
@@ -10057,6 +10082,7 @@ impl Game {
         self.plan_mana_sources(player, cost, x, avoid, &purpose)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn mana_requirement(
         &self,
         player: PlayerId,
@@ -12346,7 +12372,7 @@ impl Game {
                 recipient: EffectRecipientDef::Source,
                 effect,
                 duration: actual_duration,
-            } => effect == expected && actual_duration == duration,
+            } => Self::applied_effect_contains(effect, expected) && actual_duration == duration,
             EffectDef::None
             | EffectDef::AddMana(_)
             | EffectDef::DealDamage { .. }
@@ -12382,6 +12408,17 @@ impl Game {
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => false,
         }
+    }
+
+    fn applied_effect_contains(effect: AppliedEffectDef, expected: AppliedEffectDef) -> bool {
+        effect == expected
+            || matches!(
+                effect,
+                AppliedEffectDef::Composite(effects)
+                    if effects
+                        .iter()
+                        .any(|effect| Self::applied_effect_contains(*effect, expected))
+            )
     }
 
     fn stack_spell_has_static_effect(
@@ -12427,10 +12464,9 @@ impl Game {
     /// whether the spell is a legal target.
     fn can_be_countered(&self, object: &StackObject) -> bool {
         !self.stack_spell_has_static_effect(object, AppliedEffectDef::CannotBeCountered)
-            && !object
-                .applied_effects
-                .iter()
-                .any(|applied| applied.effect == AppliedEffectDef::CannotBeCountered)
+            && !object.applied_effects.iter().any(|applied| {
+                Self::applied_effect_contains(applied.effect, AppliedEffectDef::CannotBeCountered)
+            })
     }
 
     fn counter_spell(&mut self, id: GameObjectId) {

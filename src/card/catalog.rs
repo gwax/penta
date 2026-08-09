@@ -431,17 +431,9 @@ fn validate_attached_ability(
             definition, part, ability_id, &problem,
         ));
     }
-    validate_granted_abilities(
-        definition,
-        part,
-        ability_id,
-        ability.effect,
-        &mut Vec::new(),
-    )?;
-    if let DeclarativeAbilityDef::Spell(spell) = ability.definition {
-        let Some(modal) = spell.modal() else {
-            return Ok(());
-        };
+    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
+        && let Some(modal) = spell.modal()
+    {
         if ability.implementation != AbilityImplementationDef::Definition
             || ability.effect != EffectDef::None
         {
@@ -512,21 +504,20 @@ fn validate_attached_ability(
                     problem,
                 });
             }
-            validate_granted_abilities(definition, part, ability_id, mode.effect, &mut Vec::new())?;
         }
     }
-    Ok(())
+    validate_granted_abilities(definition, part, ability_id, ability, &mut Vec::new())
 }
 
 fn validate_granted_abilities(
     definition: &CardDefinition,
     part: CardPartId,
     outer_ability: AbilityId,
-    effect: super::EffectDef,
+    ability: &AbilityDef,
     path: &mut Vec<GrantId>,
 ) -> Result<(), CatalogError> {
     let mut grants = Vec::new();
-    collect_ability_grants(effect, &mut grants);
+    collect_direct_ability_grants(ability, &mut grants);
     for (index, granted) in grants.into_iter().enumerate() {
         let grant = GrantId::from_index(index)
             .expect("the containing ability's grant-site capacity was validated");
@@ -551,10 +542,24 @@ fn validate_granted_abilities(
                 problem: GrantedAbilityValidationError::ExecutableStaticAbility,
             });
         }
-        validate_granted_abilities(definition, part, outer_ability, granted.effect, path)?;
+        validate_granted_abilities(definition, part, outer_ability, granted, path)?;
         path.pop();
     }
     Ok(())
+}
+
+/// Collects the grant sites owned directly by one ability clause. Modal spell
+/// branches are part of their parent clause's effect tree, so their sites
+/// continue the same [`GrantId`] sequence in printed mode order.
+fn collect_direct_ability_grants<'a>(ability: &'a AbilityDef, grants: &mut Vec<&'a AbilityDef>) {
+    collect_ability_grants(ability.effect, grants);
+    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
+        && let Some(modal) = spell.modal()
+    {
+        for mode in modal.modes {
+            collect_ability_grants(mode.effect, grants);
+        }
+    }
 }
 
 fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilityValidationError> {
@@ -2682,6 +2687,85 @@ mod tests {
                 ability: AbilityId::PRIMARY,
                 grant_path: vec![GrantId::PRIMARY, GrantId::PRIMARY],
                 problem: GrantedAbilityValidationError::EmptyText,
+            }
+        );
+    }
+
+    #[test]
+    fn granted_modal_branches_validate_nested_grants_in_printed_order() {
+        static VALID: AbilityDef = AbilityDef::not_implemented(
+            "A valid granted ability.",
+            "Only nested validation matters in this fixture.",
+        );
+        static INVALID: AbilityDef = AbilityDef::spell("", EffectDef::None);
+        static MODES: [AbilityDef; 2] = [
+            AbilityDef::spell(
+                "The first mode grants a valid ability.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::GrantAbility(&VALID),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::spell(
+                "The second mode grants an invalid ability.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::GrantAbility(&INVALID),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ];
+        static GRANTED_MODAL: AbilityDef = AbilityDef::choose_one_spell("Choose one.", &MODES);
+
+        assert_eq!(
+            error(definition_granting(&GRANTED_MODAL)),
+            CatalogError::InvalidGrantedAbility {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                grant_path: vec![GrantId::PRIMARY, GrantId(1)],
+                problem: GrantedAbilityValidationError::EmptyText,
+            }
+        );
+    }
+
+    #[test]
+    fn granted_modal_capacity_counts_grants_across_all_modes() {
+        static TERMINAL: AbilityDef = AbilityDef::not_implemented(
+            "A terminal granted ability.",
+            "The terminal ability is intentionally not executable.",
+        );
+        let grants = |count| {
+            Box::leak(
+                vec![
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Source,
+                        effect: AppliedEffectDef::GrantAbility(&TERMINAL),
+                        duration: EffectDurationDef::UntilEndOfTurn,
+                    };
+                    count
+                ]
+                .into_boxed_slice(),
+            )
+        };
+        let modes = Box::leak(
+            vec![
+                AbilityDef::spell("First mode.", EffectDef::Sequence(grants(128))),
+                AbilityDef::spell("Second mode.", EffectDef::Sequence(grants(129))),
+            ]
+            .into_boxed_slice(),
+        );
+        let granted_modal = Box::leak(Box::new(AbilityDef::choose_one_spell("Choose one.", modes)));
+
+        assert_eq!(
+            error(definition_granting(granted_modal)),
+            CatalogError::InvalidGrantedAbility {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                grant_path: vec![GrantId::PRIMARY],
+                problem: GrantedAbilityValidationError::TooManyGrantSites { count: 257 },
             }
         );
     }

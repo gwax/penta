@@ -8579,6 +8579,108 @@ fn a_non_executable_cannot_be_countered_clause_does_not_change_gameplay() {
 }
 
 #[test]
+fn a_composite_static_clause_can_make_its_source_uncounterable() {
+    static COMPONENTS: [AppliedEffectDef; 1] = [AppliedEffectDef::CannotBeCountered];
+    static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+        "This spell can't be countered.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::Composite(&COMPONENTS),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )
+    .with_source_zones(&[ZoneKind::Stack])];
+    let definition_id = CardDefinitionId(20_001);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Composite uncounterable spell",
+        CardSet::ReturnToRavnica,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_instant(ManaCost::default()).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+    let mut game = ready_game();
+    game.catalog = CardCatalog::new([definition]).unwrap();
+    game.stack
+        .push(spell(20_001, definition_id, PlayerId::One, 0));
+
+    assert!(!game.can_be_countered(&game.stack[0]));
+}
+
+#[test]
+fn a_composite_mana_spend_effect_can_make_a_spell_uncounterable() {
+    static COMPONENTS: [AppliedEffectDef; 1] = [AppliedEffectDef::CannotBeCountered];
+    let mut object = spell(20_002, cards::SAVANNAH_LIONS, PlayerId::One, 0);
+    object.applied_effects.push(AppliedStackEffect {
+        source: None,
+        effect: AppliedEffectDef::Composite(&COMPONENTS),
+    });
+    let game = ready_game();
+
+    assert!(!game.can_be_countered(&object));
+}
+
+#[test]
+fn overload_does_not_silently_discard_selected_modal_effects() {
+    static MODES: [AbilityDef; 1] = [AbilityDef::spell(
+        "Draw a card.",
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )];
+    static ABILITIES: [AbilityDef; 2] = [
+        AbilityDef::choose_one_spell("Choose one.", &MODES),
+        abilities::overload(
+            mana_cost!("{0}"),
+            "Draw two cards.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ];
+
+    let definition_id = CardDefinitionId(20_003);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Modal overload test",
+        CardSet::ReturnToRavnica,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_instant(ManaCost::default()).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+    let mut game = ready_game();
+    game.catalog = CardCatalog::new([definition]).unwrap();
+    let card = card(20_003, definition_id, PlayerId::One);
+    let card_id = card.id;
+    game.players[0].hand.push(card);
+
+    assert!(game.legal_actions(PlayerId::One).iter().all(|action| {
+        !matches!(
+            action,
+            Action::CastSpell { card, choices, .. }
+                if *card == card_id
+                    && choices.costs().alternative() == Some(AlternativeCostId(1))
+        )
+    }));
+
+    let forged = CastChoices::default()
+        .with_modes(vec![ModeId(0)])
+        .with_costs(CostConfiguration::new(
+            Some(AlternativeCostId(1)),
+            Vec::new(),
+        ));
+    assert!(
+        game.validated_cast_signature(PlayerId::One, card_id, &forged)
+            .is_none(),
+        "validation must reject overload when its selected mode effects would be dropped",
+    );
+}
+
+#[test]
 fn overloaded_counterflux_is_targetless_and_counters_each_opposing_spell() {
     let mut game = ready_game();
     let friendly_spell = spell(10_000, cards::SAVANNAH_LIONS, PlayerId::One, 0);
@@ -10847,6 +10949,59 @@ fn ghor_clan_rampager_uses_one_shared_bloodrush_effect() {
 }
 
 #[test]
+fn bloodrush_can_use_mana_restricted_to_activating_creature_abilities() {
+    static RESTRICTIONS: [ManaRestrictionDef; 1] = [ManaRestrictionDef::ActivateAbility(
+        ObjectPredicateDef::HasType(CardType::Creature),
+    )];
+
+    let mut game = ready_game();
+    let mut attacker = creature(20_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let rampager = card(20_001, cards::GHOR_CLAN_RAMPAGER, PlayerId::One);
+    let rampager_id = rampager.id;
+    game.players[0].hand.push(rampager);
+
+    let mana_source = ManaSource {
+        object: CardInstanceId(20_002),
+        ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
+    };
+    game.add_mana(
+        PlayerId::One,
+        [
+            Mana::from_ability(ManaColor::Red, mana_source, &RESTRICTIONS, &[]),
+            Mana::unrestricted(ManaColor::Red),
+            Mana::from_ability(ManaColor::Green, mana_source, &RESTRICTIONS, &[]),
+        ],
+    );
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, targets, .. }
+                    if *source == rampager_id
+                        && targets.iter().flat_map(TargetSelection::targets).copied()
+                            .eq([Target::Permanent(attacker_id)])
+            )
+        })
+        .expect("creature-ability-restricted mana can pay for Bloodrush");
+
+    game.apply(PlayerId::One, action).unwrap();
+
+    assert_eq!(game.players[0].mana_pool.red, 1);
+    assert_eq!(game.players[0].mana_pool.green, 0);
+    assert_eq!(
+        game.players[0].mana,
+        vec![Mana::unrestricted(ManaColor::Red)],
+        "purpose-aware payment prefers the eligible restricted units",
+    );
+}
+
+#[test]
 fn bloodrush_discards_its_source_and_pumps_an_attacker_until_cleanup() {
     let mut game = ready_game();
     let mut attacker = creature(20_000, cards::SAVANNAH_LIONS, PlayerId::One);
@@ -12193,6 +12348,33 @@ fn a_discard_with_no_choice_left_needs_no_decision() {
 
 #[test]
 fn selesnya_charm_pumps_and_grants_trample() {
+    let catalog = poc::catalog().unwrap();
+    let charm_definition = catalog.get(cards::SELESNYA_CHARM).unwrap();
+    let DeclarativeAbilityDef::Spell(spell) =
+        charm_definition.rules.ability_clauses()[0].definition
+    else {
+        panic!("Selesnya Charm should have a spell ability")
+    };
+    let mode = spell.mode(ModeId(0)).unwrap();
+    let EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+        effect: AppliedEffectDef::Composite(components),
+        duration: EffectDurationDef::UntilEndOfTurn,
+    } = mode.effect
+    else {
+        panic!("Selesnya Charm should apply one composite effect until end of turn")
+    };
+    assert!(matches!(
+        components,
+        [
+            AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(2),
+                toughness: ValueDef::Constant(2),
+            },
+            AppliedEffectDef::GrantAbility(ability),
+        ] if ability.definition == DeclarativeAbilityDef::Keyword(KeywordAbility::Trample)
+    ));
+
     let mut game = ready_game();
     game.battlefield
         .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
@@ -12333,6 +12515,44 @@ fn boros_charm_burns_a_player_for_four() {
         game.players[0].life, 20,
         "it is a targeted burn, not a sweep"
     );
+}
+
+#[test]
+fn boros_charm_grants_double_strike_until_cleanup() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
+    let charm = card(10_001, cards::BOROS_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.white = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(
+            charm.id,
+            ModeId(2),
+            TargetSlotId(1),
+            vec![Target::Permanent(CardInstanceId(10_000))],
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == CardInstanceId(10_000))
+        .unwrap();
+    assert!(game.permanent_has_executable_keyword(lions, KeywordAbility::DoubleStrike));
+
+    game.finish_cleanup();
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == CardInstanceId(10_000))
+        .unwrap();
+    assert!(!game.permanent_has_executable_keyword(lions, KeywordAbility::DoubleStrike));
 }
 
 #[test]

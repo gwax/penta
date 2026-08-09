@@ -429,7 +429,7 @@ impl HandcraftedPolicy {
             && !Self::stack_spell_is_already_answered(observation, object.id)
     }
 
-    fn counter_target_score(&self, observation: &PlayerObservation, target: Target) -> i32 {
+    fn counter_target_score(observation: &PlayerObservation, target: Target) -> i32 {
         match target {
             Target::Spell(id) => observation
                 .stack
@@ -587,7 +587,6 @@ impl HandcraftedPolicy {
     }
 
     fn cast_target_score(
-        &self,
         observation: &PlayerObservation,
         target: Target,
         cards_drawn: Option<u16>,
@@ -615,7 +614,7 @@ impl HandcraftedPolicy {
             };
         }
         if counters {
-            return self.counter_target_score(observation, target);
+            return Self::counter_target_score(observation, target);
         }
         if removes {
             return Self::removal_target_score(observation, target);
@@ -661,7 +660,14 @@ impl HandcraftedPolicy {
         let target_score: i32 = choices
             .iter_targets()
             .map(|target| {
-                self.cast_target_score(observation, *target, cards_drawn, counters, removes, damage)
+                Self::cast_target_score(
+                    observation,
+                    *target,
+                    cards_drawn,
+                    counters,
+                    removes,
+                    damage,
+                )
             })
             .sum();
         let opponent_creatures = i32::try_from(

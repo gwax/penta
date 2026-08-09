@@ -3948,13 +3948,13 @@ impl CardRules {
 #[cfg(test)]
 mod tests {
     use super::{
-        AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AlternativeCastKindDef,
-        AlternativeCostDef, CardBehavior, CardComposition, CardDefinition, CardEffectStatus,
-        CardPart, CardPrinting, CardPrintingId, CardRules, CardSet, CardType, CardTypeSet,
-        CreatureStats, DeclarativeAbilityDef, EffectDef, EffectRecipientDef, ImplementationStatus,
-        LandEntry, ManaColor, ManaCost, ManaCostParseErrorKind, ManaRestrictionDef,
-        ObjectPredicateDef, PlayOptionDef, PrintedManaCost, SpellForm, TargetPredicate,
-        TriggerEventDef,
+        AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AddManaEffectDef,
+        AlternativeCastKindDef, AlternativeCostDef, CardBehavior, CardComposition, CardDefinition,
+        CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardRules, CardSet, CardType,
+        CardTypeSet, CreatureStats, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
+        ImplementationStatus, LandEntry, ManaColor, ManaCost, ManaCostParseErrorKind,
+        ManaRestrictionDef, ObjectPredicateDef, PlayOptionDef, PrintedManaCost, SpellForm,
+        TargetPredicate, TriggerEventDef,
     };
     use crate::{
         AbilityId, AlternativeCostId, CardDefinitionId, CardPartId, ModeId, PlayOptionId,
@@ -3965,6 +3965,29 @@ mod tests {
         "A deferred card-specific ability.",
         "The card-specific ability is not executed.",
     )];
+
+    #[test]
+    fn ability_cost_list_equality_and_hash_ignore_storage_representation() {
+        use std::collections::{HashSet, hash_map::DefaultHasher};
+        use std::hash::{Hash, Hasher};
+
+        static COSTS: [AbilityCostDef; 2] = [
+            AbilityCostDef::Mana(ManaCost::new(2, 0)),
+            AbilityCostDef::DiscardSource,
+        ];
+        let borrowed = AbilityCostList::borrowed(&COSTS);
+        let inline = AbilityCostList::two(COSTS[0], COSTS[1]);
+
+        let hash = |costs: AbilityCostList| {
+            let mut hasher = DefaultHasher::new();
+            costs.hash(&mut hasher);
+            hasher.finish()
+        };
+
+        assert_eq!(borrowed, inline);
+        assert_eq!(hash(borrowed), hash(inline));
+        assert!(HashSet::from([borrowed]).contains(&inline));
+    }
 
     #[test]
     fn modal_spell_semantics_derive_their_presentation_modes() {

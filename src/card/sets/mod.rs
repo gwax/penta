@@ -274,13 +274,13 @@ mod tests {
 
     use super::{CardRecord, SET_MODULES, y1993, y1994, y2011, y2012, y2013};
     use crate::card::{
-        AbilityCostDef, AbilityDef, AbilityImplementationDef, AlternativeCastKindDef,
-        AppliedEffectDef, BasicLandType, CardPrinting, CardPrintingId, CardStructure,
-        CardSupertype, DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectDurationDef,
-        EffectRecipientDef, ImplementationStatus, KeywordAbility, ManaColor, ManaRestrictionDef,
-        ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, PlayActionKind, PlayRestriction,
-        PlayerRelation, ReplacementEventDef, SpellForm, TargetPredicate, TriggerEventDef, ZoneKind,
-        ZoneMoveCauseDef, cards,
+        AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
+        AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardPrinting, CardPrintingId,
+        CardStructure, CardSupertype, DeclarativeAbilityDef, DoubleFacedKind, EffectDef,
+        EffectDurationDef, EffectRecipientDef, ImplementationStatus, KeywordAbility, ManaColor,
+        ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
+        PlayActionKind, PlayRestriction, PlayerRelation, ReplacementEventDef, SpellForm,
+        TargetPredicate, TriggerEventDef, ZoneKind, ZoneMoveCauseDef, cards,
     };
     use crate::{
         AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ManaCost, ModeId, PlayOptionId,
@@ -412,6 +412,24 @@ mod tests {
         )
     }
 
+    fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> bool {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                !effects.is_empty()
+                    && effects
+                        .iter()
+                        .copied()
+                        .all(shared_cannot_be_countered_effect)
+            }
+            AppliedEffectDef::CannotBeCountered => true,
+            AppliedEffectDef::ModifyPowerToughness { .. }
+            | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::GrantAbility(_)
+            | AppliedEffectDef::Special(_) => false,
+        }
+    }
+
     fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool) -> bool {
         let EffectDef::AddMana(mana) = effect else {
             return false;
@@ -433,11 +451,11 @@ mod tests {
                         false
                     }
                 })
-            && mana.spend_effects.iter().all(|effect| {
-                matches!(
-                    effect,
-                    ManaSpendEffectDef::ApplyToPaidSpell(AppliedEffectDef::CannotBeCountered)
-                )
+            && mana.spend_effects.iter().copied().all(|effect| {
+                let ManaSpendEffectDef::ApplyToPaidSpell(effect) = effect else {
+                    return false;
+                };
+                shared_cannot_be_countered_effect(effect)
             })
     }
 
@@ -663,7 +681,7 @@ mod tests {
                     );
                 let stack_source_effect = source_zones == [ZoneKind::Stack]
                     && recipient == EffectRecipientDef::Source
-                    && effect == AppliedEffectDef::CannotBeCountered
+                    && shared_cannot_be_countered_effect(effect)
                     && duration == EffectDurationDef::WhileSourceRemainsInZone;
                 battlefield_effect || stack_source_effect
             }
@@ -1583,6 +1601,52 @@ mod tests {
         assert!(!shared_activated_costs(
             &[ZoneKind::Battlefield],
             &[AbilityCostDef::DiscardSource],
+        ));
+    }
+
+    #[test]
+    fn composite_uncounterability_stays_within_the_shared_runtime_boundary() {
+        static CANNOT_BE_COUNTERED: [AppliedEffectDef; 1] = [AppliedEffectDef::CannotBeCountered];
+        static MIXED: [AppliedEffectDef; 2] = [
+            AppliedEffectDef::CannotBeCountered,
+            AppliedEffectDef::Special("unsupported"),
+        ];
+        static RIDERS: [ManaSpendEffectDef; 1] = [ManaSpendEffectDef::ApplyToPaidSpell(
+            AppliedEffectDef::Composite(&CANNOT_BE_COUNTERED),
+        )];
+        static MIXED_RIDERS: [ManaSpendEffectDef; 1] = [ManaSpendEffectDef::ApplyToPaidSpell(
+            AppliedEffectDef::Composite(&MIXED),
+        )];
+
+        let stack_effect = |effect| EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect,
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        };
+        assert!(shared_static_effect(
+            &[ZoneKind::Stack],
+            stack_effect(AppliedEffectDef::Composite(&CANNOT_BE_COUNTERED)),
+        ));
+        assert!(!shared_static_effect(
+            &[ZoneKind::Stack],
+            stack_effect(AppliedEffectDef::Composite(&MIXED)),
+        ));
+        assert!(!shared_static_effect(
+            &[ZoneKind::Stack],
+            stack_effect(AppliedEffectDef::Composite(&[])),
+        ));
+
+        assert!(shared_mana_effect(
+            EffectDef::AddMana(
+                AddManaEffectDef::one(ManaColor::Colorless).with_spend_effects(&RIDERS),
+            ),
+            false,
+        ));
+        assert!(!shared_mana_effect(
+            EffectDef::AddMana(
+                AddManaEffectDef::one(ManaColor::Colorless).with_spend_effects(&MIXED_RIDERS),
+            ),
+            false,
         ));
     }
 
