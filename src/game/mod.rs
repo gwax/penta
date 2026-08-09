@@ -1162,6 +1162,19 @@ impl Game {
             ValueDef::CountersOnSource(kind) => {
                 Some(i32::from(self.current_or_last_known_counters(source, kind)))
             }
+            // A spell is its own source, so its chosen X is right there --
+            // by way of the retired record, because a spell leaves the stack
+            // before its effect runs. An activated ability's source is the
+            // permanent instead, and its X is not reachable from a predicate.
+            ValueDef::ChosenX => self
+                .stack
+                .iter()
+                .find(|object| object.id == source)
+                .map(|object| i32::from(object.x()))
+                .or_else(|| match self.retired_objects.get(&source) {
+                    Some(RetiredObject::Stack(object)) => Some(i32::from(object.x())),
+                    Some(RetiredObject::Card(_) | RetiredObject::Permanent { .. }) | None => None,
+                }),
             _ => None,
         }
     }
@@ -2507,6 +2520,9 @@ impl Game {
             ObjectPredicateDef::ManaValueEqualTo(value) => self
                 .value_from_source(value, source)
                 .is_some_and(|value| value == i32::from(object.mana_value)),
+            ObjectPredicateDef::ManaValueAtMostValue(value) => self
+                .value_from_source(value, source)
+                .is_some_and(|value| i32::from(object.mana_value) <= value),
             ObjectPredicateDef::PowerAtLeast(minimum) => {
                 object.power.is_some_and(|power| power >= minimum)
             }
@@ -7012,6 +7028,7 @@ impl Game {
             | ObjectPredicateDef::Subtype(_)
             | ObjectPredicateDef::ManaValueAtMost(_)
             | ObjectPredicateDef::ManaValueEqualTo(_)
+            | ObjectPredicateDef::ManaValueAtMostValue(_)
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)

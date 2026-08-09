@@ -11241,3 +11241,37 @@ fn kessig_wolf_run_offers_only_the_x_it_can_actually_pay() {
     assert_eq!(game.toughness(lions), Some(1), "toughness is untouched");
     assert!(game.permanent_has_executable_keyword(lions, KeywordAbility::Trample));
 }
+
+#[test]
+fn gaze_of_granite_sweeps_up_to_the_x_it_was_cast_for() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    // One, five, and a land: X of two takes the first and spares the rest.
+    game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::MOUNTAIN)
+        .expect("cataloged");
+    let sweeper = card(10_000, cards::GAZE_OF_GRANITE, PlayerId::One);
+    game.players[0].hand.push(sweeper.clone());
+    game.players[0].mana_pool.black = 2;
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.colorless = 2;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(sweeper.id, Vec::new(), Vec::new(), 2),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .map(|permanent| permanent.card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SERRA_ANGEL, cards::MOUNTAIN],
+        "the two-or-less nonland permanent is the only one destroyed"
+    );
+}

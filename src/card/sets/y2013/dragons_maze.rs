@@ -56,9 +56,19 @@ pub(in crate::card::sets) static GAZE_OF_GRANITE: CardRecord = CardRecord::new(
     "Gaze of Granite",
     CardArt::new("96c9ac10-d114-4aa5-87ac-f1069cde8e40", "Nils Hamm"),
     CardSet::DragonsMaze,
-    CardRules::new_sorcery(mana_cost!("{X}{B}{B}{G}")).with_ability(AbilityDef::not_implemented(
+    CardRules::new_sorcery(mana_cost!("{X}{B}{B}{G}")).with_ability(AbilityDef::spell(
         "Destroy each nonland permanent with mana value X or less.",
-        "Printed rules are cataloged but are not executed by the engine.",
+        EffectDef::Destroy {
+            object: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    ObjectPredicateDef::ManaValueAtMostValue(ValueDef::ChosenX),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::Any,
+            },
+            can_regenerate: true,
+        },
     )),
 );
 

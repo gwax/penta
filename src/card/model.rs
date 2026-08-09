@@ -587,6 +587,8 @@ pub enum ObjectPredicateDef {
     /// Mana value exactly this much, where the number is read off the
     /// ability's own source rather than printed on the card.
     ManaValueEqualTo(ValueDef),
+    /// Mana value at most a computed amount, for "with mana value X or less".
+    ManaValueAtMostValue(ValueDef),
     /// Power at least this much, for "power N or greater". Reads current
     /// power on the battlefield, so a pumped creature qualifies.
     PowerAtLeast(i16),
@@ -1915,6 +1917,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
+        | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
