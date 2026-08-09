@@ -2,7 +2,7 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
+    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType,
     CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ObjectPredicateDef,
     PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
@@ -135,16 +135,34 @@ pub(in crate::card::sets) static BOROS_RECKONER: CardRecord = CardRecord::new(
     "Boros Reckoner",
     CardArt::new("82a18b07-38b8-4854-9735-3cfe83b11bf1", "Howard Lyon"),
     CardSet::Gatecrash,
-    CardRules::new_creature(
-        mana_cost!("{R/W}{R/W}{R/W}"),
-        &["Minotaur", "Wizard"],
-        3,
-        3,
-    )
-    .with_ability(AbilityDef::not_implemented(
-        "Whenever this creature is dealt damage, it deals that much damage to any target.\n{R/W}: This creature gains first strike until end of turn.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    CardRules::new_creature(mana_cost!("{R/W}{R/W}{R/W}"), &["Minotaur", "Wizard"], 3, 3)
+        .with_abilities(&[
+            AbilityDef::triggered(
+                "Whenever this creature is dealt damage, it deals that much damage to any target.",
+                TriggerEventDef::DamageDealt {
+                    source: ObjectPredicateDef::Any,
+                    recipient: EffectRecipientDef::Source,
+                },
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    amount: ValueDef::TriggerEventAmount,
+                },
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one(
+                TargetSlotId(0),
+                "any target",
+                AbilityTargetPredicate::AnyTarget,
+            )]),
+            AbilityDef::activated(
+                "{R/W}: This creature gains first strike until end of turn.",
+                &[AbilityCostDef::Mana(mana_cost!("{R/W}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::GrantAbility(&abilities::first_strike()),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
 );
 
 pub(in crate::card::sets) static DOMRI_RADE: CardRecord = CardRecord::new(

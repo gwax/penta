@@ -513,8 +513,12 @@ mod tests {
             TriggerEventDef::StepBegins { .. }
             | TriggerEventDef::LifeGained(_)
             | TriggerEventDef::DamagedCreatureDied => true,
+            // Only "whenever this creature is dealt damage" is committed; a
+            // wider recipient has no event behind it yet.
+            TriggerEventDef::DamageDealt { source, recipient } => {
+                recipient == EffectRecipientDef::Source && source == ObjectPredicateDef::Any
+            }
             TriggerEventDef::AbilityActivated(_)
-            | TriggerEventDef::DamageDealt { .. }
             | TriggerEventDef::ManaAdded(_)
             | TriggerEventDef::Special(_) => false,
         }

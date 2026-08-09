@@ -417,6 +417,10 @@ enum CommittedTriggerEvent {
     Attacks {
         object: TriggerEventObject,
     },
+    DamageDealt {
+        object: TriggerEventObject,
+        amount: u16,
+    },
     SpellCast {
         object: TriggerEventObject,
     },
@@ -441,6 +445,12 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: None,
+            },
+            Self::DamageDealt { object, amount } => TriggerContext {
+                object: Some(object.id),
+                object_controller: Some(object.controller),
+                event_player: None,
+                amount: Some(i32::from(*amount)),
             },
             Self::LifeGained { player, amount } => TriggerContext {
                 object: None,
@@ -2327,6 +2337,13 @@ impl Game {
             (TriggerEventDef::Attacks(predicate), CommittedTriggerEvent::Attacks { object }) => {
                 self.trigger_object_matches(predicate, object, source, false)
             }
+            (
+                TriggerEventDef::DamageDealt {
+                    source: _,
+                    recipient: EffectRecipientDef::Source,
+                },
+                CommittedTriggerEvent::DamageDealt { object, .. },
+            ) => object.id == source,
             (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },
@@ -7356,6 +7373,20 @@ impl Game {
             && let Some(controller) = lifelink_controller
         {
             self.gain_life(controller, amount);
+        }
+        if dealt_damage
+            && amount > 0
+            && let Some(Target::Permanent(id)) = target
+            && let Some(damaged) = self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == id)
+        {
+            let event = CommittedTriggerEvent::DamageDealt {
+                object: self.trigger_event_object(damaged),
+                amount,
+            };
+            self.capture_battlefield_triggers(&event);
         }
     }
 

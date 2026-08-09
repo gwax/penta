@@ -10562,3 +10562,72 @@ fn a_wall_may_block_but_never_attacks_and_never_stops_a_juggernaut() {
         "the Wall cannot block a Juggernaut, but the Lions can"
     );
 }
+
+#[test]
+fn boros_reckoner_returns_the_damage_it_took_to_a_target_of_its_choice() {
+    let mut game = ready_game();
+    let reckoner = creature(10_000, cards::BOROS_RECKONER, PlayerId::One);
+    game.battlefield.push(reckoner);
+    let bolt = card(10_001, cards::LIGHTNING_BOLT, PlayerId::Two);
+    game.players[1].hand.push(bolt.clone());
+    game.players[1].mana_pool.red = 1;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    let life_before = game.players[1].life;
+
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            bolt.id,
+            vec![Target::Permanent(CardInstanceId(10_000))],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    for _ in 0..12 {
+        if game.players[1].life <= life_before - 3 {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            // Aim the trigger at the player who threw the Bolt rather than
+            // taking whichever option happens to come first.
+            let options = decision
+                .options
+                .iter()
+                .find(|option| option.label == "your opponent")
+                .map_or_else(
+                    || {
+                        decision
+                            .options
+                            .iter()
+                            .take(decision.minimum.max(1))
+                            .map(|option| option.id)
+                            .collect::<Vec<_>>()
+                    },
+                    |option| vec![option.id],
+                );
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .unwrap();
+            continue;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    // Three damage in, three damage back out at the player who threw it.
+    assert_eq!(game.players[1].life, life_before - 3);
+}
