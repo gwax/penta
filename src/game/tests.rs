@@ -57,6 +57,7 @@ fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Perm
         power_bonus: 0,
         toughness_bonus: 0,
         attacking: false,
+        blocked: false,
         blocking: None,
         chosen_player: None,
         chosen_creature_type: None,
@@ -10272,4 +10273,67 @@ fn assemble_the_legion_musters_one_more_soldier_every_upkeep() {
     // One counter is added before the tokens are made, so the first upkeep
     // already musters a Soldier and each later one musters one more.
     assert_eq!(mustered, vec![1, 3, 6]);
+}
+
+#[test]
+fn a_first_striker_kills_a_smaller_blocker_before_it_can_answer() {
+    let mut game = ready_game();
+    // Black Knight is a 2/2 first striker; Savannah Lions is a 2/1, so
+    // without an earlier damage step both would die together.
+    let mut attacker = creature(10_000, cards::BLACK_KNIGHT, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    let mut blocker = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
+    blocker.blocking = Some(attacker_id);
+    let blocker_id = blocker.card.id;
+    game.battlefield = vec![attacker, blocker];
+
+    game.deal_combat_damage();
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == attacker_id)
+        .expect("the first striker survives");
+    assert_eq!(survivor.damage, 0, "the blocker never got to swing back");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == blocker_id),
+        "the blocker died in the first-strike step",
+    );
+}
+
+#[test]
+fn boros_charm_double_strike_hits_an_unblocked_player_twice() {
+    let mut game = ready_game();
+    let mut attacker = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield = vec![attacker];
+    let charm = card(10_001, cards::BOROS_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.white = 1;
+    let life_before = game.players[1].life;
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(
+            charm.id,
+            ModeId(2),
+            TargetSlotId(1),
+            vec![Target::Permanent(attacker_id)],
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    game.deal_combat_damage();
+
+    assert_eq!(
+        game.players[1].life,
+        life_before - 4,
+        "a 2/1 double striker deals two damage twice"
+    );
 }

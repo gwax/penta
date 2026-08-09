@@ -46,20 +46,12 @@ pub const fn haste() -> AbilityDef {
 
 #[must_use]
 pub const fn first_strike() -> AbilityDef {
-    unsupported_keyword(
-        "First strike",
-        KeywordAbility::FirstStrike,
-        "First-strike combat damage is not implemented.",
-    )
+    keyword("First strike", KeywordAbility::FirstStrike)
 }
 
 #[must_use]
 pub const fn double_strike() -> AbilityDef {
-    unsupported_keyword(
-        "Double strike",
-        KeywordAbility::DoubleStrike,
-        "Double-strike combat damage is not implemented.",
-    )
+    keyword("Double strike", KeywordAbility::DoubleStrike)
 }
 
 #[must_use]
@@ -174,9 +166,7 @@ pub const fn basic_land_type_mana(land_type: BasicLandType) -> AbilityDef {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        BASIC_LAND_TYPE_MANA_EXPLANATION, basic_land_type_mana, first_strike, flying, tap_for,
-    };
+    use super::{BASIC_LAND_TYPE_MANA_EXPLANATION, banding, basic_land_type_mana, flying, tap_for};
     use crate::card::{
         AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, BasicLandType,
         CardRules, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost,
@@ -232,13 +222,13 @@ mod tests {
 
     #[test]
     fn keyword_presence_is_distinct_from_executable_keyword_support() {
-        static KEYWORDS: [AbilityDef; 2] = [flying(), first_strike()];
+        static KEYWORDS: [AbilityDef; 2] = [flying(), banding()];
         let rules =
             CardRules::new_creature(ManaCost::default(), &[], 1, 1).with_abilities(&KEYWORDS);
 
         assert!(rules.has_keyword(KeywordAbility::Flying));
         assert!(rules.has_executable_keyword(KeywordAbility::Flying));
-        assert!(rules.has_keyword(KeywordAbility::FirstStrike));
-        assert!(!rules.has_executable_keyword(KeywordAbility::FirstStrike));
+        assert!(rules.has_keyword(KeywordAbility::Banding));
+        assert!(!rules.has_executable_keyword(KeywordAbility::Banding));
     }
 }

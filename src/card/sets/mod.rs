@@ -361,6 +361,8 @@ mod tests {
             KeywordAbility::Flying
                 | KeywordAbility::Trample
                 | KeywordAbility::Haste
+                | KeywordAbility::FirstStrike
+                | KeywordAbility::DoubleStrike
                 | KeywordAbility::Vigilance
                 | KeywordAbility::Deathtouch
                 | KeywordAbility::Lifelink

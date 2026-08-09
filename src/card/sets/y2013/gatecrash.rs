@@ -2,10 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, BasicLandType,
-    CardArt, CardRules, CardSet, CardSupertype, CounterKind, EffectDef, EffectRecipientDef,
-    LandEntry, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, abilities, cards,
+    AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
+    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ObjectPredicateDef,
+    PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -113,11 +113,19 @@ pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
                 "Permanents you control gain indestructible until end of turn",
                 "Printed mode is cataloged but is not executed by the engine.",
             ),
-            // Double strike arrives with the two-wave combat damage work.
-            AbilityDef::unimplemented_spell(
+            AbilityDef::spell(
                 "Target creature gains double strike until end of turn",
-                "Printed mode is cataloged but is not executed by the engine.",
-            ),
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(1)),
+                    effect: AppliedEffectDef::GrantAbility(&abilities::double_strike()),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+                TargetSlotId(1),
+                "creature",
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )]),
         ],
     )),
 );

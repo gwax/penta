@@ -108,6 +108,10 @@ struct Permanent {
     power_bonus: i16,
     toughness_bonus: i16,
     attacking: bool,
+    /// Whether this attacker was blocked. A blocked creature stays blocked
+    /// even if every blocker leaves, so this cannot be recomputed from the
+    /// blockers still on the battlefield.
+    blocked: bool,
     blocking: Option<GameObjectId>,
     chosen_player: Option<PlayerId>,
     chosen_creature_type: Option<String>,
@@ -173,6 +177,7 @@ impl Permanent {
             power_bonus: 0,
             toughness_bonus: 0,
             attacking: false,
+            blocked: false,
             blocking: None,
             chosen_player: None,
             chosen_creature_type: None,
@@ -5137,6 +5142,7 @@ impl Game {
             power_bonus: 0,
             toughness_bonus: 0,
             attacking: false,
+            blocked: false,
             blocking: None,
             chosen_player: None,
             chosen_creature_type: None,
@@ -5725,6 +5731,7 @@ impl Game {
                 power_bonus: 0,
                 toughness_bonus: 0,
                 attacking: false,
+                blocked: false,
                 blocking: None,
                 chosen_player,
                 chosen_creature_type: None,
@@ -6604,6 +6611,7 @@ impl Game {
                 {
                     creature.tapped = false;
                     creature.attacking = false;
+                    creature.blocked = false;
                     creature.combat_damage_assignment.clear();
                 }
             }
@@ -9429,6 +9437,14 @@ impl Game {
         self.blockers_declared = true;
         self.priority = self.active_player;
         self.consecutive_passes = 0;
+        let blocked = self
+            .battlefield
+            .iter()
+            .filter_map(|permanent| permanent.blocking)
+            .collect::<Vec<_>>();
+        for permanent in &mut self.battlefield {
+            permanent.blocked = blocked.contains(&permanent.card.id);
+        }
         let assignments = self
             .battlefield
             .iter()
@@ -9611,7 +9627,44 @@ impl Game {
         }
     }
 
+    /// CR 510.4: a first-strike damage step happens only when something in
+    /// combat has first or double strike. Everything else deals damage in the
+    /// ordinary step, and a double striker deals damage in both.
     fn deal_combat_damage(&mut self) {
+        let needs_first_strike = self.battlefield.iter().any(|permanent| {
+            (permanent.attacking || permanent.blocking.is_some())
+                && self.permanent_has_executable_keyword(permanent, KeywordAbility::FirstStrike)
+                || (permanent.attacking || permanent.blocking.is_some())
+                    && self
+                        .permanent_has_executable_keyword(permanent, KeywordAbility::DoubleStrike)
+        });
+        if needs_first_strike {
+            self.deal_combat_damage_step(true);
+            self.check_state_based_actions();
+        }
+        self.deal_combat_damage_step(false);
+        self.check_state_based_actions();
+    }
+
+    /// Whether `id` deals its combat damage in this step. A first striker only
+    /// deals damage in the first step, a double striker in both, and everyone
+    /// else only in the ordinary one.
+    fn strikes_in_step(&self, id: GameObjectId, first_strike_step: bool) -> bool {
+        let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+        else {
+            return false;
+        };
+        if self.permanent_has_executable_keyword(permanent, KeywordAbility::DoubleStrike) {
+            return true;
+        }
+        self.permanent_has_executable_keyword(permanent, KeywordAbility::FirstStrike)
+            == first_strike_step
+    }
+
+    fn deal_combat_damage_step(&mut self, first_strike_step: bool) {
         let attackers: Vec<_> = self
             .battlefield
             .iter()
@@ -9631,13 +9684,24 @@ impl Game {
                 .unwrap_or(0)
                 .max(0)
                 .cast_unsigned();
+            // Blocked once is blocked for good (CR 509.1h), so the recorded
+            // flag outlives the blockers themselves.
+            let was_blocked = self.battlefield[attacker_index].blocked
+                || self
+                    .battlefield
+                    .iter()
+                    .any(|permanent| permanent.blocking == Some(attacker_id));
+            let attacker_strikes = self.strikes_in_step(attacker_id, first_strike_step);
             let blockers: Vec<_> = self
                 .battlefield
                 .iter()
                 .filter(|permanent| permanent.blocking == Some(attacker_id))
                 .map(|permanent| permanent.card.id)
                 .collect();
-            if blockers.is_empty() {
+            if !was_blocked {
+                if !attacker_strikes {
+                    continue;
+                }
                 self.damage_target_from(
                     Some(attacker_id),
                     Some(Target::Player(self.active_player.opponent())),
@@ -9659,7 +9723,7 @@ impl Game {
                     }
                     _ => {}
                 }
-            } else {
+            } else if attacker_strikes {
                 let assignments = self.battlefield[attacker_index]
                     .combat_damage_assignment
                     .clone();
@@ -9676,26 +9740,26 @@ impl Game {
                         );
                     }
                 }
-                let return_damage = blockers
-                    .iter()
-                    .filter_map(|id| {
-                        self.battlefield
-                            .iter()
-                            .find(|permanent| permanent.card.id == *id)
-                            .and_then(|permanent| self.power(permanent))
-                            .map(|power| (*id, power.max(0).cast_unsigned()))
-                    })
-                    .collect::<Vec<_>>();
-                for (blocker, amount) in return_damage {
-                    self.damage_target_from(
-                        Some(blocker),
-                        Some(Target::Permanent(attacker_id)),
-                        amount,
-                    );
-                }
+            }
+            let return_damage = blockers
+                .iter()
+                .filter(|id| self.strikes_in_step(**id, first_strike_step))
+                .filter_map(|id| {
+                    self.battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == *id)
+                        .and_then(|permanent| self.power(permanent))
+                        .map(|power| (*id, power.max(0).cast_unsigned()))
+                })
+                .collect::<Vec<_>>();
+            for (blocker, amount) in return_damage {
+                self.damage_target_from(
+                    Some(blocker),
+                    Some(Target::Permanent(attacker_id)),
+                    amount,
+                );
             }
         }
-        self.check_state_based_actions();
     }
 
     fn permanent_controller(&self, id: GameObjectId) -> Option<PlayerId> {
@@ -9784,6 +9848,7 @@ impl Game {
             permanent.damage_sources.clear();
             permanent.deathtouch_damage = false;
             permanent.attacking = false;
+            permanent.blocked = false;
             permanent.blocking = None;
             permanent.combat_damage_assignment.clear();
         }
@@ -9903,6 +9968,7 @@ impl Game {
             power_bonus: 0,
             toughness_bonus: 0,
             attacking: false,
+            blocked: false,
             blocking: None,
             chosen_player: None,
             chosen_creature_type: None,
@@ -10623,6 +10689,7 @@ impl Game {
     fn clear_combat(&mut self) {
         for permanent in &mut self.battlefield {
             permanent.attacking = false;
+            permanent.blocked = false;
             permanent.blocking = None;
             permanent.combat_damage_assignment.clear();
         }
