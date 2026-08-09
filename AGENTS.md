@@ -74,6 +74,34 @@ migration inventory rather than precedent; when a repeated pattern emerges or
 an existing case is already being changed, move it toward a reusable definition
 or card-scoped implementation when that work is reasonably in scope.
 
+## Performance awareness
+
+Treat performance as a review consideration, not a merge gate. Prefer clear,
+correct designs over speculative optimization, and allow measurements to move
+in either direction when the tradeoff is justified. Still be mindful of work
+on hot paths, and avoid unnecessary work when an equally clear design is
+available.
+
+Use judgment about whether and when to measure. Do not put performance checks
+in the normal edit-test loop, run them after every relevant change, or delay
+unrelated development to chase small movements. Most changes need at most a
+qualitative assessment. A benchmark is worthwhile when evidence is likely to
+change a design or review decision: for example, a change to a known hot path,
+a suspected regression, an explicit optimization, or a meaningful
+correctness-versus-throughput tradeoff. Prefer one comparison at a coherent
+checkpoint over repeated measurements during implementation.
+
+In pull requests and handoffs, include performance context when it is useful;
+a short expected-impact note is enough. Improvement, regression, no expected
+impact, and not measured are all valid, and agents should not benchmark merely
+to fill in a report. When measurement is warranted, use
+`$profile-engine-performance` to compare with the current local `main`
+baseline. The helper lazily creates a new shared baseline when `main` advances
+and otherwise reuses it. Compare only matching workloads, seeds, build
+profiles, toolchains, and machines; call out changed deterministic outcomes or
+other comparability limits. Measurements inform review but never impose a
+fixed threshold.
+
 ## Protocol versioning
 
 A branch or pull request containing one or more incompatible protocol changes

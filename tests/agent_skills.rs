@@ -177,6 +177,7 @@ fn the_scripts_the_skills_invoke_exist() {
     for script in [
         ".agents/skills/profile-engine-performance/scripts/profile_attribution.py",
         ".agents/skills/refresh-magic-references/scripts/reference_material.py",
+        "scripts/benchmark_engine.py",
     ] {
         let script = Path::new(script);
         assert!(

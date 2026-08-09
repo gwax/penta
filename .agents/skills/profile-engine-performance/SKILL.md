@@ -6,9 +6,26 @@ description: "Benchmark and profile Penta's native engine with reproducible dete
 # Profile Engine Performance
 
 Measure the native Rust engine first. Use the web/WASM path only when evidence
-points to consumer-specific overhead. Keep captures, symbol sidecars, benchmark
-exports, and allocation traces under ignored `target/profiles/`; never commit
-them.
+points to consumer-specific overhead. Keep branch captures, symbol sidecars,
+ad hoc benchmark exports, and allocation traces under ignored
+`target/profiles/`; never commit them. The maintained `main` benchmark is the
+exception: manage it only through the baseline targets, which store it under
+Git's common directory for reuse by every linked worktree.
+
+## Decide whether to measure
+
+Performance awareness does not mean benchmarking every change. Keep these
+commands out of the normal edit-test loop and do not run them after every
+iteration. Most work needs at most a qualitative expected-impact assessment.
+Measure when the evidence is likely to change a design or review decision,
+such as work on a known hot path, a suspected regression, an explicit
+optimization, or a meaningful correctness-versus-throughput tradeoff. Use
+agent judgment, and prefer one comparison at a coherent checkpoint over
+repeated measurements while the implementation is still moving.
+
+Do not benchmark solely to populate a pull-request section or handoff. "No
+expected impact" and "Not measured" are valid conclusions. Baseline and
+comparison commands are opt-in development tools, not validation targets.
 
 ## Fix the workload
 
@@ -47,6 +64,40 @@ Prefer a direct same-session comparison when two saved binaries are available.
 Use Criterion only for a hot path that can be isolated as a stable in-process
 benchmark without distorting its inputs; keep whole-game throughput as the
 primary regression measure.
+
+## Use the shared main baseline
+
+Use the advisory baseline workflow for selected branch comparisons:
+
+```sh
+make benchmark-engine-baseline
+make benchmark-engine-compare
+```
+
+The baseline target ensures there is a matching result for the exact commit
+named by the local `refs/heads/main`, reusing it when one already exists. The
+comparison target performs the same lazy check, so it selects a new cache entry
+when local `main` advances without repeatedly measuring an unchanged baseline.
+Neither target fetches or switches the current worktree. Set
+`PERFORMANCE_BASELINE_REF=origin/main` only when that is deliberately the local
+tracking ref to measure.
+
+The helper stores the main release binary, deterministic outcome, manifest,
+and Hyperfine JSON under
+`$(git rev-parse --path-format=absolute --git-common-dir)/penta-performance-cache/layout-v1/`.
+Entries are separated by revision, machine, build environment, effective Cargo
+configuration, compiler/tool versions, workload, seed, and measurement
+settings. Branch comparison exports stay under ignored `target/profiles/` by
+default.
+
+For comparable evidence, let the comparison target run the saved main binary
+and the freshly built branch binary in the same Hyperfine session. Do not
+calculate a speedup from a new branch mean and an old saved main mean. Check the
+reported game outcomes and toolchains; if either differs, describe that limit
+because the delta may include different game paths or compiler behavior. Small
+noisy movements may be inconclusive. Baseline tracking is review context, not
+a threshold or CI gate, and it does not justify recording a routine Samply CPU
+capture.
 
 ## Capture and inspect CPU samples
 
@@ -119,10 +170,11 @@ valgrind --tool=dhat \
 
 ## Optimize and compare
 
-Change one well-supported hotspot at a time. Preserve observable ordering,
-identity, deterministic outcomes, and other semantics covered by the path. Run
-the narrowest relevant tests during implementation, then the gate required by
-`AGENTS.md` before handoff.
+Once measurement has identified a worthwhile optimization and the
+implementation is stable enough to compare, change one well-supported hotspot
+at a time. Preserve observable ordering, identity, deterministic outcomes, and
+other semantics covered by the path. Run the narrowest relevant tests during
+implementation, then the gate required by `AGENTS.md` before handoff.
 
 Capture the same CPU workload after the change and optionally compare it
 headlessly:
