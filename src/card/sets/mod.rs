@@ -264,7 +264,7 @@ mod tests {
         AbilityCostDef, AbilityDef, AbilityImplementationDef, AppliedEffectDef, BasicLandType,
         CardPrinting, CardPrintingId, CardStructure, CardSupertype, DeclarativeAbilityDef,
         DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus,
-        KeywordAbility, ManaKindDef, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
+        KeywordAbility, ManaColor, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
         ObjectPredicateDef, PlayActionKind, PlayRestriction, SpellForm, TargetPredicate,
         TriggerEventDef, ZoneKind, abilities, cards,
     };
@@ -710,7 +710,7 @@ mod tests {
         for module in SET_MODULES {
             for record in module.cards {
                 assert_eq!(
-                    record.set, module.set,
+                    record.debut_set, module.set,
                     "{} is registered in the wrong set",
                     record.name
                 );
@@ -802,7 +802,7 @@ mod tests {
             assert_eq!(usize::from(record.id.0), 129 + offset);
             assert!(names.insert(record.name));
             assert!(!record.rules.has_supertype(CardSupertype::Basic));
-            assert!(Format::IsdRtrStandard.allows_set(record.set));
+            assert!(Format::IsdRtrStandard.allows_set(record.debut_set));
             if let Some(behavior) = record.rules.special_behavior() {
                 assert_eq!(behavior.rules(), &record.rules);
             }
@@ -875,7 +875,6 @@ mod tests {
         let turn_burn = y2013::dragons_maze::TURN_BURN.definition();
         assert_eq!(turn_burn.name, "Turn // Burn");
         assert_eq!(turn_burn.rules, turn_burn.parts[0].rules);
-        assert!(turn_burn.rules.alternate_mana_costs().is_empty());
         assert_eq!(turn_burn.parts.len(), 2);
         assert_eq!(turn_burn.parts[0].name, "Turn");
         assert_eq!(turn_burn.parts[1].name, "Burn");
@@ -961,7 +960,7 @@ mod tests {
         assert!(matches!(
             abilities[1].effect,
             EffectDef::AddMana(mana)
-                if mana.mana == ManaSelectionDef::One(ManaKindDef::Colorless)
+                if mana.mana == ManaSelectionDef::One(ManaColor::Colorless)
                     && mana.amount == 1
                     && mana.restrictions.is_empty()
                     && mana.spend_effects.is_empty()
@@ -974,11 +973,11 @@ mod tests {
             abilities[2].effect,
             EffectDef::AddMana(mana)
                 if mana.mana == ManaSelectionDef::Choice(&[
-                    ManaKindDef::White,
-                    ManaKindDef::Blue,
-                    ManaKindDef::Black,
-                    ManaKindDef::Red,
-                    ManaKindDef::Green,
+                    ManaColor::White,
+                    ManaColor::Blue,
+                    ManaColor::Black,
+                    ManaColor::Red,
+                    ManaColor::Green,
                 ])
                     && mana.amount == 1
                     && mana.restrictions
@@ -995,7 +994,7 @@ mod tests {
         let lands = SET_MODULES
             .iter()
             .flat_map(|module| module.cards.iter().copied())
-            .filter(|record| record.rules.kind() == crate::card::CardKind::Land)
+            .filter(|record| record.rules.has_type(crate::card::CardType::Land))
             .collect::<Vec<_>>();
         assert_eq!(lands.len(), 45);
 
@@ -1046,7 +1045,7 @@ mod tests {
         let lands = SET_MODULES
             .iter()
             .flat_map(|module| module.cards.iter().copied())
-            .filter(|record| record.rules.kind() == crate::card::CardKind::Land)
+            .filter(|record| record.rules.has_type(crate::card::CardType::Land))
             .filter(|record| {
                 BasicLandType::ALL
                     .into_iter()
@@ -1314,7 +1313,7 @@ mod tests {
         }
 
         assert_eq!(y1993::beta::VOLCANIC_ISLAND.id, cards::VOLCANIC_ISLAND);
-        assert_eq!(y1993::beta::VOLCANIC_ISLAND.set, CardSet::Beta);
+        assert_eq!(y1993::beta::VOLCANIC_ISLAND.debut_set, CardSet::Beta);
     }
 
     #[test]

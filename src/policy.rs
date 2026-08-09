@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt;
 
 use crate::card::{
-    AbilityCostDef, BasicLandType, CardBehavior, CardCatalog, CardKind, CardSupertype,
+    AbilityCostDef, BasicLandType, CardBehavior, CardCatalog, CardSupertype, CardType, CardTypeSet,
     DeclarativeAbilityDef, EffectDef, ValueDef,
 };
 use crate::game::{
@@ -146,7 +146,7 @@ impl HandcraftedPolicy {
 
     fn declarative_mana_value(&self, definition: CardDefinitionId) -> Option<i32> {
         let card = self.catalog.get(definition)?;
-        if card.rules.kind() == CardKind::Land {
+        if card.rules.has_type(CardType::Land) {
             return self.is_mana_source(definition).then_some(80);
         }
         card.rules
@@ -435,10 +435,10 @@ impl HandcraftedPolicy {
         }
         match self.behavior(definition) {
             Some(CardBehavior::LightningBolt | CardBehavior::GoblinGrenade) => 75,
-            Some(behavior) if behavior.kind().is_creature() => 65,
+            Some(behavior) if behavior.types().is_creature() => 65,
             Some(_) => 55,
             None => self.catalog.get(definition).map_or(0, |card| {
-                if card.rules.kind().is_creature() {
+                if card.rules.has_type(CardType::Creature) {
                     65
                 } else {
                     55
@@ -458,7 +458,7 @@ impl HandcraftedPolicy {
         let declarative = definition.and_then(|id| self.declarative_spell_profile(id, choices.x()));
         let kind = definition
             .and_then(|id| self.catalog.get(id))
-            .map(|card| card.rules.kind());
+            .map(|card| card.rules.types());
         let x = choices.x();
         let damage = match behavior {
             Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => Some(3),
@@ -524,12 +524,12 @@ impl HandcraftedPolicy {
             Some(CardBehavior::Detonate | CardBehavior::ChaosOrb) => 7_400,
             Some(CardBehavior::Fork) => 7_300,
             Some(CardBehavior::WheelOfFortune) => 6_600,
-            Some(behavior) if behavior.kind().is_permanent() => 6_800,
+            Some(behavior) if behavior.types().is_permanent() => 6_800,
             _ if cards_drawn.is_some_and(|amount| amount >= 3) => 9_200,
             _ if counters => 8_900,
             _ if removes => 8_400,
             _ if damage.is_some() => 8_000,
-            None if kind.is_some_and(CardKind::is_permanent) => 6_800,
+            None if kind.is_some_and(CardTypeSet::is_permanent) => 6_800,
             Some(_) | None => 6_200,
         };
         base + target_score
@@ -684,7 +684,7 @@ impl HandcraftedPolicy {
                     && self
                         .catalog
                         .get(permanent.definition)
-                        .is_some_and(|card| card.rules.kind().is_artifact())
+                        .is_some_and(|card| card.rules.has_type(CardType::Artifact))
             })
             .count();
         let potential_power = atog

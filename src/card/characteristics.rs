@@ -9,7 +9,7 @@
 use std::error::Error;
 use std::fmt;
 
-use super::{CardDefinition, CardKind, CardStructure, PlayActionKind, SpellForm};
+use super::{CardDefinition, CardStructure, CardTypeSet, PlayActionKind, SpellForm};
 use crate::{CardDefinitionId, CardPartId};
 
 /// The zone-sensitive information needed to select printed characteristics.
@@ -84,11 +84,11 @@ pub fn applicable_part_ids(
                             definition: definition.id,
                             part: *presented,
                         })?;
-                if !part.rules.kind().is_permanent() {
+                if !part.rules.types().is_permanent() {
                     return Err(CharacteristicError::NonpermanentPresentation {
                         definition: definition.id,
                         part: *presented,
-                        kind: part.rules.kind(),
+                        types: part.rules.types(),
                     });
                 }
                 vec![*presented]
@@ -176,7 +176,7 @@ pub enum CharacteristicError {
     NonpermanentPresentation {
         definition: CardDefinitionId,
         part: CardPartId,
-        kind: CardKind,
+        types: CardTypeSet,
     },
 }
 
@@ -204,10 +204,10 @@ impl fmt::Display for CharacteristicError {
             Self::NonpermanentPresentation {
                 definition,
                 part,
-                kind,
+                types,
             } => write!(
                 formatter,
-                "part {part:?} of card definition {definition:?} is {kind:?}, not a permanent"
+                "part {part:?} of card definition {definition:?} has types {types:?}, not a permanent"
             ),
         }
     }
@@ -380,8 +380,8 @@ mod tests {
     fn flip_and_alternate_spell_parts_follow_zone_context() {
         let normal = CardPartId::PRIMARY;
         let flipped = CardPartId(1);
-        let creature_rules = CardRules::new_creature(ManaCost::new(2, 0), &[], 2, 2, "");
-        let flipped_rules = CardRules::new_creature_without_mana_cost(&[], 4, 4, "");
+        let creature_rules = CardRules::new_creature(ManaCost::new(2, 0), &[], 2, 2);
+        let flipped_rules = CardRules::new_creature_without_mana_cost(&[], 4, 4);
         let mut flip = CardDefinition::new(
             CardDefinitionId(20_000),
             "Test flip card",
@@ -418,7 +418,7 @@ mod tests {
 
         let main = CardPartId::PRIMARY;
         let adventure = CardPartId(1);
-        let adventure_rules = CardRules::new_instant(ManaCost::new(1, 0), "");
+        let adventure_rules = CardRules::new_instant(ManaCost::new(1, 0));
         let mut alternate = CardDefinition::new(
             CardDefinitionId(20_001),
             "Test adventurer",

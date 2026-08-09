@@ -8,7 +8,7 @@ pub(super) struct CardRecord {
     pub(super) id: CardDefinitionId,
     pub(super) name: &'static str,
     pub(super) art: CardArt,
-    pub(super) set: CardSet,
+    pub(super) debut_set: CardSet,
     pub(super) rules: CardRules,
     composition: Option<CompositionBuilder>,
 }
@@ -19,14 +19,14 @@ impl CardRecord {
         id: CardDefinitionId,
         name: &'static str,
         art: CardArt,
-        set: CardSet,
+        debut_set: CardSet,
         rules: CardRules,
     ) -> Self {
         Self {
             id,
             name,
             art,
-            set,
+            debut_set,
             rules,
             composition: None,
         }
@@ -48,8 +48,8 @@ impl CardRecord {
             id: self.id,
             name: self.name.into(),
             art: Some(self.art),
-            set: self.set,
-            printings: vec![CardPrinting::new(self.id, self.set)],
+            debut_set: self.debut_set,
+            printings: vec![CardPrinting::new(self.id, self.debut_set)],
             rules: self.rules,
             parts: composition.parts,
             structure: composition.structure,

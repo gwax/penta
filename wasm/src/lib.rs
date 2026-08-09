@@ -970,7 +970,7 @@ impl WebGame {
                     {
                         "artifactcreature".into()
                     } else {
-                        format!("{:?}", rules.kind()).to_ascii_lowercase()
+                        rules.kind_name().to_ascii_lowercase()
                     }
                 });
                 json!({
@@ -986,7 +986,7 @@ impl WebGame {
                     "implementationStatus": rules.map_or("complete", |rules| {
                         implementation_status_name(rules.implementation_status())
                     }),
-                    "isLand": rules.is_some_and(|rules| rules.kind() == penta::CardKind::Land),
+                    "isLand": rules.is_some_and(|rules| rules.has_type(penta::CardType::Land)),
                     "manaCost": mana_cost.map(|cost| json!({
                         "generic": cost.generic,
                         "white": cost.white,
@@ -1025,13 +1025,13 @@ impl WebGame {
                     "name": self.card_name(*definition),
                     "art": card_art_value(art),
                     "kind": card.map_or("unknown".into(), |card| {
-                        format!("{:?}", card.rules.kind()).to_ascii_lowercase()
+                        card.rules.kind_name().to_ascii_lowercase()
                     }),
                     "typeLine": card.map_or_else(String::new, |card| card.rules.type_line()),
                     "implementationStatus": card.map_or("complete", |card| {
                         implementation_status_name(card.implementation_status())
                     }),
-                    "isLand": card.is_some_and(|card| card.rules.kind() == penta::CardKind::Land),
+                    "isLand": card.is_some_and(|card| card.rules.has_type(penta::CardType::Land)),
                     "manaCost": hand_mana_cost_value(card),
                     "rulesText": card.map_or_else(String::new, |card| {
                         card.rules.rules_text().into_owned()
@@ -1895,10 +1895,10 @@ impl StackCardPresentation {
     ) -> Self {
         Self {
             name,
-            kind: format!("{:?}", rules.kind()).to_ascii_lowercase(),
+            kind: rules.kind_name().to_ascii_lowercase(),
             type_line: rules.type_line(),
             implementation_status: rules.implementation_status(),
-            is_land: rules.kind() == penta::CardKind::Land,
+            is_land: rules.has_type(penta::CardType::Land),
             mana_cost,
             rules_text: rules.rules_text().into_owned(),
             power: rules.creature_stats().map(|stats| stats.power),
@@ -1945,7 +1945,7 @@ fn stack_card_presentation(
             let kind = join_distinct(
                 parts
                     .iter()
-                    .map(|part| format!("{:?}", part.rules.kind()).to_ascii_lowercase()),
+                    .map(|part| part.rules.kind_name().to_ascii_lowercase()),
             );
             let type_line = join_distinct(parts.iter().map(|part| part.rules.type_line()));
             let rules_text = parts
@@ -1977,7 +1977,7 @@ fn stack_card_presentation(
                     .unwrap_or_default(),
                 is_land: parts
                     .iter()
-                    .any(|part| part.rules.kind() == penta::CardKind::Land),
+                    .any(|part| part.rules.has_type(penta::CardType::Land)),
                 mana_cost,
                 rules_text,
                 power: shared_stats.map(|stats| stats.power),
@@ -2640,6 +2640,34 @@ mod tests {
             fused.implementation_status,
             penta::ImplementationStatus::MetadataOnly
         );
+    }
+
+    #[test]
+    fn stack_presentation_preserves_legacy_composite_kinds_and_land_membership() {
+        let catalog = card::catalog().expect("catalog builds");
+        let juggernaut = catalog
+            .get(penta::card::cards::JUGGERNAUT)
+            .expect("Juggernaut is cataloged");
+        let artifact_creature = StackCardPresentation::from_rules(
+            juggernaut.name.clone(),
+            &juggernaut.rules,
+            juggernaut.rules.mana_cost(),
+        );
+
+        assert_eq!(artifact_creature.kind, "artifactcreature");
+        assert!(!artifact_creature.is_land);
+
+        let mountain = catalog
+            .get(penta::card::cards::MOUNTAIN)
+            .expect("Mountain is cataloged");
+        let land = StackCardPresentation::from_rules(
+            mountain.name.clone(),
+            &mountain.rules,
+            mountain.rules.mana_cost(),
+        );
+
+        assert_eq!(land.kind, "land");
+        assert!(land.is_land);
     }
 
     #[test]

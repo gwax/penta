@@ -2575,8 +2575,8 @@ function Zone({
   onDropTarget(target: string): void;
   opponent?: boolean;
 }) {
-  const lands = cards.filter((card) => card.kind === "land");
-  const nonlands = cards.filter((card) => card.kind !== "land");
+  const lands = cards.filter((card) => card.isLand);
+  const nonlands = cards.filter((card) => !card.isLand);
   const renderCards = (laneCards: Card[]) =>
     groupCardsIntoPiles(laneCards).map((pile) => (
       <CardPile
@@ -2912,7 +2912,7 @@ function GameCard({
   const hasFullArt = renderedCardArtMode === "full" && validArtId !== null;
   const currentKind = card.kind.replace("artifactcreature", "artifact creature");
   const type =
-    card.isLand && card.kind !== "land"
+    card.isLand && !card.kind.includes("land")
       ? `Land · ${currentKind}`
       : (card.typeLine || currentKind);
   const isRed =
@@ -2953,6 +2953,17 @@ function GameCard({
       : card.implementationStatus === "metadataOnly"
         ? "Metadata only: printed rules are cataloged but not active."
         : null;
+  const atomicTypeClasses = [
+    "artifact",
+    "creature",
+    "enchantment",
+    "instant",
+    "land",
+    "planeswalker",
+    "sorcery",
+  ]
+    .filter((cardType) => card.kind.includes(cardType))
+    .map((cardType) => `card-${cardType}`);
 
   const showPreview = (element: HTMLButtonElement) => {
     const bounds = element.getBoundingClientRect();
@@ -2989,6 +3000,7 @@ function GameCard({
           compact ? "game-card-compact" : "",
           hasFullArt ? "has-full-art" : "",
           `card-${card.kind}`,
+          ...atomicTypeClasses,
           isRed ? "card-red" : "",
           card.tapped ? "is-tapped" : "",
           card.attacking ? "is-attacking" : "",

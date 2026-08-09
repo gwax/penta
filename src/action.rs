@@ -7,15 +7,7 @@ use crate::{
     AbilityId, CardDefinitionId, CardPartId, GameObjectId, GrantId, PlayOptionId, PlayerId,
 };
 
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum ManaColor {
-    White,
-    Blue,
-    Black,
-    Red,
-    Green,
-    Colorless,
-}
+pub use crate::card::ManaColor;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Target {

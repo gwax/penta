@@ -403,10 +403,7 @@ fn declarative_mana_production_drives_generic_mana_sources() {
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::activated_mana(
         "{T}: Add {U} or {R}.",
         &[AbilityCostDef::TapSource],
-        EffectDef::AddMana(AddManaEffectDef::choice(&[
-            ManaKindDef::Blue,
-            ManaKindDef::Red,
-        ])),
+        EffectDef::AddMana(AddManaEffectDef::choice(&[ManaColor::Blue, ManaColor::Red])),
     )];
     let definition_id = CardDefinitionId(10_000);
     let mut definition = CardDefinition::new(
@@ -416,7 +413,7 @@ fn declarative_mana_production_drives_generic_mana_sources() {
         false,
         CardBehavior::Unsupported,
     );
-    definition.rules = CardRules::new_land(&[], "").with_abilities(&ABILITIES);
+    definition.rules = CardRules::new_land(&[]).with_abilities(&ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
     let mut game = ready_game();
@@ -455,10 +452,9 @@ fn declarative_land_entry_handles_check_tapped_and_shock_lands() {
         false,
         CardBehavior::Unsupported,
     );
-    check.rules =
-        CardRules::new_land(&[], "").land_entry(LandEntry::TappedUnlessControlsLandType([
-            true, false, false, false, false,
-        ]));
+    check.rules = CardRules::new_land(&[]).land_entry(LandEntry::TappedUnlessControlsLandType([
+        true, false, false, false, false,
+    ]));
     synchronize_single_part_definition(&mut check);
     let mut gate = CardDefinition::new(
         gate_id,
@@ -467,7 +463,7 @@ fn declarative_land_entry_handles_check_tapped_and_shock_lands() {
         false,
         CardBehavior::Unsupported,
     );
-    gate.rules = CardRules::new_land(&[], "").land_entry(LandEntry::Tapped);
+    gate.rules = CardRules::new_land(&[]).land_entry(LandEntry::Tapped);
     synchronize_single_part_definition(&mut gate);
     let mut shock = CardDefinition::new(
         shock_id,
@@ -477,7 +473,7 @@ fn declarative_land_entry_handles_check_tapped_and_shock_lands() {
         CardBehavior::Unsupported,
     );
     shock.rules =
-        CardRules::new_land(&["Plains", "Swamp"], "").land_entry(LandEntry::PayLifeOrTapped(2));
+        CardRules::new_land(&["Plains", "Swamp"]).land_entry(LandEntry::PayLifeOrTapped(2));
     synchronize_single_part_definition(&mut shock);
 
     let plains = CardDefinition::new(
@@ -515,8 +511,8 @@ fn a_land_play_option_locks_the_presented_part_on_the_permanent() {
     let definition_id = CardDefinitionId(10_100);
     let land_part = CardPartId(1);
     let land_option = PlayOptionId(1);
-    let front_rules = CardRules::new_sorcery(ManaCost::new(1, 0), "Test front");
-    let land_rules = CardRules::new_land(&[], "Test back").land_entry(LandEntry::Tapped);
+    let front_rules = CardRules::new_sorcery(ManaCost::new(1, 0));
+    let land_rules = CardRules::new_land(&[]).land_entry(LandEntry::Tapped);
     let mut definition = CardDefinition::new(
         definition_id,
         "Test modal card",
@@ -573,10 +569,9 @@ fn a_modal_spell_resolves_by_its_locked_part_instead_of_the_canonical_front() {
     let definition_id = CardDefinitionId(10_150);
     let creature_part = CardPartId(1);
     let creature_option = PlayOptionId(1);
-    let front_rules = CardRules::new_instant(ManaCost::new(1, 1), "Test front");
-    let creature_rules =
-        CardRules::new_creature(ManaCost::new(0, 0), &[], 3, 4, "Test creature back")
-            .with_abilities(&TEST_FLYING_ABILITY);
+    let front_rules = CardRules::new_instant(ManaCost::new(1, 1));
+    let creature_rules = CardRules::new_creature(ManaCost::new(0, 0), &[], 3, 4)
+        .with_abilities(&TEST_FLYING_ABILITY);
     let mut definition = CardDefinition::new(
         definition_id,
         "Test modal spell",
@@ -643,8 +638,8 @@ fn a_modal_spell_resolves_by_its_locked_part_instead_of_the_canonical_front() {
 fn changing_a_permanents_presented_face_keeps_its_object_identity() {
     let definition_id = CardDefinitionId(10_101);
     let back = CardPartId(1);
-    let front_rules = CardRules::new_creature(ManaCost::new(2, 0), &[], 2, 2, "Front-face rules.");
-    let back_rules = CardRules::new_creature_without_mana_cost(&[], 4, 5, "")
+    let front_rules = CardRules::new_creature(ManaCost::new(2, 0), &[], 2, 2);
+    let back_rules = CardRules::new_creature_without_mana_cost(&[], 4, 5)
         .with_abilities(&TEST_FLYING_TRAMPLE_ABILITIES);
     let mut definition = CardDefinition::new(
         definition_id,
@@ -830,7 +825,7 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
         false,
         CardBehavior::LightningBolt,
     );
-    definition.rules = CardRules::new_instant(ManaCost::new(0, 1), "");
+    definition.rules = CardRules::new_instant(ManaCost::new(0, 1));
     synchronize_single_part_definition(&mut definition);
     let mut option = PlayOptionDef::cast(
         option_id,
@@ -1550,7 +1545,7 @@ fn explicitly_tagged_triggered_mana_ability_resolves_without_the_stack() {
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered_mana(
         "Whenever this becomes tapped, add {C}.",
         TriggerEventDef::BecomesTapped(ObjectPredicateDef::Source),
-        EffectDef::AddMana(AddManaEffectDef::one(ManaKindDef::Colorless)),
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
     )];
     let definition_id = CardDefinitionId(10_050);
     let mut definition = CardDefinition::new(
@@ -1560,7 +1555,7 @@ fn explicitly_tagged_triggered_mana_ability_resolves_without_the_stack() {
         false,
         CardBehavior::Unsupported,
     );
-    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0), "").with_abilities(&ABILITIES);
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
     let mut game = ready_game();
@@ -1921,7 +1916,9 @@ fn balance_requests_public_sacrifices_and_private_discards() {
             .iter()
             .filter(|permanent| {
                 permanent.controller == player
-                    && game.permanent_kind(permanent) == Some(CardKind::Land)
+                    && game
+                        .permanent_types(permanent)
+                        .is_some_and(|types| types.contains(CardType::Land))
             })
             .count()
     });
@@ -2887,8 +2884,8 @@ fn game_with_test_fused_split(
 #[test]
 fn combined_spell_trigger_and_target_characteristics_union_parts() {
     let definition_id = CardDefinitionId(10_066);
-    let instant = CardRules::new_instant(ManaCost::default(), "").with_subtypes(&["Arcane"]);
-    let sorcery = CardRules::new_sorcery(ManaCost::default(), "").with_subtypes(&["Lesson"]);
+    let instant = CardRules::new_instant(ManaCost::default()).with_subtypes(&["Arcane"]);
+    let sorcery = CardRules::new_sorcery(ManaCost::default()).with_subtypes(&["Lesson"]);
     let (mut game, combined, parts) = game_with_test_fused_split(definition_id, &instant, &sorcery);
     let mut object = spell(77, definition_id, PlayerId::One, 0);
     object.signature = Some(CastSignature::from_validated_choices(
@@ -2899,8 +2896,8 @@ fn combined_spell_trigger_and_target_characteristics_union_parts() {
     let trigger_object = game
         .stack_trigger_event_object(&object)
         .expect("a fused spell has trigger characteristics");
-    assert!(trigger_object.types[CardType::Instant.index()]);
-    assert!(trigger_object.types[CardType::Sorcery.index()]);
+    assert!(trigger_object.types.contains(CardType::Instant));
+    assert!(trigger_object.types.contains(CardType::Sorcery));
     assert_eq!(trigger_object.subtypes.as_ref(), &["Arcane", "Lesson"]);
     let event = CommittedTriggerEvent::SpellCast {
         object: trigger_object,
@@ -2943,8 +2940,8 @@ fn combined_spell_trigger_and_target_characteristics_union_parts() {
 #[test]
 fn split_card_target_characteristics_union_parts_outside_the_stack() {
     let definition_id = CardDefinitionId(10_067);
-    let instant = CardRules::new_instant(ManaCost::default(), "").with_subtypes(&["Arcane"]);
-    let sorcery = CardRules::new_sorcery(ManaCost::default(), "").with_subtypes(&["Lesson"]);
+    let instant = CardRules::new_instant(ManaCost::default()).with_subtypes(&["Arcane"]);
+    let sorcery = CardRules::new_sorcery(ManaCost::default()).with_subtypes(&["Lesson"]);
     let (mut game, _, _) = game_with_test_fused_split(definition_id, &instant, &sorcery);
     game.players[0]
         .graveyard
@@ -2985,7 +2982,7 @@ fn animated_factory_keeps_types_and_last_known_stats_under_blood_moon() {
     assert_eq!(snapshot.last_known.toughness, Some(2));
     assert_eq!(snapshot.object.subtypes.as_ref(), &["Mountain"]);
     for card_type in [CardType::Land, CardType::Creature, CardType::Artifact] {
-        assert!(snapshot.object.types[card_type.index()]);
+        assert!(snapshot.object.types.contains(card_type));
     }
 
     let event = CommittedTriggerEvent::ZoneChanged {
@@ -3190,7 +3187,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         AbilityDef::activated_mana(
             "{T}: Add {C}.",
             &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaKindDef::Colorless)),
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
         ),
         AbilityDef::activated(
             "{1}, {T}: Draw a card.",
@@ -3236,7 +3233,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         false,
         CardBehavior::Unsupported,
     );
-    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0), "").with_abilities(&ABILITIES);
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
     let mut game = ready_game();
@@ -4510,7 +4507,7 @@ fn granted_activation_freezes_payload_before_sacrificing_grant_source() {
         CardBehavior::Unsupported,
     );
     grantor_definition.rules =
-        CardRules::new_artifact(ManaCost::new(0, 0), "").with_abilities(&GRANTOR_ABILITIES);
+        CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&GRANTOR_ABILITIES);
     synchronize_single_part_definition(&mut grantor_definition);
 
     let mut game = ready_game();
@@ -4603,7 +4600,7 @@ fn separate_grant_sites_receive_distinct_structural_origins() {
         false,
         CardBehavior::Unsupported,
     );
-    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0), "").with_abilities(&ABILITIES);
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
     let mut game = ready_game();
@@ -4702,7 +4699,7 @@ fn copy_grant_source_definition(
         false,
         CardBehavior::Unsupported,
     );
-    definition.rules = CardRules::new_artifact(ManaCost::default(), "").with_abilities(abilities);
+    definition.rules = CardRules::new_artifact(ManaCost::default()).with_abilities(abilities);
     synchronize_single_part_definition(&mut definition);
     definition
 }
@@ -4848,7 +4845,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
         false,
         CardBehavior::Unsupported,
     );
-    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0), "")
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0))
         .with_abilities(&MULTI_SLOT_ACTIVATION_ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
@@ -4957,7 +4954,7 @@ fn one_ability_target_slot_resolves_for_every_selected_legal_target() {
         false,
         CardBehavior::Unsupported,
     );
-    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0), "").with_abilities(&ABILITIES);
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
     let mut game = ready_game();
@@ -5046,7 +5043,7 @@ fn granted_ability_keeps_its_frozen_resolver_when_the_source_changes() {
         CardBehavior::Unsupported,
     );
     definition.rules =
-        CardRules::new_artifact(ManaCost::new(0, 0), "").with_abilities(&SOURCE_ABILITIES);
+        CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&SOURCE_ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
     let mut game = ready_game();
@@ -5137,7 +5134,7 @@ fn declarative_clause_uses_its_own_resolver_on_a_card_with_custom_behavior() {
         false,
         CardBehavior::Unsupported,
     );
-    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0), "").with_abilities(&ABILITIES);
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
     let mut game = ready_game();
@@ -6678,7 +6675,7 @@ fn any_target_damage_can_remove_a_planeswalker() {
         false,
         CardBehavior::Unsupported,
     );
-    definition.rules = CardRules::new_planeswalker(ManaCost::default(), &["Test"], 3, "")
+    definition.rules = CardRules::new_planeswalker(ManaCost::default(), &["Test"], 3)
         .with_supertype(CardSupertype::Legendary);
     synchronize_single_part_definition(&mut definition);
 
@@ -7164,7 +7161,7 @@ fn simultaneous_deaths_use_the_pre_exit_trigger_listener_snapshot() {
         CardBehavior::Unsupported,
     );
     definition.rules =
-        CardRules::new_creature(ManaCost::default(), &[], 1, 1, "").with_abilities(&ABILITIES);
+        CardRules::new_creature(ManaCost::default(), &[], 1, 1).with_abilities(&ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
     let mut game = ready_game();
@@ -7211,7 +7208,7 @@ fn simultaneous_exits_keep_pre_exit_characteristics_for_trigger_matching() {
         CardBehavior::Unsupported,
     );
     definition.rules =
-        CardRules::new_creature(ManaCost::default(), &[], 1, 1, "").with_abilities(&ABILITIES);
+        CardRules::new_creature(ManaCost::default(), &[], 1, 1).with_abilities(&ABILITIES);
     synchronize_single_part_definition(&mut definition);
 
     let mut game = ready_game();

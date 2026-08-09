@@ -3,28 +3,27 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
-    CardBehavior, CardRules, CardSet, EffectDef, EffectRecipientDef, LandEntry, ManaCost,
-    ManaKindDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    abilities, cards,
+    CardBehavior, CardRules, CardSet, EffectDef, EffectRecipientDef, LandEntry, ManaColor,
+    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
+use crate::mana_cost;
 
 pub(in crate::card::sets) static ARCHANGEL_OF_THUNE: CardRecord = CardRecord::new(
     cards::ARCHANGEL_OF_THUNE,
     "Archangel of Thune",
     CardArt::new("531cba81-afd7-4be4-adec-87edb77ba2a9", "James Ryman"),
     CardSet::Magic2014,
-    CardRules::new_creature(ManaCost::colored(3, 2, 0, 0, 0, 0), &["Angel"], 3, 4, "")
-        .with_abilities(&[
-            abilities::flying(),
-            abilities::lifelink().with_text(
-                "Lifelink (Damage dealt by this creature also causes you to gain that much life.)",
-            ),
-            AbilityDef::not_implemented(
-                "Whenever you gain life, put a +1/+1 counter on each creature you control.",
-                "The life-gain trigger is not executed.",
-            ),
-        ]),
+    CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Angel"], 3, 4).with_abilities(&[
+        abilities::flying(),
+        abilities::lifelink().with_text(
+            "Lifelink (Damage dealt by this creature also causes you to gain that much life.)",
+        ),
+        AbilityDef::not_implemented(
+            "Whenever you gain life, put a +1/+1 counter on each creature you control.",
+            "The life-gain trigger is not executed.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static BURNING_EARTH: CardRecord = CardRecord::new(
@@ -32,11 +31,12 @@ pub(in crate::card::sets) static BURNING_EARTH: CardRecord = CardRecord::new(
     "Burning Earth",
     CardArt::new("1df3a7c9-5c8d-438c-a5ad-3c9754c6ea5d", "rk post"),
     CardSet::Magic2014,
-    CardRules::new_enchantment(
-        ManaCost::colored(3, 0, 0, 0, 1, 0),
-        "Whenever a player taps a nonbasic land for mana, this enchantment deals 1 damage to that player.",
-    )
-    .metadata_only(),
+    CardRules::new_enchantment(mana_cost!("{3}{R}")).with_ability(
+        AbilityDef::not_implemented(
+            "Whenever a player taps a nonbasic land for mana, this enchantment deals 1 damage to that player.",
+            "Printed rules are cataloged but are not executed by the engine.",
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static CELESTIAL_FLARE: CardRecord = CardRecord::new(
@@ -44,11 +44,10 @@ pub(in crate::card::sets) static CELESTIAL_FLARE: CardRecord = CardRecord::new(
     "Celestial Flare",
     CardArt::new("6c8d1320-0f1a-4c66-86c9-9f8da0f1d9ef", "Clint Cearley"),
     CardSet::Magic2014,
-    CardRules::new_instant(
-        ManaCost::colored(0, 2, 0, 0, 0, 0),
+    CardRules::new_instant(mana_cost!("{W}{W}")).with_ability(AbilityDef::not_implemented(
         "Target player sacrifices an attacking or blocking creature of their choice.",
-    )
-    .metadata_only(),
+        "Printed rules are cataloged but are not executed by the engine.",
+    )),
 );
 
 pub(in crate::card::sets) static DOOM_BLADE: CardRecord = CardRecord::new(
@@ -56,11 +55,11 @@ pub(in crate::card::sets) static DOOM_BLADE: CardRecord = CardRecord::new(
     "Doom Blade",
     CardArt::new("75d96a37-bdbe-46ae-926f-8742699a0b20", "Chippy"),
     CardSet::Magic2014,
-    CardRules::new_instant(
-        ManaCost::colored(1, 0, 0, 1, 0, 0),
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::custom_full(
         "Destroy target nonblack creature.",
-    )
-    .with_special_behavior(CardBehavior::DoomBlade),
+        CardBehavior::DoomBlade,
+        "Implemented by the named card-local special behavior.",
+    )),
 );
 
 pub(in crate::card::sets) static ELVISH_MYSTIC: CardRecord = CardRecord::new(
@@ -68,14 +67,8 @@ pub(in crate::card::sets) static ELVISH_MYSTIC: CardRecord = CardRecord::new(
     "Elvish Mystic",
     CardArt::new("60d0e6a6-629a-45a7-bfcb-25ba7156788b", "Wesley Burt"),
     CardSet::Magic2014,
-    CardRules::new_creature(
-        ManaCost::colored(0, 0, 0, 0, 0, 1),
-        &["Elf", "Druid"],
-        1,
-        1,
-        "",
-    )
-    .with_abilities(&[abilities::tap_for(ManaKindDef::Green)]),
+    CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Druid"], 1, 1)
+        .with_abilities(&[abilities::tap_for(ManaColor::Green)]),
 );
 
 pub(in crate::card::sets) static ENCROACHING_WASTES: CardRecord = CardRecord::new(
@@ -83,10 +76,10 @@ pub(in crate::card::sets) static ENCROACHING_WASTES: CardRecord = CardRecord::ne
     "Encroaching Wastes",
     CardArt::new("1ad5a84b-ae9b-4ed1-a4de-b91bbf8ed0a5", "Noah Bradley"),
     CardSet::Magic2014,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
         .land_entry(LandEntry::Untapped)
         .with_abilities(&[
-            abilities::tap_for(ManaKindDef::Colorless),
+            abilities::tap_for(ManaColor::Colorless),
             AbilityDef::not_implemented(
                 "{4}, {T}, Sacrifice this land: Destroy target nonbasic land.",
                 "The land-destruction activated ability is not executed.",
@@ -100,11 +93,10 @@ pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
     CardArt::new("98370735-5303-40d4-9e80-cdb40dee18e2", "Min Yum"),
     CardSet::Magic2014,
     CardRules::new_creature(
-        ManaCost::colored(1, 0, 0, 2, 0, 0),
+        mana_cost!("{1}{B}{B}"),
         &["Zombie", "Warrior"],
         3,
         1,
-        "",
     )
     .with_abilities(&[
         abilities::intimidate().with_text(
@@ -136,10 +128,10 @@ pub(in crate::card::sets) static MUTAVAULT: CardRecord = CardRecord::new(
     "Mutavault",
     CardArt::new("927ed667-c228-4b96-a9f6-7cbadade8134", "Fred Fields"),
     CardSet::Magic2014,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .land_entry(LandEntry::Untapped)
     .with_abilities(&[
-        abilities::tap_for(ManaKindDef::Colorless),
+        abilities::tap_for(ManaColor::Colorless),
         AbilityDef::not_implemented(
             "{1}: This land becomes a 2/2 creature with all creature types until end of turn. It's still a land.",
             "The animation activated ability is not executed.",
@@ -152,11 +144,12 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
     "Primeval Bounty",
     CardArt::new("e750d55d-d5e8-4abe-99cf-f6b8ba86cf16", "Christine Choi"),
     CardSet::Magic2014,
-    CardRules::new_enchantment(
-        ManaCost::colored(5, 0, 0, 0, 0, 1),
-        "Whenever you cast a creature spell, create a 3/3 green Beast creature token.\nWhenever you cast a noncreature spell, put three +1/+1 counters on target creature you control.\nLandfall — Whenever a land you control enters, you gain 3 life.",
-    )
-    .metadata_only(),
+    CardRules::new_enchantment(mana_cost!("{5}{G}")).with_ability(
+        AbilityDef::not_implemented(
+            "Whenever you cast a creature spell, create a 3/3 green Beast creature token.\nWhenever you cast a noncreature spell, put three +1/+1 counters on target creature you control.\nLandfall — Whenever a land you control enters, you gain 3 life.",
+            "Printed rules are cataloged but are not executed by the engine.",
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static QUICKEN: CardRecord = CardRecord::new(
@@ -164,7 +157,7 @@ pub(in crate::card::sets) static QUICKEN: CardRecord = CardRecord::new(
     "Quicken",
     CardArt::new("066bef3d-c785-4b25-9b91-8f676aa9906f", "Aleksi Briclot"),
     CardSet::Magic2014,
-    CardRules::new_instant(ManaCost::colored(0, 0, 1, 0, 0, 0), "").with_abilities(&[
+    CardRules::new_instant(mana_cost!("{U}")).with_abilities(&[
         AbilityDef::not_implemented(
             "The next sorcery spell you cast this turn can be cast as though it had flash. (It can be cast any time you could cast an instant.)",
             "Granting flash to a later spell is not implemented.",
@@ -184,11 +177,12 @@ pub(in crate::card::sets) static RATCHET_BOMB: CardRecord = CardRecord::new(
     "Ratchet Bomb",
     CardArt::new("3e9045df-3eff-4236-9bbb-77537b302e27", "Austin Hsu"),
     CardSet::Magic2014,
-    CardRules::new_artifact(
-        ManaCost::colored(2, 0, 0, 0, 0, 0),
-        "{T}: Put a charge counter on this artifact.\n{T}, Sacrifice this artifact: Destroy each nonland permanent with mana value equal to the number of charge counters on this artifact.",
-    )
-    .metadata_only(),
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(
+        AbilityDef::not_implemented(
+            "{T}: Put a charge counter on this artifact.\n{T}, Sacrifice this artifact: Destroy each nonland permanent with mana value equal to the number of charge counters on this artifact.",
+            "Printed rules are cataloged but are not executed by the engine.",
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new(
@@ -197,13 +191,15 @@ pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new(
     CardArt::new("ec30153a-36b5-42f8-beed-9efab09f1051", "Austin Hsu"),
     CardSet::Magic2014,
     CardRules::new_creature(
-        ManaCost::colored(1, 0, 0, 0, 0, 1),
+        mana_cost!("{1}{G}"),
         &["Ooze"],
         2,
         2,
-        "{G}: Exile target card from a graveyard. If it was a creature card, put a +1/+1 counter on this creature and you gain 1 life.",
     )
-    .metadata_only(),
+    .with_ability(AbilityDef::not_implemented(
+        "{G}: Exile target card from a graveyard. If it was a creature card, put a +1/+1 counter on this creature and you gain 1 life.",
+        "Printed rules are cataloged but are not executed by the engine.",
+    )),
 );
 
 pub(in crate::card::sets) static SHADOWBORN_DEMON: CardRecord = CardRecord::new(
@@ -212,11 +208,10 @@ pub(in crate::card::sets) static SHADOWBORN_DEMON: CardRecord = CardRecord::new(
     CardArt::new("3884c05b-c10e-4f1d-a8bd-8b5118657972", "Lucas Graciano"),
     CardSet::Magic2014,
     CardRules::new_creature(
-        ManaCost::colored(3, 0, 0, 2, 0, 0),
+        mana_cost!("{3}{B}{B}"),
         &["Demon"],
         5,
         6,
-        "",
     )
     .with_abilities(&[
         abilities::flying(),

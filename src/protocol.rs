@@ -828,7 +828,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
 fn rules_json(rules: &CardRules, mana_cost: Option<&ManaCost>) -> Value {
     let stats = rules.creature_stats();
     json!({
-        "kind": format!("{:?}", rules.kind()),
+        "kind": rules.kind_name(),
         "typeLine": rules.type_line(),
         "manaCost": mana_cost.map(mana_cost_json),
         "power": stats.map(|stats| stats.power),
@@ -942,7 +942,7 @@ fn definition_json(catalog: &CardCatalog, format: Format, card: &CardDefinition)
         // Compatibility fields retained from protocol v1.
         "definition": card.id.0,
         "name": card.name,
-        "kind": format!("{:?}", rules.kind()),
+        "kind": rules.kind_name(),
         "isBasicLand": card.is_basic_land(),
         "manaCost": mana_cost.as_ref().map(mana_cost_json),
         "power": stats.map(|stats| stats.power),
@@ -953,7 +953,7 @@ fn definition_json(catalog: &CardCatalog, format: Format, card: &CardDefinition)
         // Protocol v2 structured and format-aware metadata.
         "allowed": allowed,
         "legal": allowed && !banned,
-        "debutSet": card_set_slug(card.set),
+        "debutSet": card_set_slug(card.debut_set),
         "implementationStatus": implementation_status_name(card.implementation_status()),
         "structure": structure_json(&card.structure),
         "parts": card.parts.iter().map(|part| {
@@ -1620,7 +1620,7 @@ mod tests {
                     if !game
                         .catalog
                         .get(definition)
-                        .is_some_and(|card| card.rules.kind().is_permanent())
+                        .is_some_and(|card| card.rules.types().is_permanent())
                     {
                         return None;
                     }
@@ -1924,9 +1924,8 @@ mod tests {
         assert_eq!(vault["implementationStatus"], "partial");
         assert_eq!(vault["parts"][0]["implementationStatus"], "partial");
 
-        // Any card still carrying legacy aggregate rules text will do here;
-        // this one is expected to migrate eventually, and the assertion should
-        // then be repointed rather than deleted.
+        // Any card with a metadata-only ability clause will do here; repoint
+        // this assertion when Domri's clause becomes executable.
         let legacy = find("Domri Rade");
         assert_eq!(legacy["implementationStatus"], "metadataOnly");
         assert_eq!(legacy["parts"][0]["implementationStatus"], "metadataOnly");
@@ -2375,5 +2374,23 @@ mod tests {
             .find(|card| card["name"] == "Lightning Bolt")
             .expect("bolt");
         assert_eq!(old_bolt["legal"], true);
+
+        let juggernaut = old_school["cards"]
+            .as_array()
+            .expect("cards")
+            .iter()
+            .find(|card| card["name"] == "Juggernaut")
+            .expect("Juggernaut is cataloged");
+        assert_eq!(juggernaut["kind"], "ArtifactCreature");
+        assert_eq!(juggernaut["parts"][0]["kind"], "ArtifactCreature");
+        assert_eq!(
+            juggernaut["parts"][0]["typeLine"],
+            "Artifact Creature — Juggernaut"
+        );
+        assert_eq!(
+            juggernaut["parts"][0]["colors"],
+            json!([false, false, false, false, false])
+        );
+        assert_eq!(juggernaut["debutSet"], "alpha");
     }
 }

@@ -1,18 +1,18 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, ColorDef, EffectDef,
-    EffectRecipientDef, ManaCost, ManaKindDef, ObjectPredicateDef, ValueDef, ZoneKind, abilities,
-    cards,
+    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
+use crate::mana_cost;
 
 pub(in crate::card::sets) static CHAIN_LIGHTNING: CardRecord = CardRecord::new(
     cards::CHAIN_LIGHTNING,
     "Chain Lightning",
     CardArt::new("b5883762-ca0a-4932-8d2a-41a45796a5f8", "Sandra Everingham"),
     CardSet::Legends,
-    CardRules::new_sorcery(ManaCost::new(0, 1), "").with_abilities(&[
+    CardRules::new_sorcery(mana_cost!("{R}")).with_abilities(&[
         AbilityDef::spell(
             "Chain Lightning deals 3 damage to any target.",
             EffectDef::DealDamage {
@@ -38,13 +38,11 @@ pub(in crate::card::sets) static DIVINE_OFFERING: CardRecord = CardRecord::new(
     "Divine Offering",
     CardArt::new("9c78c2f3-2f40-48ad-9dc4-55d1fa399a56", "Jeff A. Menges"),
     CardSet::Legends,
-    CardRules::new_instant(ManaCost::colored(1, 1, 0, 0, 0, 0), "").with_abilities(&[
-        AbilityDef::custom_full(
-            "Destroy target artifact. You gain life equal to its mana value.",
-            CardBehavior::DivineOffering,
-            "Artifact destruction and life gain are implemented by the legacy spell resolver.",
-        ),
-    ]),
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[AbilityDef::custom_full(
+        "Destroy target artifact. You gain life equal to its mana value.",
+        CardBehavior::DivineOffering,
+        "Artifact destruction and life gain are implemented by the legacy spell resolver.",
+    )]),
 );
 
 pub(in crate::card::sets) static MANA_DRAIN: CardRecord = CardRecord::new(
@@ -52,7 +50,7 @@ pub(in crate::card::sets) static MANA_DRAIN: CardRecord = CardRecord::new(
     "Mana Drain",
     CardArt::new("e691adef-3027-4e6a-889f-9f4e2df36a7c", "Mark Tedin"),
     CardSet::Legends,
-    CardRules::new_instant(ManaCost::colored(0, 0, 2, 0, 0, 0), "")
+    CardRules::new_instant(mana_cost!("{U}{U}"))
         .with_abilities(&[AbilityDef::custom_partial(
             "Counter target spell. At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value.",
             CardBehavior::ManaDrain,
@@ -65,7 +63,7 @@ pub(in crate::card::sets) static RECALL: CardRecord = CardRecord::new(
     "Recall",
     CardArt::new("33296718-0625-4422-a65c-b21cf99c52ec", "Brian Snõddy"),
     CardSet::Legends,
-    CardRules::new_sorcery(ManaCost::variable(0, 0, 1, 0, 0, 0, 2), "")
+    CardRules::new_sorcery(mana_cost!("{X}{X}{U}"))
     .with_abilities(&[AbilityDef::custom_partial(
         "Discard X cards, then return a card from your graveyard to your hand for each card discarded this way. Exile Recall.",
         CardBehavior::Recall,
@@ -78,7 +76,7 @@ pub(in crate::card::sets) static SYLVAN_LIBRARY: CardRecord = CardRecord::new(
     "Sylvan Library",
     CardArt::new("f486df00-7c4a-4ff0-bb0b-c8b5432ac742", "Harold McNeill"),
     CardSet::Legends,
-    CardRules::new_enchantment(ManaCost::colored(1, 0, 0, 0, 0, 1), "")
+    CardRules::new_enchantment(mana_cost!("{1}{G}"))
     .with_abilities(&[AbilityDef::custom_partial(
         "At the beginning of your draw step, you may draw two additional cards. If you do, choose two cards in your hand drawn this turn. For each of those cards, pay 4 life or put the card on top of your library.",
         CardBehavior::SylvanLibrary,
@@ -94,14 +92,8 @@ pub(in crate::card::sets) static THUNDER_SPIRIT: CardRecord = CardRecord::new(
         "Randy Asplund-Faith",
     ),
     CardSet::Legends,
-    CardRules::new_creature(
-        ManaCost::colored(1, 2, 0, 0, 0, 0),
-        &["Elemental", "Spirit"],
-        2,
-        2,
-        "",
-    )
-    .with_abilities(&[abilities::flying(), abilities::first_strike()]),
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Elemental", "Spirit"], 2, 2)
+        .with_abilities(&[abilities::flying(), abilities::first_strike()]),
 );
 
 pub(in crate::card::sets) static WHIRLING_DERVISH: CardRecord = CardRecord::new(
@@ -109,9 +101,9 @@ pub(in crate::card::sets) static WHIRLING_DERVISH: CardRecord = CardRecord::new(
     "Whirling Dervish",
     CardArt::new("eba294e7-7097-4bc3-b396-72e85dd4f441", "Susan Van Camp"),
     CardSet::Legends,
-    CardRules::new_creature(ManaCost::colored(0, 0, 0, 0, 0, 2), &["Human", "Monk"], 1, 1, "")
+    CardRules::new_creature(mana_cost!("{G}{G}"), &["Human", "Monk"], 1, 1)
         .with_abilities(&[
-            abilities::protection_from(ColorDef::Black),
+            abilities::protection_from(ManaColor::Black),
             AbilityDef::custom_partial(
                 "At the beginning of each end step, if this creature dealt damage to an opponent this turn, put a +1/+1 counter on it.",
                 CardBehavior::WhirlingDervish,
@@ -125,13 +117,11 @@ pub(in crate::card::sets) static MOAT: CardRecord = CardRecord::new(
     "Moat",
     CardArt::new("952ba126-0915-47f0-9b6a-a0a6dcd22c6f", "Jeff A. Menges"),
     CardSet::Legends,
-    CardRules::new_enchantment(ManaCost::colored(2, 2, 0, 0, 0, 0), "").with_abilities(&[
-        AbilityDef::custom_full(
-            "Creatures without flying can't attack.",
-            CardBehavior::Moat,
-            "The attack restriction is implemented by the legacy combat legality check.",
-        ),
-    ]),
+    CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_abilities(&[AbilityDef::custom_full(
+        "Creatures without flying can't attack.",
+        CardBehavior::Moat,
+        "The attack restriction is implemented by the legacy combat legality check.",
+    )]),
 );
 
 pub(in crate::card::sets) static PENDELHAVEN: CardRecord = CardRecord::new(
@@ -139,10 +129,10 @@ pub(in crate::card::sets) static PENDELHAVEN: CardRecord = CardRecord::new(
     "Pendelhaven",
     CardArt::new("79427109-c1f3-476d-a029-0049217237b5", "Bryon Wackwitz"),
     CardSet::Legends,
-    CardRules::new_land(&[], "")
+    CardRules::new_land(&[])
     .with_supertype(CardSupertype::Legendary)
     .with_abilities(&[
-        abilities::tap_for(ManaKindDef::Green),
+        abilities::tap_for(ManaColor::Green),
         AbilityDef::activated(
             "{T}: Target 1/1 creature gets +1/+2 until end of turn.",
             &[AbilityCostDef::TapSource],
@@ -174,7 +164,7 @@ pub(in crate::card::sets) static RELIC_BARRIER: CardRecord = CardRecord::new(
     "Relic Barrier",
     CardArt::new("c062cbae-ce5e-43be-9932-c81a0a3622e8", "Harold McNeill"),
     CardSet::Legends,
-    CardRules::new_artifact(ManaCost::new(2, 0), "").with_abilities(&[AbilityDef::activated(
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[AbilityDef::activated(
         "{T}: Tap target artifact.",
         &[AbilityCostDef::TapSource],
         EffectDef::Tap {
@@ -199,7 +189,7 @@ pub(in crate::card::sets) static THE_ABYSS: CardRecord = CardRecord::new(
     "The Abyss",
     CardArt::new("86a27d68-3e58-4ade-976d-36381beed451", "Pete Venters"),
     CardSet::Legends,
-    CardRules::new_enchantment(ManaCost::colored(3, 0, 0, 1, 0, 0), "")
+    CardRules::new_enchantment(mana_cost!("{3}{B}"))
         .with_supertype(CardSupertype::World)
         .with_abilities(&[AbilityDef::custom_partial(
             "At the beginning of each player's upkeep, destroy target nonartifact creature that player controls of their choice. It can't be regenerated.",

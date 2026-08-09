@@ -1,5 +1,6 @@
 use super::{
-    CardBehavior, CardKind, CardRules, CardSupertype, CreatureStats, KeywordAbility, ManaCost,
+    CardBehavior, CardRules, CardSupertype, CardTypeSet, ColorSet, CreatureStats, KeywordAbility,
+    ManaColor, ManaCost,
 };
 use crate::card::sets;
 
@@ -21,8 +22,8 @@ impl CardBehavior {
     }
 
     #[must_use]
-    pub const fn kind(self) -> CardKind {
-        self.rules().kind()
+    pub const fn types(self) -> CardTypeSet {
+        self.rules().types()
     }
 
     #[must_use]
@@ -51,35 +52,35 @@ impl CardBehavior {
             .has_executable_keyword(KeywordAbility::Mountainwalk)
     }
 
-    /// Returns the printed color flags in `[white, blue, black, red, green]` order.
+    /// Returns the object's printed color-characteristic set.
     #[must_use]
-    pub const fn color_identity(self) -> [bool; 5] {
-        self.rules().colors()
+    pub const fn colors(self) -> ColorSet {
+        self.rules().color_set()
     }
 
     #[must_use]
     pub const fn is_red(self) -> bool {
-        self.rules().colors()[3]
+        self.rules().has_color(ManaColor::Red)
     }
 
     #[must_use]
     pub const fn is_blue(self) -> bool {
-        self.rules().colors()[1]
+        self.rules().has_color(ManaColor::Blue)
     }
 
     #[must_use]
     pub const fn is_white(self) -> bool {
-        self.rules().colors()[0]
+        self.rules().has_color(ManaColor::White)
     }
 
     #[must_use]
     pub const fn is_black(self) -> bool {
-        self.rules().colors()[2]
+        self.rules().has_color(ManaColor::Black)
     }
 
     #[must_use]
     pub const fn is_green(self) -> bool {
-        self.rules().colors()[4]
+        self.rules().has_color(ManaColor::Green)
     }
 
     #[must_use]
