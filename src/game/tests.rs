@@ -10024,3 +10024,45 @@ fn goblin_digging_team_only_hits_walls() {
         "with no Wall in play the ability has no legal target"
     );
 }
+
+#[test]
+fn ruric_thar_burns_whoever_cast_the_noncreature_spell() {
+    // It hits its own controller too, which is the point of the card.
+    for caster in [PlayerId::One, PlayerId::Two] {
+        let mut game = ready_game();
+        game.put_onto_battlefield(PlayerId::One, cards::RURIC_THAR_THE_UNBOWED)
+            .expect("cataloged");
+        let bolt = card(10_001, cards::LIGHTNING_BOLT, caster);
+        game.players[caster.index()].hand.push(bolt.clone());
+        game.players[caster.index()].mana_pool.red = 1;
+        game.active_player = caster;
+        game.priority = caster;
+        let before = [game.players[0].life, game.players[1].life];
+
+        game.apply(
+            caster,
+            cast_action(
+                bolt.id,
+                vec![Target::Player(caster.opponent())],
+                Vec::new(),
+                0,
+            ),
+        )
+        .unwrap();
+        for _ in 0..8 {
+            if game.players[caster.index()].life < before[caster.index()] {
+                break;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+
+        assert_eq!(
+            game.players[caster.index()].life,
+            before[caster.index()] - 6,
+            "the caster {caster} takes six"
+        );
+    }
+}

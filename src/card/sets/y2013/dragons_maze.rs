@@ -93,9 +93,15 @@ pub(in crate::card::sets) static RURIC_THAR_THE_UNBOWED: CardRecord = CardRecord
             "Ruric Thar attacks each combat if able.",
             "The attack requirement is not enforced.",
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "Whenever a player casts a noncreature spell, Ruric Thar deals 6 damage to that player.",
-            "The spell-cast damage trigger is not executed.",
+            TriggerEventDef::SpellCast(ObjectPredicateDef::NoncreatureSpell),
+            EffectDef::DealDamage {
+                // Whoever cast it, which is what the event names; this hits
+                // its own controller too.
+                recipient: EffectRecipientDef::EventPlayer,
+                amount: ValueDef::Constant(6),
+            },
         ),
     ]),
 );
