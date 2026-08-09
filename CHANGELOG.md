@@ -12,10 +12,13 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
-## 0.6.0 — protocol 5
+## 0.6.0 — protocol 6
 
 ### Changed
 
+- Activated abilities can cost X. `ActivateAbility` carries the chosen value
+  and `legal_actions` offers one activation per affordable X, so a bot that
+  assumed a single activation per ability and target now sees several.
 - Flashback. A card in its owner's graveyard can offer a second cast play
   option, so `legal_actions` now reports `CastSpell` for objects outside the
   hand; a bot that assumed every castable card was in hand needs updating.

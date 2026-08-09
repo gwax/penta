@@ -95,6 +95,9 @@ pub enum Action {
         ability: AbilityOrigin,
         targets: Vec<TargetSelection>,
         sacrifice: Option<GameObjectId>,
+        /// The value chosen for X in the activation cost, zero when the cost
+        /// has no X.
+        x: u16,
     },
     DeclareAttacker {
         attacker: GameObjectId,

@@ -972,6 +972,7 @@ impl WebGame {
                     },
                     "x": match action {
                         Action::CastSpell { choices, .. } => Some(choices.x()),
+                        Action::ActivateAbility { x, .. } => Some(*x),
                         _ => None,
                     },
                     "playOptionId": match action {
@@ -1739,6 +1740,7 @@ impl WebGame {
                 ability,
                 targets,
                 sacrifice,
+                ..
             } => {
                 let source_name = self.instance_name(observation, *source);
                 let target = targets
@@ -2894,6 +2896,7 @@ mod tests {
                 ),
             ],
             sacrifice: None,
+            x: 0,
         };
         assert_eq!(
             action_ability_origin(&action),
@@ -2941,6 +2944,7 @@ mod tests {
             },
             targets: Vec::new(),
             sacrifice: None,
+            x: 0,
         };
         assert_eq!(
             action_ability_origin(&granted_action),
@@ -3057,6 +3061,7 @@ mod tests {
                 },
                 targets: Vec::new(),
                 sacrifice: None,
+                x: 0,
             },
         ];
 
@@ -3289,6 +3294,7 @@ mod tests {
                     Target::Permanent(CardInstanceId(9)),
                 )],
                 sacrifice: None,
+                x: 0,
             },
             Action::PassPriority,
         ];

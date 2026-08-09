@@ -41,7 +41,7 @@ use crate::{
 /// spell choices, public counterability and permanent-choice state, and
 /// enables previously metadata-only cards whose actions now appear in
 /// legal-action lists.
-pub const PROTOCOL_VERSION: u32 = 5;
+pub const PROTOCOL_VERSION: u32 = 6;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -421,8 +421,10 @@ pub fn action_json(action: &Action) -> Value {
             ability,
             targets,
             sacrifice,
+            x,
         } => json!({
             "type": "ActivateAbility",
+            "x": x,
             "source": source.0,
             "ability": ability_origin_json(*ability),
             "target": targets
@@ -1368,6 +1370,7 @@ mod tests {
                 ),
             ],
             sacrifice: None,
+            x: 0,
         });
         assert_eq!(activated["ability"]["kind"], "printed");
         assert_eq!(
@@ -1396,6 +1399,7 @@ mod tests {
             },
             targets: Vec::new(),
             sacrifice: None,
+            x: 0,
         });
         assert_eq!(granted["ability"]["kind"], "granted");
         assert_eq!(granted["ability"]["source"], 9);

@@ -229,10 +229,33 @@ pub(in crate::card::sets) static KESSIG_WOLF_RUN: CardRecord = CardRecord::new(
         .land_entry(LandEntry::Untapped)
         .with_abilities(&[
             abilities::tap_for(ManaColor::Colorless),
-            AbilityDef::not_implemented(
+            AbilityDef::activated(
                 "{X}{R}{G}, {T}: Target creature gets +X/+0 and gains trample until end of turn.",
-                "The targeted power and trample activated ability is not executed.",
-            ),
+                &[
+                    AbilityCostDef::Mana(mana_cost!("{X}{R}{G}")),
+                    AbilityCostDef::TapSource,
+                ],
+                EffectDef::Sequence(&[
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                        effect: AppliedEffectDef::ModifyPowerToughness {
+                            power: ValueDef::ChosenX,
+                            toughness: ValueDef::Constant(0),
+                        },
+                        duration: EffectDurationDef::UntilEndOfTurn,
+                    },
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                        effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
+                        duration: EffectDurationDef::UntilEndOfTurn,
+                    },
+                ]),
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+                TargetSlotId(0),
+                "creature",
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )]),
         ]),
 );
 

@@ -294,6 +294,7 @@ fn ability_events_distinguish_the_stack_object_from_a_source_that_left_play() {
             ability: activated_ability_for(&game, source_id, 0),
             targets: activated_targets(Target::Permanent(target_id)),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -1337,6 +1338,7 @@ fn a_resolving_tap_effect_uses_the_same_city_trigger_path() {
         ability: activated_ability_for(&game, CardInstanceId(10_000), 0),
         targets: activated_targets(Target::Permanent(CardInstanceId(10_001))),
         sacrifice: None,
+        x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
     game.apply(PlayerId::One, activation).unwrap();
@@ -2378,6 +2380,7 @@ fn triskelion_enters_with_counters_and_spends_one_to_deal_damage() {
             ability: activated_ability_for(&game, permanent_id, 0),
             targets: activated_targets(Target::Player(PlayerId::Two)),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -2775,6 +2778,7 @@ fn ivory_tower_and_jayemdae_tome_provide_control_card_advantage() {
             ability: activated_ability_for(&game, tome_id, 0),
             targets: Vec::new(),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -2804,6 +2808,7 @@ fn library_of_alexandria_draw_activation_keeps_its_printed_ability_id() {
         ability: expected_origin,
         targets: Vec::new(),
         sacrifice: None,
+        x: 0,
     };
 
     assert_eq!(activated_ability_for(&game, library_id, 0), expected_origin);
@@ -3446,6 +3451,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         ability: activated_ability_for(&game, tome_id, 0),
         targets: Vec::new(),
         sacrifice: None,
+        x: 0,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -3487,6 +3493,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         ability: activated_ability_for(&game, source, 0),
         targets: Vec::new(),
         sacrifice: None,
+        x: 0,
     };
 
     assert_eq!(
@@ -3512,6 +3519,7 @@ fn orcish_mechanics_can_sacrifice_an_artifact_to_damage_a_creature() {
         ability: activated_ability_for(&game, mechanics_id, 0),
         targets: activated_targets(Target::Permanent(target_id)),
         sacrifice: Some(artifact_id),
+        x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
 
@@ -3854,6 +3862,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
             ability: activated_ability_for(&game, factory_id, 0),
             targets: Vec::new(),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -3875,6 +3884,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
                 },
                 targets: activated_targets(Target::Permanent(factory_id)),
                 sacrifice: None,
+                x: 0,
             })
     );
 
@@ -3885,6 +3895,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
             ability: activated_ability_for(&game, strip_id, 0),
             targets: activated_targets(Target::Permanent(opposing_id)),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -3932,6 +3943,7 @@ fn mishras_factory_can_use_its_own_mana_to_animate() {
         ability: activated_ability_for(&game, factory_id, 0),
         targets: Vec::new(),
         sacrifice: None,
+        x: 0,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&animate));
@@ -4000,6 +4012,7 @@ fn strip_mine_can_be_activated_in_response_to_strip_mine() {
             ability: activated_ability_for(&game, second_strip_id, 0),
             targets: activated_targets(Target::Permanent(first_strip_id)),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -4010,6 +4023,7 @@ fn strip_mine_can_be_activated_in_response_to_strip_mine() {
         ability: activated_ability_for(&game, first_strip_id, 0),
         targets: activated_targets(Target::Permanent(other_land_id)),
         sacrifice: None,
+        x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&response));
     game.apply(PlayerId::One, response).unwrap();
@@ -4046,6 +4060,7 @@ fn chaos_orb_uses_the_documented_deterministic_success_rule() {
         ability: activated_ability_for(&game, orb_id, 0),
         targets: activated_targets(Target::Permanent(target_id)),
         sacrifice: None,
+        x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
 
@@ -4087,6 +4102,7 @@ fn chaos_orb_can_be_activated_the_turn_it_enters_using_untapped_mana() {
         ability: activated_ability_for(&game, orb_id, 0),
         targets: activated_targets(Target::Permanent(target_id)),
         sacrifice: None,
+        x: 0,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -4121,6 +4137,7 @@ fn icatian_javelineers_cannot_activate_until_their_controller_turn() {
         ability: activated_ability_for(&game, source, 0),
         targets: activated_targets(Target::Player(PlayerId::Two)),
         sacrifice: None,
+        x: 0,
     };
     assert_eq!(game.power(&game.battlefield[0]), Some(1));
     assert_eq!(game.toughness(&game.battlefield[0]), Some(1));
@@ -4158,6 +4175,7 @@ fn removing_chaos_orb_in_response_nullifies_its_flip() {
             ability: activated_ability_for(&game, orb_id, 0),
             targets: activated_targets(Target::Permanent(target_id)),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -4671,6 +4689,7 @@ fn copy_artifact_resolves_a_copied_icy_manipulator_ability_from_its_frozen_origi
             ability,
             targets: activated_targets(Target::Permanent(target_id)),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -4768,6 +4787,7 @@ fn granted_activation_freezes_payload_before_sacrificing_grant_source() {
         ability: origin,
         targets: activated_targets(Target::Player(PlayerId::Two)),
         sacrifice: Some(grantor),
+        x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
 
@@ -5083,6 +5103,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         ability: first_origin,
         targets: Vec::new(),
         sacrifice: None,
+        x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&stale_action));
 
@@ -5100,6 +5121,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         ability: second_origin,
         targets: Vec::new(),
         sacrifice: None,
+        x: 0,
     }));
 }
 
@@ -5175,6 +5197,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
         ability: primary_ability(definition_id),
         targets: targets.clone(),
         sacrifice: None,
+        x: 0,
     };
 
     let invalid_slots = Action::ActivateAbility {
@@ -5185,6 +5208,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
             TargetSelection::single(TargetSlotId(3), Target::Permanent(creature_target)),
         ],
         sacrifice: None,
+        x: 0,
     };
     assert!(game.apply(PlayerId::One, invalid_slots).is_err());
     assert!(
@@ -5287,6 +5311,7 @@ fn one_ability_target_slot_resolves_for_every_selected_legal_target() {
             ],
         )],
         sacrifice: None,
+        x: 0,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -5539,6 +5564,7 @@ fn resolving_ability_masks_an_illegal_target_in_each_frozen_slot() {
             },
             resolver: StackAbilityResolver::Declarative(EffectDef::Sequence(&EFFECTS)),
             mode_effects: Vec::new(),
+            x: 0,
         }),
         controller: PlayerId::One,
         signature: None,
@@ -7410,6 +7436,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             ability: activated_ability_for(&game, sage_id, 0),
             targets: Vec::new(),
             sacrifice: Some(ring_id),
+            x: 0,
         },
     )
     .unwrap();
@@ -7436,6 +7463,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             ability: activated_ability_for(&game, barrier_id, 0),
             targets: activated_targets(Target::Permanent(ring_id)),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -10112,6 +10140,7 @@ fn order_of_leitbur_can_pump_itself() {
             },
             targets: Vec::new(),
             sacrifice: None,
+            x: 0,
         },
     )
     .unwrap();
@@ -11099,6 +11128,7 @@ fn ratchet_bomb_sweeps_the_mana_value_it_ticked_up_to() {
                         },
                         targets: Vec::new(),
                         sacrifice: None,
+                        x: 0,
                     },
                 )),
                 _ => None,
@@ -11165,4 +11195,49 @@ fn sigarda_stops_an_opponents_edict() {
             .any(|permanent| permanent.card.id == CardInstanceId(10_000));
         assert_eq!(attacker_survived, sigarda_out, "Sigarda out: {sigarda_out}");
     }
+}
+
+#[test]
+fn kessig_wolf_run_offers_only_the_x_it_can_actually_pay() {
+    let mut game = ready_game();
+    // Only the floating mana pays, so the affordable range is exact. The Run
+    // itself taps for the ability, so its own colorless is not available.
+    game.battlefield.clear();
+    let run = game
+        .put_onto_battlefield(PlayerId::One, cards::KESSIG_WOLF_RUN)
+        .expect("cataloged");
+    let lions = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.colorless = 3;
+
+    let mut offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility { source, x, .. } if source == run => Some(x),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    offered.sort_unstable();
+    assert_eq!(offered, vec![0, 1, 2, 3], "five mana, less the two colored");
+
+    let pump = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, x, .. } if *source == run && *x == 3))
+        .expect("X of three is affordable");
+    game.apply(PlayerId::One, pump).unwrap();
+    pass_priority_pair(&mut game);
+
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == lions)
+        .expect("still there");
+    assert_eq!(game.power(lions), Some(5), "2/1 plus three");
+    assert_eq!(game.toughness(lions), Some(1), "toughness is untouched");
+    assert!(game.permanent_has_executable_keyword(lions, KeywordAbility::Trample));
 }

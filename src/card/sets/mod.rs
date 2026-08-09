@@ -546,7 +546,10 @@ mod tests {
             .count();
         sacrifice_choices <= 1
             && costs.iter().all(|cost| match cost {
-                AbilityCostDef::Mana(cost) => !cost.variable_x && cost.x_multiplier == 0,
+                // A variable X is offered one activation per affordable
+                // value. More than one X in the same cost is not: nothing
+                // enumerates a cost that charges X twice.
+                AbilityCostDef::Mana(cost) => cost.x_multiplier <= 1,
                 AbilityCostDef::SacrificePermanent { object, .. } => {
                     shared_object_predicate(*object)
                 }

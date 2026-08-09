@@ -391,6 +391,7 @@ fn handcrafted_only_uses_orcish_mechanics_on_a_player_for_lethal() {
                 ability: PRIMARY_PRINTED_ABILITY,
                 targets: activated_targets(Target::Player(PlayerId::Two)),
                 sacrifice: Some(vise),
+                x: 0,
             },
         ],
     );
@@ -423,12 +424,14 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
                 ability: PRIMARY_PRINTED_ABILITY,
                 targets: Vec::new(),
                 sacrifice: Some(vise),
+                x: 0,
             },
             Action::ActivateAbility {
                 source: atog,
                 ability: PRIMARY_PRINTED_ABILITY,
                 targets: Vec::new(),
                 sacrifice: Some(mox),
+                x: 0,
             },
         ],
     );
@@ -443,6 +446,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
             ability: PRIMARY_PRINTED_ABILITY,
             targets: Vec::new(),
             sacrifice: Some(vise),
+            x: 0,
         })
     );
 }
@@ -588,6 +592,7 @@ fn handcrafted_animates_a_factory_once_rather_than_every_priority() {
         ability: PRIMARY_PRINTED_ABILITY,
         targets: Vec::new(),
         sacrifice: None,
+        x: 0,
     };
 
     let dormant = permanent(1, poc::cards::MISHRA_S_FACTORY, PlayerId::One, None, None);

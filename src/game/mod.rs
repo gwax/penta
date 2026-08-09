@@ -272,6 +272,9 @@ struct StackAbilityPayload {
     /// Selected declarative mode effects frozen in canonical printed order.
     /// Repeated modes remain repeated procedures.
     mode_effects: Vec<EffectDef>,
+    /// The X chosen when the ability was activated, so its effects read the
+    /// same number the cost was paid for.
+    x: u16,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -407,6 +410,10 @@ enum ManaPaymentPurpose {
     },
     Ability {
         source: GameObjectId,
+        /// Whether the ability taps its source to pay for itself. When it
+        /// does, that source cannot also be tapped for mana, so it is barred
+        /// from the payment rather than merely deprioritised.
+        taps_source: bool,
     },
     Other,
 }
@@ -587,7 +594,10 @@ impl StackObject {
     }
 
     fn x(&self) -> u16 {
-        self.signature.as_ref().map_or(0, CastSignature::x)
+        self.signature.as_ref().map_or_else(
+            || self.ability.as_ref().map_or(0, |ability| ability.x),
+            CastSignature::x,
+        )
     }
 }
 
@@ -652,6 +662,9 @@ struct FrozenActivatedAbility {
     text: Option<&'static str>,
     target_defs: &'static [AbilityTargetDef],
     resolver: StackAbilityResolver,
+    /// The X chosen at activation, frozen alongside everything else the
+    /// ability will resolve with.
+    x: u16,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1419,7 +1432,8 @@ impl Game {
                 ability,
                 targets,
                 sacrifice,
-            } => self.activate_ability(player, source, ability, targets, sacrifice),
+                x,
+            } => self.activate_ability(player, source, ability, targets, sacrifice, x),
             Action::DeclareAttacker { attacker } => self.declare_attacker(attacker),
             Action::FinishDeclaringAttackers => self.finish_declaring_attackers(),
             Action::DeclareBlocker { blocker, attacker } => {
@@ -2365,6 +2379,8 @@ impl Game {
             text,
             target_defs,
             resolver,
+            // Filled in by the activation, which is where X is chosen.
+            x: 0,
         }
     }
 
@@ -2960,6 +2976,7 @@ impl Game {
                 context: trigger.context,
                 resolver: trigger.resolver,
                 mode_effects: Vec::new(),
+                x: 0,
             }),
             controller: trigger.controller,
             signature: None,
@@ -3438,6 +3455,7 @@ impl Game {
                 context: TriggerContext::empty(),
                 resolver: frozen.resolver,
                 mode_effects: Vec::new(),
+                x: frozen.x,
             }),
             controller,
             signature: None,
@@ -4457,6 +4475,7 @@ impl Game {
                 },
             ),
             mode_effects,
+            x: signature.x(),
         })
     }
 
@@ -4978,9 +4997,18 @@ impl Game {
                 }
                 has_declarative_activation = true;
                 let taps_source = definition.costs.contains(&AbilityCostDef::TapSource);
+                // The same purpose the payment will use, so an ability that
+                // taps its own source is never offered on mana only that
+                // source could have made.
+                let payment_purpose = ManaPaymentPurpose::Ability {
+                    source: permanent.card.id,
+                    taps_source,
+                };
                 if (taps_source && (permanent.tapped || !self.can_use_tap_ability(permanent)))
                     || definition.costs.iter().any(|cost| match cost {
-                        AbilityCostDef::Mana(cost) => !self.can_pay_cost(player, *cost, 0),
+                        AbilityCostDef::Mana(cost) => {
+                            !self.can_pay_cost_for(player, *cost, 0, &payment_purpose)
+                        }
                         AbilityCostDef::PayLife(amount) => {
                             self.players[player.index()].life
                                 < i16::try_from(*amount).unwrap_or(i16::MAX)
@@ -5031,6 +5059,19 @@ impl Game {
                 if sacrifice_choices.is_empty() {
                     return;
                 }
+                // A variable cost offers one activation per affordable X.
+                // Zero is always among them, and the affordability check above
+                // already proved the rest of the cost is payable there.
+                let max_x = definition
+                    .costs
+                    .iter()
+                    .find_map(|cost| match cost {
+                        AbilityCostDef::Mana(cost) if cost.variable_x => {
+                            Some(self.maximum_x_for(player, *cost, &payment_purpose))
+                        }
+                        _ => None,
+                    })
+                    .unwrap_or(0);
                 for selections in self.legal_ability_target_selections(
                     definition.targets,
                     player,
@@ -5038,12 +5079,15 @@ impl Game {
                     TriggerContext::empty(),
                 ) {
                     for sacrifice in &sacrifice_choices {
-                        actions.push(Action::ActivateAbility {
-                            source: permanent.card.id,
-                            ability: effective.origin,
-                            targets: selections.clone(),
-                            sacrifice: *sacrifice,
-                        });
+                        for x in 0..=max_x {
+                            actions.push(Action::ActivateAbility {
+                                source: permanent.card.id,
+                                ability: effective.origin,
+                                targets: selections.clone(),
+                                sacrifice: *sacrifice,
+                                x,
+                            });
+                        }
                     }
                 }
             });
@@ -5068,6 +5112,7 @@ impl Game {
                                 ability,
                                 targets: Vec::new(),
                                 sacrifice: Some(candidate.card.id),
+                                x: 0,
                             }),
                     );
                 }
@@ -5081,6 +5126,7 @@ impl Game {
                                 Target::Player(target),
                             )],
                             sacrifice: None,
+                            x: 0,
                         });
                     }
                 }
@@ -5098,6 +5144,7 @@ impl Game {
                                 Target::Permanent(candidate.card.id),
                             )],
                             sacrifice: None,
+                            x: 0,
                         }
                     }));
                 }
@@ -5119,6 +5166,7 @@ impl Game {
                                     Target::Permanent(candidate.card.id),
                                 )],
                                 sacrifice: None,
+                                x: 0,
                             }),
                     );
                 }
@@ -5130,6 +5178,7 @@ impl Game {
                         ability,
                         targets: Vec::new(),
                         sacrifice: None,
+                        x: 0,
                     });
                 }
                 Some(CardBehavior::StoneGiant)
@@ -5151,6 +5200,7 @@ impl Game {
                                     Target::Permanent(candidate.card.id),
                                 )],
                                 sacrifice: None,
+                                x: 0,
                             }),
                     );
                 }
@@ -5162,6 +5212,7 @@ impl Game {
                         ability,
                         targets: Vec::new(),
                         sacrifice: None,
+                        x: 0,
                     });
                 }
                 Some(CardBehavior::MishrasFactory)
@@ -5172,6 +5223,7 @@ impl Game {
                         ability,
                         targets: Vec::new(),
                         sacrifice: None,
+                        x: 0,
                     });
                     if !permanent.tapped && self.can_use_tap_ability(permanent) {
                         actions.extend(
@@ -5191,6 +5243,7 @@ impl Game {
                                         Target::Permanent(candidate.card.id),
                                     )],
                                     sacrifice: None,
+                                    x: 0,
                                 }),
                         );
                     }
@@ -5215,6 +5268,7 @@ impl Game {
                                     Target::Permanent(candidate.card.id),
                                 )],
                                 sacrifice: None,
+                                x: 0,
                             }),
                     );
                 }
@@ -5233,6 +5287,7 @@ impl Game {
                                     Target::Permanent(candidate.card.id),
                                 )],
                                 sacrifice: None,
+                                x: 0,
                             }),
                     );
                 }
@@ -5250,6 +5305,7 @@ impl Game {
                                 ability,
                                 targets: vec![TargetSelection::single(ability_target_slot, target)],
                                 sacrifice: Some(sacrificed.card.id),
+                                x: 0,
                             }
                         }));
                     }
@@ -5263,6 +5319,7 @@ impl Game {
                             ability,
                             targets: vec![TargetSelection::single(ability_target_slot, target)],
                             sacrifice: None,
+                            x: 0,
                         }
                     }));
                 }
@@ -5276,6 +5333,7 @@ impl Game {
                         ability,
                         targets: Vec::new(),
                         sacrifice: None,
+                        x: 0,
                     });
                 }
                 Some(CardBehavior::MazeOfIth)
@@ -5293,6 +5351,7 @@ impl Game {
                                     Target::Permanent(candidate.card.id),
                                 )],
                                 sacrifice: None,
+                                x: 0,
                             }),
                     );
                 }
@@ -5306,6 +5365,7 @@ impl Game {
                         ability,
                         targets: Vec::new(),
                         sacrifice: None,
+                        x: 0,
                     });
                 }
                 Some(CardBehavior::IcatianJavelineers)
@@ -5319,6 +5379,7 @@ impl Game {
                             ability,
                             targets: vec![TargetSelection::single(ability_target_slot, target)],
                             sacrifice: None,
+                            x: 0,
                         }
                     }));
                 }
@@ -5330,6 +5391,7 @@ impl Game {
                         ability,
                         targets: Vec::new(),
                         sacrifice: None,
+                        x: 0,
                     });
                 }
                 _ => {}
@@ -8549,7 +8611,7 @@ impl Game {
                     &CharacteristicContext::Stack { form: form.clone() },
                 )
                 .map(|object| (object, true)),
-            ManaPaymentPurpose::Ability { source } => self
+            ManaPaymentPurpose::Ability { source, .. } => self
                 .battlefield
                 .iter()
                 .find(|permanent| permanent.card.id == *source)
@@ -8831,71 +8893,89 @@ impl Game {
                 source,
                 ability,
                 targets,
+                x,
                 ..
-            } => {
-                let permanent = self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == *source)?;
-                if let Some(definition) = self
-                    .find_effective_ability(permanent, |effective| effective.origin == *ability)
-                    .and_then(|effective| match effective.ability.definition {
-                        DeclarativeAbilityDef::Activated(definition) => Some(definition),
-                        DeclarativeAbilityDef::Spell(_)
-                        | DeclarativeAbilityDef::ActivatedMana(_)
-                        | DeclarativeAbilityDef::TriggeredMana(_)
-                        | DeclarativeAbilityDef::Triggered(_)
-                        | DeclarativeAbilityDef::Static(_)
-                        | DeclarativeAbilityDef::Replacement(_)
-                        | DeclarativeAbilityDef::SpecialAction(_)
-                        | DeclarativeAbilityDef::Keyword(_)
-                        | DeclarativeAbilityDef::Legacy => None,
-                    })
-                {
-                    let mut cost = ManaCost::default();
-                    let mut has_mana_cost = false;
-                    for ability_cost in definition.costs {
-                        if let AbilityCostDef::Mana(mana) = ability_cost {
-                            cost = add_mana_cost(cost, *mana);
-                            has_mana_cost = true;
-                        }
-                    }
-                    return has_mana_cost.then_some((
-                        cost,
-                        0,
-                        (definition.costs.contains(&AbilityCostDef::TapSource)
-                            || self.effective_behavior(permanent)
-                                == Some(CardBehavior::MishrasFactory))
-                        .then_some(*source),
-                        ManaPaymentPurpose::Ability { source: *source },
-                    ));
-                }
-
-                let behavior = self.effective_behavior(permanent)?;
-                let cost = match behavior {
-                    CardBehavior::MishrasFactory
-                        if targets
-                            .iter()
-                            .all(|selection| selection.targets().is_empty()) =>
-                    {
-                        ManaCost::new(1, 0)
-                    }
-                    CardBehavior::ChaosOrb
-                    | CardBehavior::NevinyrralsDisk
-                    | CardBehavior::IcyManipulator => ManaCost::new(1, 0),
-                    CardBehavior::SedgeTroll => ManaCost::colored(0, 0, 0, 1, 0, 0),
-                    _ => return None,
-                };
-                let avoid = (behavior == CardBehavior::MishrasFactory).then_some(*source);
-                Some((
-                    cost,
-                    0,
-                    avoid,
-                    ManaPaymentPurpose::Ability { source: *source },
-                ))
-            }
+            } => self.ability_mana_requirement(*source, *ability, targets, *x),
             _ => None,
         }
+    }
+
+    /// The mana half of an activation cost, and how the payment should treat
+    /// the ability's own source.
+    fn ability_mana_requirement(
+        &self,
+        source: GameObjectId,
+        ability: AbilityOrigin,
+        targets: &[TargetSelection],
+        x: u16,
+    ) -> Option<(ManaCost, u16, Option<GameObjectId>, ManaPaymentPurpose)> {
+        let permanent = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)?;
+        if let Some(definition) = self
+            .find_effective_ability(permanent, |effective| effective.origin == ability)
+            .and_then(|effective| match effective.ability.definition {
+                DeclarativeAbilityDef::Activated(definition) => Some(definition),
+                DeclarativeAbilityDef::Spell(_)
+                | DeclarativeAbilityDef::ActivatedMana(_)
+                | DeclarativeAbilityDef::TriggeredMana(_)
+                | DeclarativeAbilityDef::Triggered(_)
+                | DeclarativeAbilityDef::Static(_)
+                | DeclarativeAbilityDef::Replacement(_)
+                | DeclarativeAbilityDef::SpecialAction(_)
+                | DeclarativeAbilityDef::Keyword(_)
+                | DeclarativeAbilityDef::Legacy => None,
+            })
+        {
+            let mut cost = ManaCost::default();
+            let mut has_mana_cost = false;
+            for ability_cost in definition.costs {
+                if let AbilityCostDef::Mana(mana) = ability_cost {
+                    cost = add_mana_cost(cost, *mana);
+                    has_mana_cost = true;
+                }
+            }
+            let taps_source = definition.costs.contains(&AbilityCostDef::TapSource);
+            return has_mana_cost.then_some((
+                cost,
+                x,
+                (taps_source
+                    || self.effective_behavior(permanent) == Some(CardBehavior::MishrasFactory))
+                .then_some(source),
+                ManaPaymentPurpose::Ability {
+                    source,
+                    taps_source,
+                },
+            ));
+        }
+
+        let behavior = self.effective_behavior(permanent)?;
+        let cost = match behavior {
+            CardBehavior::MishrasFactory
+                if targets
+                    .iter()
+                    .all(|selection| selection.targets().is_empty()) =>
+            {
+                ManaCost::new(1, 0)
+            }
+            CardBehavior::ChaosOrb
+            | CardBehavior::NevinyrralsDisk
+            | CardBehavior::IcyManipulator => ManaCost::new(1, 0),
+            CardBehavior::SedgeTroll => ManaCost::colored(0, 0, 0, 1, 0, 0),
+            _ => return None,
+        };
+        Some((
+            cost,
+            0,
+            (behavior == CardBehavior::MishrasFactory).then_some(source),
+            // Mishra's Factory animates without tapping, so tapping it for the
+            // mana is legal even if it is rarely wanted.
+            ManaPaymentPurpose::Ability {
+                source,
+                taps_source: false,
+            },
+        ))
     }
 
     fn plan_mana_sources(
@@ -8923,10 +9003,20 @@ impl Game {
         let mut pool = self.eligible_mana_pool(player, purpose);
         let mut assigned = Vec::new();
         let mut flexible = Vec::new();
+        // An ability that taps its source as a cost cannot also tap it for
+        // mana, so that source is not a candidate at all.
+        let barred = match purpose {
+            ManaPaymentPurpose::Ability {
+                source,
+                taps_source: true,
+            } => Some(*source),
+            _ => None,
+        };
         for (order, permanent) in self
             .battlefield
             .iter()
             .filter(|permanent| permanent.controller == player)
+            .filter(|permanent| Some(permanent.card.id) != barred)
             .enumerate()
         {
             let mut activations = self
@@ -9094,6 +9184,8 @@ impl Game {
                     .map(ManaPool::total)
                     .sum(),
             );
+        // The upper bound is only a search ceiling; can_pay_cost_for is
+        // what rules each X in or out, including the barred source.
         (0..=maximum)
             .rev()
             .find(|x| self.can_pay_cost_for(player, cost, *x, purpose))
@@ -9431,6 +9523,7 @@ impl Game {
         ability: AbilityOrigin,
         targets: Vec<TargetSelection>,
         sacrifice: Option<GameObjectId>,
+        x: u16,
     ) {
         let Some(source_permanent) = self
             .battlefield
@@ -9440,7 +9533,8 @@ impl Game {
             return;
         };
         let source_card = source_permanent.card.clone();
-        let frozen_ability = self.freeze_activated_ability(source_permanent, ability);
+        let mut frozen_ability = self.freeze_activated_ability(source_permanent, ability);
+        frozen_ability.x = x;
         // `apply` validated these exact ordered slot selections against a
         // generated legal action. Freeze both their slot identity and values
         // before any activation cost can move or change the source.
@@ -9466,13 +9560,17 @@ impl Game {
             for cost in definition.costs {
                 match cost {
                     AbilityCostDef::Mana(cost) => {
-                        self.activate_mana_for_cost_avoiding(
+                        self.activate_mana_for_cost_avoiding_for(
                             player,
                             *cost,
-                            0,
+                            x,
                             taps_source.then_some(source),
+                            &ManaPaymentPurpose::Ability {
+                                source,
+                                taps_source,
+                            },
                         );
-                        let _ = self.pay_player_cost(player, *cost, 0);
+                        let _ = self.pay_player_cost(player, *cost, x);
                     }
                     AbilityCostDef::TapSource => {
                         let _ = self.tap_permanent(source);
