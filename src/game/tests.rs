@@ -9597,3 +9597,30 @@ fn selesnya_charm_reads_current_power_not_printed_power() {
         "a 4/4 pumped to 6/6 is now big enough"
     );
 }
+
+#[test]
+fn boros_charm_burns_a_player_for_four() {
+    let mut game = ready_game();
+    let charm = card(10_001, cards::BOROS_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.white = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(
+            charm.id,
+            ModeId(0),
+            TargetSlotId(0),
+            vec![Target::Player(PlayerId::Two)],
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[1].life, 16);
+    assert_eq!(
+        game.players[0].life, 20,
+        "it is a targeted burn, not a sweep"
+    );
+}

@@ -76,12 +76,33 @@ pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
     "Boros Charm",
     CardArt::new("d4ddf9cc-40a7-4b4f-bb51-b08171453c9a", "Zoltan Boros"),
     CardSet::Gatecrash,
-    CardRules::new_instant(mana_cost!("{R}{W}")).with_ability(
-        AbilityDef::not_implemented(
-            "Choose one —\n• Boros Charm deals 4 damage to target player or planeswalker.\n• Permanents you control gain indestructible until end of turn.\n• Target creature gains double strike until end of turn.",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
-    ),
+    CardRules::new_instant(mana_cost!("{R}{W}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one —\n• Boros Charm deals 4 damage to target player or planeswalker.\n• Permanents you control gain indestructible until end of turn.\n• Target creature gains double strike until end of turn.",
+        &[
+            AbilityDef::spell(
+                "Boros Charm deals 4 damage to target player or planeswalker",
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    amount: ValueDef::Constant(4),
+                },
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one(
+                TargetSlotId(0),
+                "player",
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )]),
+            // Indestructible is not modeled.
+            AbilityDef::unimplemented_spell(
+                "Permanents you control gain indestructible until end of turn",
+                "Printed mode is cataloged but is not executed by the engine.",
+            ),
+            // Double strike arrives with the two-wave combat damage work.
+            AbilityDef::unimplemented_spell(
+                "Target creature gains double strike until end of turn",
+                "Printed mode is cataloged but is not executed by the engine.",
+            ),
+        ],
+    )),
 );
 
 pub(in crate::card::sets) static BOROS_RECKONER: CardRecord = CardRecord::new(
