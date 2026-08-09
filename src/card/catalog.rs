@@ -324,6 +324,17 @@ fn validate_abilities(
             count: abilities.len(),
         });
     }
+    let spell_count = abilities
+        .iter()
+        .filter(|ability| matches!(ability.definition, DeclarativeAbilityDef::Spell(_)))
+        .count();
+    if spell_count > 1 {
+        return Err(CatalogError::MultipleSpellAbilities {
+            definition: definition.id,
+            part,
+            count: spell_count,
+        });
+    }
 
     for (index, ability) in abilities.iter().enumerate() {
         let ability_id = AbilityId::from_index(index)
@@ -839,23 +850,27 @@ fn validate_semantic_spell_modes(
     let Some(part) = definition.part(*part_id) else {
         return Ok(());
     };
-    let semantic_modes = part
+    let Some(ability) = part
         .rules
         .ability_clauses()
         .iter()
-        .filter(|ability| ability.implementation.is_executable())
-        .filter_map(|ability| match ability.definition {
-            DeclarativeAbilityDef::Spell(spell) => Some(spell.modes),
-            _ => None,
-        })
-        .flatten()
-        .collect::<Vec<_>>();
+        .find(|ability| matches!(ability.definition, DeclarativeAbilityDef::Spell(_)))
+    else {
+        return Ok(());
+    };
+    if !ability.implementation.is_executable() {
+        return Ok(());
+    }
+    let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
+        unreachable!("the selected ability was checked as a spell")
+    };
+    let semantic_modes = spell.modes;
     if semantic_modes.is_empty() {
         return Ok(());
     }
 
     let mut semantic_ids = HashSet::new();
-    for mode in &semantic_modes {
+    for mode in semantic_modes {
         if !semantic_ids.insert(mode.id) {
             return Err(CatalogError::DuplicateModeId {
                 definition: definition.id,
@@ -865,7 +880,7 @@ fn validate_semantic_spell_modes(
     }
 
     let presentation_modes = option.modes.as_ref();
-    for semantic in &semantic_modes {
+    for semantic in semantic_modes {
         if presentation_modes
             .is_none_or(|modes| !modes.modes.iter().any(|mode| mode.id == semantic.id))
         {
@@ -1116,6 +1131,11 @@ pub enum CatalogError {
         part: CardPartId,
         count: usize,
     },
+    MultipleSpellAbilities {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        count: usize,
+    },
     TooManyAbilityGrantSites {
         definition: CardDefinitionId,
         part: CardPartId,
@@ -1358,6 +1378,14 @@ impl fmt::Display for CatalogError {
             } => write!(
                 formatter,
                 "part {part:?} of card definition {definition:?} defines {count} abilities, but positional ability IDs support at most 256"
+            ),
+            Self::MultipleSpellAbilities {
+                definition,
+                part,
+                count,
+            } => write!(
+                formatter,
+                "part {part:?} of card definition {definition:?} defines {count} spell abilities, but one castable card part must have at most one"
             ),
             Self::TooManyAbilityGrantSites {
                 definition,
@@ -1665,7 +1693,7 @@ mod tests {
     }
 
     fn semantic_mode(id: u8, targets: Vec<AbilityTargetDef>) -> SpellModeDef {
-        SpellModeDef::new(ModeId(id), EffectDef::None)
+        SpellModeDef::new(ModeId(id), "test mode", EffectDef::None)
             .with_targets(Box::leak(targets.into_boxed_slice()))
     }
 
@@ -1675,7 +1703,7 @@ mod tests {
     ) -> CardDefinition {
         let semantic_modes = Box::leak(semantic_modes.into_boxed_slice());
         let abilities = Box::leak(
-            vec![AbilityDef::modal_spell("Choose one.", semantic_modes)].into_boxed_slice(),
+            vec![AbilityDef::choose_one_spell("Choose one.", semantic_modes)].into_boxed_slice(),
         );
         let rules = crate::CardRules::new_instant(ManaCost::default()).with_abilities(abilities);
         let mut card = definition(1, "Test Modal Spell", CardSet::Alpha);
@@ -1909,7 +1937,7 @@ mod tests {
     fn ability_ids_follow_clause_order_within_each_card_part() {
         static ABILITIES: [AbilityDef; 2] = [
             AbilityDef::spell("first", EffectDef::None),
-            AbilityDef::spell("second", EffectDef::None),
+            AbilityDef::not_implemented("second", "Only positional identity matters here."),
         ];
         let mut card = definition(1, "Test Card", CardSet::Alpha);
         let rules = card.rules.with_abilities(&ABILITIES);
@@ -1919,6 +1947,26 @@ mod tests {
         assert_eq!(attached[0].id, AbilityId(0));
         assert_eq!(attached[1].id, AbilityId(1));
         CardCatalog::new(vec![card]).expect("ordered clauses receive distinct positional IDs");
+    }
+
+    #[test]
+    fn one_card_part_cannot_define_multiple_spell_abilities() {
+        static ABILITIES: [AbilityDef; 2] = [
+            AbilityDef::spell("first", EffectDef::None),
+            AbilityDef::spell("second", EffectDef::None),
+        ];
+        let mut card = definition(1, "Test Card", CardSet::Alpha);
+        let rules = card.rules.with_abilities(&ABILITIES);
+        set_primary_rules(&mut card, &rules);
+
+        assert_eq!(
+            error(card),
+            CatalogError::MultipleSpellAbilities {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                count: 2,
+            }
+        );
     }
 
     #[test]

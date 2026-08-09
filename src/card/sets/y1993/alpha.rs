@@ -1,13 +1,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ModeDef, ModeSetDef,
-    ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, SpellModeDef, TargetPredicate,
-    TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, SpellModeDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, abilities, cards,
 };
-use crate::ids::{CardPartId, ModeId, PlayOptionId, TargetSlotId};
+use crate::ids::{ModeId, TargetSlotId};
 use crate::mana_cost;
 
 pub(in crate::card::sets) static ANKH_OF_MISHRA: CardRecord = CardRecord::new(
@@ -172,119 +171,38 @@ pub(in crate::card::sets) static MOUNTAIN: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::basic_land_type_mana(BasicLandType::Mountain)]),
 );
 
-static RED_ELEMENTAL_BLAST_COUNTER_TARGETS: [AbilityTargetDef; 1] =
-    [AbilityTargetDef::exactly_one(
-        TargetSlotId(0),
-        "blue spell",
-        AbilityTargetPredicate::Object {
-            object: ObjectPredicateDef::All(&[
-                ObjectPredicateDef::Spell,
-                ObjectPredicateDef::Color(ManaColor::Blue),
-            ]),
-            zones: &[ZoneKind::Stack],
-            controller: None,
-            owner: None,
-        },
-    )];
-
-static RED_ELEMENTAL_BLAST_DESTROY_TARGETS: [AbilityTargetDef; 1] =
-    [AbilityTargetDef::exactly_one(
-        TargetSlotId(0),
-        "blue permanent",
-        AbilityTargetPredicate::Object {
-            object: ObjectPredicateDef::Color(ManaColor::Blue),
-            zones: &[ZoneKind::Battlefield],
-            controller: None,
-            owner: None,
-        },
-    )];
-
 static RED_ELEMENTAL_BLAST_MODES: [SpellModeDef; 2] = [
-    SpellModeDef::new(
+    SpellModeDef::counter_target(
         ModeId(0),
-        EffectDef::Counter {
-            object: EffectRecipientDef::Target(TargetSlotId(0)),
-        },
-    )
-    .with_targets(&RED_ELEMENTAL_BLAST_COUNTER_TARGETS),
-    SpellModeDef::new(
+        "Counter target blue spell",
+        &AbilityTargetDef::exactly_one_spell(
+            TargetSlotId(0),
+            "blue spell",
+            ObjectPredicateDef::Color(ManaColor::Blue),
+        ),
+    ),
+    SpellModeDef::destroy_target(
         ModeId(1),
-        EffectDef::Destroy {
-            object: EffectRecipientDef::Target(TargetSlotId(0)),
-            can_regenerate: true,
-        },
-    )
-    .with_targets(&RED_ELEMENTAL_BLAST_DESTROY_TARGETS),
+        "Destroy target blue permanent",
+        &AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "blue permanent",
+            ObjectPredicateDef::Color(ManaColor::Blue),
+        ),
+        true,
+    ),
 ];
-
-static RED_ELEMENTAL_BLAST_ABILITIES: [AbilityDef; 1] = [AbilityDef::modal_spell(
-    "Choose one —\n• Counter target blue spell.\n• Destroy target blue permanent.",
-    &RED_ELEMENTAL_BLAST_MODES,
-)];
-
-const fn red_elemental_blast_rules() -> CardRules {
-    CardRules::new_instant(mana_cost!("{R}")).with_abilities(&RED_ELEMENTAL_BLAST_ABILITIES)
-}
-
-fn elemental_blast_composition(
-    name: &'static str,
-    rules: &CardRules,
-    opposed_color: &'static str,
-) -> CardComposition {
-    let modes = ModeSetDef::choose_one(vec![
-        ModeDef {
-            id: ModeId(0),
-            label: format!("Counter target {opposed_color} spell"),
-            targets: vec![TargetSlotDef::exactly_one(
-                TargetSlotId(0),
-                format!("{opposed_color} spell"),
-                TargetPredicate::Spell,
-            )],
-            effect_status: CardEffectStatus::Implemented,
-        },
-        ModeDef {
-            id: ModeId(1),
-            label: format!("Destroy target {opposed_color} permanent"),
-            targets: vec![TargetSlotDef::exactly_one(
-                TargetSlotId(0),
-                format!("{opposed_color} permanent"),
-                TargetPredicate::Permanent,
-            )],
-            effect_status: CardEffectStatus::Implemented,
-        },
-    ]);
-    CardComposition {
-        parts: vec![CardPart::new(CardPartId::PRIMARY, name, *rules)],
-        structure: CardStructure::Single {
-            main: CardPartId::PRIMARY,
-        },
-        play_options: vec![
-            PlayOptionDef::cast(
-                PlayOptionId::DEFAULT,
-                name,
-                SpellForm::Part(CardPartId::PRIMARY),
-                rules
-                    .mana_cost()
-                    .expect("elemental blasts have a printed mana cost"),
-                CardEffectStatus::Implemented,
-            )
-            .with_modes(modes),
-        ],
-    }
-}
-
-fn red_elemental_blast_composition() -> CardComposition {
-    elemental_blast_composition("Red Elemental Blast", &red_elemental_blast_rules(), "blue")
-}
 
 pub(in crate::card::sets) static RED_ELEMENTAL_BLAST: CardRecord = CardRecord::new(
     cards::RED_ELEMENTAL_BLAST,
     "Red Elemental Blast",
     CardArt::new("776ad9be-3309-4f1d-9f27-6219d9477662", "Richard Thomas"),
     CardSet::Alpha,
-    red_elemental_blast_rules(),
-)
-.with_composition(red_elemental_blast_composition);
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one —\n• Counter target blue spell.\n• Destroy target blue permanent.",
+        &RED_ELEMENTAL_BLAST_MODES,
+    )),
+);
 
 pub(in crate::card::sets) static SHATTER: CardRecord = CardRecord::new(
     cards::SHATTER,
@@ -952,72 +870,38 @@ pub(in crate::card::sets) static BIRDS_OF_PARADISE: CardRecord = CardRecord::new
     ]),
 );
 
-static BLUE_ELEMENTAL_BLAST_COUNTER_TARGETS: [AbilityTargetDef; 1] =
-    [AbilityTargetDef::exactly_one(
-        TargetSlotId(0),
-        "red spell",
-        AbilityTargetPredicate::Object {
-            object: ObjectPredicateDef::All(&[
-                ObjectPredicateDef::Spell,
-                ObjectPredicateDef::Color(ManaColor::Red),
-            ]),
-            zones: &[ZoneKind::Stack],
-            controller: None,
-            owner: None,
-        },
-    )];
-
-static BLUE_ELEMENTAL_BLAST_DESTROY_TARGETS: [AbilityTargetDef; 1] =
-    [AbilityTargetDef::exactly_one(
-        TargetSlotId(0),
-        "red permanent",
-        AbilityTargetPredicate::Object {
-            object: ObjectPredicateDef::Color(ManaColor::Red),
-            zones: &[ZoneKind::Battlefield],
-            controller: None,
-            owner: None,
-        },
-    )];
-
 static BLUE_ELEMENTAL_BLAST_MODES: [SpellModeDef; 2] = [
-    SpellModeDef::new(
+    SpellModeDef::counter_target(
         ModeId(0),
-        EffectDef::Counter {
-            object: EffectRecipientDef::Target(TargetSlotId(0)),
-        },
-    )
-    .with_targets(&BLUE_ELEMENTAL_BLAST_COUNTER_TARGETS),
-    SpellModeDef::new(
+        "Counter target red spell",
+        &AbilityTargetDef::exactly_one_spell(
+            TargetSlotId(0),
+            "red spell",
+            ObjectPredicateDef::Color(ManaColor::Red),
+        ),
+    ),
+    SpellModeDef::destroy_target(
         ModeId(1),
-        EffectDef::Destroy {
-            object: EffectRecipientDef::Target(TargetSlotId(0)),
-            can_regenerate: true,
-        },
-    )
-    .with_targets(&BLUE_ELEMENTAL_BLAST_DESTROY_TARGETS),
+        "Destroy target red permanent",
+        &AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "red permanent",
+            ObjectPredicateDef::Color(ManaColor::Red),
+        ),
+        true,
+    ),
 ];
-
-static BLUE_ELEMENTAL_BLAST_ABILITIES: [AbilityDef; 1] = [AbilityDef::modal_spell(
-    "Choose one —\n• Counter target red spell.\n• Destroy target red permanent.",
-    &BLUE_ELEMENTAL_BLAST_MODES,
-)];
-
-const fn blue_elemental_blast_rules() -> CardRules {
-    CardRules::new_instant(mana_cost!("{U}")).with_abilities(&BLUE_ELEMENTAL_BLAST_ABILITIES)
-}
-
-fn blue_elemental_blast_composition() -> CardComposition {
-    elemental_blast_composition("Blue Elemental Blast", &blue_elemental_blast_rules(), "red")
-}
 
 pub(in crate::card::sets) static BLUE_ELEMENTAL_BLAST: CardRecord = CardRecord::new(
     cards::BLUE_ELEMENTAL_BLAST,
     "Blue Elemental Blast",
     CardArt::new("20d666ef-39bf-4fbf-8201-5f1056539da2", "Richard Thomas"),
     CardSet::Alpha,
-    blue_elemental_blast_rules(),
-)
-.with_composition(blue_elemental_blast_composition);
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one —\n• Counter target red spell.\n• Destroy target red permanent.",
+        &BLUE_ELEMENTAL_BLAST_MODES,
+    )),
+);
 
 pub(in crate::card::sets) static CHANNEL: CardRecord = CardRecord::new(
     cards::CHANNEL,
@@ -1576,17 +1460,10 @@ pub(in crate::card::sets) static WRATH_OF_GOD: CardRecord = CardRecord::new(
     "Wrath of God",
     CardArt::new("a2788d69-6a3a-42f0-8736-cc6b57755ecd", "Quinton Hoover"),
     CardSet::Alpha,
-    CardRules::new_sorcery(mana_cost!("{2}{W}{W}")).with_abilities(&[AbilityDef::spell(
+    CardRules::new_sorcery(mana_cost!("{2}{W}{W}")).with_ability(abilities::destroy_all_creatures(
         "Destroy all creatures. They can't be regenerated.",
-        EffectDef::Destroy {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
-            can_regenerate: false,
-        },
-    )]),
+        false,
+    )),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

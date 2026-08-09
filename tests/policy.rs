@@ -147,6 +147,54 @@ fn handcrafted_does_not_counter_a_publicly_uncounterable_spell() {
 }
 
 #[test]
+fn handcrafted_scores_declarative_creature_sweepers_by_the_board_swing() {
+    let catalog = poc::catalog().unwrap();
+    for definition in [poc::cards::WRATH_OF_GOD, poc::cards::SUPREME_VERDICT] {
+        let card = CardInstanceId(10);
+        let cast = Action::CastSpell {
+            card,
+            choices: CastChoices::default(),
+            sacrifices: Vec::new(),
+        };
+        let mut behind = policy_observation(
+            vec![
+                permanent(
+                    1,
+                    poc::cards::SAVANNAH_LIONS,
+                    PlayerId::One,
+                    Some(2),
+                    Some(1),
+                ),
+                permanent(2, poc::cards::ATOG, PlayerId::Two, Some(1), Some(2)),
+                permanent(3, poc::cards::SU_CHI, PlayerId::Two, Some(4), Some(4)),
+            ],
+            vec![Action::PassPriority, cast.clone()],
+        );
+        behind.hand = vec![(card, definition)];
+        let mut policy = HandcraftedPolicy::new(catalog.clone());
+        assert_eq!(policy.choose_action(&behind), Some(cast.clone()));
+
+        let mut ahead = policy_observation(
+            vec![
+                permanent(
+                    4,
+                    poc::cards::SAVANNAH_LIONS,
+                    PlayerId::One,
+                    Some(2),
+                    Some(1),
+                ),
+                permanent(5, poc::cards::SU_CHI, PlayerId::One, Some(4), Some(4)),
+                permanent(6, poc::cards::ATOG, PlayerId::Two, Some(1), Some(2)),
+            ],
+            vec![Action::PassPriority, cast],
+        );
+        ahead.hand = vec![(card, definition)];
+        let mut policy = HandcraftedPolicy::new(catalog.clone());
+        assert_eq!(policy.choose_action(&ahead), Some(Action::PassPriority));
+    }
+}
+
+#[test]
 fn handcrafted_does_not_feed_a_creature_to_a_superior_blocker() {
     let catalog = poc::catalog().unwrap();
     let attacker = permanent(

@@ -5,7 +5,8 @@ use std::fmt;
 
 use crate::card::{
     AbilityCostDef, BasicLandType, CardBehavior, CardCatalog, CardSupertype, CardType, CardTypeSet,
-    DeclarativeAbilityDef, EffectDef, SpellForm, ValueDef,
+    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    SpellForm, ValueDef, ZoneKind,
 };
 use crate::game::{
     DecisionObservation, DecisionPreference, Game, GameResult, PlayerObservation, Step,
@@ -110,6 +111,7 @@ impl DeclarativeSpellProfile {
     const REMOVES: u8 = 1 << 1;
     const TAPS: u8 = 1 << 2;
     const APPLIES: u8 = 1 << 3;
+    const SWEEPS_CREATURES: u8 = 1 << 4;
 
     fn mark(&mut self, effect_kind: u8) {
         self.effect_kinds |= effect_kind;
@@ -224,7 +226,20 @@ impl HandcraftedPolicy {
                 profile.cards_drawn = Self::policy_value(amount, x);
             }
             EffectDef::Counter { .. } => profile.mark(DeclarativeSpellProfile::COUNTERS),
-            EffectDef::Destroy { .. } => profile.mark(DeclarativeSpellProfile::REMOVES),
+            EffectDef::Destroy { object, .. } => {
+                profile.mark(DeclarativeSpellProfile::REMOVES);
+                if let EffectRecipientDef::MatchingObjects {
+                    object,
+                    zones,
+                    controller,
+                } = object
+                    && object == ObjectPredicateDef::HasType(CardType::Creature)
+                    && zones == [ZoneKind::Battlefield]
+                    && controller == PlayerRelation::Any
+                {
+                    profile.mark(DeclarativeSpellProfile::SWEEPS_CREATURES);
+                }
+            }
             EffectDef::Tap { .. } | EffectDef::Untap { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);
             }
@@ -497,6 +512,8 @@ impl HandcraftedPolicy {
         let removes = declarative
             .is_some_and(|profile| profile.has(DeclarativeSpellProfile::REMOVES))
             || Self::is_hostile_removal(behavior);
+        let sweeps_creatures = declarative
+            .is_some_and(|profile| profile.has(DeclarativeSpellProfile::SWEEPS_CREATURES));
         let target_score: i32 = choices
             .iter_targets()
             .map(|target| {
@@ -538,12 +555,12 @@ impl HandcraftedPolicy {
             Some(CardBehavior::GoblinGrenade) => 8_500,
             Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => 8_000,
             Some(CardBehavior::PillarOfFlame) => 7_800,
-            Some(CardBehavior::SupremeVerdict) => Self::sweeper_score(observation),
             Some(CardBehavior::Fireball) => 7_900 + i32::from(x) * 20,
             Some(CardBehavior::Detonate | CardBehavior::ChaosOrb) => 7_400,
             Some(CardBehavior::Fork) => 7_300,
             Some(CardBehavior::WheelOfFortune) => 6_600,
             Some(behavior) if behavior.types().is_permanent() => 6_800,
+            _ if sweeps_creatures => Self::sweeper_score(observation),
             _ if cards_drawn.is_some_and(|amount| amount >= 3) => 9_200,
             _ if counters => 8_900,
             _ if removes => 8_400,

@@ -630,6 +630,47 @@ impl AbilityTargetDef {
             maximum: 1,
         }
     }
+
+    /// One spell target, optionally narrowed by color, type, or another
+    /// object predicate. Stack object enumeration already excludes abilities,
+    /// so callers only need to state the characteristic restriction.
+    #[must_use]
+    pub const fn exactly_one_spell(
+        id: TargetSlotId,
+        label: &'static str,
+        object: ObjectPredicateDef,
+    ) -> Self {
+        Self::exactly_one(
+            id,
+            label,
+            AbilityTargetPredicate::Object {
+                object,
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            },
+        )
+    }
+
+    /// One permanent target, optionally narrowed by color, type, or another
+    /// object predicate.
+    #[must_use]
+    pub const fn exactly_one_permanent(
+        id: TargetSlotId,
+        label: &'static str,
+        object: ObjectPredicateDef,
+    ) -> Self {
+        Self::exactly_one(
+            id,
+            label,
+            AbilityTargetPredicate::Object {
+                object,
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )
+    }
 }
 
 /// A cost paid to activate an ability. The ability category, rather than the
@@ -943,6 +984,23 @@ pub enum EffectDef {
     Special(&'static str),
 }
 
+impl EffectDef {
+    #[must_use]
+    pub const fn counter_target(target: TargetSlotId) -> Self {
+        Self::Counter {
+            object: EffectRecipientDef::Target(target),
+        }
+    }
+
+    #[must_use]
+    pub const fn destroy_target(target: TargetSlotId, can_regenerate: bool) -> Self {
+        Self::Destroy {
+            object: EffectRecipientDef::Target(target),
+            can_regenerate,
+        }
+    }
+}
+
 /// Turn structure used by beginning/end-of-step trigger declarations.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TurnStepDef {
@@ -1030,17 +1088,53 @@ impl Default for SpellAbilityDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SpellModeDef {
     pub id: ModeId,
+    /// Action-menu wording derived into the card's presentation modes.
+    pub label: &'static str,
     pub targets: &'static [AbilityTargetDef],
     pub effect: EffectDef,
 }
 
 impl SpellModeDef {
     #[must_use]
-    pub const fn new(id: ModeId, effect: EffectDef) -> Self {
+    pub const fn new(id: ModeId, label: &'static str, effect: EffectDef) -> Self {
         Self {
             id,
+            label,
             targets: &[],
             effect,
+        }
+    }
+
+    /// A one-target counter mode. The effect recipient is derived from the
+    /// target declaration so the two cannot drift apart.
+    #[must_use]
+    pub const fn counter_target(
+        id: ModeId,
+        label: &'static str,
+        target: &'static AbilityTargetDef,
+    ) -> Self {
+        Self {
+            id,
+            label,
+            targets: core::slice::from_ref(target),
+            effect: EffectDef::counter_target(target.id),
+        }
+    }
+
+    /// A one-target destroy mode. The effect recipient is derived from the
+    /// target declaration so the two cannot drift apart.
+    #[must_use]
+    pub const fn destroy_target(
+        id: ModeId,
+        label: &'static str,
+        target: &'static AbilityTargetDef,
+        can_regenerate: bool,
+    ) -> Self {
+        Self {
+            id,
+            label,
+            targets: core::slice::from_ref(target),
+            effect: EffectDef::destroy_target(target.id, can_regenerate),
         }
     }
 
@@ -1128,14 +1222,27 @@ pub struct ReplacementAbilityDef {
 /// The event changed by a replacement ability.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ReplacementEventDef {
-    /// A card would be discarded by a spell or ability controlled by the
-    /// named player relative to the card's controller in its current zone.
-    WouldBeDiscardedBy(PlayerRelation),
+    /// This ability's source would move between the named zones for the
+    /// specified reason. Matching happens before the object leaves `from`.
+    WouldMove {
+        from: ZoneKind,
+        to: ZoneKind,
+        cause: ZoneMoveCauseDef,
+    },
     /// Entry replacement effects whose exact event is already identified by
     /// their effect primitive (for example, enters tapped or choosing a
     /// creature type as an object enters).
     EntersBattlefield,
     Special(&'static str),
+}
+
+/// What is causing a proposed zone move. A controlled effect is matched
+/// relative to the replacement ability's controller; rules and costs do not
+/// have an effect controller and therefore only match [`Self::Any`].
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ZoneMoveCauseDef {
+    Any,
+    EffectControlledBy(PlayerRelation),
 }
 
 impl ReplacementAbilityDef {
@@ -1319,7 +1426,7 @@ impl AbilityDef {
     }
 
     #[must_use]
-    pub const fn modal_spell(text: &'static str, modes: &'static [SpellModeDef]) -> Self {
+    pub const fn choose_one_spell(text: &'static str, modes: &'static [SpellModeDef]) -> Self {
         Self::defined(
             text,
             DeclarativeAbilityDef::Spell(SpellAbilityDef::new().with_modes(modes)),
@@ -1597,6 +1704,69 @@ impl TargetSlotDef {
     }
 }
 
+fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredicateDef) -> bool {
+    if predicate == expected {
+        return true;
+    }
+    match predicate {
+        ObjectPredicateDef::All(predicates) => predicates
+            .iter()
+            .copied()
+            .any(|predicate| object_predicate_implies(predicate, expected)),
+        ObjectPredicateDef::AnyOf(predicates) => {
+            !predicates.is_empty()
+                && predicates
+                    .iter()
+                    .copied()
+                    .all(|predicate| object_predicate_implies(predicate, expected))
+        }
+        ObjectPredicateDef::Any
+        | ObjectPredicateDef::Source
+        | ObjectPredicateDef::HasType(_)
+        | ObjectPredicateDef::Spell
+        | ObjectPredicateDef::NoncreatureSpell
+        | ObjectPredicateDef::Color(_)
+        | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::ManaValueAtMost(_)
+        | ObjectPredicateDef::Not(_)
+        | ObjectPredicateDef::Special(_) => false,
+    }
+}
+
+impl AbilityTargetDef {
+    fn presentation(self) -> Option<TargetSlotDef> {
+        let predicate = match self.predicate {
+            AbilityTargetPredicate::AnyTarget => TargetPredicate::AnyTarget,
+            AbilityTargetPredicate::Player(_) => TargetPredicate::Player,
+            AbilityTargetPredicate::Object { object, zones, .. } if zones == [ZoneKind::Stack] => {
+                if object_predicate_implies(object, ObjectPredicateDef::NoncreatureSpell) {
+                    TargetPredicate::NoncreatureSpell
+                } else {
+                    TargetPredicate::Spell
+                }
+            }
+            AbilityTargetPredicate::Object { object, zones, .. }
+                if zones == [ZoneKind::Battlefield] =>
+            {
+                if object_predicate_implies(object, ObjectPredicateDef::HasType(CardType::Creature))
+                {
+                    TargetPredicate::CreaturePermanent
+                } else {
+                    TargetPredicate::Permanent
+                }
+            }
+            AbilityTargetPredicate::Object { .. } => return None,
+        };
+        Some(TargetSlotDef {
+            id: self.id,
+            label: self.label.into(),
+            predicate,
+            minimum: self.minimum,
+            maximum: self.maximum,
+        })
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ModeDef {
     pub id: ModeId,
@@ -1623,6 +1793,22 @@ impl ModeSetDef {
             may_repeat: false,
             modes,
         }
+    }
+}
+
+impl SpellModeDef {
+    fn presentation(self, effect_status: CardEffectStatus) -> Option<ModeDef> {
+        Some(ModeDef {
+            id: self.id,
+            label: self.label.into(),
+            targets: self
+                .targets
+                .iter()
+                .copied()
+                .map(AbilityTargetDef::presentation)
+                .collect::<Option<Vec<_>>>()?,
+            effect_status,
+        })
     }
 }
 
@@ -1766,7 +1952,7 @@ impl CardComposition {
             }
         };
         let part = CardPart::new(CardPartId::PRIMARY, name.clone(), rules);
-        let option = if is_land {
+        let mut option = if is_land {
             PlayOptionDef::play_land(
                 PlayOptionId::DEFAULT,
                 name,
@@ -1782,6 +1968,9 @@ impl CardComposition {
                 effect_status,
             )
         };
+        if let Some(modes) = rules.presentation_spell_modes() {
+            option = option.with_modes(modes);
+        }
         Self {
             parts: vec![part],
             structure: CardStructure::Single {
@@ -1918,6 +2107,8 @@ pub enum CardBehavior {
     Berserk,
     BlackVise,
     BloodBaronOfVizkopa,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative choose-one spell definition.
     BlueElementalBlast,
     BloodMoon,
     ChainLightning,
@@ -1978,10 +2169,14 @@ pub enum CardBehavior {
     LightningBolt,
     MishrasFactory,
     OrcishMechanics,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative choose-one spell definition.
     RedElementalBlast,
     Smoke,
     SphinxsRevelation,
     StoneGiant,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses the shared declarative creature-sweeper definition.
     SupremeVerdict,
     SwordsToPlowshares,
     TimeWalk,
@@ -2859,6 +3054,30 @@ impl CardRules {
         self.abilities.as_slice()
     }
 
+    fn presentation_spell_modes(&self) -> Option<ModeSetDef> {
+        let mut spell_abilities = self.ability_clauses().iter().filter_map(|ability| {
+            let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
+                return None;
+            };
+            Some((ability, spell))
+        });
+        let (ability, spell) = spell_abilities.next()?;
+        if spell_abilities.next().is_some() || spell.modes.is_empty() {
+            return None;
+        }
+        let effect_status = if ability.implementation.is_executable() {
+            CardEffectStatus::Implemented
+        } else {
+            CardEffectStatus::MetadataOnly
+        };
+        spell
+            .modes
+            .iter()
+            .map(|mode| (*mode).presentation(effect_status))
+            .collect::<Option<Vec<_>>>()
+            .map(ModeSetDef::choose_one)
+    }
+
     /// Iterates the ordered ability definitions with the positional identity
     /// they receive when attached to this card part.
     ///
@@ -3032,18 +3251,76 @@ impl CardRules {
 #[cfg(test)]
 mod tests {
     use super::{
-        AbilityCostDef, AbilityDef, AddManaEffectDef, CardBehavior, CardComposition,
-        CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardRules,
-        CardSet, CardType, CardTypeSet, CreatureStats, EffectDef, ImplementationStatus, LandEntry,
-        ManaColor, ManaCost, ManaCostParseErrorKind, ManaRestrictionDef, ObjectPredicateDef,
-        PrintedManaCost, TriggerEventDef,
+        AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, CardBehavior,
+        CardComposition, CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId,
+        CardRules, CardSet, CardType, CardTypeSet, CreatureStats, EffectDef, EffectRecipientDef,
+        ImplementationStatus, LandEntry, ManaColor, ManaCost, ManaCostParseErrorKind,
+        ManaRestrictionDef, ObjectPredicateDef, PrintedManaCost, SpellModeDef, TargetPredicate,
+        TriggerEventDef,
     };
-    use crate::{AbilityId, CardDefinitionId, CardPartId};
+    use crate::{AbilityId, CardDefinitionId, CardPartId, ModeId, TargetSlotId};
 
     static DEFERRED_CLAUSE: [AbilityDef; 1] = [AbilityDef::not_implemented(
         "A deferred card-specific ability.",
         "The card-specific ability is not executed.",
     )];
+
+    static TEST_MODAL_MODES: [SpellModeDef; 2] = [
+        SpellModeDef::counter_target(
+            ModeId(0),
+            "Counter target blue spell",
+            &AbilityTargetDef::exactly_one_spell(
+                TargetSlotId(3),
+                "blue spell",
+                ObjectPredicateDef::Color(ManaColor::Blue),
+            ),
+        ),
+        SpellModeDef::destroy_target(
+            ModeId(1),
+            "Destroy target blue permanent",
+            &AbilityTargetDef::exactly_one_permanent(
+                TargetSlotId(4),
+                "blue permanent",
+                ObjectPredicateDef::Color(ManaColor::Blue),
+            ),
+            true,
+        ),
+    ];
+
+    #[test]
+    fn modal_spell_semantics_derive_their_presentation_modes() {
+        let rules = CardRules::new_instant(ManaCost::default()).with_ability(
+            AbilityDef::choose_one_spell("Choose one.", &TEST_MODAL_MODES),
+        );
+        let composition = CardComposition::single("Test Modal Spell", rules);
+        let modes = composition.play_options[0]
+            .modes
+            .as_ref()
+            .expect("semantic modes synthesize the presentation choices");
+
+        assert_eq!(modes.minimum, 1);
+        assert_eq!(modes.maximum, 1);
+        assert_eq!(modes.modes[0].label, "Counter target blue spell");
+        assert_eq!(modes.modes[0].targets[0].predicate, TargetPredicate::Spell);
+        assert_eq!(modes.modes[1].label, "Destroy target blue permanent");
+        assert_eq!(
+            modes.modes[1].targets[0].predicate,
+            TargetPredicate::Permanent
+        );
+        assert_eq!(
+            TEST_MODAL_MODES[0].effect,
+            EffectDef::Counter {
+                object: EffectRecipientDef::Target(TargetSlotId(3)),
+            }
+        );
+        assert_eq!(
+            TEST_MODAL_MODES[1].effect,
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetSlotId(4)),
+                can_regenerate: true,
+            }
+        );
+    }
 
     #[test]
     fn printing_ids_distinguish_variants_within_one_set() {

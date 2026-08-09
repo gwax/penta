@@ -5449,6 +5449,56 @@ fn dust_to_dust_targets(game: &mut Game, mut spell: StackObject) {
 }
 
 #[test]
+fn wrath_and_supreme_verdict_share_the_declarative_creature_sweeper() {
+    let game = ready_game();
+    for (definition, can_regenerate, cannot_be_countered) in [
+        (cards::WRATH_OF_GOD, false, false),
+        (cards::SUPREME_VERDICT, true, true),
+    ] {
+        let definition = game.catalog.get(definition).unwrap();
+        assert_eq!(definition.rules.special_behavior(), None);
+        assert!(
+            definition
+                .rules
+                .ability_clauses()
+                .iter()
+                .all(|ability| ability.implementation == AbilityImplementationDef::Definition)
+        );
+        assert!(definition.rules.ability_clauses().iter().any(|ability| {
+            let EffectDef::Destroy {
+                object:
+                    EffectRecipientDef::MatchingObjects {
+                        object,
+                        zones,
+                        controller,
+                    },
+                can_regenerate: actual,
+            } = ability.effect
+            else {
+                return false;
+            };
+            object == ObjectPredicateDef::HasType(CardType::Creature)
+                && zones == [ZoneKind::Battlefield]
+                && controller == PlayerRelation::Any
+                && actual == can_regenerate
+        }));
+        assert_eq!(
+            definition.rules.ability_clauses().iter().any(|ability| {
+                matches!(
+                    ability.effect,
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Source,
+                        effect: AppliedEffectDef::CannotBeCountered,
+                        ..
+                    }
+                )
+            }),
+            cannot_be_countered,
+        );
+    }
+}
+
+#[test]
 fn regeneration_shields_stop_destroy_but_not_wrath() {
     let mut game = ready_game();
     let mut troll = creature(10_000, cards::SEDGE_TROLL, PlayerId::One);
@@ -5458,6 +5508,8 @@ fn regeneration_shields_stop_destroy_but_not_wrath() {
     assert_eq!(game.battlefield.len(), 1);
     assert!(game.battlefield[0].tapped);
     assert_eq!(game.battlefield[0].regeneration_shields, 0);
+
+    game.battlefield[0].regeneration_shields = 1;
 
     let wrath = spell(10_001, cards::WRATH_OF_GOD, PlayerId::Two, 0);
     let effect = game
@@ -6519,6 +6571,9 @@ fn supreme_verdict_destroys_every_creature() {
         .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
     game.battlefield
         .push(creature(10_001, cards::SERRA_ANGEL, PlayerId::Two));
+    let sol_ring = creature(10_003, cards::SOL_RING, PlayerId::Two);
+    let sol_ring_id = sol_ring.card.id;
+    game.battlefield.push(sol_ring);
     let verdict = card(10_002, cards::SUPREME_VERDICT, PlayerId::One);
     game.players[0].hand.push(verdict.clone());
     game.players[0].mana_pool.white = 2;
@@ -6531,7 +6586,8 @@ fn supreme_verdict_destroys_every_creature() {
     .unwrap();
     pass_priority_pair(&mut game);
 
-    assert!(game.battlefield.is_empty(), "both sides are swept");
+    assert_eq!(game.battlefield.len(), 1, "only creatures are swept");
+    assert_eq!(game.battlefield[0].card.id, sol_ring_id);
     assert_eq!(
         game.players[0].graveyard[0].definition,
         cards::SAVANNAH_LIONS
@@ -6559,6 +6615,8 @@ fn supreme_verdict_does_not_stop_regeneration() {
     pass_priority_pair(&mut game);
 
     assert_eq!(game.battlefield.len(), 1, "the shield saves the troll");
+    assert!(game.battlefield[0].tapped);
+    assert_eq!(game.battlefield[0].regeneration_shields, 0);
     assert!(game.players[1].graveyard.is_empty());
 }
 
@@ -8756,22 +8814,54 @@ fn counterspell_can_target_loxodon_smiter_but_the_smiter_resolves() {
 }
 
 #[test]
-fn loxodon_smiter_discard_replacement_checks_the_cause_controller() {
+fn loxodon_smiter_replaces_an_opponent_caused_hand_to_graveyard_move() {
+    let game = ready_game();
+    let smiter = game.catalog.get(cards::LOXODON_SMITER).unwrap();
+    let replacement = smiter
+        .rules
+        .ability_clauses()
+        .iter()
+        .find_map(|ability| match ability.definition {
+            DeclarativeAbilityDef::Replacement(replacement) => Some((ability, replacement)),
+            _ => None,
+        })
+        .expect("Loxodon Smiter has a replacement ability");
+
+    assert_eq!(replacement.1.source_zones, [ZoneKind::Hand]);
+    assert_eq!(
+        replacement.1.event,
+        ReplacementEventDef::WouldMove {
+            from: ZoneKind::Hand,
+            to: ZoneKind::Graveyard,
+            cause: ZoneMoveCauseDef::EffectControlledBy(PlayerRelation::Opponent),
+        }
+    );
+    assert_eq!(
+        replacement.0.effect,
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Source,
+            zone: ZoneKind::Battlefield,
+        }
+    );
+}
+
+#[test]
+fn loxodon_smiter_zone_move_replacement_checks_the_cause_controller() {
     for (cause, enters) in [
         (
-            DiscardCause::SpellOrAbility {
+            ZoneMoveCause::Effect {
                 controller: PlayerId::Two,
             },
             true,
         ),
         (
-            DiscardCause::SpellOrAbility {
+            ZoneMoveCause::Effect {
                 controller: PlayerId::One,
             },
             false,
         ),
-        (DiscardCause::Cost, false),
-        (DiscardCause::Rules, false),
+        (ZoneMoveCause::Cost, false),
+        (ZoneMoveCause::Rules, false),
     ] {
         let mut game = ready_game();
         let smiter = card(19_060, cards::LOXODON_SMITER, PlayerId::One);
@@ -8802,6 +8892,26 @@ fn loxodon_smiter_discard_replacement_checks_the_cause_controller() {
             "the replacement changes the destination, not whether it was discarded"
         );
     }
+}
+
+#[test]
+fn general_effect_zone_moves_consult_would_move_replacements() {
+    let mut game = ready_game();
+    let smiter = card(19_061, cards::LOXODON_SMITER, PlayerId::One);
+    game.players[0].hand.push(smiter.clone());
+
+    game.move_target_to_zone(
+        Target::Card(smiter.id),
+        ZoneKind::Graveyard,
+        ZoneMoveCause::Effect {
+            controller: PlayerId::Two,
+        },
+    );
+
+    assert!(game.players[0].graveyard.is_empty());
+    assert!(game.battlefield.iter().any(|permanent| {
+        permanent.controller == PlayerId::One && permanent.card.definition == cards::LOXODON_SMITER
+    }));
 }
 
 #[test]

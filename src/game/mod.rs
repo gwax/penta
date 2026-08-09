@@ -15,7 +15,8 @@ use crate::card::{
     EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry, ManaCost,
     ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, PlayActionKind,
     PlayOptionDef, PlayerRelation, ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, applicable_part_ids,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
+    applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -650,10 +651,10 @@ impl BalancePhase {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum DiscardCause {
+enum ZoneMoveCause {
     Rules,
     Cost,
-    SpellOrAbility { controller: PlayerId },
+    Effect { controller: PlayerId },
 }
 
 #[derive(Clone, Debug)]
@@ -664,7 +665,7 @@ struct BalanceTask {
     cards: Vec<CardInstance>,
     count: usize,
     action: BalanceAction,
-    cause: DiscardCause,
+    cause: ZoneMoveCause,
 }
 
 /// Where a countered spell ends up.
@@ -708,7 +709,7 @@ enum DecisionContinuation {
     },
     Duress {
         victim: PlayerId,
-        cause: DiscardCause,
+        cause: ZoneMoveCause,
     },
     /// Holds the revealed cards while the caster decides which to keep; they
     /// have already left the library, so the continuation must place them all.
@@ -1653,7 +1654,7 @@ impl Game {
     }
 
     fn discard_cards(&mut self, player: PlayerId, cards: &[GameObjectId]) {
-        self.discard_cards_with_cause(player, cards, DiscardCause::Rules);
+        self.discard_cards_with_cause(player, cards, ZoneMoveCause::Rules);
         self.cleanup_pending = false;
         self.complete_cleanup();
         if self.result.is_none() {
@@ -1666,17 +1667,24 @@ impl Game {
         }
     }
 
-    fn discard_replacement_destination(
+    fn zone_move_replacement_destination(
         &self,
         card: &CardInstance,
-        player: PlayerId,
-        cause: DiscardCause,
+        from: ZoneKind,
+        to: ZoneKind,
+        actual_cause: ZoneMoveCause,
     ) -> Option<ZoneKind> {
-        let DiscardCause::SpellOrAbility { controller } = cause else {
-            return None;
+        let characteristic_context = match from {
+            ZoneKind::Library => CharacteristicContext::Library,
+            ZoneKind::Hand => CharacteristicContext::Hand,
+            ZoneKind::Graveyard => CharacteristicContext::Graveyard,
+            ZoneKind::Exile => CharacteristicContext::Exile,
+            ZoneKind::Command => CharacteristicContext::Command,
+            ZoneKind::Battlefield | ZoneKind::Stack => return None,
         };
+        let replacement_controller = card.owner;
         let definition = self.catalog.get(card.definition)?;
-        let parts = applicable_part_ids(definition, &CharacteristicContext::Hand).ok()?;
+        let parts = applicable_part_ids(definition, &characteristic_context).ok()?;
         for part in parts {
             let Some(part) = definition.part(part) else {
                 continue;
@@ -1685,17 +1693,33 @@ impl Game {
                 let DeclarativeAbilityDef::Replacement(replacement) = ability.definition else {
                     continue;
                 };
-                let ReplacementEventDef::WouldBeDiscardedBy(relation) = replacement.event else {
+                let ReplacementEventDef::WouldMove {
+                    from: event_from,
+                    to: event_to,
+                    cause,
+                } = replacement.event
+                else {
                     continue;
                 };
-                if ability.implementation.is_executable()
-                    && replacement.source_zones.contains(&ZoneKind::Hand)
-                    && self.player_relation_matches(
-                        controller,
-                        relation,
-                        player,
-                        TriggerContext::empty(),
-                    )
+                let cause_matches = match cause {
+                    ZoneMoveCauseDef::Any => true,
+                    ZoneMoveCauseDef::EffectControlledBy(relation) => {
+                        let ZoneMoveCause::Effect { controller } = actual_cause else {
+                            continue;
+                        };
+                        self.player_relation_matches(
+                            controller,
+                            relation,
+                            replacement_controller,
+                            TriggerContext::empty(),
+                        )
+                    }
+                };
+                if event_from == from
+                    && event_to == to
+                    && cause_matches
+                    && ability.implementation.is_executable()
+                    && replacement.source_zones.contains(&from)
                     && let EffectDef::MoveToZone {
                         object: EffectRecipientDef::Source,
                         zone,
@@ -1708,9 +1732,10 @@ impl Game {
         None
     }
 
-    fn put_discarded_card_onto_battlefield(
+    fn put_card_onto_battlefield_from(
         &mut self,
         card: CardInstance,
+        from: ZoneKind,
         controller: PlayerId,
     ) -> CardInstance {
         let definition = self
@@ -1727,37 +1752,14 @@ impl Game {
             .map(|loyalty| i16::try_from(loyalty).unwrap_or(i16::MAX));
         let (card, _zone_change) = self.zone_change_card(card);
         let entered_card = card.clone();
-        self.battlefield.push(Permanent {
+        let mut permanent = Permanent::entering(
             card,
             presented,
             controller,
-            tapped: false,
-            entered_controller_turn: self.turns_started[controller.index()],
-            damage: 0,
-            loyalty: starting_loyalty,
-            power_bonus: 0,
-            toughness_bonus: 0,
-            attacking: false,
-            blocking: None,
-            chosen_player: None,
-            chosen_creature_type: None,
-            destroy_at_end: false,
-            temporary_keywords: Vec::new(),
-            factory_animated: false,
-            dragon_whelp_activations: 0,
-            plus_one_counters: 0,
-            javelin_counters: 0,
-            attached_to: None,
-            exile_instead_of_dying: false,
-            combat_damage_assignment: Vec::new(),
-            copied_from: None,
-            regeneration_shields: 0,
-            berserked: false,
-            attacked_this_turn: false,
-            forestwalk_until_upkeep_of: None,
-            damage_sources: Vec::new(),
-            deathtouch_damage: false,
-        });
+            self.turns_started[controller.index()],
+        );
+        permanent.loyalty = starting_loyalty;
+        self.battlefield.push(permanent);
         let entered = self
             .battlefield
             .last()
@@ -1765,48 +1767,88 @@ impl Game {
         let entered_event = self.trigger_event_object(entered);
         self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
             object: entered_event,
-            from: ZoneKind::Hand,
+            from,
             to: ZoneKind::Battlefield,
         });
         self.apply_legend_rule();
         entered_card
     }
 
+    /// Moves a card between non-stack zones after applying replacement
+    /// abilities printed on that card. The replacement is selected before the
+    /// old object leaves its source zone, so its source-zone characteristics
+    /// remain available while matching the proposed move.
+    fn move_card_from_nonbattlefield_zone(
+        &mut self,
+        id: GameObjectId,
+        expected_from: ZoneKind,
+        requested_to: ZoneKind,
+        cause: ZoneMoveCause,
+    ) -> Option<(CardInstance, ZoneKind)> {
+        let (from, card) = self
+            .card_in_nonbattlefield_zone(id)
+            .map(|(zone, card)| (zone, card.clone()))?;
+        if from != expected_from {
+            return None;
+        }
+        let destination = self
+            .zone_move_replacement_destination(&card, from, requested_to, cause)
+            .unwrap_or(requested_to);
+        if matches!(destination, ZoneKind::Stack | ZoneKind::Command) {
+            return None;
+        }
+
+        let owner = card.owner;
+        let cards = match from {
+            ZoneKind::Library => &mut self.players[owner.index()].library,
+            ZoneKind::Hand => &mut self.players[owner.index()].hand,
+            ZoneKind::Graveyard => &mut self.players[owner.index()].graveyard,
+            ZoneKind::Exile => &mut self.players[owner.index()].exile,
+            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => return None,
+        };
+        let card = remove_card(cards, id)?;
+        let card = if destination == ZoneKind::Battlefield {
+            self.put_card_onto_battlefield_from(card, from, owner)
+        } else {
+            let (card, _zone_change) = self.zone_change_card(card);
+            match destination {
+                ZoneKind::Library => self.players[owner.index()].library.push(card.clone()),
+                ZoneKind::Hand => self.players[owner.index()].hand.push(card.clone()),
+                ZoneKind::Graveyard => self.players[owner.index()].graveyard.push(card.clone()),
+                ZoneKind::Exile => self.players[owner.index()].exile.push(card.clone()),
+                ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {
+                    unreachable!("unsupported destinations returned before removing the card")
+                }
+            }
+            card
+        };
+        Some((card, destination))
+    }
+
     fn discard_cards_with_cause(
         &mut self,
         player: PlayerId,
         cards: &[GameObjectId],
-        cause: DiscardCause,
+        cause: ZoneMoveCause,
     ) {
         let mut discarded = Vec::new();
         for id in cards {
-            let Some(card) = remove_card(&mut self.players[player.index()].hand, *id) else {
+            if !self.players[player.index()]
+                .hand
+                .iter()
+                .any(|card| card.id == *id)
+            {
+                continue;
+            }
+            let Some((card, _destination)) = self.move_card_from_nonbattlefield_zone(
+                *id,
+                ZoneKind::Hand,
+                ZoneKind::Graveyard,
+                cause,
+            ) else {
                 continue;
             };
             let definition = card.definition;
-            let card = match self.discard_replacement_destination(&card, player, cause) {
-                Some(ZoneKind::Battlefield) => {
-                    self.put_discarded_card_onto_battlefield(card, player)
-                }
-                Some(ZoneKind::Exile) => {
-                    let (card, _zone_change) = self.zone_change_card(card);
-                    self.players[player.index()].exile.push(card.clone());
-                    card
-                }
-                Some(ZoneKind::Hand) => {
-                    let (card, _zone_change) = self.zone_change_card(card);
-                    self.players[player.index()].hand.push(card.clone());
-                    card
-                }
-                Some(
-                    ZoneKind::Library | ZoneKind::Graveyard | ZoneKind::Stack | ZoneKind::Command,
-                )
-                | None => {
-                    let (card, _zone_change) = self.zone_change_card(card);
-                    self.players[player.index()].graveyard.push(card.clone());
-                    card
-                }
-            };
             discarded.push((card.id, definition));
         }
         if !discarded.is_empty() {
@@ -3536,7 +3578,7 @@ impl Game {
                     .filter(|option| options.contains(&option.id))
                     .filter_map(|option| option.card.map(|(card, _)| card))
                     .collect::<Vec<_>>();
-                self.discard_cards_with_cause(player, &discarded, DiscardCause::Cost);
+                self.discard_cards_with_cause(player, &discarded, ZoneMoveCause::Cost);
                 self.finish_cast_spell(player, card, &choices, &[]);
             }
             DecisionContinuation::RecallReturn { player } => {
@@ -4220,25 +4262,6 @@ impl Game {
         Self::play_option_types(definition, option)
     }
 
-    fn stack_spell_has_color(&self, object: &StackObject, color_index: usize) -> bool {
-        let Some(definition) = self.catalog.get(object.card.definition) else {
-            return false;
-        };
-        let Some(signature) = &object.signature else {
-            return false;
-        };
-        match signature.form() {
-            crate::card::SpellForm::Part(part) => definition
-                .part(*part)
-                .is_some_and(|part| part.rules.colors()[color_index]),
-            crate::card::SpellForm::Combined(parts) => parts.iter().any(|part| {
-                definition
-                    .part(*part)
-                    .is_some_and(|part| part.rules.colors()[color_index])
-            }),
-        }
-    }
-
     fn stack_spell_enters_tapped(&self, object: &StackObject) -> bool {
         let Some(definition) = self.catalog.get(object.card.definition) else {
             return false;
@@ -4493,48 +4516,6 @@ impl Game {
                 .filter(|object| object.kind == StackObjectKind::Spell)
                 .map(|object| vec![Target::Spell(object.id)])
                 .collect(),
-            CardBehavior::RedElementalBlast => {
-                let mut targets = self
-                    .stack
-                    .iter()
-                    .filter(|object| {
-                        object.kind == StackObjectKind::Spell
-                            && self.stack_spell_has_color(object, 1)
-                    })
-                    .map(|object| vec![Target::Spell(object.id)])
-                    .collect::<Vec<_>>();
-                targets.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|permanent| {
-                            self.effective_rules(permanent)
-                                .is_some_and(|rules| rules.colors()[1])
-                        })
-                        .map(|permanent| vec![Target::Permanent(permanent.card.id)]),
-                );
-                targets
-            }
-            CardBehavior::BlueElementalBlast => {
-                let mut targets = self
-                    .stack
-                    .iter()
-                    .filter(|object| {
-                        object.kind == StackObjectKind::Spell
-                            && self.stack_spell_has_color(object, 3)
-                    })
-                    .map(|object| vec![Target::Spell(object.id)])
-                    .collect::<Vec<_>>();
-                targets.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|permanent| {
-                            self.effective_rules(permanent)
-                                .is_some_and(|rules| rules.colors()[3])
-                        })
-                        .map(|permanent| vec![Target::Permanent(permanent.card.id)]),
-                );
-                targets
-            }
             _ => vec![Vec::new()],
         }
     }
@@ -6061,7 +6042,13 @@ impl Game {
                 zone,
             } => {
                 for target in self.effect_recipients(recipient, object, context) {
-                    self.move_target_to_zone(target, zone);
+                    self.move_target_to_zone(
+                        target,
+                        zone,
+                        ZoneMoveCause::Effect {
+                            controller: object.controller,
+                        },
+                    );
                 }
             }
             // An Aura attaches as its spell becomes a permanent, which is
@@ -6125,7 +6112,7 @@ impl Game {
 
     /// Moves one object to a zone. Only the moves a supported card actually
     /// makes are handled; the rest stay seams rather than guesses.
-    fn move_target_to_zone(&mut self, target: Target, zone: ZoneKind) {
+    fn move_target_to_zone(&mut self, target: Target, zone: ZoneKind, cause: ZoneMoveCause) {
         if let Target::Permanent(id) = target {
             // Leaving the battlefield has its own procedure: last-known
             // information, exit events, and the triggers watching for them.
@@ -6143,49 +6130,13 @@ impl Game {
         let Target::Card(id) = target else {
             return;
         };
-        let Some((from, card)) = self.card_in_nonbattlefield_zone(id) else {
+        let Some(from) = self
+            .card_in_nonbattlefield_zone(id)
+            .map(|(from, _card)| from)
+        else {
             return;
         };
-        let owner = card.owner;
-        let cards = match from {
-            ZoneKind::Library => &mut self.players[owner.index()].library,
-            ZoneKind::Hand => &mut self.players[owner.index()].hand,
-            ZoneKind::Graveyard => &mut self.players[owner.index()].graveyard,
-            ZoneKind::Exile => &mut self.players[owner.index()].exile,
-            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => return,
-        };
-        let Some(card) = remove_card(cards, id) else {
-            return;
-        };
-        let (card, _zone_change) = self.zone_change_card(card);
-        match zone {
-            ZoneKind::Battlefield => {
-                let presented = self
-                    .catalog
-                    .get(card.definition)
-                    .map_or(CardPartId::PRIMARY, CardDefinition::primary_part_id);
-                let permanent =
-                    Permanent::entering(card, presented, owner, self.turns_started[owner.index()]);
-                self.battlefield.push(permanent);
-                // The card really did enter, so anything watching for that has
-                // to see it, exactly as a resolving permanent spell would.
-                let entered = self
-                    .battlefield
-                    .last()
-                    .expect("the card just pushed is on the battlefield");
-                let entered_event = self.trigger_event_object(entered);
-                self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
-                    object: entered_event,
-                    from,
-                    to: ZoneKind::Battlefield,
-                });
-            }
-            ZoneKind::Hand => self.players[owner.index()].hand.push(card),
-            ZoneKind::Graveyard => self.players[owner.index()].graveyard.push(card),
-            ZoneKind::Exile => self.players[owner.index()].exile.push(card),
-            ZoneKind::Library => self.players[owner.index()].library.push(card),
-            ZoneKind::Stack | ZoneKind::Command => {}
-        }
+        let _ = self.move_card_from_nonbattlefield_zone(id, from, zone, cause);
     }
 
     fn resolve_applied_effect(
@@ -6685,17 +6636,6 @@ impl Game {
                     }
                 }
             }
-            CardBehavior::SupremeVerdict => {
-                // Unlike Wrath of God, the Verdict does not say "they can't be
-                // regenerated", so a regeneration shield still saves.
-                let creatures: Vec<_> = self
-                    .battlefield
-                    .iter()
-                    .filter(|permanent| self.power(permanent).is_some())
-                    .map(|permanent| permanent.card.id)
-                    .collect::<Vec<_>>();
-                self.destroy_permanents(&creatures, true);
-            }
             CardBehavior::DivineOffering => {
                 if let Some(Target::Permanent(target)) = object.first_target()
                     && let Some(permanent) = self
@@ -6724,11 +6664,6 @@ impl Game {
                     self.players[controller.index()].life += life;
                 }
             }
-            CardBehavior::RedElementalBlast => match object.first_target() {
-                Some(Target::Spell(target)) => self.counter_spell(target),
-                Some(Target::Permanent(target)) => self.destroy_permanent(target),
-                Some(Target::Player(_) | Target::Card(_)) | None => {}
-            },
             CardBehavior::Negate | CardBehavior::EssenceScatter | CardBehavior::Dispel => {
                 if let Some(Target::Spell(target)) = object.first_target() {
                     self.counter_spell(target);
@@ -6739,11 +6674,6 @@ impl Game {
                     self.counter_spell_into(target, CounteredSpellZone::Exile);
                 }
             }
-            CardBehavior::BlueElementalBlast => match object.first_target() {
-                Some(Target::Spell(target)) => self.counter_spell(target),
-                Some(Target::Permanent(target)) => self.destroy_permanent(target),
-                Some(Target::Player(_) | Target::Card(_)) | None => {}
-            },
             CardBehavior::Detonate => {
                 if let Some(Target::Permanent(target)) = object.first_target()
                     && let Some(controller) = self.permanent_controller(target)
@@ -6822,7 +6752,7 @@ impl Game {
                         options,
                         DecisionContinuation::Duress {
                             victim,
-                            cause: DiscardCause::SpellOrAbility {
+                            cause: ZoneMoveCause::Effect {
                                 controller: object.controller,
                             },
                         },
@@ -6873,7 +6803,7 @@ impl Game {
             CardBehavior::HymnToTourach => self.discard_random(
                 object.controller.opponent(),
                 2,
-                DiscardCause::SpellOrAbility {
+                ZoneMoveCause::Effect {
                     controller: object.controller,
                 },
             ),
@@ -6881,7 +6811,7 @@ impl Game {
                 self.discard_random(
                     object.controller.opponent(),
                     object.x(),
-                    DiscardCause::SpellOrAbility {
+                    ZoneMoveCause::Effect {
                         controller: object.controller,
                     },
                 );
@@ -6933,7 +6863,7 @@ impl Game {
         }
     }
 
-    fn discard_random(&mut self, player: PlayerId, count: u16, cause: DiscardCause) {
+    fn discard_random(&mut self, player: PlayerId, count: u16, cause: ZoneMoveCause) {
         self.rng.shuffle(&mut self.players[player.index()].hand);
         let hand_count = u16::try_from(self.players[player.index()].hand.len()).unwrap_or(u16::MAX);
         let discard_count = count.min(hand_count);
@@ -6977,7 +6907,7 @@ impl Game {
                         cards: self.players[player.index()].hand.clone(),
                         count,
                         action: BalanceAction::Discard,
-                        cause: DiscardCause::SpellOrAbility { controller },
+                        cause: ZoneMoveCause::Effect { controller },
                     });
                 }
             }
@@ -7035,7 +6965,7 @@ impl Game {
                     cards,
                     count,
                     action: BalanceAction::Sacrifice,
-                    cause: DiscardCause::SpellOrAbility { controller },
+                    cause: ZoneMoveCause::Effect { controller },
                 });
             }
         }
@@ -7064,11 +6994,7 @@ impl Game {
                 .iter()
                 .map(|card| card.id)
                 .collect::<Vec<_>>();
-            self.discard_cards_with_cause(
-                player,
-                &hand,
-                DiscardCause::SpellOrAbility { controller },
-            );
+            self.discard_cards_with_cause(player, &hand, ZoneMoveCause::Effect { controller });
         }
         let can_draw = [
             self.players[0].library.len() >= 7,
@@ -9470,7 +9396,7 @@ impl Game {
                         self.discard_random(
                             self.active_player.opponent(),
                             1,
-                            DiscardCause::SpellOrAbility {
+                            ZoneMoveCause::Effect {
                                 controller: self.active_player,
                             },
                         );

@@ -30,7 +30,7 @@ pub use card::{
     PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation, PrintedManaCost,
     ReplacementAbilityDef, ReplacementEventDef, SpecialActionDef, SpellAbilityDef, SpellForm,
     SpellModeDef, StaticAbilityDef, TargetPredicate, TargetSlotDef, TriggerEventDef,
-    TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind, applicable_part_ids,
+    TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, applicable_part_ids,
 };
 pub use casting::{
     CastChoices, CastSignature, CostConfiguration, TargetReplacementError, TargetSelection,

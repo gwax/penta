@@ -3,13 +3,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor, ModeDef, ModeSetDef,
-    ObjectPredicateDef, PlayOptionDef, PlayerRelation, ReplacementEventDef, SpellForm,
-    TargetPredicate, TargetSlotDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry,
+    ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEventDef, SpellModeDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities, cards,
 };
-use crate::ids::{CardPartId, ModeId, PlayOptionId, TargetSlotId};
+use crate::ids::{ModeId, TargetSlotId};
 use crate::mana_cost;
 
 pub(in crate::card::sets) static ABRUPT_DECAY: CardRecord = CardRecord::new(
@@ -227,73 +226,46 @@ pub(in crate::card::sets) static HALLOWED_FOUNTAIN: CardRecord = CardRecord::new
     ]),
 );
 
-const fn izzet_charm_rules() -> CardRules {
-    CardRules::new_instant(mana_cost!("{U}{R}")).with_ability(
-        AbilityDef::not_implemented(
-            "Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
+static IZZET_CHARM_MODES: [SpellModeDef; 3] = [
+    SpellModeDef::new(
+        ModeId(0),
+        "Counter a noncreature spell unless its controller pays {2}",
+        EffectDef::None,
     )
-}
-
-fn izzet_charm_composition() -> CardComposition {
-    let rules = izzet_charm_rules();
-    let modes = ModeSetDef::choose_one(vec![
-        ModeDef {
-            id: ModeId(0),
-            label: "Counter a noncreature spell unless its controller pays {2}".into(),
-            targets: vec![TargetSlotDef::exactly_one(
-                TargetSlotId(0),
-                "noncreature spell",
-                TargetPredicate::NoncreatureSpell,
-            )],
-            effect_status: CardEffectStatus::MetadataOnly,
-        },
-        ModeDef {
-            id: ModeId(1),
-            label: "Deal 2 damage to a creature".into(),
-            targets: vec![TargetSlotDef::exactly_one(
-                TargetSlotId(1),
-                "creature",
-                TargetPredicate::CreaturePermanent,
-            )],
-            effect_status: CardEffectStatus::MetadataOnly,
-        },
-        ModeDef {
-            id: ModeId(2),
-            label: "Draw two cards, then discard two cards".into(),
-            targets: Vec::new(),
-            effect_status: CardEffectStatus::MetadataOnly,
-        },
-    ]);
-    CardComposition {
-        parts: vec![CardPart::new(CardPartId::PRIMARY, "Izzet Charm", rules)],
-        structure: CardStructure::Single {
-            main: CardPartId::PRIMARY,
-        },
-        play_options: vec![
-            PlayOptionDef::cast(
-                PlayOptionId::DEFAULT,
-                "Izzet Charm",
-                SpellForm::Part(CardPartId::PRIMARY),
-                rules
-                    .mana_cost()
-                    .expect("Izzet Charm has a printed mana cost"),
-                CardEffectStatus::MetadataOnly,
-            )
-            .with_modes(modes),
-        ],
-    }
-}
+    .with_targets(&[AbilityTargetDef::exactly_one_spell(
+        TargetSlotId(0),
+        "noncreature spell",
+        ObjectPredicateDef::NoncreatureSpell,
+    )]),
+    SpellModeDef::new(ModeId(1), "Deal 2 damage to a creature", EffectDef::None).with_targets(&[
+        AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(1),
+            "creature",
+            ObjectPredicateDef::HasType(CardType::Creature),
+        ),
+    ]),
+    SpellModeDef::new(
+        ModeId(2),
+        "Draw two cards, then discard two cards",
+        EffectDef::None,
+    ),
+];
 
 pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
     cards::IZZET_CHARM,
     "Izzet Charm",
     CardArt::new("1e3a5af6-5423-442b-a207-364e97a871d8", "Zoltan Boros"),
     CardSet::ReturnToRavnica,
-    izzet_charm_rules(),
-)
-.with_composition(izzet_charm_composition);
+    CardRules::new_instant(mana_cost!("{U}{R}")).with_ability(
+        AbilityDef::choose_one_spell(
+            "Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.",
+            &IZZET_CHARM_MODES,
+        )
+        .with_implementation(AbilityImplementationDef::NotImplemented {
+            explanation: "Printed rules are cataloged but are not executed by the engine.",
+        }),
+    ),
+);
 
 pub(in crate::card::sets) static IZZET_STATICASTER: CardRecord = CardRecord::new(
     cards::IZZET_STATICASTER,
@@ -350,7 +322,11 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
         abilities::cannot_be_countered(),
         AbilityDef::replacement_for(
             "If a spell or ability an opponent controls causes you to discard this card, put it onto the battlefield instead of putting it into your graveyard.",
-            ReplacementEventDef::WouldBeDiscardedBy(PlayerRelation::Opponent),
+            ReplacementEventDef::WouldMove {
+                from: ZoneKind::Hand,
+                to: ZoneKind::Graveyard,
+                cause: ZoneMoveCauseDef::EffectControlledBy(PlayerRelation::Opponent),
+            },
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Battlefield,
@@ -510,11 +486,7 @@ pub(in crate::card::sets) static SUPREME_VERDICT: CardRecord = CardRecord::new(
     CardSet::ReturnToRavnica,
     CardRules::new_sorcery(mana_cost!("{1}{W}{W}{U}")).with_abilities(&[
         abilities::cannot_be_countered(),
-        AbilityDef::custom_full(
-            "Destroy all creatures.",
-            CardBehavior::SupremeVerdict,
-            "The creature sweep is implemented by the card-local spell resolver.",
-        ),
+        abilities::destroy_all_creatures("Destroy all creatures.", true),
     ]),
 );
 

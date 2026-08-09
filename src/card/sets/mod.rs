@@ -173,6 +173,7 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::AugurOfBolas => &y2012::magic_2013::AUGUR_OF_BOLAS.rules,
         CardBehavior::BlackVise => &y1993::alpha::BLACK_VISE.rules,
         CardBehavior::BloodBaronOfVizkopa => &y2013::dragons_maze::BLOOD_BARON_OF_VIZKOPA.rules,
+        CardBehavior::BlueElementalBlast => &y1993::alpha::BLUE_ELEMENTAL_BLAST.rules,
         CardBehavior::BloodMoon => &y1994::the_dark::BLOOD_MOON.rules,
         CardBehavior::ChainLightning => &y1994::legends::CHAIN_LIGHTNING.rules,
         CardBehavior::Detonate => &y1994::antiquities::DETONATE.rules,
@@ -180,7 +181,6 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::Fork => &y1993::alpha::FORK.rules,
         CardBehavior::GlassesOfUrza => &y1993::alpha::GLASSES_OF_URZA.rules,
         CardBehavior::LightningBolt => &y1993::alpha::LIGHTNING_BOLT.rules,
-        CardBehavior::RedElementalBlast => &y1993::alpha::RED_ELEMENTAL_BLAST.rules,
         CardBehavior::Smoke => &y1993::alpha::SMOKE.rules,
         CardBehavior::StoneGiant => &y1993::alpha::STONE_GIANT.rules,
         CardBehavior::WinterOrb => &y1993::alpha::WINTER_ORB.rules,
@@ -190,6 +190,7 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::IronclawOrcs => &y1993::alpha::IRONCLAW_ORCS.rules,
         CardBehavior::MishrasFactory => &y1994::antiquities::MISHRA_S_FACTORY.rules,
         CardBehavior::OrcishMechanics => &y1994::antiquities::ORCISH_MECHANICS.rules,
+        CardBehavior::RedElementalBlast => &y1993::alpha::RED_ELEMENTAL_BLAST.rules,
         CardBehavior::WheelOfFortune => &y1993::alpha::WHEEL_OF_FORTUNE.rules,
         CardBehavior::Juggernaut => &y1993::alpha::JUGGERNAUT.rules,
         CardBehavior::ManaVault => &y1993::alpha::MANA_VAULT.rules,
@@ -198,7 +199,6 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::SwordsToPlowshares => &y1993::alpha::SWORDS_TO_PLOWSHARES.rules,
         CardBehavior::TimeWalk => &y1993::alpha::TIME_WALK.rules,
         CardBehavior::Balance => &y1993::alpha::BALANCE.rules,
-        CardBehavior::BlueElementalBlast => &y1993::alpha::BLUE_ELEMENTAL_BLAST.rules,
         CardBehavior::Channel => &y1993::alpha::CHANNEL.rules,
         CardBehavior::Crusade => &y1993::alpha::CRUSADE.rules,
         CardBehavior::DemonicTutor => &y1993::alpha::DEMONIC_TUTOR.rules,
@@ -267,8 +267,8 @@ mod tests {
         CardPrinting, CardPrintingId, CardStructure, CardSupertype, DeclarativeAbilityDef,
         DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus,
         KeywordAbility, ManaColor, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
-        ObjectPredicateDef, PlayActionKind, PlayRestriction, ReplacementEventDef, SpellForm,
-        TargetPredicate, TriggerEventDef, ZoneKind, abilities, cards,
+        ObjectPredicateDef, PlayActionKind, PlayRestriction, PlayerRelation, ReplacementEventDef,
+        SpellForm, TargetPredicate, TriggerEventDef, ZoneKind, ZoneMoveCauseDef, abilities, cards,
     };
     use crate::{AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ModeId, PlayOptionId};
 
@@ -368,6 +368,20 @@ mod tests {
                 | KeywordAbility::Undying
                 | KeywordAbility::Mountainwalk
                 | KeywordAbility::ProtectionFrom(_)
+        )
+    }
+
+    fn shared_zone_move_cause(cause: ZoneMoveCauseDef) -> bool {
+        matches!(
+            cause,
+            ZoneMoveCauseDef::Any
+                | ZoneMoveCauseDef::EffectControlledBy(
+                    PlayerRelation::Any
+                        | PlayerRelation::You
+                        | PlayerRelation::Opponent
+                        | PlayerRelation::ActivePlayer
+                        | PlayerRelation::NonactivePlayer
+                )
         )
     }
 
@@ -679,8 +693,11 @@ mod tests {
                                 }
                         )
                 }
-                ReplacementEventDef::WouldBeDiscardedBy(_) => {
-                    definition.source_zones == [ZoneKind::Hand]
+                ReplacementEventDef::WouldMove { from, to, cause } => {
+                    definition.source_zones == [from]
+                        && from == ZoneKind::Hand
+                        && to == ZoneKind::Graveyard
+                        && shared_zone_move_cause(cause)
                         && ability.effect
                             == EffectDef::MoveToZone {
                                 object: EffectRecipientDef::Source,
