@@ -47,9 +47,18 @@ pub(in crate::card::sets) static BURNING_EARTH: CardRecord = CardRecord::new(
     CardArt::new("1df3a7c9-5c8d-438c-a5ad-3c9754c6ea5d", "rk post"),
     CardSet::Magic2014,
     CardRules::new_enchantment(mana_cost!("{3}{R}")).with_ability(
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "Whenever a player taps a nonbasic land for mana, this enchantment deals 1 damage to that player.",
-            "Printed rules are cataloged but are not executed by the engine.",
+            TriggerEventDef::TappedForMana(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Land),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Basic)),
+            ])),
+            EffectDef::DealDamage {
+                // Whoever tapped it, which includes this enchantment's own
+                // controller.
+                recipient: EffectRecipientDef::ControllerOfTriggeringObject,
+                amount: ValueDef::Constant(1),
+            },
         ),
     ),
 );

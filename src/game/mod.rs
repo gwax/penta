@@ -417,6 +417,9 @@ enum CommittedTriggerEvent {
     Attacks {
         object: TriggerEventObject,
     },
+    TappedForMana {
+        object: TriggerEventObject,
+    },
     DamageDealt {
         object: TriggerEventObject,
         amount: u16,
@@ -458,7 +461,9 @@ impl CommittedTriggerEvent {
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
             },
-            Self::SpellCast { object } => TriggerContext {
+            // The player who tapped a permanent for mana is its controller,
+            // which is the same shape a cast spell has.
+            Self::TappedForMana { object } | Self::SpellCast { object } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: Some(object.controller),
@@ -2333,10 +2338,15 @@ impl Game {
             (
                 TriggerEventDef::BecomesTapped(predicate),
                 CommittedTriggerEvent::BecomesTapped { object },
+            )
+            | (
+                TriggerEventDef::TappedForMana(predicate),
+                CommittedTriggerEvent::TappedForMana { object },
             ) => self.trigger_object_matches(predicate, object, source, false),
             (TriggerEventDef::Attacks(predicate), CommittedTriggerEvent::Attacks { object }) => {
                 self.trigger_object_matches(predicate, object, source, false)
             }
+
             (
                 TriggerEventDef::DamageDealt {
                     source: _,
@@ -5423,7 +5433,20 @@ impl Game {
         for cost in activation.costs {
             match cost {
                 AbilityCostDef::TapSource => {
+                    // Captured before the tap so the land's own characteristics
+                    // are the ones a watcher sees, and only here: a mana
+                    // ability with no tap cost never taps anything for mana.
+                    let tapped_for_mana = self
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == source)
+                        .map(|permanent| CommittedTriggerEvent::TappedForMana {
+                            object: self.trigger_event_object(permanent),
+                        });
                     let _ = self.tap_permanent(source);
+                    if let Some(event) = tapped_for_mana {
+                        self.capture_battlefield_triggers(&event);
+                    }
                 }
                 AbilityCostDef::SacrificeSource => self.sacrifice_permanent(source),
                 AbilityCostDef::PayLife(amount) => {

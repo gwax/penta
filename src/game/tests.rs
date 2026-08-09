@@ -10631,3 +10631,50 @@ fn boros_reckoner_returns_the_damage_it_took_to_a_target_of_its_choice() {
     // Three damage in, three damage back out at the player who threw it.
     assert_eq!(game.players[1].life, life_before - 3);
 }
+
+#[test]
+fn burning_earth_burns_only_the_nonbasic_taps() {
+    let mut game = ready_game();
+    game.put_onto_battlefield(PlayerId::One, cards::BURNING_EARTH)
+        .expect("cataloged");
+    let foundry = game
+        .put_onto_battlefield(PlayerId::Two, cards::SACRED_FOUNDRY)
+        .expect("cataloged");
+    let mountain = game
+        .put_onto_battlefield(PlayerId::Two, cards::MOUNTAIN)
+        .expect("cataloged");
+    let life_before = game.players[1].life;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+
+    let tap_for_red = |game: &Game, source: GameObjectId| {
+        game.legal_actions(PlayerId::Two)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateManaAbility { source: id, color, .. }
+                    if *id == source && *color == ManaColor::Red)
+            })
+            .expect("the land taps for red")
+    };
+
+    let action = tap_for_red(&game, mountain);
+    game.apply(PlayerId::Two, action).unwrap();
+    assert_eq!(
+        game.players[1].life, life_before,
+        "a basic Mountain is not a nonbasic land"
+    );
+
+    let action = tap_for_red(&game, foundry);
+    game.apply(PlayerId::Two, action).unwrap();
+    for _ in 0..8 {
+        if game.players[1].life < life_before {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(game.players[1].life, life_before - 1);
+}

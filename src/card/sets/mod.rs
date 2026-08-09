@@ -509,6 +509,7 @@ mod tests {
             }
             TriggerEventDef::BecomesTapped(object)
             | TriggerEventDef::Attacks(object)
+            | TriggerEventDef::TappedForMana(object)
             | TriggerEventDef::SpellCast(object) => shared_object_predicate(object),
             TriggerEventDef::StepBegins { .. }
             | TriggerEventDef::LifeGained(_)

@@ -1056,6 +1056,10 @@ pub enum TriggerEventDef {
         to: Option<ZoneKind>,
     },
     BecomesTapped(ObjectPredicateDef),
+    /// A permanent was tapped to pay for one of its own mana abilities. This
+    /// is narrower than [`Self::BecomesTapped`]: attacking or a tap effect
+    /// does not produce mana and does not fire this.
+    TappedForMana(ObjectPredicateDef),
     /// A creature was declared as an attacker. Every matching attacker in one
     /// declaration triggers separately, as CR 508.2 has them all attack at
     /// once rather than one at a time.
