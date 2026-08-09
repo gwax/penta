@@ -10887,3 +10887,136 @@ fn an_order_can_buy_first_strike_and_win_a_trade_it_would_have_lost() {
         "the Order struck first and took nothing back"
     );
 }
+
+#[test]
+fn syncopate_exiles_the_spell_when_its_controller_will_not_pay() {
+    let mut game = ready_game();
+    let bolt = card(10_000, cards::LIGHTNING_BOLT, PlayerId::Two);
+    game.players[1].hand.push(bolt.clone());
+    game.players[1].mana_pool.red = 1;
+    let syncopate = card(10_001, cards::SYNCOPATE, PlayerId::One);
+    game.players[0].hand.push(syncopate.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 2;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+
+    game.apply(
+        PlayerId::Two,
+        cast_action(bolt.id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+    )
+    .unwrap();
+    let spell = game.stack.last().expect("the Bolt is on the stack").id;
+    // Enough to pay, so the choice is real rather than a formality.
+    game.players[1].mana_pool.colorless = 2;
+    game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+    game.apply(
+        PlayerId::One,
+        cast_action(syncopate.id, vec![Target::Spell(spell)], Vec::new(), 2),
+    )
+    .unwrap();
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .observe(PlayerId::Two)
+        .decision
+        .expect("the Bolt's controller is asked, not Syncopate's");
+    assert_eq!(decision.player, PlayerId::Two);
+    let decline = decision
+        .options
+        .iter()
+        .find(|option| option.label == "Let it be countered")
+        .expect("declining is always available");
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decline.id],
+        },
+    )
+    .unwrap();
+
+    assert_eq!(game.players[0].life, 20, "the Bolt never resolved");
+    assert!(game.players[1].graveyard.is_empty(), "exiled, not buried");
+    assert_eq!(
+        game.players[1]
+            .exile
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::LIGHTNING_BOLT]
+    );
+}
+
+#[test]
+fn izzet_charm_lets_a_paying_controller_keep_the_spell() {
+    let mut game = ready_game();
+    let ritual = card(10_000, cards::DARK_RITUAL, PlayerId::Two);
+    game.players[1].hand.push(ritual.clone());
+    game.players[1].mana_pool.black = 1;
+    let charm = card(10_001, cards::IZZET_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+
+    game.apply(
+        PlayerId::Two,
+        cast_action(ritual.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    let spell = game.stack.last().expect("the Ritual is on the stack").id;
+    game.players[1].mana_pool.colorless = 2;
+    game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+    game.apply(
+        PlayerId::One,
+        cast_mode(
+            charm.id,
+            ModeId(0),
+            TargetSlotId(0),
+            vec![Target::Spell(spell)],
+        ),
+    )
+    .unwrap();
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game.observe(PlayerId::Two).decision.expect("a real choice");
+    let pay = decision
+        .options
+        .iter()
+        .find(|option| option.label == "Pay the cost")
+        .expect("they can afford it");
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![pay.id],
+        },
+    )
+    .unwrap();
+
+    assert!(
+        game.stack.iter().any(|object| object.id == spell),
+        "paying keeps the spell on the stack"
+    );
+    assert_eq!(game.players[1].mana_pool.colorless, 0, "the two was spent");
+}

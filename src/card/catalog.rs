@@ -665,6 +665,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::Sacrifice { .. }
         | super::EffectDef::SacrificeOfChoice { .. }
         | super::EffectDef::Counter { .. }
+        | super::EffectDef::CounterUnlessPaid { .. }
         | super::EffectDef::AddCounters { .. }
         | super::EffectDef::EntersTapped
         | super::EffectDef::MultiplyEventAmount(_)
@@ -701,6 +702,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::Sacrifice { .. }
         | super::EffectDef::SacrificeOfChoice { .. }
         | super::EffectDef::Counter { .. }
+        | super::EffectDef::CounterUnlessPaid { .. }
         | super::EffectDef::AddCounters { .. }
         | super::EffectDef::EntersTapped
         | super::EffectDef::MultiplyEventAmount(_)

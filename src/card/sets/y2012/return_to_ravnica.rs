@@ -268,9 +268,13 @@ pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
         AbilityDef::choose_one_spell(
             "Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.",
             &[
-                AbilityDef::unimplemented_spell(
+                AbilityDef::spell(
                     "Counter a noncreature spell unless its controller pays {2}",
-                    "Printed mode is cataloged but is not executed by the engine.",
+                    EffectDef::CounterUnlessPaid {
+                        object: EffectRecipientDef::Target(TargetSlotId(0)),
+                        amount: ValueDef::Constant(2),
+                        zone: ZoneKind::Graveyard,
+                    },
                 )
                 .with_targets(&[AbilityTargetDef::exactly_one_spell(
                     TargetSlotId(0),
@@ -590,10 +594,24 @@ pub(in crate::card::sets) static SYNCOPATE: CardRecord = CardRecord::new(
     CardArt::new("ba6f218f-83b0-4b68-a00f-0327cd79f32a", "Clint Cearley"),
     CardSet::ReturnToRavnica,
     CardRules::new_instant(mana_cost!("{X}{U}")).with_ability(
-        AbilityDef::not_implemented(
+        AbilityDef::spell(
             "Counter target spell unless its controller pays {X}. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
+            EffectDef::CounterUnlessPaid {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                amount: ValueDef::ChosenX,
+                zone: ZoneKind::Exile,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "spell",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            },
+        )]),
     ),
 );
 

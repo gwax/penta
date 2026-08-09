@@ -993,6 +993,14 @@ pub enum EffectDef {
     Counter {
         object: EffectRecipientDef,
     },
+    /// Counters unless the spell's own controller pays this much generic
+    /// mana. `zone` is where a spell countered this way goes, which is the
+    /// graveyard unless the card says otherwise.
+    CounterUnlessPaid {
+        object: EffectRecipientDef,
+        amount: ValueDef,
+        zone: ZoneKind,
+    },
     AddCounters {
         object: EffectRecipientDef,
         kind: CounterKind,

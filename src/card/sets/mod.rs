@@ -467,6 +467,11 @@ mod tests {
             | EffectDef::Counter { object }
             | EffectDef::AddCounters { object, .. }
             | EffectDef::Attach { object } => shared_effect_recipient(object),
+            // Only the two destinations counter_spell_into knows.
+            EffectDef::CounterUnlessPaid { object, zone, .. } => {
+                matches!(zone, ZoneKind::Graveyard | ZoneKind::Exile)
+                    && shared_effect_recipient(object)
+            }
             // A token needs no recipient: it is created under the resolving
             // object's controller.
             EffectDef::CreateToken { .. } => true,
@@ -627,6 +632,7 @@ mod tests {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Counter { .. }
+            | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
@@ -697,6 +703,7 @@ mod tests {
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::SacrificeOfChoice { .. }
                         | EffectDef::Counter { .. }
+                        | EffectDef::CounterUnlessPaid { .. }
                         | EffectDef::AddCounters { .. }
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::EntersTapped
@@ -794,6 +801,7 @@ mod tests {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Counter { .. }
+            | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::EntersTapped
             | EffectDef::MultiplyEventAmount(_)

@@ -779,6 +779,13 @@ enum DecisionContinuation {
     },
     /// A sacrifice an effect demanded, chosen by the sacrificing player.
     SacrificeOfChoice,
+    /// The spell's controller deciding whether to keep it alive.
+    CounterUnlessPaid {
+        spell: GameObjectId,
+        player: PlayerId,
+        cost: ManaCost,
+        zone: CounteredSpellZone,
+    },
     /// A discard an effect demanded, chosen by the discarding player.
     DiscardToEffect {
         player: PlayerId,
@@ -2207,6 +2214,7 @@ impl Game {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Counter { .. }
+            | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
@@ -2971,6 +2979,59 @@ impl Game {
                 object: Box::new(object.clone()),
                 context,
                 effect,
+            },
+        );
+    }
+
+    /// Offers the spell's own controller the chance to keep it. A controller
+    /// who cannot pay is not asked; the spell is simply countered.
+    fn queue_counter_unless_paid(
+        &mut self,
+        spell: GameObjectId,
+        amount: u16,
+        zone: CounteredSpellZone,
+    ) {
+        let Some(controller) = self
+            .stack
+            .iter()
+            .find(|object| object.id == spell)
+            .map(|object| object.controller)
+        else {
+            return;
+        };
+        let cost = ManaCost::new(amount, 0);
+        if !self.can_pay_cost(controller, cost, 0) {
+            self.counter_spell_into(spell, zone);
+            return;
+        }
+        self.queue_decision(
+            controller,
+            format!("Pay {amount} or your spell is countered"),
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            vec![
+                DecisionOption {
+                    id: 0,
+                    label: "Let it be countered".into(),
+                    card: None,
+                    ability_text: None,
+                    zone: DecisionZone::None,
+                },
+                DecisionOption {
+                    id: 1,
+                    label: "Pay the cost".into(),
+                    card: None,
+                    ability_text: None,
+                    zone: DecisionZone::None,
+                },
+            ],
+            DecisionContinuation::CounterUnlessPaid {
+                spell,
+                player: controller,
+                cost,
+                zone,
             },
         );
     }
@@ -3760,6 +3821,19 @@ impl Game {
                     self.players[player.index()].hand.push(card);
                 }
                 self.bury_cards(player, to_graveyard);
+            }
+            DecisionContinuation::CounterUnlessPaid {
+                spell,
+                player,
+                cost,
+                zone,
+            } => {
+                if options.contains(&1) {
+                    self.activate_mana_for_cost(player, cost, 0);
+                    let _ = self.pay_player_cost(player, cost, 0);
+                } else {
+                    self.counter_spell_into(spell, zone);
+                }
             }
             DecisionContinuation::SacrificeOfChoice => {
                 let sacrificed = pending
@@ -6388,6 +6462,27 @@ impl Game {
                     }
                 }
             }
+            EffectDef::CounterUnlessPaid {
+                object: recipient,
+                amount,
+                zone,
+            } => {
+                let amount = self
+                    .effect_value(amount, object, context)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                let zone = if zone == ZoneKind::Exile {
+                    CounteredSpellZone::Exile
+                } else {
+                    CounteredSpellZone::Graveyard
+                };
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Spell(spell) = target {
+                        self.queue_counter_unless_paid(spell, amount, zone);
+                    }
+                }
+            }
             EffectDef::AddCounters {
                 object: recipient,
                 kind,
@@ -8216,6 +8311,7 @@ impl Game {
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::Counter { .. }
+                | EffectDef::CounterUnlessPaid { .. }
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
@@ -8302,6 +8398,7 @@ impl Game {
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::Counter { .. }
+                | EffectDef::CounterUnlessPaid { .. }
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
@@ -10487,6 +10584,7 @@ impl Game {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Counter { .. }
+            | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped

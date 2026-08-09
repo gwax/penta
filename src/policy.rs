@@ -236,7 +236,9 @@ impl HandcraftedPolicy {
                         Some(drawn.saturating_sub(Self::policy_value(amount, x).unwrap_or(0)));
                 }
             }
-            EffectDef::Counter { .. } => profile.mark(DeclarativeSpellProfile::COUNTERS),
+            EffectDef::Counter { .. } | EffectDef::CounterUnlessPaid { .. } => {
+                profile.mark(DeclarativeSpellProfile::COUNTERS);
+            }
             EffectDef::Destroy { object, .. } => {
                 profile.mark(DeclarativeSpellProfile::REMOVES);
                 if let EffectRecipientDef::MatchingObjects {
