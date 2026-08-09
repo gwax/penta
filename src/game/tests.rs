@@ -9480,3 +9480,61 @@ fn izzet_charm_deals_two_damage_in_its_implemented_mode() {
 
     assert!(game.battlefield.is_empty());
 }
+
+#[test]
+fn selesnya_charm_pumps_and_grants_trample() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
+    let charm = card(10_001, cards::SELESNYA_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.white = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(
+            charm.id,
+            ModeId(0),
+            TargetSlotId(0),
+            vec![Target::Permanent(CardInstanceId(10_000))],
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS)
+        .expect("still there");
+    assert_eq!(game.power(lions), Some(4), "2/1 plus 2/2");
+    assert_eq!(game.toughness(lions), Some(3));
+    assert!(game.permanent_has_executable_keyword(lions, KeywordAbility::Trample));
+}
+
+#[test]
+fn selesnya_charm_can_instead_make_a_knight() {
+    let mut game = ready_game();
+    let charm = card(10_001, cards::SELESNYA_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.white = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(charm.id, ModeId(2), TargetSlotId(0), Vec::new()),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let knight = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::KNIGHT_TOKEN_2_2_WHITE)
+        .expect("a Knight token arrived");
+    assert_eq!(game.power(knight), Some(2));
+    assert_eq!(game.toughness(knight), Some(2));
+    assert_eq!(knight.controller, PlayerId::One);
+    assert!(game.permanent_has_executable_keyword(knight, KeywordAbility::Vigilance));
+}

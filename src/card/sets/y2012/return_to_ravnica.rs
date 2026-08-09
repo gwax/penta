@@ -458,12 +458,46 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
     "Selesnya Charm",
     CardArt::new("a9848eab-1d3a-4ab0-adf6-c20858aa3afb", "Zoltan Boros"),
     CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{G}{W}")).with_ability(
-        AbilityDef::not_implemented(
-            "Choose one —\n• Target creature gets +2/+2 and gains trample until end of turn.\n• Exile target creature with power 5 or greater.\n• Create a 2/2 white Knight creature token with vigilance.",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
-    ),
+    CardRules::new_instant(mana_cost!("{G}{W}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one —\n• Target creature gets +2/+2 and gains trample until end of turn.\n• Exile target creature with power 5 or greater.\n• Create a 2/2 white Knight creature token with vigilance.",
+        &[
+            AbilityDef::spell(
+                "Target creature gets +2/+2 and gains trample until end of turn",
+                EffectDef::Sequence(&[
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                        effect: AppliedEffectDef::ModifyPowerToughness {
+                            power: ValueDef::Constant(2),
+                            toughness: ValueDef::Constant(2),
+                        },
+                        duration: EffectDurationDef::UntilEndOfTurn,
+                    },
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                        effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
+                        duration: EffectDurationDef::UntilEndOfTurn,
+                    },
+                ]),
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+                TargetSlotId(0),
+                "creature",
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )]),
+            // Needs a power predicate to say "power 5 or greater".
+            AbilityDef::unimplemented_spell(
+                "Exile a creature with power 5 or greater",
+                "Printed mode is cataloged but is not executed by the engine.",
+            ),
+            AbilityDef::spell(
+                "Create a 2/2 white Knight creature token with vigilance",
+                EffectDef::CreateToken {
+                    token: cards::KNIGHT_TOKEN_2_2_WHITE,
+                    count: 1,
+                },
+            ),
+        ],
+    )),
 );
 
 pub(in crate::card::sets) static SPHINXS_REVELATION: CardRecord = CardRecord::new(

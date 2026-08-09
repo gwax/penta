@@ -806,13 +806,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 245);
+        assert_eq!(records.len(), 246);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=245).collect::<Vec<_>>()
+            (1..=246).collect::<Vec<_>>()
         );
         assert_eq!(
             records
@@ -852,7 +852,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 245);
+        assert_eq!(records.len(), 246);
 
         for record in records {
             let definition = record.definition();

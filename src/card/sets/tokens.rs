@@ -10,7 +10,7 @@
 //! printing, and the client already falls back to the type glyph without one.
 
 use super::{CardRecord, PrintingRecord};
-use crate::card::{CardArt, CardRules, CardSet, ManaColor, cards};
+use crate::card::{CardArt, CardRules, CardSet, ManaColor, abilities, cards};
 
 pub(in crate::card::sets) static BEAST_TOKEN_3_3_GREEN: CardRecord = CardRecord::new(
     cards::BEAST_TOKEN_3_3_GREEN,
@@ -20,6 +20,17 @@ pub(in crate::card::sets) static BEAST_TOKEN_3_3_GREEN: CardRecord = CardRecord:
     CardRules::new_creature_without_mana_cost(&["Beast"], 3, 3).printed_colors(&[ManaColor::Green]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&BEAST_TOKEN_3_3_GREEN];
+pub(in crate::card::sets) static KNIGHT_TOKEN_2_2_WHITE: CardRecord = CardRecord::new(
+    cards::KNIGHT_TOKEN_2_2_WHITE,
+    "Knight",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Knight"], 2, 2)
+        .printed_colors(&[ManaColor::White])
+        .with_abilities(&[abilities::vigilance()]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&BEAST_TOKEN_3_3_GREEN, &KNIGHT_TOKEN_2_2_WHITE];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
