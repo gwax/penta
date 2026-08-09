@@ -196,29 +196,23 @@ pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::ne
     )
     .with_abilities(&[
         abilities::trample(),
-        AbilityDef::activated(
-            "Bloodrush — {R}{G}, Discard this card: Target attacking creature gets +4/+4 and gains trample until end of turn.",
-            &[
-                AbilityCostDef::Mana(mana_cost!("{R}{G}")),
-                AbilityCostDef::DiscardSource,
-            ],
-            EffectDef::Sequence(&[
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                    effect: AppliedEffectDef::ModifyPowerToughness {
+        abilities::bloodrush(
+            mana_cost!("{R}{G}"),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::ModifyPowerToughness {
                         power: ValueDef::Constant(4),
                         toughness: ValueDef::Constant(4),
                     },
-                    duration: EffectDurationDef::UntilEndOfTurn,
-                },
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                    effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
-                    duration: EffectDurationDef::UntilEndOfTurn,
-                },
-            ]),
+                    AppliedEffectDef::GrantAbility(&abilities::trample()),
+                ]),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
         )
-        .with_source_zones(&[ZoneKind::Hand])
+        .with_text(
+            "Bloodrush — {R}{G}, Discard this card: Target attacking creature gets +4/+4 and gains trample until end of turn.",
+        )
         .with_targets(&[AbilityTargetDef::exactly_one(
             TargetSlotId(0),
             "attacking creature",
@@ -228,11 +222,7 @@ pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::ne
                 controller: None,
                 owner: None,
             },
-        )])
-        .with_activation_text(
-            "Give {} +4/+4 and trample",
-            "Give an attacker +4/+4 and trample",
-        ),
+        )]),
     ]),
 );
 

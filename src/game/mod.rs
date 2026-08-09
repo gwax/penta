@@ -775,7 +775,7 @@ struct ManaAbilityActivation {
     source: GameObjectId,
     ability: AbilityOrigin,
     color: ManaColor,
-    costs: &'static [AbilityCostDef],
+    costs: crate::card::AbilityCostList,
     effect: AddManaEffectDef,
 }
 
@@ -5967,7 +5967,7 @@ impl Game {
                 }
                 let mut mana_cost = ManaCost::default();
                 let mut supported = true;
-                for cost in definition.costs {
+                for cost in definition.costs.as_slice() {
                     match cost {
                         AbilityCostDef::Mana(cost) => {
                             mana_cost = add_mana_cost(mana_cost, *cost);
@@ -6325,7 +6325,7 @@ impl Game {
             .and_then(|permanent| self.mana_ability_activation(permanent, ability, color))
             .expect("legal mana action references a mana source");
         let produced_mana = Self::mana_for_activation(activation);
-        for cost in activation.costs {
+        for cost in activation.costs.as_slice() {
             match cost {
                 AbilityCostDef::TapSource => {
                     // Captured before the tap so the land's own characteristics
@@ -7616,67 +7616,7 @@ impl Game {
         context: TriggerContext,
     ) {
         for target in self.effect_recipients(recipient, object, context) {
-            if let AppliedEffectDef::GrantAbility(ability) = effect {
-                match target {
-                    Target::Card(target) => {
-                        let grant = TemporaryAbilityGrant {
-                            object: target,
-                            ability,
-                        };
-                        if self.card_in_nonbattlefield_zone(target).is_some()
-                            && !self.temporary_ability_grants.contains(&grant)
-                        {
-                            self.temporary_ability_grants.push(grant);
-                        }
-                    }
-                    Target::Permanent(target) => {
-                        if let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
-                            && let Some(permanent) = self
-                                .battlefield
-                                .iter_mut()
-                                .find(|permanent| permanent.card.id == target)
-                            && !permanent.temporary_keywords.contains(&keyword)
-                        {
-                            permanent.temporary_keywords.push(keyword);
-                        }
-                    }
-                    Target::Player(_) | Target::Spell(_) => {}
-                }
-                continue;
-            }
-            let Target::Permanent(target) = target else {
-                continue;
-            };
-            match effect {
-                AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
-                    let power = i16::try_from(
-                        self.effect_value(power, object, context)
-                            .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
-                    )
-                    .expect("the effect value was clamped to i16");
-                    let toughness = i16::try_from(
-                        self.effect_value(toughness, object, context)
-                            .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
-                    )
-                    .expect("the effect value was clamped to i16");
-                    if let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                    {
-                        permanent.power_bonus = permanent.power_bonus.saturating_add(power);
-                        permanent.toughness_bonus =
-                            permanent.toughness_bonus.saturating_add(toughness);
-                    }
-                }
-                AppliedEffectDef::GrantAbility(_) => {
-                    unreachable!("granted abilities are handled before permanent-only effects")
-                }
-                AppliedEffectDef::CannotBeCountered
-                | AppliedEffectDef::CannotBeBlockedBy(_)
-                | AppliedEffectDef::AddLandTypes(_)
-                | AppliedEffectDef::Special(_) => {}
-            }
+            self.apply_applied_effect_component(target, effect, object, context);
         }
         // Current supported Apply effects all last until cleanup. Keeping the
         // duration explicit here makes unsupported permanent/granted effects
@@ -7685,6 +7625,74 @@ impl Game {
             duration,
             EffectDurationDef::UntilEndOfTurn | EffectDurationDef::Permanent
         ));
+    }
+
+    fn apply_applied_effect_component(
+        &mut self,
+        target: Target,
+        effect: AppliedEffectDef,
+        object: &StackObject,
+        context: TriggerContext,
+    ) {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                for effect in effects {
+                    self.apply_applied_effect_component(target, *effect, object, context);
+                }
+            }
+            AppliedEffectDef::GrantAbility(ability) => match target {
+                Target::Card(target) => {
+                    let grant = TemporaryAbilityGrant {
+                        object: target,
+                        ability,
+                    };
+                    if self.card_in_nonbattlefield_zone(target).is_some()
+                        && !self.temporary_ability_grants.contains(&grant)
+                    {
+                        self.temporary_ability_grants.push(grant);
+                    }
+                }
+                Target::Permanent(target) => {
+                    if let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
+                        && let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == target)
+                        && !permanent.temporary_keywords.contains(&keyword)
+                    {
+                        permanent.temporary_keywords.push(keyword);
+                    }
+                }
+                Target::Player(_) | Target::Spell(_) => {}
+            },
+            AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
+                let Target::Permanent(target) = target else {
+                    return;
+                };
+                let power = i16::try_from(
+                    self.effect_value(power, object, context)
+                        .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
+                )
+                .expect("the effect value was clamped to i16");
+                let toughness = i16::try_from(
+                    self.effect_value(toughness, object, context)
+                        .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
+                )
+                .expect("the effect value was clamped to i16");
+                if let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == target)
+                {
+                    permanent.power_bonus = permanent.power_bonus.saturating_add(power);
+                    permanent.toughness_bonus = permanent.toughness_bonus.saturating_add(toughness);
+                }
+            }
+            AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::Special(_) => {}
+        }
     }
 
     fn live_object_target(&self, object: GameObjectId) -> Option<Target> {
@@ -9027,6 +9035,7 @@ impl Game {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::Composite(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::Special(_) => ControlFlow::Continue(()),
         })
@@ -9142,6 +9151,58 @@ impl Game {
                 effect,
                 duration,
             } => {
+                // Traverse the whole applied-effect structure even when this
+                // recipient does not match. Grant IDs identify structural
+                // grant sites, so later grants must not be renumbered by
+                // which permanent happens to be queried.
+                let include_effect = matches!(
+                    duration,
+                    EffectDurationDef::WhileSourceRemainsInZone
+                        | EffectDurationDef::UntilSourceLeavesZone
+                ) && self.static_recipient_matches(
+                    recipient,
+                    traversal.source,
+                    traversal.affected,
+                );
+                Self::visit_static_applied_effect_components(
+                    effect,
+                    traversal,
+                    include_effect,
+                    visitor,
+                )
+            }
+            _ => ControlFlow::Continue(()),
+        }
+    }
+
+    fn visit_static_applied_effect_components(
+        effect: AppliedEffectDef,
+        traversal: &mut StaticEffectTraversal<'_>,
+        include_effect: bool,
+        visitor: &mut impl FnMut(StaticAppliedEffect) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                for effect in effects {
+                    if Self::visit_static_applied_effect_components(
+                        *effect,
+                        traversal,
+                        include_effect,
+                        visitor,
+                    )
+                    .is_break()
+                    {
+                        return ControlFlow::Break(());
+                    }
+                }
+                ControlFlow::Continue(())
+            }
+            AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::ModifyPowerToughness { .. }
+            | AppliedEffectDef::GrantAbility(_)
+            | AppliedEffectDef::Special(_) => {
                 let grant = if matches!(effect, AppliedEffectDef::GrantAbility(_)) {
                     let grant = GrantId::from_index(traversal.next_grant)
                         .expect("one static ability contains at most 256 grant sites");
@@ -9150,15 +9211,7 @@ impl Game {
                 } else {
                     None
                 };
-                if matches!(
-                    duration,
-                    EffectDurationDef::WhileSourceRemainsInZone
-                        | EffectDurationDef::UntilSourceLeavesZone
-                ) && self.static_recipient_matches(
-                    recipient,
-                    traversal.source,
-                    traversal.affected,
-                ) {
+                if include_effect {
                     visitor(StaticAppliedEffect {
                         source: traversal.source.card.id,
                         source_definition: traversal.source_definition,
@@ -9171,7 +9224,6 @@ impl Game {
                     ControlFlow::Continue(())
                 }
             }
-            _ => ControlFlow::Continue(()),
         }
     }
 
@@ -10163,7 +10215,7 @@ impl Game {
     fn activated_ability_mana_cost(definition: ActivatedAbilityDef) -> Option<ManaCost> {
         let mut cost = ManaCost::default();
         let mut has_mana_cost = false;
-        for ability_cost in definition.costs {
+        for ability_cost in definition.costs.as_slice() {
             if let AbilityCostDef::Mana(mana) = ability_cost {
                 cost = add_mana_cost(cost, *mana);
                 has_mana_cost = true;
@@ -10803,7 +10855,7 @@ impl Game {
                 source,
                 taps_source: false,
             };
-            for cost in definition.costs {
+            for cost in definition.costs.as_slice() {
                 match cost {
                     AbilityCostDef::Mana(cost) => {
                         self.activate_mana_for_cost_avoiding_for(
@@ -10891,7 +10943,7 @@ impl Game {
                 unreachable!("the declarative activation filter checked its category")
             };
             let taps_source = definition.costs.contains(&AbilityCostDef::TapSource);
-            for cost in definition.costs {
+            for cost in definition.costs.as_slice() {
                 match cost {
                     AbilityCostDef::Mana(cost) => {
                         self.activate_mana_for_cost_avoiding_for(

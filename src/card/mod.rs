@@ -22,9 +22,9 @@ pub use catalog::{CardCatalog, CatalogError, GrantedAbilityValidationError};
 pub use characteristics::{CharacteristicContext, CharacteristicError, applicable_part_ids};
 pub use creature_types::CREATURE_TYPES;
 pub use model::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivatedAbilityDef, ActivatedAbilityText, AddManaEffectDef, AdditionalCostDef,
-    AlternateSpellKind, AlternativeCastAbilityDef, AlternativeCastKindDef,
+    AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AbilityTargetDef,
+    AbilityTargetPredicate, ActivatedAbilityDef, ActivatedAbilityText, AddManaEffectDef,
+    AdditionalCostDef, AlternateSpellKind, AlternativeCastAbilityDef, AlternativeCastKindDef,
     AlternativeCastManaCostDef, AlternativeCostDef, AppliedEffectDef, AttachedAbilityDef,
     BasicLandType, CardAbilityList, CardArt, CardBehavior, CardComposition, CardDefinition,
     CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardRules, CardSet, CardStructure,

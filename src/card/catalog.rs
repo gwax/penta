@@ -709,10 +709,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::AtNextStep { effect, .. } => {
             collect_ability_grants(*effect, grants);
         }
-        super::EffectDef::Apply {
-            effect: super::AppliedEffectDef::GrantAbility(ability),
-            ..
-        } => grants.push(ability),
+        super::EffectDef::Apply { effect, .. } => collect_applied_ability_grants(effect, grants),
         super::EffectDef::None
         | super::EffectDef::AddMana(_)
         | super::EffectDef::DealDamage { .. }
@@ -742,8 +739,23 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCreatureType { .. }
-        | super::EffectDef::Apply { .. }
         | super::EffectDef::Special(_) => {}
+    }
+}
+
+fn collect_applied_ability_grants(effect: super::AppliedEffectDef, grants: &mut Vec<&AbilityDef>) {
+    match effect {
+        super::AppliedEffectDef::Composite(effects) => {
+            for effect in effects {
+                collect_applied_ability_grants(*effect, grants);
+            }
+        }
+        super::AppliedEffectDef::GrantAbility(ability) => grants.push(ability),
+        super::AppliedEffectDef::CannotBeCountered
+        | super::AppliedEffectDef::CannotBeBlockedBy(_)
+        | super::AppliedEffectDef::AddLandTypes(_)
+        | super::AppliedEffectDef::ModifyPowerToughness { .. }
+        | super::AppliedEffectDef::Special(_) => {}
     }
 }
 
@@ -753,13 +765,10 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
             .iter()
             .map(|effect| ability_grant_sites(*effect))
             .fold(0, usize::saturating_add),
-        super::EffectDef::OptionalManaPayment { effect, .. }
-        | super::EffectDef::May(effect)
-        | super::EffectDef::AtNextStep { effect, .. } => ability_grant_sites(*effect),
-        super::EffectDef::Apply {
-            effect: super::AppliedEffectDef::GrantAbility(_),
-            ..
-        } => 1,
+        super::EffectDef::OptionalManaPayment { effect, .. } | super::EffectDef::May(effect) => {
+            ability_grant_sites(*effect)
+        }
+        super::EffectDef::Apply { effect, .. } => applied_ability_grant_sites(effect),
         super::EffectDef::None
         | super::EffectDef::AddMana(_)
         | super::EffectDef::DealDamage { .. }
@@ -787,10 +796,25 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::MakeUnblockableThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
         | super::EffectDef::MultiplyEventAmount(_)
+        | super::EffectDef::AtNextStep { .. }
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCreatureType { .. }
-        | super::EffectDef::Apply { .. }
         | super::EffectDef::Special(_) => 0,
+    }
+}
+
+fn applied_ability_grant_sites(effect: super::AppliedEffectDef) -> usize {
+    match effect {
+        super::AppliedEffectDef::Composite(effects) => effects
+            .iter()
+            .map(|effect| applied_ability_grant_sites(*effect))
+            .fold(0, usize::saturating_add),
+        super::AppliedEffectDef::GrantAbility(_) => 1,
+        super::AppliedEffectDef::CannotBeCountered
+        | super::AppliedEffectDef::CannotBeBlockedBy(_)
+        | super::AppliedEffectDef::AddLandTypes(_)
+        | super::AppliedEffectDef::ModifyPowerToughness { .. }
+        | super::AppliedEffectDef::Special(_) => 0,
     }
 }
 

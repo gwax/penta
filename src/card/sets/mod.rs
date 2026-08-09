@@ -449,7 +449,14 @@ mod tests {
         if duration != EffectDurationDef::UntilEndOfTurn || !shared_effect_recipient(recipient) {
             return false;
         }
+        shared_resolving_applied_effect(effect)
+    }
+
+    fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool {
         match effect {
+            AppliedEffectDef::Composite(effects) => {
+                !effects.is_empty() && effects.iter().copied().all(shared_resolving_applied_effect)
+            }
             AppliedEffectDef::ModifyPowerToughness { .. } => true,
             AppliedEffectDef::GrantAbility(ability) => {
                 ability.implementation == AbilityImplementationDef::Definition
@@ -644,27 +651,8 @@ mod tests {
                     | EffectRecipientDef::ControllerOfTriggeringObject
                     | EffectRecipientDef::EventPlayer => false,
                 };
-                let battlefield_effect_is_supported = match effect {
-                    AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
-                        // The static bonus path evaluates exactly these two.
-                        let supported = |value| {
-                            matches!(
-                                value,
-                                crate::card::ValueDef::Constant(_)
-                                    | crate::card::ValueDef::AnyMatchingObject(_)
-                            )
-                        };
-                        supported(power) && supported(toughness)
-                    }
-                    AppliedEffectDef::AddLandTypes(land_types) => !land_types.is_empty(),
-                    AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
-                    AppliedEffectDef::CannotBeBlockedBy(predicate) => {
-                        recipient == EffectRecipientDef::Source
-                            && shared_object_predicate(predicate)
-                    }
-                    AppliedEffectDef::CannotBeCountered => true,
-                    AppliedEffectDef::Special(_) => false,
-                };
+                let battlefield_effect_is_supported =
+                    shared_static_applied_effect(recipient, effect);
                 let battlefield_effect = battlefield_only(source_zones)
                     && battlefield_recipient_is_supported
                     && battlefield_effect_is_supported
@@ -711,6 +699,38 @@ mod tests {
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
+        }
+    }
+
+    fn shared_static_applied_effect(
+        recipient: EffectRecipientDef,
+        effect: AppliedEffectDef,
+    ) -> bool {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                !effects.is_empty()
+                    && effects
+                        .iter()
+                        .copied()
+                        .all(|effect| shared_static_applied_effect(recipient, effect))
+            }
+            AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
+                let supported = |value| {
+                    matches!(
+                        value,
+                        crate::card::ValueDef::Constant(_)
+                            | crate::card::ValueDef::AnyMatchingObject(_)
+                    )
+                };
+                supported(power) && supported(toughness)
+            }
+            AppliedEffectDef::AddLandTypes(land_types) => !land_types.is_empty(),
+            AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
+            AppliedEffectDef::CannotBeBlockedBy(predicate) => {
+                recipient == EffectRecipientDef::Source && shared_object_predicate(predicate)
+            }
+            AppliedEffectDef::CannotBeCountered => true,
+            AppliedEffectDef::Special(_) => false,
         }
     }
 
@@ -803,7 +823,7 @@ mod tests {
                 matches!(
                     definition.source_zones,
                     [ZoneKind::Battlefield | ZoneKind::Hand]
-                ) && shared_activated_costs(definition.source_zones, definition.costs)
+                ) && shared_activated_costs(definition.source_zones, definition.costs.as_slice())
                     && shared_stack_effect(ability.effect)
             }
             DeclarativeAbilityDef::Triggered(definition) => {
@@ -861,17 +881,8 @@ mod tests {
             EffectDef::OptionalManaPayment { effect, .. } | EffectDef::May(effect) => {
                 assert_nested_definition_abilities(card_name, *effect);
             }
-            EffectDef::Apply {
-                effect: AppliedEffectDef::GrantAbility(ability),
-                ..
-            } => {
-                if ability.implementation == AbilityImplementationDef::Definition {
-                    assert!(
-                        shared_definition_ability(ability),
-                        "{card_name} contains a nested Definition ability outside the shared runtime boundary: {ability:?}",
-                    );
-                }
-                assert_nested_definition_abilities(card_name, ability.effect);
+            EffectDef::Apply { effect, .. } => {
+                assert_nested_definition_applied_effect(card_name, effect);
             }
             EffectDef::None
             | EffectDef::AddMana(_)
@@ -903,8 +914,31 @@ mod tests {
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
-            | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {}
+        }
+    }
+
+    fn assert_nested_definition_applied_effect(card_name: &str, effect: AppliedEffectDef) {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                for effect in effects {
+                    assert_nested_definition_applied_effect(card_name, *effect);
+                }
+            }
+            AppliedEffectDef::GrantAbility(ability) => {
+                if ability.implementation == AbilityImplementationDef::Definition {
+                    assert!(
+                        shared_definition_ability(ability),
+                        "{card_name} contains a nested Definition ability outside the shared runtime boundary: {ability:?}",
+                    );
+                }
+                assert_nested_definition_abilities(card_name, ability.effect);
+            }
+            AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::ModifyPowerToughness { .. }
+            | AppliedEffectDef::Special(_) => {}
         }
     }
 
@@ -1413,12 +1447,6 @@ mod tests {
                 AbilityId::PRIMARY,
                 "Untap {} and take it out of combat",
                 "Take an attacker out of combat",
-            ),
-            (
-                &y2013::gatecrash::GHOR_CLAN_RAMPAGER,
-                AbilityId(1),
-                "Give {} +4/+4 and trample",
-                "Give an attacker +4/+4 and trample",
             ),
         ];
 

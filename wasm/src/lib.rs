@@ -2791,7 +2791,7 @@ mod tests {
     }
 
     #[test]
-    fn hand_source_bloodrush_exposes_its_ability_summary() {
+    fn hand_source_bloodrush_needs_no_custom_action_presentation() {
         let game = WebGame::new(
             "Briksza Naya Midrange",
             "Greer G/R Aggro",
@@ -2813,20 +2813,16 @@ mod tests {
         let ability = definition
             .rules
             .indexed_abilities()
-            .find(|ability| ability.definition.activation_text.is_some())
-            .expect("Bloodrush has action presentation metadata")
-            .id;
+            .find(|ability| ability.definition.text.starts_with("Bloodrush"))
+            .expect("Bloodrush is a printed ability");
+        assert_eq!(ability.definition.activation_text, None);
         let origin = AbilityOrigin::Printed {
             definition: definition.id,
             part: penta::CardPartId::PRIMARY,
-            ability,
+            ability: ability.id,
         };
 
-        let text = game
-            .ability_text(&observation, source, origin)
-            .expect("hand abilities expose their presentation metadata");
-        assert_eq!(text.summary, "Give an attacker +4/+4 and trample");
-        assert_eq!(text.targeted, "Give {} +4/+4 and trample");
+        assert_eq!(game.ability_text(&observation, source, origin), None);
     }
 
     #[test]

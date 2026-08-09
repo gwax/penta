@@ -4,9 +4,9 @@
 //! intrinsic rule, or grant site assigns identity when it attaches the clause.
 
 use super::model::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, AlternativeCastKindDef,
-    AppliedEffectDef, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ManaCost, ZoneKind,
+    AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
+    AlternativeCastKindDef, AppliedEffectDef, EffectDef, EffectDurationDef,
+    EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ZoneKind,
 };
 
 const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
@@ -161,7 +161,23 @@ pub const fn overload(
     )
 }
 
-/// The static ability carried by a spell that says it can't be countered.
+/// A Bloodrush ability activated from the card carrying it in hand. The
+/// mechanic always discards that card in addition to paying its mana cost;
+/// the card supplies its target declaration and exact effect text.
+#[must_use]
+pub const fn bloodrush(mana_cost: ManaCost, effect: EffectDef) -> AbilityDef {
+    AbilityDef::activated_with_cost_list(
+        "Bloodrush",
+        AbilityCostList::two(
+            AbilityCostDef::Mana(mana_cost),
+            AbilityCostDef::DiscardSource,
+        ),
+        effect,
+    )
+    .with_source_zones(&[ZoneKind::Hand])
+}
+
+/// The intrinsic stack-zone rule carried by spells that cannot be countered.
 #[must_use]
 pub const fn cannot_be_countered() -> AbilityDef {
     AbilityDef::static_ability(
@@ -196,13 +212,13 @@ pub const fn tap_for(mana: ManaColor) -> AbilityDef {
 #[cfg(test)]
 mod tests {
     use super::{
-        banding, double_strike, first_strike, flashback, flashback_for_card_mana_cost, flying,
-        intimidate, overload, tap_for,
+        banding, bloodrush, double_strike, first_strike, flashback, flashback_for_card_mana_cost,
+        flying, intimidate, overload, tap_for,
     };
     use crate::card::{
-        AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
-        AlternativeCastKindDef, AlternativeCastManaCostDef, CardRules, DeclarativeAbilityDef,
-        EffectDef, KeywordAbility, ManaColor, ManaCost,
+        AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
+        AlternativeCastKindDef, AlternativeCastManaCostDef, CardRules,
+        DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost, ZoneKind,
     };
     use crate::mana_cost;
 
@@ -225,7 +241,7 @@ mod tests {
             assert!(matches!(
                 ability.definition,
                 DeclarativeAbilityDef::ActivatedMana(definition)
-                    if definition.costs == [AbilityCostDef::TapSource]
+                    if definition.costs.as_slice() == [AbilityCostDef::TapSource]
             ));
             assert_eq!(
                 ability.effect,
@@ -312,5 +328,34 @@ mod tests {
             unreachable!("the helper always builds an alternative-cast ability")
         };
         assert_eq!(definition.mana_cost.resolve(None), None);
+    }
+
+    #[test]
+    fn bloodrush_owns_its_hand_zone_and_discard_procedure() {
+        let effect = EffectDef::Special("Test Bloodrush effect");
+        let ability = bloodrush(mana_cost!("{R}{G}"), effect);
+        let DeclarativeAbilityDef::Activated(definition) = ability.definition else {
+            panic!("Bloodrush should be an activated ability")
+        };
+
+        assert_eq!(ability.text, "Bloodrush");
+        assert_eq!(ability.activation_text, None);
+        assert_eq!(definition.source_zones, [ZoneKind::Hand]);
+        assert_eq!(
+            definition.costs,
+            AbilityCostList::borrowed(&[
+                AbilityCostDef::Mana(mana_cost!("{R}{G}")),
+                AbilityCostDef::DiscardSource,
+            ]),
+            "inline and borrowed cost storage should compare by their costs",
+        );
+        assert_eq!(
+            definition.costs.as_slice(),
+            [
+                AbilityCostDef::Mana(mana_cost!("{R}{G}")),
+                AbilityCostDef::DiscardSource,
+            ],
+        );
+        assert_eq!(ability.effect, effect);
     }
 }

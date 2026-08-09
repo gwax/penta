@@ -1,5 +1,6 @@
 use super::*;
 use crate::card::abilities;
+use crate::mana_cost;
 use crate::poc::{self, cards};
 use crate::{
     AbilityTargetDef, AbilityTargetPredicate, AdditionalCostDef, AdditionalCostId,
@@ -6230,6 +6231,72 @@ fn a_nonmatching_grant_site_still_advances_the_structural_origin() {
     );
 }
 
+#[test]
+fn nonmatching_composite_grant_sites_still_advance_structural_origins() {
+    static GRANTED_ABILITY: AbilityDef = abilities::flying();
+    static MISSED_COMPONENTS: [AppliedEffectDef; 1] =
+        [AppliedEffectDef::GrantAbility(&GRANTED_ABILITY)];
+    static EFFECTS: [EffectDef; 2] = [
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::Composite(&MISSED_COMPONENTS),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    ];
+    static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+        "The attached permanent has flying.\nThis permanent has flying.",
+        EffectDef::Sequence(&EFFECTS),
+    )];
+    let definition_id = CardDefinitionId(10_064);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Conditional composite grant identity test card",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    let source = CardInstanceId(10_001);
+    game.battlefield
+        .push(creature(source.0, definition_id, PlayerId::One));
+
+    let granted = game
+        .effective_abilities(&game.battlefield[0])
+        .into_iter()
+        .filter_map(|effective| match effective.origin {
+            AbilityOrigin::Granted { .. } => Some(effective.origin),
+            AbilityOrigin::Printed { .. } | AbilityOrigin::IntrinsicBasicLand(_) => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        granted,
+        vec![AbilityOrigin::Granted {
+            source,
+            source_definition: definition_id,
+            source_part: CardPartId::PRIMARY,
+            source_ability: AbilityId::PRIMARY,
+            grant: GrantId(1),
+        }]
+    );
+}
+
 static COPY_GRANT_A: AbilityDef = AbilityDef::activated(
     "Gain 1 life.",
     &[],
@@ -10742,6 +10809,44 @@ fn unburial_rites_reanimates_its_target_and_exiles_itself() {
 }
 
 #[test]
+fn ghor_clan_rampager_uses_one_shared_bloodrush_effect() {
+    let catalog = poc::catalog().unwrap();
+    let rampager = catalog.get(cards::GHOR_CLAN_RAMPAGER).unwrap();
+    let bloodrush = rampager.rules.ability(AbilityId(1)).unwrap();
+    let DeclarativeAbilityDef::Activated(definition) = bloodrush.definition else {
+        panic!("Bloodrush should be an activated ability")
+    };
+
+    assert_eq!(bloodrush.activation_text, None);
+    assert_eq!(definition.source_zones, [ZoneKind::Hand]);
+    assert_eq!(
+        definition.costs.as_slice(),
+        [
+            AbilityCostDef::Mana(mana_cost!("{R}{G}")),
+            AbilityCostDef::DiscardSource,
+        ],
+    );
+    let EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+        effect: AppliedEffectDef::Composite(components),
+        duration: EffectDurationDef::UntilEndOfTurn,
+    } = bloodrush.effect
+    else {
+        panic!("Rampager should apply one composite effect until end of turn")
+    };
+    assert!(matches!(
+        components,
+        [
+            AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(4),
+                toughness: ValueDef::Constant(4),
+            },
+            AppliedEffectDef::GrantAbility(ability),
+        ] if ability.definition == DeclarativeAbilityDef::Keyword(KeywordAbility::Trample)
+    ));
+}
+
+#[test]
 fn bloodrush_discards_its_source_and_pumps_an_attacker_until_cleanup() {
     let mut game = ready_game();
     let mut attacker = creature(20_000, cards::SAVANNAH_LIONS, PlayerId::One);
@@ -12752,11 +12857,15 @@ fn boros_charm_double_strike_hits_an_unblocked_player_twice() {
     )
     .unwrap();
     pass_priority_pair(&mut game);
-
     game.step = Step::DeclareBlockers;
     game.advance_step();
-    assert_eq!(game.players[1].life, life_before - 2, "first strike wave");
+    assert_eq!(
+        game.players[1].life,
+        life_before - 2,
+        "double strike deals once before the inter-wave priority window",
+    );
     assert!(game.regular_combat_damage_pending());
+
     pass_priority_pair(&mut game);
 
     assert_eq!(

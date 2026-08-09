@@ -16,9 +16,9 @@ pub mod rules;
 
 pub use action::{AbilityOrigin, Action, ActionError, CombatDamageAssignment, ManaColor, Target};
 pub use card::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivatedAbilityDef, ActivatedAbilityText, AddManaEffectDef, AdditionalCostDef,
-    AlternateSpellKind, AlternativeCastAbilityDef, AlternativeCastKindDef,
+    AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AbilityTargetDef,
+    AbilityTargetPredicate, ActivatedAbilityDef, ActivatedAbilityText, AddManaEffectDef,
+    AdditionalCostDef, AlternateSpellKind, AlternativeCastAbilityDef, AlternativeCastKindDef,
     AlternativeCastManaCostDef, AlternativeCostDef, AppliedEffectDef, AttachedAbilityDef,
     BasicLandType, CardAbilityList, CardArt, CardBehavior, CardCatalog, CardComposition,
     CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardRules, CardSet,

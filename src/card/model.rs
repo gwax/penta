@@ -742,6 +742,72 @@ pub enum AbilityCostDef {
     Special(&'static str),
 }
 
+/// Const-friendly storage for activated-ability costs.
+///
+/// Most card definitions borrow a promoted slice. Common constructors whose
+/// costs include a parameter, such as Bloodrush's mana cost, can instead own a
+/// small inline list without introducing a mechanic-specific cost primitive.
+#[derive(Clone, Copy, Debug)]
+pub struct AbilityCostList(AbilityCostStorage);
+
+#[derive(Clone, Copy, Debug)]
+enum AbilityCostStorage {
+    Borrowed(&'static [AbilityCostDef]),
+    Two([AbilityCostDef; 2]),
+}
+
+impl PartialEq for AbilityCostList {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+
+impl Eq for AbilityCostList {}
+
+impl std::hash::Hash for AbilityCostList {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(self.as_slice(), state);
+    }
+}
+
+impl AbilityCostList {
+    #[must_use]
+    pub(crate) const fn borrowed(costs: &'static [AbilityCostDef]) -> Self {
+        Self(AbilityCostStorage::Borrowed(costs))
+    }
+
+    #[must_use]
+    pub(crate) const fn two(first: AbilityCostDef, second: AbilityCostDef) -> Self {
+        Self(AbilityCostStorage::Two([first, second]))
+    }
+
+    #[must_use]
+    pub const fn as_slice(&self) -> &[AbilityCostDef] {
+        match &self.0 {
+            AbilityCostStorage::Borrowed(costs) => costs,
+            AbilityCostStorage::Two(costs) => costs,
+        }
+    }
+
+    #[must_use]
+    pub fn contains(&self, cost: &AbilityCostDef) -> bool {
+        self.as_slice().contains(cost)
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, AbilityCostDef> {
+        self.as_slice().iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a AbilityCostList {
+    type Item = &'a AbilityCostDef;
+    type IntoIter = std::slice::Iter<'a, AbilityCostDef>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.as_slice().iter()
+    }
+}
+
 /// A basic land subtype used by type-changing effects and mana provenance.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum BasicLandType {
@@ -1003,6 +1069,9 @@ pub enum EffectDurationDef {
 /// A continuous or rules-modifying effect applied to a game object.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AppliedEffectDef {
+    /// Components applied to the same recipient for the same duration as one
+    /// continuous effect.
+    Composite(&'static [AppliedEffectDef]),
     CannotBeCountered,
     /// A creature matching this predicate cannot block the affected creature.
     CannotBeBlockedBy(ObjectPredicateDef),
@@ -1341,13 +1410,18 @@ impl Default for SpellAbilityDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ActivatedAbilityDef {
     pub source_zones: &'static [ZoneKind],
-    pub costs: &'static [AbilityCostDef],
+    pub costs: AbilityCostList,
     pub targets: &'static [AbilityTargetDef],
 }
 
 impl ActivatedAbilityDef {
     #[must_use]
     pub const fn new(costs: &'static [AbilityCostDef]) -> Self {
+        Self::with_costs(AbilityCostList::borrowed(costs))
+    }
+
+    #[must_use]
+    pub(crate) const fn with_costs(costs: AbilityCostList) -> Self {
         Self {
             source_zones: &[ZoneKind::Battlefield],
             costs,
@@ -1827,9 +1901,18 @@ impl AbilityDef {
         costs: &'static [AbilityCostDef],
         effect: EffectDef,
     ) -> Self {
+        Self::activated_with_cost_list(text, AbilityCostList::borrowed(costs), effect)
+    }
+
+    #[must_use]
+    pub(crate) const fn activated_with_cost_list(
+        text: &'static str,
+        costs: AbilityCostList,
+        effect: EffectDef,
+    ) -> Self {
         Self::defined(
             text,
-            DeclarativeAbilityDef::Activated(ActivatedAbilityDef::new(costs)),
+            DeclarativeAbilityDef::Activated(ActivatedAbilityDef::with_costs(costs)),
             effect,
         )
     }
@@ -2003,9 +2086,9 @@ impl AbilityDef {
         self
     }
 
-    /// Overrides the canonical text supplied by a common ability constructor.
-    /// This is reserved for Oracle clauses that include reminder text; the
-    /// underlying keyword or mana semantics remain shared.
+    /// Overrides the canonical text supplied by a common ability constructor
+    /// when the exact printed clause includes card-specific instructions or
+    /// reminder text. The underlying structured semantics remain shared.
     #[must_use]
     pub const fn with_text(mut self, text: &'static str) -> Self {
         self.text = text;
