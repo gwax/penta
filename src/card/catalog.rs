@@ -326,7 +326,48 @@ fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError>
         validate_semantic_spell_presentation(definition, option)?;
     }
 
+    validate_alternative_cast_abilities(definition)?;
+
     validate_fused_option(definition)
+}
+
+fn validate_alternative_cast_abilities(definition: &CardDefinition) -> Result<(), CatalogError> {
+    let mut alternative_cast_abilities = HashSet::new();
+    for part in &definition.parts {
+        for attached in part.rules.indexed_abilities() {
+            let DeclarativeAbilityDef::AlternativeCast(alternative_cast) =
+                attached.definition.definition
+            else {
+                continue;
+            };
+            if !alternative_cast_abilities.insert(alternative_cast.alternative) {
+                return Err(CatalogError::DuplicateAlternativeCastAbility {
+                    definition: definition.id,
+                    cost: alternative_cast.alternative,
+                });
+            }
+            let linked = definition.play_options.iter().any(|option| {
+                let presents_part = match &option.form {
+                    SpellForm::Part(candidate) => *candidate == part.id,
+                    SpellForm::Combined(parts) => parts.contains(&part.id),
+                };
+                presents_part
+                    && option
+                        .alternative_costs
+                        .iter()
+                        .any(|cost| cost.id == alternative_cast.alternative)
+            });
+            if !linked {
+                return Err(CatalogError::MissingAlternativeCostForAbility {
+                    definition: definition.id,
+                    part: part.id,
+                    ability: attached.id,
+                    cost: alternative_cast.alternative,
+                });
+            }
+        }
+    }
+    Ok(())
 }
 
 fn validate_abilities(
@@ -551,7 +592,9 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
         DeclarativeAbilityDef::SpecialAction(special_action) => {
             (Some(special_action.source_zones), &[][..], false)
         }
-        DeclarativeAbilityDef::Keyword(_) | DeclarativeAbilityDef::Legacy => (None, &[][..], false),
+        DeclarativeAbilityDef::AlternativeCast(_)
+        | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::Legacy => (None, &[][..], false),
     };
 
     if source_zones.is_some_and(<[super::ZoneKind]>::is_empty) {
@@ -1605,6 +1648,16 @@ pub enum CatalogError {
         definition: CardDefinitionId,
         cost: AlternativeCostId,
     },
+    MissingAlternativeCostForAbility {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        cost: AlternativeCostId,
+    },
+    DuplicateAlternativeCastAbility {
+        definition: CardDefinitionId,
+        cost: AlternativeCostId,
+    },
     DuplicateAdditionalCostId {
         definition: CardDefinitionId,
         cost: AdditionalCostId,
@@ -2059,6 +2112,19 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "card definition {definition:?} defines alternative cost {cost:?} more than once"
             ),
+            Self::MissingAlternativeCostForAbility {
+                definition,
+                part,
+                ability,
+                cost,
+            } => write!(
+                formatter,
+                "alternative-cast ability {ability:?} on part {part:?} of card definition {definition:?} references missing cost {cost:?}"
+            ),
+            Self::DuplicateAlternativeCastAbility { definition, cost } => write!(
+                formatter,
+                "card definition {definition:?} has more than one alternative-cast ability for cost {cost:?}"
+            ),
             Self::DuplicateAdditionalCostId { definition, cost } => write!(
                 formatter,
                 "card definition {definition:?} defines additional cost {cost:?} more than once"
@@ -2112,11 +2178,11 @@ mod tests {
     use super::{CardCatalog, CatalogError, GrantedAbilityValidationError};
     use crate::card::{
         AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef,
-        AbilityTargetPredicate, AdditionalCostDef, AlternateSpellKind, AlternativeCostDef,
-        AppliedEffectDef, CardBehavior, CardDefinition, CardEffectStatus, CardPart, CardPrinting,
-        CardPrintingId, CardSet, CardStructure, DoubleFacedKind, EffectDef, EffectDurationDef,
-        EffectRecipientDef, ManaCost, ModeDef, ModeSetDef, PlayOptionDef, PlayerRelation,
-        PrintedManaCost, SpellForm, TargetPredicate, TargetSlotDef,
+        AbilityTargetPredicate, AdditionalCostDef, AlternateSpellKind, AlternativeCastKindDef,
+        AlternativeCostDef, AppliedEffectDef, CardBehavior, CardDefinition, CardEffectStatus,
+        CardPart, CardPrinting, CardPrintingId, CardSet, CardStructure, DoubleFacedKind, EffectDef,
+        EffectDurationDef, EffectRecipientDef, ManaCost, ModeDef, ModeSetDef, PlayOptionDef,
+        PlayerRelation, PrintedManaCost, SpellForm, TargetPredicate, TargetSlotDef,
     };
     use crate::{
         AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, Format,
@@ -2907,6 +2973,117 @@ mod tests {
                 definition: CardDefinitionId(1),
                 cost: AdditionalCostId(5),
             }
+        );
+    }
+
+    #[test]
+    fn alternative_cast_abilities_link_to_exactly_one_cost() {
+        let missing_abilities = Box::leak(
+            vec![AbilityDef::alternative_cast(
+                "Flashback",
+                AlternativeCostId(4),
+                AlternativeCastKindDef::Flashback,
+                None,
+                EffectDef::None,
+            )]
+            .into_boxed_slice(),
+        );
+        let mut missing = definition(1, "Test Card", CardSet::Alpha);
+        let rules =
+            crate::CardRules::new_instant(ManaCost::default()).with_abilities(missing_abilities);
+        set_primary_rules(&mut missing, &rules);
+        assert_eq!(
+            error(missing),
+            CatalogError::MissingAlternativeCostForAbility {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                cost: AlternativeCostId(4),
+            }
+        );
+
+        let duplicate_abilities = Box::leak(
+            vec![
+                AbilityDef::alternative_cast(
+                    "Flashback",
+                    AlternativeCostId(4),
+                    AlternativeCastKindDef::Flashback,
+                    None,
+                    EffectDef::None,
+                ),
+                AbilityDef::alternative_cast(
+                    "Overload",
+                    AlternativeCostId(4),
+                    AlternativeCastKindDef::Overload,
+                    Some("Do this to each object."),
+                    EffectDef::None,
+                ),
+            ]
+            .into_boxed_slice(),
+        );
+        let mut duplicate = definition(1, "Test Card", CardSet::Alpha);
+        duplicate.play_options[0]
+            .alternative_costs
+            .push(AlternativeCostDef {
+                id: AlternativeCostId(4),
+                label: "alternative".into(),
+                mana_cost: ManaCost::default(),
+            });
+        let rules =
+            crate::CardRules::new_instant(ManaCost::default()).with_abilities(duplicate_abilities);
+        set_primary_rules(&mut duplicate, &rules);
+        assert_eq!(
+            error(duplicate),
+            CatalogError::DuplicateAlternativeCastAbility {
+                definition: CardDefinitionId(1),
+                cost: AlternativeCostId(4),
+            }
+        );
+    }
+
+    #[test]
+    fn incomplete_alternative_cast_ability_remains_non_executable_catalog_metadata() {
+        let alternative = AlternativeCostId(4);
+        let abilities = Box::leak(
+            vec![
+                AbilityDef::spell("Draw a card.", EffectDef::None),
+                AbilityDef::alternative_cast(
+                    "Overload {0}",
+                    alternative,
+                    AlternativeCastKindDef::Overload,
+                    Some("Draw a card for each opponent."),
+                    EffectDef::None,
+                )
+                .with_implementation(AbilityImplementationDef::NotImplemented {
+                    explanation: "Test-only incomplete overload.",
+                }),
+            ]
+            .into_boxed_slice(),
+        );
+        let mut definition = definition(1, "Test Card", CardSet::Alpha);
+        definition.play_options[0]
+            .alternative_costs
+            .push(AlternativeCostDef {
+                id: alternative,
+                label: "Overload".into(),
+                mana_cost: ManaCost::default(),
+            });
+        let rules = crate::CardRules::new_instant(ManaCost::default()).with_abilities(abilities);
+        set_primary_rules(&mut definition, &rules);
+
+        let catalog = CardCatalog::new([definition]).expect("incomplete clauses stay cataloged");
+        let stored = catalog.get(CardDefinitionId(1)).unwrap();
+        assert_eq!(
+            stored.implementation_status(),
+            crate::ImplementationStatus::Partial,
+        );
+        assert!(
+            !stored.parts[0]
+                .rules
+                .ability(AbilityId(1))
+                .unwrap()
+                .implementation
+                .is_executable(),
         );
     }
 

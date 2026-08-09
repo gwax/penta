@@ -237,6 +237,7 @@ simulating in their own process, where there is nobody to hide from.
 | `seat` | whose view this is: `"p1"` or `"p2"` |
 | `pregame` | true while mulligans are being settled |
 | `turn`, `activeSeat`, `prioritySeat`, `step` | where the game is; `step` is one of `Upkeep`, `Draw`, `PrecombatMain`, `BeginningOfCombat`, `DeclareAttackers`, `DeclareBlockers`, `CombatDamage`, `EndOfCombat`, `PostcombatMain`, `End`, `Cleanup` |
+| `regularCombatDamagePending` | true during the priority window after first-strike damage and before regular combat damage; both damage waves otherwise use `step: "CombatDamage"` |
 | `life`, `manaPools`, `librarySizes` | two-element arrays, indexed p1 then p2 |
 | `hand` | your cards: `{instance, definition, name}` |
 | `opponentHandSize` | their hand as a count — never the cards |

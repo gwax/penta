@@ -3,12 +3,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
-    ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, abilities, cards,
+    AddManaEffectDef, AlternativeCostDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition,
+    CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectDurationDef, EffectRecipientDef,
+    LandEntry, ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZoneMoveCauseDef, abilities, cards,
 };
-use crate::ids::TargetSlotId;
+use crate::ids::{AlternativeCostId, TargetSlotId};
 use crate::mana_cost;
 
 pub(in crate::card::sets) static ABRUPT_DECAY: CardRecord = CardRecord::new(
@@ -140,43 +140,65 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
     )),
 );
 
+static COUNTERFLUX_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    TargetSlotId(0),
+    "spell you don't control",
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Spell,
+        zones: &[ZoneKind::Stack],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+static COUNTERFLUX_ABILITIES: [AbilityDef; 3] = [
+    abilities::cannot_be_countered(),
+    AbilityDef::spell(
+        "Counter target spell you don't control.",
+        EffectDef::Counter {
+            object: EffectRecipientDef::Target(TargetSlotId(0)),
+        },
+    )
+    .with_targets(&COUNTERFLUX_TARGETS),
+    abilities::overload(
+        "Overload {1}{U}{U}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+        AlternativeCostId(0),
+        "Counter each spell you don't control.",
+        EffectDef::Counter {
+            object: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: PlayerRelation::Opponent,
+            },
+        },
+    ),
+];
+
+const fn counterflux_rules() -> CardRules {
+    CardRules::new_instant(mana_cost!("{U}{U}{R}")).with_abilities(&COUNTERFLUX_ABILITIES)
+}
+
+fn counterflux_composition() -> CardComposition {
+    let rules = counterflux_rules();
+    let mut composition = CardComposition::single("Counterflux", rules);
+    composition.play_options[0]
+        .alternative_costs
+        .push(AlternativeCostDef {
+            id: AlternativeCostId(0),
+            label: "Overload".into(),
+            mana_cost: mana_cost!("{1}{U}{U}{R}"),
+        });
+    composition
+}
+
 pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
     cards::COUNTERFLUX,
     "Counterflux",
     CardArt::new("94e4b773-40a4-4272-85dd-f728ada22748", "Scott M. Fischer"),
     CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{U}{U}{R}")).with_abilities(&[
-        AbilityDef::static_ability(
-            "This spell can't be countered.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeCountered,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
-            },
-        )
-        .with_source_zones(&[ZoneKind::Stack]),
-        AbilityDef::spell(
-            "Counter target spell you don't control.",
-            EffectDef::Counter {
-                object: EffectRecipientDef::Target(TargetSlotId(0)),
-            },
-        )
-        .with_targets(&[AbilityTargetDef::exactly_one(
-            TargetSlotId(0),
-            "spell you don't control",
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::Spell,
-                zones: &[ZoneKind::Stack],
-                controller: Some(PlayerRelation::Opponent),
-                owner: None,
-            },
-        )]),
-        AbilityDef::not_implemented(
-            "Overload {1}{U}{U}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
-            "Alternative overload costs that rewrite a spell's targeting are not implemented.",
-        ),
-    ]),
-);
+    counterflux_rules(),
+)
+.with_composition(counterflux_composition);
 
 pub(in crate::card::sets) static DESECRATION_DEMON: CardRecord = CardRecord::new(
     cards::DESECRATION_DEMON,
@@ -450,35 +472,66 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
     ]),
 );
 
+static MIZZIUM_MORTARS_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    TargetSlotId(0),
+    "creature you don't control",
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+static MIZZIUM_MORTARS_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::spell(
+        "Mizzium Mortars deals 4 damage to target creature you don't control.",
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+            amount: ValueDef::Constant(4),
+        },
+    )
+    .with_targets(&MIZZIUM_MORTARS_TARGETS),
+    abilities::overload(
+        "Overload {3}{R}{R}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+        AlternativeCostId(0),
+        "Mizzium Mortars deals 4 damage to each creature you don't control.",
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::Opponent,
+            },
+            amount: ValueDef::Constant(4),
+        },
+    ),
+];
+
+const fn mizzium_mortars_rules() -> CardRules {
+    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_abilities(&MIZZIUM_MORTARS_ABILITIES)
+}
+
+fn mizzium_mortars_composition() -> CardComposition {
+    let rules = mizzium_mortars_rules();
+    let mut composition = CardComposition::single("Mizzium Mortars", rules);
+    composition.play_options[0]
+        .alternative_costs
+        .push(AlternativeCostDef {
+            id: AlternativeCostId(0),
+            label: "Overload".into(),
+            mana_cost: mana_cost!("{3}{R}{R}{R}"),
+        });
+    composition
+}
+
 pub(in crate::card::sets) static MIZZIUM_MORTARS: CardRecord = CardRecord::new(
     cards::MIZZIUM_MORTARS,
     "Mizzium Mortars",
     CardArt::new("d4ded88d-2688-4f5e-a8b2-16216cf9c792", "Noah Bradley"),
     CardSet::ReturnToRavnica,
-    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_abilities(&[
-        AbilityDef::spell(
-            "Mizzium Mortars deals 4 damage to target creature you don't control.",
-            EffectDef::DealDamage {
-                recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                amount: ValueDef::Constant(4),
-            },
-        )
-        .with_targets(&[AbilityTargetDef::exactly_one(
-            TargetSlotId(0),
-            "creature you don't control",
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: Some(PlayerRelation::Opponent),
-                owner: None,
-            },
-        )]),
-        AbilityDef::not_implemented(
-            "Overload {3}{R}{R}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
-            "Alternative overload costs that rewrite a spell's targeting are not implemented.",
-        ),
-    ]),
-);
+    mizzium_mortars_rules(),
+)
+.with_composition(mizzium_mortars_composition);
 
 pub(in crate::card::sets) static OVERGROWN_TOMB: CardRecord = CardRecord::new(
     cards::OVERGROWN_TOMB,

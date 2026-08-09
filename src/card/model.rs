@@ -256,9 +256,6 @@ pub enum PlayActionKind {
 pub enum PlayRestriction {
     Normal,
     FromHandOnly,
-    /// Cast from the graveyard for an alternative cost, exiling the card as it
-    /// leaves the stack. This is flashback, CR 702.34.
-    Flashback,
 }
 
 /// A catalog-level description of what can occupy one target slot.
@@ -608,6 +605,8 @@ pub enum ObjectPredicateDef {
     /// Has this keyword. Protection is not askable this way, because it is a
     /// keyword per color rather than one keyword.
     HasKeyword(KeywordAbility),
+    /// A creature currently declared as an attacker in combat.
+    Attacking,
     All(&'static [ObjectPredicateDef]),
     AnyOf(&'static [ObjectPredicateDef]),
     Not(&'static ObjectPredicateDef),
@@ -726,6 +725,8 @@ pub enum AbilityCostDef {
     TapSource,
     UntapSource,
     SacrificeSource,
+    /// Discard the card that carries this ability from its owner's hand.
+    DiscardSource,
     PayLife(u16),
     DiscardCards(u8),
     SacrificePermanent {
@@ -1007,6 +1008,9 @@ pub enum AppliedEffectDef {
         toughness: ValueDef,
     },
     GrantAbility(&'static AbilityDef),
+    /// Give an instant or sorcery card in a graveyard flashback until cleanup,
+    /// with a cost equal to the mana cost of the spell form being cast.
+    GrantFlashbackForManaCost,
     Special(&'static str),
 }
 
@@ -1395,6 +1399,27 @@ pub struct StaticAbilityDef {
     pub source_zones: &'static [ZoneKind],
 }
 
+/// The rules procedure supplied by a printed alternative-casting keyword.
+///
+/// The referenced alternative cost remains on the play option, alongside the
+/// other casting choices. An overload clause uses its [`AbilityDef::effect`]
+/// as the targetless text-replacement result; flashback uses `EffectDef::None`
+/// and changes where the card may be cast and where it goes after the stack.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct AlternativeCastAbilityDef {
+    pub alternative: AlternativeCostId,
+    pub kind: AlternativeCastKindDef,
+    /// Rules text for the spell as modified by this alternative, when the
+    /// procedure changes its visible instructions (as overload does).
+    pub stack_text: Option<&'static str>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AlternativeCastKindDef {
+    Flashback,
+    Overload,
+}
+
 /// A replacement ability changes how an event happens and never uses the
 /// stack. It is modeled separately from a triggered ability even when both
 /// watch the same event.
@@ -1499,8 +1524,8 @@ impl Default for StaticAbilityDef {
 /// A keyword ability carried as an ordinary, ordered rules clause.
 ///
 /// The clause's [`AbilityImplementationDef`] says whether the engine currently
-/// executes the keyword. This keeps unimplemented keywords such as first
-/// strike visible and accurately reflected in aggregate coverage without
+/// executes the keyword. This keeps unimplemented keywords such as banding
+/// visible and accurately reflected in aggregate coverage without
 /// hiding them in card-level booleans.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum KeywordAbility {
@@ -1564,6 +1589,7 @@ pub enum DeclarativeAbilityDef {
     Triggered(TriggeredAbilityDef),
     Static(StaticAbilityDef),
     Replacement(ReplacementAbilityDef),
+    AlternativeCast(AlternativeCastAbilityDef),
     SpecialAction(SpecialActionDef),
     Keyword(KeywordAbility),
     /// Transitional structural marker for a clause still dispatched through
@@ -1779,6 +1805,25 @@ impl AbilityDef {
     }
 
     #[must_use]
+    pub const fn alternative_cast(
+        text: &'static str,
+        alternative: AlternativeCostId,
+        kind: AlternativeCastKindDef,
+        stack_text: Option<&'static str>,
+        effect: EffectDef,
+    ) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::AlternativeCast(AlternativeCastAbilityDef {
+                alternative,
+                kind,
+                stack_text,
+            }),
+            effect,
+        )
+    }
+
+    #[must_use]
     pub const fn special_action(
         text: &'static str,
         source_zones: &'static [ZoneKind],
@@ -1891,6 +1936,7 @@ impl AbilityDef {
             | DeclarativeAbilityDef::Triggered(definition) => definition.targets = targets,
             DeclarativeAbilityDef::Static(_)
             | DeclarativeAbilityDef::Replacement(_)
+            | DeclarativeAbilityDef::AlternativeCast(_)
             | DeclarativeAbilityDef::SpecialAction(_)
             | DeclarativeAbilityDef::Keyword(_)
             | DeclarativeAbilityDef::Legacy => {}
@@ -1919,6 +1965,7 @@ impl AbilityDef {
                 definition.source_zones = source_zones;
             }
             DeclarativeAbilityDef::Spell(_)
+            | DeclarativeAbilityDef::AlternativeCast(_)
             | DeclarativeAbilityDef::Keyword(_)
             | DeclarativeAbilityDef::Legacy => {}
         }
@@ -2018,6 +2065,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         }
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
+        | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -2265,7 +2313,6 @@ impl CardComposition {
                 CardEffectStatus::Implemented
             }
         };
-        let name_for_flashback = name.clone();
         let part = CardPart::new(CardPartId::PRIMARY, name.clone(), rules);
         let mut option = if is_land {
             PlayOptionDef::play_land(
@@ -2286,27 +2333,12 @@ impl CardComposition {
         if let Some(modes) = rules.presentation_spell_modes() {
             option = option.with_modes(modes);
         }
-        let mut play_options = vec![option];
-        if let Some(cost) = rules.flashback_cost() {
-            let mut flashback = PlayOptionDef::cast(
-                PlayOptionId(1),
-                format!("{name_for_flashback} with flashback"),
-                SpellForm::Part(CardPartId::PRIMARY),
-                cost,
-                effect_status,
-            );
-            flashback.restriction = PlayRestriction::Flashback;
-            if let Some(modes) = rules.presentation_spell_modes() {
-                flashback = flashback.with_modes(modes);
-            }
-            play_options.push(flashback);
-        }
         Self {
             parts: vec![part],
             structure: CardStructure::Single {
                 main: CardPartId::PRIMARY,
             },
-            play_options,
+            play_options: vec![option],
         }
     }
 }
@@ -3107,10 +3139,6 @@ pub struct CardRules {
     /// those intrinsic to basic land types, are derived by the game engine.
     abilities: CardAbilityList,
     colors: ColorSet,
-    /// The cost this card can be cast for from its owner's graveyard. The
-    /// printed clause still carries the reminder text; this is what gives
-    /// casting a second play option to offer.
-    flashback: Option<ManaCost>,
 }
 
 impl CardRules {
@@ -3145,21 +3173,7 @@ impl CardRules {
             creature_stats: None,
             abilities: CardAbilityList::None,
             colors,
-            flashback: None,
         }
-    }
-
-    /// Declares the flashback cost the printed clause names. The clause itself
-    /// stays in the ability list so the reminder text is still cataloged.
-    #[must_use]
-    pub const fn with_flashback(mut self, cost: ManaCost) -> Self {
-        self.flashback = Some(cost);
-        self
-    }
-
-    #[must_use]
-    pub const fn flashback_cost(&self) -> Option<ManaCost> {
-        self.flashback
     }
 
     #[must_use]

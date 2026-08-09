@@ -274,14 +274,17 @@ mod tests {
 
     use super::{CardRecord, SET_MODULES, y1993, y1994, y2011, y2012, y2013};
     use crate::card::{
-        AbilityCostDef, AbilityDef, AbilityImplementationDef, AppliedEffectDef, BasicLandType,
-        CardPrinting, CardPrintingId, CardStructure, CardSupertype, DeclarativeAbilityDef,
-        DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus,
-        KeywordAbility, ManaColor, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
-        ObjectPredicateDef, PlayActionKind, PlayRestriction, PlayerRelation, ReplacementEventDef,
-        SpellForm, TargetPredicate, TriggerEventDef, ZoneKind, ZoneMoveCauseDef, cards,
+        AbilityCostDef, AbilityDef, AbilityImplementationDef, AlternativeCastKindDef,
+        AppliedEffectDef, BasicLandType, CardPrinting, CardPrintingId, CardStructure,
+        CardSupertype, DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectDurationDef,
+        EffectRecipientDef, ImplementationStatus, KeywordAbility, ManaColor, ManaRestrictionDef,
+        ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, PlayActionKind, PlayRestriction,
+        PlayerRelation, ReplacementEventDef, SpellForm, TargetPredicate, TriggerEventDef, ZoneKind,
+        ZoneMoveCauseDef, cards,
     };
-    use crate::{AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ModeId, PlayOptionId};
+    use crate::{
+        AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ManaCost, ModeId, PlayOptionId,
+    };
 
     fn standard_records() -> Vec<&'static CardRecord> {
         let mut records = SET_MODULES
@@ -338,7 +341,8 @@ mod tests {
             | ObjectPredicateDef::Supertype(_)
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
-            | ObjectPredicateDef::HasKeyword(_) => true,
+            | ObjectPredicateDef::HasKeyword(_)
+            | ObjectPredicateDef::Attacking => true,
         }
     }
 
@@ -446,7 +450,8 @@ mod tests {
             return false;
         }
         match effect {
-            AppliedEffectDef::ModifyPowerToughness { .. } => true,
+            AppliedEffectDef::ModifyPowerToughness { .. }
+            | AppliedEffectDef::GrantFlashbackForManaCost => true,
             AppliedEffectDef::GrantAbility(ability) => {
                 ability.implementation == AbilityImplementationDef::Definition
                     && matches!(ability.definition, DeclarativeAbilityDef::Keyword(keyword) if shared_keyword(keyword))
@@ -566,7 +571,9 @@ mod tests {
         }
     }
 
-    fn shared_activated_costs(costs: &[AbilityCostDef]) -> bool {
+    fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[AbilityCostDef]) -> bool {
+        let battlefield = source_zones == [ZoneKind::Battlefield];
+        let hand = source_zones == [ZoneKind::Hand];
         let sacrifice_choices = costs
             .iter()
             .filter(|cost| matches!(cost, AbilityCostDef::SacrificePermanent { .. }))
@@ -578,11 +585,12 @@ mod tests {
                 // enumerates a cost that charges X twice.
                 AbilityCostDef::Mana(cost) => cost.x_multiplier <= 1,
                 AbilityCostDef::SacrificePermanent { object, .. } => {
-                    shared_object_predicate(*object)
+                    battlefield && shared_object_predicate(*object)
                 }
                 AbilityCostDef::TapSource
                 | AbilityCostDef::SacrificeSource
-                | AbilityCostDef::PayLife(_) => true,
+                | AbilityCostDef::PayLife(_) => battlefield,
+                AbilityCostDef::DiscardSource => hand,
                 AbilityCostDef::UntapSource
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::ExileSource
@@ -648,7 +656,10 @@ mod tests {
                         recipient == EffectRecipientDef::Source
                             && shared_object_predicate(predicate)
                     }
-                    AppliedEffectDef::CannotBeCountered | AppliedEffectDef::Special(_) => false,
+                    AppliedEffectDef::CannotBeCountered => true,
+                    AppliedEffectDef::GrantFlashbackForManaCost | AppliedEffectDef::Special(_) => {
+                        false
+                    }
                 };
                 let battlefield_effect = battlefield_only(source_zones)
                     && battlefield_recipient_is_supported
@@ -785,8 +796,10 @@ mod tests {
                     && immediate_mana_effect(ability.effect)
             }
             DeclarativeAbilityDef::Activated(definition) => {
-                battlefield_only(definition.source_zones)
-                    && shared_activated_costs(definition.costs)
+                matches!(
+                    definition.source_zones,
+                    [ZoneKind::Battlefield | ZoneKind::Hand]
+                ) && shared_activated_costs(definition.source_zones, definition.costs)
                     && shared_stack_effect(ability.effect)
             }
             DeclarativeAbilityDef::Triggered(definition) => {
@@ -824,6 +837,10 @@ mod tests {
                         && matches!(ability.effect, EffectDef::MultiplyEventAmount(_))
                 }
                 ReplacementEventDef::Special(_) => false,
+            },
+            DeclarativeAbilityDef::AlternativeCast(definition) => match definition.kind {
+                AlternativeCastKindDef::Flashback => ability.effect == EffectDef::None,
+                AlternativeCastKindDef::Overload => shared_stack_effect(ability.effect),
             },
             DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),
             DeclarativeAbilityDef::SpecialAction(_) | DeclarativeAbilityDef::Legacy => false,
@@ -1393,6 +1410,12 @@ mod tests {
                 "Untap {} and take it out of combat",
                 "Take an attacker out of combat",
             ),
+            (
+                &y2013::gatecrash::GHOR_CLAN_RAMPAGER,
+                AbilityId(1),
+                "Give {} +4/+4 and trample",
+                "Give an attacker +4/+4 and trample",
+            ),
         ];
 
         for (record, ability_id, targeted, summary) in cases {
@@ -1508,6 +1531,27 @@ mod tests {
 
         assert_eq!(y1993::beta::VOLCANIC_ISLAND.id, cards::VOLCANIC_ISLAND);
         assert_eq!(y1993::beta::VOLCANIC_ISLAND.debut_set, CardSet::Beta);
+    }
+
+    #[test]
+    fn activated_cost_boundary_is_specific_to_the_source_zone() {
+        let mana = AbilityCostDef::Mana(ManaCost::colored(0, 0, 0, 0, 1, 1));
+        assert!(shared_activated_costs(
+            &[ZoneKind::Hand],
+            &[mana, AbilityCostDef::DiscardSource],
+        ));
+        assert!(!shared_activated_costs(
+            &[ZoneKind::Hand],
+            &[AbilityCostDef::PayLife(1)],
+        ));
+        assert!(shared_activated_costs(
+            &[ZoneKind::Battlefield],
+            &[mana, AbilityCostDef::TapSource],
+        ));
+        assert!(!shared_activated_costs(
+            &[ZoneKind::Battlefield],
+            &[AbilityCostDef::DiscardSource],
+        ));
     }
 
     #[test]

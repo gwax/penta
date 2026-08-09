@@ -4,9 +4,11 @@
 //! intrinsic rule, or grant site assigns identity when it attaches the clause.
 
 use super::model::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, AppliedEffectDef,
-    EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ZoneKind,
+    AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, AlternativeCastKindDef,
+    AppliedEffectDef, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ZoneKind,
 };
+use crate::ids::AlternativeCostId;
 
 const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
     AbilityDef::keyword(text, keyword)
@@ -51,22 +53,6 @@ pub const fn double_strike() -> AbilityDef {
     keyword("Double strike", KeywordAbility::DoubleStrike)
 }
 
-/// The printed flashback clause. The cost itself lives on
-/// [`crate::card::CardRules::with_flashback`], which is what gives the card a
-/// second play option; this clause only carries the text.
-#[must_use]
-pub const fn flashback(text: &'static str) -> AbilityDef {
-    AbilityDef::static_ability(
-        text,
-        EffectDef::Special("Cast this card from your graveyard for its flashback cost"),
-    )
-    .with_source_zones(&[ZoneKind::Graveyard])
-    .with_implementation(AbilityImplementationDef::CustomFull {
-        behavior: None,
-        explanation: "The flashback play option is implemented by the shared casting path.",
-    })
-}
-
 #[must_use]
 pub const fn banding() -> AbilityDef {
     unsupported_keyword(
@@ -108,7 +94,10 @@ pub const fn hexproof() -> AbilityDef {
 
 #[must_use]
 pub const fn intimidate() -> AbilityDef {
-    keyword("Intimidate", KeywordAbility::Intimidate)
+    keyword(
+        "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)",
+        KeywordAbility::Intimidate,
+    )
 }
 
 #[must_use]
@@ -132,6 +121,37 @@ pub const fn protection_from(color: ManaColor) -> AbilityDef {
         ManaColor::Colorless => "Protection from colorless",
     };
     keyword(text, KeywordAbility::ProtectionFrom(color))
+}
+
+/// A printed flashback clause linked to one alternative cost on the card's
+/// spell play option.
+#[must_use]
+pub const fn flashback(text: &'static str, alternative: AlternativeCostId) -> AbilityDef {
+    AbilityDef::alternative_cast(
+        text,
+        alternative,
+        AlternativeCastKindDef::Flashback,
+        None,
+        EffectDef::None,
+    )
+}
+
+/// A printed overload clause linked to one alternative cost. `effect` is the
+/// spell after every instance of "target" has been changed to "each."
+#[must_use]
+pub const fn overload(
+    text: &'static str,
+    alternative: AlternativeCostId,
+    stack_text: &'static str,
+    effect: EffectDef,
+) -> AbilityDef {
+    AbilityDef::alternative_cast(
+        text,
+        alternative,
+        AlternativeCastKindDef::Overload,
+        Some(stack_text),
+        effect,
+    )
 }
 
 /// The static ability carried by a spell that says it can't be countered.
@@ -168,7 +188,7 @@ pub const fn tap_for(mana: ManaColor) -> AbilityDef {
 
 #[cfg(test)]
 mod tests {
-    use super::{banding, flying, tap_for};
+    use super::{banding, double_strike, first_strike, flying, intimidate, tap_for};
     use crate::card::{
         AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, CardRules,
         DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost,
@@ -212,5 +232,24 @@ mod tests {
         assert!(rules.has_executable_keyword(KeywordAbility::Flying));
         assert!(rules.has_keyword(KeywordAbility::Banding));
         assert!(!rules.has_executable_keyword(KeywordAbility::Banding));
+    }
+
+    #[test]
+    fn common_combat_keywords_are_complete_definitions() {
+        let cases = [
+            (first_strike(), KeywordAbility::FirstStrike),
+            (double_strike(), KeywordAbility::DoubleStrike),
+            (intimidate(), KeywordAbility::Intimidate),
+        ];
+
+        for (ability, expected) in cases {
+            assert_eq!(ability.implementation, AbilityImplementationDef::Definition);
+            assert!(ability.implementation.is_executable());
+            assert_eq!(ability.definition, DeclarativeAbilityDef::Keyword(expected));
+        }
+        assert_eq!(
+            intimidate().text,
+            "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)"
+        );
     }
 }
