@@ -5814,6 +5814,24 @@ impl Game {
                 .then_some(Target::Spell(candidate.id))
             }));
         }
+        // The same card zones the target enumerator understands. Without this
+        // a sweep over graveyards matched nothing and the clause was inert.
+        for zone in [
+            ZoneKind::Library,
+            ZoneKind::Hand,
+            ZoneKind::Graveyard,
+            ZoneKind::Exile,
+            ZoneKind::Command,
+        ] {
+            if !zones.contains(&zone) {
+                continue;
+            }
+            recipients.extend(self.cards_in_zone(zone).filter_map(|card| {
+                (self.player_relation_matches(card.owner, controller, object.controller, context)
+                    && self.card_object_matches(predicate, card, zone, source))
+                .then_some(Target::Card(card.id))
+            }));
+        }
         recipients
     }
 

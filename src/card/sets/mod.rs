@@ -325,9 +325,18 @@ mod tests {
         match recipient {
             EffectRecipientDef::MatchingObjects { object, zones, .. } => {
                 !zones.is_empty()
-                    && zones
-                        .iter()
-                        .all(|zone| matches!(zone, ZoneKind::Battlefield | ZoneKind::Stack))
+                    && zones.iter().all(|zone| {
+                        matches!(
+                            zone,
+                            ZoneKind::Battlefield
+                                | ZoneKind::Stack
+                                | ZoneKind::Library
+                                | ZoneKind::Hand
+                                | ZoneKind::Graveyard
+                                | ZoneKind::Exile
+                                | ZoneKind::Command
+                        )
+                    })
                     && shared_object_predicate(object)
             }
             EffectRecipientDef::Source

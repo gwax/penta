@@ -7,7 +7,7 @@ use crate::card::{
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaCost, ManaKindDef, ModeDef,
     ModeSetDef, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TargetPredicate,
-    TargetSlotDef, ValueDef, ZoneKind, abilities, cards,
+    TargetSlotDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, ModeId, PlayOptionId, TargetSlotId};
 
@@ -91,11 +91,37 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
     "Counterflux",
     CardArt::new("94e4b773-40a4-4272-85dd-f728ada22748", "Scott M. Fischer"),
     CardSet::ReturnToRavnica,
-    CardRules::new_instant(
-        ManaCost::colored(0, 0, 2, 0, 1, 0),
-        "This spell can't be countered.\nCounter target spell you don't control.\nOverload {1}{U}{U}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
-    )
-    .metadata_only(),
+    CardRules::new_instant(ManaCost::colored(0, 0, 2, 0, 1, 0), "").with_abilities(&[
+        AbilityDef::static_ability(
+            "This spell can't be countered.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBeCountered,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        )
+        .with_source_zones(&[ZoneKind::Stack]),
+        AbilityDef::spell(
+            "Counter target spell you don't control.",
+            EffectDef::Counter {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "spell you don't control",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: Some(PlayerRelation::Opponent),
+                owner: None,
+            },
+        )]),
+        AbilityDef::not_implemented(
+            "Overload {1}{U}{U}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+            "Alternative overload costs that rewrite a spell's targeting are not implemented.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static DESECRATION_DEMON: CardRecord = CardRecord::new(
@@ -322,9 +348,23 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
         &["Elephant", "Soldier"],
         4,
         4,
-        "This spell can't be countered.\nIf a spell or ability an opponent controls causes you to discard this card, put it onto the battlefield instead of putting it into your graveyard.",
+        "",
     )
-    .metadata_only(),
+    .with_abilities(&[
+        AbilityDef::static_ability(
+            "This spell can't be countered.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBeCountered,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        )
+        .with_source_zones(&[ZoneKind::Stack]),
+        AbilityDef::not_implemented(
+            "If a spell or ability an opponent controls causes you to discard this card, put it onto the battlefield instead of putting it into your graveyard.",
+            "Replacing a discard with a battlefield entry is not implemented.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static MIZZIUM_MORTARS: CardRecord = CardRecord::new(
@@ -397,11 +437,28 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
     "Rest in Peace",
     CardArt::new("37c2b1d1-faa0-40fd-82f4-216604ce7635", "Terese Nielsen"),
     CardSet::ReturnToRavnica,
-    CardRules::new_enchantment(
-        ManaCost::colored(1, 1, 0, 0, 0, 0),
-        "When this enchantment enters, exile all graveyards.\nIf a card or token would be put into a graveyard from anywhere, exile it instead.",
-    )
-    .metadata_only(),
+    CardRules::new_enchantment(ManaCost::colored(1, 1, 0, 0, 0, 0), "").with_abilities(&[
+        AbilityDef::triggered(
+            "When this enchantment enters, exile all graveyards.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::Any,
+                    zones: &[ZoneKind::Graveyard],
+                    controller: PlayerRelation::Any,
+                },
+                zone: ZoneKind::Exile,
+            },
+        ),
+        AbilityDef::not_implemented(
+            "If a card or token would be put into a graveyard from anywhere, exile it instead.",
+            "Replacing every graveyard placement with exile is not implemented.",
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(

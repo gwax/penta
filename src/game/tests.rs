@@ -7747,3 +7747,83 @@ fn war_priest_of_thune_arrives_even_with_no_enchantment_to_destroy() {
     );
     assert_eq!(game.battlefield.len(), 1);
 }
+
+#[test]
+fn rest_in_peace_exiles_both_graveyards_as_it_enters() {
+    let mut game = ready_game();
+    game.players[0]
+        .graveyard
+        .push(card(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
+    game.players[1]
+        .graveyard
+        .push(card(10_002, cards::JUZAM_DJINN, PlayerId::Two));
+    let rip = card(10_001, cards::REST_IN_PEACE, PlayerId::One);
+    game.players[0].hand.push(rip.clone());
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(rip.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut game);
+
+    assert!(game.players[0].graveyard.is_empty());
+    assert!(game.players[1].graveyard.is_empty());
+    assert_eq!(game.players[0].exile[0].definition, cards::SAVANNAH_LIONS);
+    assert_eq!(game.players[1].exile[0].definition, cards::JUZAM_DJINN);
+}
+
+#[test]
+fn counterflux_counters_theirs_and_survives_theirs() {
+    let mut game = ready_game();
+    let bolt = card(10_000, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let flux = card(10_001, cards::COUNTERFLUX, PlayerId::One);
+    let counterspell = card(10_002, cards::COUNTERSPELL, PlayerId::Two);
+    game.players[1].hand.push(bolt.clone());
+    game.players[1].mana_pool.red = 1;
+    game.players[1].mana_pool.blue = 2;
+    game.players[1].hand.push(counterspell.clone());
+    game.players[0].hand.push(flux.clone());
+    game.players[0].mana_pool.blue = 2;
+    game.players[0].mana_pool.red = 1;
+    game.priority = PlayerId::Two;
+
+    game.apply(
+        PlayerId::Two,
+        cast_action(bolt.id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+    )
+    .unwrap();
+    game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+    let bolt_on_stack = game.stack[0].id;
+    game.apply(
+        PlayerId::One,
+        cast_action(flux.id, vec![Target::Spell(bolt_on_stack)], Vec::new(), 0),
+    )
+    .unwrap();
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    let flux_on_stack = game.stack[1].id;
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            counterspell.id,
+            vec![Target::Spell(flux_on_stack)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    for _ in 0..3 {
+        pass_priority_pair(&mut game);
+    }
+
+    assert!(game.stack.is_empty());
+    assert_eq!(game.players[0].life, 20, "the Bolt never resolved");
+    assert_eq!(
+        game.players[1].graveyard[0].definition,
+        cards::COUNTERSPELL,
+        "their Counterspell resolved and did nothing"
+    );
+}
