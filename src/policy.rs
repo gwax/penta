@@ -256,7 +256,7 @@ impl HandcraftedPolicy {
                     EffectRecipientDef::MatchingObjects {
                         object: ObjectPredicateDef::HasType(crate::CardType::Creature),
                         zones: [ZoneKind::Battlefield],
-                        controller: PlayerRelation::Opponent,
+                        controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
                     }
                 );
             }
@@ -278,7 +278,7 @@ impl HandcraftedPolicy {
                     EffectRecipientDef::MatchingObjects {
                         object: ObjectPredicateDef::Spell,
                         zones: [ZoneKind::Stack],
-                        controller: PlayerRelation::Opponent,
+                        controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
                     }
                 );
             }

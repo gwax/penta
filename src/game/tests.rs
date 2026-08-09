@@ -3,15 +3,16 @@ use crate::card::abilities;
 use crate::poc::{self, cards};
 use crate::{
     AbilityTargetDef, AbilityTargetPredicate, AdditionalCostDef, AdditionalCostId,
-    AlternativeCostDef, AlternativeCostId, CardComposition, CardDefinition, CardEffectStatus,
-    CardInstanceId, CardPart, CardPartId, CardPrinting, CardRules, CardStructure, CastChoices,
-    DoubleFacedKind, LandEntry, ManaSpendEffectDef, ModeDef, ModeSetDef, PlayOptionDef,
-    PlayOptionId, PlayerRelation, SpellForm, StackObjectId, TargetPredicate, TargetSelection,
-    TargetSlotDef, TargetSlotId,
+    AlternativeCastManaCostDef, AlternativeCostDef, AlternativeCostId, CardComposition,
+    CardDefinition, CardEffectStatus, CardInstanceId, CardPart, CardPartId, CardPrinting,
+    CardRules, CardStructure, CastChoices, DoubleFacedKind, LandEntry, ManaSpendEffectDef, ModeDef,
+    ModeSetDef, PlayOptionDef, PlayOptionId, PlayerRelation, SpellForm, StackObjectId,
+    TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId,
 };
 
 static TEST_FLYING_ABILITY: [AbilityDef; 1] = [abilities::flying()];
 static TEST_FLYING_TRAMPLE_ABILITIES: [AbilityDef; 2] = [abilities::flying(), abilities::trample()];
+static CARD_COST_FLASHBACK: AbilityDef = abilities::flashback_for_card_mana_cost();
 
 fn ready_game() -> Game {
     let deck = poc::mono_red_atog();
@@ -8450,6 +8451,35 @@ fn counterflux_normally_counters_one_opposing_spell_and_cannot_be_countered() {
 }
 
 #[test]
+fn counterflux_uses_not_you_for_both_casting_modes() {
+    let catalog = poc::catalog().unwrap();
+    let counterflux = catalog.get(cards::COUNTERFLUX).unwrap();
+
+    let normal = counterflux.rules.ability(AbilityId(1)).unwrap();
+    let DeclarativeAbilityDef::Spell(normal) = normal.definition else {
+        panic!("Counterflux's normal instruction should be a spell ability")
+    };
+    assert!(matches!(
+        normal.targets()[0].predicate,
+        AbilityTargetPredicate::Object {
+            controller: Some(PlayerRelation::NotYou),
+            ..
+        }
+    ));
+
+    let overload = counterflux.rules.ability(AbilityId(2)).unwrap();
+    assert!(matches!(
+        overload.effect,
+        EffectDef::Counter {
+            object: EffectRecipientDef::MatchingObjects {
+                controller: PlayerRelation::NotYou,
+                ..
+            }
+        }
+    ));
+}
+
+#[test]
 fn a_non_executable_cannot_be_countered_clause_does_not_change_gameplay() {
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
         "This spell can't be countered.",
@@ -10189,6 +10219,34 @@ fn alternative_cast_action(
         .expect("the requested alternative cast is legal")
 }
 
+fn grant_card_cost_flashback(game: &mut Game, object: GameObjectId) {
+    game.temporary_ability_grants.push(TemporaryAbilityGrant {
+        object,
+        ability: &CARD_COST_FLASHBACK,
+    });
+}
+
+#[test]
+fn snapcaster_grants_an_ordinary_card_cost_flashback_ability() {
+    let catalog = poc::catalog().unwrap();
+    let snapcaster = catalog.get(cards::SNAPCASTER_MAGE).unwrap();
+    let trigger = snapcaster.rules.ability(AbilityId(1)).unwrap();
+    let EffectDef::Apply {
+        effect: AppliedEffectDef::GrantAbility(granted),
+        duration: EffectDurationDef::UntilEndOfTurn,
+        ..
+    } = trigger.effect
+    else {
+        panic!("Snapcaster's trigger should use the generic ability-grant effect")
+    };
+    assert!(matches!(
+        granted.definition,
+        DeclarativeAbilityDef::AlternativeCast(alternative)
+            if alternative.kind == AlternativeCastKindDef::Flashback
+                && alternative.mana_cost == AlternativeCastManaCostDef::ThisCardManaCost
+    ));
+}
+
 #[test]
 fn think_twice_can_be_flashed_back_and_is_exiled_after_resolving() {
     let mut game = ready_game();
@@ -10356,13 +10414,16 @@ fn snapcaster_grants_a_second_flashback_cost_until_cleanup() {
 }
 
 #[test]
-fn snapcaster_granted_flashback_uses_the_printed_cost_and_exiles_on_resolution() {
+fn snapcaster_granted_flashback_uses_the_card_mana_cost_and_exiles_on_resolution() {
     let mut game = ready_game();
-    let think_twice = card(20_000, cards::THINK_TWICE, PlayerId::One);
-    let graveyard_id = think_twice.id;
-    game.players[0].graveyard.push(think_twice);
+    let mortars = card(20_000, cards::MIZZIUM_MORTARS, PlayerId::One);
+    let graveyard_id = mortars.id;
+    game.players[0].graveyard.push(mortars);
     let snapcaster = card(20_001, cards::SNAPCASTER_MAGE, PlayerId::One);
     game.players[0].hand.push(snapcaster.clone());
+    let target = creature(20_002, cards::DESECRATION_DEMON, PlayerId::Two);
+    let target_id = target.card.id;
+    game.battlefield.push(target);
     game.players[0].mana_pool.blue = 1;
     game.players[0].mana_pool.colorless = 1;
 
@@ -10383,7 +10444,7 @@ fn snapcaster_granted_flashback_uses_the_printed_cost_and_exiles_on_resolution()
     .unwrap();
     pass_priority_pair(&mut game);
 
-    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
     game.players[0].mana_pool.colorless = 1;
     let actions = game
         .legal_actions(PlayerId::One)
@@ -10393,7 +10454,7 @@ fn snapcaster_granted_flashback_uses_the_printed_cost_and_exiles_on_resolution()
     assert_eq!(
         actions.len(),
         1,
-        "the printed {{2}}{{U}} flashback is not affordable"
+        "the overload alternative is unavailable from the graveyard"
     );
     let Action::CastSpell { choices, .. } = &actions[0] else {
         unreachable!("the filtered action is a cast")
@@ -10403,19 +10464,25 @@ fn snapcaster_granted_flashback_uses_the_printed_cost_and_exiles_on_resolution()
         Some(AlternativeCostId(1)),
         "the affordable action is Snapcaster's synthetic flashback cost",
     );
-    let library_before = game.players[0].library.len();
     game.apply(PlayerId::One, actions.into_iter().next().unwrap())
         .unwrap();
     assert_eq!(game.players[0].mana_pool, ManaPool::default());
     assert!(game.stack.last().unwrap().cast_via_flashback);
     pass_priority_pair(&mut game);
 
-    assert_eq!(game.players[0].library.len(), library_before - 1);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == target_id)
+            .expect("Desecration Demon survives four damage")
+            .damage,
+        4,
+    );
     assert!(
         game.players[0]
             .exile
             .iter()
-            .any(|card| card.definition == cards::THINK_TWICE)
+            .any(|card| card.definition == cards::MIZZIUM_MORTARS)
     );
 }
 
@@ -10432,7 +10499,7 @@ fn snapcaster_flashback_does_not_bypass_a_from_hand_only_fuse_option() {
     let split = card(20_000, cards::TURN_BURN, PlayerId::One);
     let split_id = split.id;
     game.players[0].graveyard.push(split);
-    game.temporary_flashback_grants.push(split_id);
+    grant_card_cost_flashback(&mut game, split_id);
     game.players[0].mana_pool.blue = 1;
     game.players[0].mana_pool.red = 1;
     game.players[0].mana_pool.colorless = 3;
@@ -10476,7 +10543,7 @@ fn snapcaster_granted_recall_can_discard_every_card_in_hand_for_x() {
     let recall = card(20_000, cards::RECALL, PlayerId::One);
     let recall_id = recall.id;
     game.players[0].graveyard.push(recall);
-    game.temporary_flashback_grants.push(recall_id);
+    grant_card_cost_flashback(&mut game, recall_id);
     game.players[0].hand.extend([
         card(20_001, cards::MOUNTAIN, PlayerId::One),
         card(20_002, cards::MOUNTAIN, PlayerId::One),
@@ -10501,7 +10568,7 @@ fn snapcaster_flashback_cannot_be_combined_with_overload() {
     let mortars = card(20_000, cards::MIZZIUM_MORTARS, PlayerId::One);
     let mortars_id = mortars.id;
     game.players[0].graveyard.push(mortars);
-    game.temporary_flashback_grants.push(mortars_id);
+    grant_card_cost_flashback(&mut game, mortars_id);
     game.players[0].mana_pool.red = 3;
     game.players[0].mana_pool.colorless = 3;
     let target = creature(20_001, cards::SERRA_ANGEL, PlayerId::Two);

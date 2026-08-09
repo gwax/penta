@@ -291,6 +291,10 @@ pub enum ZoneKind {
 pub enum PlayerRelation {
     Any,
     You,
+    /// Any player other than the ability's controller. This matches "you
+    /// don't control" without assuming that every other player is an
+    /// opponent.
+    NotYou,
     Opponent,
     ActivePlayer,
     NonactivePlayer,
@@ -1008,10 +1012,9 @@ pub enum AppliedEffectDef {
         power: ValueDef,
         toughness: ValueDef,
     },
+    /// Give the affected object an ordinary ability. The granted definition
+    /// carries its own keyword, activation, or alternative-casting procedure.
     GrantAbility(&'static AbilityDef),
-    /// Give an instant or sorcery card in a graveyard flashback until cleanup,
-    /// with a cost equal to the mana cost of the spell form being cast.
-    GrantFlashbackForManaCost,
     Special(&'static str),
 }
 
@@ -1410,7 +1413,7 @@ pub struct StaticAbilityDef {
 /// goes after the stack.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AlternativeCastAbilityDef {
-    pub mana_cost: ManaCost,
+    pub mana_cost: AlternativeCastManaCostDef,
     pub kind: AlternativeCastKindDef,
     /// Rules text for the spell as modified by this alternative, when the
     /// procedure changes its visible instructions (as overload does).
@@ -1421,6 +1424,27 @@ pub struct AlternativeCastAbilityDef {
 pub enum AlternativeCastKindDef {
     Flashback,
     Overload,
+}
+
+/// How an alternative-casting ability determines the cost it supplies.
+///
+/// Printed abilities normally carry a fixed cost. A granted ability such as
+/// Snapcaster Mage's flashback instead reads the mana cost of the card that
+/// gained it, after a concrete play option has selected the spell form.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AlternativeCastManaCostDef {
+    Fixed(ManaCost),
+    ThisCardManaCost,
+}
+
+impl AlternativeCastManaCostDef {
+    #[must_use]
+    pub const fn resolve(self, card_mana_cost: Option<ManaCost>) -> Option<ManaCost> {
+        match self {
+            Self::Fixed(mana_cost) => Some(mana_cost),
+            Self::ThisCardManaCost => card_mana_cost,
+        }
+    }
 }
 
 impl AlternativeCastKindDef {
@@ -1436,25 +1460,39 @@ impl AlternativeCastKindDef {
 impl AlternativeCastAbilityDef {
     #[must_use]
     pub fn rules_text(self) -> String {
-        match self.kind {
-            AlternativeCastKindDef::Flashback => format!(
-                "Flashback {} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-                self.mana_cost,
-            ),
-            AlternativeCastKindDef::Overload => format!(
-                "Overload {} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
-                self.mana_cost,
-            ),
+        match (self.kind, self.mana_cost) {
+            (AlternativeCastKindDef::Flashback, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Flashback {mana_cost} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+                )
+            }
+            (
+                AlternativeCastKindDef::Flashback,
+                AlternativeCastManaCostDef::ThisCardManaCost,
+            ) => "Flashback—the flashback cost is equal to this card's mana cost. (You may cast this card from your graveyard for its flashback cost. Then exile it.)".into(),
+            (AlternativeCastKindDef::Overload, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Overload {mana_cost} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+                )
+            }
+            (
+                AlternativeCastKindDef::Overload,
+                AlternativeCastManaCostDef::ThisCardManaCost,
+            ) => "Overload—the overload cost is equal to this card's mana cost. (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")".into(),
         }
     }
 
     #[must_use]
-    pub fn alternative_cost(self, ability: AbilityId) -> AlternativeCostDef {
-        AlternativeCostDef {
+    pub fn alternative_cost(
+        self,
+        ability: AbilityId,
+        card_mana_cost: Option<ManaCost>,
+    ) -> Option<AlternativeCostDef> {
+        Some(AlternativeCostDef {
             id: AlternativeCostId(ability.0),
             label: self.kind.label().into(),
-            mana_cost: self.mana_cost,
-        }
+            mana_cost: self.mana_cost.resolve(card_mana_cost)?,
+        })
     }
 }
 
@@ -1855,7 +1893,27 @@ impl AbilityDef {
         Self::defined(
             kind.label(),
             DeclarativeAbilityDef::AlternativeCast(AlternativeCastAbilityDef {
-                mana_cost,
+                mana_cost: AlternativeCastManaCostDef::Fixed(mana_cost),
+                kind,
+                stack_text,
+            }),
+            effect,
+        )
+    }
+
+    /// Builds an alternative-casting ability whose cost is the mana cost of
+    /// the card carrying the ability. This is resolved only after a concrete
+    /// spell form has been selected.
+    #[must_use]
+    pub const fn alternative_cast_for_card_mana_cost(
+        kind: AlternativeCastKindDef,
+        stack_text: Option<&'static str>,
+        effect: EffectDef,
+    ) -> Self {
+        Self::defined(
+            kind.label(),
+            DeclarativeAbilityDef::AlternativeCast(AlternativeCastAbilityDef {
+                mana_cost: AlternativeCastManaCostDef::ThisCardManaCost,
                 kind,
                 stack_text,
             }),
@@ -2344,10 +2402,11 @@ impl PlayOptionDef {
     /// remain intact.
     #[must_use]
     pub fn with_alternative_cast_costs(mut self, rules: &CardRules) -> Self {
+        let card_mana_cost = self.mana_cost;
         self.alternative_costs.extend(
             rules
                 .indexed_abilities()
-                .filter_map(AttachedAbilityDef::alternative_cost),
+                .filter_map(|ability| ability.alternative_cost(card_mana_cost)),
         );
         self
     }
@@ -3231,11 +3290,11 @@ impl AttachedAbilityDef {
 
     /// Materializes the play-option view of a printed alternative cost.
     #[must_use]
-    pub fn alternative_cost(self) -> Option<AlternativeCostDef> {
+    pub fn alternative_cost(self, card_mana_cost: Option<ManaCost>) -> Option<AlternativeCostDef> {
         let DeclarativeAbilityDef::AlternativeCast(definition) = self.definition.definition else {
             return None;
         };
-        Some(definition.alternative_cost(self.id))
+        definition.alternative_cost(self.id, card_mana_cost)
     }
 }
 

@@ -140,17 +140,6 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
     )),
 );
 
-static COUNTERFLUX_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
-    TargetSlotId(0),
-    "spell you don't control",
-    AbilityTargetPredicate::Object {
-        object: ObjectPredicateDef::Spell,
-        zones: &[ZoneKind::Stack],
-        controller: Some(PlayerRelation::Opponent),
-        owner: None,
-    },
-)];
-
 pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
     cards::COUNTERFLUX,
     "Counterflux",
@@ -164,7 +153,16 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetSlotId(0)),
             },
         )
-        .with_targets(&COUNTERFLUX_TARGETS),
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "spell you don't control",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: Some(PlayerRelation::NotYou),
+                owner: None,
+            },
+        )]),
         abilities::overload(
             mana_cost!("{1}{U}{U}{R}"),
             "Counter each spell you don't control.",
@@ -172,7 +170,7 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::MatchingObjects {
                     object: ObjectPredicateDef::Spell,
                     zones: &[ZoneKind::Stack],
-                    controller: PlayerRelation::Opponent,
+                    controller: PlayerRelation::NotYou,
                 },
             },
         ),
@@ -451,17 +449,6 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
     ]),
 );
 
-static MIZZIUM_MORTARS_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
-    TargetSlotId(0),
-    "creature you don't control",
-    AbilityTargetPredicate::Object {
-        object: ObjectPredicateDef::HasType(CardType::Creature),
-        zones: &[ZoneKind::Battlefield],
-        controller: Some(PlayerRelation::Opponent),
-        owner: None,
-    },
-)];
-
 pub(in crate::card::sets) static MIZZIUM_MORTARS: CardRecord = CardRecord::new(
     cards::MIZZIUM_MORTARS,
     "Mizzium Mortars",
@@ -475,7 +462,16 @@ pub(in crate::card::sets) static MIZZIUM_MORTARS: CardRecord = CardRecord::new(
                 amount: ValueDef::Constant(4),
             },
         )
-        .with_targets(&MIZZIUM_MORTARS_TARGETS),
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "creature you don't control",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::NotYou),
+                owner: None,
+            },
+        )]),
         abilities::overload(
             mana_cost!("{3}{R}{R}{R}"),
             "Mizzium Mortars deals 4 damage to each creature you don't control.",
@@ -483,7 +479,7 @@ pub(in crate::card::sets) static MIZZIUM_MORTARS: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::MatchingObjects {
                     object: ObjectPredicateDef::HasType(CardType::Creature),
                     zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Opponent,
+                    controller: PlayerRelation::NotYou,
                 },
                 amount: ValueDef::Constant(4),
             },

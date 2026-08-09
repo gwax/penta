@@ -314,22 +314,6 @@ pub(in crate::card::sets) static MULCH: CardRecord = CardRecord::new(
     ),
 );
 
-static INSTANT_OR_SORCERY_CARD: [ObjectPredicateDef; 2] = [
-    ObjectPredicateDef::HasType(CardType::Instant),
-    ObjectPredicateDef::HasType(CardType::Sorcery),
-];
-
-static SNAPCASTER_MAGE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
-    TargetSlotId(0),
-    "instant or sorcery card in your graveyard",
-    AbilityTargetPredicate::Object {
-        object: ObjectPredicateDef::AnyOf(&INSTANT_OR_SORCERY_CARD),
-        zones: &[ZoneKind::Graveyard],
-        controller: None,
-        owner: Some(PlayerRelation::You),
-    },
-)];
-
 pub(in crate::card::sets) static SNAPCASTER_MAGE: CardRecord = CardRecord::new(
     cards::SNAPCASTER_MAGE,
     "Snapcaster Mage",
@@ -352,11 +336,25 @@ pub(in crate::card::sets) static SNAPCASTER_MAGE: CardRecord = CardRecord::new(
             },
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                effect: AppliedEffectDef::GrantFlashbackForManaCost,
+                effect: AppliedEffectDef::GrantAbility(
+                    &abilities::flashback_for_card_mana_cost(),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         )
-        .with_targets(&SNAPCASTER_MAGE_TARGETS),
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "instant or sorcery card in your graveyard",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::HasType(CardType::Instant),
+                    ObjectPredicateDef::HasType(CardType::Sorcery),
+                ]),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: Some(PlayerRelation::You),
+            },
+        )]),
     ]),
 );
 
@@ -406,17 +404,6 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
     ]),
 );
 
-static UNBURIAL_RITES_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
-    TargetSlotId(0),
-    "creature card in your graveyard",
-    AbilityTargetPredicate::Object {
-        object: ObjectPredicateDef::HasType(CardType::Creature),
-        zones: &[ZoneKind::Graveyard],
-        controller: None,
-        owner: Some(PlayerRelation::You),
-    },
-)];
-
 pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
     cards::UNBURIAL_RITES,
     "Unburial Rites",
@@ -430,7 +417,16 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
                 zone: ZoneKind::Battlefield,
             },
         )
-        .with_targets(&UNBURIAL_RITES_TARGETS),
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "creature card in your graveyard",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: Some(PlayerRelation::You),
+            },
+        )]),
         abilities::flashback(mana_cost!("{3}{W}")),
     ]),
 );

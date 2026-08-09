@@ -101,17 +101,6 @@ pub(in crate::card::sets) static HUNTMASTER_OF_THE_FELLS: CardRecord = CardRecor
 )
 .with_composition(huntmaster_composition);
 
-static RAY_OF_REVELATION_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
-    TargetSlotId(0),
-    "enchantment",
-    AbilityTargetPredicate::Object {
-        object: ObjectPredicateDef::HasType(CardType::Enchantment),
-        zones: &[ZoneKind::Battlefield],
-        controller: None,
-        owner: None,
-    },
-)];
-
 pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new(
     cards::RAY_OF_REVELATION,
     "Ray of Revelation",
@@ -125,7 +114,16 @@ pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new
                 can_regenerate: true,
             },
         )
-        .with_targets(&RAY_OF_REVELATION_TARGETS),
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "enchantment",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Enchantment),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
         abilities::flashback(mana_cost!("{G}")),
     ]),
 );

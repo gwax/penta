@@ -134,6 +134,17 @@ pub const fn flashback(mana_cost: ManaCost) -> AbilityDef {
     )
 }
 
+/// A flashback ability whose cost is the mana cost of the card carrying it.
+/// This is the form granted by Snapcaster Mage.
+#[must_use]
+pub const fn flashback_for_card_mana_cost() -> AbilityDef {
+    AbilityDef::alternative_cast_for_card_mana_cost(
+        AlternativeCastKindDef::Flashback,
+        None,
+        EffectDef::None,
+    )
+}
+
 /// A printed overload clause. `effect` is the spell after every instance of
 /// "target" has been changed to "each."
 #[must_use]
@@ -185,12 +196,13 @@ pub const fn tap_for(mana: ManaColor) -> AbilityDef {
 #[cfg(test)]
 mod tests {
     use super::{
-        banding, double_strike, first_strike, flashback, flying, intimidate, overload, tap_for,
+        banding, double_strike, first_strike, flashback, flashback_for_card_mana_cost, flying,
+        intimidate, overload, tap_for,
     };
     use crate::card::{
         AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
-        AlternativeCastKindDef, CardRules, DeclarativeAbilityDef, EffectDef, KeywordAbility,
-        ManaColor, ManaCost,
+        AlternativeCastKindDef, AlternativeCastManaCostDef, CardRules, DeclarativeAbilityDef,
+        EffectDef, KeywordAbility, ManaColor, ManaCost,
     };
     use crate::mana_cost;
 
@@ -266,7 +278,8 @@ mod tests {
             flashback.definition,
             DeclarativeAbilityDef::AlternativeCast(definition)
                 if definition.kind == AlternativeCastKindDef::Flashback
-                    && definition.mana_cost == mana_cost!("{2}{U}")
+                    && definition.mana_cost
+                        == AlternativeCastManaCostDef::Fixed(mana_cost!("{2}{U}"))
         ));
         assert_eq!(
             flashback.rules_text(),
@@ -276,7 +289,8 @@ mod tests {
             overload.definition,
             DeclarativeAbilityDef::AlternativeCast(definition)
                 if definition.kind == AlternativeCastKindDef::Overload
-                    && definition.mana_cost == mana_cost!("{3}{R}{R}{R}")
+                    && definition.mana_cost
+                        == AlternativeCastManaCostDef::Fixed(mana_cost!("{3}{R}{R}{R}"))
                     && definition.stack_text
                         == Some("Deal 4 damage to each creature you don't control.")
         ));
@@ -284,5 +298,19 @@ mod tests {
             overload.rules_text(),
             "Overload {3}{R}{R}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
         );
+
+        let granted = flashback_for_card_mana_cost();
+        assert!(matches!(
+            granted.definition,
+            DeclarativeAbilityDef::AlternativeCast(definition)
+                if definition.kind == AlternativeCastKindDef::Flashback
+                    && definition.mana_cost == AlternativeCastManaCostDef::ThisCardManaCost
+                    && definition.mana_cost.resolve(Some(mana_cost!("{1}{U}")))
+                        == Some(mana_cost!("{1}{U}"))
+        ));
+        let DeclarativeAbilityDef::AlternativeCast(definition) = granted.definition else {
+            unreachable!("the helper always builds an alternative-cast ability")
+        };
+        assert_eq!(definition.mana_cost.resolve(None), None);
     }
 }

@@ -450,11 +450,17 @@ mod tests {
             return false;
         }
         match effect {
-            AppliedEffectDef::ModifyPowerToughness { .. }
-            | AppliedEffectDef::GrantFlashbackForManaCost => true,
+            AppliedEffectDef::ModifyPowerToughness { .. } => true,
             AppliedEffectDef::GrantAbility(ability) => {
                 ability.implementation == AbilityImplementationDef::Definition
-                    && matches!(ability.definition, DeclarativeAbilityDef::Keyword(keyword) if shared_keyword(keyword))
+                    && match ability.definition {
+                        DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),
+                        DeclarativeAbilityDef::AlternativeCast(definition) => {
+                            definition.kind == AlternativeCastKindDef::Flashback
+                                && ability.effect == EffectDef::None
+                        }
+                        _ => false,
+                    }
             }
             // A blocking restriction is continuous, not an until-end-of-turn
             // rider a spell hands out.
@@ -657,9 +663,7 @@ mod tests {
                             && shared_object_predicate(predicate)
                     }
                     AppliedEffectDef::CannotBeCountered => true,
-                    AppliedEffectDef::GrantFlashbackForManaCost | AppliedEffectDef::Special(_) => {
-                        false
-                    }
+                    AppliedEffectDef::Special(_) => false,
                 };
                 let battlefield_effect = battlefield_only(source_zones)
                     && battlefield_recipient_is_supported

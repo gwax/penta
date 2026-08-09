@@ -10,15 +10,15 @@ use crate::action::{
 };
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivatedAbilityDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType,
-    CREATURE_TYPES, CardBehavior, CardCatalog, CardDefinition, CardEffectStatus, CardPart,
-    CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext,
-    CounterKind, DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectDurationDef,
-    EffectRecipientDef, KeywordAbility, LandEntry, ManaCost, ManaRestrictionDef, ManaSelectionDef,
-    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayActionKind, PlayOptionDef,
-    PlayRestriction, PlayerRelation, ReplacementEventDef, SpellForm, TargetPredicate,
-    TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
-    applicable_part_ids,
+    ActivatedAbilityDef, AddManaEffectDef, AlternativeCastAbilityDef, AlternativeCastKindDef,
+    AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardBehavior, CardCatalog, CardDefinition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    CardTypeSet, CharacteristicContext, CounterKind, DeclarativeAbilityDef, DoubleFacedKind,
+    EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry, ManaCost,
+    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
+    PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation, ReplacementEventDef, SpellForm,
+    TargetPredicate, TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZoneMoveCauseDef, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -707,6 +707,14 @@ struct EffectiveAbility {
     ability: AbilityDef,
 }
 
+/// An ability granted to one non-battlefield object until cleanup. The object
+/// identity naturally makes the grant end if that card changes zones.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct TemporaryAbilityGrant {
+    object: GameObjectId,
+    ability: &'static AbilityDef,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct StaticAppliedEffect {
     source: GameObjectId,
@@ -986,8 +994,8 @@ pub struct Game {
     battlefield: Vec<Permanent>,
     stack: GameStack,
     retired_objects: BTreeMap<GameObjectId, RetiredObject>,
-    /// Graveyard object incarnations granted flashback until cleanup.
-    temporary_flashback_grants: Vec<GameObjectId>,
+    /// Abilities granted to non-battlefield object incarnations until cleanup.
+    temporary_ability_grants: Vec<TemporaryAbilityGrant>,
     next_object_id: u32,
     turn: u32,
     turns_started: [u32; 2],
@@ -1141,7 +1149,7 @@ impl Game {
             battlefield: Vec::new(),
             stack: GameStack::default(),
             retired_objects: BTreeMap::new(),
-            temporary_flashback_grants: Vec::new(),
+            temporary_ability_grants: Vec::new(),
             next_object_id,
             turn: 1,
             turns_started: [1, 0],
@@ -2919,6 +2927,7 @@ impl Game {
         match relation {
             PlayerRelation::Any => true,
             PlayerRelation::You => player == controller,
+            PlayerRelation::NotYou => player != controller,
             PlayerRelation::Opponent => player == controller.opponent(),
             PlayerRelation::ActivePlayer => player == self.active_player,
             PlayerRelation::NonactivePlayer => player == self.active_player.opponent(),
@@ -4790,15 +4799,15 @@ impl Game {
         costs: &CostConfiguration,
     ) -> Option<AlternativeCastKindDef> {
         let selected = costs.alternative()?;
-        if Some(selected) == Self::granted_flashback_cost_id(option)
-            && self.temporary_flashback_grants.contains(&card)
+        if Some(selected) == Self::temporary_alternative_cost_id(option)
+            && self.granted_flashback(card, option).is_some()
         {
             return Some(AlternativeCastKindDef::Flashback);
         }
         Self::alternative_cast_ability(definition, option, selected).map(|(_, _, kind)| kind)
     }
 
-    fn granted_flashback_cost_id(option: &PlayOptionDef) -> Option<AlternativeCostId> {
+    fn temporary_alternative_cost_id(option: &PlayOptionDef) -> Option<AlternativeCostId> {
         (u8::MIN..=u8::MAX)
             .rev()
             .map(AlternativeCostId)
@@ -4810,6 +4819,28 @@ impl Game {
             })
     }
 
+    fn granted_flashback(
+        &self,
+        card: GameObjectId,
+        option: &PlayOptionDef,
+    ) -> Option<(AlternativeCastAbilityDef, ManaCost)> {
+        self.temporary_ability_grants
+            .iter()
+            .filter(|grant| grant.object == card)
+            .find_map(|grant| {
+                if !grant.ability.implementation.is_executable() {
+                    return None;
+                }
+                let DeclarativeAbilityDef::AlternativeCast(alternative) = grant.ability.definition
+                else {
+                    return None;
+                };
+                (alternative.kind == AlternativeCastKindDef::Flashback)
+                    .then(|| alternative.mana_cost.resolve(option.mana_cost))
+                    .flatten()
+                    .map(|mana_cost| (alternative, mana_cost))
+            })
+    }
     fn spell_custom_followup(
         definition: &CardDefinition,
         option: &PlayOptionDef,
@@ -4972,9 +5003,8 @@ impl Game {
             }
         }));
         if source_zone == CastSourceZone::Graveyard
-            && self.temporary_flashback_grants.contains(&card)
-            && option.mana_cost.is_some()
-            && let Some(granted) = Self::granted_flashback_cost_id(option)
+            && self.granted_flashback(card, option).is_some()
+            && let Some(granted) = Self::temporary_alternative_cost_id(option)
         {
             alternatives.push(Some(granted));
         }
@@ -5007,19 +5037,19 @@ impl Game {
         option: &PlayOptionDef,
         configuration: &CostConfiguration,
     ) -> Option<ManaCost> {
-        let granted = Self::granted_flashback_cost_id(option);
-        let uses_granted_flashback = configuration.alternative().is_some()
-            && configuration.alternative() == granted
-            && self.temporary_flashback_grants.contains(&card);
-        let mut cost = if uses_granted_flashback {
-            option.mana_cost?
-        } else {
-            configured_mana_cost(option, configuration)?
-        };
+        let granted = Self::temporary_alternative_cost_id(option);
+        let granted_flashback = (configuration.alternative().is_some()
+            && configuration.alternative() == granted)
+            .then(|| self.granted_flashback(card, option))
+            .flatten();
+        let mut cost = granted_flashback.map_or_else(
+            || configured_mana_cost(option, configuration),
+            |(_, mana_cost)| Some(mana_cost),
+        )?;
         // `configured_mana_cost` already included additional costs for every
-        // printed alternative and the normal cost. Only the synthetic
-        // Snapcaster grant needs them folded in here.
-        if uses_granted_flashback {
+        // printed alternative and the normal cost. Runtime-granted
+        // alternatives need them folded in here.
+        if granted_flashback.is_some() {
             for selected in configuration.additional() {
                 let additional = option
                     .additional_costs
@@ -7585,29 +7615,35 @@ impl Game {
         object: &StackObject,
         context: TriggerContext,
     ) {
-        if effect == AppliedEffectDef::GrantFlashbackForManaCost {
-            for target in self.effect_recipients(recipient, object, context) {
-                let Target::Card(target) = target else {
-                    continue;
-                };
-                let is_eligible = self.players.iter().any(|player| {
-                    player.graveyard.iter().any(|card| {
-                        card.id == target
-                            && self.catalog.get(card.definition).is_some_and(|definition| {
-                                let types = definition.rules.types();
-                                types.contains(CardType::Instant)
-                                    || types.contains(CardType::Sorcery)
-                            })
-                    })
-                });
-                if is_eligible && !self.temporary_flashback_grants.contains(&target) {
-                    self.temporary_flashback_grants.push(target);
-                }
-            }
-            debug_assert_eq!(duration, EffectDurationDef::UntilEndOfTurn);
-            return;
-        }
         for target in self.effect_recipients(recipient, object, context) {
+            if let AppliedEffectDef::GrantAbility(ability) = effect {
+                match target {
+                    Target::Card(target) => {
+                        let grant = TemporaryAbilityGrant {
+                            object: target,
+                            ability,
+                        };
+                        if self.card_in_nonbattlefield_zone(target).is_some()
+                            && !self.temporary_ability_grants.contains(&grant)
+                        {
+                            self.temporary_ability_grants.push(grant);
+                        }
+                    }
+                    Target::Permanent(target) => {
+                        if let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
+                            && let Some(permanent) = self
+                                .battlefield
+                                .iter_mut()
+                                .find(|permanent| permanent.card.id == target)
+                            && !permanent.temporary_keywords.contains(&keyword)
+                        {
+                            permanent.temporary_keywords.push(keyword);
+                        }
+                    }
+                    Target::Player(_) | Target::Spell(_) => {}
+                }
+                continue;
+            }
             let Target::Permanent(target) = target else {
                 continue;
             };
@@ -7633,21 +7669,12 @@ impl Game {
                             permanent.toughness_bonus.saturating_add(toughness);
                     }
                 }
-                AppliedEffectDef::GrantAbility(ability) => {
-                    if let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|permanent| permanent.card.id == target)
-                        && !permanent.temporary_keywords.contains(&keyword)
-                    {
-                        permanent.temporary_keywords.push(keyword);
-                    }
+                AppliedEffectDef::GrantAbility(_) => {
+                    unreachable!("granted abilities are handled before permanent-only effects")
                 }
                 AppliedEffectDef::CannotBeCountered
                 | AppliedEffectDef::CannotBeBlockedBy(_)
                 | AppliedEffectDef::AddLandTypes(_)
-                | AppliedEffectDef::GrantFlashbackForManaCost
                 | AppliedEffectDef::Special(_) => {}
             }
         }
@@ -9000,7 +9027,6 @@ impl Game {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
-            | AppliedEffectDef::GrantFlashbackForManaCost
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::Special(_) => ControlFlow::Continue(()),
         })
@@ -12899,7 +12925,7 @@ impl Game {
     }
 
     fn finish_cleanup(&mut self) {
-        self.temporary_flashback_grants.clear();
+        self.temporary_ability_grants.clear();
         for permanent in &mut self.battlefield {
             permanent.damage = 0;
             permanent.exile_instead_of_dying = false;

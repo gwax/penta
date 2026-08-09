@@ -333,12 +333,22 @@ fn validate_alternative_cast_abilities(definition: &CardDefinition) -> Result<()
             else {
                 continue;
             };
-            let expected = alternative_cast.alternative_cost(attached.id);
+            let cost = AlternativeCostId(attached.id.0);
             let mut owning_option_found = false;
             for option in definition.play_options.iter().filter(
                 |option| matches!(option.form, SpellForm::Part(candidate) if candidate == part.id),
             ) {
                 owning_option_found = true;
+                let Some(expected) =
+                    alternative_cast.alternative_cost(attached.id, option.mana_cost)
+                else {
+                    return Err(CatalogError::MissingAlternativeCostForAbility {
+                        definition: definition.id,
+                        part: part.id,
+                        ability: attached.id,
+                        cost,
+                    });
+                };
                 let Some(actual) = option
                     .alternative_costs
                     .iter()
@@ -370,7 +380,7 @@ fn validate_alternative_cast_abilities(definition: &CardDefinition) -> Result<()
                     definition: definition.id,
                     part: part.id,
                     ability: attached.id,
-                    cost: expected.id,
+                    cost,
                 });
             }
         }
