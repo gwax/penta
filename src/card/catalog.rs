@@ -24,27 +24,45 @@ pub struct CardCatalog {
 
 #[derive(Debug, Default)]
 struct CatalogEntries {
-    definitions: HashMap<CardDefinitionId, CardDefinition>,
+    definitions: Vec<CardDefinition>,
+    definition_indices: Vec<Option<usize>>,
     ids_by_name: HashMap<String, CardDefinitionId>,
     definition_by_printing: HashMap<CardPrintingId, CardDefinitionId>,
 }
 
 impl CatalogEntries {
+    fn definition_index(&self, definition: CardDefinitionId) -> Option<usize> {
+        self.definition_indices
+            .get(usize::from(definition.0))
+            .copied()
+            .flatten()
+    }
+
+    fn definition(&self, definition: CardDefinitionId) -> Option<&CardDefinition> {
+        self.definitions.get(self.definition_index(definition)?)
+    }
+
+    fn insert_definition(&mut self, definition: CardDefinition) {
+        let slot = usize::from(definition.id.0);
+        if self.definition_indices.len() <= slot {
+            self.definition_indices.resize(slot + 1, None);
+        }
+        let index = self.definitions.len();
+        self.definitions.push(definition);
+        self.definition_indices[slot] = Some(index);
+    }
+
     fn attach_printing(&mut self, printing: CardPrinting) -> Result<(), CatalogError> {
         let definition = printing.id.definition;
-        if !self.definitions.contains_key(&definition) {
+        let Some(index) = self.definition_index(definition) else {
             return Err(CatalogError::OrphanPrinting(printing.id));
-        }
+        };
         if self.definition_by_printing.contains_key(&printing.id) {
             return Err(CatalogError::DuplicatePrintingId(printing.id));
         }
 
         self.definition_by_printing.insert(printing.id, definition);
-        self.definitions
-            .get_mut(&definition)
-            .expect("printing definition was checked above")
-            .printings
-            .push(printing);
+        self.definitions[index].printings.push(printing);
         Ok(())
     }
 }
@@ -80,7 +98,7 @@ impl CardCatalog {
         let mut entries = CatalogEntries::default();
         let mut definition_printings = Vec::new();
         for mut definition in definitions {
-            if entries.definitions.contains_key(&definition.id) {
+            if entries.definition_index(definition.id).is_some() {
                 return Err(CatalogError::DuplicateId(definition.id));
             }
             let normalized_name = normalize_name(&definition.name);
@@ -95,7 +113,7 @@ impl CardCatalog {
                     .map(|printing| (definition.id, printing)),
             );
             entries.ids_by_name.insert(normalized_name, definition.id);
-            entries.definitions.insert(definition.id, definition);
+            entries.insert_definition(definition);
         }
 
         for (definition, printing) in definition_printings {
@@ -117,14 +135,14 @@ impl CardCatalog {
 
     #[must_use]
     pub fn get(&self, id: CardDefinitionId) -> Option<&CardDefinition> {
-        self.entries.definitions.get(&id)
+        self.entries.definition(id)
     }
 
     /// Every definition in the catalog, ordered by id so consumers see a
     /// stable listing.
     #[must_use]
     pub fn definitions(&self) -> Vec<&CardDefinition> {
-        let mut definitions: Vec<_> = self.entries.definitions.values().collect();
+        let mut definitions: Vec<_> = self.entries.definitions.iter().collect();
         definitions.sort_by_key(|definition| definition.id);
         definitions
     }
@@ -139,8 +157,7 @@ impl CardCatalog {
     pub fn get_printing(&self, id: CardPrintingId) -> Option<&CardPrinting> {
         let definition = self.entries.definition_by_printing.get(&id)?;
         self.entries
-            .definitions
-            .get(definition)?
+            .definition(*definition)?
             .printings
             .iter()
             .find(|printing| printing.id == id)

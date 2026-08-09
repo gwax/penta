@@ -160,6 +160,11 @@ A deck of `Random` (the default) rotates through the built-in list. For
 your own bot, the harness in `examples/python/first_bot.py` shows the
 pattern: a seed loop, one `penta.Game` per seed, win counting.
 
+For CPU bottleneck work, `make profile-engine` records this deterministic
+match loop with release optimizations and source symbols. The
+[profiling guide](README.md#profiling) explains how to capture, reopen, and
+compare profiles, plus how to run the broader both-format workload.
+
 ## Self-play
 
 `opponent="external"` disables the built-in opponent entirely: the game

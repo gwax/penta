@@ -256,8 +256,8 @@ Run the reproducible, seat-swapped sanity gauntlet with:
 cargo run --release --bin policy_sanity
 ```
 
-The gauntlet uses mirror matches for all fifteen built-in decks, isolating policy
-quality from deck strength.
+The gauntlet uses mirror matches for every built-in deck in both formats,
+isolating policy quality from deck strength.
 
 Run the broader rules audit with:
 
@@ -272,6 +272,48 @@ actions are unique, the correct player owns the decision, and completed games
 expose no further actions. Pass a different seed count as the final argument
 when doing a longer soak run, for example
 `cargo run --release --bin rules_audit -- 1000`.
+
+## Profiling
+
+The engine has an optimized `profiling` build that keeps debug symbols without
+changing release optimization. The default capture drives 4,000 deterministic
+Random/Random games through the normal `observe`/`apply` path. Using the cheap
+random policy keeps the sampled stacks focused on engine work.
+
+Install [Samply](https://github.com/mstange/samply) once, then record and open a
+profile from the repository root:
+
+```sh
+cargo install --locked samply
+make profile-engine
+make profile-engine-open
+```
+
+The capture is saved under the ignored `target/profiles/` directory instead of
+being uploaded or opened automatically. Samply releases that store symbols in
+an adjacent `.syms.json` sidecar need that file kept beside the capture.
+Override the deterministic workload or output path when narrowing an
+investigation:
+
+```sh
+make profile-engine PROFILE_GAMES=5000 PROFILE_SEED=42 \
+  PROFILE_OUTPUT=target/profiles/engine-before.json.gz
+```
+
+The focused workload rotates through the Old School decks. For a broader sample
+covering every built-in deck in both formats, profile the existing policy
+gauntlet through the companion target:
+
+```sh
+make profile-engine-all
+make profile-engine-open PROFILE_OUTPUT=target/profiles/engine-all.json.gz
+```
+
+Use sampled profiles to choose an optimization target, then compare the same
+game count and seed before and after the change on the same machine. Samply may
+need performance-counter permission on Linux; the profiler's error includes the
+host-specific setup when access is restricted. Profiling is intentionally
+opt-in and is not part of CI.
 
 ## Web interface
 
