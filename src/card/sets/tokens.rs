@@ -111,6 +111,25 @@ pub(in crate::card::sets) static WOLF_TOKEN_1_1_BLACK: CardRecord = CardRecord::
         .with_abilities(&[abilities::deathtouch()]),
 );
 
+pub(in crate::card::sets) static ASSASSIN_TOKEN_1_1_BLACK: CardRecord = CardRecord::new(
+    cards::ASSASSIN_TOKEN_1_1_BLACK,
+    "Assassin",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Assassin"], 1, 1)
+        .printed_colors(&[ManaColor::Black])
+        .with_ability(AbilityDef::triggered(
+            "Whenever this token deals combat damage to a player, that player loses the game.",
+            crate::card::TriggerEventDef::CombatDamageDealt {
+                source: ObjectPredicateDef::Source,
+                recipient: EffectRecipientDef::EventPlayer,
+            },
+            EffectDef::LoseGame {
+                recipient: EffectRecipientDef::EventPlayer,
+            },
+        )),
+);
+
 /// Domri's emblem. An emblem is an object with abilities and no other
 /// characteristics, so it is cataloged like a token and lives in its own
 /// list rather than on the battlefield.
@@ -155,6 +174,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOLF_TOKEN_2_2_GREEN,
     &WOLF_TOKEN_1_1_BLACK,
     &DOMRI_RADE_EMBLEM,
+    &ASSASSIN_TOKEN_1_1_BLACK,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -268,3 +268,4 @@ pub const SPIRIT_TOKEN_1_1_WHITE: CardDefinitionId = CardDefinitionId(255);
 pub const WOLF_TOKEN_2_2_GREEN: CardDefinitionId = CardDefinitionId(256);
 pub const WOLF_TOKEN_1_1_BLACK: CardDefinitionId = CardDefinitionId(257);
 pub const DOMRI_RADE_EMBLEM: CardDefinitionId = CardDefinitionId(258);
+pub const ASSASSIN_TOKEN_1_1_BLACK: CardDefinitionId = CardDefinitionId(259);

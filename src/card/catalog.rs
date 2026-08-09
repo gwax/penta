@@ -777,6 +777,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::BecomeCopyOf { .. }
         | super::EffectDef::CannotBeForcedToSacrifice
         | super::EffectDef::CreateEmblem { .. }
+        | super::EffectDef::LoseGame { .. }
         | super::EffectDef::Transform { .. }
         | super::EffectDef::AdditionalCombatPhase
         | super::EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -850,6 +851,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::BecomeCopyOf { .. }
         | super::EffectDef::CannotBeForcedToSacrifice
         | super::EffectDef::CreateEmblem { .. }
+        | super::EffectDef::LoseGame { .. }
         | super::EffectDef::Transform { .. }
         | super::EffectDef::AdditionalCombatPhase
         | super::EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -942,6 +944,7 @@ fn validate_recipient_target_references(
         | EffectRecipientDef::ControllerOfTriggeringObject
         | EffectRecipientDef::EventPlayer
         | EffectRecipientDef::MatchingObjects { .. } => Ok(()),
+        EffectRecipientDef::EachPlayer => Ok(()),
     }
 }
 
@@ -1025,6 +1028,9 @@ fn validate_effect_target_references(
         | EffectDef::LoseLife { recipient, amount } => {
             validate_recipient_target_references(recipient, target_count)?;
             validate_value_target_references(amount, target_count)
+        }
+        EffectDef::LoseGame { recipient } => {
+            validate_recipient_target_references(recipient, target_count)
         }
         EffectDef::Tap { object }
         | EffectDef::Untap { object }

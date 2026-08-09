@@ -23,9 +23,9 @@ use crate::game::{DecisionKind, DecisionObservation, DecisionOrderSemantics, Sta
 use crate::ids::CardDefinitionId;
 use crate::policy::Policy;
 use crate::{
-    AbilityOrigin, Action, CardCatalog, CardPart, Deck, Format, Game, GameObjectId, GameResult,
-    HandcraftedPolicy, ManaColor, PlayerId, PlayerObservation, RandomPolicy, StackObjectKind,
-    Target, WinReason, decks, poc,
+    AbilityOrigin, Action, AttackDefender, CardCatalog, CardPart, Deck, Format, Game, GameObjectId,
+    GameResult, HandcraftedPolicy, ManaColor, PlayerId, PlayerObservation, RandomPolicy,
+    StackObjectKind, Target, WinReason, decks, poc,
 };
 
 /// The wire contract: the JSON shapes here and the action space they
@@ -47,7 +47,9 @@ use crate::{
 /// and adds newly executable keyword and alternative-casting actions to
 /// legal-action lists. Version 11 assigns instantiated spell and ability target
 /// slots positionally, including flattened target ranges for selected modes.
-pub const PROTOCOL_VERSION: u32 = 11;
+/// Version 12 adds planeswalker state, attack defenders, command-zone emblems,
+/// and structured decision-option members.
+pub const PROTOCOL_VERSION: u32 = 12;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -245,6 +247,15 @@ fn target_json(target: Target) -> Value {
             "objectId": id.0,
             "stackId": id.0,
         }),
+    }
+}
+
+fn defender_json(defender: AttackDefender) -> Value {
+    match defender {
+        AttackDefender::Player(player) => json!({ "type": "player", "seat": seat_name(player) }),
+        AttackDefender::Planeswalker(permanent) => {
+            json!({ "type": "planeswalker", "objectId": permanent.0 })
+        }
     }
 }
 
@@ -451,8 +462,8 @@ pub fn action_json(action: &Action) -> Value {
             "targetSelections": target_selections_json(targets),
             "costObject": cost_object.map(|card| card.0),
         }),
-        Action::DeclareAttacker { attacker } => {
-            json!({ "type": "DeclareAttacker", "attacker": attacker.0 })
+        Action::DeclareAttacker { attacker, defender } => {
+            json!({ "type": "DeclareAttacker", "attacker": attacker.0, "defender": defender_json(*defender) })
         }
         Action::FinishDeclaringAttackers => json!({ "type": "FinishDeclaringAttackers" }),
         Action::DeclareBlocker { blocker, attacker } => {
@@ -571,6 +582,7 @@ fn decision_json(catalog: &CardCatalog, decision: &DecisionObservation) -> Value
                 "definition": definition.0,
                 "name": card_name(catalog, definition),
             })),
+            "members": card_list_json(catalog, &option.members),
             "abilityText": option.ability_text,
             "zone": format!("{:?}", option.zone),
         })).collect::<Vec<_>>(),
@@ -593,9 +605,49 @@ fn result_json(result: GameResult) -> Value {
                 WinReason::OpponentLostAllLife => "OpponentLostAllLife",
                 WinReason::OpponentTriedToDrawFromEmptyLibrary =>
                     "OpponentTriedToDrawFromEmptyLibrary",
+                WinReason::OpponentLostGame => "OpponentLostGame",
             },
         }),
     }
+}
+
+fn permanent_observation_json(
+    catalog: &CardCatalog,
+    permanent: &crate::PermanentObservation,
+) -> Value {
+    json!({
+        "objectId": permanent.id.0,
+        "instance": permanent.id.0,
+        "definition": permanent.definition.0,
+        "presentedPartId": permanent.presented.0,
+        "name": card_part_name(catalog, permanent.definition, permanent.presented),
+        "controller": seat_name(permanent.controller),
+        "chosenCardName": permanent.chosen_card_name.as_deref(),
+        "chosenCreatureType": permanent.chosen_creature_type.as_deref(),
+        "tapped": permanent.tapped,
+        "power": permanent.power,
+        "toughness": permanent.toughness,
+        "damage": permanent.damage,
+        "loyalty": permanent.loyalty,
+        "loyaltyAbilityUsedThisTurn": permanent.loyalty_ability_used_this_turn,
+        "attacking": permanent.attacking,
+        "attackDefender": permanent.attack_defender.map(defender_json),
+        "blockedThisCombat": permanent.blocked_this_combat,
+        "blocking": permanent.blocking.map(|id| id.0),
+        "flying": permanent.flying,
+        "canAttack": permanent.can_attack,
+        "enteredThisTurn": permanent.entered_this_turn,
+    })
+}
+
+fn emblem_observation_json(emblem: &crate::EmblemObservation) -> Value {
+    json!({
+        "objectId": emblem.id.0,
+        "controller": seat_name(emblem.controller),
+        "name": emblem.name,
+        "sourceAbility": ability_origin_json(emblem.source_ability),
+        "abilityTexts": emblem.ability_texts,
+    })
 }
 
 /// Translates the engine's action list into the one bots see.
@@ -719,24 +771,8 @@ pub fn observation_json_for_format(
             card_list_json(catalog, &observation.exiles[0]),
             card_list_json(catalog, &observation.exiles[1]),
         ],
-        "battlefield": observation.battlefield.iter().map(|permanent| json!({
-            "objectId": permanent.id.0,
-            "instance": permanent.id.0,
-            "definition": permanent.definition.0,
-            "presentedPartId": permanent.presented.0,
-            "name": card_part_name(catalog, permanent.definition, permanent.presented),
-            "controller": seat_name(permanent.controller),
-            "chosenCreatureType": permanent.chosen_creature_type.as_deref(),
-            "tapped": permanent.tapped,
-            "power": permanent.power,
-            "toughness": permanent.toughness,
-            "damage": permanent.damage,
-            "attacking": permanent.attacking,
-            "blocking": permanent.blocking.map(|id| id.0),
-            "flying": permanent.flying,
-            "canAttack": permanent.can_attack,
-            "enteredThisTurn": permanent.entered_this_turn,
-        })).collect::<Vec<_>>(),
+        "battlefield": observation.battlefield.iter().map(|permanent| permanent_observation_json(catalog, permanent)).collect::<Vec<_>>(),
+        "emblems": observation.emblems.iter().map(emblem_observation_json).collect::<Vec<_>>(),
         "stack": observation
             .stack
             .iter()
@@ -1985,11 +2021,11 @@ mod tests {
         assert_eq!(partial["implementationStatus"], "partial");
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 
-        // Any card with a metadata-only ability clause will do here; repoint
-        // this assertion when Vraska's clause becomes executable.
-        let legacy = find("Vraska the Unseen");
-        assert_eq!(legacy["implementationStatus"], "metadataOnly");
-        assert_eq!(legacy["parts"][0]["implementationStatus"], "metadataOnly");
+        // Pithing Needle is now complete; this keeps the coverage assertion
+        // aligned with its newly executable card-name choice.
+        let needle = find("Pithing Needle");
+        assert_eq!(needle["implementationStatus"], "complete");
+        assert_eq!(needle["parts"][0]["implementationStatus"], "complete");
 
         assert!(cards.iter().all(|card| {
             card["playOptions"].as_array().is_some_and(|options| {
@@ -2179,17 +2215,23 @@ mod tests {
             library_sizes: [0, 0],
             graveyards: [Vec::new(), Vec::new()],
             exiles: [Vec::new(), Vec::new()],
+            emblems: Vec::new(),
             battlefield: vec![crate::game::PermanentObservation {
                 id: GameObjectId(30),
                 definition: crate::card::cards::HUNTMASTER_OF_THE_FELLS,
                 presented: crate::CardPartId(1),
                 controller: PlayerId::One,
                 chosen_creature_type: Some("Werewolf".into()),
+                chosen_card_name: None,
                 tapped: false,
                 power: Some(4),
                 toughness: Some(4),
                 damage: 0,
+                loyalty: None,
+                loyalty_ability_used_this_turn: false,
+                attack_defender: None,
                 attacking: false,
+                blocked_this_combat: false,
                 blocking: None,
                 flying: false,
                 can_attack: true,
@@ -2356,6 +2398,7 @@ mod tests {
                     id: 11,
                     label: "First Ankh trigger".into(),
                     card: Some((GameObjectId(81), crate::card::cards::ANKH_OF_MISHRA)),
+                    members: Vec::new(),
                     ability_text: Some("First frozen trigger text".into()),
                     zone: crate::game::DecisionZone::Battlefield,
                 },
@@ -2363,6 +2406,7 @@ mod tests {
                     id: 12,
                     label: "Second Ankh trigger".into(),
                     card: Some((GameObjectId(82), crate::card::cards::ANKH_OF_MISHRA)),
+                    members: Vec::new(),
                     ability_text: Some("Second frozen trigger text".into()),
                     zone: crate::game::DecisionZone::Battlefield,
                 },

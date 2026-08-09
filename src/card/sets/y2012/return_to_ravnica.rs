@@ -684,21 +684,55 @@ pub(in crate::card::sets) static UNDERWORLD_CONNECTIONS: CardRecord = CardRecord
         ]),
 );
 
+static VRASKA_RETALIATION: AbilityDef = AbilityDef::triggered(
+    "Whenever a creature deals combat damage to Vraska, destroy that creature.",
+    TriggerEventDef::CombatDamageDealt {
+        source: ObjectPredicateDef::HasType(CardType::Creature),
+        recipient: EffectRecipientDef::Source,
+    },
+    EffectDef::Destroy {
+        object: EffectRecipientDef::TriggeringObject,
+        can_regenerate: true,
+    },
+);
+
 pub(in crate::card::sets) static VRASKA_THE_UNSEEN: CardRecord = CardRecord::new(
     cards::VRASKA_THE_UNSEEN,
     "Vraska the Unseen",
     CardArt::new("8971938c-cd26-4b83-96d7-1408cd0b0de6", "Aleksi Briclot"),
     CardSet::ReturnToRavnica,
-    CardRules::new_planeswalker(
-        mana_cost!("{3}{B}{G}"),
-        &["Vraska"],
-        5,
-    )
-    .with_supertype(CardSupertype::Legendary)
-    .with_ability(AbilityDef::not_implemented(
-        "+1: Until your next turn, whenever a creature deals combat damage to Vraska, destroy that creature.\n−3: Destroy target nonland permanent.\n−7: Create three 1/1 black Assassin creature tokens with \"Whenever this token deals combat damage to a player, that player loses the game.\"",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    CardRules::new_planeswalker(mana_cost!("{3}{B}{G}"), &["Vraska"], 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::activated(
+                "+1: Until your next turn, whenever a creature deals combat damage to Vraska, destroy that creature.",
+                &[AbilityCostDef::Loyalty(1)],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::GrantAbility(&VRASKA_RETALIATION),
+                    duration: EffectDurationDef::UntilYourNextTurn,
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "−3: Destroy target nonland permanent.",
+                &[AbilityCostDef::Loyalty(-3)],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                )],
+                EffectDef::Destroy {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    can_regenerate: true,
+                },
+            ),
+            AbilityDef::activated(
+                "−7: Create three 1/1 black Assassin creature tokens with \"Whenever this token deals combat damage to a player, that player loses the game.\"",
+                &[AbilityCostDef::Loyalty(-7)],
+                EffectDef::CreateToken {
+                    token: cards::ASSASSIN_TOKEN_1_1_BLACK,
+                    count: ValueDef::Constant(3),
+                },
+            ),
+        ]),
 );
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABRUPT_DECAY,

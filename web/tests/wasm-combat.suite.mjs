@@ -63,6 +63,12 @@ test("attack all declares every currently legal attacker", async () => {
     action.label.startsWith("Attack with "),
   );
   assert.ok(attackOptions.length > 0);
+  assert.ok(
+    attackOptions.every(
+      (action) => action.attackDefender?.kind === "player" && action.attackDefender.player === "opponent",
+    ),
+    "player attacks expose their defender separately from target metadata",
+  );
   game.set_phase_stop("Combat", true);
   game.attack_all();
   state = JSON.parse(game.state_json());
@@ -158,17 +164,31 @@ test("combat damage is only asked about when it is a real choice", async () => {
     return null;
   };
 
-  // A lone blocker is never a question, so a trampler facing one resolves on
-  // its own instead of listing every way to waste damage on the blocker.
-  const solo = new WebGame("Goblins", "The Deck", "Handcrafted", true, 9394);
+  // Trample makes even one blocker a real assignment choice: the attacker may
+  // assign only lethal damage before trampling over, or deliberately assign
+  // more to the blocker.
+  const solo = new WebGame("Goblins", "The Deck", "Handcrafted", true, 24);
   const prompted = advance(solo, (state) => {
     const asks = state.actions.filter((action) => action.combatDamageAttacker != null);
     if (!asks.length) return null;
     const attacker = state.battlefield.find((card) => card.id === asks[0].combatDamageAttacker);
     const blockers = state.battlefield.filter((card) => card.blocking === attacker?.id);
-    return blockers.length > 1 ? null : { attacker: attacker?.name, blockers: blockers.length };
+    return blockers.length > 1
+      ? null
+      : {
+          attacker: attacker?.name,
+          blockers: blockers.length,
+          asks,
+        };
   });
-  assert.equal(prompted, null, `a single blocker still prompted: ${JSON.stringify(prompted)}`);
+  assert.ok(prompted, "the seeded trampler reaches its one-blocker assignment");
+  assert.equal(prompted.attacker, "Ball Lightning");
+  assert.equal(prompted.blockers, 1);
+  assert.ok(prompted.asks.length > 1, "overassigning and trampling are distinct legal choices");
+  assert.ok(
+    prompted.asks.every((action) => /^\d+ to /.test(action.label)),
+    `each assignment names its recipient: ${prompted.asks.map((action) => action.label).join(", ")}`,
+  );
   solo.free();
 
   // Splitting between several blockers is a real decision and stays asked.

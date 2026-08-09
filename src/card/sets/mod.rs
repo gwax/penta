@@ -13,8 +13,9 @@ mod y2011;
 mod y2012;
 mod y2013;
 
-use super::record::{CardRecord, PrintingRecord};
-use crate::card::{CardBehavior, CardDefinition, CardPrinting, CardRules, CardSet};
+use super::record::{CardAbilityBinding, CardRecord, PrintingRecord};
+use crate::AbilityOrigin;
+use crate::card::{AbilityDef, CardBehavior, CardDefinition, CardPrinting, CardRules, CardSet};
 
 static UNSUPPORTED_RULES: CardRules = CardRules::unsupported();
 
@@ -161,6 +162,29 @@ pub(super) fn definitions() -> Vec<CardDefinition> {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }
     definitions
+}
+
+pub(crate) fn ability_binding(
+    origin: AbilityOrigin,
+    actual: &AbilityDef,
+) -> Option<&'static CardAbilityBinding> {
+    let AbilityOrigin::Printed {
+        definition,
+        part,
+        ability,
+    } = origin
+    else {
+        return None;
+    };
+    SET_MODULES
+        .iter()
+        .flat_map(|module| module.cards.iter().copied())
+        .find(|record| record.id == definition)?
+        .ability_bindings
+        .iter()
+        .find(|binding| {
+            binding.part == part && binding.ability == ability && binding.expected == *actual
+        })
 }
 
 pub(super) fn additional_printings() -> Vec<CardPrinting> {
@@ -372,6 +396,7 @@ mod tests {
             | EffectRecipientDef::AttachedPermanent
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
+            | EffectRecipientDef::EachPlayer
             | EffectRecipientDef::Target(_)
             | EffectRecipientDef::ControllerOfTarget(_)
             | EffectRecipientDef::TriggeringObject
@@ -527,6 +552,7 @@ mod tests {
             | EffectDef::DrawCards { recipient, .. }
             | EffectDef::DiscardCards { recipient, .. }
             | EffectDef::LoseLife { recipient, .. } => shared_effect_recipient(recipient),
+            EffectDef::LoseGame { recipient } => shared_effect_recipient(recipient),
             // The chooser is a player, and the choices are their own
             // battlefield, so only the predicate needs checking.
             EffectDef::SacrificeOfChoice {
@@ -672,6 +698,9 @@ mod tests {
             TriggerEventDef::DamageDealt { source, recipient } => {
                 recipient == EffectRecipientDef::Source && source == ObjectPredicateDef::Any
             }
+            TriggerEventDef::CombatDamageDealt { source, recipient } => {
+                recipient == EffectRecipientDef::Source && source == ObjectPredicateDef::Any
+            }
             TriggerEventDef::AbilityActivated(_)
             | TriggerEventDef::ManaAdded(_)
             | TriggerEventDef::Special(_) => false,
@@ -745,6 +774,7 @@ mod tests {
                     }
                     EffectRecipientDef::Controller
                     | EffectRecipientDef::Opponent
+                    | EffectRecipientDef::EachPlayer
                     | EffectRecipientDef::Target(_)
                     | EffectRecipientDef::ControllerOfTarget(_)
                     | EffectRecipientDef::ObjectsControlledByTarget { .. }
@@ -807,6 +837,7 @@ mod tests {
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::CreateEmblem { .. }
+            | EffectDef::LoseGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -984,6 +1015,7 @@ mod tests {
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::CannotBeForcedToSacrifice
                         | EffectDef::CreateEmblem { .. }
+                        | EffectDef::LoseGame { .. }
                         | EffectDef::Transform { .. }
                         | EffectDef::AdditionalCombatPhase
                         | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -1145,6 +1177,7 @@ mod tests {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
+            | EffectDef::LoseGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }

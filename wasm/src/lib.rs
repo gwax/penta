@@ -1071,12 +1071,17 @@ impl WebGame {
                         rules.rules_text().into_owned()
                     }),
                     "owner": if permanent.controller == self.human { "human" } else { "opponent" },
+                    "chosenCardName": permanent.chosen_card_name.as_deref(),
                     "chosenCreatureType": permanent.chosen_creature_type.as_deref(),
                     "tapped": permanent.tapped,
                     "power": permanent.power,
                     "toughness": permanent.toughness,
                     "damage": permanent.damage,
+                    "loyalty": permanent.loyalty,
+                    "loyaltyAbilityUsedThisTurn": permanent.loyalty_ability_used_this_turn,
                     "attacking": permanent.attacking,
+                    "attackDefender": permanent.attack_defender.map(attack_defender_value),
+                    "blockedThisCombat": permanent.blocked_this_combat,
                     "blocking": permanent.blocking.map(|id| id.0),
                     "flying": permanent.flying,
                     "canAttack": permanent.can_attack,
@@ -1268,6 +1273,10 @@ impl WebGame {
                     "label": option.label,
                     "cardId": option.card.map(|(card, _)| card.0),
                     "cardName": option.card.map(|(_, definition)| self.card_name(definition)),
+                    "members": option.members.iter().map(|(card, definition)| json!({
+                        "id": card.0,
+                        "name": self.card_name(*definition),
+                    })).collect::<Vec<_>>(),
                     "abilityText": option.ability_text,
                     "zone": readable_debug(option.zone),
                 })).collect::<Vec<_>>(),
@@ -1320,6 +1329,14 @@ impl WebGame {
                 "graveyard": graveyard(opponent),
             },
             "battlefield": battlefield,
+            "emblems": observation.emblems.iter().map(|emblem| json!({
+                "id": emblem.id.0,
+                "owner": if emblem.controller == self.human { "human" } else { "opponent" },
+                "name": emblem.name,
+                "rulesText": emblem.ability_texts.join(" "),
+                "abilityTexts": emblem.ability_texts,
+                "sourceAbility": ability_origin_value(emblem.source_ability),
+            })).collect::<Vec<_>>(),
             "stack": stack,
             "actions": actions,
             "passLabel": self.pass_preview_label(),
@@ -1518,6 +1535,13 @@ impl WebGame {
                 self.instance_name(observation, *card)
             )),
             GameEvent::CardDrawn { .. } => Some("Opponent drew a card".into()),
+            GameEvent::CardRevealed {
+                player, definition, ..
+            } => Some(format!(
+                "{} revealed {}",
+                self.player_name(*player),
+                self.card_name(*definition)
+            )),
             GameEvent::CardsDiscarded { player, cards } => Some(format!(
                 "{} discarded {}",
                 self.player_name(*player),
@@ -1658,6 +1682,8 @@ impl WebGame {
                     BattlefieldExit::Exile => "was exiled",
                     BattlefieldExit::Hand => "returned to hand",
                     BattlefieldExit::LibraryTop => "was put on top of its owner's library",
+                    BattlefieldExit::LibraryBottom =>
+                        "was put on the bottom of its owner's library",
                 }
             )),
             GameEvent::GameEnded { result } => Some(match result {
@@ -1830,7 +1856,7 @@ impl WebGame {
                 }
                 label
             }
-            Action::DeclareAttacker { attacker } => {
+            Action::DeclareAttacker { attacker, .. } => {
                 format!("Attack with {}", self.instance_name(observation, *attacker))
             }
             // Naming the commitment reads better than naming the step: the
@@ -2183,6 +2209,8 @@ fn win_reason_text(reason: penta::WinReason, human_lost: bool) -> &'static str {
         (penta::WinReason::OpponentTriedToDrawFromEmptyLibrary, true) => {
             "you drew from an empty library"
         }
+        (penta::WinReason::OpponentLostGame, false) => "opponent lost the game",
+        (penta::WinReason::OpponentLostGame, true) => "you lost the game",
     }
 }
 
@@ -2476,7 +2504,7 @@ fn action_card(action: &Action) -> Option<CardInstanceId> {
         Action::ActivateManaAbility { source, .. } | Action::ActivateAbility { source, .. } => {
             Some(*source)
         }
-        Action::DeclareAttacker { attacker } | Action::AssignCombatDamage { attacker, .. } => {
+        Action::DeclareAttacker { attacker, .. } | Action::AssignCombatDamage { attacker, .. } => {
             Some(*attacker)
         }
         Action::DeclareBlocker { blocker, .. } => Some(*blocker),
@@ -2578,6 +2606,18 @@ fn ability_origin_value(origin: AbilityOrigin) -> Value {
             "sourceAbilityId": source_ability.0,
             "grantId": grant.0,
         }),
+    }
+}
+
+fn attack_defender_value(defender: penta::AttackDefender) -> Value {
+    match defender {
+        penta::AttackDefender::Player(player) => json!({
+            "kind": "player",
+            "player": if player == PlayerId::One { "human" } else { "opponent" },
+        }),
+        penta::AttackDefender::Planeswalker(card) => {
+            json!({ "kind": "planeswalker", "cardId": card.0 })
+        }
     }
 }
 
@@ -3272,7 +3312,7 @@ mod tests {
             .id;
         apply_engine_action(
             &mut game.game,
-            |action| matches!(action, Action::DeclareAttacker { attacker } if *attacker == knight),
+            |action| matches!(action, Action::DeclareAttacker { attacker, .. } if *attacker == knight),
         );
         apply_engine_action(&mut game.game, |action| {
             matches!(action, Action::FinishDeclaringAttackers)

@@ -1087,6 +1087,10 @@ pub enum EffectRecipientDef {
     ObjectsSharingNameWithTarget(TargetIndex),
     Controller,
     Opponent,
+    /// Every player in turn order, starting with the ability's controller.
+    /// This keeps effects such as Liliana's +1 simultaneous rather than
+    /// resolving one player's discard before the other chooses.
+    EachPlayer,
     Target(TargetIndex),
     TriggeringObject,
     /// The triggering object's controller when this effect resolves, using
@@ -1116,6 +1120,9 @@ pub enum EffectRecipientDef {
 pub enum EffectDurationDef {
     Permanent,
     UntilEndOfTurn,
+    /// Until the next turn of the effect's controller begins. The affected
+    /// turn is captured when the resolving effect is created.
+    UntilYourNextTurn,
     WhileSourceRemainsInZone,
     UntilSourceLeavesZone,
 }
@@ -1488,6 +1495,11 @@ pub enum EffectDef {
     CreateEmblem {
         emblem: CardDefinitionId,
     },
+    /// That player loses the game. This is distinct from life loss: effects
+    /// such as Vraska's Assassin token can end the game at any life total.
+    LoseGame {
+        recipient: EffectRecipientDef,
+    },
     /// Turns a double-faced permanent over to its other face.
     Transform {
         object: EffectRecipientDef,
@@ -1593,6 +1605,12 @@ pub enum TriggerEventDef {
         player: PlayerRelation,
     },
     DamageDealt {
+        source: ObjectPredicateDef,
+        recipient: EffectRecipientDef,
+    },
+    /// Combat damage was dealt. This is distinct from ordinary damage so an
+    /// Assassin token does not trigger after fighting.
+    CombatDamageDealt {
         source: ObjectPredicateDef,
         recipient: EffectRecipientDef,
     },
@@ -3875,16 +3893,18 @@ pub enum CounterKind {
     Javelin,
     Muster,
     Charge,
+    Loyalty,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 4;
+    pub const COUNT: usize = 5;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
         Self::Javelin,
         Self::Muster,
         Self::Charge,
+        Self::Loyalty,
     ];
 
     #[must_use]
@@ -3894,6 +3914,7 @@ impl CounterKind {
             Self::Javelin => 1,
             Self::Muster => 2,
             Self::Charge => 3,
+            Self::Loyalty => 4,
         }
     }
 
@@ -3904,6 +3925,7 @@ impl CounterKind {
             Self::Javelin => "javelin",
             Self::Muster => "muster",
             Self::Charge => "charge",
+            Self::Loyalty => "loyalty",
         }
     }
 }

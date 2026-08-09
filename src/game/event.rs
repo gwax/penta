@@ -43,6 +43,7 @@ pub enum WinReason {
     OpponentConceded,
     OpponentLostAllLife,
     OpponentTriedToDrawFromEmptyLibrary,
+    OpponentLostGame,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -60,6 +61,11 @@ pub enum GameEvent {
     CardDrawn {
         player: PlayerId,
         card: GameObjectId,
+    },
+    CardRevealed {
+        player: PlayerId,
+        card: GameObjectId,
+        definition: CardDefinitionId,
     },
     CardsDiscarded {
         player: PlayerId,
@@ -195,7 +201,8 @@ pub enum BattlefieldExit {
     Graveyard,
     Exile,
     Hand,
-    /// On top of its owner's library. Bottoming a permanent has no card that
-    /// needs it yet, so this destination means the top.
+    /// On top of its owner's library.
     LibraryTop,
+    /// On the bottom of its owner's library.
+    LibraryBottom,
 }

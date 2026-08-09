@@ -18,6 +18,8 @@ mod model;
 mod record;
 mod sets;
 
+pub(crate) use record::{AbilityPolicyHint, CardAbilityBinding};
+
 pub use catalog::{CardCatalog, CatalogError, GrantedAbilityValidationError};
 pub use characteristics::{CharacteristicContext, CharacteristicError, applicable_part_ids};
 pub use creature_types::CREATURE_TYPES;
@@ -60,4 +62,11 @@ static BUILT_IN: LazyLock<Result<CardCatalog, CatalogError>> = LazyLock::new(|| 
 /// accidentally duplicated or references an unknown card.
 pub fn catalog() -> Result<CardCatalog, CatalogError> {
     BUILT_IN.clone()
+}
+
+pub(crate) fn ability_binding(
+    origin: crate::AbilityOrigin,
+    ability: &AbilityDef,
+) -> Option<&'static CardAbilityBinding> {
+    sets::ability_binding(origin, ability)
 }

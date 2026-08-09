@@ -2,14 +2,16 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef,
-    CounterKind, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef,
-    LibraryPlacement, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
-    SpellForm, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPolicyHint, AbilityTargetDef,
+    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardAbilityBinding,
+    CardArt, CardBehavior, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
+    CardStructure, CardSupertype, CardType, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef,
+    EffectDurationDef, EffectRecipientDef, LibraryPlacement, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
-use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
+use crate::game::{CardAbilityResolver, CardRuntime, PileChoice, PileSplit, ResolvedAbility};
+use crate::ids::{AbilityId, CardPartId, PlayOptionId, TargetIndex, TargetSlotId};
 use crate::mana_cost;
 
 pub(in crate::card::sets) static AVACYNS_PILGRIM: CardRecord = CardRecord::new(
@@ -352,59 +354,100 @@ pub(in crate::card::sets) static KESSIG_WOLF_RUN: CardRecord = CardRecord::new(
     ]),
 );
 
+static LILIANA_ULTIMATE_RESOLVER: CardAbilityResolver = CardAbilityResolver::new(
+    "innistrad/liliana-of-the-veil/ultimate",
+    resolve_liliana_ultimate,
+);
+
+const LILIANA_ULTIMATE_ABILITY: AbilityDef = AbilityDef::activated_with_targets(
+    "−6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
+    &[AbilityCostDef::Loyalty(-6)],
+    &[AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Player(PlayerRelation::Any),
+    )],
+    EffectDef::None,
+)
+.with_coverage(AbilityCoverageDef::explained_complete(
+    "Pile separation, pile choice, and the chosen-pile sacrifice are composed by Liliana's card-owned resolver from shared runtime primitives.",
+));
+
+static LILIANA_ABILITY_BINDINGS: [CardAbilityBinding; 1] = [CardAbilityBinding::new(
+    CardPartId::PRIMARY,
+    AbilityId(2),
+    LILIANA_ULTIMATE_ABILITY,
+    &LILIANA_ULTIMATE_RESOLVER,
+)
+.with_policy_hint(
+    AbilityPolicyHint::TargetPlayerSacrificesOneOfTwoPermanentPiles {
+        target: TargetSlotId(0),
+    },
+)];
+
+fn resolve_liliana_ultimate(runtime: &mut CardRuntime<'_>, ability: &ResolvedAbility) {
+    let Some(victim) = ability.target_player(TargetIndex::PRIMARY) else {
+        return;
+    };
+    let permanents = runtime.controlled_permanents(victim);
+    runtime.queue_permanent_partition(
+        ability.controller(),
+        ability.controller(),
+        victim,
+        &permanents,
+        liliana_piles_separated,
+    );
+}
+
+fn liliana_piles_separated(runtime: &mut CardRuntime<'_>, piles: PileSplit) {
+    let victim = piles.subject();
+    runtime.queue_pile_choice(
+        victim,
+        piles,
+        "Choose a pile to sacrifice",
+        "Sacrifice pile",
+        liliana_pile_chosen,
+    );
+}
+
+fn liliana_pile_chosen(runtime: &mut CardRuntime<'_>, choice: PileChoice) {
+    let victim = choice.subject();
+    let resolving_controller = choice.resolving_controller();
+    let (chosen, _unchosen) = choice.into_parts();
+    runtime.sacrifice_permanents_simultaneously(&chosen, victim, resolving_controller);
+}
+
 pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::new(
     cards::LILIANA_OF_THE_VEIL,
     "Liliana of the Veil",
     CardArt::new("ac506c17-adc8-49c6-9d8d-43db7cb1ec9d", "Steve Argyle"),
     CardSet::Innistrad,
-    CardRules::new_planeswalker(
-        mana_cost!("{1}{B}{B}"),
-        &["Liliana"],
-        3,
-    )
-    .with_supertype(CardSupertype::Legendary)
-    .with_abilities(&[
-        AbilityDef::activated(
-            "+1: Each player discards a card.",
-            &[AbilityCostDef::Loyalty(1)],
-            // Two players, so "each player" is both of them, in turn order
-            // starting with the ability's controller.
-            EffectDef::Sequence(&[
+    CardRules::new_planeswalker(mana_cost!("{1}{B}{B}"), &["Liliana"], 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::activated(
+                "+1: Each player discards a card.",
+                &[AbilityCostDef::Loyalty(1)],
                 EffectDef::DiscardCards {
-                    recipient: EffectRecipientDef::Controller,
+                    recipient: EffectRecipientDef::EachPlayer,
                     amount: ValueDef::Constant(1),
                 },
-                EffectDef::DiscardCards {
-                    recipient: EffectRecipientDef::Opponent,
-                    amount: ValueDef::Constant(1),
+            ),
+            AbilityDef::activated_with_targets(
+                "−2: Target player sacrifices a creature.",
+                &[AbilityCostDef::Loyalty(-2)],
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Player(PlayerRelation::Any),
+                )],
+                EffectDef::SacrificeOfChoice {
+                    player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    then: None,
+                    optional: false,
                 },
-            ]),
-        ),
-        AbilityDef::activated_with_targets(
-            "−2: Target player sacrifices a creature.",
-            &[AbilityCostDef::Loyalty(-2)],
-            &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::Player(PlayerRelation::Any),
-            )],
-            EffectDef::SacrificeOfChoice {
-                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                then: None,
-                optional: false,
-            },
-        ),
-        AbilityDef::activated_with_targets(
-            "−6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
-            &[AbilityCostDef::Loyalty(-6)],
-            &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::Player(PlayerRelation::Any),
-            )],
-            EffectDef::SplitPermanentsAndSacrificeAPile {
-                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            },
-        ),
-    ]),
-);
+            ),
+            LILIANA_ULTIMATE_ABILITY,
+        ]),
+)
+.with_ability_bindings(&LILIANA_ABILITY_BINDINGS);
 
 pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
     cards::MOORLAND_HAUNT,

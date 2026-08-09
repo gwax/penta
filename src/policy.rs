@@ -330,6 +330,7 @@ impl HandcraftedPolicy {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
+            | EffectDef::LoseGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -852,6 +853,102 @@ impl HandcraftedPolicy {
             .and_then(|card| Self::permanent_definition(observation, card))
             .map_or(0, |definition| self.card_value(definition));
         let discard_source_cost = self.discard_source_cost(source_definition, ability);
+        let card_owned_hint_score =
+            self.card_owned_policy_hint(ability)
+                .map_or(0, |hint| {
+                    match hint {
+                crate::card::AbilityPolicyHint::TargetPlayerSacrificesOneOfTwoPermanentPiles {
+                    target,
+                } => targets
+                    .iter()
+                    .find(|selection| selection.slot() == target)
+                    .into_iter()
+                    .flat_map(|selection| selection.targets())
+                    .filter_map(|target| match target {
+                        Target::Player(player) => Some(player),
+                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                    })
+                    .map(|player| {
+                        let value = observation
+                            .battlefield
+                            .iter()
+                            .filter(|permanent| permanent.controller == *player)
+                            .map(|permanent| self.card_value(permanent.definition))
+                            .sum::<i32>()
+                            / 2;
+                        if *player == observation.viewer {
+                            -value
+                        } else {
+                            500 + value
+                        }
+                    })
+                    .sum(),
+            }
+                });
+        let loyalty_cost = source_definition.and_then(|definition| {
+            let AbilityOrigin::Printed {
+                definition: origin_definition,
+                part,
+                ability,
+            } = ability
+            else {
+                return None;
+            };
+            let actual = (origin_definition == definition)
+                .then(|| {
+                    self.catalog
+                        .get(definition)?
+                        .part(part)?
+                        .rules
+                        .ability(ability)
+                })
+                .flatten()?;
+            match actual.definition {
+                DeclarativeAbilityDef::Activated(definition) => {
+                    definition.costs.iter().find_map(|cost| match *cost {
+                        AbilityCostDef::Loyalty(change) => Some(change),
+                        _ => None,
+                    })
+                }
+                _ => None,
+            }
+        });
+        if let Some(cost) = loyalty_cost {
+            let fight_score = targets
+                .iter()
+                .flat_map(crate::TargetSelection::targets)
+                .filter_map(|target| match target {
+                    Target::Permanent(id) => observation
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.id == *id),
+                    Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+                })
+                .collect::<Vec<_>>();
+            let loyalty_score = if fight_score.len() == 2
+                && fight_score[0].controller == observation.viewer
+                && fight_score[1].controller == observation.viewer.opponent()
+                && fight_score[0].power.unwrap_or(0)
+                    >= fight_score[1].toughness.unwrap_or(0)
+                        - i16::try_from(fight_score[1].damage).unwrap_or(i16::MAX)
+                && fight_score[1].power.unwrap_or(0)
+                    < fight_score[0].toughness.unwrap_or(0)
+                        - i16::try_from(fight_score[0].damage).unwrap_or(i16::MAX)
+            {
+                8_000
+            } else if declarative.is_some_and(|profile| profile.damage.is_some()) {
+                7_200 + target_score
+            } else if card_owned_hint_score != 0 {
+                6_800 + card_owned_hint_score
+            } else if declarative
+                .is_some_and(|profile| profile.has(DeclarativeSpellProfile::APPLIES))
+            {
+                5_200 + target_score
+            } else {
+                4_500 + target_score
+            };
+            return loyalty_score + i32::from(cost) * 100 - sacrifice_cost - discard_source_cost;
+        }
         let score = match behavior {
             Some(CardBehavior::ChaosOrb) => 7_200 + target_score,
             // Animating a Factory that is already a creature does nothing but
@@ -919,7 +1016,28 @@ impl HandcraftedPolicy {
         {
             return -1_000;
         }
-        score - sacrifice_cost - discard_source_cost
+        score + card_owned_hint_score - sacrifice_cost - discard_source_cost
+    }
+
+    fn card_owned_policy_hint(
+        &self,
+        origin: AbilityOrigin,
+    ) -> Option<crate::card::AbilityPolicyHint> {
+        let AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } = origin
+        else {
+            return None;
+        };
+        let actual = self
+            .catalog
+            .get(definition)?
+            .part(part)?
+            .rules
+            .ability(ability)?;
+        crate::card::ability_binding(origin, actual).and_then(|binding| binding.policy_hint())
     }
 
     /// Every reason a greedy policy should decline an activated ability
@@ -1493,6 +1611,7 @@ impl HandcraftedPolicy {
                     .map(|decision| decision.preference)
                 {
                     Some(crate::DecisionPreference::HigherCardValue) => 8_000 + selected_value,
+                    Some(crate::DecisionPreference::BalancedPartition) => 8_000,
                     Some(crate::DecisionPreference::LowerCardValue) => 8_000 - selected_value,
                     Some(crate::DecisionPreference::PreferOption(preferred)) => {
                         8_000 + i32::from(options.contains(&preferred))
@@ -1519,7 +1638,7 @@ impl HandcraftedPolicy {
                 cost_object,
                 x,
             } => self.score_ability(observation, *source, *ability, targets, *cost_object, *x),
-            Action::DeclareAttacker { attacker } => self.score_attack(observation, *attacker),
+            Action::DeclareAttacker { attacker, .. } => self.score_attack(observation, *attacker),
             Action::DeclareBlocker { blocker, attacker } => {
                 Self::score_block(observation, *blocker, *attacker)
             }
@@ -1594,7 +1713,7 @@ impl HandcraftedPolicy {
                     -self.linked_exile_target_score(observation, decision, option)
                 }
                 DecisionPreference::PreferOption(preferred) => i32::from(option.id != preferred),
-                DecisionPreference::Neutral => 0,
+                DecisionPreference::BalancedPartition | DecisionPreference::Neutral => 0,
             }
         });
         // How many to take, once they are in preference order. Taking the
@@ -1613,6 +1732,7 @@ impl HandcraftedPolicy {
                 .min(decision.maximum)
                 .min(options.len()),
             DecisionPreference::LowerCardValue
+            | DecisionPreference::BalancedPartition
             | DecisionPreference::PreferOption(_)
             | DecisionPreference::Neutral => decision.minimum,
         };

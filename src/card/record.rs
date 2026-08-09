@@ -1,7 +1,66 @@
-use super::{CardArt, CardComposition, CardDefinition, CardPrinting, CardRules, CardSet};
-use crate::CardDefinitionId;
+use super::{
+    AbilityDef, CardArt, CardComposition, CardDefinition, CardPrinting, CardRules, CardSet,
+};
+use crate::game::CardAbilityResolver;
+use crate::{AbilityId, CardDefinitionId, CardPartId, TargetSlotId};
 
 type CompositionBuilder = fn() -> CardComposition;
+
+/// Strategic meaning used to evaluate a card-owned ability without making its
+/// runtime procedure part of the public rules model.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub(crate) enum AbilityPolicyHint {
+    TargetPlayerSacrificesOneOfTwoPermanentPiles { target: TargetSlotId },
+}
+
+/// Internal runtime metadata attached to one printed ability.
+///
+/// `expected` guards the positional identity: if a card's abilities are
+/// reordered without updating its binding, lookup fails instead of dispatching
+/// the wrong procedure.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub(crate) struct CardAbilityBinding {
+    pub(crate) part: CardPartId,
+    pub(crate) ability: AbilityId,
+    pub(crate) expected: AbilityDef,
+    resolver: &'static CardAbilityResolver,
+    policy_hint: Option<AbilityPolicyHint>,
+}
+
+impl CardAbilityBinding {
+    #[must_use]
+    #[allow(clippy::large_types_passed_by_value)]
+    pub(crate) const fn new(
+        part: CardPartId,
+        ability: AbilityId,
+        expected: AbilityDef,
+        resolver: &'static CardAbilityResolver,
+    ) -> Self {
+        Self {
+            part,
+            ability,
+            expected,
+            resolver,
+            policy_hint: None,
+        }
+    }
+
+    #[must_use]
+    pub(crate) const fn with_policy_hint(mut self, hint: AbilityPolicyHint) -> Self {
+        self.policy_hint = Some(hint);
+        self
+    }
+
+    #[must_use]
+    pub(crate) const fn resolver(self) -> &'static CardAbilityResolver {
+        self.resolver
+    }
+
+    #[must_use]
+    pub(crate) const fn policy_hint(self) -> Option<AbilityPolicyHint> {
+        self.policy_hint
+    }
+}
 
 /// Internal source record from which the runtime catalog is built.
 pub(super) struct CardRecord {
@@ -11,6 +70,7 @@ pub(super) struct CardRecord {
     pub(super) debut_set: CardSet,
     pub(super) rules: CardRules,
     composition: Option<CompositionBuilder>,
+    pub(crate) ability_bindings: &'static [CardAbilityBinding],
 }
 
 impl CardRecord {
@@ -29,6 +89,7 @@ impl CardRecord {
             debut_set,
             rules,
             composition: None,
+            ability_bindings: &[],
         }
     }
 
@@ -36,6 +97,17 @@ impl CardRecord {
     #[must_use]
     pub(super) const fn with_composition(mut self, builder: CompositionBuilder) -> Self {
         self.composition = Some(builder);
+        self
+    }
+
+    /// Attaches card-owned runtime procedures without changing the public
+    /// rules value produced by this record.
+    #[must_use]
+    pub(crate) const fn with_ability_bindings(
+        mut self,
+        bindings: &'static [CardAbilityBinding],
+    ) -> Self {
+        self.ability_bindings = bindings;
         self
     }
 

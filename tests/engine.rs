@@ -890,12 +890,15 @@ mod hidden_state {
     #[test]
     fn a_library_can_be_stacked_or_emptied() {
         let mut game = game();
-        game.set_library(PlayerId::Two, &[cards::BLACK_LOTUS])
-            .unwrap();
-        assert_eq!(game.library(PlayerId::Two).len(), 1);
+        let top_first = [cards::BLACK_LOTUS, cards::MOUNTAIN, cards::LIGHTNING_BOLT];
+        game.set_library(PlayerId::Two, &top_first).unwrap();
         assert_eq!(
-            game.library(PlayerId::Two)[0].definition,
-            cards::BLACK_LOTUS
+            game.library(PlayerId::Two)
+                .into_iter()
+                .map(|card| card.definition)
+                .collect::<Vec<_>>(),
+            top_first,
+            "the simulation surface reads back the documented top-first order",
         );
 
         game.set_library(PlayerId::Two, &[]).unwrap();

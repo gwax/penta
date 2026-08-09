@@ -32,12 +32,19 @@ export type SpellFormMetadata =
   | { kind: "part"; partId: number }
   | { kind: "combined"; partIds: number[] };
 
-export type CastTargetSelectionMetadata = {
+export type TargetSelectionMetadata = {
   slotId: number;
+  amounts: number[];
   targetCardIds: number[];
   targetPlayers: Owner[];
   targetStackIds: number[];
 };
+
+export type CastTargetSelectionMetadata = TargetSelectionMetadata;
+
+export type AttackDefenderMetadata =
+  | { kind: "player"; player: Owner }
+  | { kind: "planeswalker"; cardId: number };
 
 export type CastSignatureMetadata = {
   playOptionId: number;
@@ -46,7 +53,16 @@ export type CastSignatureMetadata = {
   alternativeCostId?: number | null;
   additionalCostIds: number[];
   x: number;
-  targetSelections: CastTargetSelectionMetadata[];
+  targetSelections: TargetSelectionMetadata[];
+};
+
+export type Emblem = {
+  id: number;
+  owner: Owner;
+  name: string;
+  rulesText: string;
+  abilityTexts: string[];
+  sourceAbility: AbilityOriginMetadata;
 };
 
 export type Card = {
@@ -73,12 +89,17 @@ export type Card = {
     x: boolean;
   } | null;
   owner?: Owner;
+  chosenCardName?: string | null;
   chosenCreatureType?: string | null;
   tapped?: boolean;
   power?: number | null;
   toughness?: number | null;
   damage?: number;
+  loyalty?: number | null;
+  loyaltyAbilityUsedThisTurn?: boolean;
   attacking?: boolean;
+  attackDefender?: AttackDefenderMetadata | null;
+  blockedThisCombat?: boolean;
   blocking?: number | null;
   flying?: boolean;
   canAttack?: boolean;
@@ -99,6 +120,8 @@ export type Action = {
   targetPlayers?: Owner[];
   targetStackIds?: number[];
   targetCount?: number;
+  targetSelections?: TargetSelectionMetadata[];
+  attackDefender?: AttackDefenderMetadata | null;
   ability?: AbilityOriginMetadata | null;
   /** Target-independent activation label; includes exact ability text when disambiguation is needed. */
   abilityLabel?: string | null;
@@ -149,6 +172,7 @@ export type DecisionOption = {
   label: string;
   cardId?: number | null;
   cardName?: string | null;
+  members?: Array<{ id: number; name: string }>;
   /** Pending trigger identity, when this option represents a trigger. */
   triggerId?: number | null;
   /** The exact ability text, when it is narrower than the source card text. */
@@ -182,6 +206,7 @@ export type GameState = {
   human: PlayerState & { hand: Card[] };
   opponent: PlayerState & { handSize: number };
   battlefield: Card[];
+  emblems: Emblem[];
   stack: Array<{
     id: number;
     /** Deprecated JSON compatibility alias for `id`; never use for targeting. */
