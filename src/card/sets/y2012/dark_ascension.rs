@@ -5,8 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure,
     CardType, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry,
-    ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, ValueDef, ZoneKind,
-    abilities, cards,
+    ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -24,9 +24,18 @@ pub(in crate::card::sets) static HELLRIDER: CardRecord = CardRecord::new(
     )
     .with_abilities(&[
         abilities::haste(),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "Whenever a creature you control attacks, this creature deals 1 damage to the player or planeswalker it's attacking.",
-            "The attack trigger is not executed.",
+            TriggerEventDef::Attacks(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            EffectDef::DealDamage {
+                // With no planeswalkers in the game, the player an attacker is
+                // attacking is always the defending player.
+                recipient: EffectRecipientDef::Opponent,
+                amount: ValueDef::Constant(1),
+            },
         ),
     ]),
 );

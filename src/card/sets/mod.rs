@@ -499,9 +499,9 @@ mod tests {
                                 && to.is_none_or(|expected| expected == *actual_to)
                         })
             }
-            TriggerEventDef::BecomesTapped(object) | TriggerEventDef::SpellCast(object) => {
-                shared_object_predicate(object)
-            }
+            TriggerEventDef::BecomesTapped(object)
+            | TriggerEventDef::Attacks(object)
+            | TriggerEventDef::SpellCast(object) => shared_object_predicate(object),
             TriggerEventDef::StepBegins { .. } | TriggerEventDef::DamagedCreatureDied => true,
             TriggerEventDef::AbilityActivated(_)
             | TriggerEventDef::DamageDealt { .. }

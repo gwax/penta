@@ -2683,6 +2683,69 @@ fn serra_angel_attacks_without_tapping() {
 }
 
 #[test]
+fn hellrider_burns_once_per_attacker_including_itself() {
+    let mut game = ready_game();
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    let hellrider = creature(10_000, cards::HELLRIDER, PlayerId::One);
+    let hellrider_id = hellrider.card.id;
+    game.battlefield.push(hellrider);
+    let lions = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One);
+    let lions_id = lions.card.id;
+    game.battlefield.push(lions);
+    // A creature the opponent controls is not "a creature you control", and
+    // it is not attacking anyway.
+    game.battlefield
+        .push(creature(10_002, cards::SERRA_ANGEL, PlayerId::Two));
+    let life_before = game.players[1].life;
+
+    for attacker in [hellrider_id, lions_id] {
+        game.apply(PlayerId::One, Action::DeclareAttacker { attacker })
+            .unwrap();
+    }
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .unwrap();
+    // Drain the whole batch rather than stopping at the expected life total,
+    // so a third trigger would show up as too much damage.
+    for _ in 0..12 {
+        if game.stack.is_empty() && game.pending_decisions.is_empty() {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .take(decision.minimum.max(1))
+                .map(|option| option.id)
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .unwrap();
+            continue;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert_eq!(
+        game.players[1].life,
+        life_before - 2,
+        "one trigger per attacking creature"
+    );
+}
+
+#[test]
 fn ivory_tower_and_jayemdae_tome_provide_control_card_advantage() {
     let mut game = ready_game();
     game.players[0].life = 10;

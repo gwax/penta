@@ -389,6 +389,9 @@ enum CommittedTriggerEvent {
     BecomesTapped {
         object: TriggerEventObject,
     },
+    Attacks {
+        object: TriggerEventObject,
+    },
     SpellCast {
         object: TriggerEventObject,
     },
@@ -407,6 +410,7 @@ impl CommittedTriggerEvent {
         match self {
             Self::ZoneChanged { object, .. }
             | Self::BecomesTapped { object }
+            | Self::Attacks { object }
             | Self::DamagedCreatureDied { object, .. } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
@@ -2262,6 +2266,9 @@ impl Game {
                 TriggerEventDef::BecomesTapped(predicate),
                 CommittedTriggerEvent::BecomesTapped { object },
             ) => self.trigger_object_matches(predicate, object, source, false),
+            (TriggerEventDef::Attacks(predicate), CommittedTriggerEvent::Attacks { object }) => {
+                self.trigger_object_matches(predicate, object, source, false)
+            }
             (
                 TriggerEventDef::SpellCast(predicate),
                 CommittedTriggerEvent::SpellCast { object },
@@ -9265,11 +9272,28 @@ impl Game {
             .filter(|permanent| permanent.controller == self.active_player && permanent.attacking)
             .map(|permanent| permanent.card.id)
             .collect::<Vec<_>>();
-        if !attackers.is_empty() {
-            self.events.push(GameEvent::AttackDeclared {
-                player: self.active_player,
-                attackers,
-            });
+        if attackers.is_empty() {
+            return;
+        }
+        self.events.push(GameEvent::AttackDeclared {
+            player: self.active_player,
+            attackers: attackers.clone(),
+        });
+        // CR 508.2: the whole declaration happens at once, so every attacker
+        // is already attacking by the time any of these triggers is captured.
+        let events = attackers
+            .iter()
+            .filter_map(|attacker| {
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == *attacker)
+                    .map(|permanent| CommittedTriggerEvent::Attacks {
+                        object: self.trigger_event_object(permanent),
+                    })
+            })
+            .collect::<Vec<_>>();
+        for event in &events {
+            self.capture_battlefield_triggers(event);
         }
     }
 

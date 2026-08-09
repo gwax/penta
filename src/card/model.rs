@@ -1041,6 +1041,10 @@ pub enum TriggerEventDef {
         to: Option<ZoneKind>,
     },
     BecomesTapped(ObjectPredicateDef),
+    /// A creature was declared as an attacker. Every matching attacker in one
+    /// declaration triggers separately, as CR 508.2 has them all attack at
+    /// once rather than one at a time.
+    Attacks(ObjectPredicateDef),
     SpellCast(ObjectPredicateDef),
     AbilityActivated(ObjectPredicateDef),
     StepBegins {
