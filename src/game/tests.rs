@@ -11275,3 +11275,49 @@ fn gaze_of_granite_sweeps_up_to_the_x_it_was_cast_for() {
         "the two-or-less nonland permanent is the only one destroyed"
     );
 }
+
+#[test]
+fn blasphemous_act_gets_cheaper_as_the_board_fills_up() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let act = card(10_000, cards::BLASPHEMOUS_ACT, PlayerId::One);
+    game.players[0].hand.push(act.clone());
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 2;
+
+    let castable = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == act.id))
+    };
+    assert!(!castable(&game), "nine mana is out of reach on three");
+
+    // Six creatures take it to {2}{R}, which the pool covers. Both sides
+    // count: the reduction is not about who controls them.
+    for (index, owner) in [PlayerId::One, PlayerId::Two]
+        .into_iter()
+        .cycle()
+        .take(6)
+        .enumerate()
+    {
+        game.battlefield.push(creature(
+            10_010 + u32::try_from(index).unwrap(),
+            cards::SAVANNAH_LIONS,
+            owner,
+        ));
+    }
+    assert!(castable(&game), "six creatures pay for six of the eight");
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == act.id))
+        .expect("castable");
+    game.apply(PlayerId::One, cast).unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.battlefield.is_empty(),
+        "thirteen damage to each creature"
+    );
+}

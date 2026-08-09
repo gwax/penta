@@ -2279,6 +2279,7 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
@@ -4296,8 +4297,10 @@ impl Game {
                                     .iter()
                                     .map(|selection| selection.targets().len())
                                     .sum();
-                                let payable_cost =
-                                    add_generic(cost, fireball_extra_cost(behavior, target_count));
+                                let payable_cost = reduce_generic(
+                                    add_generic(cost, fireball_extra_cost(behavior, target_count)),
+                                    self.spell_cost_reduction(definition.id, player),
+                                );
                                 if !self.can_pay_cost_for(player, payable_cost, x, &payment_purpose)
                                 {
                                     continue;
@@ -5802,6 +5805,36 @@ impl Game {
         }
     }
 
+    /// Whether the chosen targets fill a declarative spell clause's slots and
+    /// every one of them is legal right now.
+    fn spell_target_selection_is_valid(
+        &self,
+        target_defs: &[AbilityTargetDef],
+        choices: &CastChoices,
+        player: PlayerId,
+        card_id: GameObjectId,
+    ) -> bool {
+        target_defs
+            .iter()
+            .zip(choices.targets())
+            .all(|(slot, selection)| {
+                let count = selection.targets().len();
+                let legal = self.ability_targets_matching(
+                    slot.predicate,
+                    player,
+                    card_id,
+                    TriggerContext::empty(),
+                );
+                slot.id == selection.slot()
+                    && count >= usize::from(slot.minimum)
+                    && count <= usize::from(slot.maximum)
+                    && selection
+                        .targets()
+                        .iter()
+                        .all(|target| legal.contains(target))
+            })
+    }
+
     /// Whether the chosen targets fill the play option's own declared slots,
     /// used by cards whose targeting comes from the option rather than from a
     /// declarative spell clause.
@@ -5859,7 +5892,10 @@ impl Game {
             return None;
         }
 
-        let mut cost = configured_mana_cost(option, choices.costs())?;
+        let mut cost = reduce_generic(
+            configured_mana_cost(option, choices.costs())?,
+            self.spell_cost_reduction(definition.id, player),
+        );
         if cost.variable_x {
             let payment_purpose = ManaPaymentPurpose::Spell {
                 object: card_id,
@@ -5883,24 +5919,8 @@ impl Game {
             if target_defs.len() != choices.targets().len() {
                 return None;
             }
-            for (slot, selection) in target_defs.iter().zip(choices.targets()) {
-                let count = selection.targets().len();
-                let legal = self.ability_targets_matching(
-                    slot.predicate,
-                    player,
-                    card_id,
-                    TriggerContext::empty(),
-                );
-                if slot.id != selection.slot()
-                    || count < usize::from(slot.minimum)
-                    || count > usize::from(slot.maximum)
-                    || selection
-                        .targets()
-                        .iter()
-                        .any(|target| !legal.contains(target))
-                {
-                    return None;
-                }
+            if !self.spell_target_selection_is_valid(&target_defs, choices, player, card_id) {
+                return None;
             }
         } else if Self::uses_legacy_behavior_targets(definition, option) {
             let flat_targets = choices.iter_targets().copied().collect::<Vec<_>>();
@@ -6680,6 +6700,7 @@ impl Game {
             })
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {
@@ -8466,6 +8487,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::ChooseCreatureType { .. }
@@ -8554,6 +8576,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::ChooseCreatureType { .. }
@@ -8892,9 +8915,12 @@ impl Game {
                     .unwrap_or(CardBehavior::Unsupported);
                 let cost = configured_mana_cost(option, choices.costs())?;
                 Some((
-                    add_generic(
-                        cost,
-                        fireball_extra_cost(behavior, choices.iter_targets().count()),
+                    reduce_generic(
+                        add_generic(
+                            cost,
+                            fireball_extra_cost(behavior, choices.iter_targets().count()),
+                        ),
+                        self.spell_cost_reduction(definition.id, player),
                     ),
                     choices.x(),
                     None,
@@ -9182,6 +9208,54 @@ impl Game {
 
         debug_assert!(can_pay(pool, cost, x));
         Some(selected)
+    }
+
+    /// How much generic mana this card's own static clauses take off its
+    /// cost. Read from the hand, which is where casting reads it.
+    fn spell_cost_reduction(&self, definition: CardDefinitionId, player: PlayerId) -> u16 {
+        let Some(card) = self.catalog.get(definition) else {
+            return 0;
+        };
+        card.rules
+            .ability_clauses()
+            .iter()
+            .filter(|ability| ability.implementation.is_executable())
+            .filter_map(|ability| match ability.effect {
+                EffectDef::ReduceGenericCostBy(value) => Some(value),
+                _ => None,
+            })
+            .map(|value| self.cost_reduction_value(value, player))
+            .fold(0, u16::saturating_add)
+    }
+
+    /// The values a cost reduction can read. There is no resolving object
+    /// while a cost is being worked out, so only board counts are available.
+    fn cost_reduction_value(&self, value: ValueDef, player: PlayerId) -> u16 {
+        match value {
+            ValueDef::Constant(amount) => u16::try_from(amount.max(0)).unwrap_or(u16::MAX),
+            ValueDef::CountMatchingObjects(query) if query.zones == [ZoneKind::Battlefield] => {
+                u16::try_from(
+                    self.battlefield
+                        .iter()
+                        .filter(|permanent| {
+                            self.player_relation_matches(
+                                permanent.controller,
+                                query.controller,
+                                player,
+                                TriggerContext::empty(),
+                            ) && self.trigger_object_matches(
+                                query.object,
+                                &self.trigger_event_object(permanent),
+                                permanent.card.id,
+                                false,
+                            )
+                        })
+                        .count(),
+                )
+                .unwrap_or(u16::MAX)
+            }
+            _ => 0,
+        }
     }
 
     fn maximum_x_for(&self, player: PlayerId, cost: ManaCost, purpose: &ManaPaymentPurpose) -> u16 {
@@ -10781,6 +10855,7 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }
@@ -11641,6 +11716,13 @@ fn pay_cost_with_orders(
 
 fn add_generic(mut cost: ManaCost, additional: u16) -> ManaCost {
     cost.generic = cost.generic.saturating_add(additional);
+    cost
+}
+
+/// A cost reduction only ever removes generic mana, and never takes a cost
+/// below its colored requirements (CR 601.2f).
+fn reduce_generic(mut cost: ManaCost, reduction: u16) -> ManaCost {
+    cost.generic = cost.generic.saturating_sub(reduction);
     cost
 }
 

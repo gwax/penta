@@ -270,6 +270,7 @@ impl HandcraftedPolicy {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }

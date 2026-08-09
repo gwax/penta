@@ -498,6 +498,7 @@ mod tests {
             EffectDef::None
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
@@ -569,6 +570,16 @@ mod tests {
             // A prohibition applies to the source's controller, and only
             // while the source is on the battlefield to say so.
             EffectDef::CannotBeForcedToSacrifice => battlefield_only(source_zones),
+            // A cost reduction is read while the card is being cast from
+            // hand, and only counts what the runtime can count.
+            EffectDef::ReduceGenericCostBy(value) => {
+                source_zones == [ZoneKind::Hand]
+                    && matches!(
+                        value,
+                        crate::card::ValueDef::Constant(_)
+                            | crate::card::ValueDef::CountMatchingObjects(_)
+                    )
+            }
             EffectDef::Sequence(effects) => {
                 !effects.is_empty()
                     && effects
@@ -717,6 +728,7 @@ mod tests {
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::EntersTapped
                         | EffectDef::CannotBeForcedToSacrifice
+                        | EffectDef::ReduceGenericCostBy(_)
                         | EffectDef::MultiplyEventAmount(_)
                         | EffectDef::MoveToZone { .. }
                         | EffectDef::ChooseCreatureType { .. }
@@ -815,6 +827,7 @@ mod tests {
             | EffectDef::AddCounters { .. }
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }

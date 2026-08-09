@@ -1029,6 +1029,9 @@ pub enum EffectDef {
     /// A static prohibition: no spell or ability an opponent controls can
     /// make this ability's controller sacrifice a permanent.
     CannotBeForcedToSacrifice,
+    /// This card costs that much less generic mana to cast. A static ability
+    /// that works from the hand, where casting reads it.
+    ReduceGenericCostBy(ValueDef),
     /// Multiplies the amount of the event a replacement ability is replacing.
     /// This means nothing outside a replacement whose event carries an amount.
     MultiplyEventAmount(u8),

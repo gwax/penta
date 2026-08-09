@@ -6,8 +6,8 @@ use crate::card::{
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
     CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CounterKind,
     DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
-    ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef, ValueDef,
-    ZoneKind, abilities, cards,
+    ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -24,16 +24,24 @@ pub(in crate::card::sets) static AVACYNS_PILGRIM: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::tap_for(ManaColor::White)]),
 );
 
+/// Every creature anyone controls, which is what the reduction counts.
+static EVERY_CREATURE: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::Any,
+};
+
 pub(in crate::card::sets) static BLASPHEMOUS_ACT: CardRecord = CardRecord::new(
     cards::BLASPHEMOUS_ACT,
     "Blasphemous Act",
     CardArt::new("509ce648-fb76-486d-8b39-183e368b7cb7", "Daarken"),
     CardSet::Innistrad,
     CardRules::new_sorcery(mana_cost!("{8}{R}")).with_abilities(&[
-        AbilityDef::not_implemented(
+        AbilityDef::static_ability(
             "This spell costs {1} less to cast for each creature on the battlefield.",
-            "Cost reduction that scales with the board is not implemented, so the spell always costs its printed {8}{R}.",
-        ),
+            EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(&EVERY_CREATURE)),
+        )
+        .with_source_zones(&[ZoneKind::Hand]),
         AbilityDef::spell(
             "Blasphemous Act deals 13 damage to each creature.",
             EffectDef::DealDamage {
