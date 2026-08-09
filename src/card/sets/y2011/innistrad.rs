@@ -153,9 +153,23 @@ pub(in crate::card::sets) static GAVONY_TOWNSHIP: CardRecord = CardRecord::new(
         .land_entry(LandEntry::Untapped)
         .with_abilities(&[
             abilities::tap_for(ManaColor::Colorless),
-            AbilityDef::not_implemented(
+            AbilityDef::activated(
                 "{2}{G}{W}, {T}: Put a +1/+1 counter on each creature you control.",
-                "The counter-placing activated ability is not executed.",
+                &[
+                    AbilityCostDef::Mana(mana_cost!("{2}{G}{W}")),
+                    AbilityCostDef::TapSource,
+                ],
+                EffectDef::AddPlusOneCounters {
+                    object: EffectRecipientDef::MatchingObjects {
+                        object: ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                        ]),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: PlayerRelation::You,
+                    },
+                    amount: ValueDef::Constant(1),
+                },
             ),
         ]),
 );

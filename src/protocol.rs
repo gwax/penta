@@ -1956,9 +1956,12 @@ mod tests {
         assert!(pilgrim.get("effectStatus").is_none());
         assert!(pilgrim["parts"][0].get("effectStatus").is_none());
 
-        let vault = find("Vault of the Archangel");
-        assert_eq!(vault["implementationStatus"], "partial");
-        assert_eq!(vault["parts"][0]["implementationStatus"], "partial");
+        // Any card with a mix of executable and pending clauses will do here.
+        // Restoration Angel's blink needs exile-and-return, so it should stay
+        // partial for a while; repoint this if that lands.
+        let partial = find("Restoration Angel");
+        assert_eq!(partial["implementationStatus"], "partial");
+        assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 
         // Any card with a metadata-only ability clause will do here; repoint
         // this assertion when Domri's clause becomes executable.

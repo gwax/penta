@@ -9766,3 +9766,95 @@ fn primeval_bounty_gains_life_only_for_its_own_lands() {
         );
     }
 }
+
+#[test]
+fn vault_of_the_archangel_arms_only_your_creatures() {
+    let mut game = ready_game();
+    let vault = game
+        .put_onto_battlefield(PlayerId::One, cards::VAULT_OF_THE_ARCHANGEL)
+        .expect("cataloged");
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == vault)
+        .unwrap()
+        .entered_controller_turn = game.turns_started[0] - 1;
+    game.put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.black = 1;
+    game.players[0].mana_pool.colorless = 2;
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == vault))
+        .expect("the vault ability is activatable");
+    game.apply(PlayerId::One, activate).unwrap();
+    pass_priority_pair(&mut game);
+
+    let armed = |game: &Game, definition| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .expect("still there");
+        game.permanent_has_executable_keyword(permanent, KeywordAbility::Deathtouch)
+            && game.permanent_has_executable_keyword(permanent, KeywordAbility::Lifelink)
+    };
+    assert!(armed(&game, cards::SAVANNAH_LIONS), "yours gets both");
+    assert!(!armed(&game, cards::SERRA_ANGEL), "theirs gets neither");
+}
+
+#[test]
+fn gavony_township_grows_only_your_creatures() {
+    let mut game = ready_game();
+    let township = game
+        .put_onto_battlefield(PlayerId::One, cards::GAVONY_TOWNSHIP)
+        .expect("cataloged");
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == township)
+        .unwrap()
+        .entered_controller_turn = game.turns_started[0] - 1;
+    game.put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.colorless = 2;
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == township)
+        })
+        .expect("the township ability is activatable");
+    game.apply(PlayerId::One, activate).unwrap();
+    pass_priority_pair(&mut game);
+
+    let power_of = |game: &Game, controller| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| {
+                permanent.card.definition == cards::SAVANNAH_LIONS
+                    && permanent.controller == controller
+            })
+            .expect("still there");
+        game.power(permanent)
+    };
+    assert_eq!(
+        power_of(&game, PlayerId::One),
+        Some(3),
+        "2/1 plus a counter"
+    );
+    assert_eq!(
+        power_of(&game, PlayerId::Two),
+        Some(2),
+        "theirs is untouched"
+    );
+}

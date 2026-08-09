@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt,
-    CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType,
-    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
-    ObjectPredicateDef, PlayOptionDef, SpellForm, ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure,
+    CardType, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry,
+    ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -183,9 +184,38 @@ pub(in crate::card::sets) static VAULT_OF_THE_ARCHANGEL: CardRecord = CardRecord
     .land_entry(LandEntry::Untapped)
     .with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
-        AbilityDef::not_implemented(
+        AbilityDef::activated(
             "{2}{W}{B}, {T}: Creatures you control gain deathtouch and lifelink until end of turn.",
-            "The deathtouch- and lifelink-granting activated ability is not executed.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}{W}{B}")),
+                AbilityCostDef::TapSource,
+            ],
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::You,
+                },
+                    effect: AppliedEffectDef::GrantAbility(&abilities::deathtouch()),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::You,
+                },
+                    effect: AppliedEffectDef::GrantAbility(&abilities::lifelink()),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ]),
         ),
     ]),
 );
