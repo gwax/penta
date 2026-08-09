@@ -467,12 +467,44 @@ pub(in crate::card::sets) static VOLCANIC_STRENGTH: CardRecord = CardRecord::new
     "Volcanic Strength",
     CardArt::new("f1963f08-1765-4f3e-92be-479773de47a0", "Izzy"),
     CardSet::Magic2013,
-    CardRules::new_enchantment(
-        ManaCost::colored(1, 0, 0, 0, 1, 0),
-        "Enchant creature\nEnchanted creature gets +2/+2 and has mountainwalk. (It can't be blocked as long as defending player controls a Mountain.)",
-    )
-    .with_subtypes(&["Aura"])
-    .metadata_only(),
+    CardRules::new_enchantment(ManaCost::colored(1, 0, 0, 0, 1, 0), "")
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+        AbilityDef::spell(
+            "Enchant creature",
+            EffectDef::Attach {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "creature",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
+        AbilityDef::static_ability(
+            "Enchanted creature gets +2/+2 and has mountainwalk. (It can't be blocked as long as defending player controls a Mountain.)",
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(2),
+                        toughness: ValueDef::Constant(2),
+                    },
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&abilities::mountainwalk()),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ]),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static WAR_PRIEST_OF_THUNE: CardRecord = CardRecord::new(

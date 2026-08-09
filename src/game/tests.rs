@@ -65,6 +65,7 @@ fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Perm
         dragon_whelp_activations: 0,
         plus_one_counters: 0,
         javelin_counters: 0,
+        attached_to: None,
         exile_instead_of_dying: false,
         combat_damage_assignment: Vec::new(),
         copied_from: None,
@@ -7911,4 +7912,133 @@ fn arbor_elf_untaps_a_forest_but_not_a_mountain() {
     };
     assert!(!tapped(&game, 10_001), "the Forest untapped");
     assert!(tapped(&game, 10_002), "the Mountain did not");
+}
+
+#[test]
+fn unflinching_courage_pumps_what_it_enchants() {
+    let mut game = ready_game();
+    let angel = creature(10_000, cards::SERRA_ANGEL, PlayerId::One);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    // A second creature must not be affected.
+    game.battlefield
+        .push(creature(10_003, cards::SAVANNAH_LIONS, PlayerId::One));
+    let aura = card(10_001, cards::UNFLINCHING_COURAGE, PlayerId::One);
+    game.players[0].hand.push(aura.clone());
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(aura.id, vec![Target::Permanent(angel_id)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel_id)
+        .expect("the angel is enchanted, not gone");
+    assert_eq!(game.power(angel), Some(6), "4/4 plus 2/2");
+    assert_eq!(game.toughness(angel), Some(6));
+
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS)
+        .expect("the lions are still there");
+    assert_eq!(
+        game.power(lions),
+        Some(2),
+        "the other creature is untouched"
+    );
+}
+
+#[test]
+fn an_aura_falls_off_when_its_host_dies() {
+    let mut game = ready_game();
+    let lions = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    let lions_id = lions.card.id;
+    game.battlefield.push(lions);
+    let aura = card(10_001, cards::UNFLINCHING_COURAGE, PlayerId::One);
+    game.players[0].hand.push(aura.clone());
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(aura.id, vec![Target::Permanent(lions_id)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    assert_eq!(game.battlefield.len(), 2, "creature and aura");
+
+    game.destroy_permanent_without_regeneration(lions_id);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield.is_empty(),
+        "the aura followed its host off the battlefield"
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::UNFLINCHING_COURAGE),
+        "and went to its owner's graveyard"
+    );
+}
+
+#[test]
+fn underworld_connections_lends_its_land_a_draw_ability() {
+    let mut game = ready_game();
+    let mut swamp = creature(10_000, cards::SWAMP, PlayerId::One);
+    swamp.entered_controller_turn = game.turns_started[0] - 1;
+    let swamp_id = swamp.card.id;
+    game.battlefield.push(swamp);
+    let aura = card(10_001, cards::UNDERWORLD_CONNECTIONS, PlayerId::One);
+    game.players[0].hand.push(aura.clone());
+    game.players[0].mana_pool.black = 2;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(aura.id, vec![Target::Permanent(swamp_id)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let library_before = game.players[0].library.len();
+    // The Aura became a new object as it left the stack, so its permanent id
+    // is not the card id it was cast from.
+    let aura_id = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::UNDERWORLD_CONNECTIONS)
+        .expect("the aura is on the battlefield")
+        .card
+        .id;
+    // The Swamp still has its own mana ability, so pick the granted one by
+    // its origin rather than by guessing at the order.
+    let draw = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, ability, .. }
+                    if *source == swamp_id
+                        && matches!(ability, AbilityOrigin::Granted { source: granter, .. }
+                            if *granter == aura_id)
+            )
+        })
+        .expect("the aura granted the land an activated ability");
+    game.apply(PlayerId::One, draw).unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[0].library.len(), library_before - 1);
+    assert_eq!(game.players[0].life, 19, "one life paid");
 }

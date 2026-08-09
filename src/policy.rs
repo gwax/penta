@@ -219,6 +219,7 @@ impl HandcraftedPolicy {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
+            | EffectDef::Attach { .. }
             | EffectDef::Special(_) => {}
         }
     }

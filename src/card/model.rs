@@ -617,6 +617,8 @@ pub enum ValueDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectRecipientDef {
     Source,
+    /// What this permanent is attached to, for an Aura's own static clauses.
+    AttachedPermanent,
     Controller,
     Opponent,
     Target(TargetSlotId),
@@ -680,6 +682,12 @@ pub enum EffectDef {
         object: EffectRecipientDef,
     },
     Untap {
+        object: EffectRecipientDef,
+    },
+    /// An Aura spell attaching itself to what it enchants. The permanent the
+    /// spell becomes is what attaches, so this is only meaningful on the spell
+    /// clause of an Aura.
+    Attach {
         object: EffectRecipientDef,
     },
     Destroy {

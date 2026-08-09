@@ -117,6 +117,10 @@ struct Permanent {
     /// +1/+1 counters. This can become a general counter collection when a
     /// supported card needs another named counter type.
     javelin_counters: u16,
+    /// What this Aura is attached to. `None` for everything that is not an
+    /// Aura, and for an Aura whose host has left -- state-based actions put
+    /// such an Aura into its owner's graveyard.
+    attached_to: Option<GameObjectId>,
     /// Set by Pillar of Flame: if this creature would die this turn, it is
     /// exiled instead. The replacement outlives the damage itself, so it
     /// cannot be a property of the damage. Clears in cleanup.
@@ -175,6 +179,7 @@ impl Permanent {
             dragon_whelp_activations: 0,
             plus_one_counters: 0,
             javelin_counters: 0,
+            attached_to: None,
             exile_instead_of_dying: false,
             combat_damage_assignment: Vec::new(),
             copied_from: None,
@@ -1799,6 +1804,7 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
+            | EffectDef::Attach { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing and non-mana primitives need a dedicated
@@ -4630,6 +4636,7 @@ impl Game {
             dragon_whelp_activations: 0,
             plus_one_counters: 0,
             javelin_counters: 0,
+            attached_to: None,
             exile_instead_of_dying: false,
             combat_damage_assignment: Vec::new(),
             copied_from: None,
@@ -5129,6 +5136,7 @@ impl Game {
                     _ => 0,
                 },
                 javelin_counters: u16::from(behavior == CardBehavior::IcatianJavelineers),
+                attached_to: None,
                 exile_instead_of_dying: false,
                 combat_damage_assignment: Vec::new(),
                 copied_from: None,
@@ -5151,6 +5159,14 @@ impl Game {
                         permanent.plus_one_counters = 3;
                     }
                 }
+            }
+            // An Aura enters attached to what its spell targeted. This runs
+            // before the entry event so anything watching sees it already
+            // attached.
+            if let Some(host) = self.aura_host_for(&object)
+                && let Some(permanent) = self.battlefield.last_mut()
+            {
+                permanent.attached_to = Some(host);
             }
             let entered = self
                 .battlefield
@@ -5531,7 +5547,10 @@ impl Game {
                     self.move_target_to_zone(target, zone);
                 }
             }
-            EffectDef::None
+            // An Aura attaches as its spell becomes a permanent, which is
+            // handled where the permanent enters rather than here.
+            EffectDef::Attach { .. }
+            | EffectDef::None
             | EffectDef::AddMana(AddManaEffectDef {
                 mana: ManaSelectionDef::Choice(_),
                 ..
@@ -5780,6 +5799,10 @@ impl Game {
         else {
             return match recipient {
                 EffectRecipientDef::Source => object.source.map(Target::Permanent),
+                EffectRecipientDef::AttachedPermanent => object
+                    .source
+                    .and_then(|source| self.attached_host(source))
+                    .map(Target::Permanent),
                 EffectRecipientDef::Controller => Some(Target::Player(object.controller)),
                 EffectRecipientDef::Opponent => Some(Target::Player(object.controller.opponent())),
                 EffectRecipientDef::TriggeringObject => context
@@ -6893,6 +6916,65 @@ impl Game {
         }
     }
 
+    /// Whether an Aura may stay attached to `host`: the host has to still be
+    /// on the battlefield and still satisfy what the Aura enchants.
+    fn is_legal_aura_host(&self, aura: &Permanent, host: GameObjectId) -> bool {
+        let Some(host) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == host)
+        else {
+            return false;
+        };
+        let Some(rules) = self.effective_rules(aura) else {
+            return false;
+        };
+        rules
+            .ability_clauses()
+            .iter()
+            .filter(|ability| matches!(ability.effect, EffectDef::Attach { .. }))
+            .flat_map(|ability| match ability.definition {
+                DeclarativeAbilityDef::Spell(spell) => spell.targets,
+                _ => &[],
+            })
+            .all(|slot| match slot.predicate {
+                AbilityTargetPredicate::Object { object, .. } => Self::trigger_object_matches(
+                    object,
+                    &self.trigger_event_object(host),
+                    aura.card.id,
+                    false,
+                ),
+                AbilityTargetPredicate::AnyTarget | AbilityTargetPredicate::Player(_) => false,
+            })
+    }
+
+    /// The permanent an Aura spell targeted, read off its own spell clause.
+    fn aura_host_for(&self, object: &StackObject) -> Option<GameObjectId> {
+        let definition = self.catalog.get(object.card.definition)?;
+        let signature = object.signature.as_ref()?;
+        let option = definition.play_option(signature.play_option())?;
+        let (_, ability) = Self::spell_ability(definition, option)?;
+        if !matches!(ability.effect, EffectDef::Attach { .. }) {
+            return None;
+        }
+        signature
+            .targets()
+            .iter()
+            .flat_map(TargetSelection::targets)
+            .find_map(|target| match target {
+                Target::Permanent(id) => Some(*id),
+                _ => None,
+            })
+    }
+
+    /// What an Aura is attached to, if it is on the battlefield and attached.
+    fn attached_host(&self, aura: GameObjectId) -> Option<GameObjectId> {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == aura)
+            .and_then(|permanent| permanent.attached_to)
+    }
+
     fn static_recipient_matches(
         &self,
         recipient: EffectRecipientDef,
@@ -6901,6 +6983,7 @@ impl Game {
     ) -> bool {
         match recipient {
             EffectRecipientDef::Source => source.card.id == affected.card.id,
+            EffectRecipientDef::AttachedPermanent => source.attached_to == Some(affected.card.id),
             EffectRecipientDef::MatchingObjects {
                 object,
                 zones,
@@ -7118,6 +7201,7 @@ impl Game {
                 | EffectDef::LoseLife { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
+                | EffectDef::Attach { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::Counter { .. }
@@ -7196,6 +7280,7 @@ impl Game {
                 | EffectDef::LoseLife { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
+                | EffectDef::Attach { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::Counter { .. }
@@ -8813,6 +8898,7 @@ impl Game {
             dragon_whelp_activations: 0,
             plus_one_counters: 1,
             javelin_counters: 0,
+            attached_to: None,
             exile_instead_of_dying: false,
             combat_damage_assignment: Vec::new(),
             copied_from: None,
@@ -8992,6 +9078,14 @@ impl Game {
             let mut regenerate = Vec::new();
             let mut die = Vec::new();
             for permanent in &self.battlefield {
+                // 704.5m: an Aura attached to nothing, or to something that is
+                // no longer a legal host, is put into its owner's graveyard.
+                if let Some(host) = permanent.attached_to
+                    && !self.is_legal_aura_host(permanent, host)
+                {
+                    die.push(permanent.card.id);
+                    continue;
+                }
                 if permanent.loyalty.is_some_and(|loyalty| loyalty <= 0) {
                     die.push(permanent.card.id);
                     continue;

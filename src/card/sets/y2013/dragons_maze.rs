@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
-    CardBehavior, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure,
-    CardSupertype, ColorDef, EffectDef, ManaCost, ObjectPredicateDef, PlayOptionDef,
-    PlayerRelation, SpellForm, TargetPredicate, TargetSlotDef, TriggerEventDef, ZoneKind,
+    AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
+    AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus, CardPart,
+    CardRules, CardSet, CardStructure, CardSupertype, CardType, ColorDef, EffectDef,
+    EffectDurationDef, EffectRecipientDef, ManaCost, ObjectPredicateDef, PlayOptionDef,
+    PlayerRelation, SpellForm, TargetPredicate, TargetSlotDef, TriggerEventDef, ValueDef, ZoneKind,
     abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
@@ -215,12 +216,49 @@ pub(in crate::card::sets) static UNFLINCHING_COURAGE: CardRecord = CardRecord::n
     "Unflinching Courage",
     CardArt::new("35952c24-d728-4ec6-b0d1-b8183a18554a", "Mike Bierek"),
     CardSet::DragonsMaze,
-    CardRules::new_enchantment(
-        ManaCost::colored(1, 1, 0, 0, 0, 1),
-        "Enchant creature\nEnchanted creature gets +2/+2 and has trample and lifelink. (Damage dealt by the creature also causes its controller to gain that much life.)",
-    )
-    .with_subtypes(&["Aura"])
-    .metadata_only(),
+    CardRules::new_enchantment(ManaCost::colored(1, 1, 0, 0, 0, 1), "")
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+        AbilityDef::spell(
+            "Enchant creature",
+            EffectDef::Attach {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "creature",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
+        AbilityDef::static_ability(
+            "Enchanted creature gets +2/+2 and has trample and lifelink. (Damage dealt by the creature also causes its controller to gain that much life.)",
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(2),
+                        toughness: ValueDef::Constant(2),
+                    },
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&abilities::lifelink()),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ]),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static VOICE_OF_RESURGENCE: CardRecord = CardRecord::new(

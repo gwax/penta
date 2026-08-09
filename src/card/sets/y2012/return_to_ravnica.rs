@@ -567,17 +567,48 @@ pub(in crate::card::sets) static ULTIMATE_PRICE: CardRecord = CardRecord::new(
     .with_special_behavior(CardBehavior::UltimatePrice),
 );
 
+static UNDERWORLD_CONNECTIONS_DRAW: AbilityDef = AbilityDef::activated(
+    "{T}, Pay 1 life: Draw a card.",
+    &[AbilityCostDef::TapSource, AbilityCostDef::PayLife(1)],
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+);
+
 pub(in crate::card::sets) static UNDERWORLD_CONNECTIONS: CardRecord = CardRecord::new(
     cards::UNDERWORLD_CONNECTIONS,
     "Underworld Connections",
     CardArt::new("19c52e3b-b3b8-4243-96fe-fa4c8eea7c59", "Yeong-Hao Han"),
     CardSet::ReturnToRavnica,
-    CardRules::new_enchantment(
-        ManaCost::colored(1, 0, 0, 2, 0, 0),
-        "Enchant land\nEnchanted land has \"{T}, Pay 1 life: Draw a card.\"",
-    )
-    .with_subtypes(&["Aura"])
-    .metadata_only(),
+    CardRules::new_enchantment(ManaCost::colored(1, 0, 0, 2, 0, 0), "")
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            AbilityDef::spell(
+                "Enchant land",
+                EffectDef::Attach {
+                    object: EffectRecipientDef::Target(TargetSlotId(0)),
+                },
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one(
+                TargetSlotId(0),
+                "land",
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Land),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: None,
+                    owner: None,
+                },
+            )]),
+            AbilityDef::static_ability(
+                "Enchanted land has \"{T}, Pay 1 life: Draw a card.\"",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&UNDERWORLD_CONNECTIONS_DRAW),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+        ]),
 );
 
 pub(in crate::card::sets) static VRASKA_THE_UNSEEN: CardRecord = CardRecord::new(

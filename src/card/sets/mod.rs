@@ -340,6 +340,7 @@ mod tests {
                     && shared_object_predicate(object)
             }
             EffectRecipientDef::Source
+            | EffectRecipientDef::AttachedPermanent
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
             | EffectRecipientDef::Target(_)
@@ -417,7 +418,8 @@ mod tests {
             | EffectDef::Destroy { object, .. }
             | EffectDef::Sacrifice { object }
             | EffectDef::Counter { object }
-            | EffectDef::AddPlusOneCounters { object, .. } => shared_effect_recipient(object),
+            | EffectDef::AddPlusOneCounters { object, .. }
+            | EffectDef::Attach { object } => shared_effect_recipient(object),
             EffectDef::OptionalManaPayment { effect, .. } => shared_stack_effect(*effect),
             EffectDef::Apply {
                 recipient,
@@ -501,7 +503,7 @@ mod tests {
                 duration,
             } => {
                 let recipient_is_supported = match recipient {
-                    EffectRecipientDef::Source => true,
+                    EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent => true,
                     EffectRecipientDef::MatchingObjects { object, zones, .. } => {
                         zones == [ZoneKind::Battlefield] && shared_object_predicate(object)
                     }
@@ -536,6 +538,7 @@ mod tests {
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::Attach { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
@@ -590,6 +593,7 @@ mod tests {
                         | EffectDef::LoseLife { .. }
                         | EffectDef::Tap { .. }
                         | EffectDef::Untap { .. }
+                        | EffectDef::Attach { .. }
                         | EffectDef::Destroy { .. }
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::Counter { .. }
@@ -671,6 +675,7 @@ mod tests {
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::Attach { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
