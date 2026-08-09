@@ -864,6 +864,15 @@ pub struct ConditionalValueDef {
     pub otherwise: ValueDef,
 }
 
+/// A conditional value that asks how many objects match.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct CountConditionDef {
+    pub query: ObjectQueryDef,
+    pub equals: u8,
+    pub then: ValueDef,
+    pub otherwise: ValueDef,
+}
+
 /// A conditional value that asks what the chosen target is.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TargetConditionDef {
@@ -909,6 +918,9 @@ pub enum ValueDef {
     /// One value when the chosen target matches, another when it does not.
     /// Held by reference for the same reason.
     IfTargetMatches(&'static TargetConditionDef),
+    /// One value when exactly that many objects match, another otherwise.
+    /// This is how an intervening-if condition becomes an amount.
+    IfMatchingObjectCount(&'static CountConditionDef),
 }
 
 /// An object or player affected by an effect. Targets are chosen when a spell

@@ -11358,3 +11358,42 @@ fn scavenging_ooze_only_grows_on_a_creature_card() {
         );
     }
 }
+
+#[test]
+fn demonic_rising_only_pays_off_with_exactly_one_creature() {
+    for (creatures, expect_demon) in [(0, false), (1, true), (2, false)] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.put_onto_battlefield(PlayerId::One, cards::DEMONIC_RISING)
+            .expect("cataloged");
+        for _ in 0..creatures {
+            game.put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+                .expect("cataloged");
+        }
+        // The opponent's creatures are not yours, whatever the count.
+        game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+            .expect("cataloged");
+
+        game.step = Step::PostcombatMain;
+        game.advance_step();
+        for _ in 0..8 {
+            if game.stack.is_empty()
+                && game.pending_triggers.is_empty()
+                && game.pending_decisions.is_empty()
+            {
+                break;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+
+        let demons = game
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::DEMON_TOKEN_5_5_BLACK)
+            .count();
+        assert_eq!(demons, usize::from(expect_demon), "{creatures} creatures");
+    }
+}

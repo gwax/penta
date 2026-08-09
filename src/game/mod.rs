@@ -6789,6 +6789,19 @@ impl Game {
                 };
                 self.effect_value(chosen, object, context)
             }
+            ValueDef::IfMatchingObjectCount(condition) => {
+                let count = self.effect_value(
+                    ValueDef::CountMatchingObjects(&condition.query),
+                    object,
+                    context,
+                );
+                let chosen = if count == i32::from(condition.equals) {
+                    condition.then
+                } else {
+                    condition.otherwise
+                };
+                self.effect_value(chosen, object, context)
+            }
             ValueDef::IfCreatureDiedThisTurn(branches) => {
                 let chosen = if self.creature_died_this_turn {
                     branches.then

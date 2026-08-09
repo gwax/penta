@@ -258,3 +258,4 @@ pub const SOLDIER_TOKEN_1_1_RED_WHITE: CardDefinitionId = CardDefinitionId(247);
 /// added to an older set therefore lands after the tokens rather than beside
 /// its set's block.
 pub const WALL_OF_STONE: CardDefinitionId = CardDefinitionId(248);
+pub const DEMON_TOKEN_5_5_BLACK: CardDefinitionId = CardDefinitionId(249);

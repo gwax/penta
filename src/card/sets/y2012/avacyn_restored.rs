@@ -3,8 +3,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior,
-    CardRules, CardSet, CardSupertype, EffectDef, EffectRecipientDef, LandEntry, ManaColor,
-    ManaRestrictionDef, ManaSpendEffectDef, abilities, cards,
+    CardRules, CardSet, CardSupertype, CardType, CountConditionDef, EffectDef, EffectRecipientDef,
+    LandEntry, ManaColor, ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 use crate::mana_cost;
 
@@ -62,15 +64,36 @@ pub(in crate::card::sets) static CAVERN_OF_SOULS: CardRecord = CardRecord::new(
     ]),
 );
 
+/// One Demon when its controller has exactly one creature, none otherwise.
+static EXACTLY_ONE_CREATURE: CountConditionDef = CountConditionDef {
+    query: ObjectQueryDef {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: PlayerRelation::You,
+    },
+    equals: 1,
+    then: ValueDef::Constant(1),
+    otherwise: ValueDef::Constant(0),
+};
+
 pub(in crate::card::sets) static DEMONIC_RISING: CardRecord = CardRecord::new(
     cards::DEMONIC_RISING,
     "Demonic Rising",
     CardArt::new("a2136a82-b535-47f6-9eee-5b7585ac5cf1", "Trevor Claxton"),
     CardSet::AvacynRestored,
     CardRules::new_enchantment(mana_cost!("{3}{B}{B}")).with_ability(
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "At the beginning of your end step, if you control exactly one creature, create a 5/5 black Demon creature token with flying.",
-            "Printed rules are cataloged but are not executed by the engine.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::You,
+            },
+            // The intervening if becomes a count: one Demon when the
+            // condition holds, none when it does not.
+            EffectDef::CreateToken {
+                token: cards::DEMON_TOKEN_5_5_BLACK,
+                count: ValueDef::IfMatchingObjectCount(&EXACTLY_ONE_CREATURE),
+            },
         ),
     ),
 );

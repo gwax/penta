@@ -40,10 +40,21 @@ pub(in crate::card::sets) static SOLDIER_TOKEN_1_1_RED_WHITE: CardRecord = CardR
         .with_abilities(&[abilities::haste()]),
 );
 
+pub(in crate::card::sets) static DEMON_TOKEN_5_5_BLACK: CardRecord = CardRecord::new(
+    cards::DEMON_TOKEN_5_5_BLACK,
+    "Demon",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Demon"], 5, 5)
+        .printed_colors(&[ManaColor::Black])
+        .with_abilities(&[abilities::flying()]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BEAST_TOKEN_3_3_GREEN,
     &KNIGHT_TOKEN_2_2_WHITE,
     &SOLDIER_TOKEN_1_1_RED_WHITE,
+    &DEMON_TOKEN_5_5_BLACK,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
