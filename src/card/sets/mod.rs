@@ -322,7 +322,8 @@ mod tests {
             | ObjectPredicateDef::ManaValueAtMost(_)
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::ControlledBy(_)
-            | ObjectPredicateDef::Supertype(_) => true,
+            | ObjectPredicateDef::Supertype(_)
+            | ObjectPredicateDef::AttackingOrBlocking => true,
         }
     }
 
@@ -453,6 +454,11 @@ mod tests {
             | EffectDef::DrawCards { recipient, .. }
             | EffectDef::DiscardCards { recipient, .. }
             | EffectDef::LoseLife { recipient, .. } => shared_effect_recipient(recipient),
+            // The chooser is a player, and the choices are their own
+            // battlefield, so only the predicate needs checking.
+            EffectDef::SacrificeOfChoice { player, object } => {
+                shared_effect_recipient(player) && shared_object_predicate(object)
+            }
             EffectDef::Tap { object }
             | EffectDef::Untap { object }
             | EffectDef::Destroy { object, .. }
@@ -618,6 +624,7 @@ mod tests {
             | EffectDef::CreateToken { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
+            | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Counter { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
@@ -687,6 +694,7 @@ mod tests {
                         | EffectDef::CreateToken { .. }
                         | EffectDef::Destroy { .. }
                         | EffectDef::Sacrifice { .. }
+                        | EffectDef::SacrificeOfChoice { .. }
                         | EffectDef::Counter { .. }
                         | EffectDef::AddCounters { .. }
                         | EffectDef::OptionalManaPayment { .. }
@@ -783,6 +791,7 @@ mod tests {
             | EffectDef::CreateToken { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
+            | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Counter { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::EntersTapped

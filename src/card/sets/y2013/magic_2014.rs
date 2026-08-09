@@ -68,10 +68,23 @@ pub(in crate::card::sets) static CELESTIAL_FLARE: CardRecord = CardRecord::new(
     "Celestial Flare",
     CardArt::new("6c8d1320-0f1a-4c66-86c9-9f8da0f1d9ef", "Clint Cearley"),
     CardSet::Magic2014,
-    CardRules::new_instant(mana_cost!("{W}{W}")).with_ability(AbilityDef::not_implemented(
-        "Target player sacrifices an attacking or blocking creature of their choice.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    CardRules::new_instant(mana_cost!("{W}{W}")).with_ability(
+        AbilityDef::spell(
+            "Target player sacrifices an attacking or blocking creature of their choice.",
+            EffectDef::SacrificeOfChoice {
+                player: EffectRecipientDef::Target(TargetSlotId(0)),
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::AttackingOrBlocking,
+                ]),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "player",
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )]),
+    ),
 );
 
 pub(in crate::card::sets) static DOOM_BLADE: CardRecord = CardRecord::new(

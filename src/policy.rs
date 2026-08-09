@@ -260,6 +260,7 @@ impl HandcraftedPolicy {
             | EffectDef::GainLife { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Sacrifice { .. }
+            | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped

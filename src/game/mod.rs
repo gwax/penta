@@ -381,6 +381,9 @@ struct TriggerEventObject {
     /// is now, not what it was printed as.
     power: Option<i16>,
     supertypes: [bool; CardSupertype::COUNT],
+    /// Whether this object is in combat. Cheap to carry and it cannot feed
+    /// back into a characteristic, unlike a keyword or a static bonus.
+    attacking_or_blocking: bool,
 }
 
 /// The object or procedure a mana payment is paying for. Restrictions are
@@ -766,6 +769,8 @@ enum DecisionContinuation {
         victim: PlayerId,
         cause: ZoneMoveCause,
     },
+    /// A sacrifice an effect demanded, chosen by the sacrificing player.
+    SacrificeOfChoice,
     /// A discard an effect demanded, chosen by the discarding player.
     DiscardToEffect {
         player: PlayerId,
@@ -2192,6 +2197,7 @@ impl Game {
             | EffectDef::Untap { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
+            | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Counter { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
@@ -2436,6 +2442,7 @@ impl Game {
                 object.power.is_some_and(|power| power >= minimum)
             }
             ObjectPredicateDef::Supertype(supertype) => object.supertypes[supertype.index()],
+            ObjectPredicateDef::AttackingOrBlocking => object.attacking_or_blocking,
             ObjectPredicateDef::ControlledBy(relation) => {
                 self.controller_of_object(source).is_some_and(|controller| {
                     self.player_relation_matches(
@@ -3416,6 +3423,48 @@ impl Game {
         );
     }
 
+    /// Asks `player` which matching permanent they control to sacrifice. With
+    /// nothing matching there is no choice and no sacrifice; with exactly one
+    /// there is nothing to ask.
+    fn queue_chosen_sacrifice(
+        &mut self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+    ) {
+        let candidates = self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == player)
+            .filter(|permanent| {
+                self.trigger_object_matches(
+                    predicate,
+                    &self.trigger_event_object(permanent),
+                    source,
+                    false,
+                )
+            })
+            .map(|permanent| permanent.card.clone())
+            .collect::<Vec<_>>();
+        match candidates.as_slice() {
+            [] => {}
+            [only] => self.destroy_permanents(&[only.id], false),
+            _ => {
+                let options = self.card_decision_options(&candidates, DecisionZone::Battlefield);
+                self.queue_decision(
+                    player,
+                    "Choose a permanent to sacrifice",
+                    DecisionVisibility::Public,
+                    DecisionPreference::LowerCardValue,
+                    1..=1,
+                    false,
+                    options,
+                    DecisionContinuation::SacrificeOfChoice,
+                );
+            }
+        }
+    }
+
     fn queue_time_vault_decision(&mut self, permanent: GameObjectId, remaining: Vec<GameObjectId>) {
         let card = self
             .battlefield
@@ -3700,6 +3749,16 @@ impl Game {
                     self.players[player.index()].hand.push(card);
                 }
                 self.bury_cards(player, to_graveyard);
+            }
+            DecisionContinuation::SacrificeOfChoice => {
+                let sacrificed = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                self.destroy_permanents(&sacrificed, false);
             }
             DecisionContinuation::DiscardToEffect { player, cause } => {
                 let discarded = pending
@@ -4525,6 +4584,8 @@ impl Game {
             controller,
             colors,
             subtypes: Cow::Owned(subtypes),
+            // A card or a spell is nowhere near combat.
+            attacking_or_blocking: false,
             mana_value,
             power,
             supertypes,
@@ -6288,6 +6349,17 @@ impl Game {
                     .collect::<Vec<_>>();
                 self.destroy_permanents(&permanents, false);
             }
+            EffectDef::SacrificeOfChoice {
+                player: recipient,
+                object: predicate,
+            } => {
+                let source = object.source.unwrap_or(object.id);
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Player(player) = target {
+                        self.queue_chosen_sacrifice(player, predicate, source);
+                    }
+                }
+            }
             EffectDef::Counter { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context) {
                     if let Target::Spell(spell) = target {
@@ -6695,7 +6767,8 @@ impl Game {
             | ObjectPredicateDef::ManaValueAtMost(_)
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::ControlledBy(_)
-            | ObjectPredicateDef::Supertype(_) => false,
+            | ObjectPredicateDef::Supertype(_)
+            | ObjectPredicateDef::AttackingOrBlocking => false,
         }
     }
 
@@ -7493,6 +7566,7 @@ impl Game {
                 .permanent_types(permanent)
                 .expect("a battlefield object has effective types"),
             controller: permanent.controller,
+            attacking_or_blocking: permanent.attacking || permanent.blocking.is_some(),
             colors: rules.colors(),
             subtypes: Cow::Borrowed(if blood_moon_applies {
                 &["Mountain"]
@@ -8097,6 +8171,7 @@ impl Game {
                 | EffectDef::CreateToken { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
+                | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
@@ -8182,6 +8257,7 @@ impl Game {
                 | EffectDef::CreateToken { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
+                | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
@@ -10337,6 +10413,7 @@ impl Game {
             | EffectDef::Attach { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
+            | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Counter { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }

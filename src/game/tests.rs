@@ -10678,3 +10678,83 @@ fn burning_earth_burns_only_the_nonbasic_taps() {
     }
     assert_eq!(game.players[1].life, life_before - 1);
 }
+
+#[test]
+fn celestial_flare_only_takes_a_creature_that_is_in_combat() {
+    let mut game = ready_game();
+    let mut attacker = creature(10_000, cards::SERRA_ANGEL, PlayerId::Two);
+    attacker.attacking = true;
+    game.battlefield.push(attacker);
+    // Sitting at home, so the Flare cannot reach it.
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two));
+    let flare = card(10_002, cards::CELESTIAL_FLARE, PlayerId::One);
+    game.players[0].hand.push(flare.clone());
+    game.players[0].mana_pool.white = 2;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(flare.id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    // One candidate means no decision: the Angel simply goes.
+    assert!(game.pending_decisions.is_empty());
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>(),
+        vec![CardInstanceId(10_001)],
+        "the attacker was sacrificed and the untapped Lions stayed"
+    );
+}
+
+#[test]
+fn celestial_flare_lets_the_targeted_player_pick_which_attacker_dies() {
+    let mut game = ready_game();
+    for id in [10_000, 10_001] {
+        let mut attacker = creature(id, cards::SAVANNAH_LIONS, PlayerId::Two);
+        attacker.attacking = true;
+        game.battlefield.push(attacker);
+    }
+    let flare = card(10_002, cards::CELESTIAL_FLARE, PlayerId::One);
+    game.players[0].hand.push(flare.clone());
+    game.players[0].mana_pool.white = 2;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(flare.id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::Two)
+        .decision
+        .expect("the sacrifice is the targeted player's choice");
+    assert_eq!(decision.player, PlayerId::Two);
+    let keep = decision
+        .options
+        .iter()
+        .find(|option| option.card == Some((CardInstanceId(10_001), cards::SAVANNAH_LIONS)))
+        .expect("both attackers are offered");
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![keep.id],
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>(),
+        vec![CardInstanceId(10_000)],
+        "the one they chose is the one that died"
+    );
+}

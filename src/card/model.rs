@@ -592,6 +592,9 @@ pub enum ObjectPredicateDef {
     ControlledBy(PlayerRelation),
     /// Carries this supertype. Negate it for "nonbasic".
     Supertype(CardSupertype),
+    /// Currently attacking or blocking. Only a battlefield object can be, so
+    /// this never matches a card or a spell.
+    AttackingOrBlocking,
     All(&'static [ObjectPredicateDef]),
     AnyOf(&'static [ObjectPredicateDef]),
     Not(&'static ObjectPredicateDef),
@@ -976,6 +979,13 @@ pub enum EffectDef {
     },
     Sacrifice {
         object: EffectRecipientDef,
+    },
+    /// Each recipient player chooses one permanent they control that matches,
+    /// and sacrifices it. Unlike [`Self::Sacrifice`] the choice is the
+    /// player's, so nothing happens when they control nothing matching.
+    SacrificeOfChoice {
+        player: EffectRecipientDef,
+        object: ObjectPredicateDef,
     },
     Counter {
         object: EffectRecipientDef,
@@ -1852,6 +1862,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::Not(_)
         | ObjectPredicateDef::Special(_) => false,
     }
