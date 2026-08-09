@@ -294,6 +294,7 @@ impl HandcraftedPolicy {
             | ValueDef::AnyMatchingObject(_)
             | ValueDef::CountersOnSource(_)
             | ValueDef::IfCreatureDiedThisTurn(_)
+            | ValueDef::IfTargetMatches(_)
             | ValueDef::Negate(_) => None,
         }
     }
@@ -688,6 +689,21 @@ impl HandcraftedPolicy {
             {
                 5_200 + target_score
             }
+            // An ability whose whole payoff is conditional on what it points
+            // at does nothing when the condition fails, and spending mana on
+            // nothing is worse than passing. This is the same lesson as a
+            // pump for X of zero.
+            None if source_definition.is_some_and(|definition| {
+                self.ability_needs_a_matching_target(definition, ability)
+            }) && !self.ability_target_matches_condition(
+                observation,
+                source_definition,
+                ability,
+                target,
+            ) =>
+            {
+                -100
+            }
             None if declarative.is_some() => 4_500 + target_score,
             None => -10_000,
         };
@@ -698,6 +714,87 @@ impl HandcraftedPolicy {
             return -1_000;
         }
         score - sacrifice_cost
+    }
+
+    /// Whether every value in the ability's effect is conditional on the
+    /// target, which is what makes a mismatched target worthless.
+    fn ability_needs_a_matching_target(
+        &self,
+        definition: CardDefinitionId,
+        origin: AbilityOrigin,
+    ) -> bool {
+        self.activated_target_condition(definition, origin)
+            .is_some()
+    }
+
+    /// The condition an ability's payoff hangs on, if it has exactly one.
+    fn activated_target_condition(
+        &self,
+        definition: CardDefinitionId,
+        origin: AbilityOrigin,
+    ) -> Option<&'static crate::card::TargetConditionDef> {
+        let AbilityOrigin::Printed {
+            definition: origin_definition,
+            part,
+            ability,
+        } = origin
+        else {
+            return None;
+        };
+        if origin_definition != definition {
+            return None;
+        }
+        let ability = self
+            .catalog
+            .get(definition)?
+            .part(part)?
+            .rules
+            .ability(ability)?;
+        Self::target_condition_in(ability.effect)
+    }
+
+    /// The first target condition an effect hangs a value on.
+    fn target_condition_in(effect: EffectDef) -> Option<&'static crate::card::TargetConditionDef> {
+        match effect {
+            EffectDef::Sequence(effects) => {
+                effects.iter().copied().find_map(Self::target_condition_in)
+            }
+            EffectDef::AddCounters { amount, .. } | EffectDef::GainLife { amount, .. } => {
+                match amount {
+                    ValueDef::IfTargetMatches(condition) => Some(condition),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Whether the chosen target satisfies that condition.
+    fn ability_target_matches_condition(
+        &self,
+        observation: &PlayerObservation,
+        definition: Option<CardDefinitionId>,
+        origin: AbilityOrigin,
+        target: Option<Target>,
+    ) -> bool {
+        let Some(condition) =
+            definition.and_then(|definition| self.activated_target_condition(definition, origin))
+        else {
+            return true;
+        };
+        let ObjectPredicateDef::HasType(expected) = condition.object else {
+            return true;
+        };
+        let Some(Target::Card(id)) = target else {
+            return true;
+        };
+        observation
+            .graveyards
+            .iter()
+            .flatten()
+            .find(|(card, _)| *card == id)
+            .and_then(|(_, definition)| self.catalog.get(*definition))
+            .is_some_and(|card| card.rules.has_type(expected))
     }
 
     fn declarative_activated_profile(

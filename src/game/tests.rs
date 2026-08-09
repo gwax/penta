@@ -11321,3 +11321,40 @@ fn blasphemous_act_gets_cheaper_as_the_board_fills_up() {
         "thirteen damage to each creature"
     );
 }
+
+#[test]
+fn scavenging_ooze_only_grows_on_a_creature_card() {
+    for (definition, expect_growth) in [(cards::SAVANNAH_LIONS, true), (cards::MOUNTAIN, false)] {
+        let mut game = ready_game();
+        let ooze = game
+            .put_onto_battlefield(PlayerId::One, cards::SCAVENGING_OOZE)
+            .expect("cataloged");
+        let food = card(10_000, definition, PlayerId::Two);
+        game.players[1].graveyard.push(food.clone());
+        game.players[0].mana_pool.green = 1;
+        let life_before = game.players[0].life;
+
+        let eat = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == ooze))
+            .expect("the graveyard card is a legal target");
+        game.apply(PlayerId::One, eat).unwrap();
+        pass_priority_pair(&mut game);
+
+        assert!(game.players[1].graveyard.is_empty(), "it was exiled");
+        assert_eq!(game.players[1].exile.len(), 1);
+        let ooze = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == ooze)
+            .expect("still there");
+        let counters = ooze.counters[CounterKind::PlusOnePlusOne.index()];
+        assert_eq!(counters, u16::from(expect_growth), "{definition:?}");
+        assert_eq!(
+            game.players[0].life - life_before,
+            i16::from(expect_growth),
+            "{definition:?}"
+        );
+    }
+}

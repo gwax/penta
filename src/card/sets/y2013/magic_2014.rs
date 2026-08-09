@@ -4,8 +4,8 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
-    EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef,
-    ValueDef, ZoneKind, abilities, cards,
+    EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, PlayerRelation,
+    TargetConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -304,6 +304,14 @@ pub(in crate::card::sets) static RATCHET_BOMB: CardRecord = CardRecord::new(
     ]),
 );
 
+/// One when the exiled card was a creature, nothing otherwise.
+static EXILED_A_CREATURE: TargetConditionDef = TargetConditionDef {
+    slot: TargetSlotId(0),
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    then: ValueDef::Constant(1),
+    otherwise: ValueDef::Constant(0),
+};
+
 pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new(
     cards::SCAVENGING_OOZE,
     "Scavenging Ooze",
@@ -315,10 +323,40 @@ pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new(
         2,
         2,
     )
-    .with_ability(AbilityDef::not_implemented(
-        "{G}: Exile target card from a graveyard. If it was a creature card, put a +1/+1 counter on this creature and you gain 1 life.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    .with_ability(
+        AbilityDef::activated(
+            "{G}: Exile target card from a graveyard. If it was a creature card, put a +1/+1 counter on this creature and you gain 1 life.",
+            &[AbilityCostDef::Mana(mana_cost!("{G}"))],
+            // The counter and the life come first so the card is still in the
+            // graveyard to be asked what it was. Exiling it first would leave
+            // nothing to look at, and nothing here can observe the order.
+            EffectDef::Sequence(&[
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::IfTargetMatches(&EXILED_A_CREATURE),
+                },
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::IfTargetMatches(&EXILED_A_CREATURE),
+                },
+                EffectDef::MoveToZone {
+                    object: EffectRecipientDef::Target(TargetSlotId(0)),
+                    zone: ZoneKind::Exile,
+                },
+            ]),
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "card in a graveyard",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Any,
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: None,
+            },
+        )]),
+    ),
 );
 
 pub(in crate::card::sets) static SHADOWBORN_DEMON: CardRecord = CardRecord::new(

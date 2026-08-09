@@ -6756,6 +6756,39 @@ impl Game {
                 object.source.unwrap_or(object.id),
                 object.controller,
             )),
+            ValueDef::IfTargetMatches(condition) => {
+                let source = object.source.unwrap_or(object.id);
+                let matched = self
+                    .effect_recipients(EffectRecipientDef::Target(condition.slot), object, context)
+                    .into_iter()
+                    .any(|target| match target {
+                        Target::Card(id) => {
+                            self.card_in_nonbattlefield_zone(id)
+                                .is_some_and(|(zone, card)| {
+                                    self.card_object_matches(condition.object, card, zone, source)
+                                })
+                        }
+                        Target::Permanent(id) => self
+                            .battlefield
+                            .iter()
+                            .find(|permanent| permanent.card.id == id)
+                            .is_some_and(|permanent| {
+                                self.trigger_object_matches(
+                                    condition.object,
+                                    &self.trigger_event_object(permanent),
+                                    source,
+                                    false,
+                                )
+                            }),
+                        Target::Player(_) | Target::Spell(_) => false,
+                    });
+                let chosen = if matched {
+                    condition.then
+                } else {
+                    condition.otherwise
+                };
+                self.effect_value(chosen, object, context)
+            }
             ValueDef::IfCreatureDiedThisTurn(branches) => {
                 let chosen = if self.creature_died_this_turn {
                     branches.then

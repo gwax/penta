@@ -864,6 +864,15 @@ pub struct ConditionalValueDef {
     pub otherwise: ValueDef,
 }
 
+/// A conditional value that asks what the chosen target is.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct TargetConditionDef {
+    pub slot: TargetSlotId,
+    pub object: ObjectPredicateDef,
+    pub then: ValueDef,
+    pub otherwise: ValueDef,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ObjectQueryDef {
     pub object: ObjectPredicateDef,
@@ -897,6 +906,9 @@ pub enum ValueDef {
     /// The morbid condition. Held by reference so that `ValueDef` stays one
     /// word wide; a second inline value would grow everything embedding it.
     IfCreatureDiedThisTurn(&'static ConditionalValueDef),
+    /// One value when the chosen target matches, another when it does not.
+    /// Held by reference for the same reason.
+    IfTargetMatches(&'static TargetConditionDef),
 }
 
 /// An object or player affected by an effect. Targets are chosen when a spell

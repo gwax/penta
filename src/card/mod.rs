@@ -34,8 +34,9 @@ pub use model::{
     MeldComponentDef, MeldRecipeDef, MeldResultDef, ModalSpellDef, ModeDef, ModeSetDef,
     ObjectPredicateDef, ObjectQueryDef, PlayActionKind, PlayOptionDef, PlayRestriction,
     PlayerRelation, PrintedManaCost, ReplacementAbilityDef, ReplacementEventDef, SpecialActionDef,
-    SpellAbilityDef, SpellForm, StaticAbilityDef, TargetPredicate, TargetSlotDef, TriggerEventDef,
-    TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    SpellAbilityDef, SpellForm, StaticAbilityDef, TargetConditionDef, TargetPredicate,
+    TargetSlotDef, TriggerEventDef, TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind,
+    ZoneMoveCauseDef,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every
