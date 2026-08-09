@@ -1610,6 +1610,7 @@ impl WebGame {
                     BattlefieldExit::Graveyard => "was destroyed",
                     BattlefieldExit::Exile => "was exiled",
                     BattlefieldExit::Hand => "returned to hand",
+                    BattlefieldExit::LibraryTop => "was put on top of its owner's library",
                 }
             )),
             GameEvent::GameEnded { result } => Some(match result {

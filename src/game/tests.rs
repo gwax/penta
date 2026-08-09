@@ -10796,3 +10796,36 @@ fn thundermaw_hellkite_only_shocks_the_fliers_across_the_table() {
     assert_eq!(state(10_001), Some((0, false)), "their ground creature");
     assert_eq!(state(10_002), Some((0, false)), "your own flier");
 }
+
+#[test]
+fn azorius_charm_puts_an_attacker_back_on_top_of_its_library() {
+    let mut game = ready_game();
+    let mut attacker = creature(10_000, cards::SERRA_ANGEL, PlayerId::Two);
+    attacker.attacking = true;
+    game.battlefield.push(attacker);
+    let charm = card(10_001, cards::AZORIUS_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.blue = 1;
+    let library_before = game.players[1].library.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(
+            charm.id,
+            ModeId(2),
+            TargetSlotId(2),
+            vec![Target::Permanent(CardInstanceId(10_000))],
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.battlefield.is_empty(), "the attacker left combat");
+    assert_eq!(game.players[1].library.len(), library_before + 1);
+    assert_eq!(
+        game.players[1].library.last().map(|card| card.definition),
+        Some(cards::SERRA_ANGEL),
+        "on top, not shuffled in",
+    );
+}

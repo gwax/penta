@@ -6514,10 +6514,8 @@ impl Game {
                 ZoneKind::Exile => self.exile_permanent(id),
                 ZoneKind::Hand => self.return_permanent_to_hand(id),
                 ZoneKind::Graveyard => self.destroy_permanent_without_regeneration(id),
-                // Bottoming a permanent needs a battlefield exit destination
-                // the event vocabulary does not have yet.
-                ZoneKind::Library | ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {
-                }
+                ZoneKind::Library => self.return_permanent_to_library_top(id),
+                ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {}
             }
             return;
         }
@@ -10392,6 +10390,35 @@ impl Game {
         let owner = permanent.card.owner;
         let (card, _zone_change) = self.zone_change_card(permanent.card);
         self.players[owner.index()].hand.push(card);
+    }
+
+    /// Puts a permanent on top of its owner's library. The exit is the same
+    /// procedure a bounce uses; only the destination differs.
+    fn return_permanent_to_library_top(&mut self, id: GameObjectId) {
+        let listeners = self.battlefield_trigger_listeners();
+        let Some(index) = self
+            .battlefield
+            .iter()
+            .position(|permanent| permanent.card.id == id)
+        else {
+            return;
+        };
+        let snapshot = self.battlefield_exit_snapshot(&self.battlefield[index]);
+        let permanent = self.remove_battlefield_object(index, &snapshot.last_known);
+        let event = CommittedTriggerEvent::ZoneChanged {
+            object: snapshot.object,
+            from: ZoneKind::Battlefield,
+            to: ZoneKind::Library,
+        };
+        self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
+        self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
+        self.record_battlefield_exit(&permanent, BattlefieldExit::LibraryTop);
+        if self.is_token(permanent.card.definition) {
+            return;
+        }
+        let owner = permanent.card.owner;
+        let (card, _zone_change) = self.zone_change_card(permanent.card);
+        self.players[owner.index()].library.push(card);
     }
 
     /// True when a spell had targets and every one of them is now illegal.

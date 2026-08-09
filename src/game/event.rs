@@ -182,4 +182,7 @@ pub enum BattlefieldExit {
     Graveyard,
     Exile,
     Hand,
+    /// On top of its owner's library. Bottoming a permanent has no card that
+    /// needs it yet, so this destination means the top.
+    LibraryTop,
 }

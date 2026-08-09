@@ -92,12 +92,21 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
                     amount: ValueDef::Constant(1),
                 },
             ),
-            // Needs a top-of-library destination and an attacking-or-blocking
-            // predicate; the vocabulary has neither yet.
-            AbilityDef::unimplemented_spell(
+            AbilityDef::spell(
                 "Put an attacking or blocking creature on top of its owner's library",
-                "Printed mode is cataloged but is not executed by the engine.",
-            ),
+                EffectDef::MoveToZone {
+                    object: EffectRecipientDef::Target(TargetSlotId(2)),
+                    zone: ZoneKind::Library,
+                },
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+                TargetSlotId(2),
+                "attacking or blocking creature",
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::AttackingOrBlocking,
+                ]),
+            )]),
         ],
     )),
 );
