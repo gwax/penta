@@ -198,6 +198,7 @@ pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::ne
         abilities::trample(),
         abilities::bloodrush(
             mana_cost!("{R}{G}"),
+            "Bloodrush — {R}{G}, Discard this card: Target attacking creature gets +4/+4 and gains trample until end of turn.",
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetSlotId(0)),
                 effect: AppliedEffectDef::Composite(&[
@@ -209,9 +210,6 @@ pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::ne
                 ]),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
-        )
-        .with_text(
-            "Bloodrush — {R}{G}, Discard this card: Target attacking creature gets +4/+4 and gains trample until end of turn.",
         )
         .with_targets(&[AbilityTargetDef::exactly_one(
             TargetSlotId(0),

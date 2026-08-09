@@ -2086,9 +2086,9 @@ impl AbilityDef {
         self
     }
 
-    /// Overrides the canonical text supplied by a common ability constructor
-    /// when the exact printed clause includes card-specific instructions or
-    /// reminder text. The underlying structured semantics remain shared.
+    /// Overrides the canonical text supplied by a common ability constructor.
+    /// This is reserved for Oracle clauses that include reminder text; the
+    /// underlying keyword or mana semantics remain shared.
     #[must_use]
     pub const fn with_text(mut self, text: &'static str) -> Self {
         self.text = text;

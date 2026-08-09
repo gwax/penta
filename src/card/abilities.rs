@@ -163,11 +163,11 @@ pub const fn overload(
 
 /// A Bloodrush ability activated from the card carrying it in hand. The
 /// mechanic always discards that card in addition to paying its mana cost;
-/// the card supplies its target declaration and exact effect text.
+/// the card supplies its exact rules text, target declaration, and effect.
 #[must_use]
-pub const fn bloodrush(mana_cost: ManaCost, effect: EffectDef) -> AbilityDef {
+pub const fn bloodrush(mana_cost: ManaCost, text: &'static str, effect: EffectDef) -> AbilityDef {
     AbilityDef::activated_with_cost_list(
-        "Bloodrush",
+        text,
         AbilityCostList::two(
             AbilityCostDef::Mana(mana_cost),
             AbilityCostDef::DiscardSource,
@@ -333,12 +333,13 @@ mod tests {
     #[test]
     fn bloodrush_owns_its_hand_zone_and_discard_procedure() {
         let effect = EffectDef::Special("Test Bloodrush effect");
-        let ability = bloodrush(mana_cost!("{R}{G}"), effect);
+        let text = "Bloodrush — {R}{G}, Discard this card: Test Bloodrush effect.";
+        let ability = bloodrush(mana_cost!("{R}{G}"), text, effect);
         let DeclarativeAbilityDef::Activated(definition) = ability.definition else {
             panic!("Bloodrush should be an activated ability")
         };
 
-        assert_eq!(ability.text, "Bloodrush");
+        assert_eq!(ability.text, text);
         assert_eq!(ability.activation_text, None);
         assert_eq!(definition.source_zones, [ZoneKind::Hand]);
         assert_eq!(
