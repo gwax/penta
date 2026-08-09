@@ -983,6 +983,82 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
 }
 
 #[test]
+fn cost_configuration_visitor_preserves_option_order() {
+    let definition = CardDefinition::new(
+        CardDefinitionId(10_201),
+        "Ordered Costs",
+        CardSet::Alpha,
+        false,
+        CardBehavior::Unsupported,
+    );
+    let mut option = PlayOptionDef::cast(
+        PlayOptionId::DEFAULT,
+        "Cast Ordered Costs",
+        SpellForm::Part(CardPartId::PRIMARY),
+        ManaCost::new(1, 0),
+        CardEffectStatus::Implemented,
+    );
+    let alternatives = [AlternativeCostId(3), AlternativeCostId(7)];
+    let additional = [AdditionalCostId(11), AdditionalCostId(13)];
+    option.alternative_costs = alternatives
+        .into_iter()
+        .map(|id| AlternativeCostDef {
+            id,
+            label: format!("Alternative {}", id.0),
+            mana_cost: ManaCost::new(1, 0),
+        })
+        .collect();
+    option.additional_costs = additional
+        .into_iter()
+        .map(|id| AdditionalCostDef {
+            id,
+            label: format!("Additional {}", id.0),
+            mana_cost: Some(ManaCost::new(1, 0)),
+        })
+        .collect();
+
+    let game = ready_game();
+    let mut actual = Vec::new();
+    assert!(
+        game.visit_cost_configurations(
+            &definition,
+            GameObjectId(10_201),
+            &option,
+            CastSourceZone::Hand,
+            |configuration| {
+                actual.push(configuration);
+                ControlFlow::Continue(())
+            },
+        )
+        .is_continue()
+    );
+
+    let additional_sets = [
+        vec![],
+        vec![additional[0]],
+        vec![additional[1]],
+        vec![additional[0], additional[1]],
+    ];
+    let expected = [None, Some(alternatives[0]), Some(alternatives[1])]
+        .into_iter()
+        .flat_map(|alternative| {
+            additional_sets
+                .iter()
+                .cloned()
+                .map(move |additional| CostConfiguration::new(alternative, additional))
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(actual, expected);
+    for invalid in [
+        vec![additional[1], additional[0]],
+        vec![additional[0], additional[0]],
+        vec![AdditionalCostId(99)],
+    ] {
+        assert!(!actual.contains(&CostConfiguration::new(None, invalid)));
+    }
+}
+
+#[test]
 fn generated_mode_selections_are_canonical_combinations() {
     let modes = [ModeId(0), ModeId(1)];
     assert_eq!(

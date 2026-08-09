@@ -23,8 +23,8 @@ use crate::card::{
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
 use crate::ids::{
-    AbilityId, AlternativeCostId, CardDefinitionId, CardPartId, GameObjectId, GrantId,
-    MeldRecipeId, ModeId, PhysicalCardId, PlayOptionId, PlayerId, TargetSlotId,
+    AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, GameObjectId,
+    GrantId, MeldRecipeId, ModeId, PhysicalCardId, PlayOptionId, PlayerId, TargetSlotId,
 };
 use crate::rng::ReplayRng;
 #[cfg(test)]
@@ -4558,99 +4558,117 @@ impl Game {
 
                 for modes in Self::implemented_mode_selections(option) {
                     let declared_slots = Self::target_slots_for(option, &modes);
-                    for costs in self.cost_configurations(definition, card.id, option, source_zone)
-                    {
-                        let alternative_kind =
-                            self.selected_alternative_kind(definition, option, card.id, &costs);
-                        if alternative_kind == Some(AlternativeCastKindDef::Overload)
-                            && !modes.is_empty()
-                        {
-                            continue;
-                        }
-                        let Some(cost) = self.configured_cast_mana_cost(card.id, option, &costs)
-                        else {
-                            continue;
-                        };
-                        let max_x = if cost.variable_x {
-                            self.maximum_x_for(player, cost, &payment_purpose)
-                        } else {
-                            0
-                        };
-                        for x in 0..=max_x {
-                            if behavior == CardBehavior::Recall
-                                && usize::from(x)
-                                    > state.hand.len().saturating_sub(usize::from(
-                                        source_zone == CastSourceZone::Hand,
-                                    ))
+                    let _ = self.visit_cost_configurations(
+                        definition,
+                        card.id,
+                        option,
+                        source_zone,
+                        |costs| {
+                            let alternative_kind =
+                                self.selected_alternative_kind(definition, option, card.id, &costs);
+                            if alternative_kind == Some(AlternativeCastKindDef::Overload)
+                                && !modes.is_empty()
                             {
-                                continue;
+                                return ControlFlow::Continue(());
                             }
-                            let target_choices = if alternative_kind
-                                == Some(AlternativeCastKindDef::Overload)
-                            {
-                                vec![Vec::new()]
-                            } else if let Some((_, ability)) =
-                                Self::spell_ability(definition, option)
-                            {
-                                let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
-                                    unreachable!("spell_ability returns a spell clause")
-                                };
-                                let Some(targets) = Self::selected_spell_target_defs(spell, &modes)
-                                else {
-                                    continue;
-                                };
-                                self.legal_ability_target_selections(
-                                    &targets,
-                                    player,
-                                    card.id,
-                                    TriggerContext::empty(),
-                                )
-                            } else if Self::uses_legacy_behavior_targets(definition, option) {
-                                self.legacy_target_selections(behavior, x, player)
-                            } else {
-                                self.legal_target_selections(&declared_slots)
+                            let Some(cost) =
+                                self.configured_cast_mana_cost(card.id, option, &costs)
+                            else {
+                                return ControlFlow::Continue(());
                             };
-                            for targets in &target_choices {
-                                let target_count = targets
-                                    .iter()
-                                    .map(|selection| selection.targets().len())
-                                    .sum();
-                                let payable_cost = reduce_generic(
-                                    add_generic(cost, fireball_extra_cost(behavior, target_count)),
-                                    self.spell_cost_reduction(definition.id, player),
-                                );
-                                if !self.can_pay_cost_for(player, payable_cost, x, &payment_purpose)
+                            let max_x = if cost.variable_x {
+                                self.maximum_x_for(player, cost, &payment_purpose)
+                            } else {
+                                0
+                            };
+                            for x in 0..=max_x {
+                                if behavior == CardBehavior::Recall
+                                    && usize::from(x)
+                                        > state.hand.len().saturating_sub(usize::from(
+                                            source_zone == CastSourceZone::Hand,
+                                        ))
                                 {
                                     continue;
                                 }
-                                let sacrifice_choices = if behavior == CardBehavior::GoblinGrenade {
-                                    self.battlefield
-                                        .iter()
-                                        .filter(|permanent| {
-                                            permanent.controller == player
-                                                && self.effective_rules(permanent).is_some_and(
-                                                    |rules| rules.has_subtype("Goblin"),
-                                                )
-                                        })
-                                        .map(|permanent| vec![permanent.card.id])
-                                        .collect()
-                                } else {
+                                let target_choices = if alternative_kind
+                                    == Some(AlternativeCastKindDef::Overload)
+                                {
                                     vec![Vec::new()]
+                                } else if let Some((_, ability)) =
+                                    Self::spell_ability(definition, option)
+                                {
+                                    let DeclarativeAbilityDef::Spell(spell) = ability.definition
+                                    else {
+                                        unreachable!("spell_ability returns a spell clause")
+                                    };
+                                    let Some(targets) =
+                                        Self::selected_spell_target_defs(spell, &modes)
+                                    else {
+                                        continue;
+                                    };
+                                    self.legal_ability_target_selections(
+                                        &targets,
+                                        player,
+                                        card.id,
+                                        TriggerContext::empty(),
+                                    )
+                                } else if Self::uses_legacy_behavior_targets(definition, option) {
+                                    self.legacy_target_selections(behavior, x, player)
+                                } else {
+                                    self.legal_target_selections(&declared_slots)
                                 };
-                                for sacrifices in sacrifice_choices {
-                                    actions.push(Action::CastSpell {
-                                        card: card.id,
-                                        choices: CastChoices::new(option.id)
-                                            .with_modes(modes.clone())
-                                            .with_costs(costs.clone())
-                                            .with_x(x)
-                                            .with_targets(targets.clone()),
-                                        sacrifices,
-                                    });
+                                for targets in &target_choices {
+                                    let target_count = targets
+                                        .iter()
+                                        .map(|selection| selection.targets().len())
+                                        .sum();
+                                    let payable_cost = reduce_generic(
+                                        add_generic(
+                                            cost,
+                                            fireball_extra_cost(behavior, target_count),
+                                        ),
+                                        self.spell_cost_reduction(definition.id, player),
+                                    );
+                                    if !self.can_pay_cost_for(
+                                        player,
+                                        payable_cost,
+                                        x,
+                                        &payment_purpose,
+                                    ) {
+                                        continue;
+                                    }
+                                    let sacrifice_choices = if behavior
+                                        == CardBehavior::GoblinGrenade
+                                    {
+                                        self.battlefield
+                                            .iter()
+                                            .filter(|permanent| {
+                                                permanent.controller == player
+                                                    && self.effective_rules(permanent).is_some_and(
+                                                        |rules| rules.has_subtype("Goblin"),
+                                                    )
+                                            })
+                                            .map(|permanent| vec![permanent.card.id])
+                                            .collect()
+                                    } else {
+                                        vec![Vec::new()]
+                                    };
+                                    for sacrifices in sacrifice_choices {
+                                        actions.push(Action::CastSpell {
+                                            card: card.id,
+                                            choices: CastChoices::new(option.id)
+                                                .with_modes(modes.clone())
+                                                .with_costs(costs.clone())
+                                                .with_x(x)
+                                                .with_targets(targets.clone()),
+                                            sacrifices,
+                                        });
+                                    }
                                 }
                             }
-                        }
-                    }
+                            ControlFlow::Continue(())
+                        },
+                    );
                 }
             }
         }
@@ -4980,61 +4998,105 @@ impl Game {
         slots
     }
 
-    fn cost_configurations(
+    fn visit_cost_configurations(
         &self,
         definition: &CardDefinition,
         card: GameObjectId,
         option: &PlayOptionDef,
         source_zone: CastSourceZone,
-    ) -> Vec<CostConfiguration> {
-        let mut alternatives = Vec::new();
-        if source_zone == CastSourceZone::Hand {
-            alternatives.push(None);
+        mut visitor: impl FnMut(CostConfiguration) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
+        let mut selected_additional = Vec::with_capacity(option.additional_costs.len());
+        if source_zone == CastSourceZone::Hand
+            && Self::visit_additional_cost_configurations(
+                option,
+                None,
+                option.additional_costs.len(),
+                &mut selected_additional,
+                &mut visitor,
+            )
+            .is_break()
+        {
+            return ControlFlow::Break(());
         }
-        alternatives.extend(option.alternative_costs.iter().filter_map(|cost| {
+        for cost in &option.alternative_costs {
             let kind = match Self::alternative_cast_clause(definition, option, cost.id) {
                 Some((_, ability, kind)) if ability.implementation.is_executable() => Some(kind),
-                Some(_) => return None,
+                Some(_) => continue,
                 None => None,
             };
-            match (source_zone, kind) {
+            let available = match (source_zone, kind) {
                 (CastSourceZone::Hand, Some(AlternativeCastKindDef::Flashback))
                 | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Overload) | None) => {
-                    None
+                    false
                 }
                 (CastSourceZone::Hand, Some(AlternativeCastKindDef::Overload) | None)
-                | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Flashback)) => {
-                    Some(Some(cost.id))
-                }
+                | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Flashback)) => true,
+            };
+            if available
+                && Self::visit_additional_cost_configurations(
+                    option,
+                    Some(cost.id),
+                    option.additional_costs.len(),
+                    &mut selected_additional,
+                    &mut visitor,
+                )
+                .is_break()
+            {
+                return ControlFlow::Break(());
             }
-        }));
+        }
         if source_zone == CastSourceZone::Graveyard
             && self.granted_flashback(card, option).is_some()
             && let Some(granted) = Self::temporary_alternative_cost_id(option)
+            && Self::visit_additional_cost_configurations(
+                option,
+                Some(granted),
+                option.additional_costs.len(),
+                &mut selected_additional,
+                &mut visitor,
+            )
+            .is_break()
         {
-            alternatives.push(Some(granted));
+            return ControlFlow::Break(());
         }
-        let mut additional_sets = vec![Vec::new()];
-        for additional in &option.additional_costs {
-            let with_additional = additional_sets
-                .iter()
-                .cloned()
-                .map(|mut selected| {
-                    selected.push(additional.id);
-                    selected
-                })
-                .collect::<Vec<_>>();
-            additional_sets.extend(with_additional);
+
+        ControlFlow::Continue(())
+    }
+
+    fn visit_additional_cost_configurations(
+        option: &PlayOptionDef,
+        alternative: Option<AlternativeCostId>,
+        remaining: usize,
+        selected_reversed: &mut Vec<AdditionalCostId>,
+        visitor: &mut impl FnMut(CostConfiguration) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
+        let Some(index) = remaining.checked_sub(1) else {
+            let additional = selected_reversed.iter().rev().copied().collect();
+            return visitor(CostConfiguration::new(alternative, additional));
+        };
+
+        if Self::visit_additional_cost_configurations(
+            option,
+            alternative,
+            index,
+            selected_reversed,
+            visitor,
+        )
+        .is_break()
+        {
+            return ControlFlow::Break(());
         }
-        alternatives
-            .into_iter()
-            .flat_map(|alternative| {
-                additional_sets
-                    .iter()
-                    .cloned()
-                    .map(move |additional| CostConfiguration::new(alternative, additional))
-            })
-            .collect()
+        selected_reversed.push(option.additional_costs[index].id);
+        let result = Self::visit_additional_cost_configurations(
+            option,
+            alternative,
+            index,
+            selected_reversed,
+            visitor,
+        );
+        selected_reversed.pop();
+        result
     }
 
     fn configured_cast_mana_cost(
@@ -5925,51 +5987,82 @@ impl Game {
         self.add_hand_ability_actions(player, actions);
     }
 
-    fn printed_card_abilities(
+    fn visit_printed_card_abilities(
         &self,
         card: &CardInstance,
         context: &CharacteristicContext,
-    ) -> Vec<EffectiveAbility> {
+        mut visitor: impl FnMut(EffectiveAbility) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
         let Some(definition) = self.catalog.get(card.definition) else {
-            return Vec::new();
+            return ControlFlow::Continue(());
         };
         let Ok(parts) = applicable_part_ids(definition, context) else {
-            return Vec::new();
+            return ControlFlow::Continue(());
         };
-        parts
-            .into_iter()
-            .flat_map(|part| {
-                definition
-                    .part(part)
-                    .into_iter()
-                    .flat_map(move |part_definition| {
-                        part_definition
-                            .rules
-                            .indexed_abilities()
-                            .map(move |attached| EffectiveAbility {
-                                origin: AbilityOrigin::Printed {
-                                    definition: definition.id,
-                                    part,
-                                    ability: attached.id,
-                                },
-                                ability: attached.definition,
-                            })
-                    })
-            })
-            .collect()
+        for part in parts {
+            let Some(part_definition) = definition.part(part) else {
+                continue;
+            };
+            for attached in part_definition.rules.indexed_abilities() {
+                if visitor(EffectiveAbility {
+                    origin: AbilityOrigin::Printed {
+                        definition: definition.id,
+                        part,
+                        ability: attached.id,
+                    },
+                    ability: attached.definition,
+                })
+                .is_break()
+                {
+                    return ControlFlow::Break(());
+                }
+            }
+        }
+        ControlFlow::Continue(())
+    }
+
+    fn for_each_printed_card_ability(
+        &self,
+        card: &CardInstance,
+        context: &CharacteristicContext,
+        mut visitor: impl FnMut(EffectiveAbility),
+    ) {
+        let result = self.visit_printed_card_abilities(card, context, |effective| {
+            visitor(effective);
+            ControlFlow::Continue(())
+        });
+        debug_assert!(result.is_continue());
+    }
+
+    fn find_printed_card_ability(
+        &self,
+        card: &CardInstance,
+        context: &CharacteristicContext,
+        mut predicate: impl FnMut(EffectiveAbility) -> bool,
+    ) -> Option<EffectiveAbility> {
+        let mut found = None;
+        let _ = self.visit_printed_card_abilities(card, context, |effective| {
+            if predicate(effective) {
+                found = Some(effective);
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        });
+        found
     }
 
     fn add_hand_ability_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
         for card in &self.players[player.index()].hand {
-            for effective in self.printed_card_abilities(card, &CharacteristicContext::Hand) {
+            self.for_each_printed_card_ability(card, &CharacteristicContext::Hand, |effective| {
                 let ability = effective.ability;
                 let DeclarativeAbilityDef::Activated(definition) = ability.definition else {
-                    continue;
+                    return;
                 };
                 if ability.implementation != AbilityImplementationDef::Definition
                     || !definition.source_zones.contains(&ZoneKind::Hand)
                 {
-                    continue;
+                    return;
                 }
                 let mut mana_cost = ManaCost::default();
                 let mut supported = true;
@@ -5994,7 +6087,7 @@ impl Game {
                     taps_source: false,
                 };
                 if !supported || !self.can_pay_cost_for(player, mana_cost, 0, &payment_purpose) {
-                    continue;
+                    return;
                 }
                 let max_x = if mana_cost.variable_x {
                     self.maximum_x_for(player, mana_cost, &payment_purpose)
@@ -6017,7 +6110,7 @@ impl Game {
                         });
                     }
                 }
-            }
+            });
         }
     }
 
@@ -6500,8 +6593,14 @@ impl Game {
         }
 
         if !self
-            .cost_configurations(definition, card_id, option, source_zone)
-            .contains(choices.costs())
+            .visit_cost_configurations(definition, card_id, option, source_zone, |costs| {
+                if &costs == choices.costs() {
+                    ControlFlow::Break(())
+                } else {
+                    ControlFlow::Continue(())
+                }
+            })
+            .is_break()
         {
             return None;
         }
@@ -6511,21 +6610,8 @@ impl Game {
         {
             return None;
         }
-        let mut cost = reduce_generic(
-            self.configured_cast_mana_cost(card_id, option, choices.costs())?,
-            self.spell_cost_reduction(definition.id, player),
-        );
-        if cost.variable_x {
-            let payment_purpose = ManaPaymentPurpose::Spell {
-                object: card_id,
-                definition: definition.id,
-                controller: player,
-                form: option.form.clone(),
-            };
-            if choices.x() > self.maximum_x_for(player, cost, &payment_purpose) {
-                return None;
-            }
-        } else if choices.x() != 0 {
+        let mut cost = self.configured_cast_mana_cost(card_id, option, choices.costs())?;
+        if !cost.variable_x && choices.x() != 0 {
             return None;
         }
 
@@ -6565,12 +6651,16 @@ impl Game {
         } else if !self.declared_slot_selection_is_valid(&declared_slots, choices) {
             return None;
         }
+        cost = reduce_generic(cost, self.spell_cost_reduction(definition.id, player));
         let payment_purpose = ManaPaymentPurpose::Spell {
             object: card_id,
             definition: definition.id,
             controller: player,
             form: option.form.clone(),
         };
+        if cost.variable_x && choices.x() > self.maximum_x_for(player, cost, &payment_purpose) {
+            return None;
+        }
         if !self.can_pay_cost_for(player, cost, choices.x(), &payment_purpose) {
             return None;
         }
@@ -10144,9 +10234,7 @@ impl Game {
             .iter()
             .find(|card| card.id == source)
             && let Some(definition) = self
-                .printed_card_abilities(card, &CharacteristicContext::Hand)
-                .into_iter()
-                .find(|effective| {
+                .find_printed_card_ability(card, &CharacteristicContext::Hand, |effective| {
                     effective.origin == ability
                         && effective.ability.implementation == AbilityImplementationDef::Definition
                 })
@@ -10850,11 +10938,11 @@ impl Game {
             .find(|card| card.id == source)
             .cloned()
         {
-            let Some(effective) = self
-                .printed_card_abilities(&source_card, &CharacteristicContext::Hand)
-                .into_iter()
-                .find(|effective| effective.origin == ability)
-            else {
+            let Some(effective) = self.find_printed_card_ability(
+                &source_card,
+                &CharacteristicContext::Hand,
+                |effective| effective.origin == ability,
+            ) else {
                 return;
             };
             let DeclarativeAbilityDef::Activated(definition) = effective.ability.definition else {
