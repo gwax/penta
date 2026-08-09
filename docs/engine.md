@@ -138,7 +138,9 @@ effect: an ability that produces mana can still be an ordinary activated
 ability and use the stack. Other supported activated abilities create stack
 objects with their source, clause origin, text, targets, and resolver frozen at
 activation. Removing or changing the source does not erase that independent
-ability object.
+ability object. Definition-driven declarative and custom resolvers share this
+lifecycle for supported non-mana activated and triggered abilities; new custom
+resolution should not make one of those abilities atomic or bypass the stack.
 
 Committed events capture matching triggered abilities from the objects that
 declare them. The active player's simultaneous triggers are handled before the
@@ -293,17 +295,42 @@ and its rules. Format legality considers all known printings: a nonbasic card
 is legal when at least one printing belongs to the format's allowed sets,
 regardless of which printing might eventually be selected for presentation.
 
-Most executable effects use reusable declarative primitives or constructors in
-`card::abilities`. `CardBehavior` remains a closed, serialization-safe escape
-hatch attached only to the custom clause that needs card-specific resolution;
-declarative cards need no behavior identity. Unsupported cards can exist in
-other catalogs and hidden zones but do not generate play options that would
-resolve as silent no-ops. This makes partial coverage explicit and keeps
+Many executable effects use reusable declarative primitives or constructors in
+`card::abilities`. A `CardBehavior` value supplies a closed,
+serialization-safe selector for many custom implementations; other custom
+clauses use compatibility hooks without a behavior identity, and declarative
+cards need none. A clause can carry its custom selector, coverage, and
+explanation even though compatibility handlers remain centralized and some
+older behavior is still selected at card or part scope. Unsupported cards can
+exist in other catalogs and hidden zones but do not generate play options that
+would resolve as silent no-ops. This makes partial coverage explicit and keeps
 arbitrary card code out of serialized game state.
 
-As the corpus grows, behavior should be factored into reusable primitives
-(damage, draw, destroy, continuous restrictions, triggers) rather than one
-large bespoke function per printed card.
+The preferred extension boundary is the `AbilityDef` clause. A new or migrated
+card first expresses its ability category and its applicable costs, targets,
+stack behavior, and effect there. If its behavior is a recurring mechanic or a
+general Magic rules concept, the declarative vocabulary and runtime should gain
+a reusable, card-agnostic primitive. That is engine development, not an
+engine-level implementation of one named card.
+
+If an effect is genuinely card-specific, or its general shape is still
+uncertain, a card-specific resolver reached from that clause is an intentional
+alternative to premature abstraction. It should leave as much of the
+surrounding ability definition declarative as possible. Here, "card-scoped"
+describes the intended ownership boundary, not a particular file layout or a
+claim that every compatibility path already has exact-clause dispatch. The
+codebase does not yet provide every useful card-scoped hook, so those
+boundaries can be introduced incrementally rather than routing new work into a
+generic engine procedure by default.
+
+A direct card-identity branch in generic `Game` or state-machine flow that
+bypasses the clause-attached custom-resolution boundary is the final escape
+valve for particularly weird or difficult cards. Such a branch should be
+narrow, explain why the definition or card-scoped paths were insufficient, and
+retain accurate clause-level coverage and focused tests. Existing engine-level
+cases are migration inventory rather than templates. Conversely, one unusual
+card does not justify a speculative framework; extract a shared primitive when
+a real rules concept or repeated implementation demonstrates the boundary.
 
 ## Rules boundary
 
@@ -320,11 +347,12 @@ combat damage assignment decisions. Supported non-mana activated and triggered
 abilities use the same priority-bearing stack as spells, while explicitly
 tagged mana abilities remain immediate. Chaos Orb's activation uses the stack
 and deterministically destroys its target rather than simulating EC's physical
-card flip; removing the Orb before resolution does not remove the ability, but
-an illegal target makes it fail normally. Colored sources pay their printed
-colors, dual lands expose both choices, and flexible sources such as Black
-Lotus and Fellwar Stone are considered when the engine checks or automatically
-pays a cost. Red Elemental Blast can counter blue spells or destroy blue
-permanents.
+card flip. Removing the Orb before resolution leaves the independent ability
+object on the stack but makes its custom source-presence check nullify the
+flip; an illegal target also makes it fail normally. Colored sources pay their
+printed colors, dual lands expose both choices, and flexible sources such as
+Black Lotus and Fellwar Stone are considered when the engine checks or
+automatically pays a cost. Red Elemental Blast can counter blue spells or
+destroy blue permanents.
 
 [foundations-update]: https://magic.wizards.com/en/news/announcements/foundations-update-bulletin
