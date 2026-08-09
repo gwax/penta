@@ -400,7 +400,7 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
             },
             EffectDef::CreateToken {
                 token: cards::BEAST_TOKEN_3_3_GREEN,
-                count: 1,
+                count: ValueDef::Constant(1),
             },
         ),
     ]),

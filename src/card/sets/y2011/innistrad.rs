@@ -4,10 +4,10 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, DoubleFacedKind,
-    EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef,
-    PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef, ValueDef, ZoneKind, abilities,
-    cards,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CounterKind,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
+    ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef, ValueDef,
+    ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -159,7 +159,8 @@ pub(in crate::card::sets) static GAVONY_TOWNSHIP: CardRecord = CardRecord::new(
                     AbilityCostDef::Mana(mana_cost!("{2}{G}{W}")),
                     AbilityCostDef::TapSource,
                 ],
-                EffectDef::AddPlusOneCounters {
+                EffectDef::AddCounters {
+                    kind: CounterKind::PlusOnePlusOne,
                     object: EffectRecipientDef::MatchingObjects {
                         object: ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),

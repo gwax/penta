@@ -3,7 +3,7 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, EffectDef,
+    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
     EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef,
     ValueDef, ZoneKind, abilities, cards,
 };
@@ -170,7 +170,7 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
             ])),
             EffectDef::CreateToken {
                 token: cards::BEAST_TOKEN_3_3_GREEN,
-                count: 1,
+                count: ValueDef::Constant(1),
             },
         ),
         AbilityDef::triggered(
@@ -179,7 +179,8 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
                 ObjectPredicateDef::NoncreatureSpell,
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
-            EffectDef::AddPlusOneCounters {
+            EffectDef::AddCounters {
+                kind: CounterKind::PlusOnePlusOne,
                 object: EffectRecipientDef::Target(TargetSlotId(0)),
                 amount: ValueDef::Constant(3),
             },

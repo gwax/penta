@@ -451,7 +451,7 @@ mod tests {
             | EffectDef::Destroy { object, .. }
             | EffectDef::Sacrifice { object }
             | EffectDef::Counter { object }
-            | EffectDef::AddPlusOneCounters { object, .. }
+            | EffectDef::AddCounters { object, .. }
             | EffectDef::Attach { object } => shared_effect_recipient(object),
             // A token needs no recipient: it is created under the resolving
             // object's controller.
@@ -593,7 +593,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
-            | EffectDef::AddPlusOneCounters { .. }
+            | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
@@ -661,7 +661,7 @@ mod tests {
                         | EffectDef::Destroy { .. }
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::Counter { .. }
-                        | EffectDef::AddPlusOneCounters { .. }
+                        | EffectDef::AddCounters { .. }
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::EntersTapped
                         | EffectDef::MoveToZone { .. }
@@ -752,7 +752,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
-            | EffectDef::AddPlusOneCounters { .. }
+            | EffectDef::AddCounters { .. }
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
@@ -813,13 +813,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 246);
+        assert_eq!(records.len(), 247);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=246).collect::<Vec<_>>()
+            (1..=247).collect::<Vec<_>>()
         );
         assert_eq!(
             records
@@ -859,7 +859,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 246);
+        assert_eq!(records.len(), 247);
 
         for record in records {
             let definition = record.definition();

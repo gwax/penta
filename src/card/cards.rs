@@ -252,3 +252,4 @@ pub const ZEALOUS_CONSCRIPTS: CardDefinitionId = CardDefinitionId(244);
 /// to no set any format allows, so they are never deck-legal.
 pub const BEAST_TOKEN_3_3_GREEN: CardDefinitionId = CardDefinitionId(245);
 pub const KNIGHT_TOKEN_2_2_WHITE: CardDefinitionId = CardDefinitionId(246);
+pub const SOLDIER_TOKEN_1_1_RED_WHITE: CardDefinitionId = CardDefinitionId(247);

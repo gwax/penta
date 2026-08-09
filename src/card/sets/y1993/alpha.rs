@@ -2,9 +2,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    abilities, cards,
+    CardSupertype, CardType, CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef,
+    ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -1138,7 +1138,8 @@ pub(in crate::card::sets) static SENGIR_VAMPIRE: CardRecord = CardRecord::new(
         AbilityDef::triggered(
             "Whenever a creature dealt damage by this creature this turn dies, put a +1/+1 counter on this creature.",
             TriggerEventDef::DamagedCreatureDied,
-            EffectDef::AddPlusOneCounters {
+            EffectDef::AddCounters {
+                kind: CounterKind::PlusOnePlusOne,
                 object: EffectRecipientDef::Source,
                 amount: ValueDef::Constant(1),
             },

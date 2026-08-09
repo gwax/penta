@@ -30,7 +30,20 @@ pub(in crate::card::sets) static KNIGHT_TOKEN_2_2_WHITE: CardRecord = CardRecord
         .with_abilities(&[abilities::vigilance()]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&BEAST_TOKEN_3_3_GREEN, &KNIGHT_TOKEN_2_2_WHITE];
+pub(in crate::card::sets) static SOLDIER_TOKEN_1_1_RED_WHITE: CardRecord = CardRecord::new(
+    cards::SOLDIER_TOKEN_1_1_RED_WHITE,
+    "Soldier",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Soldier"], 1, 1)
+        .printed_colors(&[ManaColor::Red, ManaColor::White])
+        .with_abilities(&[abilities::haste()]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &BEAST_TOKEN_3_3_GREEN,
+    &KNIGHT_TOKEN_2_2_WHITE,
+    &SOLDIER_TOKEN_1_1_RED_WHITE,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

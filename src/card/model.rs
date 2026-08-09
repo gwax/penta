@@ -867,6 +867,8 @@ pub enum ValueDef {
     /// The negation of another value, so a "for each" penalty can reuse the
     /// same count a bonus would.
     Negate(&'static ValueDef),
+    /// How many counters of one kind sit on the ability's own source.
+    CountersOnSource(CounterKind),
 }
 
 /// An object or player affected by an effect. Targets are chosen when a spell
@@ -951,7 +953,7 @@ pub enum EffectDef {
     /// object's controller.
     CreateToken {
         token: CardDefinitionId,
-        count: u8,
+        count: ValueDef,
     },
     /// An Aura spell attaching itself to what it enchants. The permanent the
     /// spell becomes is what attaches, so this is only meaningful on the spell
@@ -969,8 +971,9 @@ pub enum EffectDef {
     Counter {
         object: EffectRecipientDef,
     },
-    AddPlusOneCounters {
+    AddCounters {
         object: EffectRecipientDef,
+        kind: CounterKind,
         amount: ValueDef,
     },
     OptionalManaPayment {
@@ -2301,6 +2304,40 @@ pub enum CardBehavior {
     Mountain,
     Plains,
     Unsupported,
+}
+
+/// A kind of counter a permanent can carry. Only `PlusOnePlusOne` has rules
+/// meaning of its own; the rest are named markers that the cards putting them
+/// there give meaning to.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum CounterKind {
+    PlusOnePlusOne,
+    Javelin,
+    Muster,
+}
+
+impl CounterKind {
+    pub const COUNT: usize = 3;
+
+    pub const ALL: [Self; Self::COUNT] = [Self::PlusOnePlusOne, Self::Javelin, Self::Muster];
+
+    #[must_use]
+    pub const fn index(self) -> usize {
+        match self {
+            Self::PlusOnePlusOne => 0,
+            Self::Javelin => 1,
+            Self::Muster => 2,
+        }
+    }
+
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::PlusOnePlusOne => "+1/+1",
+            Self::Javelin => "javelin",
+            Self::Muster => "muster",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

@@ -12,11 +12,11 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardBehavior, CardCatalog,
     CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype,
-    CardType, CardTypeSet, CharacteristicContext, DeclarativeAbilityDef, DoubleFacedKind,
-    EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry, ManaCost,
-    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, PlayActionKind,
-    PlayOptionDef, PlayerRelation, ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
+    CardType, CardTypeSet, CharacteristicContext, CounterKind, DeclarativeAbilityDef,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry,
+    ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
+    PlayActionKind, PlayOptionDef, PlayerRelation, ReplacementEventDef, SpellForm, TargetPredicate,
+    TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
     applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
@@ -115,11 +115,10 @@ struct Permanent {
     temporary_keywords: Vec<KeywordAbility>,
     factory_animated: bool,
     dragon_whelp_activations: u8,
-    plus_one_counters: u16,
-    /// Named counters with no power/toughness meaning stay distinct from
-    /// +1/+1 counters. This can become a general counter collection when a
-    /// supported card needs another named counter type.
-    javelin_counters: u16,
+    /// Every kind of counter this permanent carries, indexed by
+    /// [`CounterKind::index`]. Only +1/+1 counters have rules meaning on their
+    /// own; the rest are markers the cards that place them interpret.
+    counters: [u16; CounterKind::COUNT],
     /// What this Aura is attached to. `None` for everything that is not an
     /// Aura, and for an Aura whose host has left -- state-based actions put
     /// such an Aura into its owner's graveyard.
@@ -181,8 +180,7 @@ impl Permanent {
             temporary_keywords: Vec::new(),
             factory_animated: false,
             dragon_whelp_activations: 0,
-            plus_one_counters: 0,
-            javelin_counters: 0,
+            counters: [0; CounterKind::COUNT],
             attached_to: None,
             exile_instead_of_dying: false,
             combat_damage_assignment: Vec::new(),
@@ -194,6 +192,24 @@ impl Permanent {
             damage_sources: Vec::new(),
             deathtouch_damage: false,
         }
+    }
+
+    const fn counters(&self, kind: CounterKind) -> u16 {
+        self.counters[kind.index()]
+    }
+
+    const fn set_counters(&mut self, kind: CounterKind, amount: u16) {
+        self.counters[kind.index()] = amount;
+    }
+
+    const fn add_counters(&mut self, kind: CounterKind, amount: u16) {
+        let index = kind.index();
+        self.counters[index] = self.counters[index].saturating_add(amount);
+    }
+
+    const fn remove_counter(&mut self, kind: CounterKind) {
+        let index = kind.index();
+        self.counters[index] = self.counters[index].saturating_sub(1);
     }
 }
 
@@ -2121,7 +2137,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
-            | EffectDef::AddPlusOneCounters { .. }
+            | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
@@ -4936,7 +4952,9 @@ impl Game {
                         }));
                     }
                 }
-                Some(CardBehavior::Triskelion) if permanent.plus_one_counters > 0 => {
+                Some(CardBehavior::Triskelion)
+                    if permanent.counters(CounterKind::PlusOnePlusOne) > 0 =>
+                {
                     actions.extend(self.damage_targets().into_iter().map(|target| {
                         Action::ActivateAbility {
                             source: permanent.card.id,
@@ -4991,7 +5009,7 @@ impl Game {
                 Some(CardBehavior::IcatianJavelineers)
                     if !permanent.tapped
                         && self.can_use_tap_ability(permanent)
-                        && permanent.javelin_counters > 0 =>
+                        && permanent.counters(CounterKind::Javelin) > 0 =>
                 {
                     actions.extend(self.damage_targets().into_iter().map(|target| {
                         Action::ActivateAbility {
@@ -5126,8 +5144,7 @@ impl Game {
             temporary_keywords: Vec::new(),
             factory_animated: false,
             dragon_whelp_activations: 0,
-            plus_one_counters: 0,
-            javelin_counters: 0,
+            counters: [0; CounterKind::COUNT],
             attached_to: None,
             exile_instead_of_dying: false,
             combat_damage_assignment: Vec::new(),
@@ -5715,11 +5732,16 @@ impl Game {
                 temporary_keywords: Vec::new(),
                 factory_animated: false,
                 dragon_whelp_activations: 0,
-                plus_one_counters: match behavior {
-                    CardBehavior::Triskelion | CardBehavior::Tetravus => 3,
-                    _ => 0,
+                counters: {
+                    let mut counters = [0; CounterKind::COUNT];
+                    counters[CounterKind::PlusOnePlusOne.index()] = match behavior {
+                        CardBehavior::Triskelion | CardBehavior::Tetravus => 3,
+                        _ => 0,
+                    };
+                    counters[CounterKind::Javelin.index()] =
+                        u16::from(behavior == CardBehavior::IcatianJavelineers);
+                    counters
                 },
-                javelin_counters: u16::from(behavior == CardBehavior::IcatianJavelineers),
                 attached_to: None,
                 exile_instead_of_dying: false,
                 combat_damage_assignment: Vec::new(),
@@ -5740,7 +5762,7 @@ impl Game {
                 if let Some(permanent) = self.battlefield.last_mut() {
                     permanent.copied_from = Some(copied_from);
                     if copied_behavior == Some(CardBehavior::Tetravus) {
-                        permanent.plus_one_counters = 3;
+                        permanent.set_counters(CounterKind::PlusOnePlusOne, 3);
                     }
                 }
             }
@@ -6071,7 +6093,7 @@ impl Game {
                 }
             }
             EffectDef::CreateToken { token, count } => {
-                for _ in 0..count {
+                for _ in 0..self.effect_value(count, object, context).max(0) {
                     self.create_token(object.controller, token);
                 }
             }
@@ -6119,8 +6141,9 @@ impl Game {
                     }
                 }
             }
-            EffectDef::AddPlusOneCounters {
+            EffectDef::AddCounters {
                 object: recipient,
+                kind,
                 amount,
             } => {
                 let amount = self
@@ -6135,8 +6158,7 @@ impl Game {
                             .iter_mut()
                             .find(|candidate| candidate.card.id == permanent)
                     {
-                        permanent.plus_one_counters =
-                            permanent.plus_one_counters.saturating_add(amount);
+                        permanent.add_counters(kind, amount);
                     }
                 }
             }
@@ -6193,6 +6215,14 @@ impl Game {
                 .and_then(|source| self.current_or_last_known_toughness(source))
                 .map_or(0, i32::from),
             ValueDef::TriggerEventAmount => context.amount.unwrap_or(0),
+            ValueDef::CountersOnSource(kind) => object
+                .source
+                .and_then(|source| {
+                    self.battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == source)
+                })
+                .map_or(0, |permanent| i32::from(permanent.counters(kind))),
             ValueDef::CardsInHandAbove { player, threshold } => {
                 let player = [PlayerId::One, PlayerId::Two]
                     .into_iter()
@@ -7898,7 +7928,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::Counter { .. }
-                | EffectDef::AddPlusOneCounters { .. }
+                | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
                 | EffectDef::MoveToZone { .. }
@@ -7982,7 +8012,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::Counter { .. }
-                | EffectDef::AddPlusOneCounters { .. }
+                | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::EntersTapped
                 | EffectDef::MoveToZone { .. }
@@ -8701,7 +8731,7 @@ impl Game {
     }
 
     fn plus_one_counter_bonus(permanent: &Permanent) -> i16 {
-        i16::try_from(permanent.plus_one_counters).unwrap_or(i16::MAX)
+        i16::try_from(permanent.counters(CounterKind::PlusOnePlusOne)).unwrap_or(i16::MAX)
     }
 
     fn static_power_toughness_bonus(&self, permanent: &Permanent) -> (i16, i16) {
@@ -9164,7 +9194,7 @@ impl Game {
                     .iter_mut()
                     .find(|permanent| permanent.card.id == source)
                     .map(|permanent| {
-                        permanent.plus_one_counters -= 1;
+                        permanent.remove_counter(CounterKind::PlusOnePlusOne);
                         permanent.card.clone()
                     })
                     .expect("legal Triskelion activation has a source");
@@ -9197,7 +9227,7 @@ impl Game {
                         .iter_mut()
                         .find(|permanent| permanent.card.id == source)
                         .expect("the activation source remains on the battlefield")
-                        .javelin_counters -= 1;
+                        .remove_counter(CounterKind::Javelin);
                 }
                 self.push_activated_ability(
                     source,
@@ -9624,10 +9654,8 @@ impl Game {
                         );
                     }
                     Some(CardBehavior::WhirlingDervish) => {
-                        self.battlefield[attacker_index].plus_one_counters = self.battlefield
-                            [attacker_index]
-                            .plus_one_counters
-                            .saturating_add(1);
+                        self.battlefield[attacker_index]
+                            .add_counters(CounterKind::PlusOnePlusOne, 1);
                     }
                     _ => {}
                 }
@@ -9790,7 +9818,8 @@ impl Game {
                             self.battlefield_exit_snapshot(permanent),
                             permanent.damage_sources.clone(),
                             permanent.exile_instead_of_dying,
-                            self.has_undying(permanent) && permanent.plus_one_counters == 0,
+                            self.has_undying(permanent)
+                                && permanent.counters(CounterKind::PlusOnePlusOne) == 0,
                             permanent.presented,
                         )
                     })
@@ -9881,8 +9910,11 @@ impl Game {
             temporary_keywords: Vec::new(),
             factory_animated: false,
             dragon_whelp_activations: 0,
-            plus_one_counters: 1,
-            javelin_counters: 0,
+            counters: {
+                let mut counters = [0; CounterKind::COUNT];
+                counters[CounterKind::PlusOnePlusOne.index()] = 1;
+                counters
+            },
             attached_to: None,
             exile_instead_of_dying: false,
             combat_damage_assignment: Vec::new(),
@@ -10024,7 +10056,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::Counter { .. }
-            | EffectDef::AddPlusOneCounters { .. }
+            | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }

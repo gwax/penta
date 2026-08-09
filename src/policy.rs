@@ -260,7 +260,7 @@ impl HandcraftedPolicy {
             | EffectDef::GainLife { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Sacrifice { .. }
-            | EffectDef::AddPlusOneCounters { .. }
+            | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::EntersTapped
             | EffectDef::MoveToZone { .. }
@@ -282,6 +282,7 @@ impl HandcraftedPolicy {
             | ValueDef::TriggerEventAmount
             | ValueDef::CardsInHandAbove { .. }
             | ValueDef::CountMatchingObjects(_)
+            | ValueDef::CountersOnSource(_)
             | ValueDef::Negate(_) => None,
         }
     }

@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate, BasicLandType,
-    CardArt, CardRules, CardSet, CardSupertype, EffectDef, EffectRecipientDef, LandEntry,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    CardArt, CardRules, CardSet, CardSupertype, CounterKind, EffectDef, EffectRecipientDef,
+    LandEntry, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -15,9 +16,25 @@ pub(in crate::card::sets) static ASSEMBLE_THE_LEGION: CardRecord = CardRecord::n
     CardArt::new("43675ed7-ece1-4414-965e-9ebadcbf3dfb", "Eric Deschamps"),
     CardSet::Gatecrash,
     CardRules::new_enchantment(mana_cost!("{3}{R}{W}")).with_ability(
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "At the beginning of your upkeep, put a muster counter on this enchantment. Then create a 1/1 red and white Soldier creature token with haste for each muster counter on this enchantment.",
-            "Printed rules are cataloged but are not executed by the engine.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            // The counter goes on first, so the very first upkeep already
+            // musters one Soldier.
+            EffectDef::Sequence(&[
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::Muster,
+                    amount: ValueDef::Constant(1),
+                },
+                EffectDef::CreateToken {
+                    token: cards::SOLDIER_TOKEN_1_1_RED_WHITE,
+                    count: ValueDef::CountersOnSource(CounterKind::Muster),
+                },
+            ]),
         ),
     ),
 );

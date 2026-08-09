@@ -64,8 +64,7 @@ fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Perm
         temporary_keywords: Vec::new(),
         factory_animated: false,
         dragon_whelp_activations: 0,
-        plus_one_counters: 0,
-        javelin_counters: 0,
+        counters: [0; CounterKind::COUNT],
         attached_to: None,
         exile_instead_of_dying: false,
         combat_damage_assignment: Vec::new(),
@@ -4112,7 +4111,7 @@ fn chaos_orb_can_be_activated_the_turn_it_enters_using_untapped_mana() {
 fn icatian_javelineers_cannot_activate_until_their_controller_turn() {
     let mut game = ready_game();
     let mut javeliners = creature(10_000, cards::ICATIAN_JAVELINEERS, PlayerId::One);
-    javeliners.javelin_counters = 1;
+    javeliners.counters[CounterKind::Javelin.index()] = 1;
     javeliners.entered_controller_turn = game.turns_started[PlayerId::One.index()];
     let source = javeliners.card.id;
     game.battlefield = vec![javeliners];
@@ -6493,7 +6492,11 @@ fn undying_returns_the_creature_once_with_a_counter() {
         "it came back rather than staying dead"
     );
     let returned = &game.battlefield[0];
-    assert_eq!(returned.plus_one_counters, 1, "with a +1/+1 counter");
+    assert_eq!(
+        returned.counters[CounterKind::PlusOnePlusOne.index()],
+        1,
+        "with a +1/+1 counter"
+    );
     assert_ne!(
         returned.card.id,
         CardInstanceId(10_001),
@@ -7478,7 +7481,7 @@ fn migrated_upkeep_and_death_triggers_resolve_from_the_stack() {
         .iter()
         .find(|permanent| permanent.card.id == vampire_id)
         .unwrap();
-    assert_eq!(vampire.plus_one_counters, 1);
+    assert_eq!(vampire.counters[CounterKind::PlusOnePlusOne.index()], 1);
     assert_eq!(game.power(vampire), Some(5));
 }
 
@@ -10208,4 +10211,65 @@ fn ruric_thar_burns_whoever_cast_the_noncreature_spell() {
             "the caster {caster} takes six"
         );
     }
+}
+
+#[test]
+fn assemble_the_legion_musters_one_more_soldier_every_upkeep() {
+    let mut game = ready_game();
+    game.turn = 2;
+    game.put_onto_battlefield(PlayerId::One, cards::ASSEMBLE_THE_LEGION)
+        .expect("cataloged");
+
+    let mut mustered = Vec::new();
+    for _ in 0..3 {
+        loop {
+            game.start_next_turn();
+            if game.active_player == PlayerId::One {
+                break;
+            }
+        }
+        for _ in 0..8 {
+            if game.stack.is_empty()
+                && game.pending_triggers.is_empty()
+                && game.pending_decisions.is_empty()
+            {
+                break;
+            }
+            if let Some(decision) = game
+                .pending_decisions
+                .first()
+                .map(|pending| pending.observation.clone())
+            {
+                let options = decision
+                    .options
+                    .iter()
+                    .take(decision.minimum.max(1))
+                    .map(|option| option.id)
+                    .collect::<Vec<_>>();
+                game.apply(
+                    decision.player,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options,
+                    },
+                )
+                .unwrap();
+                continue;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+        mustered.push(
+            game.battlefield
+                .iter()
+                .filter(|permanent| permanent.card.definition == cards::SOLDIER_TOKEN_1_1_RED_WHITE)
+                .count(),
+        );
+    }
+
+    // One counter is added before the tokens are made, so the first upkeep
+    // already musters a Soldier and each later one musters one more.
+    assert_eq!(mustered, vec![1, 3, 6]);
 }

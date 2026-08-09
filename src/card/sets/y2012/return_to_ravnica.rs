@@ -512,7 +512,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
                 "Create a 2/2 white Knight creature token with vigilance",
                 EffectDef::CreateToken {
                     token: cards::KNIGHT_TOKEN_2_2_WHITE,
-                    count: 1,
+                    count: ValueDef::Constant(1),
                 },
             ),
         ],
