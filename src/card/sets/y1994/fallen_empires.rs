@@ -1,8 +1,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    CardArt, CardBehavior, CardRules, CardSet, EffectDef, EffectRecipientDef, ManaColor, ValueDef,
-    abilities, cards,
+    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, EffectDef, EffectDurationDef,
+    EffectRecipientDef, ManaColor, ValueDef, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -93,9 +93,17 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
                 "{W}: This creature gains first strike until end of turn.",
                 "Granting first strike until end of turn is not implemented.",
             ),
-            AbilityDef::not_implemented(
+            AbilityDef::activated(
                 "{W}{W}: This creature gets +1/+0 until end of turn.",
-                "The activated power boost is not implemented.",
+                &[AbilityCostDef::Mana(mana_cost!("{W}{W}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(1),
+                        toughness: ValueDef::Constant(0),
+                    },
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
             ),
         ]),
 );
@@ -111,9 +119,17 @@ pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord
             "{B}: This creature gains first strike until end of turn.",
             "Granting first strike until end of turn is not implemented.",
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::activated(
             "{B}{B}: This creature gets +1/+0 until end of turn.",
-            "The activated power boost is not implemented.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(1),
+                    toughness: ValueDef::Constant(0),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
         ),
     ]),
 );

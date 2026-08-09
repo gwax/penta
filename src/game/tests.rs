@@ -9858,3 +9858,98 @@ fn gavony_township_grows_only_your_creatures() {
         "theirs is untouched"
     );
 }
+
+#[test]
+fn shadowborn_demon_cannot_point_its_trigger_at_a_demon() {
+    // Juzam Djinn is a Djinn and a legal target; Desecration Demon is not.
+    // The other Demon deliberately has no entry trigger of its own, so this
+    // test has exactly one trigger to answer.
+    let mut game = ready_game();
+    game.put_onto_battlefield(PlayerId::Two, cards::JUZAM_DJINN)
+        .expect("cataloged");
+    let other_demon = game
+        .put_onto_battlefield(PlayerId::Two, cards::DESECRATION_DEMON)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::SHADOWBORN_DEMON)
+        .expect("cataloged");
+
+    // A captured trigger reaches the stack as the game processes actions.
+    for _ in 0..6 {
+        if game.observe(PlayerId::One).decision.is_some() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the entry trigger asks for a target");
+    let offered: Vec<_> = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(id, _)| id))
+        .collect();
+    assert!(
+        !offered.contains(&CardInstanceId(other_demon.0)),
+        "another Demon is not a legal target"
+    );
+    assert_eq!(offered.len(), 1, "only the Djinn qualifies");
+
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decision.options[0].id],
+        },
+    )
+    .unwrap();
+    for _ in 0..6 {
+        if !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::JUZAM_DJINN)
+        {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::JUZAM_DJINN),
+        "the Djinn was destroyed"
+    );
+}
+
+#[test]
+fn order_of_leitbur_can_pump_itself() {
+    let mut game = ready_game();
+    let order = game
+        .put_onto_battlefield(PlayerId::One, cards::ORDER_OF_LEITBUR)
+        .expect("cataloged");
+    game.players[0].mana_pool.white = 2;
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == order))
+        .expect("the pump is activatable");
+    game.apply(PlayerId::One, activate).unwrap();
+    pass_priority_pair(&mut game);
+
+    let order = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == order)
+        .expect("still there");
+    assert_eq!(game.power(order), Some(3), "2/1 plus one power");
+    assert_eq!(game.toughness(order), Some(1), "toughness is unchanged");
+}

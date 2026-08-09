@@ -257,10 +257,26 @@ pub(in crate::card::sets) static SHADOWBORN_DEMON: CardRecord = CardRecord::new(
     )
     .with_abilities(&[
         abilities::flying(),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "When this creature enters, destroy target non-Demon creature.",
-            "The enters-the-battlefield destruction trigger is not executed.",
-        ),
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                can_regenerate: true,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "non-Demon creature",
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Demon")),
+            ]),
+        )]),
         AbilityDef::not_implemented(
             "At the beginning of your upkeep, if there are fewer than six creature cards in your graveyard, sacrifice a creature.",
             "The conditional upkeep sacrifice trigger is not executed.",
