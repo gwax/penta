@@ -790,6 +790,12 @@ enum DecisionContinuation {
         victim: PlayerId,
         cause: ZoneMoveCause,
     },
+    /// An effect the controller was offered and may decline.
+    OptionalEffect {
+        object: Box<StackObject>,
+        context: TriggerContext,
+        effect: &'static EffectDef,
+    },
     /// A sacrifice an effect demanded, chosen by the sacrificing player.
     SacrificeOfChoice,
     /// The spell's controller deciding whether to keep it alive.
@@ -2281,6 +2287,7 @@ impl Game {
             | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
+            | EffectDef::May(_)
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ExileLinkedToSource { .. }
@@ -2535,6 +2542,10 @@ impl Game {
             }
             ObjectPredicateDef::Supertype(supertype) => object.supertypes[supertype.index()],
             ObjectPredicateDef::AttackingOrBlocking => object.attacking_or_blocking,
+            ObjectPredicateDef::SharesNameWithSource => {
+                let name = self.object_card_name(object.id);
+                name.is_some() && name == self.object_card_name(source)
+            }
             ObjectPredicateDef::HasKeyword(keyword) => keyword
                 .simple_index()
                 .is_some_and(|index| object.keywords & (1 << index) != 0),
@@ -3109,6 +3120,46 @@ impl Game {
                 player: controller,
                 cost,
                 zone,
+            },
+        );
+    }
+
+    /// Offers an effect its controller may decline, resolving it only on a
+    /// yes. Declining is always available, which is what "may" means.
+    fn queue_optional_effect(
+        &mut self,
+        player: PlayerId,
+        object: &StackObject,
+        context: TriggerContext,
+        effect: &'static EffectDef,
+    ) {
+        self.queue_decision(
+            player,
+            object.ability_text().unwrap_or("Use this optional effect?"),
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            vec![
+                DecisionOption {
+                    id: 0,
+                    label: "Decline".into(),
+                    card: None,
+                    ability_text: None,
+                    zone: DecisionZone::None,
+                },
+                DecisionOption {
+                    id: 1,
+                    label: "Do it".into(),
+                    card: None,
+                    ability_text: None,
+                    zone: DecisionZone::None,
+                },
+            ],
+            DecisionContinuation::OptionalEffect {
+                object: Box::new(object.clone()),
+                context,
+                effect,
             },
         );
     }
@@ -3932,6 +3983,15 @@ impl Game {
                     let _ = self.pay_player_cost(player, cost, 0);
                 } else {
                     self.counter_spell_into(spell, zone);
+                }
+            }
+            DecisionContinuation::OptionalEffect {
+                object,
+                context,
+                effect,
+            } => {
+                if options.contains(&1) {
+                    self.resolve_effect_def(*effect, &object, context);
                 }
             }
             DecisionContinuation::SacrificeOfChoice => {
@@ -6625,6 +6685,9 @@ impl Game {
                     }
                 }
             }
+            EffectDef::May(inner) => {
+                self.queue_optional_effect(object.controller, object, context, inner);
+            }
             EffectDef::ExileLinkedToSource { object: recipient } => {
                 let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context) {
@@ -7135,6 +7198,7 @@ impl Game {
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
+            | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::HasKeyword(_) => false,
         }
@@ -8571,6 +8635,7 @@ impl Game {
                 | EffectDef::CounterUnlessPaid { .. }
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
+                | EffectDef::May(_)
                 | EffectDef::EntersTapped
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::ExileLinkedToSource { .. }
@@ -8662,6 +8727,7 @@ impl Game {
                 | EffectDef::CounterUnlessPaid { .. }
                 | EffectDef::AddCounters { .. }
                 | EffectDef::OptionalManaPayment { .. }
+                | EffectDef::May(_)
                 | EffectDef::EntersTapped
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::ExileLinkedToSource { .. }
@@ -10571,6 +10637,16 @@ impl Game {
             .collect()
     }
 
+    /// The printed name of any object the engine can still find, wherever it
+    /// is. Used by the cards that speak about names rather than identity.
+    fn object_card_name(&self, id: GameObjectId) -> Option<&str> {
+        self.permanent_card_name(id).or_else(|| {
+            self.card_in_nonbattlefield_zone(id)
+                .and_then(|(_, card)| self.catalog.get(card.definition))
+                .map(|card| card.name.as_str())
+        })
+    }
+
     /// The printed name a permanent presents, for the cards that gather
     /// everything sharing a name.
     fn permanent_card_name(&self, id: GameObjectId) -> Option<&str> {
@@ -11016,6 +11092,7 @@ impl Game {
             | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::OptionalManaPayment { .. }
+            | EffectDef::May(_)
             | EffectDef::EntersTapped
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ExileLinkedToSource { .. }

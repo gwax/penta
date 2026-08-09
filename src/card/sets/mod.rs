@@ -325,6 +325,7 @@ mod tests {
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
+            | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::HasKeyword(_) => true,
         }
@@ -467,6 +468,7 @@ mod tests {
             EffectDef::ReturnLinkedExiles { zone } => {
                 matches!(zone, ZoneKind::Battlefield | ZoneKind::Hand)
             }
+            EffectDef::May(inner) => shared_stack_effect(*inner),
             EffectDef::Tap { object }
             | EffectDef::Untap { object }
             | EffectDef::Destroy { object, .. }
@@ -644,9 +646,10 @@ mod tests {
                     && duration == EffectDurationDef::WhileSourceRemainsInZone;
                 battlefield_effect || stack_source_effect
             }
-            // Neither linked-exile effect is a static ability; both
-            // execute from the stack.
-            EffectDef::ExileLinkedToSource { .. }
+            // Neither linked-exile effect is a static ability, nor is an
+            // optional one; all execute from the stack.
+            EffectDef::May(_)
+            | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
@@ -720,7 +723,8 @@ mod tests {
                                 && effects.iter().copied().all(immediate_mana_effect)
                         }
                         EffectDef::AddMana(_) => shared_mana_effect(effect, false),
-                        EffectDef::None
+                        EffectDef::May(_)
+                        | EffectDef::None
                         | EffectDef::DealDamage { .. }
                         | EffectDef::GainLife { .. }
                         | EffectDef::DrawCards { .. }
@@ -806,7 +810,7 @@ mod tests {
                     assert_nested_definition_abilities(card_name, *effect);
                 }
             }
-            EffectDef::OptionalManaPayment { effect, .. } => {
+            EffectDef::OptionalManaPayment { effect, .. } | EffectDef::May(effect) => {
                 assert_nested_definition_abilities(card_name, *effect);
             }
             EffectDef::Apply {

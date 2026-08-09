@@ -174,12 +174,45 @@ pub(in crate::card::sets) static DETENTION_SPHERE: CardRecord = CardRecord::new(
     "Detention Sphere",
     CardArt::new("afee5464-83b7-4d7a-b407-9ee7de21535b", "Kev Walker"),
     CardSet::ReturnToRavnica,
-    CardRules::new_enchantment(mana_cost!("{1}{W}{U}")).with_ability(
-        AbilityDef::not_implemented(
-            "When this enchantment enters, you may exile target nonland permanent not named Detention Sphere and all other permanents with the same name as that permanent.\nWhen this enchantment leaves the battlefield, return the exiled cards to the battlefield under their owner's control.",
-            "Printed rules are cataloged but are not executed by the engine.",
+    CardRules::new_enchantment(mana_cost!("{1}{W}{U}")).with_abilities(&[
+        AbilityDef::triggered(
+            "When this enchantment enters, you may exile target nonland permanent not named Detention Sphere and all other permanents with the same name as that permanent.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::May(&EffectDef::ExileLinkedToSource {
+                object: EffectRecipientDef::ObjectsSharingNameWithTarget(TargetSlotId(0)),
+            }),
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "nonland permanent not named Detention Sphere",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    // By name rather than by identity, so a second Sphere is
+                    // no more a legal target than this one.
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::SharesNameWithSource),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
+        AbilityDef::triggered(
+            "When this enchantment leaves the battlefield, return the exiled cards to the battlefield under their owner's control.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: Some(ZoneKind::Battlefield),
+                to: None,
+            },
+            EffectDef::ReturnLinkedExiles {
+                zone: ZoneKind::Battlefield,
+            },
         ),
-    ),
+    ]),
 );
 
 pub(in crate::card::sets) static DISPEL: CardRecord = CardRecord::new(

@@ -225,6 +225,8 @@ impl HandcraftedPolicy {
                     Self::collect_spell_effect_profile(*effect, x, profile);
                 }
             }
+            // An optional effect is worth what it would do if taken.
+            EffectDef::May(inner) => Self::collect_spell_effect_profile(*inner, x, profile),
             EffectDef::DealDamage { amount, .. } => {
                 profile.damage = Self::policy_value(amount, x);
             }

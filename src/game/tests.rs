@@ -11524,3 +11524,97 @@ fn oblivion_ring_gives_back_exactly_what_it_took() {
     );
     assert_eq!(game.players[1].exile.len(), 1, "the Mountain is untouched");
 }
+
+#[test]
+fn detention_sphere_takes_every_copy_and_gives_them_all_back() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let lions = [
+        game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+            .expect("cataloged"),
+        game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+            .expect("cataloged"),
+    ];
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    let sphere = game
+        .put_onto_battlefield(PlayerId::One, cards::DETENTION_SPHERE)
+        .expect("cataloged");
+
+    let drain = |game: &mut Game| {
+        for _ in 0..12 {
+            if game.stack.is_empty()
+                && game.pending_triggers.is_empty()
+                && game.pending_decisions.is_empty()
+            {
+                break;
+            }
+            if let Some(decision) = game
+                .pending_decisions
+                .first()
+                .map(|pending| pending.observation.clone())
+            {
+                // Take the optional exile, and name a Lion when asked.
+                let options = decision
+                    .options
+                    .iter()
+                    .filter(|option| {
+                        option.label == "Do it"
+                            || option.card == Some((lions[0], cards::SAVANNAH_LIONS))
+                    })
+                    .map(|option| option.id)
+                    .chain(decision.options.iter().map(|option| option.id))
+                    .take(decision.minimum.max(1))
+                    .collect::<Vec<_>>();
+                game.apply(
+                    decision.player,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options,
+                    },
+                )
+                .unwrap();
+                continue;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+    };
+
+    // The Sphere's trigger needs a target chosen when it is put on the stack.
+    let target = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ChooseDecision { .. }));
+    if let Some(action) = target {
+        let _ = game.apply(PlayerId::One, action);
+    }
+    drain(&mut game);
+
+    let on_field = |game: &Game, id: GameObjectId| game.battlefield.iter().any(|p| p.card.id == id);
+    assert!(
+        !on_field(&game, lions[0]) && !on_field(&game, lions[1]),
+        "both Lions left"
+    );
+    assert!(on_field(&game, angel), "the Angel shares no name");
+
+    game.destroy_permanent(sphere);
+    drain(&mut game);
+
+    let names = game
+        .battlefield
+        .iter()
+        .map(|permanent| permanent.card.definition)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        names
+            .iter()
+            .filter(|d| **d == cards::SAVANNAH_LIONS)
+            .count(),
+        2,
+        "both Lions came back"
+    );
+}

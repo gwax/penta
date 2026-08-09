@@ -597,6 +597,9 @@ pub enum ObjectPredicateDef {
     ControlledBy(PlayerRelation),
     /// Carries this supertype. Negate it for "nonbasic".
     Supertype(CardSupertype),
+    /// Has the same printed name as the ability's source. Negate it for
+    /// "not named <this card>".
+    SharesNameWithSource,
     /// Currently attacking or blocking. Only a battlefield object can be, so
     /// this never matches a card or a spell.
     AttackingOrBlocking,
@@ -1054,6 +1057,9 @@ pub enum EffectDef {
         effect: &'static EffectDef,
     },
     EntersTapped,
+    /// An effect its controller may decline. Held by reference so that
+    /// `EffectDef` does not grow a recursive inline copy of itself.
+    May(&'static EffectDef),
     /// Exiles, remembering which object sent it there so a later clause can
     /// bring it back. This is the Oblivion Ring shape.
     ExileLinkedToSource {
@@ -1961,6 +1967,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::Not(_)
