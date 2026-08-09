@@ -348,7 +348,8 @@ mod tests {
                     })
                     && shared_object_predicate(object)
             }
-            EffectRecipientDef::Source
+            EffectRecipientDef::ObjectsSharingNameWithTarget(_)
+            | EffectRecipientDef::Source
             | EffectRecipientDef::AttachedPermanent
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
@@ -600,6 +601,7 @@ mod tests {
                     EffectRecipientDef::Controller
                     | EffectRecipientDef::Opponent
                     | EffectRecipientDef::Target(_)
+                    | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
                     | EffectRecipientDef::TriggeringObject
                     | EffectRecipientDef::ControllerOfTriggeringObject
                     | EffectRecipientDef::EventPlayer => false,

@@ -930,6 +930,10 @@ pub enum EffectRecipientDef {
     Source,
     /// What this permanent is attached to, for an Aura's own static clauses.
     AttachedPermanent,
+    /// Every battlefield permanent sharing a name with the chosen target,
+    /// including the target itself. "And each other one with the same name"
+    /// names the same set.
+    ObjectsSharingNameWithTarget(TargetSlotId),
     Controller,
     Opponent,
     Target(TargetSlotId),

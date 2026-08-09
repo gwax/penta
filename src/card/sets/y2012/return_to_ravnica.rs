@@ -327,10 +327,21 @@ pub(in crate::card::sets) static IZZET_STATICASTER: CardRecord = CardRecord::new
             "Flash (You may cast this spell any time you could cast an instant.)",
         ),
         abilities::haste(),
-        AbilityDef::not_implemented(
+        AbilityDef::activated(
             "{T}: This creature deals 1 damage to target creature and each other creature with the same name as that creature.",
-            "The targeted activated damage ability is not executed.",
-        ),
+            &[AbilityCostDef::TapSource],
+            // The target and every other creature sharing its name are one
+            // set, so the two printed halves are a single sweep.
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::ObjectsSharingNameWithTarget(TargetSlotId(0)),
+                amount: ValueDef::Constant(1),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "creature",
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )]),
     ]),
 );
 

@@ -6942,6 +6942,10 @@ impl Game {
                 .collect();
         }
 
+        if let EffectRecipientDef::ObjectsSharingNameWithTarget(slot) = recipient {
+            return self.objects_sharing_name_with_target(slot, object, context);
+        }
+
         let EffectRecipientDef::MatchingObjects {
             object: predicate,
             zones,
@@ -6965,8 +6969,10 @@ impl Game {
                     .or(context.object_controller)
                     .map(Target::Player),
                 EffectRecipientDef::EventPlayer => context.event_player.map(Target::Player),
-                EffectRecipientDef::Target(_) | EffectRecipientDef::MatchingObjects { .. } => {
-                    unreachable!("target and matching-object recipients returned above")
+                EffectRecipientDef::Target(_)
+                | EffectRecipientDef::MatchingObjects { .. }
+                | EffectRecipientDef::ObjectsSharingNameWithTarget(_) => {
+                    unreachable!("target, matching, and shared-name recipients returned above")
                 }
             }
             .into_iter()
@@ -8286,6 +8292,7 @@ impl Game {
         match recipient {
             EffectRecipientDef::Source => source.card.id == affected.card.id,
             EffectRecipientDef::AttachedPermanent => source.attached_to == Some(affected.card.id),
+
             EffectRecipientDef::MatchingObjects {
                 object,
                 zones,
@@ -8305,9 +8312,12 @@ impl Game {
                         false,
                     )
             }
+            // None of these name a permanent a static effect could apply to;
+            // a static effect has no chosen target either.
             EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
             | EffectRecipientDef::Target(_)
+            | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
             | EffectRecipientDef::TriggeringObject
             | EffectRecipientDef::ControllerOfTriggeringObject
             | EffectRecipientDef::EventPlayer => false,
@@ -10500,6 +10510,41 @@ impl Game {
                 );
             }
         }
+    }
+
+    /// Every battlefield permanent whose printed name matches the chosen
+    /// target's, the target included.
+    fn objects_sharing_name_with_target(
+        &self,
+        slot: TargetSlotId,
+        object: &StackObject,
+        context: TriggerContext,
+    ) -> Vec<Target> {
+        let Some(name) = self
+            .effect_recipients(EffectRecipientDef::Target(slot), object, context)
+            .into_iter()
+            .find_map(|target| match target {
+                Target::Permanent(id) => self.permanent_card_name(id),
+                _ => None,
+            })
+        else {
+            return Vec::new();
+        };
+        self.battlefield
+            .iter()
+            .filter(|permanent| self.permanent_card_name(permanent.card.id) == Some(name))
+            .map(|permanent| Target::Permanent(permanent.card.id))
+            .collect()
+    }
+
+    /// The printed name a permanent presents, for the cards that gather
+    /// everything sharing a name.
+    fn permanent_card_name(&self, id: GameObjectId) -> Option<&str> {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .and_then(|permanent| self.catalog.get(permanent.card.definition))
+            .map(|card| card.name.as_str())
     }
 
     fn permanent_controller(&self, id: GameObjectId) -> Option<PlayerId> {

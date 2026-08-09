@@ -11397,3 +11397,54 @@ fn demonic_rising_only_pays_off_with_exactly_one_creature() {
         assert_eq!(demons, usize::from(expect_demon), "{creatures} creatures");
     }
 }
+
+#[test]
+fn izzet_staticaster_hits_every_copy_of_the_creature_it_names() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let caster = game
+        .put_onto_battlefield(PlayerId::One, cards::IZZET_STATICASTER)
+        .expect("cataloged");
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == caster)
+        .expect("just entered")
+        .entered_controller_turn = game.turns_started[0] - 1;
+    // Two Lions on one side, one on the other, and an unrelated creature.
+    let mut lions = Vec::new();
+    for owner in [PlayerId::Two, PlayerId::Two, PlayerId::One] {
+        lions.push(
+            game.put_onto_battlefield(owner, cards::SAVANNAH_LIONS)
+                .expect("cataloged"),
+        );
+    }
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+
+    let zap = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, targets, .. }
+            if *source == caster
+                && targets.iter().flat_map(TargetSelection::targets).any(|target| {
+                    *target == Target::Permanent(lions[0])
+                }))
+        })
+        .expect("a Lion is a legal target");
+    game.apply(PlayerId::One, zap).unwrap();
+    pass_priority_pair(&mut game);
+
+    // A 2/1 dies to one damage, whoever controls it.
+    assert!(
+        lions
+            .iter()
+            .all(|lion| !game.battlefield.iter().any(|p| p.card.id == *lion)),
+        "every Savannah Lions was named"
+    );
+    assert!(
+        game.battlefield.iter().any(|p| p.card.id == angel),
+        "the Angel shares no name"
+    );
+}
