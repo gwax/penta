@@ -455,9 +455,34 @@ pub(in crate::card::sets) static WAR_PRIEST_OF_THUNE: CardRecord = CardRecord::n
         &["Human", "Cleric"],
         2,
         2,
-        "When this creature enters, you may destroy target enchantment.",
+        "",
     )
-    .metadata_only(),
+    .with_abilities(&[AbilityDef::triggered(
+        "When this creature enters, you may destroy target enchantment.",
+        TriggerEventDef::ZoneChanged {
+            object: ObjectPredicateDef::Source,
+            from: None,
+            to: Some(ZoneKind::Battlefield),
+        },
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetSlotId(0)),
+            can_regenerate: true,
+        },
+    )
+    .with_targets(&[AbilityTargetDef {
+        id: TargetSlotId(0),
+        label: "enchantment",
+        predicate: AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::HasType(CardType::Enchantment),
+            zones: &[ZoneKind::Battlefield],
+            controller: None,
+            owner: None,
+        },
+        // "You may" is an optional target: declining to choose one is how the
+        // trigger does nothing, so the minimum is zero rather than one.
+        minimum: 0,
+        maximum: 1,
+    }])]),
 );
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARBOR_ELF,

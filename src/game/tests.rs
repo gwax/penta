@@ -7679,3 +7679,71 @@ fn oblivion_ring_exiles_another_nonland_permanent() {
             .all(|permanent| permanent.card.definition != cards::SERRA_ANGEL)
     );
 }
+
+#[test]
+fn war_priest_of_thune_may_decline_to_destroy() {
+    for destroy in [true, false] {
+        let mut game = ready_game();
+        game.battlefield
+            .push(creature(10_000, cards::ENERGY_FLUX, PlayerId::Two));
+        let priest = card(10_001, cards::WAR_PRIEST_OF_THUNE, PlayerId::One);
+        game.players[0].hand.push(priest.clone());
+        game.players[0].mana_pool.white = 1;
+        game.players[0].mana_pool.colorless = 1;
+
+        game.apply(
+            PlayerId::One,
+            cast_action(priest.id, Vec::new(), Vec::new(), 0),
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+
+        let decision = game
+            .observe(PlayerId::One)
+            .decision
+            .expect("the trigger asks about its optional target");
+        assert_eq!(decision.minimum, 0, "you may, so declining is an answer");
+        let options = if destroy {
+            vec![decision.options[0].id]
+        } else {
+            Vec::new()
+        };
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+
+        let flux_alive = game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::ENERGY_FLUX);
+        assert_eq!(flux_alive, !destroy);
+    }
+}
+
+#[test]
+fn war_priest_of_thune_arrives_even_with_no_enchantment_to_destroy() {
+    let mut game = ready_game();
+    let priest = card(10_001, cards::WAR_PRIEST_OF_THUNE, PlayerId::One);
+    game.players[0].hand.push(priest.clone());
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(priest.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "nothing to destroy, so nothing to ask"
+    );
+    assert_eq!(game.battlefield.len(), 1);
+}
