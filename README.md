@@ -69,7 +69,13 @@ extension boundaries.
   alternate-art variants without duplicating their rules. Ordered ability
   clauses own both their rules text and implementation; aggregate Complete,
   Partial, or MetadataOnly coverage is derived from those clauses, whose
-  non-declarative implementations explain any remaining gaps in place.
+  non-declarative implementations explain any remaining gaps in place. New
+  card work starts at that clause boundary: general rules concepts become
+  reusable definition vocabulary and card-agnostic engine primitives, while
+  bespoke behavior or behavior without a clear reusable shape can use a
+  clause-owned custom selector and a card-specific resolver. Direct
+  card-identity branches outside that boundary are reserved as a pragmatic
+  escape valve for particularly weird or difficult cards.
 - `decks/<format>/` contains the built-in decklists as YAML mappings from
   canonical card names to copy counts. `src/decks.rs` compiles those files into
   the binary, so the engine and browser build do not need runtime filesystem
@@ -97,7 +103,8 @@ The engine currently supports:
 - deck validation and seeded, reproducible setup
 - hidden-information-safe observations and deterministic legal actions
 - the priority-bearing turn skeleton, active player, and priority passing
-- the stack and last-in-first-out spell and non-mana ability resolution
+- the stack and last-in-first-out resolution for spells and non-mana activated
+  and triggered abilities
 - basic and nonbasic land plays, five-color and colorless mana sources, and EC
   phase-boundary mana burn
 - player damage, concession, and empty-library loss conditions
@@ -191,8 +198,10 @@ uses the off-color Moxen; every Mox now produces its printed color.
 EC Chaos Orb normally uses a physical dexterity flip. The headless simulator
 instead treats a resolving Orb activation as a deterministic successful flip
 against the chosen permanent. The activation uses the stack, and removing the
-Orb before resolution nullifies the flip. This keeps seeded games reproducible
-and makes the format playable without modeling a human motor skill.
+Orb before resolution does not remove that independent ability object, but its
+custom source-presence check nullifies the flip; an illegal target also makes
+it fail normally. This keeps seeded games reproducible and makes the format
+playable without modeling a human motor skill.
 
 The expanded corpus now includes the recurring top-table cards that make those
 decks distinct: Copy Artifact, Tetravus, Icy Manipulator, Relic Barrier, The
@@ -224,9 +233,11 @@ The catalog carries the canonical rules identity and every known set-and-
 variant printing, along with the cost, type, rules text, and stats for every
 card used by these lists. Ordinary mana sources and creatures are playable
 now; specialized effects are being implemented incrementally as reusable
-rules primitives are added. Until a metadata-only nonland, noncreature card is
-implemented, the engine withholds it from legal actions instead of silently
-resolving an approximation; card previews label this staged support explicitly.
+rules primitives are added or, when a reusable shape is not yet clear, through
+a clause-owned custom selector and card-specific resolution. Until a
+metadata-only nonland, noncreature card is implemented, the engine withholds it
+from legal actions instead of silently resolving an approximation; card
+previews label this staged support explicitly.
 
 ## Bot policies
 

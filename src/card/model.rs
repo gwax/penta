@@ -932,9 +932,9 @@ pub enum EffectDef {
         effect: AppliedEffectDef,
         duration: EffectDurationDef,
     },
-    /// A narrow escape hatch for effects that genuinely cannot be composed
-    /// from shared primitives. The surrounding costs, targets, and timing can
-    /// still remain declarative.
+    /// A descriptive marker for an effect portion the shared vocabulary does
+    /// not yet represent. The surrounding costs, targets, and timing can still
+    /// remain declarative; clause coverage records whether and how it executes.
     Special(&'static str),
 }
 
@@ -1182,8 +1182,8 @@ pub enum DeclarativeAbilityDef {
 /// How completely one printed rules clause is implemented.
 ///
 /// Fully declarative clauses need no explanation: their structure and effect
-/// are the implementation. Every other variant explains the escape hatch or
-/// remaining gap beside the clause that owns it.
+/// are the implementation. Every other variant explains the custom
+/// implementation or remaining gap beside the clause that owns it.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AbilityImplementationDef {
     Definition,
