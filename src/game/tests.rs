@@ -11618,3 +11618,93 @@ fn detention_sphere_takes_every_copy_and_gives_them_all_back() {
         "both Lions came back"
     );
 }
+
+#[test]
+fn angel_of_serenity_takes_from_both_zones_and_returns_to_hand() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let lions = game
+        .put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.players[1]
+        .graveyard
+        .push(card(10_050, cards::SERRA_ANGEL, PlayerId::Two));
+    let hand_before = game.players[1].hand.len();
+
+    let angel = game
+        .put_onto_battlefield(PlayerId::One, cards::ANGEL_OF_SERENITY)
+        .expect("cataloged");
+    // Take every offered target, and accept the optional exile.
+    let drain = |game: &mut Game| {
+        for _ in 0..12 {
+            if game.stack.is_empty()
+                && game.pending_triggers.is_empty()
+                && game.pending_decisions.is_empty()
+            {
+                break;
+            }
+            if let Some(decision) = game
+                .pending_decisions
+                .first()
+                .map(|pending| pending.observation.clone())
+            {
+                let cards = decision
+                    .options
+                    .iter()
+                    .filter(|option| option.card.is_some())
+                    .map(|option| option.id)
+                    .take(decision.maximum)
+                    .collect::<Vec<_>>();
+                let options = if cards.is_empty() {
+                    decision
+                        .options
+                        .iter()
+                        .filter(|option| option.label == "Do it")
+                        .map(|option| option.id)
+                        .chain(decision.options.iter().map(|option| option.id))
+                        .take(decision.minimum.max(1))
+                        .collect::<Vec<_>>()
+                } else {
+                    cards
+                };
+                game.apply(
+                    decision.player,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options,
+                    },
+                )
+                .unwrap();
+                continue;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+    };
+    drain(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == lions),
+        "the creature on the battlefield was taken"
+    );
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "so was the creature card in the graveyard"
+    );
+    assert_eq!(game.players[1].exile.len(), 2);
+
+    game.destroy_permanent(angel);
+    drain(&mut game);
+
+    assert_eq!(
+        game.players[1].hand.len(),
+        hand_before + 2,
+        "both came back to hand rather than to the battlefield"
+    );
+    assert!(game.players[1].exile.is_empty());
+}

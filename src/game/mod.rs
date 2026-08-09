@@ -6691,9 +6691,12 @@ impl Game {
             EffectDef::ExileLinkedToSource { object: recipient } => {
                 let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context) {
-                    if let Target::Permanent(id) = target
-                        && let Some(exiled) = self.exile_permanent_returning_card(id)
-                    {
+                    let exiled = match target {
+                        Target::Permanent(id) => self.exile_permanent_returning_card(id),
+                        Target::Card(id) => self.exile_card_returning_card(id),
+                        Target::Player(_) | Target::Spell(_) => None,
+                    };
+                    if let Some(exiled) = exiled {
                         self.linked_exiles.push((source, exiled));
                     }
                 }
@@ -10943,6 +10946,40 @@ impl Game {
             .exile
             .get(before)
             .map(|card| card.id)
+    }
+
+    /// Exiles a card from wherever it is outside the battlefield, reporting
+    /// the object it became so the link can be recorded.
+    fn exile_card_returning_card(&mut self, id: GameObjectId) -> Option<GameObjectId> {
+        let (zone, owner) = self
+            .card_in_nonbattlefield_zone(id)
+            .map(|(zone, card)| (zone, card.owner))?;
+        if zone == ZoneKind::Exile {
+            return None;
+        }
+        let card = self.take_card_from_zone(owner, zone, id)?;
+        let (card, _zone_change) = self.zone_change_card(card);
+        let exiled = card.id;
+        self.players[owner.index()].exile.push(card);
+        Some(exiled)
+    }
+
+    /// Removes a card from one of a player's non-battlefield zones.
+    fn take_card_from_zone(
+        &mut self,
+        owner: PlayerId,
+        zone: ZoneKind,
+        id: GameObjectId,
+    ) -> Option<CardInstance> {
+        let state = &mut self.players[owner.index()];
+        let cards = match zone {
+            ZoneKind::Library => &mut state.library,
+            ZoneKind::Hand => &mut state.hand,
+            ZoneKind::Graveyard => &mut state.graveyard,
+            ZoneKind::Exile => &mut state.exile,
+            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => return None,
+        };
+        remove_card(cards, id)
     }
 
     /// Brings a linked exile back. A card that is no longer in exile has

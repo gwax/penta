@@ -54,13 +54,41 @@ pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new
     )
     .with_abilities(&[
         abilities::flying(),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "When this creature enters, you may exile up to three other target creatures from the battlefield and/or creature cards from graveyards.",
-            "The enters-the-battlefield exile ability is not executed.",
-        ),
-        AbilityDef::not_implemented(
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::May(&EffectDef::ExileLinkedToSource {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+            }),
+        )
+        .with_targets(&[AbilityTargetDef::up_to(
+            TargetSlotId(0),
+            "other creature on the battlefield or creature card in a graveyard",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                zones: &[ZoneKind::Battlefield, ZoneKind::Graveyard],
+                controller: None,
+                owner: None,
+            },
+            3,
+        )]),
+        AbilityDef::triggered(
             "When this creature leaves the battlefield, return the exiled cards to their owners' hands.",
-            "The leaves-the-battlefield return ability is not executed.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: Some(ZoneKind::Battlefield),
+                to: None,
+            },
+            EffectDef::ReturnLinkedExiles {
+                zone: ZoneKind::Hand,
+            },
         ),
     ]),
 );

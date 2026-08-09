@@ -656,6 +656,24 @@ impl AbilityTargetDef {
         }
     }
 
+    /// Any number of targets up to a limit, for "up to three target ...".
+    /// Choosing none is a legal choice.
+    #[must_use]
+    pub const fn up_to(
+        id: TargetSlotId,
+        label: &'static str,
+        predicate: AbilityTargetPredicate,
+        maximum: u8,
+    ) -> Self {
+        Self {
+            id,
+            label,
+            predicate,
+            minimum: 0,
+            maximum,
+        }
+    }
+
     /// One spell target, optionally narrowed by color, type, or another
     /// object predicate. Stack object enumeration already excludes abilities,
     /// so callers only need to state the characteristic restriction.
