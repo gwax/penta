@@ -28,6 +28,13 @@ path = "src/lib.rs"
 [dependencies]
 serde_json = "1"
 
+# Keep profiling representative of release behavior while retaining enough
+# symbol information for sampled stacks and source-level views.
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = "none"
+
 [lints.rust]
 unsafe_code = "forbid"
 

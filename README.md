@@ -256,8 +256,8 @@ Run the reproducible, seat-swapped sanity gauntlet with:
 cargo run --release --bin policy_sanity
 ```
 
-The gauntlet uses mirror matches for all fifteen built-in decks, isolating policy
-quality from deck strength.
+The gauntlet uses mirror matches for every built-in deck in both formats,
+isolating policy quality from deck strength.
 
 Run the broader rules audit with:
 
@@ -272,6 +272,82 @@ actions are unique, the correct player owns the decision, and completed games
 expose no further actions. Pass a different seed count as the final argument
 when doing a longer soak run, for example
 `cargo run --release --bin rules_audit -- 1000`.
+
+## Engine performance
+
+Measure the native Rust engine first. The default workload drives deterministic
+Random/Random games through the normal `observe`/`apply` loop; the cheap policy
+keeps policy selection from obscuring engine costs. Profile the WASM adapter or
+browser only when a consumer-specific problem remains after measuring the
+native engine.
+
+Use [Hyperfine](https://github.com/sharkdp/hyperfine) on the normal release
+binary for elapsed-time evidence:
+
+```sh
+cargo install --locked hyperfine
+make benchmark-engine PROFILE_GAMES=2000 PROFILE_SEED=1 \
+  BENCHMARK_OUTPUT=target/profiles/engine-before-benchmark.json
+```
+
+The target prints one untimed run so its deterministic outcome counts can be
+checked, then runs Hyperfine with warmups and repeated measurements. Override
+`BENCHMARK_WARMUP` and `BENCHMARK_RUNS` when needed. Use Criterion only after a
+hot path can be isolated as a stable in-process benchmark; whole-game
+throughput remains the primary regression measure. [Criterion](https://github.com/bheisler/criterion.rs)
+is not a dependency until such a benchmark exists.
+
+Use [Samply](https://github.com/mstange/samply) to locate CPU hotspots with the
+Firefox Profiler call tree, flame graph, timeline, and source views. The
+separate `profiling` build keeps release optimization and adds symbols:
+
+```sh
+cargo install --locked samply
+make profile-engine PROFILE_GAMES=20000 PROFILE_SEED=1 \
+  PROFILE_OUTPUT=target/profiles/engine-before.json.gz
+make profile-engine-open \
+  PROFILE_OUTPUT=target/profiles/engine-before.json.gz
+```
+
+The profiler UI visualizes a native process capture; it does not profile
+Penta's browser interface.
+
+Captures, Hyperfine exports, and allocation traces belong under the ignored
+`target/profiles/` directory. Samply releases that store symbols in an adjacent
+`.syms.json` sidecar need that file kept beside the capture. For a broader CPU
+sample covering every built-in deck in both formats, use `make
+profile-engine-all`.
+
+Samples in allocator functions measure allocator CPU time, not allocation
+counts or bytes. When heap churn is the question, run the same symbol-rich
+native workload under a real allocation profiler:
+
+```sh
+make build-profile-engine
+
+# macOS with full Xcode installed
+xcrun xctrace record --template 'Allocations' \
+  --output target/profiles/engine-allocations.trace --launch -- \
+  target/profiling/penta-match --p1 random --p2 random \
+  --deck1 Random --deck2 Random --games 2000 --seed 1
+
+# Linux with Valgrind installed
+valgrind --tool=dhat \
+  --dhat-out-file=target/profiles/engine-dhat.out \
+  target/profiling/penta-match --p1 random --p2 random \
+  --deck1 Random --deck2 Random --games 2000 --seed 1
+```
+
+See Apple's [Instruments memory guidance](https://developer.apple.com/documentation/xcode/gathering-information-about-memory-use)
+and the [Valgrind DHAT manual](https://valgrind.org/docs/manual/dh-manual.html)
+for interpreting the allocation results.
+
+Use sampled profiles to choose one optimization target, then repeat the exact
+game count, seed, build profile, and machine before and after the change. The
+shared `profile-engine-performance` skill also provides an optional,
+schema-guarded headless attribution script for agent workflows. Standard
+profiler views remain the primary way to inspect a capture. Profiling is opt-in
+and is not part of CI.
 
 ## Web interface
 

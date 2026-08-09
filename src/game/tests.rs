@@ -4809,6 +4809,77 @@ fn separate_grant_sites_receive_distinct_structural_origins() {
     );
 }
 
+#[test]
+fn a_nonmatching_grant_site_still_advances_the_structural_origin() {
+    static GRANTED_ABILITY: AbilityDef = abilities::flying();
+    static EFFECTS: [EffectDef; 2] = [
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::You,
+            },
+            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    ];
+    static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+        "This permanent has flying. Creatures you control have flying.",
+        EffectDef::Sequence(&EFFECTS),
+    )];
+    let definition_id = CardDefinitionId(10_080);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Nonmatching grant identity test card",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    let source = CardInstanceId(10_000);
+    let receiver = CardInstanceId(10_001);
+    game.battlefield.extend([
+        creature(source.0, definition_id, PlayerId::One),
+        creature(receiver.0, cards::ATOG, PlayerId::One),
+    ]);
+
+    let granted = game
+        .effective_abilities(&game.battlefield[1])
+        .into_iter()
+        .filter_map(|effective| match effective.origin {
+            AbilityOrigin::Granted { .. } => Some(effective.origin),
+            AbilityOrigin::Printed { .. } | AbilityOrigin::IntrinsicBasicLand(_) => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        granted,
+        vec![AbilityOrigin::Granted {
+            source,
+            source_definition: definition_id,
+            source_part: CardPartId::PRIMARY,
+            source_ability: AbilityId::PRIMARY,
+            grant: GrantId(1),
+        }]
+    );
+}
+
 static COPY_GRANT_A: AbilityDef = AbilityDef::activated(
     "Gain 1 life.",
     &[],

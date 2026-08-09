@@ -1,0 +1,4 @@
+interface:
+  display_name: "Profile Engine Performance"
+  short_description: "Benchmark and profile Penta native engine"
+  default_prompt: "Use $profile-engine-performance to benchmark Penta native-engine throughput, inspect CPU hotspots, and distinguish allocator CPU time from real allocation churn."
