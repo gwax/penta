@@ -8122,3 +8122,45 @@ fn a_token_is_never_deck_legal() {
         );
     }
 }
+
+#[test]
+fn put_onto_battlefield_reaches_a_board_state_directly() {
+    let mut game = ready_game();
+    let id = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("Serra Angel is in the catalog");
+
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == id)
+        .expect("it is on the battlefield");
+    assert_eq!(angel.controller, PlayerId::Two);
+    assert_eq!(game.power(angel), Some(4));
+    assert!(!angel.tapped);
+
+    assert_eq!(
+        game.put_onto_battlefield(PlayerId::One, CardDefinitionId(60_000)),
+        Err(ZoneError::UnknownCard(CardDefinitionId(60_000))),
+        "an unknown definition is refused rather than guessed at"
+    );
+}
+
+#[test]
+fn put_onto_battlefield_runs_the_entry_trigger() {
+    // Thragtusk gains 5 life when it enters, so a board set up this way is a
+    // real entry rather than a permanent appearing out of nowhere.
+    let mut game = ready_game();
+    game.put_onto_battlefield(PlayerId::One, cards::THRAGTUSK)
+        .expect("Thragtusk is in the catalog");
+    for _ in 0..6 {
+        if game.players[0].life > 20 {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(game.players[0].life, 25);
+}

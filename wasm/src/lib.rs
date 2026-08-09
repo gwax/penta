@@ -376,6 +376,37 @@ impl WebGame {
         self.snapshot().to_string()
     }
 
+    /// Puts a named card onto a seat's battlefield, for reaching a board state
+    /// without playing toward one.
+    ///
+    /// Compiled only with the `dev-cheats` feature, which the production web
+    /// build never enables. `seat` is `"human"` or `"bot"`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error when the seat name is unknown, no card has
+    /// that name, or the game cannot take another object.
+    #[cfg(feature = "dev-cheats")]
+    pub fn dev_put_onto_battlefield(&mut self, seat: &str, card_name: &str) -> Result<(), JsValue> {
+        let player = match seat {
+            "human" => self.human,
+            "bot" => self.human.opponent(),
+            other => {
+                return Err(js_error(format!(
+                    "seat must be \"human\" or \"bot\", got {other:?}"
+                )));
+            }
+        };
+        let definition = self
+            .catalog
+            .find_by_name(card_name)
+            .ok_or_else(|| js_error(format!("no card named {card_name:?}")))?;
+        self.game
+            .put_onto_battlefield(player, definition)
+            .map_err(|error| js_error(error.to_string()))?;
+        Ok(())
+    }
+
     fn advance_until_human_choice(&mut self) -> Result<(), JsValue> {
         for _ in 0..BOT_ACTION_LIMIT {
             let Some(player) = self.game.decision_player() else {

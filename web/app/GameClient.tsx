@@ -6,6 +6,7 @@ import { CardArt } from "./CardArt";
 import { isScryfallId, type CardArtMode } from "./card-art-mode";
 import {
   createEngineGame,
+  publishDevHandle,
   initializeEngine,
   readEngineState,
   type EngineGame,
@@ -348,6 +349,14 @@ export function GameClient({
     setMulliganBottomSelection([]);
     pendingActionRef.current = null;
   }, [presentSnapshot]);
+
+  // A console handle for reaching a board state directly. The entry point it
+  // needs exists only in a dev WASM build, so this does nothing in a deployed
+  // client.
+  useEffect(() => {
+    if (!engineReady || !game.current) return;
+    publishDevHandle(() => game.current, refresh);
+  }, [engineReady, refresh]);
 
   const newGame = useCallback(
     (

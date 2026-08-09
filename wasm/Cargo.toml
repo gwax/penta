@@ -7,6 +7,12 @@ publish = false
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+# Exposes state-setting entry points for local development and testing. Never
+# enable this for a build a player could reach: the engine has no business
+# trusting a client that can write to the battlefield.
+dev-cheats = []
+
 [dependencies]
 penta = { path = ".." }
 serde_json = "1"

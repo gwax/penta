@@ -20,11 +20,20 @@ if [[ "$actual_bindgen_version" != "$required_bindgen_version" ]]; then
   exit 1
 fi
 
-cargo build \
-  --package penta-wasm \
-  --target wasm32-unknown-unknown \
-  --release \
+# State-setting entry points are for local development only. The production
+# web build never sets this, so a deployed client cannot reach them.
+dev_cheats="${PENTA_DEV_CHEATS:-0}"
+cargo_args=(
+  --package penta-wasm
+  --target wasm32-unknown-unknown
+  --release
   --locked
+)
+if [[ "$dev_cheats" == "1" ]]; then
+  cargo_args+=(--features dev-cheats)
+fi
+
+cargo build "${cargo_args[@]}"
 
 wasm_input="$repo_root/target/wasm32-unknown-unknown/release/penta_wasm.wasm"
 bindgen_args=(--target web)
@@ -35,7 +44,9 @@ else
   wasm_hash="$(shasum -a 256 "$wasm_input" | cut -d ' ' -f 1)"
 fi
 
-cache_key="schema=2 wasm=$wasm_hash bindgen=$actual_bindgen_version args=${bindgen_args[*]}"
+# The feature belongs in the key: without it, switching between a dev and a
+# production build would silently reuse the other one's bindings.
+cache_key="schema=2 wasm=$wasm_hash bindgen=$actual_bindgen_version args=${bindgen_args[*]} cheats=$dev_cheats"
 cache_file="$output_dir/.build-cache-key"
 generated_files=(
   "$output_dir/penta_wasm.d.ts"

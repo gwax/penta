@@ -1343,6 +1343,65 @@ impl Game {
         Ok(())
     }
 
+    /// Puts a permanent onto the battlefield under `player`, named by
+    /// definition, and returns its object ID.
+    ///
+    /// This completes the simulation surface that [`Self::set_hand`] and
+    /// [`Self::set_library`] start: those state what a hidden zone holds, and
+    /// this states what is in play. It is how a caller reaches a board state
+    /// directly instead of playing toward one.
+    ///
+    /// The permanent enters as though it resolved, raising the same
+    /// zone-change event, so anything that triggers on entering sees it. It
+    /// does not pay a cost, take a turn, or respect timing: setting up a board
+    /// is not the same as playing to one, and the difference is the point.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ZoneError::UnknownCard`] when the definition is not in this
+    /// game's catalog, and [`ZoneError::TooManyCards`] when the game has run
+    /// out of object identifiers.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the catalog yields no card for a definition it just
+    /// validated, which would mean the catalog changed mid-call.
+    pub fn put_onto_battlefield(
+        &mut self,
+        player: PlayerId,
+        definition: CardDefinitionId,
+    ) -> Result<GameObjectId, ZoneError> {
+        let Some(card) = self.catalog.get(definition) else {
+            return Err(ZoneError::UnknownCard(definition));
+        };
+        let presented = card.primary_part_id();
+        let starting_loyalty = card
+            .part(presented)
+            .and_then(|part| part.rules.starting_loyalty())
+            .map(|loyalty| i16::try_from(loyalty).unwrap_or(i16::MAX));
+        let built = self.build_zone(player, &[definition])?;
+        let card = built
+            .into_iter()
+            .next()
+            .expect("build_zone returns one card for one definition");
+        let id = card.id;
+        let mut permanent =
+            Permanent::entering(card, presented, player, self.turns_started[player.index()]);
+        permanent.loyalty = starting_loyalty;
+        self.battlefield.push(permanent);
+        let entered = self
+            .battlefield
+            .last()
+            .expect("the permanent just pushed is on the battlefield");
+        let entered_event = self.trigger_event_object(entered);
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
+            object: entered_event,
+            from: ZoneKind::Stack,
+            to: ZoneKind::Battlefield,
+        });
+        Ok(id)
+    }
+
     /// Replaces a library with exactly these cards, top card first. Behaves
     /// like [`Self::set_hand`] in every other respect.
     ///
