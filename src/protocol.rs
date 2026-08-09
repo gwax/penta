@@ -1904,6 +1904,36 @@ mod tests {
     }
 
     #[test]
+    fn a_token_is_cataloged_for_lookup_but_never_legal_and_carries_no_art() {
+        let catalog = poc::catalog().expect("catalog builds");
+        let value = catalog_json_for_format(&catalog, Format::IsdRtrStandard);
+        let cards = value["cards"].as_array().expect("cards array");
+        let beast = cards
+            .iter()
+            .find(|card| card["definition"] == crate::card::cards::BEAST_TOKEN_3_3_GREEN.0)
+            .expect("a client can resolve a token by definition");
+
+        assert_eq!(beast["name"], "Beast");
+        assert_eq!(beast["power"], 3);
+        assert_eq!(beast["toughness"], 3);
+        assert_eq!(beast["allowed"], false, "a token is in no card pool");
+        assert_eq!(beast["legal"], false);
+        assert!(
+            beast["manaCost"].is_null(),
+            "a token has no printed mana cost"
+        );
+
+        // The browser renders art only for a Scryfall UUID and otherwise falls
+        // back to the card-type glyph, so an empty identifier is what keeps a
+        // token from requesting an image that does not exist.
+        let art = beast["art"]["scryfallId"].as_str().unwrap_or_default();
+        assert!(
+            art.is_empty(),
+            "a token names no printing, so it has no Scryfall identifier"
+        );
+    }
+
+    #[test]
     fn catalog_exposes_derived_implementation_coverage_not_the_play_gate() {
         let catalog = poc::catalog().expect("catalog builds");
         let value = catalog_json_for_format(&catalog, Format::IsdRtrStandard);
