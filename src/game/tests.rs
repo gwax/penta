@@ -11758,3 +11758,86 @@ fn quicken_lets_one_sorcery_be_cast_at_instant_speed() {
         "the grant covered the next sorcery, not every one"
     );
 }
+
+#[test]
+fn obzedat_blinks_itself_and_comes_back_hasty_next_upkeep() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let obzedat = game
+        .put_onto_battlefield(PlayerId::One, cards::OBZEDAT_GHOST_COUNCIL)
+        .expect("cataloged");
+    // Its entry trigger fires too; take every decision as it comes.
+    let drain = |game: &mut Game| {
+        for _ in 0..14 {
+            if game.stack.is_empty()
+                && game.pending_triggers.is_empty()
+                && game.pending_decisions.is_empty()
+            {
+                break;
+            }
+            if let Some(decision) = game
+                .pending_decisions
+                .first()
+                .map(|pending| pending.observation.clone())
+            {
+                let options = decision
+                    .options
+                    .iter()
+                    .filter(|option| option.label == "Do it")
+                    .map(|option| option.id)
+                    .chain(decision.options.iter().map(|option| option.id))
+                    .take(decision.minimum.max(1))
+                    .collect::<Vec<_>>();
+                game.apply(
+                    decision.player,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options,
+                    },
+                )
+                .unwrap();
+                continue;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+    };
+    drain(&mut game);
+    assert!(
+        game.battlefield.iter().any(|p| p.card.id == obzedat),
+        "it starts on the battlefield"
+    );
+
+    game.step = Step::PostcombatMain;
+    game.advance_step();
+    drain(&mut game);
+    assert!(
+        !game.battlefield.iter().any(|p| p.card.id == obzedat),
+        "the end step exiled it"
+    );
+    assert_eq!(game.players[0].exile.len(), 1);
+
+    // Their turn, then back to ours: it returns at our upkeep, not theirs.
+    game.start_next_turn();
+    drain(&mut game);
+    assert_eq!(
+        game.players[0].exile.len(),
+        1,
+        "not on the opponent's upkeep"
+    );
+
+    game.start_next_turn();
+    drain(&mut game);
+    let back = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::OBZEDAT_GHOST_COUNCIL)
+        .expect("it came back");
+    assert!(
+        game.permanent_has_executable_keyword(back, KeywordAbility::Haste),
+        "and it can attack straight away"
+    );
+    assert!(game.players[0].exile.is_empty());
+}

@@ -643,7 +643,9 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
                 collect_ability_grants(*effect, grants);
             }
         }
-        super::EffectDef::OptionalManaPayment { effect, .. } | super::EffectDef::May(effect) => {
+        super::EffectDef::OptionalManaPayment { effect, .. }
+        | super::EffectDef::May(effect)
+        | super::EffectDef::AtNextStep { effect, .. } => {
             collect_ability_grants(*effect, grants);
         }
         super::EffectDef::Apply {
@@ -687,9 +689,9 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
             .iter()
             .map(|effect| ability_grant_sites(*effect))
             .fold(0, usize::saturating_add),
-        super::EffectDef::OptionalManaPayment { effect, .. } | super::EffectDef::May(effect) => {
-            ability_grant_sites(*effect)
-        }
+        super::EffectDef::OptionalManaPayment { effect, .. }
+        | super::EffectDef::May(effect)
+        | super::EffectDef::AtNextStep { effect, .. } => ability_grant_sites(*effect),
         super::EffectDef::Apply {
             effect: super::AppliedEffectDef::GrantAbility(_),
             ..

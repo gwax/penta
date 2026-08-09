@@ -465,7 +465,7 @@ mod tests {
                 shared_effect_recipient(player) && shared_object_predicate(object)
             }
             // Only the two destinations the return path knows.
-            EffectDef::ReturnLinkedExiles { zone } => {
+            EffectDef::ReturnLinkedExiles { zone, .. } => {
                 matches!(zone, ZoneKind::Battlefield | ZoneKind::Hand)
             }
             EffectDef::May(inner) => shared_stack_effect(*inner),
@@ -486,7 +486,8 @@ mod tests {
             // resolving object's controller, and the flash grant is about its
             // controller's next spell.
             EffectDef::CreateToken { .. } | EffectDef::GrantFlashToNextSorcery => true,
-            EffectDef::OptionalManaPayment { effect, .. } => shared_stack_effect(*effect),
+            EffectDef::OptionalManaPayment { effect, .. }
+            | EffectDef::AtNextStep { effect, .. } => shared_stack_effect(*effect),
             EffectDef::Apply {
                 recipient,
                 effect,
@@ -652,6 +653,7 @@ mod tests {
             | EffectDef::May(_)
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::AtNextStep { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
             | EffectDef::DealDamage { .. }
@@ -747,6 +749,7 @@ mod tests {
                         | EffectDef::GrantFlashToNextSorcery
                         | EffectDef::ExileLinkedToSource { .. }
                         | EffectDef::ReturnLinkedExiles { .. }
+                        | EffectDef::AtNextStep { .. }
                         | EffectDef::ReduceGenericCostBy(_)
                         | EffectDef::MultiplyEventAmount(_)
                         | EffectDef::MoveToZone { .. }
@@ -849,6 +852,7 @@ mod tests {
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }

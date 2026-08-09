@@ -4,8 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ObjectPredicateDef,
-    PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry,
+    ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -261,9 +262,28 @@ pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord:
             "opponent",
             AbilityTargetPredicate::Player(PlayerRelation::Opponent),
         )]),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "At the beginning of your end step, you may exile Obzedat. If you do, return it to the battlefield under its owner's control at the beginning of your next upkeep. It gains haste.",
-            "Exiling a permanent and returning it on a later turn is not implemented.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::You,
+            },
+            EffectDef::May(&EffectDef::Sequence(&[
+                EffectDef::ExileLinkedToSource {
+                    object: EffectRecipientDef::Source,
+                },
+                // Queued before the exile takes effect would be the same:
+                // both read the source from the resolving ability, which the
+                // exile does not disturb.
+                EffectDef::AtNextStep {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                    effect: &EffectDef::ReturnLinkedExiles {
+                        zone: ZoneKind::Battlefield,
+                        grant: Some(KeywordAbility::Haste),
+                    },
+                },
+            ])),
         ),
     ]),
 );

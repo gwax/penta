@@ -218,6 +218,18 @@ impl Permanent {
     }
 }
 
+/// An effect queued for the next time a step begins. Whatever queued it has
+/// usually left by then, so the entry carries its own source and controller.
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct DelayedTrigger {
+    /// The object that queued this, kept whole so the effect resolves with
+    /// the same source and controller it would have had at the time.
+    object: Box<StackObject>,
+    step: TurnStepDef,
+    player: PlayerRelation,
+    effect: &'static EffectDef,
+}
+
 /// A retired object incarnation retained for last-known-information queries.
 /// Zone changes still create a new [`GameObjectId`]; this record deliberately
 /// never follows the physical card into its new zone.
@@ -906,6 +918,8 @@ pub struct Game {
     /// How many of each player's next sorceries may be cast as though they
     /// had flash. Quicken grants one, and the grant lapses with the turn.
     sorcery_flash_grants: [u8; 2],
+    /// Effects waiting for a step to begin. Obzedat's return is one.
+    delayed_triggers: Vec<DelayedTrigger>,
     blockers_declared: bool,
     untap_pending: bool,
     pregame: Option<Pregame>,
@@ -1048,6 +1062,7 @@ impl Game {
             creature_died_this_turn: false,
             linked_exiles: Vec::new(),
             sorcery_flash_grants: [0; 2],
+            delayed_triggers: Vec::new(),
             blockers_declared: false,
             untap_pending: false,
             pregame: Some(Pregame::Mulligan(PlayerId::One)),
@@ -2297,6 +2312,7 @@ impl Game {
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
@@ -6725,7 +6741,7 @@ impl Game {
                     }
                 }
             }
-            EffectDef::ReturnLinkedExiles { zone } => {
+            EffectDef::ReturnLinkedExiles { zone, grant } => {
                 let source = object.source.unwrap_or(object.id);
                 let returning = self
                     .linked_exiles
@@ -6736,8 +6752,20 @@ impl Game {
                 self.linked_exiles
                     .retain(|(exiled_by, _)| *exiled_by != source);
                 for card in returning {
-                    self.return_exiled_card(card, zone);
+                    self.return_exiled_card(card, zone, grant);
                 }
+            }
+            EffectDef::AtNextStep {
+                step,
+                player,
+                effect,
+            } => {
+                self.delayed_triggers.push(DelayedTrigger {
+                    object: Box::new(object.clone()),
+                    step,
+                    player,
+                    effect,
+                });
             }
             EffectDef::Counter { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context) {
@@ -8668,6 +8696,7 @@ impl Game {
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::AtNextStep { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
@@ -8761,6 +8790,7 @@ impl Game {
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
+                | EffectDef::AtNextStep { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
@@ -11010,7 +11040,12 @@ impl Game {
 
     /// Brings a linked exile back. A card that is no longer in exile has
     /// moved on, and nothing follows it.
-    fn return_exiled_card(&mut self, id: GameObjectId, zone: ZoneKind) {
+    fn return_exiled_card(
+        &mut self,
+        id: GameObjectId,
+        zone: ZoneKind,
+        grant: Option<KeywordAbility>,
+    ) {
         let Some(owner) = [PlayerId::One, PlayerId::Two].into_iter().find(|player| {
             self.players[player.index()]
                 .exile
@@ -11023,10 +11058,61 @@ impl Game {
             return;
         };
         if zone == ZoneKind::Battlefield {
-            self.put_card_onto_battlefield_from(card, ZoneKind::Exile, owner);
+            let entered = self.put_card_onto_battlefield_from(card, ZoneKind::Exile, owner);
+            if let Some(keyword) = grant
+                && let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == entered.id)
+            {
+                permanent.temporary_keywords.push(keyword);
+            }
         } else {
             let (card, _zone_change) = self.zone_change_card(card);
             self.players[owner.index()].hand.push(card);
+        }
+    }
+
+    /// Raises the start-of-step event and resolves whatever was waiting for
+    /// it. The upkeep has its own richer path and calls both itself.
+    fn begin_step_triggers(&mut self) {
+        if self.step == Step::Upkeep {
+            return;
+        }
+        let step = Self::turn_step_def(self.step);
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
+            step,
+            player: self.active_player,
+        });
+        self.fire_delayed_triggers(step);
+    }
+
+    /// Resolves the effects that were waiting for this step.
+    ///
+    /// A real delayed trigger goes on the stack and can be responded to. This
+    /// resolves at the step boundary instead, which no card here can tell
+    /// apart, and keeps the queue from needing a listener of its own.
+    fn fire_delayed_triggers(&mut self, step: TurnStepDef) {
+        let active = self.active_player;
+        let mut due = Vec::new();
+        let mut waiting = Vec::new();
+        for delayed in std::mem::take(&mut self.delayed_triggers) {
+            let is_due = delayed.step == step
+                && self.player_relation_matches(
+                    active,
+                    delayed.player,
+                    delayed.object.controller,
+                    TriggerContext::empty(),
+                );
+            if is_due {
+                due.push(delayed);
+            } else {
+                waiting.push(delayed);
+            }
+        }
+        self.delayed_triggers = waiting;
+        for delayed in due {
+            self.resolve_effect_def(*delayed.effect, &delayed.object, TriggerContext::empty());
         }
     }
 
@@ -11161,6 +11247,7 @@ impl Game {
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
@@ -11557,12 +11644,7 @@ impl Game {
         }
 
         if self.result.is_none() {
-            if self.step != Step::Upkeep {
-                self.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
-                    step: Self::turn_step_def(self.step),
-                    player: self.active_player,
-                });
-            }
+            self.begin_step_triggers();
             self.priority = self.active_player;
             self.events.push(GameEvent::StepChanged {
                 turn: self.turn,
@@ -11646,6 +11728,7 @@ impl Game {
             step: TurnStepDef::Upkeep,
             player,
         });
+        self.fire_delayed_triggers(TurnStepDef::Upkeep);
         let vise_damage: u16 = self
             .battlefield
             .iter()

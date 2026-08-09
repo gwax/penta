@@ -1087,8 +1087,17 @@ pub enum EffectDef {
         object: EffectRecipientDef,
     },
     /// Returns everything this ability's source exiled, to the named zone.
+    /// A returned permanent keeps `grant` until end of turn, which is how
+    /// Obzedat comes back ready to attack.
     ReturnLinkedExiles {
         zone: ZoneKind,
+        grant: Option<KeywordAbility>,
+    },
+    /// Queues an effect for the next time that step begins.
+    AtNextStep {
+        step: TurnStepDef,
+        player: PlayerRelation,
+        effect: &'static EffectDef,
     },
     /// A static prohibition: no spell or ability an opponent controls can
     /// make this ability's controller sacrifice a permanent.
