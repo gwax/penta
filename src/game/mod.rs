@@ -4760,7 +4760,7 @@ impl Game {
                     else {
                         return None;
                     };
-                    (alternative_cast.alternative == alternative).then_some((
+                    (attached.alternative_cost_id() == Some(alternative)).then_some((
                         AbilityOrigin::Printed {
                             definition: definition.id,
                             part: *part_id,

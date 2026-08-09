@@ -6,9 +6,8 @@
 use super::model::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, AlternativeCastKindDef,
     AppliedEffectDef, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ZoneKind,
+    ManaCost, ZoneKind,
 };
-use crate::ids::AlternativeCostId;
 
 const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
     AbilityDef::keyword(text, keyword)
@@ -123,31 +122,28 @@ pub const fn protection_from(color: ManaColor) -> AbilityDef {
     keyword(text, KeywordAbility::ProtectionFrom(color))
 }
 
-/// A printed flashback clause linked to one alternative cost on the card's
-/// spell play option.
+/// A printed flashback clause. Its attached ability identity becomes the
+/// spell play option's alternative-cost identity.
 #[must_use]
-pub const fn flashback(text: &'static str, alternative: AlternativeCostId) -> AbilityDef {
+pub const fn flashback(mana_cost: ManaCost) -> AbilityDef {
     AbilityDef::alternative_cast(
-        text,
-        alternative,
+        mana_cost,
         AlternativeCastKindDef::Flashback,
         None,
         EffectDef::None,
     )
 }
 
-/// A printed overload clause linked to one alternative cost. `effect` is the
-/// spell after every instance of "target" has been changed to "each."
+/// A printed overload clause. `effect` is the spell after every instance of
+/// "target" has been changed to "each."
 #[must_use]
 pub const fn overload(
-    text: &'static str,
-    alternative: AlternativeCostId,
+    mana_cost: ManaCost,
     stack_text: &'static str,
     effect: EffectDef,
 ) -> AbilityDef {
     AbilityDef::alternative_cast(
-        text,
-        alternative,
+        mana_cost,
         AlternativeCastKindDef::Overload,
         Some(stack_text),
         effect,
@@ -188,11 +184,15 @@ pub const fn tap_for(mana: ManaColor) -> AbilityDef {
 
 #[cfg(test)]
 mod tests {
-    use super::{banding, double_strike, first_strike, flying, intimidate, tap_for};
-    use crate::card::{
-        AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, CardRules,
-        DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost,
+    use super::{
+        banding, double_strike, first_strike, flashback, flying, intimidate, overload, tap_for,
     };
+    use crate::card::{
+        AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
+        AlternativeCastKindDef, CardRules, DeclarativeAbilityDef, EffectDef, KeywordAbility,
+        ManaColor, ManaCost,
+    };
+    use crate::mana_cost;
 
     #[test]
     fn tap_for_builds_a_complete_executable_mana_ability() {
@@ -250,6 +250,39 @@ mod tests {
         assert_eq!(
             intimidate().text,
             "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)"
+        );
+    }
+
+    #[test]
+    fn alternative_cast_helpers_own_costs_and_render_canonical_text() {
+        let flashback = flashback(mana_cost!("{2}{U}"));
+        let overload = overload(
+            mana_cost!("{3}{R}{R}{R}"),
+            "Deal 4 damage to each creature you don't control.",
+            EffectDef::None,
+        );
+
+        assert!(matches!(
+            flashback.definition,
+            DeclarativeAbilityDef::AlternativeCast(definition)
+                if definition.kind == AlternativeCastKindDef::Flashback
+                    && definition.mana_cost == mana_cost!("{2}{U}")
+        ));
+        assert_eq!(
+            flashback.rules_text(),
+            "Flashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+        );
+        assert!(matches!(
+            overload.definition,
+            DeclarativeAbilityDef::AlternativeCast(definition)
+                if definition.kind == AlternativeCastKindDef::Overload
+                    && definition.mana_cost == mana_cost!("{3}{R}{R}{R}")
+                    && definition.stack_text
+                        == Some("Deal 4 damage to each creature you don't control.")
+        ));
+        assert_eq!(
+            overload.rules_text(),
+            "Overload {3}{R}{R}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
         );
     }
 }

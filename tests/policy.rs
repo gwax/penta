@@ -820,7 +820,7 @@ fn handcrafted_does_not_overload_counterflux_into_an_empty_stack() {
     let overload = Action::CastSpell {
         card: source,
         choices: CastChoices::default().with_costs(CostConfiguration::new(
-            Some(AlternativeCostId(0)),
+            Some(AlternativeCostId(2)),
             Vec::new(),
         )),
         sacrifices: Vec::new(),
@@ -875,7 +875,7 @@ fn handcrafted_overload_counts_only_effective_unanswered_spells() {
     let overload = Action::CastSpell {
         card: source,
         choices: CastChoices::default().with_costs(CostConfiguration::new(
-            Some(AlternativeCostId(0)),
+            Some(AlternativeCostId(2)),
             Vec::new(),
         )),
         sacrifices: Vec::new(),

@@ -196,14 +196,15 @@ impl HandcraftedPolicy {
         };
         let rules = &card.part(part)?.rules;
         if let Some(ability) = choices.costs().alternative().and_then(|alternative| {
-            rules.ability_clauses().iter().find(|ability| {
-                ability.implementation.is_executable()
+            rules.indexed_abilities().find_map(|attached| {
+                (attached.definition.implementation.is_executable()
+                    && attached.alternative_cost_id() == Some(alternative)
                     && matches!(
-                        ability.definition,
+                        attached.definition.definition,
                         DeclarativeAbilityDef::AlternativeCast(alternative_cast)
-                            if alternative_cast.alternative == alternative
-                                && alternative_cast.kind == AlternativeCastKindDef::Overload
-                    )
+                            if alternative_cast.kind == AlternativeCastKindDef::Overload
+                    ))
+                .then_some(attached.definition)
             })
         }) {
             if !choices.modes().is_empty() {

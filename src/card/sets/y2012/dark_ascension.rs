@@ -3,12 +3,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AlternativeCostDef, AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart,
-    CardRules, CardSet, CardStructure, CardType, ConditionalValueDef, DoubleFacedKind, EffectDef,
-    EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, PlayOptionDef,
-    PlayerRelation, SpellForm, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
+    CardStructure, CardType, ConditionalValueDef, DoubleFacedKind, EffectDef, EffectDurationDef,
+    EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation,
+    SpellForm, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
-use crate::ids::{AlternativeCostId, CardPartId, PlayOptionId, TargetSlotId};
+use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
 
 pub(in crate::card::sets) static HELLRIDER: CardRecord = CardRecord::new(
@@ -101,8 +101,6 @@ pub(in crate::card::sets) static HUNTMASTER_OF_THE_FELLS: CardRecord = CardRecor
 )
 .with_composition(huntmaster_composition);
 
-const RAY_OF_REVELATION_FLASHBACK_COST: AlternativeCostId = AlternativeCostId(0);
-
 static RAY_OF_REVELATION_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     TargetSlotId(0),
     "enchantment",
@@ -114,62 +112,23 @@ static RAY_OF_REVELATION_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exa
     },
 )];
 
-static RAY_OF_REVELATION_ABILITIES: [AbilityDef; 2] = [
-    AbilityDef::spell(
-        "Destroy target enchantment.",
-        EffectDef::Destroy {
-            object: EffectRecipientDef::Target(TargetSlotId(0)),
-            can_regenerate: true,
-        },
-    )
-    .with_targets(&RAY_OF_REVELATION_TARGETS),
-    abilities::flashback(
-        "Flashback {G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-        RAY_OF_REVELATION_FLASHBACK_COST,
-    ),
-];
-
-const fn ray_of_revelation_rules() -> CardRules {
-    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&RAY_OF_REVELATION_ABILITIES)
-}
-
-fn ray_of_revelation_composition() -> CardComposition {
-    let rules = ray_of_revelation_rules();
-    let mut cast = PlayOptionDef::cast(
-        PlayOptionId::DEFAULT,
-        "Ray of Revelation",
-        SpellForm::Part(CardPartId::PRIMARY),
-        rules
-            .mana_cost()
-            .expect("Ray of Revelation has a printed mana cost"),
-        CardEffectStatus::Implemented,
-    );
-    cast.alternative_costs.push(AlternativeCostDef {
-        id: RAY_OF_REVELATION_FLASHBACK_COST,
-        label: "Flashback".into(),
-        mana_cost: mana_cost!("{G}"),
-    });
-    CardComposition {
-        parts: vec![CardPart::new(
-            CardPartId::PRIMARY,
-            "Ray of Revelation",
-            rules,
-        )],
-        structure: CardStructure::Single {
-            main: CardPartId::PRIMARY,
-        },
-        play_options: vec![cast],
-    }
-}
-
 pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new(
     cards::RAY_OF_REVELATION,
     "Ray of Revelation",
     CardArt::new("d7e2c5a4-cf92-46bd-9033-8036436488cb", "Cliff Childs"),
     CardSet::DarkAscension,
-    ray_of_revelation_rules(),
-)
-.with_composition(ray_of_revelation_composition);
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[
+        AbilityDef::spell(
+            "Destroy target enchantment.",
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                can_regenerate: true,
+            },
+        )
+        .with_targets(&RAY_OF_REVELATION_TARGETS),
+        abilities::flashback(mana_cost!("{G}")),
+    ]),
+);
 
 pub(in crate::card::sets) static STRANGLEROOT_GEIST: CardRecord = CardRecord::new(
     cards::STRANGLEROOT_GEIST,

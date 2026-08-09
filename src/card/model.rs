@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
@@ -1399,15 +1400,17 @@ pub struct StaticAbilityDef {
     pub source_zones: &'static [ZoneKind],
 }
 
-/// The rules procedure supplied by a printed alternative-casting keyword.
+/// The rules procedure and mana cost supplied by a printed
+/// alternative-casting keyword.
 ///
-/// The referenced alternative cost remains on the play option, alongside the
-/// other casting choices. An overload clause uses its [`AbilityDef::effect`]
-/// as the targetless text-replacement result; flashback uses `EffectDef::None`
-/// and changes where the card may be cast and where it goes after the stack.
+/// A play option exposes a derived [`AlternativeCostDef`] whose identity is
+/// the positional [`AbilityId`] of this clause. An overload clause uses its
+/// [`AbilityDef::effect`] as the targetless text-replacement result; flashback
+/// uses `EffectDef::None` and changes where the card may be cast and where it
+/// goes after the stack.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AlternativeCastAbilityDef {
-    pub alternative: AlternativeCostId,
+    pub mana_cost: ManaCost,
     pub kind: AlternativeCastKindDef,
     /// Rules text for the spell as modified by this alternative, when the
     /// procedure changes its visible instructions (as overload does).
@@ -1418,6 +1421,41 @@ pub struct AlternativeCastAbilityDef {
 pub enum AlternativeCastKindDef {
     Flashback,
     Overload,
+}
+
+impl AlternativeCastKindDef {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Flashback => "Flashback",
+            Self::Overload => "Overload",
+        }
+    }
+}
+
+impl AlternativeCastAbilityDef {
+    #[must_use]
+    pub fn rules_text(self) -> String {
+        match self.kind {
+            AlternativeCastKindDef::Flashback => format!(
+                "Flashback {} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+                self.mana_cost,
+            ),
+            AlternativeCastKindDef::Overload => format!(
+                "Overload {} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+                self.mana_cost,
+            ),
+        }
+    }
+
+    #[must_use]
+    pub fn alternative_cost(self, ability: AbilityId) -> AlternativeCostDef {
+        AlternativeCostDef {
+            id: AlternativeCostId(ability.0),
+            label: self.kind.label().into(),
+            mana_cost: self.mana_cost,
+        }
+    }
 }
 
 /// A replacement ability changes how an event happens and never uses the
@@ -1649,6 +1687,9 @@ impl AbilityImplementationDef {
 /// engine never infers stack behavior from costs, targets, or effects.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AbilityDef {
+    /// Static text for ordinary clauses and the keyword label for clauses
+    /// whose full Oracle-style text is rendered from structured metadata.
+    /// Use [`Self::rules_text`] when presenting a clause.
     pub text: &'static str,
     /// Optional action-menu wording for a targeted activated ability. This is
     /// presentation attached to the exact ability, not a second rules text.
@@ -1806,16 +1847,15 @@ impl AbilityDef {
 
     #[must_use]
     pub const fn alternative_cast(
-        text: &'static str,
-        alternative: AlternativeCostId,
+        mana_cost: ManaCost,
         kind: AlternativeCastKindDef,
         stack_text: Option<&'static str>,
         effect: EffectDef,
     ) -> Self {
         Self::defined(
-            text,
+            kind.label(),
             DeclarativeAbilityDef::AlternativeCast(AlternativeCastAbilityDef {
-                alternative,
+                mana_cost,
                 kind,
                 stack_text,
             }),
@@ -1912,6 +1952,19 @@ impl AbilityDef {
     pub const fn with_text(mut self, text: &'static str) -> Self {
         self.text = text;
         self
+    }
+
+    /// Renders the complete printed clause. Most abilities borrow their
+    /// canonical static text; structured alternative-casting keywords insert
+    /// their owned mana cost into canonical reminder text.
+    #[must_use]
+    pub fn rules_text(&self) -> Cow<'static, str> {
+        match self.definition {
+            DeclarativeAbilityDef::AlternativeCast(definition) => {
+                Cow::Owned(definition.rules_text())
+            }
+            _ => Cow::Borrowed(self.text),
+        }
     }
 
     #[must_use]
@@ -2286,6 +2339,19 @@ impl PlayOptionDef {
         self
     }
 
+    /// Adds the printed alternative costs owned by alternative-casting
+    /// clauses on `rules`. Existing manually authored generic alternatives
+    /// remain intact.
+    #[must_use]
+    pub fn with_alternative_cast_costs(mut self, rules: &CardRules) -> Self {
+        self.alternative_costs.extend(
+            rules
+                .indexed_abilities()
+                .filter_map(AttachedAbilityDef::alternative_cost),
+        );
+        self
+    }
+
     #[must_use]
     pub const fn restricted_to_hand(mut self) -> Self {
         self.restriction = PlayRestriction::FromHandOnly;
@@ -2329,6 +2395,7 @@ impl CardComposition {
                 printed_mana_cost,
                 effect_status,
             )
+            .with_alternative_cast_costs(&rules)
         };
         if let Some(modes) = rules.presentation_spell_modes() {
             option = option.with_modes(modes);
@@ -3033,6 +3100,39 @@ impl ManaCost {
     }
 }
 
+impl fmt::Display for ManaCost {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut wrote_symbol = false;
+        if self.generic > 0 {
+            write!(formatter, "{{{}}}", self.generic)?;
+            wrote_symbol = true;
+        }
+        if self.variable_x {
+            for _ in 0..self.x_multiplier.max(1) {
+                formatter.write_str("{X}")?;
+                wrote_symbol = true;
+            }
+        }
+        for (amount, symbol) in [
+            (self.white, "W"),
+            (self.blue, "U"),
+            (self.black, "B"),
+            (self.red, "R"),
+            (self.green, "G"),
+            (self.white_red_hybrid, "R/W"),
+        ] {
+            for _ in 0..amount {
+                write!(formatter, "{{{symbol}}}")?;
+                wrote_symbol = true;
+            }
+        }
+        if !wrote_symbol {
+            formatter.write_str("{0}")?;
+        }
+        Ok(())
+    }
+}
+
 impl FromStr for ManaCost {
     type Err = ManaCostParseError;
 
@@ -3111,6 +3211,32 @@ pub enum CardAbilityList {
 pub struct AttachedAbilityDef {
     pub id: AbilityId,
     pub definition: AbilityDef,
+}
+
+impl AttachedAbilityDef {
+    /// The stable cost-choice identity of a printed alternative-casting
+    /// clause. Printed alternative costs use their owning ability's positional
+    /// identity rather than a separately maintained identifier.
+    #[must_use]
+    pub const fn alternative_cost_id(self) -> Option<AlternativeCostId> {
+        if matches!(
+            self.definition.definition,
+            DeclarativeAbilityDef::AlternativeCast(_)
+        ) {
+            Some(AlternativeCostId(self.id.0))
+        } else {
+            None
+        }
+    }
+
+    /// Materializes the play-option view of a printed alternative cost.
+    #[must_use]
+    pub fn alternative_cost(self) -> Option<AlternativeCostDef> {
+        let DeclarativeAbilityDef::AlternativeCast(definition) = self.definition.definition else {
+            return None;
+        };
+        Some(definition.alternative_cost(self.id))
+    }
 }
 
 impl CardAbilityList {
@@ -3521,14 +3647,14 @@ impl CardRules {
     /// Renders the ordered card text from the same clauses used by execution
     /// and implementation auditing.
     #[must_use]
-    pub fn rules_text(&self) -> std::borrow::Cow<'static, str> {
+    pub fn rules_text(&self) -> Cow<'static, str> {
         match self.abilities {
-            CardAbilityList::None => std::borrow::Cow::Borrowed(""),
-            CardAbilityList::One(ability) => std::borrow::Cow::Borrowed(ability.text),
-            CardAbilityList::Many(abilities) => std::borrow::Cow::Owned(
+            CardAbilityList::None => Cow::Borrowed(""),
+            CardAbilityList::One(ability) => ability.rules_text(),
+            CardAbilityList::Many(abilities) => Cow::Owned(
                 abilities
                     .iter()
-                    .map(|ability| ability.text)
+                    .map(AbilityDef::rules_text)
                     .collect::<Vec<_>>()
                     .join("\n"),
             ),
@@ -3680,14 +3806,18 @@ impl CardRules {
 #[cfg(test)]
 mod tests {
     use super::{
-        AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, CardBehavior,
-        CardComposition, CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId,
-        CardRules, CardSet, CardType, CardTypeSet, CreatureStats, DeclarativeAbilityDef, EffectDef,
-        EffectRecipientDef, ImplementationStatus, LandEntry, ManaColor, ManaCost,
-        ManaCostParseErrorKind, ManaRestrictionDef, ObjectPredicateDef, PrintedManaCost,
-        TargetPredicate, TriggerEventDef,
+        AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AlternativeCastKindDef,
+        AlternativeCostDef, CardBehavior, CardComposition, CardDefinition, CardEffectStatus,
+        CardPart, CardPrinting, CardPrintingId, CardRules, CardSet, CardType, CardTypeSet,
+        CreatureStats, DeclarativeAbilityDef, EffectDef, EffectRecipientDef, ImplementationStatus,
+        LandEntry, ManaColor, ManaCost, ManaCostParseErrorKind, ManaRestrictionDef,
+        ObjectPredicateDef, PlayOptionDef, PrintedManaCost, SpellForm, TargetPredicate,
+        TriggerEventDef,
     };
-    use crate::{AbilityId, CardDefinitionId, CardPartId, ModeId, TargetSlotId};
+    use crate::{
+        AbilityId, AlternativeCostId, CardDefinitionId, CardPartId, ModeId, PlayOptionId,
+        TargetSlotId,
+    };
 
     static DEFERRED_CLAUSE: [AbilityDef; 1] = [AbilityDef::not_implemented(
         "A deferred card-specific ability.",
@@ -3852,6 +3982,82 @@ mod tests {
         assert_eq!(COMPILED.green, 2);
         assert_eq!(mana_cost!("{X}{X}{U}").x_multiplier, 2);
         assert_eq!(mana_cost!("{0}"), ManaCost::default());
+        assert_eq!(mana_cost!("{0}").to_string(), "{0}");
+        assert_eq!(
+            mana_cost!("{12}{X}{X}{W}{U}{B}{R}{G}{R/W}").to_string(),
+            "{12}{X}{X}{W}{U}{B}{R}{G}{R/W}",
+        );
+    }
+
+    #[test]
+    fn alternative_cast_clauses_render_and_project_their_owned_costs() {
+        static ABILITIES: [AbilityDef; 3] = [
+            AbilityDef::spell("Draw a card.", EffectDef::None),
+            AbilityDef::alternative_cast(
+                mana_cost!("{2}{U}"),
+                AlternativeCastKindDef::Flashback,
+                None,
+                EffectDef::None,
+            ),
+            AbilityDef::alternative_cast(
+                mana_cost!("{3}{R}"),
+                AlternativeCastKindDef::Overload,
+                Some("Draw a card for each opponent."),
+                EffectDef::None,
+            ),
+        ];
+        let rules = CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&ABILITIES);
+
+        assert_eq!(ABILITIES[1].text, "Flashback");
+        assert_eq!(
+            ABILITIES[1].rules_text(),
+            "Flashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+        );
+        assert_eq!(
+            ABILITIES[2].rules_text(),
+            "Overload {3}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+        );
+        assert_eq!(
+            rules.rules_text(),
+            concat!(
+                "Draw a card.\n",
+                "Flashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)\n",
+                "Overload {3}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+            ),
+        );
+
+        let composition = CardComposition::single("Test spell", rules);
+        assert_eq!(
+            composition.play_options[0].alternative_costs,
+            vec![
+                AlternativeCostDef {
+                    id: AlternativeCostId(1),
+                    label: "Flashback".into(),
+                    mana_cost: mana_cost!("{2}{U}"),
+                },
+                AlternativeCostDef {
+                    id: AlternativeCostId(2),
+                    label: "Overload".into(),
+                    mana_cost: mana_cost!("{3}{R}"),
+                },
+            ],
+        );
+
+        let mut generic = PlayOptionDef::cast(
+            PlayOptionId(4),
+            "Generic alternative",
+            SpellForm::Part(CardPartId::PRIMARY),
+            mana_cost!("{1}{U}"),
+            CardEffectStatus::Implemented,
+        );
+        generic.alternative_costs.push(AlternativeCostDef {
+            id: AlternativeCostId(9),
+            label: "Generic".into(),
+            mana_cost: mana_cost!("{U}"),
+        });
+        let projected = generic.with_alternative_cast_costs(&rules);
+        assert_eq!(projected.alternative_costs[0].label, "Generic");
+        assert_eq!(projected.alternative_costs.len(), 3);
     }
 
     #[test]

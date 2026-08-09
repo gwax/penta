@@ -8267,7 +8267,7 @@ fn overloaded_mizzium_mortars_is_targetless_and_hits_hexproof_opposing_creatures
                 action,
                 Action::CastSpell { card, choices, .. }
                     if *card == mortars.id
-                        && choices.costs().alternative() == Some(AlternativeCostId(0))
+                        && choices.costs().alternative() == Some(AlternativeCostId(1))
             )
         })
         .expect("the overload cost is payable");
@@ -8324,7 +8324,7 @@ fn overloaded_mizzium_mortars_resolves_with_no_matching_creatures() {
     game.players[0].mana_pool.red = 3;
     game.players[0].mana_pool.colorless = 3;
     let choices = CastChoices::default().with_costs(CostConfiguration::new(
-        Some(AlternativeCostId(0)),
+        Some(AlternativeCostId(1)),
         Vec::new(),
     ));
 
@@ -8357,7 +8357,7 @@ fn overloaded_mizzium_mortars_matches_creatures_when_it_resolves() {
     game.players[0].mana_pool.red = 3;
     game.players[0].mana_pool.colorless = 3;
     let choices = CastChoices::default().with_costs(CostConfiguration::new(
-        Some(AlternativeCostId(0)),
+        Some(AlternativeCostId(1)),
         Vec::new(),
     ));
     game.apply(
@@ -8514,7 +8514,7 @@ fn overloaded_counterflux_is_targetless_and_counters_each_opposing_spell() {
                 action,
                 Action::CastSpell { card, choices, .. }
                     if *card == counterflux.id
-                        && choices.costs().alternative() == Some(AlternativeCostId(0))
+                        && choices.costs().alternative() == Some(AlternativeCostId(2))
             )
         })
         .expect("the overload cost is payable");
@@ -10199,7 +10199,7 @@ fn think_twice_can_be_flashed_back_and_is_exiled_after_resolving() {
     game.players[0].mana_pool.colorless = 2;
     let library_before = game.players[0].library.len();
 
-    let action = alternative_cast_action(&game, PlayerId::One, graveyard_id, AlternativeCostId(0));
+    let action = alternative_cast_action(&game, PlayerId::One, graveyard_id, AlternativeCostId(1));
     game.apply(PlayerId::One, action).unwrap();
     assert!(game.players[0].graveyard.is_empty());
     assert!(game.stack.last().unwrap().cast_via_flashback);
@@ -10222,7 +10222,7 @@ fn flashback_exiles_a_spell_that_is_countered_or_fizzles() {
     game.players[1].hand.push(counterspell.clone());
     game.players[1].mana_pool.blue = 2;
     let flashback =
-        alternative_cast_action(&game, PlayerId::One, think_twice.id, AlternativeCostId(0));
+        alternative_cast_action(&game, PlayerId::One, think_twice.id, AlternativeCostId(1));
     game.apply(PlayerId::One, flashback).unwrap();
     game.apply(PlayerId::One, Action::PassPriority).unwrap();
     let flashed_back_spell = game.stack.last().unwrap().id;
@@ -10260,7 +10260,7 @@ fn flashback_exiles_a_spell_that_is_countered_or_fizzles() {
                 action,
                 Action::CastSpell { card, choices, .. }
                     if *card == ray.id
-                        && choices.costs().alternative() == Some(AlternativeCostId(0))
+                        && choices.costs().alternative() == Some(AlternativeCostId(1))
                         && choices.iter_targets().copied().eq([Target::Permanent(enchantment_id)])
             )
         })
@@ -10344,7 +10344,7 @@ fn snapcaster_grants_a_second_flashback_cost_until_cleanup() {
         })
         .collect::<std::collections::HashSet<_>>();
     assert_eq!(flashback_ids.len(), 2, "printed and granted costs coexist");
-    assert!(flashback_ids.contains(&AlternativeCostId(0)));
+    assert!(flashback_ids.contains(&AlternativeCostId(1)));
 
     game.finish_cleanup();
     let after_cleanup = game
@@ -10400,7 +10400,7 @@ fn snapcaster_granted_flashback_uses_the_printed_cost_and_exiles_on_resolution()
     };
     assert_ne!(
         choices.costs().alternative(),
-        Some(AlternativeCostId(0)),
+        Some(AlternativeCostId(1)),
         "the affordable action is Snapcaster's synthetic flashback cost",
     );
     let library_before = game.players[0].library.len();
@@ -10533,8 +10533,8 @@ fn snapcaster_flashback_cannot_be_combined_with_overload() {
 #[allow(clippy::too_many_lines)]
 fn incomplete_alternative_cast_clauses_do_not_enable_or_transform_their_costs() {
     let definition_id = CardDefinitionId(20_100);
-    let flashback = AlternativeCostId(4);
-    let overload = AlternativeCostId(5);
+    let flashback = AlternativeCostId(1);
+    let overload = AlternativeCostId(2);
     let targets = Box::leak(
         vec![AbilityTargetDef::exactly_one(
             TargetSlotId(0),
@@ -10554,8 +10554,7 @@ fn incomplete_alternative_cast_clauses_do_not_enable_or_transform_their_costs() 
             )
             .with_targets(targets),
             AbilityDef::alternative_cast(
-                "Flashback {0}",
-                flashback,
+                ManaCost::default(),
                 AlternativeCastKindDef::Flashback,
                 None,
                 EffectDef::None,
@@ -10564,8 +10563,7 @@ fn incomplete_alternative_cast_clauses_do_not_enable_or_transform_their_costs() 
                 explanation: "Test-only incomplete flashback.",
             }),
             AbilityDef::alternative_cast(
-                "Overload {0}",
-                overload,
+                ManaCost::default(),
                 AlternativeCastKindDef::Overload,
                 Some("Test spell deals 1 damage to each opponent."),
                 EffectDef::DealDamage {
@@ -10588,18 +10586,6 @@ fn incomplete_alternative_cast_clauses_do_not_enable_or_transform_their_costs() 
     );
     definition.rules = CardRules::new_sorcery(ManaCost::new(1, 0)).with_abilities(abilities);
     synchronize_single_part_definition(&mut definition);
-    definition.play_options[0].alternative_costs.extend([
-        AlternativeCostDef {
-            id: flashback,
-            label: "Flashback".into(),
-            mana_cost: ManaCost::default(),
-        },
-        AlternativeCostDef {
-            id: overload,
-            label: "Overload".into(),
-            mana_cost: ManaCost::default(),
-        },
-    ]);
 
     let mut game = ready_game();
     game.catalog = CardCatalog::new([definition]).unwrap();
@@ -10667,7 +10653,7 @@ fn unburial_rites_reanimates_its_target_and_exiles_itself() {
                 action,
                 Action::CastSpell { card, choices, .. }
                     if *card == rites.id
-                        && choices.costs().alternative() == Some(AlternativeCostId(0))
+                        && choices.costs().alternative() == Some(AlternativeCostId(1))
                         && choices.iter_targets().copied().eq([Target::Card(creature_id)])
             )
         })

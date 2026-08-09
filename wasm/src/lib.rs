@@ -2753,7 +2753,7 @@ mod tests {
         let flashback = Action::CastSpell {
             card: flashback,
             choices: penta::CastChoices::default().with_costs(penta::CostConfiguration::new(
-                Some(penta::AlternativeCostId(0)),
+                Some(penta::AlternativeCostId(1)),
                 Vec::new(),
             )),
             sacrifices: Vec::new(),
@@ -2761,7 +2761,7 @@ mod tests {
         let overload = Action::CastSpell {
             card: overload,
             choices: penta::CastChoices::default().with_costs(penta::CostConfiguration::new(
-                Some(penta::AlternativeCostId(0)),
+                Some(penta::AlternativeCostId(1)),
                 Vec::new(),
             )),
             sacrifices: Vec::new(),

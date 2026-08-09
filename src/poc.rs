@@ -61,7 +61,7 @@ mod tests {
                 .rules
                 .ability_clauses()
                 .iter()
-                .map(|ability| ability.text)
+                .map(crate::card::AbilityDef::rules_text)
                 .collect::<Vec<_>>()
                 .join("\n");
             assert_eq!(card.rules.rules_text(), expected_text, "{}", card.name);

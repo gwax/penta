@@ -3,13 +3,13 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AlternativeCostDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    CounterKind, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation, SpellForm,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CounterKind,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
-use crate::ids::{AlternativeCostId, CardPartId, PlayOptionId, TargetSlotId};
+use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
 
 pub(in crate::card::sets) static AVACYNS_PILGRIM: CardRecord = CardRecord::new(
@@ -389,59 +389,22 @@ pub(in crate::card::sets) static SULFUR_FALLS: CardRecord = CardRecord::new(
     ]),
 );
 
-const FLASHBACK_COST: AlternativeCostId = AlternativeCostId(0);
-
-static THINK_TWICE_ABILITIES: [AbilityDef; 2] = [
-    AbilityDef::spell(
-        "Draw a card.",
-        EffectDef::DrawCards {
-            recipient: EffectRecipientDef::Controller,
-            amount: ValueDef::Constant(1),
-        },
-    ),
-    abilities::flashback(
-        "Flashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-        FLASHBACK_COST,
-    ),
-];
-
-const fn think_twice_rules() -> CardRules {
-    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&THINK_TWICE_ABILITIES)
-}
-
-fn think_twice_composition() -> CardComposition {
-    let rules = think_twice_rules();
-    let mut cast = PlayOptionDef::cast(
-        PlayOptionId::DEFAULT,
-        "Think Twice",
-        SpellForm::Part(CardPartId::PRIMARY),
-        rules
-            .mana_cost()
-            .expect("Think Twice has a printed mana cost"),
-        CardEffectStatus::Implemented,
-    );
-    cast.alternative_costs.push(AlternativeCostDef {
-        id: FLASHBACK_COST,
-        label: "Flashback".into(),
-        mana_cost: mana_cost!("{2}{U}"),
-    });
-    CardComposition {
-        parts: vec![CardPart::new(CardPartId::PRIMARY, "Think Twice", rules)],
-        structure: CardStructure::Single {
-            main: CardPartId::PRIMARY,
-        },
-        play_options: vec![cast],
-    }
-}
-
 pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
     cards::THINK_TWICE,
     "Think Twice",
     CardArt::new("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco"),
     CardSet::Innistrad,
-    think_twice_rules(),
-)
-.with_composition(think_twice_composition);
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
+        AbilityDef::spell(
+            "Draw a card.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        abilities::flashback(mana_cost!("{2}{U}")),
+    ]),
+);
 
 static UNBURIAL_RITES_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     TargetSlotId(0),
@@ -454,58 +417,23 @@ static UNBURIAL_RITES_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactl
     },
 )];
 
-static UNBURIAL_RITES_ABILITIES: [AbilityDef; 2] = [
-    AbilityDef::spell(
-        "Return target creature card from your graveyard to the battlefield.",
-        EffectDef::MoveToZone {
-            object: EffectRecipientDef::Target(TargetSlotId(0)),
-            zone: ZoneKind::Battlefield,
-        },
-    )
-    .with_targets(&UNBURIAL_RITES_TARGETS),
-    abilities::flashback(
-        "Flashback {3}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-        FLASHBACK_COST,
-    ),
-];
-
-const fn unburial_rites_rules() -> CardRules {
-    CardRules::new_sorcery(mana_cost!("{4}{B}")).with_abilities(&UNBURIAL_RITES_ABILITIES)
-}
-
-fn unburial_rites_composition() -> CardComposition {
-    let rules = unburial_rites_rules();
-    let mut cast = PlayOptionDef::cast(
-        PlayOptionId::DEFAULT,
-        "Unburial Rites",
-        SpellForm::Part(CardPartId::PRIMARY),
-        rules
-            .mana_cost()
-            .expect("Unburial Rites has a printed mana cost"),
-        CardEffectStatus::Implemented,
-    );
-    cast.alternative_costs.push(AlternativeCostDef {
-        id: FLASHBACK_COST,
-        label: "Flashback".into(),
-        mana_cost: mana_cost!("{3}{W}"),
-    });
-    CardComposition {
-        parts: vec![CardPart::new(CardPartId::PRIMARY, "Unburial Rites", rules)],
-        structure: CardStructure::Single {
-            main: CardPartId::PRIMARY,
-        },
-        play_options: vec![cast],
-    }
-}
-
 pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
     cards::UNBURIAL_RITES,
     "Unburial Rites",
     CardArt::new("2794c82b-e5ce-4369-894e-bf56c6402ae1", "Ryan Pancoast"),
     CardSet::Innistrad,
-    unburial_rites_rules(),
-)
-.with_composition(unburial_rites_composition);
+    CardRules::new_sorcery(mana_cost!("{4}{B}")).with_abilities(&[
+        AbilityDef::spell(
+            "Return target creature card from your graveyard to the battlefield.",
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                zone: ZoneKind::Battlefield,
+            },
+        )
+        .with_targets(&UNBURIAL_RITES_TARGETS),
+        abilities::flashback(mana_cost!("{3}{W}")),
+    ]),
+);
 
 pub(in crate::card::sets) static URGENT_EXORCISM: CardRecord = CardRecord::new(
     cards::URGENT_EXORCISM,

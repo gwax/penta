@@ -6,7 +6,7 @@ use std::sync::Arc;
 use super::{
     AbilityDef, AbilityImplementationDef, AbilityTargetDef, CardDefinition, CardEffectStatus,
     CardPrinting, CardPrintingId, CardSet, CardStructure, DeclarativeAbilityDef, EffectDef,
-    ModeSetDef, PlayActionKind, PlayOptionDef, SpellForm, TargetSlotDef,
+    ManaCost, ModeSetDef, PlayActionKind, PlayOptionDef, SpellForm, TargetSlotDef,
 };
 use crate::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, Format, GrantId,
@@ -306,7 +306,6 @@ fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError>
     }
 
     let mut play_options = HashSet::new();
-    let mut alternative_costs = HashSet::new();
     let mut additional_costs = HashSet::new();
     for option in &definition.play_options {
         if !play_options.insert(option.id) {
@@ -316,12 +315,7 @@ fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError>
             });
         }
         validate_spell_form(definition, option, &defined_parts, &structure_parts)?;
-        validate_cost_ids(
-            definition,
-            option,
-            &mut alternative_costs,
-            &mut additional_costs,
-        )?;
+        validate_cost_ids(definition, option, &mut additional_costs)?;
         validate_modes_and_targets(definition, option)?;
         validate_semantic_spell_presentation(definition, option)?;
     }
@@ -332,7 +326,6 @@ fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError>
 }
 
 fn validate_alternative_cast_abilities(definition: &CardDefinition) -> Result<(), CatalogError> {
-    let mut alternative_cast_abilities = HashSet::new();
     for part in &definition.parts {
         for attached in part.rules.indexed_abilities() {
             let DeclarativeAbilityDef::AlternativeCast(alternative_cast) =
@@ -340,29 +333,44 @@ fn validate_alternative_cast_abilities(definition: &CardDefinition) -> Result<()
             else {
                 continue;
             };
-            if !alternative_cast_abilities.insert(alternative_cast.alternative) {
-                return Err(CatalogError::DuplicateAlternativeCastAbility {
-                    definition: definition.id,
-                    cost: alternative_cast.alternative,
-                });
-            }
-            let linked = definition.play_options.iter().any(|option| {
-                let presents_part = match &option.form {
-                    SpellForm::Part(candidate) => *candidate == part.id,
-                    SpellForm::Combined(parts) => parts.contains(&part.id),
+            let expected = alternative_cast.alternative_cost(attached.id);
+            let mut owning_option_found = false;
+            for option in definition.play_options.iter().filter(
+                |option| matches!(option.form, SpellForm::Part(candidate) if candidate == part.id),
+            ) {
+                owning_option_found = true;
+                let Some(actual) = option
+                    .alternative_costs
+                    .iter()
+                    .find(|cost| cost.id == expected.id)
+                else {
+                    return Err(CatalogError::MissingAlternativeCostForAbility {
+                        definition: definition.id,
+                        part: part.id,
+                        ability: attached.id,
+                        cost: expected.id,
+                    });
                 };
-                presents_part
-                    && option
-                        .alternative_costs
-                        .iter()
-                        .any(|cost| cost.id == alternative_cast.alternative)
-            });
-            if !linked {
+                if actual != &expected {
+                    return Err(CatalogError::MismatchedAlternativeCostForAbility {
+                        definition: definition.id,
+                        part: part.id,
+                        ability: attached.id,
+                        option: option.id,
+                        cost: expected.id,
+                        expected_label: expected.label,
+                        actual_label: actual.label.clone(),
+                        expected_mana_cost: expected.mana_cost,
+                        actual_mana_cost: actual.mana_cost,
+                    });
+                }
+            }
+            if !owning_option_found {
                 return Err(CatalogError::MissingAlternativeCostForAbility {
                     definition: definition.id,
                     part: part.id,
                     ability: attached.id,
-                    cost: alternative_cast.alternative,
+                    cost: expected.id,
                 });
             }
         }
@@ -878,13 +886,17 @@ fn validate_spell_form(
 fn validate_cost_ids(
     definition: &CardDefinition,
     option: &PlayOptionDef,
-    alternative_costs: &mut HashSet<AlternativeCostId>,
     additional_costs: &mut HashSet<AdditionalCostId>,
 ) -> Result<(), CatalogError> {
+    // Alternative identities are interpreted together with their play option.
+    // In particular, alternative-cast clauses on two split-card parts may
+    // have the same positional AbilityId and therefore the same projected ID.
+    let mut alternative_costs = HashSet::new();
     for cost in &option.alternative_costs {
         if !alternative_costs.insert(cost.id) {
             return Err(CatalogError::DuplicateAlternativeCostId {
                 definition: definition.id,
+                option: option.id,
                 cost: cost.id,
             });
         }
@@ -1646,6 +1658,7 @@ pub enum CatalogError {
     },
     DuplicateAlternativeCostId {
         definition: CardDefinitionId,
+        option: PlayOptionId,
         cost: AlternativeCostId,
     },
     MissingAlternativeCostForAbility {
@@ -1654,9 +1667,16 @@ pub enum CatalogError {
         ability: AbilityId,
         cost: AlternativeCostId,
     },
-    DuplicateAlternativeCastAbility {
+    MismatchedAlternativeCostForAbility {
         definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        option: PlayOptionId,
         cost: AlternativeCostId,
+        expected_label: String,
+        actual_label: String,
+        expected_mana_cost: ManaCost,
+        actual_mana_cost: ManaCost,
     },
     DuplicateAdditionalCostId {
         definition: CardDefinitionId,
@@ -2108,9 +2128,13 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "spell mode {mode:?} in play option {option:?} of card definition {definition:?} is labeled {presentation:?} but its semantic branch is labeled {semantic:?}"
             ),
-            Self::DuplicateAlternativeCostId { definition, cost } => write!(
+            Self::DuplicateAlternativeCostId {
+                definition,
+                option,
+                cost,
+            } => write!(
                 formatter,
-                "card definition {definition:?} defines alternative cost {cost:?} more than once"
+                "play option {option:?} of card definition {definition:?} defines alternative cost {cost:?} more than once"
             ),
             Self::MissingAlternativeCostForAbility {
                 definition,
@@ -2121,9 +2145,19 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "alternative-cast ability {ability:?} on part {part:?} of card definition {definition:?} references missing cost {cost:?}"
             ),
-            Self::DuplicateAlternativeCastAbility { definition, cost } => write!(
+            Self::MismatchedAlternativeCostForAbility {
+                definition,
+                part,
+                ability,
+                option,
+                cost,
+                expected_label,
+                actual_label,
+                expected_mana_cost,
+                actual_mana_cost,
+            } => write!(
                 formatter,
-                "card definition {definition:?} has more than one alternative-cast ability for cost {cost:?}"
+                "alternative cost {cost:?} on play option {option:?}, projected from ability {ability:?} on part {part:?} of card definition {definition:?}, must be labeled {expected_label:?} with mana cost {expected_mana_cost}, but is labeled {actual_label:?} with mana cost {actual_mana_cost}"
             ),
             Self::DuplicateAdditionalCostId { definition, cost } => write!(
                 formatter,
@@ -2907,7 +2941,7 @@ mod tests {
     }
 
     #[test]
-    fn mode_ids_are_positional_per_option_and_cost_ids_are_unique_per_definition() {
+    fn mode_and_alternative_cost_ids_are_local_to_options() {
         let modes = ModeSetDef::choose_one(vec![mode(3, Vec::new()), mode(3, Vec::new())]);
         let mut duplicate_mode = definition(1, "Test Card", CardSet::Alpha);
         duplicate_mode.play_options[0].modes = Some(modes);
@@ -2950,9 +2984,21 @@ mod tests {
             error(duplicate_alternative),
             CatalogError::DuplicateAlternativeCostId {
                 definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
                 cost: AlternativeCostId(4),
             }
         );
+
+        let mut alternatives_on_distinct_options = split_definition(None);
+        for option in &mut alternatives_on_distinct_options.play_options {
+            option.alternative_costs.push(AlternativeCostDef {
+                id: AlternativeCostId(4),
+                label: "Generic alternative".into(),
+                mana_cost: ManaCost::default(),
+            });
+        }
+        CardCatalog::new([alternatives_on_distinct_options])
+            .expect("alternative-cost identities are local to a play option");
 
         let mut duplicate_additional = definition(1, "Test Card", CardSet::Alpha);
         duplicate_additional.play_options[0].additional_costs = vec![
@@ -2977,11 +3023,15 @@ mod tests {
     }
 
     #[test]
-    fn alternative_cast_abilities_link_to_exactly_one_cost() {
+    fn alternative_cast_ability_requires_its_derived_cost_projection() {
+        let flashback_cost = ManaCost {
+            generic: 2,
+            blue: 1,
+            ..ManaCost::default()
+        };
         let missing_abilities = Box::leak(
             vec![AbilityDef::alternative_cast(
-                "Flashback",
-                AlternativeCostId(4),
+                flashback_cost,
                 AlternativeCastKindDef::Flashback,
                 None,
                 EffectDef::None,
@@ -2998,58 +3048,79 @@ mod tests {
                 definition: CardDefinitionId(1),
                 part: CardPartId::PRIMARY,
                 ability: AbilityId::PRIMARY,
-                cost: AlternativeCostId(4),
+                cost: AlternativeCostId(AbilityId::PRIMARY.0),
             }
         );
 
-        let duplicate_abilities = Box::leak(
+        let projected_abilities = Box::leak(
             vec![
+                AbilityDef::spell("Draw a card.", EffectDef::None),
                 AbilityDef::alternative_cast(
-                    "Flashback",
-                    AlternativeCostId(4),
+                    flashback_cost,
                     AlternativeCastKindDef::Flashback,
                     None,
-                    EffectDef::None,
-                ),
-                AbilityDef::alternative_cast(
-                    "Overload",
-                    AlternativeCostId(4),
-                    AlternativeCastKindDef::Overload,
-                    Some("Do this to each object."),
                     EffectDef::None,
                 ),
             ]
             .into_boxed_slice(),
         );
-        let mut duplicate = definition(1, "Test Card", CardSet::Alpha);
-        duplicate.play_options[0]
+        let mut projected = definition(1, "Test Card", CardSet::Alpha);
+        projected.play_options[0]
             .alternative_costs
             .push(AlternativeCostDef {
-                id: AlternativeCostId(4),
-                label: "alternative".into(),
-                mana_cost: ManaCost::default(),
+                id: AlternativeCostId(1),
+                label: "Flashback".into(),
+                mana_cost: flashback_cost,
             });
         let rules =
-            crate::CardRules::new_instant(ManaCost::default()).with_abilities(duplicate_abilities);
-        set_primary_rules(&mut duplicate, &rules);
+            crate::CardRules::new_instant(ManaCost::default()).with_abilities(projected_abilities);
+        set_primary_rules(&mut projected, &rules);
+        CardCatalog::new([projected.clone()])
+            .expect("the ability's positional ID derives its matching cost projection");
+
+        let mut mismatched_label = projected.clone();
+        mismatched_label.play_options[0].alternative_costs[0].label = "Overload".into();
         assert_eq!(
-            error(duplicate),
-            CatalogError::DuplicateAlternativeCastAbility {
+            error(mismatched_label),
+            CatalogError::MismatchedAlternativeCostForAbility {
                 definition: CardDefinitionId(1),
-                cost: AlternativeCostId(4),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId(1),
+                option: PlayOptionId::DEFAULT,
+                cost: AlternativeCostId(1),
+                expected_label: "Flashback".into(),
+                actual_label: "Overload".into(),
+                expected_mana_cost: flashback_cost,
+                actual_mana_cost: flashback_cost,
+            }
+        );
+
+        let mut mismatched_mana = projected;
+        mismatched_mana.play_options[0].alternative_costs[0].mana_cost = ManaCost::default();
+        assert_eq!(
+            error(mismatched_mana),
+            CatalogError::MismatchedAlternativeCostForAbility {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId(1),
+                option: PlayOptionId::DEFAULT,
+                cost: AlternativeCostId(1),
+                expected_label: "Flashback".into(),
+                actual_label: "Flashback".into(),
+                expected_mana_cost: flashback_cost,
+                actual_mana_cost: ManaCost::default(),
             }
         );
     }
 
     #[test]
     fn incomplete_alternative_cast_ability_remains_non_executable_catalog_metadata() {
-        let alternative = AlternativeCostId(4);
+        let alternative = AlternativeCostId(1);
         let abilities = Box::leak(
             vec![
                 AbilityDef::spell("Draw a card.", EffectDef::None),
                 AbilityDef::alternative_cast(
-                    "Overload {0}",
-                    alternative,
+                    ManaCost::default(),
                     AlternativeCastKindDef::Overload,
                     Some("Draw a card for each opponent."),
                     EffectDef::None,
