@@ -668,7 +668,16 @@ pub struct AbilityTargetDef {
     /// The total this slot divides among its targets, when the card says
     /// "divided as you choose". Every chosen target takes at least one, which
     /// is what makes the number of targets a consequence of the division.
-    pub divided_total: Option<u8>,
+    pub divided_total: Option<DividedTotal>,
+}
+
+/// How much a divided slot has to share out.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DividedTotal {
+    Fixed(u8),
+    /// The X chosen as the spell was cast, so the number of targets is not
+    /// known until then either.
+    ChosenX,
 }
 
 impl AbilityTargetDef {
@@ -1426,6 +1435,11 @@ pub enum EffectDef {
     OptionalManaPayment {
         cost: ManaCost,
         effect: &'static EffectDef,
+    },
+    /// Stops the affected players casting noncreature spells for the rest of
+    /// the turn.
+    CannotCastNoncreatureSpellsThisTurn {
+        player: EffectRecipientDef,
     },
     /// Lets the next sorcery its controller casts this turn be cast as
     /// though it had flash.
@@ -2560,7 +2574,7 @@ pub struct TargetSlotDef {
     /// The total this slot divides among its targets, when the card says
     /// "divided as you choose". Every chosen target takes at least one, which
     /// is what makes the number of targets a consequence of the division.
-    pub divided_total: Option<u8>,
+    pub divided_total: Option<DividedTotal>,
 }
 
 impl TargetSlotDef {
@@ -2594,7 +2608,7 @@ impl TargetSlotDef {
             predicate,
             minimum: 1,
             maximum: total,
-            divided_total: Some(total),
+            divided_total: Some(DividedTotal::Fixed(total)),
         }
     }
 }

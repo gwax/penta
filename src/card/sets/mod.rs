@@ -549,6 +549,11 @@ mod tests {
             // checking.
             // The mill count and the milled player are both ordinary values.
             EffectDef::Mill { player, .. } => shared_effect_recipient(player),
+            // The lock reads a player and lasts until the turn ends, so only
+            // the recipient needs checking.
+            EffectDef::CannotCastNoncreatureSpellsThisTurn { player } => {
+                shared_effect_recipient(player)
+            }
             // Both halves of the split are decisions the shared procedure
             // asks for, so only the player needs checking.
             EffectDef::SplitPermanentsAndSacrificeAPile { player } => {
@@ -793,6 +798,7 @@ mod tests {
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::AdditionalCombatPhase
+            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::Special(_) => false,
         }
     }
@@ -968,6 +974,7 @@ mod tests {
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::CannotBeForcedToSacrifice
                         | EffectDef::AdditionalCombatPhase
+                        | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                         | EffectDef::GrantFlashToNextSorcery
                         | EffectDef::ExileLinkedToSource { .. }
                         | EffectDef::ReturnLinkedExiles { .. }
@@ -994,6 +1001,13 @@ mod tests {
                     definition.source_zones,
                     [ZoneKind::Battlefield | ZoneKind::Hand]
                 ) && shared_activated_costs(definition.source_zones, definition.costs.as_slice())
+                    // An activation enumerates its targets once for every
+                    // affordable X, so a slot dividing X has no enumeration
+                    // to live in yet.
+                    && definition
+                        .targets
+                        .iter()
+                        .all(|slot| slot.divided_total.is_none())
                     && shared_stack_effect(ability.effect)
             }
             DeclarativeAbilityDef::Triggered(definition) => {
@@ -1112,6 +1126,7 @@ mod tests {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::AdditionalCombatPhase
+            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }

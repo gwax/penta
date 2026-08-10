@@ -4,8 +4,8 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility,
-    LibraryPlacement, ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation,
+    CounterKind, DividedTotal, EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair,
+    KeywordAbility, LibraryPlacement, ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation,
     ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
     abilities, cards,
 };
@@ -47,10 +47,33 @@ pub(in crate::card::sets) static AURELIAS_FURY: CardRecord = CardRecord::new(
     CardArt::new("1a3465b6-ee7f-4553-bbf1-85fae9734b67", "Tyler Jacobson"),
     CardSet::Gatecrash,
     CardRules::new_instant(mana_cost!("{X}{R}{W}")).with_ability(
-        AbilityDef::not_implemented(
+        AbilityDef::spell(
             "Aurelia's Fury deals X damage divided as you choose among any number of targets. Tap each creature dealt damage this way. Players dealt damage this way can't cast noncreature spells this turn.",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
+            // Everything chosen took damage, so the tap and the lock are the
+            // same set of targets read again; each ignores what it cannot
+            // apply to.
+            EffectDef::Sequence(&[
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    amount: ValueDef::DividedAmongTargets,
+                },
+                EffectDef::Tap {
+                    object: EffectRecipientDef::Target(TargetSlotId(0)),
+                },
+                EffectDef::CannotCastNoncreatureSpellsThisTurn {
+                    player: EffectRecipientDef::Target(TargetSlotId(0)),
+                },
+            ]),
+        )
+        .with_targets(&[AbilityTargetDef {
+            id: TargetSlotId(0),
+            label: "any target",
+            predicate: AbilityTargetPredicate::AnyTarget,
+            // "Any number of targets" is however many shares X splits into.
+            minimum: 1,
+            maximum: u8::MAX,
+            divided_total: Some(DividedTotal::ChosenX),
+        }]),
     ),
 );
 

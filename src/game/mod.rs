@@ -14,13 +14,13 @@ use crate::card::{
     AnimationDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CREATURE_TYPES,
     CardBehavior, CardCatalog, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
     CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext, ColorSet,
-    ComparisonDef, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, DoubleFacedKind,
-    EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility, LibraryPlacement,
-    ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
-    ObjectQueryDef, PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
-    abilities, applicable_part_ids,
+    ComparisonDef, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, DividedTotal,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility,
+    LibraryPlacement, ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
+    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction,
+    PlayerRelation, ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate,
+    TargetSlotDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZoneMoveCauseDef, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -1153,6 +1153,9 @@ pub struct Game {
     /// Combat phases still owed this turn, added by an effect rather than by
     /// the ordinary turn structure.
     additional_combat_phases: u8,
+    /// Whether each player has been stopped from casting noncreature spells
+    /// for the rest of the turn.
+    noncreature_casts_locked: [bool; 2],
     /// How many cards each player has drawn this turn. Miracle asks whether a
     /// draw was the first one.
     cards_drawn_this_turn: [u16; 2],
@@ -1309,6 +1312,7 @@ impl Game {
             linked_exiles: Vec::new(),
             sorcery_flash_grants: [0; 2],
             additional_combat_phases: 0,
+            noncreature_casts_locked: [false; 2],
             cards_drawn_this_turn: [0; 2],
             miracle_window: None,
             delayed_triggers: Vec::new(),
@@ -3335,6 +3339,7 @@ impl Game {
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::AdditionalCombatPhase
+            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
@@ -5747,6 +5752,11 @@ impl Game {
                 if option.effect_status == CardEffectStatus::MetadataOnly && !types.is_creature() {
                     continue;
                 }
+                // A player stopped from casting noncreature spells this turn
+                // keeps their creatures.
+                if self.noncreature_casts_locked[player.index()] && !types.is_creature() {
+                    continue;
+                }
                 let part_has_flash = match &option.form {
                     crate::card::SpellForm::Part(part) => {
                         definition.part(*part).is_some_and(|part| {
@@ -5834,11 +5844,12 @@ impl Game {
                                         player,
                                         card.id,
                                         TriggerContext::empty(),
+                                        x,
                                     )
                                 } else if Self::uses_legacy_behavior_targets(definition, option) {
                                     self.legacy_target_selections(behavior, x, player)
                                 } else {
-                                    self.legal_target_selections(&declared_slots)
+                                    self.legal_target_selections(&declared_slots, x)
                                 };
                                 for targets in &target_choices {
                                     let target_count = targets
@@ -6380,12 +6391,20 @@ impl Game {
             .collect()
     }
 
-    fn legal_target_selections(&self, slots: &[TargetSlotDef]) -> Vec<Vec<TargetSelection>> {
+    fn legal_target_selections(
+        &self,
+        slots: &[TargetSlotDef],
+        x: u16,
+    ) -> Vec<Vec<TargetSelection>> {
         let mut selections = vec![Vec::new()];
         for slot in slots {
             let candidates = self.targets_matching(slot.predicate);
             let mut choices = Vec::new();
             if let Some(total) = slot.divided_total {
+                let total = match total {
+                    DividedTotal::Fixed(total) => total,
+                    DividedTotal::ChosenX => u8::try_from(x).unwrap_or(u8::MAX),
+                };
                 // Every chosen target takes at least one, so the number of
                 // targets follows from how the total is split.
                 for count in 1..=usize::from(total).min(candidates.len()) {
@@ -6436,6 +6455,7 @@ impl Game {
         controller: PlayerId,
         source: GameObjectId,
         context: TriggerContext,
+        x: u16,
     ) -> Vec<Vec<TargetSelection>> {
         let mut selections = vec![Vec::new()];
         for slot in slots {
@@ -6443,6 +6463,10 @@ impl Game {
                 self.ability_targets_matching(slot.predicate, controller, source, context);
             let mut choices = Vec::new();
             if let Some(total) = slot.divided_total {
+                let total = match total {
+                    DividedTotal::Fixed(total) => total,
+                    DividedTotal::ChosenX => u8::try_from(x).unwrap_or(u8::MAX),
+                };
                 // Every chosen target takes at least one, so the number of
                 // targets follows from how the total is split.
                 for count in 1..=usize::from(total).min(candidates.len()) {
@@ -6962,6 +6986,10 @@ impl Game {
                     player,
                     permanent.card.id,
                     TriggerContext::empty(),
+                    // Targets are enumerated once for every affordable X, so
+                    // a slot that divided X would need the enumeration inside
+                    // that loop. The boundary test rejects one until it is.
+                    0,
                 ) {
                     for sacrifice in &sacrifice_choices {
                         for x in 0..=max_x {
@@ -7394,6 +7422,7 @@ impl Game {
                     player,
                     card.id,
                     TriggerContext::empty(),
+                    0,
                 ) {
                     for x in 0..=max_x {
                         actions.push(Action::ActivateAbility {
@@ -8601,6 +8630,13 @@ impl Game {
             }
             EffectDef::AdditionalCombatPhase => {
                 self.additional_combat_phases = self.additional_combat_phases.saturating_add(1);
+            }
+            EffectDef::CannotCastNoncreatureSpellsThisTurn { player: recipient } => {
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Player(player) = target {
+                        self.noncreature_casts_locked[player.index()] = true;
+                    }
+                }
             }
             EffectDef::GrantFlashToNextSorcery => {
                 let grants = &mut self.sorcery_flash_grants[object.controller.index()];
@@ -11627,6 +11663,7 @@ impl Game {
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::AdditionalCombatPhase
+                | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
@@ -11730,6 +11767,7 @@ impl Game {
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::AdditionalCombatPhase
+                | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
@@ -14385,6 +14423,7 @@ impl Game {
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::AdditionalCombatPhase
+            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
@@ -14900,6 +14939,7 @@ impl Game {
         self.creature_died_this_turn = false;
         self.sorcery_flash_grants = [0; 2];
         self.additional_combat_phases = 0;
+        self.noncreature_casts_locked = [false; 2];
         self.cards_drawn_this_turn = [0; 2];
         self.miracle_window = None;
         self.step = Step::Upkeep;

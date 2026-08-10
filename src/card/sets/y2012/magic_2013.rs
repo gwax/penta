@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEventDef,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    CardSupertype, CardType, DividedTotal, EffectDef, EffectDurationDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ReplacementEventDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -156,7 +156,7 @@ pub(in crate::card::sets) static FLAMES_OF_THE_FIREBRAND: CardRecord = CardRecor
             // split with every share at least one says the same thing.
             minimum: 1,
             maximum: 3,
-            divided_total: Some(3),
+            divided_total: Some(DividedTotal::Fixed(3)),
         }]),
     ),
 );

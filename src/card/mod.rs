@@ -30,7 +30,7 @@ pub use model::{
     CardBehavior, CardComposition, CardDefinition, CardEffectStatus, CardPart, CardPrinting,
     CardPrintingId, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet,
     ColorSet, ComparisonDef, ConditionDef, ConditionalValueDef, CostDef, CountConditionDef,
-    CounterKind, CreatureStats, DeclarativeAbilityDef, DoubleFacedKind, EffectDef,
+    CounterKind, CreatureStats, DeclarativeAbilityDef, DividedTotal, DoubleFacedKind, EffectDef,
     EffectDurationDef, EffectRecipientDef, HybridPair, ImplementationStatus, KeywordAbility,
     LibraryPlacement, ManaColor, ManaCost, ManaCostParseError, ManaCostParseErrorKind,
     ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef,

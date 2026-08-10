@@ -739,6 +739,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::BecomeCopyOf { .. }
         | super::EffectDef::CannotBeForcedToSacrifice
         | super::EffectDef::AdditionalCombatPhase
+        | super::EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | super::EffectDef::GrantFlashToNextSorcery
         | super::EffectDef::ExileLinkedToSource { .. }
         | super::EffectDef::ReturnLinkedExiles { .. }
@@ -805,6 +806,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::BecomeCopyOf { .. }
         | super::EffectDef::CannotBeForcedToSacrifice
         | super::EffectDef::AdditionalCombatPhase
+        | super::EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | super::EffectDef::GrantFlashToNextSorcery
         | super::EffectDef::ExileLinkedToSource { .. }
         | super::EffectDef::ReturnLinkedExiles { .. }

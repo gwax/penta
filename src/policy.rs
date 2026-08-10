@@ -318,6 +318,7 @@ impl HandcraftedPolicy {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::AdditionalCombatPhase
+            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }

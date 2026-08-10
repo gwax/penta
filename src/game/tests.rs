@@ -17894,3 +17894,82 @@ fn bonfire_cast_for_its_miracle_cost_still_chooses_x() {
         "and the same one killed their 2/1"
     );
 }
+
+#[test]
+fn aurelias_fury_taps_what_it_burns_and_locks_who_it_hits() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    // A 4/4, so one damage leaves it alive to show the tap.
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.players[0].hand = vec![card(27_000, cards::AURELIAS_FURY, PlayerId::One)];
+    game.players[0].mana_pool = ManaPool {
+        red: 1,
+        white: 1,
+        colorless: 2,
+        ..ManaPool::default()
+    };
+    // Something for the locked player to try casting afterwards.
+    game.players[1].hand = vec![
+        card(27_001, cards::LIGHTNING_BOLT, PlayerId::Two),
+        // A creature with flash, so the only thing stopping it would be the
+        // lock rather than sorcery timing.
+        card(27_002, cards::RESTORATION_ANGEL, PlayerId::Two),
+    ];
+    game.players[1].mana_pool = ManaPool {
+        red: 1,
+        white: 1,
+        colorless: 3,
+        ..ManaPool::default()
+    };
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    // X of two, split one at the player and one at their creature.
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            let Action::CastSpell { choices, .. } = action else {
+                return false;
+            };
+            choices.x() == 2
+                && choices.targets().iter().any(|selection| {
+                    selection.amount_for(Target::Player(PlayerId::Two)) == Some(1)
+                        && selection.amount_for(Target::Permanent(angel)) == Some(1)
+                })
+        })
+        .expect("X of two split between the player and their creature");
+    game.apply(PlayerId::One, cast).unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, 19, "the player took its share");
+    let burned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel)
+        .expect("a 4/4 survives one damage");
+    assert_eq!(burned.damage, 1);
+    assert!(burned.tapped, "and every creature it burned is tapped");
+
+    // The burned player keeps their creatures but loses their burn.
+    game.priority = PlayerId::Two;
+    let casts = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, .. } => Some(card),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        !casts.contains(&GameObjectId(27_001)),
+        "a noncreature spell is locked out for the rest of the turn"
+    );
+    assert!(
+        casts.contains(&GameObjectId(27_002)),
+        "but a creature spell is not"
+    );
+}
