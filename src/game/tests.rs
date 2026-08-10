@@ -2601,6 +2601,59 @@ fn a_countered_recall_costs_no_cards() {
 }
 
 #[test]
+fn balance_counts_an_animated_land_in_both_phases() {
+    // Balance settles lands, then hands, then creatures, recounting each time.
+    // An animated Mishra's Factory is a land and a creature at once, so it
+    // has to be counted twice -- and the land phase running first is what
+    // decides whether it is still there for the creature count.
+    let mut game = ready_game();
+    game.battlefield.extend([
+        creature(10_000, cards::MISHRA_S_FACTORY, PlayerId::One),
+        creature(10_001, cards::SWAMP, PlayerId::Two),
+        creature(10_002, cards::FOREST, PlayerId::Two),
+    ]);
+    game.battlefield[0].animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
+
+    game.resolve_balance(PlayerId::One);
+    let mut prompts = Vec::new();
+    while let Some(player) = game.decision_player() {
+        let Some(decision) = game.observe(player).decision else {
+            break;
+        };
+        prompts.push((player, decision.prompt.clone()));
+        choose_all_offered(&mut game, player);
+    }
+
+    assert_eq!(
+        prompts,
+        vec![
+            (
+                PlayerId::Two,
+                "Choose 1 land(s) to sacrifice to Balance".into()
+            ),
+            (
+                PlayerId::One,
+                "Choose 1 creature(s) to sacrifice to Balance".into()
+            ),
+        ],
+        "the Factory kept its controller's land count level, then lost the \
+         creature count outright"
+    );
+    assert_eq!(
+        game.battlefield.len(),
+        1,
+        "one land each was two lands, and the Factory was one of them"
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_000)),
+        "and the Factory is what went"
+    );
+}
+
+#[test]
 fn balance_requests_public_sacrifices_and_private_discards() {
     let mut game = ready_game();
     game.battlefield.extend([

@@ -818,10 +818,10 @@ pub(in crate::card::sets) static BALANCE: CardRecord = CardRecord::new(
     CardArt::new("6f9ea46a-411f-40ce-a873-a905180093f4", "Mark Poole"),
     CardSet::Alpha,
     CardRules::new_sorcery(mana_cost!("{1}{W}"))
-    .with_abilities(&[AbilityDef::custom_partial(
+    .with_abilities(&[AbilityDef::custom_full(
         "Each player chooses a number of lands they control equal to the number of lands controlled by the player who controls the fewest, then sacrifices the rest. Players discard cards and sacrifice creatures the same way.",
         CardBehavior::Balance,
-        "The legacy decision sequence needs review against the simultaneous-choice procedure.",
+        "The card-local resolver settles lands, then hands, then creatures, recounting before each. Only whoever is over the shared floor chooses, so a phase never has two choosers whose picks could leak to each other.",
     )]),
 );
 
