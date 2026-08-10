@@ -5383,37 +5383,62 @@ fn goblin_king_buffs_other_goblins_and_grants_mountainwalk() {
 #[test]
 fn erhnam_djinn_upkeep_targets_a_creature_for_forestwalk() {
     let mut game = ready_game();
-    let erhnam = creature(10_000, cards::ERHNAM_DJINN, PlayerId::One);
-    let target = creature(10_001, cards::JUZAM_DJINN, PlayerId::Two);
-    let target_id = target.card.id;
-    game.battlefield = vec![erhnam, target];
+    game.battlefield
+        .push(creature(10_000, cards::ERHNAM_DJINN, PlayerId::One));
+    game.battlefield
+        .push(creature(10_001, cards::JUZAM_DJINN, PlayerId::Two));
+    // A Wall is never a candidate, and neither is the Djinn's own side.
+    game.battlefield
+        .push(creature(10_002, cards::WALL_OF_STONE, PlayerId::Two));
+    game.battlefield
+        .push(creature(10_003, cards::SAVANNAH_LIONS, PlayerId::One));
     game.turn = 2;
     game.step = Step::Upkeep;
 
     game.handle_upkeep_triggers();
+    drain_pending(&mut game);
 
-    let decision = game.observe(PlayerId::One).decision.unwrap();
-    assert_eq!(
-        decision.prompt,
-        "Erhnam Djinn: choose a creature for forestwalk"
+    let target = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still there");
+    assert!(
+        game.has_forestwalk(target),
+        "the only legal target got the gift"
     );
-    assert_eq!(decision.options.len(), 1);
-    game.apply(
-        PlayerId::One,
-        Action::ChooseDecision {
-            decision: decision.id,
-            options: vec![target_id.0],
-        },
-    )
-    .unwrap();
-
-    assert_eq!(
-        game.battlefield
+    for spared in [GameObjectId(10_002), GameObjectId(10_003)] {
+        let permanent = game
+            .battlefield
             .iter()
-            .find(|permanent| permanent.card.id == target_id)
-            .unwrap()
-            .forestwalk_until_upkeep_of,
-        Some(PlayerId::One)
+            .find(|permanent| permanent.card.id == spared)
+            .expect("still there");
+        assert!(!game.has_forestwalk(permanent));
+    }
+
+    // It lasts through the opponent's turn and ends when the Djinn's
+    // controller comes back around.
+    game.finish_cleanup();
+    game.start_next_turn();
+    let target = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still there");
+    assert!(
+        game.has_forestwalk(target),
+        "an until-your-next-upkeep grant outlives cleanup"
+    );
+    game.finish_cleanup();
+    game.start_next_turn();
+    let target = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still there");
+    assert!(
+        !game.has_forestwalk(target),
+        "and ends when that upkeep arrives"
     );
 }
 

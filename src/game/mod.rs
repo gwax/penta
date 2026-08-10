@@ -226,7 +226,10 @@ struct Permanent {
     /// triggers are captured, so a "first time each turn" trigger needs the
     /// count rather than the flag.
     attacks_this_turn: u8,
-    forestwalk_until_upkeep_of: Option<PlayerId>,
+    /// Keywords granted until a named player's next upkeep, which outlive
+    /// the cleanup that clears `temporary_keywords`. Erhnam Djinn's
+    /// forestwalk is one.
+    keywords_until_upkeep_of: Vec<(PlayerId, KeywordAbility)>,
     /// Sources that dealt damage to this permanent during the current turn.
     /// IDs deliberately refer to the damaging object incarnation so a later
     /// death trigger can use the live source or its retired LKI snapshot.
@@ -292,7 +295,7 @@ impl Permanent {
             berserked: false,
             attacked_this_turn: false,
             attacks_this_turn: 0,
-            forestwalk_until_upkeep_of: None,
+            keywords_until_upkeep_of: Vec::new(),
             damage_sources: Vec::new(),
             dealt_damage_to_opponent_this_turn: false,
             deathtouch_damage: false,
@@ -1209,10 +1212,6 @@ enum DecisionContinuation {
         card: GameObjectId,
         candidates: Vec<GameObjectId>,
         choices_left: usize,
-    },
-    ErhnamForestwalk {
-        player: PlayerId,
-        source: GameObjectId,
     },
     /// How many +1/+1 counters Tetravus is trading for Tetravites. Every
     /// option stands for one counter, so the count selected is the answer.
@@ -4906,44 +4905,6 @@ impl Game {
         );
     }
 
-    fn queue_erhnam_decision(&mut self, player: PlayerId, source: GameObjectId) {
-        let options = self
-            .battlefield
-            .iter()
-            .filter(|permanent| {
-                permanent.controller == player.opponent() && self.power(permanent).is_some()
-            })
-            .map(|permanent| {
-                let name = self
-                    .catalog
-                    .get(permanent.card.definition)
-                    .map_or("that creature", |card| card.name.as_str());
-                DecisionOption {
-                    id: permanent.card.id.0,
-                    label: format!("Give {name} forestwalk"),
-                    card: Some((permanent.card.id, permanent.card.definition)),
-                    ability_text: None,
-                    zone: DecisionZone::Battlefield,
-                }
-            })
-            .collect::<Vec<_>>();
-        if options.is_empty() {
-            return;
-        }
-        self.queue_decision(
-            player,
-            "Erhnam Djinn: choose a creature for forestwalk",
-            DecisionVisibility::Private,
-            DecisionPreference::Neutral,
-            1..=1,
-            false,
-            options,
-            DecisionContinuation::ErhnamForestwalk { player, source },
-        );
-    }
-
-    /// Fork's copy is red whatever it copies, which is what protection from
-    /// red sees.
     fn push_copy(&mut self, spell: StackObject, player: PlayerId, targets: Vec<TargetSelection>) {
         self.push_copy_with_colors(spell, player, targets, None);
     }
@@ -6257,38 +6218,6 @@ impl Game {
                 }
                 if choices_left > 1 && self.result.is_none() {
                     self.queue_sylvan_select(player, candidates, choices_left - 1);
-                }
-            }
-            DecisionContinuation::ErhnamForestwalk { player, source } => {
-                let Some(target) = pending
-                    .observation
-                    .options
-                    .iter()
-                    .find(|option| options.contains(&option.id))
-                    .and_then(|option| option.card)
-                    .map(|(card, _)| card)
-                else {
-                    return;
-                };
-                let can_grant = self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == target)
-                    .is_some_and(|permanent| {
-                        permanent.controller == player.opponent() && self.power(permanent).is_some()
-                    });
-                if can_grant
-                    && let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                {
-                    permanent.forestwalk_until_upkeep_of = Some(player);
-                    self.events.push(GameEvent::ErhnamForestwalkGranted {
-                        player,
-                        source,
-                        target,
-                    });
                 }
             }
             DecisionContinuation::TetravusDetach { source } => {
@@ -9912,14 +9841,16 @@ impl Game {
         scoped: ScopedEffect,
     ) {
         for target in self.effect_recipients(recipient, object, context, scoped) {
-            self.apply_applied_effect_component(target, effect, object, context, scoped);
+            self.apply_applied_effect_component(target, effect, duration, object, context, scoped);
         }
-        // Current supported Apply effects all last until cleanup. Keeping the
-        // duration explicit here makes unsupported permanent/granted effects
-        // visible rather than silently changing their lifetime.
+        // Everything else lasts until cleanup. Keeping the duration explicit
+        // here makes unsupported permanent/granted effects visible rather
+        // than silently changing their lifetime.
         debug_assert!(matches!(
             duration,
-            EffectDurationDef::UntilEndOfTurn | EffectDurationDef::Permanent
+            EffectDurationDef::UntilEndOfTurn
+                | EffectDurationDef::Permanent
+                | EffectDurationDef::UntilYourNextUpkeep
         ));
     }
 
@@ -9927,6 +9858,7 @@ impl Game {
         &mut self,
         target: Target,
         effect: AppliedEffectDef,
+        duration: EffectDurationDef,
         object: &StackObject,
         context: TriggerContext,
         scoped: ScopedEffect,
@@ -9934,7 +9866,9 @@ impl Game {
         match effect {
             AppliedEffectDef::Composite(effects) => {
                 for effect in effects {
-                    self.apply_applied_effect_component(target, *effect, object, context, scoped);
+                    self.apply_applied_effect_component(
+                        target, *effect, duration, object, context, scoped,
+                    );
                 }
             }
             AppliedEffectDef::GrantAbility(ability) => match target {
@@ -9950,14 +9884,24 @@ impl Game {
                     }
                 }
                 Target::Permanent(target) => {
+                    let until_upkeep_of = (duration == EffectDurationDef::UntilYourNextUpkeep)
+                        .then_some(object.controller);
                     if let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
                         && let Some(permanent) = self
                             .battlefield
                             .iter_mut()
                             .find(|permanent| permanent.card.id == target)
-                        && !permanent.temporary_keywords.contains(&keyword)
                     {
-                        permanent.temporary_keywords.push(keyword);
+                        if let Some(player) = until_upkeep_of {
+                            if !permanent
+                                .keywords_until_upkeep_of
+                                .contains(&(player, keyword))
+                            {
+                                permanent.keywords_until_upkeep_of.push((player, keyword));
+                            }
+                        } else if !permanent.temporary_keywords.contains(&keyword) {
+                            permanent.temporary_keywords.push(keyword);
+                        }
                     }
                 }
                 Target::Player(_) | Target::Spell(_) => {}
@@ -14003,6 +13947,10 @@ impl Game {
         expected: KeywordAbility,
     ) -> bool {
         permanent.temporary_keywords.contains(&expected)
+            || permanent
+                .keywords_until_upkeep_of
+                .iter()
+                .any(|(_, keyword)| *keyword == expected)
             || self
                 .find_effective_ability(permanent, |effective| {
                     effective.ability.is_executable()
@@ -14041,8 +13989,8 @@ impl Game {
         }
     }
 
-    fn has_forestwalk(permanent: &Permanent) -> bool {
-        permanent.forestwalk_until_upkeep_of.is_some()
+    fn has_forestwalk(&self, permanent: &Permanent) -> bool {
+        self.permanent_has_executable_keyword(permanent, KeywordAbility::Forestwalk)
     }
 
     fn controls_mountain(&self, player: PlayerId) -> bool {
@@ -14581,7 +14529,7 @@ impl Game {
                     self.has_flying(permanent),
                     (self.has_mountainwalk(permanent)
                         && self.controls_mountain(permanent.controller.opponent()))
-                        || (Self::has_forestwalk(permanent)
+                        || (self.has_forestwalk(permanent)
                             && self.controls_forest(permanent.controller.opponent())),
                     self.power(permanent).unwrap_or(0),
                 )
@@ -16157,9 +16105,9 @@ impl Game {
             floating.until_turn_of != self.active_player || started <= floating.created_after_turns
         });
         for permanent in &mut self.battlefield {
-            if permanent.forestwalk_until_upkeep_of == Some(self.active_player) {
-                permanent.forestwalk_until_upkeep_of = None;
-            }
+            permanent
+                .keywords_until_upkeep_of
+                .retain(|(player, _)| *player != self.active_player);
             // One loyalty ability per planeswalker per turn, so the allowance
             // returns as the turn does.
             permanent.activated_loyalty_this_turn = false;
@@ -16217,18 +16165,6 @@ impl Game {
             player,
         });
         self.fire_delayed_triggers(TurnStepDef::Upkeep);
-        let erhnams = self
-            .battlefield
-            .iter()
-            .filter(|permanent| {
-                permanent.controller == player
-                    && self.effective_behavior(permanent) == Some(CardBehavior::ErhnamDjinn)
-            })
-            .map(|permanent| permanent.card.id)
-            .collect::<Vec<_>>();
-        for source in erhnams {
-            self.queue_erhnam_decision(player, source);
-        }
         if self.count_behavior(CardBehavior::CityInABottle) > 0 {
             let doomed: Vec<_> = self
                 .battlefield

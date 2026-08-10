@@ -1,9 +1,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AddManaEffectDef, CardArt, CardBehavior,
-    CardRules, CardSet, EffectDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, abilities, cards,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
+    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
+use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new(
@@ -34,16 +37,40 @@ pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The gift is compulsory and goes to an opponent's creature, which is the
+/// drawback the Djinn is priced around.
+static ERHNAM_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Wall")),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+static ERHNAM_FORESTWALK: AbilityDef = abilities::forestwalk();
+
 pub(in crate::card::sets) static ERHNAM_DJINN: CardRecord = CardRecord::new(
     cards::ERHNAM_DJINN,
     "Erhnam Djinn",
     CardArt::new("42bc0c3f-0a52-4bdc-83da-6484bf3102f3", "Ken Meyer, Jr."),
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Djinn"], 4, 5)
-    .with_abilities(&[AbilityDef::custom_partial(
+    .with_abilities(&[AbilityDef::triggered_with_targets(
         "At the beginning of your upkeep, target non-Wall creature an opponent controls gains forestwalk until your next upkeep. (It can't be blocked as long as defending player controls a Forest.)",
-        CardBehavior::ErhnamDjinn,
-        "The targeted upkeep trigger is handled outside the stack.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::You,
+        },
+        &ERHNAM_TARGET,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::GrantAbility(&ERHNAM_FORESTWALK),
+            duration: EffectDurationDef::UntilYourNextUpkeep,
+        },
     )]),
 );
 

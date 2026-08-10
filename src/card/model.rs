@@ -1136,6 +1136,10 @@ pub enum EffectRecipientDef {
 pub enum EffectDurationDef {
     Permanent,
     UntilEndOfTurn,
+    /// Until the beginning of the resolving ability's controller's next
+    /// upkeep, which outlives the cleanup that ends an until-end-of-turn
+    /// effect.
+    UntilYourNextUpkeep,
     WhileSourceRemainsInZone,
     UntilSourceLeavesZone,
 }
@@ -2193,6 +2197,7 @@ pub enum KeywordAbility {
     /// state in the same words.
     AttacksEachCombatIfAble,
     Mountainwalk,
+    Forestwalk,
     ProtectionFrom(ManaColor),
 }
 
@@ -2220,6 +2225,7 @@ impl KeywordAbility {
             Self::Undying => 14,
             Self::Mountainwalk => 15,
             Self::AttacksEachCombatIfAble => 16,
+            Self::Forestwalk => 17,
             Self::ProtectionFrom(_) => return None,
         })
     }
@@ -3957,6 +3963,8 @@ pub enum CardBehavior {
     DustToDust,
     Duress,
     Earthquake,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative targeted upkeep trigger.
     ErhnamDjinn,
     EssenceScatter,
     Fireball,

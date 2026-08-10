@@ -126,6 +126,11 @@ pub const fn mountainwalk() -> AbilityDef {
 }
 
 #[must_use]
+pub const fn forestwalk() -> AbilityDef {
+    keyword("Forestwalk", KeywordAbility::Forestwalk)
+}
+
+#[must_use]
 pub const fn protection_from(color: ManaColor) -> AbilityDef {
     let text = match color {
         ManaColor::White => "Protection from white",

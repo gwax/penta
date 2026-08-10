@@ -153,11 +153,6 @@ pub enum GameEvent {
         player: PlayerId,
         assignments: Vec<(GameObjectId, GameObjectId)>,
     },
-    ErhnamForestwalkGranted {
-        player: PlayerId,
-        source: GameObjectId,
-        target: GameObjectId,
-    },
     DamageDealt {
         player: PlayerId,
         amount: u16,

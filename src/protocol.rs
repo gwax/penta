@@ -47,7 +47,7 @@ use crate::{
 /// and adds newly executable keyword and alternative-casting actions to
 /// legal-action lists. Version 11 assigns instantiated spell and ability target
 /// slots positionally, including flattened target ranges for selected modes.
-pub const PROTOCOL_VERSION: u32 = 13;
+pub const PROTOCOL_VERSION: u32 = 14;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold

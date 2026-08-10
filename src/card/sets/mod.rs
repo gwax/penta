@@ -404,6 +404,7 @@ mod tests {
                 | KeywordAbility::Intimidate
                 | KeywordAbility::Undying
                 | KeywordAbility::Mountainwalk
+                | KeywordAbility::Forestwalk
                 | KeywordAbility::AttacksEachCombatIfAble
                 | KeywordAbility::ProtectionFrom(_)
         )
@@ -477,7 +478,16 @@ mod tests {
         effect: AppliedEffectDef,
         duration: EffectDurationDef,
     ) -> bool {
-        if duration != EffectDurationDef::UntilEndOfTurn || !shared_effect_recipient(recipient) {
+        // A grant that outlives cleanup is only carried for keywords; every
+        // other applied effect ends with the turn.
+        let duration_is_supported = duration == EffectDurationDef::UntilEndOfTurn
+            || duration == EffectDurationDef::UntilYourNextUpkeep
+                && matches!(
+                    effect,
+                    AppliedEffectDef::GrantAbility(ability)
+                        if matches!(ability.definition, DeclarativeAbilityDef::Keyword(_))
+                );
+        if !duration_is_supported || !shared_effect_recipient(recipient) {
             return false;
         }
         shared_resolving_applied_effect(effect)

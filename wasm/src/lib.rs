@@ -1607,16 +1607,6 @@ impl WebGame {
                     .collect::<Vec<_>>()
                     .join(", ")
             )),
-            GameEvent::ErhnamForestwalkGranted {
-                player,
-                source,
-                target,
-            } => Some(format!(
-                "{} used {} to give {} forestwalk",
-                self.player_name(*player),
-                self.instance_name(observation, *source),
-                self.instance_name(observation, *target)
-            )),
             GameEvent::DamageDealt { player, amount } => Some(format!(
                 "{} took {amount} damage",
                 self.player_name(*player)
