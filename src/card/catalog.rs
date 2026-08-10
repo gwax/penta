@@ -816,6 +816,7 @@ fn collect_applied_ability_grants(effect: super::AppliedEffectDef, grants: &mut 
         super::AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::CannotBeEnchanted
         | super::AppliedEffectDef::CannotBeBlockedBy(_)
+        | super::AppliedEffectDef::PreventDamageFrom(_)
         | super::AppliedEffectDef::AddLandTypes(_)
         | super::AppliedEffectDef::Animate(_)
         | super::AppliedEffectDef::ModifyPowerToughness { .. }
@@ -899,6 +900,7 @@ fn applied_ability_grant_sites(effect: super::AppliedEffectDef) -> usize {
         super::AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::CannotBeEnchanted
         | super::AppliedEffectDef::CannotBeBlockedBy(_)
+        | super::AppliedEffectDef::PreventDamageFrom(_)
         | super::AppliedEffectDef::AddLandTypes(_)
         | super::AppliedEffectDef::Animate(_)
         | super::AppliedEffectDef::ModifyPowerToughness { .. }
@@ -1024,6 +1026,7 @@ fn validate_applied_effect_target_references(
         | AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBeBlockedBy(_)
+        | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::AddLandTypes(_)
         | AppliedEffectDef::Animate(_)
         | AppliedEffectDef::Special(_) => Ok(()),

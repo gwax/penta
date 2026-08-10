@@ -263,22 +263,36 @@ pub(in crate::card::sets) static MISHRA_S_WORKSHOP: CardRecord = CardRecord::new
     )]),
 );
 
+/// Both halves of the Pixies read the same set, so the blocking restriction
+/// and the prevention cannot drift apart.
+static ARTIFACT_CREATURE: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Creature),
+]);
+
 pub(in crate::card::sets) static ARGOTHIAN_PIXIES: CardRecord = CardRecord::new(
     cards::ARGOTHIAN_PIXIES,
     "Argothian Pixies",
     CardArt::new("5712e87a-2381-4f5b-a853-6973841f9bf1", "Amy Weber"),
     CardSet::Antiquities,
-    CardRules::new_creature(
-        mana_cost!("{1}{G}"),
-        &["Faerie"],
-        2,
-        1,
-    )
-    .with_abilities(&[AbilityDef::custom_partial(
-        "This creature can't be blocked by artifact creatures.\nPrevent all damage that would be dealt to this creature by artifact creatures.",
-        CardBehavior::ArgothianPixies,
-        "The artifact-creature blocking restriction works, but damage from artifact creatures is not prevented.",
-    )]),
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Faerie"], 2, 1).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't be blocked by artifact creatures.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBeBlockedBy(ARTIFACT_CREATURE),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::static_ability(
+            "Prevent all damage that would be dealt to this creature by artifact creatures.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::PreventDamageFrom(ARTIFACT_CREATURE),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static HURKYLS_RECALL: CardRecord = CardRecord::new(

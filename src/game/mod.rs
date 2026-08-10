@@ -2989,6 +2989,7 @@ impl Game {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
@@ -9848,6 +9849,7 @@ impl Game {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Special(_) => {}
         }
@@ -10982,6 +10984,35 @@ impl Game {
         self.damage_target_from(None, target, amount);
     }
 
+    /// Whether a static prevention on this permanent stops damage from this
+    /// particular source. The source has to be a permanent, which is what
+    /// "damage from artifact creatures" is about; damage from a spell is
+    /// never prevented this way.
+    fn damage_is_prevented_from(
+        &self,
+        permanent: &Permanent,
+        source: Option<GameObjectId>,
+    ) -> bool {
+        let Some(source) = source.and_then(|source| {
+            self.battlefield
+                .iter()
+                .find(|candidate| candidate.card.id == source)
+        }) else {
+            return false;
+        };
+        let subject = self.trigger_event_object(source);
+        self.visit_static_applied_effects(permanent, |applied| {
+            if matches!(applied.effect, AppliedEffectDef::PreventDamageFrom(predicate)
+                if self.trigger_object_matches(predicate, &subject, permanent.card.id, false))
+            {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+
     fn damage_target_from(
         &mut self,
         source: Option<GameObjectId>,
@@ -11007,7 +11038,9 @@ impl Game {
                     .iter()
                     .position(|permanent| permanent.card.id == id)
                 {
-                    if self.is_protected_from_colors(&self.battlefield[index], source_colors) {
+                    if self.is_protected_from_colors(&self.battlefield[index], source_colors)
+                        || self.damage_is_prevented_from(&self.battlefield[index], source)
+                    {
                         return;
                     }
                     if self
@@ -11310,6 +11343,7 @@ impl Game {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::GrantAbility(_)
@@ -11652,6 +11686,7 @@ impl Game {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::Composite(_)
@@ -11970,6 +12005,7 @@ impl Game {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
@@ -14396,14 +14432,6 @@ impl Game {
                             .iter()
                             .find(|permanent| permanent.card.id == *attacker)
                             .expect("attacker is on the battlefield");
-                        let pixies = self
-                            .battlefield
-                            .iter()
-                            .find(|permanent| permanent.card.id == *attacker)
-                            .is_some_and(|permanent| {
-                                self.effective_behavior(permanent)
-                                    == Some(CardBehavior::ArgothianPixies)
-                            });
                         let intimidate = self.permanent_has_executable_keyword(
                             attacker_permanent,
                             KeywordAbility::Intimidate,
@@ -14426,7 +14454,6 @@ impl Game {
                                 && !self.is_artifact_permanent(blocker_permanent)
                                 && !shares_color
                             || ironclaw && *power >= 2
-                            || pixies && self.is_artifact_permanent(blocker_permanent)
                             || self.combat_is_protected(blocker_permanent, attacker_permanent));
                         can_block.then_some(Action::DeclareBlocker {
                             blocker,

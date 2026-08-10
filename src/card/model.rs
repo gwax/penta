@@ -1150,6 +1150,10 @@ pub enum AppliedEffectDef {
     CannotBeEnchanted,
     /// A creature matching this predicate cannot block the affected creature.
     CannotBeBlockedBy(ObjectPredicateDef),
+    /// Damage from a source matching this predicate is prevented before it
+    /// touches the affected permanent. Only a permanent can be the source
+    /// today, which is all "damage from artifact creatures" needs.
+    PreventDamageFrom(ObjectPredicateDef),
     /// Adds land subtypes without removing the object's existing subtypes.
     AddLandTypes(&'static [BasicLandType]),
     ModifyPowerToughness {
@@ -3889,6 +3893,8 @@ impl CardDefinition {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CardBehavior {
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative blocking restriction and damage prevention.
     ArgothianPixies,
     Atog,
     AugurOfBolas,

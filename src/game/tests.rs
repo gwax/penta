@@ -20176,3 +20176,58 @@ fn regrowth_returns_the_card_you_choose_rather_than_the_last_one_buried() {
         "and the one on top stayed put"
     );
 }
+
+#[test]
+fn argothian_pixies_ignore_artifact_creatures_entirely() {
+    let mut game = ready_game();
+    game.step = Step::CombatDamage;
+    let mut pixies = creature(10_000, cards::ARGOTHIAN_PIXIES, PlayerId::One);
+    pixies.attacking = true;
+    game.battlefield.push(pixies);
+    // Su-Chi is a 4/4 artifact creature: lethal to a 2/1 if the damage lands.
+    let mut su_chi = creature(10_001, cards::SU_CHI, PlayerId::Two);
+    su_chi.blocking = Some(GameObjectId(10_000));
+    game.battlefield.push(su_chi);
+
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+
+    let pixies = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("the Pixies shrugged it off");
+    assert_eq!(pixies.damage, 0, "artifact creatures cannot hurt them");
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == GameObjectId(10_001))
+            .expect("still there")
+            .damage,
+        2,
+        "and the Pixies still hit back"
+    );
+}
+
+#[test]
+fn argothian_pixies_still_take_damage_from_an_ordinary_creature() {
+    let mut game = ready_game();
+    game.step = Step::CombatDamage;
+    let mut pixies = creature(10_000, cards::ARGOTHIAN_PIXIES, PlayerId::One);
+    pixies.attacking = true;
+    game.battlefield.push(pixies);
+    let mut lions = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
+    lions.blocking = Some(GameObjectId(10_000));
+    game.battlefield.push(lions);
+
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_000)),
+        "the prevention only names artifact creatures"
+    );
+}

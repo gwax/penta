@@ -435,6 +435,7 @@ mod tests {
             AppliedEffectDef::CannotBeCountered | AppliedEffectDef::CannotBeEnchanted => true,
             AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::GrantAbility(_)
@@ -506,6 +507,7 @@ mod tests {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Special(_) => false,
         }
@@ -893,7 +895,8 @@ mod tests {
             }
             AppliedEffectDef::AddLandTypes(land_types) => !land_types.is_empty(),
             AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
-            AppliedEffectDef::CannotBeBlockedBy(predicate) => {
+            AppliedEffectDef::CannotBeBlockedBy(predicate)
+            | AppliedEffectDef::PreventDamageFrom(predicate) => {
                 recipient == EffectRecipientDef::Source && shared_object_predicate(predicate)
             }
             AppliedEffectDef::CannotBeCountered | AppliedEffectDef::CannotBeEnchanted => true,
@@ -1261,6 +1264,7 @@ mod tests {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
