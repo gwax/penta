@@ -263,3 +263,4 @@ pub const MAGICAL_HACK: CardDefinitionId = CardDefinitionId(250);
 pub const THESPIANS_STAGE: CardDefinitionId = CardDefinitionId(251);
 pub const DRYAD_ARBOR: CardDefinitionId = CardDefinitionId(252);
 pub const NYLEAS_PRESENCE: CardDefinitionId = CardDefinitionId(253);
+pub const ELEMENTAL_TOKEN_GREEN_WHITE: CardDefinitionId = CardDefinitionId(254);

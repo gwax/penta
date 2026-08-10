@@ -9086,7 +9086,18 @@ impl Game {
             query,
             comparison,
             amount,
-        } = condition;
+        } = condition
+        else {
+            let TriggerConditionDef::ActivePlayer(relation) = condition else {
+                unreachable!("every condition variant is handled")
+            };
+            return self.player_relation_matches(
+                self.active_player,
+                *relation,
+                controller,
+                context,
+            );
+        };
         let mut count = 0;
         let result = self.visit_objects_matching_query_with_prospective(
             *query,
@@ -12406,6 +12417,19 @@ impl Game {
                         ValueDef::AnyMatchingObject(query) => i32::from(
                             self.any_battlefield_object_matches(query, applied.source, controller),
                         ),
+                        // A bonus that counts is how a token whose printed
+                        // power and toughness are defined by the board is
+                        // expressed: a zero-power body plus the count.
+                        ValueDef::CountMatchingObjects(query) => i32::try_from(
+                            self.objects_matching_query(
+                                *query,
+                                controller,
+                                applied.source,
+                                TriggerContext::empty(),
+                            )
+                            .len(),
+                        )
+                        .unwrap_or(i32::MAX),
                         // Everything else stays a seam; the boundary test
                         // rejects a card that reaches for one.
                         _ => 0,

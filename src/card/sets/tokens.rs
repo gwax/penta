@@ -10,7 +10,11 @@
 //! printing, and the client already falls back to the type glyph without one.
 
 use super::{CardRecord, PrintingRecord};
-use crate::card::{CardArt, CardRules, CardSet, ManaColor, abilities, cards};
+use crate::card::{
+    AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, ValueDef, ZoneKind, abilities, cards,
+};
 
 pub(in crate::card::sets) static BEAST_TOKEN_3_3_GREEN: CardRecord = CardRecord::new(
     cards::BEAST_TOKEN_3_3_GREEN,
@@ -50,11 +54,41 @@ pub(in crate::card::sets) static DEMON_TOKEN_5_5_BLACK: CardRecord = CardRecord:
         .with_abilities(&[abilities::flying()]),
 );
 
+/// Voice of Resurgence's token. Its printed power and toughness are defined
+/// by the board, which a zero-power body plus a counting static bonus says
+/// exactly: the count includes the token itself, so it is never a 0/0.
+pub(in crate::card::sets) static ELEMENTAL_TOKEN_GREEN_WHITE: CardRecord = CardRecord::new(
+    cards::ELEMENTAL_TOKEN_GREEN_WHITE,
+    "Elemental",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Elemental"], 0, 0)
+        .printed_colors(&[ManaColor::Green, ManaColor::White])
+        .with_ability(AbilityDef::static_ability(
+            "This token's power and toughness are each equal to the number of creatures you control.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
+                    toughness: ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
+                },
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        )),
+);
+
+static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::You,
+};
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BEAST_TOKEN_3_3_GREEN,
     &KNIGHT_TOKEN_2_2_WHITE,
     &SOLDIER_TOKEN_1_1_RED_WHITE,
     &DEMON_TOKEN_5_5_BLACK,
+    &ELEMENTAL_TOKEN_GREEN_WHITE,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

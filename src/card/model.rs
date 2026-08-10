@@ -1696,6 +1696,8 @@ pub enum TriggerConditionDef {
         comparison: ComparisonDef,
         amount: u8,
     },
+    /// Whose turn it is, relative to the ability's controller.
+    ActivePlayer(PlayerRelation),
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

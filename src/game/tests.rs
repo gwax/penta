@@ -17454,3 +17454,77 @@ fn pithing_needle_locks_the_named_card_but_not_its_mana() {
         "but a mana ability is exempt from the lock"
     );
 }
+
+#[test]
+fn voice_of_resurgence_makes_a_token_that_counts_the_board() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let voice = game
+        .put_onto_battlefield(PlayerId::One, cards::VOICE_OF_RESURGENCE)
+        .expect("cataloged");
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+
+    // An opponent's spell only triggers it during your turn.
+    let opponent_casts = |game: &mut Game, active: PlayerId| {
+        game.active_player = active;
+        game.priority = PlayerId::Two;
+        game.players[1].hand = vec![card(21_000, cards::LIGHTNING_BOLT, PlayerId::Two)];
+        game.players[1].mana_pool = ManaPool {
+            red: 1,
+            ..ManaPool::default()
+        };
+        let cast = game
+            .legal_actions(PlayerId::Two)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { .. }))
+            .expect("the Bolt is castable");
+        game.apply(PlayerId::Two, cast).unwrap();
+        let triggered = game
+            .stack
+            .iter()
+            .filter(|object| object.kind == StackObjectKind::TriggeredAbility)
+            .count();
+        game.pending_triggers.clear();
+        game.stack.clear();
+        triggered
+    };
+    assert_eq!(
+        opponent_casts(&mut game, PlayerId::Two),
+        0,
+        "their turn, so nothing triggers"
+    );
+    assert_eq!(
+        opponent_casts(&mut game, PlayerId::One),
+        1,
+        "your turn, so the Voice speaks"
+    );
+
+    game.active_player = PlayerId::One;
+    game.destroy_permanent(voice);
+    drain_pending(&mut game);
+
+    let token = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::ELEMENTAL_TOKEN_GREEN_WHITE)
+        .expect("dying made a token")
+        .clone();
+    // The Voice is gone, so the token is the only creature: a 1/1.
+    assert_eq!(game.power(&token), Some(1));
+    assert_eq!(game.toughness(&token), Some(1));
+
+    // Every creature added counts, including the token itself.
+    game.put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    let token = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::ELEMENTAL_TOKEN_GREEN_WHITE)
+        .expect("the token is still there")
+        .clone();
+    assert_eq!(game.power(&token), Some(3));
+    assert_eq!(game.toughness(&token), Some(3));
+}

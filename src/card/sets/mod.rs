@@ -156,7 +156,7 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let mut definitions = Vec::with_capacity(253);
+    let mut definitions = Vec::with_capacity(254);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }
@@ -805,6 +805,7 @@ mod tests {
                         value,
                         crate::card::ValueDef::Constant(_)
                             | crate::card::ValueDef::AnyMatchingObject(_)
+                            | crate::card::ValueDef::CountMatchingObjects(_)
                     )
                 };
                 supported(power) && supported(toughness)
@@ -824,6 +825,7 @@ mod tests {
     fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         match condition {
             TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
+            TriggerConditionDef::ActivePlayer(_) => true,
         }
     }
 
@@ -1200,13 +1202,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 253);
+        assert_eq!(records.len(), 254);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=253).collect::<Vec<_>>()
+            (1..=254).collect::<Vec<_>>()
         );
         assert_eq!(
             records
@@ -1221,12 +1223,13 @@ mod tests {
     #[test]
     fn built_in_catalog_indexes_definitions_and_printings_separately() {
         let catalog = crate::card::catalog().unwrap();
-        let printing_count = (1..=253)
+        let printing_count = (1..=254)
             .filter(|id| {
                 *id != cards::BEAST_TOKEN_3_3_GREEN.0
                     && *id != cards::KNIGHT_TOKEN_2_2_WHITE.0
                     && *id != cards::SOLDIER_TOKEN_1_1_RED_WHITE.0
                     && *id != cards::DEMON_TOKEN_5_5_BLACK.0
+                    && *id != cards::ELEMENTAL_TOKEN_GREEN_WHITE.0
             })
             .map(|id| catalog.printings_for(CardDefinitionId(id)).len())
             .sum::<usize>();
@@ -1252,7 +1255,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 253);
+        assert_eq!(records.len(), 254);
 
         for record in records {
             let definition = record.definition();

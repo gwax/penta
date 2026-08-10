@@ -6,8 +6,8 @@ use crate::card::{
     AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus, CardPart,
     CardRules, CardSet, CardStructure, CardSupertype, CardType, EffectDef, EffectDurationDef,
     EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm,
-    TargetPredicate, TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
-    cards,
+    TargetPredicate, TargetSlotDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -334,11 +334,34 @@ pub(in crate::card::sets) static VOICE_OF_RESURGENCE: CardRecord = CardRecord::n
         2,
         2,
     )
-    .with_ability(AbilityDef::not_implemented(
-        "Whenever an opponent casts a spell during your turn and when this creature dies, create a green and white Elemental creature token with \"This token's power and toughness are each equal to the number of creatures you control.\"",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    // One printed sentence, two separate triggers: the cast one only during
+    // your turn, and the death one whenever it happens.
+    .with_abilities(&[
+        AbilityDef::triggered_if(
+            "Whenever an opponent casts a spell during your turn, create a green and white Elemental creature token with \"This token's power and toughness are each equal to the number of creatures you control.\"",
+            TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent)),
+            &VOICE_OF_RESURGENCE_DURING_YOUR_TURN,
+            VOICE_OF_RESURGENCE_TOKEN,
+        ),
+        AbilityDef::triggered(
+            "When this creature dies, create a green and white Elemental creature token with \"This token's power and toughness are each equal to the number of creatures you control.\"",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: Some(ZoneKind::Battlefield),
+                to: Some(ZoneKind::Graveyard),
+            },
+            VOICE_OF_RESURGENCE_TOKEN,
+        ),
+    ]),
 );
+
+static VOICE_OF_RESURGENCE_DURING_YOUR_TURN: TriggerConditionDef =
+    TriggerConditionDef::ActivePlayer(PlayerRelation::You);
+
+static VOICE_OF_RESURGENCE_TOKEN: EffectDef = EffectDef::CreateToken {
+    token: cards::ELEMENTAL_TOKEN_GREEN_WHITE,
+    count: ValueDef::Constant(1),
+};
 
 pub(in crate::card::sets) static WARLEADERS_HELIX: CardRecord = CardRecord::new(
     cards::WARLEADERS_HELIX,
