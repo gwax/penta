@@ -17130,3 +17130,107 @@ fn liliana_splits_a_board_and_the_victim_picks_the_pile() {
         "and the pile they chose was sacrificed"
     );
 }
+
+#[test]
+fn aurelia_untaps_the_team_and_buys_exactly_one_extra_combat() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let aurelia = game
+        .put_onto_battlefield(PlayerId::One, cards::AURELIA_THE_WARLEADER)
+        .expect("cataloged");
+    let lions = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [2, 1];
+    game.turn = 2;
+    game.tap_permanent(lions);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+
+    game.apply(PlayerId::One, Action::DeclareAttacker { attacker: aurelia })
+        .unwrap();
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == lions)
+            .expect("the Lions are still there")
+            .tapped,
+        "the trigger untapped the rest of the team"
+    );
+
+    // Walk the rest of combat; the extra phase comes instead of second main.
+    let mut seen_second_combat = false;
+    for _ in 0..40 {
+        if game.step == Step::PostcombatMain {
+            break;
+        }
+        if game.step == Step::EndOfCombat {
+            game.advance_step();
+            if game.step == Step::BeginningOfCombat {
+                seen_second_combat = true;
+            }
+            continue;
+        }
+        game.advance_step();
+    }
+    assert!(seen_second_combat, "an additional combat phase happened");
+    assert_eq!(
+        game.step,
+        Step::PostcombatMain,
+        "and the turn reached its second main afterwards"
+    );
+    assert_eq!(
+        game.additional_combat_phases, 0,
+        "the extra combat was spent rather than granted every time"
+    );
+}
+
+#[test]
+fn an_attack_trigger_for_the_first_time_each_turn_does_not_loop() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let aurelia = game
+        .put_onto_battlefield(PlayerId::One, cards::AURELIA_THE_WARLEADER)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [2, 1];
+    game.turn = 2;
+
+    let attack = |game: &mut Game| {
+        game.step = Step::DeclareAttackers;
+        game.attackers_declared = false;
+        for permanent in &mut game.battlefield {
+            permanent.attacking = false;
+            permanent.tapped = false;
+        }
+        game.apply(PlayerId::One, Action::DeclareAttacker { attacker: aurelia })
+            .unwrap();
+        game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+            .unwrap();
+        drain_pending(game);
+    };
+
+    attack(&mut game);
+    assert_eq!(
+        game.additional_combat_phases, 1,
+        "the first attack this turn granted a combat phase"
+    );
+
+    // Attacking again in the extra combat is not the first time this turn,
+    // so it grants nothing. Without that guard Aurelia never stops attacking.
+    attack(&mut game);
+    assert_eq!(
+        game.additional_combat_phases, 1,
+        "attacking again the same turn granted nothing further"
+    );
+}

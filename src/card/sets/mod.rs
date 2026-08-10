@@ -585,7 +585,9 @@ mod tests {
             // Neither needs a recipient: a token is created under the
             // resolving object's controller, and the flash grant is about its
             // controller's next spell.
-            EffectDef::CreateToken { .. } | EffectDef::GrantFlashToNextSorcery => true,
+            EffectDef::CreateToken { .. }
+            | EffectDef::AdditionalCombatPhase
+            | EffectDef::GrantFlashToNextSorcery => true,
             EffectDef::OptionalManaPayment { effect, .. } => {
                 deferred_decision_allowed && shared_stack_effect_at_position(*effect, true)
             }
@@ -640,6 +642,7 @@ mod tests {
             }
             TriggerEventDef::BecomesTapped(object)
             | TriggerEventDef::Attacks(object)
+            | TriggerEventDef::AttacksFirstTimeThisTurn(object)
             | TriggerEventDef::TappedForMana(object)
             | TriggerEventDef::SpellCast(object) => shared_object_predicate(object),
             TriggerEventDef::StepBegins { .. }
@@ -777,6 +780,7 @@ mod tests {
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
+            | EffectDef::AdditionalCombatPhase
             | EffectDef::Special(_) => false,
         }
     }
@@ -949,6 +953,7 @@ mod tests {
                         | EffectDef::BecomeCopyOf { .. }
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::CannotBeForcedToSacrifice
+                        | EffectDef::AdditionalCombatPhase
                         | EffectDef::GrantFlashToNextSorcery
                         | EffectDef::ExileLinkedToSource { .. }
                         | EffectDef::ReturnLinkedExiles { .. }
@@ -1083,6 +1088,7 @@ mod tests {
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::AdditionalCombatPhase
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }

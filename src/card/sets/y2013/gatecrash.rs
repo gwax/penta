@@ -69,9 +69,19 @@ pub(in crate::card::sets) static AURELIA_THE_WARLEADER: CardRecord = CardRecord:
         abilities::flying(),
         abilities::vigilance(),
         abilities::haste(),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "Whenever Aurelia attacks for the first time each turn, untap all creatures you control. After this phase, there is an additional combat phase.",
-            "The attack trigger and additional combat phase are not executed.",
+            TriggerEventDef::AttacksFirstTimeThisTurn(ObjectPredicateDef::Source),
+            EffectDef::Sequence(&[
+                EffectDef::Untap {
+                    object: EffectRecipientDef::MatchingObjects {
+                        object: ObjectPredicateDef::HasType(CardType::Creature),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: PlayerRelation::You,
+                    },
+                },
+                EffectDef::AdditionalCombatPhase,
+            ]),
         ),
     ]),
 );

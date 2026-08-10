@@ -317,6 +317,7 @@ impl HandcraftedPolicy {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::AdditionalCombatPhase
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }

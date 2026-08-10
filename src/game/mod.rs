@@ -211,6 +211,11 @@ struct Permanent {
     regeneration_shields: u8,
     berserked: bool,
     attacked_this_turn: bool,
+    /// How many times this creature has been declared as an attacker this
+    /// turn. `attacked_this_turn` is already set by the time the attack
+    /// triggers are captured, so a "first time each turn" trigger needs the
+    /// count rather than the flag.
+    attacks_this_turn: u8,
     forestwalk_until_upkeep_of: Option<PlayerId>,
     /// Sources that dealt damage to this permanent during the current turn.
     /// IDs deliberately refer to the damaging object incarnation so a later
@@ -265,6 +270,7 @@ impl Permanent {
             regeneration_shields: 0,
             berserked: false,
             attacked_this_turn: false,
+            attacks_this_turn: 0,
             forestwalk_until_upkeep_of: None,
             damage_sources: Vec::new(),
             deathtouch_damage: false,
@@ -1133,6 +1139,9 @@ pub struct Game {
     /// How many of each player's next sorceries may be cast as though they
     /// had flash. Quicken grants one, and the grant lapses with the turn.
     sorcery_flash_grants: [u8; 2],
+    /// Combat phases still owed this turn, added by an effect rather than by
+    /// the ordinary turn structure.
+    additional_combat_phases: u8,
     /// Effects waiting for a step to begin. Obzedat's return is one.
     delayed_triggers: Vec<DelayedTrigger>,
     blockers_declared: bool,
@@ -1281,6 +1290,7 @@ impl Game {
             creature_died_this_turn: false,
             linked_exiles: Vec::new(),
             sorcery_flash_grants: [0; 2],
+            additional_combat_phases: 0,
             delayed_triggers: Vec::new(),
             blockers_declared: false,
             untap_pending: false,
@@ -3290,6 +3300,7 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::AdditionalCombatPhase
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
@@ -3456,6 +3467,17 @@ impl Game {
             ) => self.trigger_object_matches(predicate, object, source, false),
             (TriggerEventDef::Attacks(predicate), CommittedTriggerEvent::Attacks { object }) => {
                 self.trigger_object_matches(predicate, object, source, false)
+            }
+            (
+                TriggerEventDef::AttacksFirstTimeThisTurn(predicate),
+                CommittedTriggerEvent::Attacks { object },
+            ) => {
+                self.trigger_object_matches(predicate, object, source, false)
+                    && self
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == object.id)
+                        .is_some_and(|permanent| permanent.attacks_this_turn == 1)
             }
 
             (
@@ -8332,6 +8354,9 @@ impl Game {
                     }
                 }
             }
+            EffectDef::AdditionalCombatPhase => {
+                self.additional_combat_phases = self.additional_combat_phases.saturating_add(1);
+            }
             EffectDef::GrantFlashToNextSorcery => {
                 let grants = &mut self.sorcery_flash_grants[object.controller.index()];
                 *grants = grants.saturating_add(1);
@@ -11232,6 +11257,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::AdditionalCombatPhase
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
@@ -11333,6 +11359,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::AdditionalCombatPhase
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
@@ -12889,6 +12916,7 @@ impl Game {
         {
             permanent.attacking = true;
             permanent.attacked_this_turn = true;
+            permanent.attacks_this_turn = permanent.attacks_this_turn.saturating_add(1);
         }
         if !vigilance {
             let _ = self.tap_permanent(attacker);
@@ -13959,6 +13987,7 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::AdditionalCombatPhase
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
@@ -14400,7 +14429,14 @@ impl Game {
             Step::CombatDamage => self.advance_combat_damage_step(),
             Step::EndOfCombat => {
                 self.clear_combat();
-                self.step = Step::PostcombatMain;
+                // An extra combat phase replaces the move to the second main,
+                // which still happens once the extra combats are spent.
+                if self.additional_combat_phases > 0 {
+                    self.additional_combat_phases -= 1;
+                    self.step = Step::BeginningOfCombat;
+                } else {
+                    self.step = Step::PostcombatMain;
+                }
             }
             Step::PostcombatMain => {
                 self.step = Step::End;
@@ -14450,6 +14486,7 @@ impl Game {
         self.turns_started[self.active_player.index()] += 1;
         self.creature_died_this_turn = false;
         self.sorcery_flash_grants = [0; 2];
+        self.additional_combat_phases = 0;
         self.step = Step::Upkeep;
         self.players[self.active_player.index()].land_played_this_turn = false;
         for permanent in &mut self.battlefield {
@@ -14637,6 +14674,7 @@ impl Game {
             permanent.regeneration_shields = 0;
             permanent.berserked = false;
             permanent.attacked_this_turn = false;
+            permanent.attacks_this_turn = 0;
         }
     }
 

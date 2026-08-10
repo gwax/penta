@@ -1423,6 +1423,8 @@ pub enum EffectDef {
     /// This card costs that much less generic mana to cast. A static ability
     /// that works from the hand, where casting reads it.
     ReduceGenericCostBy(ValueDef),
+    /// Adds a combat phase after the one now ending.
+    AdditionalCombatPhase,
     /// Multiplies the amount of the event a replacement ability is replacing.
     /// This means nothing outside a replacement whose event carries an amount.
     MultiplyEventAmount(u8),
@@ -1505,6 +1507,10 @@ pub enum TriggerEventDef {
     /// declaration triggers separately, as CR 508.2 has them all attack at
     /// once rather than one at a time.
     Attacks(ObjectPredicateDef),
+    /// The first time a matching creature attacks in a turn. An extra combat
+    /// phase is the only way a creature attacks twice, which is exactly what
+    /// the cards carrying this wording tend to grant.
+    AttacksFirstTimeThisTurn(ObjectPredicateDef),
     SpellCast(ObjectPredicateDef),
     AbilityActivated(ObjectPredicateDef),
     StepBegins {

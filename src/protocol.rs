@@ -1975,9 +1975,9 @@ mod tests {
         assert!(pilgrim["parts"][0].get("effectStatus").is_none());
 
         // Any card with a mix of executable and pending clauses will do here.
-        // Aurelia flies, has vigilance and haste, but her extra combat phase
-        // needs machinery the engine lacks; repoint this if that lands.
-        let partial = find("Aurelia, the Warleader");
+        // Moorland Haunt taps for mana, but its token ability pays a cost the
+        // action space cannot express; repoint this if that lands.
+        let partial = find("Moorland Haunt");
         assert_eq!(partial["implementationStatus"], "partial");
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 
