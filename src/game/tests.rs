@@ -3775,6 +3775,76 @@ fn fireball_pays_for_multiple_targets_and_divides_x_evenly() {
 }
 
 #[test]
+fn channel_pays_for_a_fireball_in_one_cast() {
+    // The reason Channel is a card: the life is spendable while paying for
+    // the spell, so the X the engine offers has to count it.
+    let mut game = ready_game();
+    game.channel_active[0] = true;
+    game.battlefield
+        .push(creature(10_000, cards::MOUNTAIN, PlayerId::One));
+    let fireball = card(10_001, cards::FIREBALL, PlayerId::One);
+    game.players[0].hand.push(fireball.clone());
+
+    let biggest = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. }
+                if card == fireball.id
+                    && choices
+                        .iter_targets()
+                        .copied()
+                        .eq(std::iter::once(Target::Player(PlayerId::Two))) =>
+            {
+                Some(choices.x())
+            }
+            _ => None,
+        })
+        .max()
+        .expect("Fireball can be cast");
+    assert_eq!(
+        biggest, 19,
+        "nineteen life is spendable; the twentieth is not"
+    );
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            fireball.id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            12,
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[0].life, 8, "twelve life became twelve mana");
+    assert_eq!(game.players[1].life, 8, "and all twelve landed");
+}
+
+#[test]
+fn channel_does_not_pay_a_coloured_symbol() {
+    // Channel makes {C}. It can cover the generic half of a cost and nothing
+    // else, so a spell whose coloured symbol is unpayable stays unpayable
+    // however much life is left.
+    let mut game = ready_game();
+    game.channel_active[0] = true;
+    game.battlefield
+        .push(creature(10_000, cards::MOUNTAIN, PlayerId::One));
+    let counterspell = card(10_001, cards::COUNTERSPELL, PlayerId::One);
+    game.players[0].hand.push(counterspell.clone());
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::CastSpell { card, .. } if *card == counterspell.id)
+        ),
+        "two blue is not something life can buy"
+    );
+    assert_eq!(game.players[0].life, 20, "and nothing was paid trying");
+}
+
+#[test]
 fn fireball_may_be_cast_with_no_targets_at_all() {
     // "Any number of targets" includes none. It is a bad play, but it is a
     // legal one, and a spell that insists on a target is a different card.

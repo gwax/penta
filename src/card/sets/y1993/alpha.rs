@@ -892,10 +892,10 @@ pub(in crate::card::sets) static CHANNEL: CardRecord = CardRecord::new(
     CardArt::new("c1862c47-71cc-45a3-8805-a5ddc62e55ea", "Richard Thomas"),
     CardSet::Alpha,
     CardRules::new_sorcery(mana_cost!("{G}{G}"))
-    .with_abilities(&[AbilityDef::custom_partial(
+    .with_abilities(&[AbilityDef::custom_full(
         "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}.",
         CardBehavior::Channel,
-        "Paying life for mana is not yet integrated with all mana-payment timing windows.",
+        "The life is offered as its own action at priority and is also counted by the payment layer, so a cost can be paid with it mid-cast. Colourless mana pays only the generic part of a cost, and the last point of life is not spendable.",
     )]),
 );
 

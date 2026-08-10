@@ -13374,6 +13374,27 @@ impl Game {
         eligible
     }
 
+    /// Turns life into the {C} this payment is short, one point at a time,
+    /// so the ordinary payment below finds a pool that can cover the cost.
+    fn channel_for_shortfall(
+        &mut self,
+        player: PlayerId,
+        cost: ManaCost,
+        x: u16,
+        purpose: &ManaPaymentPurpose,
+    ) {
+        let available = self.channel_mana_available(player);
+        if available == 0 {
+            return;
+        }
+        let pool = self.eligible_mana_pool(player, purpose);
+        let needed = Self::generic_shortfall(pool, cost, x).min(available);
+        for _ in 0..needed {
+            self.players[player.index()].life -= 1;
+            self.add_unrestricted_mana(player, ManaColor::Colorless, 1);
+        }
+    }
+
     fn pay_player_cost_for(
         &mut self,
         player: PlayerId,
@@ -13383,6 +13404,7 @@ impl Game {
     ) -> Vec<Mana> {
         let (cost, x) = self.restrict_x(cost, x, purpose);
         self.reconcile_mana(player);
+        self.channel_for_shortfall(player, cost, x, purpose);
         let before = self.eligible_mana_pool(player, purpose);
         let mut after = before;
         let has_eligible_spend_effect = |color| {
@@ -13699,6 +13721,39 @@ impl Game {
             .collect()
     }
 
+    /// How much {C} Channel could still produce for this player. The last
+    /// point of life is not spendable, which is the same limit the priority
+    /// action already enforces.
+    fn channel_mana_available(&self, player: PlayerId) -> u16 {
+        if !self.channel_active[player.index()] {
+            return 0;
+        }
+        u16::try_from(self.players[player.index()].life.saturating_sub(1)).unwrap_or(0)
+    }
+
+    /// The generic mana this payment would be short if it drew only on the
+    /// pool. Coloured and hybrid symbols come off first, exactly as the
+    /// payment does, because Channel's {C} cannot pay a coloured symbol and
+    /// must not be counted against one.
+    fn generic_shortfall(pool: ManaPool, cost: ManaCost, x: u16) -> u16 {
+        let mut spare = pool;
+        for color in colored_mana() {
+            spare.remove_color(color, mana_cost_amount(cost, color));
+        }
+        for pair in HybridPair::ALL {
+            let mut remaining = cost.hybrid[pair.index()];
+            let (first, second) = pair.colors();
+            for color in [first, second] {
+                let spent = spare.amount(color).min(remaining);
+                spare.remove_color(color, spent);
+                remaining -= spent;
+            }
+        }
+        cost.generic
+            .saturating_add(x.saturating_mul(cost.x_multiplier))
+            .saturating_sub(spare.total())
+    }
+
     fn assigned_mana_activations_for(
         &self,
         player: PlayerId,
@@ -13708,6 +13763,9 @@ impl Game {
     ) -> Option<Vec<PlannedManaActivation>> {
         let (cost, x) = self.restrict_x(cost, x, purpose);
         let mut pool = self.eligible_mana_pool(player, purpose);
+        // Channel lets a player make {C} any time they could activate a mana
+        // ability, which includes the middle of paying for this spell.
+        pool.add_color(ManaColor::Colorless, self.channel_mana_available(player));
         let mut assigned = Vec::new();
         let mut flexible = Vec::new();
         // An ability that taps its source as a cost cannot also tap it for
@@ -13801,6 +13859,9 @@ impl Game {
         let mut available = self.assigned_mana_activations_for(player, cost, x, purpose)?;
         let (cost, x) = self.restrict_x(cost, x, purpose);
         let mut pool = self.eligible_mana_pool(player, purpose);
+        // The payment tops the pool up from Channel before it spends, so the
+        // plan has to count that mana too or it will tap sources for it.
+        pool.add_color(ManaColor::Colorless, self.channel_mana_available(player));
         let mut selected = Vec::new();
 
         for color in colored_mana() {
@@ -13942,7 +14003,8 @@ impl Game {
                     })
                     .map(ManaPool::total)
                     .sum(),
-            );
+            )
+            .saturating_add(self.channel_mana_available(player));
         // The upper bound is only a search ceiling; can_pay_cost_for is
         // what rules each X in or out, including the barred source.
         (0..=maximum)
