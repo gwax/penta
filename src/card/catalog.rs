@@ -774,6 +774,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::Destroy { .. }
         | super::EffectDef::Sacrifice { .. }
         | super::EffectDef::SacrificeOfChoice { then: None, .. }
+        | super::EffectDef::DestroyOfChoice { .. }
         | super::EffectDef::SplitPermanentsAndSacrificeAPile { .. }
         | EffectDef::RevealAndSplitIntoPiles { .. }
         | super::EffectDef::Mill { .. }
@@ -860,6 +861,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::Destroy { .. }
         | super::EffectDef::Sacrifice { .. }
         | super::EffectDef::SacrificeOfChoice { then: None, .. }
+        | super::EffectDef::DestroyOfChoice { .. }
         | super::EffectDef::SplitPermanentsAndSacrificeAPile { .. }
         | EffectDef::RevealAndSplitIntoPiles { .. }
         | super::EffectDef::Mill { .. }
@@ -1088,7 +1090,8 @@ fn validate_effect_target_references(
             }
             Ok(())
         }
-        EffectDef::SplitPermanentsAndSacrificeAPile { player }
+        EffectDef::DestroyOfChoice { player, .. }
+        | EffectDef::SplitPermanentsAndSacrificeAPile { player }
         | EffectDef::CannotCastNoncreatureSpellsThisTurn { player }
         | EffectDef::SearchLibrary { player, .. }
         | EffectDef::LookAtHand { player }

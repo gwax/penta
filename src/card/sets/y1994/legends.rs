@@ -202,10 +202,20 @@ pub(in crate::card::sets) static THE_ABYSS: CardRecord = CardRecord::new(
     CardSet::Legends,
     CardRules::new_enchantment(mana_cost!("{3}{B}"))
         .with_supertype(CardSupertype::World)
-        .with_abilities(&[AbilityDef::custom_partial(
+        .with_abilities(&[AbilityDef::triggered(
             "At the beginning of each player's upkeep, destroy target nonartifact creature that player controls of their choice. It can't be regenerated.",
-            CardBehavior::TheAbyss,
-            "The target is selected automatically and the upkeep trigger never becomes a stack object.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::Any,
+            },
+            EffectDef::DestroyOfChoice {
+                player: EffectRecipientDef::EventPlayer,
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Artifact)),
+                ]),
+                can_regenerate: false,
+            },
         )]),
 );
 

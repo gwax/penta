@@ -584,6 +584,14 @@ mod tests {
             | EffectDef::LoseTheGame { player: recipient }
             | EffectDef::LookAtHand { player: recipient } => shared_effect_recipient(recipient),
             EffectDef::SacrificeOfChoice { .. } => shared_sacrifice_of_choice(effect),
+            // The choice is asked of whoever controls the candidates, and the
+            // candidates are their own battlefield, so only the player and
+            // the predicate need checking.
+            EffectDef::DestroyOfChoice { player, object, .. } => {
+                deferred_decision_allowed
+                    && shared_effect_recipient(player)
+                    && shared_object_predicate(object)
+            }
             // The searcher is a player and the choices come out of their own
             // library, so only the predicate and the destination need
             // checking.
@@ -845,6 +853,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::DestroyOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
@@ -1036,6 +1045,7 @@ mod tests {
                         | EffectDef::Destroy { .. }
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::SacrificeOfChoice { .. }
+                        | EffectDef::DestroyOfChoice { .. }
                         | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
                         | EffectDef::RevealAndSplitIntoPiles { .. }
                         | EffectDef::Mill { .. }
@@ -1221,6 +1231,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::DestroyOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }

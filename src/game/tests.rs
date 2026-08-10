@@ -20409,3 +20409,87 @@ fn whirling_dervish_grows_at_the_end_step_only_after_drawing_blood() {
     );
     assert_eq!(game.power(dervish), Some(2));
 }
+
+#[test]
+fn the_abyss_lets_each_player_pick_which_of_their_own_creatures_it_takes() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::THE_ABYSS, PlayerId::One));
+    // The player whose upkeep it is has a choice; the other player's
+    // creatures are not candidates.
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two));
+    game.battlefield
+        .push(creature(10_002, cards::SERRA_ANGEL, PlayerId::Two));
+    game.battlefield
+        .push(creature(10_003, cards::SAVANNAH_LIONS, PlayerId::One));
+    // An artifact creature is safe from it.
+    game.battlefield
+        .push(creature(10_004, cards::SU_CHI, PlayerId::Two));
+
+    game.turn = 2;
+    game.active_player = PlayerId::Two;
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+    // The trigger uses the stack, so it has to resolve before anyone is
+    // asked anything.
+    for _ in 0..12 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .observe(PlayerId::Two)
+        .decision
+        .expect("the Abyss asks its victim");
+    assert_eq!(
+        decision
+            .options
+            .iter()
+            .filter_map(|option| option.card.map(|(card, _)| card))
+            .collect::<Vec<_>>(),
+        vec![GameObjectId(10_001), GameObjectId(10_002)],
+        "only their own nonartifact creatures are candidates"
+    );
+
+    // They keep the Angel and feed it the Lions.
+    let lions = decision
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(id, _)| id == GameObjectId(10_001))
+        })
+        .expect("the Lions are offered")
+        .id;
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![lions],
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    let survivors = game
+        .battlefield
+        .iter()
+        .map(|permanent| permanent.card.id)
+        .collect::<Vec<_>>();
+    assert!(!survivors.contains(&GameObjectId(10_001)), "the Lions went");
+    assert!(
+        survivors.contains(&GameObjectId(10_002)),
+        "the Angel they chose to keep stayed"
+    );
+    assert!(
+        survivors.contains(&GameObjectId(10_003)),
+        "the other player's creature was never at risk"
+    );
+    assert!(survivors.contains(&GameObjectId(10_004)), "nor the Su-Chi");
+}

@@ -1408,6 +1408,17 @@ pub enum EffectDef {
         object: EffectRecipientDef,
     },
     /// Each recipient player chooses one permanent they control that matches,
+    /// and it is destroyed. The choice belongs to the player who owns the
+    /// permanents, not to the ability's controller, which is what "of their
+    /// choice" means; unlike [`Self::SacrificeOfChoice`] nothing is
+    /// sacrificed, so a prohibition on being forced to sacrifice does not
+    /// apply.
+    DestroyOfChoice {
+        player: EffectRecipientDef,
+        object: ObjectPredicateDef,
+        can_regenerate: bool,
+    },
+    /// Each recipient player chooses one permanent they control that matches,
     /// and sacrifices it. Unlike [`Self::Sacrifice`] the choice is the
     /// player's, so nothing happens when they control nothing matching.
     SacrificeOfChoice {
@@ -4015,6 +4026,8 @@ pub enum CardBehavior {
     /// Tetravus's second upkeep trigger: exile its own Tetravites to take the
     /// counters back.
     TetravusAssemble,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative upkeep trigger with a chosen destruction.
     TheAbyss,
     UltimatePrice,
     WarleadersHelix,

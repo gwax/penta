@@ -330,6 +330,7 @@ impl HandcraftedPolicy {
             | EffectDef::LoseLife { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::DestroyOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }

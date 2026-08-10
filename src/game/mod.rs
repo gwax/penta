@@ -1166,6 +1166,11 @@ enum DecisionContinuation {
         followup: Option<SacrificeFollowup>,
         optional: bool,
     },
+    /// A destruction an effect demanded, chosen by the player who controls
+    /// the candidates.
+    DestroyOfChoice {
+        can_regenerate: bool,
+    },
     /// The spell's controller deciding whether to keep it alive.
     CounterUnlessPaid {
         spell: GameObjectId,
@@ -3585,6 +3590,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::DestroyOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
@@ -5452,6 +5458,59 @@ impl Game {
         );
     }
 
+    /// The permanents a player controls that an effect could pick out.
+    fn chosen_removal_candidates(
+        &self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+    ) -> Vec<CardInstance> {
+        self.battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == player)
+            .filter(|permanent| {
+                self.trigger_object_matches(
+                    predicate,
+                    &self.trigger_event_object(permanent),
+                    source,
+                    false,
+                )
+            })
+            .map(|permanent| permanent.card.clone())
+            .collect()
+    }
+
+    /// "Destroy target creature that player controls of their choice": the
+    /// choice belongs to whoever controls the candidates, so it is asked of
+    /// them rather than of the ability's controller.
+    fn queue_chosen_destruction(
+        &mut self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+        can_regenerate: bool,
+    ) {
+        let candidates = self.chosen_removal_candidates(player, predicate, source);
+        if candidates.len() <= 1 {
+            let doomed = candidates.first().map(|only| only.id);
+            if let Some(doomed) = doomed {
+                self.destroy_permanents(&[doomed], can_regenerate);
+            }
+            return;
+        }
+        let options = self.card_decision_options(&candidates, DecisionZone::Battlefield);
+        self.queue_decision(
+            player,
+            "Choose a permanent to destroy",
+            DecisionVisibility::Public,
+            DecisionPreference::LowerCardValue,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::DestroyOfChoice { can_regenerate },
+        );
+    }
+
     fn queue_chosen_sacrifice(
         &mut self,
         player: PlayerId,
@@ -5991,6 +6050,16 @@ impl Game {
             DecisionContinuation::PileChoice { first, second } => {
                 let chosen = if options.contains(&0) { first } else { second };
                 self.destroy_permanents(&chosen, false);
+            }
+            DecisionContinuation::DestroyOfChoice { can_regenerate } => {
+                let doomed = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                self.destroy_permanents(&doomed, can_regenerate);
             }
             DecisionContinuation::SacrificeOfChoice { followup, optional } => {
                 let sacrificed = pending
@@ -9214,6 +9283,18 @@ impl Game {
                     .collect::<Vec<_>>();
                 self.destroy_permanents(&permanents, false);
             }
+            EffectDef::DestroyOfChoice {
+                player: recipient,
+                object: predicate,
+                can_regenerate,
+            } => {
+                let source = object.source.unwrap_or(object.id);
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.queue_chosen_destruction(player, predicate, source, can_regenerate);
+                    }
+                }
+            }
             EffectDef::SacrificeOfChoice {
                 player: recipient,
                 object: predicate,
@@ -12159,6 +12240,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::DestroyOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
@@ -12696,6 +12778,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::DestroyOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::LoseTheGame { .. }
@@ -12840,6 +12923,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
+                | EffectDef::DestroyOfChoice { .. }
                 | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
                 | EffectDef::RevealAndSplitIntoPiles { .. }
                 | EffectDef::LoseTheGame { .. }
@@ -15518,6 +15602,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::DestroyOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
@@ -16132,19 +16217,6 @@ impl Game {
             player,
         });
         self.fire_delayed_triggers(TurnStepDef::Upkeep);
-        if self.count_behavior(CardBehavior::TheAbyss) > 0 {
-            let target = self
-                .battlefield
-                .iter()
-                .filter(|permanent| {
-                    self.power(permanent).is_some() && !self.is_artifact_permanent(permanent)
-                })
-                .map(|permanent| permanent.card.id)
-                .min();
-            if let Some(target) = target {
-                self.destroy_permanent(target);
-            }
-        }
         let erhnams = self
             .battlefield
             .iter()
