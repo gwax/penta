@@ -725,6 +725,20 @@ struct TriggerCapture {
     condition: Option<&'static TriggerConditionDef>,
 }
 
+/// A triggered ability with no object behind it, installed by an effect and
+/// listening until its controller's next turn begins. Everything the trigger
+/// needs is frozen here, because the ability that created it has finished
+/// resolving and its source may be long gone.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct FloatingTrigger {
+    event: TriggerEventDef,
+    capture: TriggerCapture,
+    until_turn_of: PlayerId,
+    /// How many turns that player had already started, so the turn the
+    /// ability resolved during does not count as their next one.
+    created_after_turns: u32,
+}
+
 /// One battlefield trigger listener frozen at the start of an atomic event.
 /// A simultaneous zone change can remove the source before another object in
 /// the same event is published, so listener discovery cannot consult the
@@ -1280,6 +1294,9 @@ pub struct Game {
     miracle_window: Option<GameObjectId>,
     /// Effects waiting for a step to begin. Obzedat's return is one.
     delayed_triggers: Vec<DelayedTrigger>,
+    /// Triggered abilities listening from nowhere until their controller's
+    /// next turn. Jace's first ability installs one.
+    floating_triggers: Vec<FloatingTrigger>,
     blockers_declared: bool,
     untap_pending: bool,
     pregame: Option<Pregame>,
@@ -1434,6 +1451,7 @@ impl Game {
             cards_drawn_this_turn: [0; 2],
             miracle_window: None,
             delayed_triggers: Vec::new(),
+            floating_triggers: Vec::new(),
             blockers_declared: false,
             untap_pending: false,
             pregame: Some(Pregame::Mulligan(PlayerId::One)),
@@ -3397,6 +3415,16 @@ impl Game {
                 });
             });
         }
+        // A floating trigger listens the same way, minus a permanent to hang
+        // on; it is appended last so a permanent's own triggers keep the
+        // relative order they had before any existed.
+        listeners.extend(self.floating_triggers.iter().map(|floating| {
+            BattlefieldTriggerListener {
+                event: floating.event,
+                uses_stack: true,
+                capture: floating.capture,
+            }
+        }));
         listeners
     }
 
@@ -3514,6 +3542,7 @@ impl Game {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
@@ -9366,6 +9395,34 @@ impl Game {
                     }
                 }
             }
+            EffectDef::TriggerUntilYourNextTurn { ability } => {
+                let DeclarativeAbilityDef::Triggered(definition) = ability.definition else {
+                    return;
+                };
+                let Some(frozen) = object.ability.as_ref() else {
+                    return;
+                };
+                self.floating_triggers.push(FloatingTrigger {
+                    event: definition.event,
+                    capture: TriggerCapture {
+                        source: AbilitySourceRef {
+                            object: object.source.unwrap_or(object.id),
+                            ability: frozen.origin,
+                        },
+                        definition: frozen.presentation_definition,
+                        owner: object.card.owner,
+                        controller: object.controller,
+                        text: ability.text,
+                        target_defs: definition.targets,
+                        effect: ability.effect.definition,
+                        resolver: Self::ability_resolver(ability),
+                        context: TriggerContext::empty(),
+                        condition: definition.condition,
+                    },
+                    until_turn_of: object.controller,
+                    created_after_turns: self.turns_started[object.controller.index()],
+                });
+            }
             EffectDef::AtNextStep {
                 step,
                 player,
@@ -12058,6 +12115,7 @@ impl Game {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
@@ -12566,6 +12624,7 @@ impl Game {
                 | EffectDef::MakeUnblockableThisTurn { .. }
                 | EffectDef::GainControlThisTurn { .. }
                 | EffectDef::AtNextStep { .. }
+                | EffectDef::TriggerUntilYourNextTurn { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::Replacement(_)
@@ -12704,6 +12763,7 @@ impl Game {
                 | EffectDef::MakeUnblockableThisTurn { .. }
                 | EffectDef::GainControlThisTurn { .. }
                 | EffectDef::AtNextStep { .. }
+                | EffectDef::TriggerUntilYourNextTurn { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::Replacement(_)
@@ -15402,6 +15462,7 @@ impl Game {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
@@ -15921,6 +15982,12 @@ impl Game {
         self.miracle_window = None;
         self.step = Step::Upkeep;
         self.players[self.active_player.index()].land_played_this_turn = false;
+        // "Until your next turn" means the one now beginning, not the one the
+        // ability resolved during.
+        let started = self.turns_started[self.active_player.index()];
+        self.floating_triggers.retain(|floating| {
+            floating.until_turn_of != self.active_player || started <= floating.created_after_turns
+        });
         for permanent in &mut self.battlefield {
             if permanent.forestwalk_until_upkeep_of == Some(self.active_player) {
                 permanent.forestwalk_until_upkeep_of = None;

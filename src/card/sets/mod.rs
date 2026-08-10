@@ -619,6 +619,9 @@ mod tests {
             // therefore be the delayed effect's root even when scheduling it
             // is itself one component of a sequence.
             EffectDef::AtNextStep { effect, .. } => shared_stack_effect_at_position(*effect, true),
+            // Installing an ability is a resolution like any other; what it
+            // installs has to be an ability the shared runtime can fire.
+            EffectDef::TriggerUntilYourNextTurn { ability } => shared_definition_ability(ability),
             EffectDef::Apply {
                 recipient,
                 effect,
@@ -788,6 +791,7 @@ mod tests {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
             | EffectDef::DealDamage { .. }
@@ -1010,6 +1014,7 @@ mod tests {
                         | EffectDef::MakeUnblockableThisTurn { .. }
                         | EffectDef::GainControlThisTurn { .. }
                         | EffectDef::AtNextStep { .. }
+                        | EffectDef::TriggerUntilYourNextTurn { .. }
                         | EffectDef::ReduceGenericCostBy(_)
                         | EffectDef::MultiplyEventAmount(_)
                         | EffectDef::Replacement(_)
@@ -1136,6 +1141,13 @@ mod tests {
             | EffectDef::May(effect)
             | EffectDef::AtNextStep { effect, .. } => {
                 assert_nested_definition_abilities(card_name, *effect);
+            }
+            EffectDef::TriggerUntilYourNextTurn { ability } => {
+                assert!(
+                    shared_definition_ability(ability),
+                    "{card_name} installs a triggered ability outside the shared runtime boundary: {ability:?}",
+                );
+                assert_nested_definition_abilities(card_name, ability.effect.definition);
             }
             EffectDef::Apply { effect, .. } => {
                 assert_nested_definition_applied_effect(card_name, effect);

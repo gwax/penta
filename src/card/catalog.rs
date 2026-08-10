@@ -755,7 +755,8 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
             then: Some(effect), ..
         } => collect_ability_grants(*effect, grants),
         super::EffectDef::Apply { effect, .. } => collect_applied_ability_grants(effect, grants),
-        super::EffectDef::None
+        super::EffectDef::TriggerUntilYourNextTurn { .. }
+        | super::EffectDef::None
         | super::EffectDef::AddMana(_)
         | super::EffectDef::DealDamage { .. }
         | super::EffectDef::GainLife { .. }
@@ -834,7 +835,8 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
             then: Some(effect), ..
         } => ability_grant_sites(*effect),
         super::EffectDef::Apply { effect, .. } => applied_ability_grant_sites(effect),
-        super::EffectDef::None
+        super::EffectDef::TriggerUntilYourNextTurn { .. }
+        | super::EffectDef::None
         | super::EffectDef::AddMana(_)
         | super::EffectDef::DealDamage { .. }
         | super::EffectDef::GainLife { .. }
@@ -1100,7 +1102,10 @@ fn validate_effect_target_references(
             validate_recipient_target_references(recipient, target_count)?;
             validate_applied_effect_target_references(effect, target_count)
         }
-        EffectDef::None
+        // An installed ability chooses its own targets when it triggers, so
+        // nothing in it can refer to this ability's target slots.
+        EffectDef::TriggerUntilYourNextTurn { .. }
+        | EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::CreateEmblem { .. }
         | EffectDef::GrantFlashToNextSorcery

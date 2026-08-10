@@ -1501,6 +1501,13 @@ pub enum EffectDef {
         player: PlayerRelation,
         effect: &'static EffectDef,
     },
+    /// Installs a triggered ability that listens from nowhere until its
+    /// controller's next turn begins. The ability outlives the resolution
+    /// that created it and does not belong to any permanent, which is what
+    /// separates it from an ability a source grants.
+    TriggerUntilYourNextTurn {
+        ability: &'static AbilityDef,
+    },
     /// A static prohibition: no spell or ability an opponent controls can
     /// make this ability's controller sacrifice a permanent.
     CannotBeForcedToSacrifice,

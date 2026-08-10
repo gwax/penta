@@ -343,6 +343,7 @@ impl HandcraftedPolicy {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)

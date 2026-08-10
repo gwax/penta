@@ -19410,7 +19410,7 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
         PlayerId::One,
         Action::ActivateAbility {
             source: GameObjectId(10_000),
-            ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+            ability: activated_ability_for(&game, GameObjectId(10_000), 1),
             targets: Vec::new(),
             cost_object: None,
             x: 0,
@@ -19494,4 +19494,68 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
         .find(|permanent| permanent.card.id == GameObjectId(10_000))
         .expect("he stayed");
     assert_eq!(jace.loyalty, Some(2));
+}
+
+#[test]
+fn jaces_first_ability_taxes_attackers_until_his_controller_comes_back_around() {
+    let mut game = ready_game();
+    let mut jace = creature(10_000, cards::JACE_ARCHITECT_OF_THOUGHT, PlayerId::One);
+    jace.loyalty = Some(4);
+    game.battlefield.push(jace);
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: GameObjectId(10_000),
+            ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+            targets: Vec::new(),
+            cost_object: None,
+            x: 0,
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == GameObjectId(10_000))
+            .expect("he stayed")
+            .loyalty,
+        Some(5)
+    );
+
+    // The opponent's turn: their attacker is taxed, and Jace's own creature
+    // attacking on a later turn is not.
+    game.start_next_turn();
+    assert_eq!(game.active_player, PlayerId::Two);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.battlefield
+        .push(creature(10_001, cards::SERRA_ANGEL, PlayerId::Two));
+    game.apply(
+        PlayerId::Two,
+        Action::DeclareAttacker {
+            attacker: GameObjectId(10_001),
+        },
+    )
+    .unwrap();
+    game.apply(PlayerId::Two, Action::FinishDeclaringAttackers)
+        .unwrap();
+    drain_pending(&mut game);
+
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still attacking");
+    assert_eq!(game.power(angel), Some(3), "the 4/4 attacked into the tax");
+    assert_eq!(game.toughness(angel), Some(4), "-1/-0 leaves toughness be");
+
+    // Jace's own next turn takes the listener away.
+    game.start_next_turn();
+    assert_eq!(game.active_player, PlayerId::One);
+    assert!(
+        game.floating_triggers.is_empty(),
+        "his next turn began, so the ability stopped listening"
+    );
 }

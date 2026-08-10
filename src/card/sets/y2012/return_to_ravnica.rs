@@ -372,10 +372,31 @@ pub(in crate::card::sets) static JACE_ARCHITECT_OF_THOUGHT: CardRecord = CardRec
         .with_abilities(&JACE_ARCHITECT_ABILITIES),
 );
 
+/// The ability Jace's first one leaves behind. It belongs to no permanent,
+/// so "an opponent" is read against the player who installed it.
+static JACE_ATTACK_TAX: AbilityDef = AbilityDef::triggered(
+    "Whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn.",
+    TriggerEventDef::Attacks(ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+    ])),
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::TriggeringObject,
+        effect: AppliedEffectDef::ModifyPowerToughness {
+            power: ValueDef::Constant(-1),
+            toughness: ValueDef::Constant(0),
+        },
+        duration: EffectDurationDef::UntilEndOfTurn,
+    },
+);
+
 static JACE_ARCHITECT_ABILITIES: [AbilityDef; 3] = [
-    AbilityDef::not_implemented(
+    AbilityDef::activated(
         "+1: Until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn.",
-        "A delayed trigger that lasts until its controller's next turn has nothing to hang on once the ability has resolved.",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::TriggerUntilYourNextTurn {
+            ability: &JACE_ATTACK_TAX,
+        },
     ),
     AbilityDef::activated(
         "−2: Reveal the top three cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other on the bottom of your library in any order.",
