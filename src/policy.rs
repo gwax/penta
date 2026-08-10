@@ -435,6 +435,20 @@ impl HandcraftedPolicy {
             .any(|permanent| permanent.id == id && permanent.power.is_some())
     }
 
+    /// Whether this exact ability is already waiting on the stack from this
+    /// source. An animation that has not resolved yet is still going to
+    /// happen, so activating a second one buys nothing.
+    fn already_on_the_stack(
+        observation: &PlayerObservation,
+        source: GameObjectId,
+        ability: AbilityOrigin,
+    ) -> bool {
+        observation
+            .stack
+            .iter()
+            .any(|object| object.source == Some(source) && object.ability == Some(ability))
+    }
+
     /// Whether an ability's target is attacking or blocking right now, which
     /// is the only time a until-end-of-turn pump changes anything.
     fn source_is_attacking(observation: &PlayerObservation, source: GameObjectId) -> bool {
@@ -978,7 +992,8 @@ impl HandcraftedPolicy {
         if source_definition
             .is_some_and(|definition| self.ability_animates_the_source(definition, ability))
             && (!Self::can_attack_this_combat(observation, source)
-                || Self::is_already_a_creature(observation, source))
+                || Self::is_already_a_creature(observation, source)
+                || Self::already_on_the_stack(observation, source, ability))
         {
             return true;
         }
@@ -1482,8 +1497,28 @@ impl HandcraftedPolicy {
         !(2..=5).contains(&mana_sources)
     }
 
+    /// Whether any of a card's abilities turns the permanent into a creature.
+    /// A permanent that can do that is worth keeping untapped in combat: the
+    /// creature it becomes cannot attack if its own mana paid for the change.
+    fn definition_animates_itself(&self, definition: CardDefinitionId) -> bool {
+        self.catalog.get(definition).is_some_and(|card| {
+            card.parts.iter().any(|part| {
+                part.rules.ability_clauses().iter().any(|ability| {
+                    matches!(
+                        ability.declarative_effect(),
+                        Some(EffectDef::Apply {
+                            recipient: EffectRecipientDef::Source,
+                            effect: crate::card::AppliedEffectDef::Animate(_),
+                            ..
+                        })
+                    )
+                })
+            })
+        })
+    }
+
     fn mana_action_score(&self, observation: &PlayerObservation, source: GameObjectId) -> i32 {
-        let needs_factory_mana = observation.active_player == observation.viewer
+        let saving_an_attacker = observation.active_player == observation.viewer
             && matches!(
                 observation.step,
                 Step::BeginningOfCombat | Step::DeclareAttackers
@@ -1493,12 +1528,11 @@ impl HandcraftedPolicy {
                 permanent.controller == observation.viewer
                     && !permanent.tapped
                     && permanent.power.is_none()
-                    && self.behavior(permanent.definition) == Some(CardBehavior::MishrasFactory)
+                    && self.definition_animates_itself(permanent.definition)
             });
-        if needs_factory_mana
-            && Self::permanent_definition(observation, source)
-                .and_then(|definition| self.behavior(definition))
-                != Some(CardBehavior::MishrasFactory)
+        if saving_an_attacker
+            && !Self::permanent_definition(observation, source)
+                .is_some_and(|definition| self.definition_animates_itself(definition))
         {
             8_800
         } else {

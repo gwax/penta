@@ -864,8 +864,17 @@ impl WebGame {
     /// Combat is awaiting either its first damage wave or the regular wave
     /// after first-strike damage. The latter cannot be inferred from `step`
     /// because both waves are exposed as `CombatDamage`.
+    ///
+    /// Either way something has to be left to deal the damage: first strike
+    /// can kill every attacker, and a wave with nothing in it is not a
+    /// destination worth naming the button after.
     fn combat_damage_awaiting(observation: &PlayerObservation) -> bool {
-        observation.regular_combat_damage_pending || Self::attack_awaiting_damage(observation)
+        (observation.regular_combat_damage_pending
+            && observation
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.attacking))
+            || Self::attack_awaiting_damage(observation)
     }
 
     fn pass_destination_label(
