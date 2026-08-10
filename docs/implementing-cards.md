@@ -1,0 +1,71 @@
+# Implementing cards
+
+This guide describes where card behavior belongs in the current engine. The
+[design doctrine](design-doctrine.md) explains why these boundaries are
+preferences rather than purity requirements.
+
+## Definition boundary
+
+Each built-in canonical card is declared once in the `CARDS` registry of its
+representative or debut set module. Its `CardRecord` keeps its identity and
+primary `CardRules` together: name, cost, types, creature stats, and ordered
+ability clauses can all be understood at the declaration.
+
+Start new and migrated work with the card's ordered `AbilityDef` clauses. Each
+printed clause should carry its explicit timing category and, where applicable,
+its costs, targets, effect, execution, and coverage. Displayed rules text and
+aggregate Complete, Partial, or MetadataOnly status derive from those clauses
+rather than from parallel card-level assertions.
+
+Reuse constructors from `card::abilities` and declarative rules primitives
+where they fit. Keep rules text, implementation coverage, and execution tied to
+the same clause even when the final effect requires custom code.
+
+## Extension boundaries
+
+Use the smallest boundary that truthfully implements the behavior:
+
+- A recurring mechanic or general Magic rules concept belongs in a reusable,
+  card-agnostic primitive that ability definitions can invoke.
+- Genuinely card-specific behavior, or behavior whose reusable shape is not yet
+  clear, belongs in a card-scoped implementation reached from the relevant
+  ability clause. Keep timing, costs, targets, and stack behavior declarative
+  around the custom portion whenever possible.
+- A direct card-identity branch in generic `Game` or state-machine flow is an
+  escape valve when the definition and card-scoped paths cannot reasonably
+  express the card. Keep it narrow, searchable, documented, and tested.
+
+Custom resolution must not silently change an explicit ability category or let
+a supported activated or triggered non-mana ability bypass the shared stack.
+Existing engine-level special cases are migration inventory rather than
+templates, but they need not be migrated until repetition or nearby work makes
+the better boundary clear and reasonably scoped.
+
+## Coverage and partial support
+
+Declarative effects need no custom behavior identity. A custom clause keeps its
+closed effect selector, independent coverage, and explanation beside the clause
+even when its handler remains centralized. Unsupported cards may exist in
+catalogs and hidden zones, but the engine does not offer play options that
+would resolve as silent no-ops.
+
+When complete fidelity is too large for the current increment, implement the
+working portion, mark the remainder accurately, and state the follow-up. A
+contained special case with focused tests is preferable to scattering partial
+logic through unrelated engine paths.
+
+## Implementation workflow
+
+1. Confirm the printed clauses and the format or card interaction being added.
+2. Represent the clauses, categories, costs, targets, effects, and coverage in
+   the card definition.
+3. Reuse an existing primitive, add a shared primitive, attach card-local
+   execution, or introduce a narrow special case according to the preference
+   ladder above.
+4. Test the shared rule behavior and the card's exceptional result at the
+   narrowest useful level.
+5. Run the broader gate appropriate to the changed paths before handoff.
+
+The [development guide](development.md) maps repository paths to validation
+workflows. Current format and card coverage is described in
+[formats and scope](formats.md).

@@ -35,64 +35,24 @@ work exposes a missing field, relationship, index, or query pattern, update the
 refresh builder, both skills, and the documented schema together, then rebuild
 and validate the cache. Avoid expanding them for isolated one-off questions.
 
-## Card implementations
+## Design doctrine
 
-Use a card's ordered `AbilityDef` clauses as the primary implementation
-boundary. New or migrated card work should start by representing each printed
-clause there with its explicit category and, where applicable, costs, targets,
-and effects, even when its final effect still needs custom execution. Reuse
-constructors from `card::abilities` and declarative rules primitives where they
-fit, and keep rules text, implementation coverage, and execution tied to the
-same clause.
-
-When the current vocabulary cannot express a card, choose the extension by the
-semantics rather than by the fastest place to add a branch:
-
-- A recurring mechanic or general Magic rules concept belongs in a reusable,
-  card-agnostic engine primitive that ability definitions can invoke. Adding
-  such a primitive is building the engine; it is not an engine-level
-  implementation of one named card.
-- Genuinely card-specific behavior, or behavior whose reusable shape is not yet
-  clear, should use or introduce a card-scoped implementation reached from the
-  relevant ability clause. Today a clause can own its custom selector,
-  coverage, and explanation even though some compatibility handlers remain
-  centralized. Keep timing, costs, targets, and stack behavior declarative
-  around that custom portion whenever possible. Custom resolution should not
-  change an explicit ability category or let an activated or triggered
-  non-mana ability bypass the shared stack.
-- A direct card-identity special case in generic `Game` or state-machine flow
-  that bypasses the clause-attached custom-resolution boundary is an escape
-  valve for particularly weird or difficult cards, not the default
-  implementation path. Keep it narrow, explain why the definition or
-  card-scoped path is insufficient, preserve accurate clause-level coverage,
-  and test both the shared rules behavior and the exceptional result.
-
-Be pragmatic about the boundary. Do not build a speculative framework for one
-exceptional card, but do not multiply one-off engine branches for a rules
-concept that should be shared. Existing engine-level special cases are
-migration inventory rather than precedent; when a repeated pattern emerges or
-an existing case is already being changed, move it toward a reusable definition
-or card-scoped implementation when that work is reasonably in scope.
+Prefer the [design doctrine](docs/design-doctrine.md) and
+[card extension boundaries](docs/implementing-cards.md#extension-boundaries)
+in the project documentation. Treat them as the project's direction of travel
+and the default starting point for implementation decisions, not as purity
+gates. When a task benefits from a different boundary, keep the supported
+behavior correct, the coverage honest, the exception contained, and the
+tradeoff explicit.
 
 ## Performance awareness
 
-Treat performance as review context, not a merge gate, and prefer clear,
-correct designs. Watch mainly for accidental multiplier-sized slowdowns, such
-as 2× or 4×; roughly 20% slower is ordinarily context, not a reason to optimize
-or block. These examples calibrate judgment rather than set thresholds.
-
-Keep performance checks out of the normal edit-test loop. Most changes need
-only a qualitative assessment. Measure only when evidence is likely to change
-a decision, then prefer one `$profile-engine-performance` comparison at a
-coherent checkpoint. It uses a lazily refreshed local-`main` baseline shared
-under Git's common directory; compare like-for-like and note any limits. Once a
-routine check rules out a scale-changing regression, report and stop rather
-than profiling or rerunning to recover another roughly 10%, unless performance
-is explicitly the task or a concrete user-visible requirement exists.
-
-In pull requests and handoffs, include brief performance context only when
-useful. “No expected impact” and “Not measured” are valid; never benchmark just
-to fill in a report.
+Follow the [performance guide](docs/performance.md). Treat performance as
+review context, not a merge gate. Most changes need only a qualitative impact
+note; measure when evidence could change a design or review decision, using
+`$profile-engine-performance` for the repository's reproducible comparison
+workflow. Stop once the relevant question is answered rather than turning a
+routine check into an open-ended optimization task.
 
 ## Protocol versioning
 
@@ -101,6 +61,14 @@ must set the protocol version to exactly one greater than the target branch's
 version. Do not bump it again for additional incompatible changes or
 intermediate commits in the same branch or pull request. After rebasing,
 re-check the target branch's protocol version and adjust if it changed.
+
+Treat the [bot guide](docs/bots.md) and [changelog](CHANGELOG.md) as part of
+the protocol contract. A change to observation or catalog JSON, legal-action
+contents or meaning, decision shapes, a bot binding, or version semantics must
+update both documents in the same branch or pull request. Check the guide's
+examples against every affected binding rather than deferring documentation to
+a follow-up. Keep the root `BOTS.md` compatibility symlink pointed at
+`docs/bots.md`.
 
 ## Validation
 

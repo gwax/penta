@@ -1,33 +1,10 @@
-# Engine design
+# Engine architecture
 
-## API boundary
-
-`Game` is the authoritative state machine. Consumers do not mutate zones,
-life, mana, priority, or the stack. They ask for `legal_actions(player)` and
-submit one of those values to `apply(player, action)`. `apply` checks legality
-again so stale bot decisions fail without changing state. For a generic
-`DecisionObservation`, `legal_actions` returns a compact `ChooseDecision`
-marker; callers select option IDs from the observation and use
-`is_legal_action`/`apply` for validation without expanding every combination.
-
-Bots receive `PlayerObservation`, which contains that player's hand and only
-counts for an opponent's hidden zones. `GameEvent` is an omniscient debugging
-and replay stream; it is not a bot observation.
-
-A bot runner asks `decision_player()` who must act, observes that player, and
-submits one of the observation's legal actions:
-
-```rust
-while let Some(player) = game.decision_player() {
-    let observation = game.observe(player);
-    let action = bots[player.index()].choose_action(&observation);
-    game.apply(player, action)?;
-}
-```
-
-The decision player is normally the player with priority, but differs during
-mulligans, blocker declaration, restricted untaps, cleanup discards, and
-triggered or combat-damage choices.
+This document describes the engine's current runtime abstractions and
+invariants. See the [design doctrine](design-doctrine.md) for project
+philosophy, [implementing cards](implementing-cards.md) for extension guidance,
+[engine interfaces](interfaces.md) for consumer APIs, and
+[formats and scope](formats.md) for current coverage.
 
 ## Identities and zones
 
@@ -61,17 +38,17 @@ An object's characteristics are independent of its physical backing. The
 backing is represented conceptually as zero, one, or several physical-card
 IDs: a spell copy or token has no physical card, an ordinary card object has
 one, and a future melded permanent can have two. A physical card may back at
-most one live game object at a time. Physical lineage should normally stay out
-of player observations because exposing it would allow a client to track a
-known card through a shuffle.
+most one live game object at a time. Physical lineage stays out of player
+observations because exposing it would allow a client to track a known card
+through a shuffle.
 
-The core runtime now uses this separation. Physical cards live in a private
+The core runtime uses this separation. Physical cards live in a private
 game registry, live objects carry zero-or-more physical backing IDs separately
 from their characteristic source, and actions, targets, observations, and
 events use `GameObjectId`. The former `CardInstanceId` and `StackObjectId`
 names remain deprecated source-compatibility aliases; they no longer identify
 physical lineage or a separate stack-ID namespace. Printing IDs are catalog
-metadata today and are not yet an art-selection feature in the UI.
+metadata and are not an art-selection feature in the UI.
 
 Historical events that outlive a zone object carry its immutable card
 definition as well as the former object ID. Activated-ability events carry the
@@ -104,16 +81,16 @@ Visibility is separate from applicability. A player may be allowed to inspect
 another face without that face contributing characteristics in the current
 zone.
 
-The catalog now stores parts, structures, and play options. Ordinary cards
+The catalog stores parts, structures, and play options. Ordinary cards
 receive a synthesized single primary part, while Garruk Relentless, Huntmaster
 of the Fells, Izzet Charm, and Turn // Burn exercise the structured metadata.
 The contextual part resolver implements the zone/form/presentation selection
 above. A permanent observation exposes its presented part, and baseline type,
 power/toughness, flying, trample, mana production, and land-type queries read
 that part. `CardDefinition.rules` remains a primary/front compatibility view
-for older behavior code, and permanents do not yet execute general transform
-actions or triggers. Cataloging both faces therefore does not by itself make
-Huntmaster or Garruk transform during a game.
+for older behavior code. Cataloging both faces does not itself define the
+actions or triggers that transform an object; those remain separate runtime
+behavior.
 
 Spell resolution determines whether the result is a permanent from the locked
 spell form rather than from the canonical front face. Structured target-slot
@@ -139,8 +116,8 @@ ability and use the stack. Other supported activated abilities create stack
 objects with their source, clause origin, text, targets, and resolver frozen at
 activation. Removing or changing the source does not erase that independent
 ability object. Definition-driven declarative and custom resolvers share this
-lifecycle for supported non-mana activated and triggered abilities; new custom
-resolution should not make one of those abilities atomic or bypass the stack.
+lifecycle for supported non-mana activated and triggered abilities; custom
+execution does not make one of those abilities atomic or bypass the stack.
 
 Committed events capture matching triggered abilities from the objects that
 declare them. The active player's simultaneous triggers are handled before the
@@ -223,43 +200,19 @@ replace only the target values in its existing slots. Sacrificed, discarded,
 or tapped objects remain payment records outside the signature because a copy
 does not pay those costs again.
 
-Izzet Charm and Turn // Burn currently exercise this structured catalog and
-validation path, including ordered modes, fused forms, and independent target
-slots. Their printed effects are still marked metadata-only, so the engine
-does not offer casts that would resolve as silent no-ops. Implementing those
-effects can enable the existing options without changing the casting model.
+Izzet Charm and Turn // Burn exercise this structured catalog and validation
+path, including ordered modes, fused forms, and independent target slots.
+Ability implementation coverage remains separate from casting structure, so a
+catalog can represent a form without offering an action that would resolve as
+a silent no-op.
 
 Catalog construction rejects ambiguous structured metadata: duplicate local
 IDs, missing or out-of-structure parts, invalid mode and target bounds, and a
 fused option that does not name every split part in printed order.
 
-## Future composite objects and meld
-
-No supported format currently needs meld, and the engine does not execute it.
-The identity model nevertheless avoids assuming that every game object is
-backed by exactly one card. A future meld action can consume two zone objects
-with one physical backing each and create one battlefield object whose backing
-contains both cards. If that permanent later changes zones, the result can be
-two new card objects rather than forcing a false one-object/one-card mapping.
-
-Finding the objects named by a meld ability and successfully melding their
-physical cards are deliberately different operations. Name conditions inspect
-the objects' effective characteristics. A Clone or token copy named Graf Rats
-can therefore satisfy Midnight Scavengers' condition. Resolution first
-performs the instructed exile zone changes, then the meld attempt validates
-that the resulting objects are backed by the two complementary physical meld
-cards. With a real Midnight Scavengers and only a copy of Graf Rats, that
-validation fails; it does not undo the exile. A physical copy card remains in
-exile, while a token follows the normal rule that makes it cease to exist.
-
-`MeldRecipeDef` makes that boundary explicit in catalog data: each component
-has a `required_name` for the object-level condition and a separate
-`required_card` for physical-backing validation, while `MeldResultDef` owns the
-combined object's name and rules instead of pretending it is either component.
-
-This is the same general boundary used elsewhere: characteristic predicates
-look at what an object currently is, while structural actions inspect what can
-physically represent the requested result.
+The identity model also leaves room for objects backed by multiple physical
+cards. The future design is recorded separately in
+[composite objects and meld](design-notes/composite-objects.md).
 
 ## Determinism and replay
 
@@ -269,7 +222,7 @@ reconstructed from the engine version, format, decks, seed, and submitted
 action sequence. Events provide a convenient derived trace for debugging and
 UI use.
 
-## Card behavior
+## Card model and behavior
 
 Each built-in canonical card is declared once in the `CARDS` registry of its
 representative or debut set module, under the set's release-year module. Its
@@ -280,13 +233,14 @@ their parts, topology, and play options; an ordinary record receives an
 equivalent one-part composition automatically.
 
 An `AbilityDef` owns one rules-text clause together with its explicit timing
-category, costs, targets, effect, and implementation. The displayed card text
-is the clauses' text joined in printed order with newlines, so presentation and
-execution do not duplicate Oracle text. Clause IDs are assigned from that
-order when definitions are attached to a card part. A clause is declarative,
-custom-full, custom-partial, or not implemented; every non-declarative form
-keeps an explanation beside the clause. Complete, Partial, and MetadataOnly
-card coverage is derived from all clauses and the executable land/creature
+category, costs, targets, structured effect, effect execution, and coverage.
+The displayed card text is the clauses' text joined in printed order with
+newlines, so presentation and execution do not duplicate Oracle text. Clause
+IDs are assigned from that order when definitions are attached to a card part.
+Effect execution is either declarative or a closed custom selector. Coverage
+is independent: a declarative or custom clause can be Complete, Partial, or
+MetadataOnly, with an explanation for custom complete clauses and every gap.
+Card coverage is derived from all clauses and the executable land/creature
 baseline rather than stored as a second card-level assertion.
 
 A set module's `ADDITIONAL_PRINTINGS` registry points back to those canonical
@@ -299,62 +253,15 @@ regardless of which printing might eventually be selected for presentation.
 
 Many executable effects use reusable declarative primitives or constructors in
 `card::abilities`. A `CardBehavior` value supplies a closed,
-serialization-safe selector for many custom implementations; other custom
-clauses use compatibility hooks without a behavior identity, and declarative
-cards need none. A clause can carry its custom selector, coverage, and
-explanation even though compatibility handlers remain centralized and some
-older behavior is still selected at card or part scope. Unsupported cards can
+serialization-safe selector for custom effect execution, while declarative
+effects need none. A clause keeps its selector, coverage, and explanation
+together even though custom handlers remain centralized. Unsupported cards can
 exist in other catalogs and hidden zones but do not generate play options that
 would resolve as silent no-ops. This makes partial coverage explicit and keeps
 arbitrary card code out of serialized game state.
 
-The preferred extension boundary is the `AbilityDef` clause. A new or migrated
-card first expresses its ability category and its applicable costs, targets,
-stack behavior, and effect there. If its behavior is a recurring mechanic or a
-general Magic rules concept, the declarative vocabulary and runtime should gain
-a reusable, card-agnostic primitive. That is engine development, not an
-engine-level implementation of one named card.
-
-If an effect is genuinely card-specific, or its general shape is still
-uncertain, a card-specific resolver reached from that clause is an intentional
-alternative to premature abstraction. It should leave as much of the
-surrounding ability definition declarative as possible. Here, "card-scoped"
-describes the intended ownership boundary, not a particular file layout or a
-claim that every compatibility path already has exact-clause dispatch. The
-codebase does not yet provide every useful card-scoped hook, so those
-boundaries can be introduced incrementally rather than routing new work into a
-generic engine procedure by default.
-
-A direct card-identity branch in generic `Game` or state-machine flow that
-bypasses the clause-attached custom-resolution boundary is the final escape
-valve for particularly weird or difficult cards. Such a branch should be
-narrow, explain why the definition or card-scoped paths were insufficient, and
-retain accurate clause-level coverage and focused tests. Existing engine-level
-cases are migration inventory rather than templates. Conversely, one unusual
-card does not justify a speculative framework; extract a shared primitive when
-a real rules concept or repeated implementation demonstrates the boundary.
-
-## Rules boundary
-
-Every `Game` owns a `Format` profile. Eternal Central 93/94 uses current Magic
-rules plus its explicit exceptions, notably phase-boundary mana burn. The final
-pre-Theros ISD–RTR Standard profile uses its eight-set legality snapshot,
-empties mana after each step and phase, and has no mana burn. Both currently
-use London mulligans. The POC implements priority-bearing turn steps, cleanup,
-combat, and fixed built-in decks for both profiles.
-
-It deliberately remains narrower than the full Comprehensive Rules. Fireball
-and Fork expose their full targeting decisions, and attackers expose current
-combat damage assignment decisions. Supported non-mana activated and triggered
-abilities use the same priority-bearing stack as spells, while explicitly
-tagged mana abilities remain immediate. Chaos Orb's activation uses the stack
-and deterministically destroys its target rather than simulating EC's physical
-card flip. Removing the Orb before resolution leaves the independent ability
-object on the stack but makes its custom source-presence check nullify the
-flip; an illegal target also makes it fail normally. Colored sources pay their
-printed colors, dual lands expose both choices, and flexible sources such as
-Black Lotus and Fellwar Stone are considered when the engine checks or
-automatically pays a cost. Red Elemental Blast can counter blue spells or
-destroy blue permanents.
+Implementation choices and extension boundaries are documented in
+[implementing cards](implementing-cards.md). Current format-specific rules and
+support limitations belong in [formats and scope](formats.md).
 
 [foundations-update]: https://magic.wizards.com/en/news/announcements/foundations-update-bulletin
