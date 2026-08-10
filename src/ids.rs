@@ -93,7 +93,7 @@ impl ModeId {
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct TargetSlotId(pub u8);
 
-/// Identity of an alternative cost choice, local to its card definition.
+/// Identity of an alternative cost choice, local to one play option.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct AlternativeCostId(pub u8);
 

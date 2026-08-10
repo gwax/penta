@@ -4,12 +4,13 @@ use std::error::Error;
 use std::fmt;
 
 use crate::card::{
-    AbilityCostDef, BasicLandType, CardBehavior, CardCatalog, CardSupertype, CardType, CardTypeSet,
-    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    SpellForm, ValueDef, ZoneKind,
+    AbilityCostDef, AlternativeCastKindDef, BasicLandType, CardBehavior, CardCatalog,
+    CardSupertype, CardType, CardTypeSet, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, PlayerRelation, SpellForm, ValueDef, ZoneKind,
 };
 use crate::game::{
-    DecisionObservation, DecisionPreference, Game, GameResult, PlayerObservation, Step,
+    DecisionObservation, DecisionPreference, Game, GameResult, PlayerObservation, StackObjectKind,
+    StackObservation, Step,
 };
 use crate::{
     AbilityOrigin, Action, ActionError, CardDefinitionId, CastChoices, GameObjectId, PlayerId,
@@ -107,6 +108,8 @@ struct DeclarativeSpellProfile {
     /// Whether the activation taps its own source. A land that taps to pump
     /// is spending the mana it could have made.
     taps_source: bool,
+    opponent_creature_sweep: bool,
+    opponent_spell_sweep: bool,
 }
 
 impl DeclarativeSpellProfile {
@@ -191,15 +194,30 @@ impl HandcraftedPolicy {
         let SpellForm::Part(part) = option.form else {
             return None;
         };
-        let ability = card
-            .part(part)?
-            .rules
-            .ability_clauses()
-            .iter()
-            .find(|ability| {
-                ability.implementation.is_executable()
-                    && matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
-            })?;
+        let rules = &card.part(part)?.rules;
+        if let Some(ability) = choices.costs().alternative().and_then(|alternative| {
+            rules.indexed_abilities().find_map(|attached| {
+                (attached.definition.implementation.is_executable()
+                    && attached.alternative_cost_id() == Some(alternative)
+                    && matches!(
+                        attached.definition.definition,
+                        DeclarativeAbilityDef::AlternativeCast(alternative_cast)
+                            if alternative_cast.kind == AlternativeCastKindDef::Overload
+                    ))
+                .then_some(attached.definition)
+            })
+        }) {
+            if !choices.modes().is_empty() {
+                return None;
+            }
+            let mut profile = DeclarativeSpellProfile::default();
+            Self::collect_spell_effect_profile(ability.effect, choices.x(), &mut profile);
+            return Some(profile);
+        }
+        let ability = rules.ability_clauses().iter().find(|ability| {
+            ability.implementation.is_executable()
+                && matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
+        })?;
         let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
             unreachable!("the selected ability is a spell ability")
         };
@@ -231,8 +249,16 @@ impl HandcraftedPolicy {
             }
             // An optional effect is worth what it would do if taken.
             EffectDef::May(inner) => Self::collect_spell_effect_profile(*inner, x, profile),
-            EffectDef::DealDamage { amount, .. } => {
+            EffectDef::DealDamage { recipient, amount } => {
                 profile.damage = Self::policy_value(amount, x);
+                profile.opponent_creature_sweep |= matches!(
+                    recipient,
+                    EffectRecipientDef::MatchingObjects {
+                        object: ObjectPredicateDef::HasType(crate::CardType::Creature),
+                        zones: [ZoneKind::Battlefield],
+                        controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
+                    }
+                );
             }
             EffectDef::DrawCards { amount, .. } => {
                 profile.cards_drawn = Self::policy_value(amount, x);
@@ -245,7 +271,18 @@ impl HandcraftedPolicy {
                         Some(drawn.saturating_sub(Self::policy_value(amount, x).unwrap_or(0)));
                 }
             }
-            EffectDef::Counter { .. } | EffectDef::CounterUnlessPaid { .. } => {
+            EffectDef::Counter { object } => {
+                profile.mark(DeclarativeSpellProfile::COUNTERS);
+                profile.opponent_spell_sweep |= matches!(
+                    object,
+                    EffectRecipientDef::MatchingObjects {
+                        object: ObjectPredicateDef::Spell,
+                        zones: [ZoneKind::Stack],
+                        controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
+                    }
+                );
+            }
+            EffectDef::CounterUnlessPaid { .. } => {
                 profile.mark(DeclarativeSpellProfile::COUNTERS);
             }
             EffectDef::Destroy { object, .. } => {
@@ -323,6 +360,17 @@ impl HandcraftedPolicy {
             .find_map(|(candidate, definition)| (*candidate == id).then_some(*definition))
     }
 
+    fn graveyard_definition(
+        observation: &PlayerObservation,
+        id: GameObjectId,
+    ) -> Option<CardDefinitionId> {
+        observation
+            .graveyards
+            .iter()
+            .flatten()
+            .find_map(|(candidate, definition)| (*candidate == id).then_some(*definition))
+    }
+
     fn permanent_definition(
         observation: &PlayerObservation,
         id: GameObjectId,
@@ -361,6 +409,26 @@ impl HandcraftedPolicy {
         })
     }
 
+    fn stack_spell_is_already_answered(
+        observation: &PlayerObservation,
+        spell: GameObjectId,
+    ) -> bool {
+        observation.stack.iter().any(|counter| {
+            counter.controller == observation.viewer
+                && counter.targets.contains(&Target::Spell(spell))
+        })
+    }
+
+    fn is_effective_counter_target(
+        observation: &PlayerObservation,
+        object: &StackObservation,
+    ) -> bool {
+        object.kind == StackObjectKind::Spell
+            && object.controller == observation.viewer.opponent()
+            && object.counterable
+            && !Self::stack_spell_is_already_answered(observation, object.id)
+    }
+
     fn counter_target_score(observation: &PlayerObservation, target: Target) -> i32 {
         match target {
             Target::Spell(id) => observation
@@ -368,20 +436,10 @@ impl HandcraftedPolicy {
                 .iter()
                 .find(|object| object.id == id)
                 .map_or(-10_000, |object| {
-                    if object.controller == observation.viewer {
-                        -10_000
-                    } else if !object.counterable {
-                        // Legal to target, but it would accomplish nothing.
-                        -10_000
-                    } else if observation.stack.iter().any(|counter| {
-                        counter.controller == observation.viewer
-                            && counter.targets.contains(&Target::Spell(id))
-                    }) {
-                        // Already answered: a second counter aimed at the same
-                        // spell fizzles for nothing.
-                        -10_000
-                    } else {
+                    if Self::is_effective_counter_target(observation, object) {
                         2_000
+                    } else {
+                        -10_000
                     }
                 }),
             Target::Permanent(id) => observation
@@ -528,13 +586,53 @@ impl HandcraftedPolicy {
         }
     }
 
+    fn cast_target_score(
+        observation: &PlayerObservation,
+        target: Target,
+        cards_drawn: Option<u16>,
+        counters: bool,
+        removes: bool,
+        damage: Option<u16>,
+    ) -> i32 {
+        if let Some(cards_drawn) = cards_drawn {
+            return match target {
+                Target::Player(player) if player == observation.viewer => {
+                    if usize::from(cards_drawn) > observation.library_sizes[player.index()] {
+                        -20_000
+                    } else {
+                        1_000 + i32::from(cards_drawn) * 100
+                    }
+                }
+                Target::Player(player) => {
+                    if usize::from(cards_drawn) > observation.library_sizes[player.index()] {
+                        20_000
+                    } else {
+                        -10_000
+                    }
+                }
+                Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => -10_000,
+            };
+        }
+        if counters {
+            return Self::counter_target_score(observation, target);
+        }
+        if removes {
+            return Self::removal_target_score(observation, target);
+        }
+        damage.map_or_else(
+            || Self::target_score(observation, target),
+            |amount| Self::damage_target_score(observation, target, amount),
+        )
+    }
+
     fn score_cast(
         &self,
         observation: &PlayerObservation,
         card: GameObjectId,
         choices: &CastChoices,
     ) -> i32 {
-        let definition = Self::hand_definition(observation, card);
+        let definition = Self::hand_definition(observation, card)
+            .or_else(|| Self::graveyard_definition(observation, card));
         let behavior = definition.and_then(|id| self.behavior(id));
         let declarative = definition.and_then(|id| self.declarative_spell_profile(id, choices));
         let kind = definition
@@ -562,38 +660,35 @@ impl HandcraftedPolicy {
         let target_score: i32 = choices
             .iter_targets()
             .map(|target| {
-                if let Some(cards_drawn) = cards_drawn {
-                    match target {
-                        Target::Player(player) if *player == observation.viewer => {
-                            if usize::from(cards_drawn) > observation.library_sizes[player.index()]
-                            {
-                                -20_000
-                            } else {
-                                1_000 + i32::from(cards_drawn) * 100
-                            }
-                        }
-                        Target::Player(player) => {
-                            if usize::from(cards_drawn) > observation.library_sizes[player.index()]
-                            {
-                                20_000
-                            } else {
-                                -10_000
-                            }
-                        }
-                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => -10_000,
-                    }
-                } else if counters {
-                    Self::counter_target_score(observation, *target)
-                } else if removes {
-                    Self::removal_target_score(observation, *target)
-                } else {
-                    damage.map_or_else(
-                        || Self::target_score(observation, *target),
-                        |amount| Self::damage_target_score(observation, *target, amount),
-                    )
-                }
+                Self::cast_target_score(
+                    observation,
+                    *target,
+                    cards_drawn,
+                    counters,
+                    removes,
+                    damage,
+                )
             })
             .sum();
+        let opponent_creatures = i32::try_from(
+            observation
+                .battlefield
+                .iter()
+                .filter(|permanent| {
+                    permanent.controller == observation.viewer.opponent()
+                        && permanent.power.is_some()
+                })
+                .count(),
+        )
+        .unwrap_or(i32::MAX);
+        let opponent_spells = i32::try_from(
+            observation
+                .stack
+                .iter()
+                .filter(|object| Self::is_effective_counter_target(observation, object))
+                .count(),
+        )
+        .unwrap_or(i32::MAX);
         let base = match behavior {
             Some(CardBehavior::SwordsToPlowshares) => 8_400,
             Some(CardBehavior::TimeWalk) => 8_300,
@@ -606,6 +701,22 @@ impl HandcraftedPolicy {
             Some(CardBehavior::WheelOfFortune) => 6_600,
             Some(behavior) if behavior.types().is_permanent() => 6_800,
             _ if sweeps_creatures => Self::sweeper_score(observation),
+            _ if declarative.is_some_and(|profile| profile.opponent_creature_sweep) => {
+                if opponent_creatures == 0 {
+                    -10_000
+                } else {
+                    7_500 + opponent_creatures * 900
+                }
+            }
+            _ if declarative.is_some_and(|profile| profile.opponent_spell_sweep) => {
+                if opponent_spells == 0 {
+                    -10_000
+                } else if opponent_spells == 1 {
+                    6_000 + opponent_spells * 500
+                } else {
+                    8_900 + opponent_spells * 2_000
+                }
+            }
             _ if cards_drawn.is_some_and(|amount| amount >= 3) => 9_200,
             _ if counters => 8_900,
             _ if removes => 8_400,
@@ -614,6 +725,85 @@ impl HandcraftedPolicy {
             Some(_) | None => 6_200,
         };
         base + target_score
+    }
+
+    fn activated_target_score(
+        observation: &PlayerObservation,
+        target: Target,
+        behavior: Option<CardBehavior>,
+        declarative: Option<DeclarativeSpellProfile>,
+    ) -> i32 {
+        if behavior == Some(CardBehavior::OrcishMechanics) {
+            return Self::damage_target_score(observation, target, 2);
+        }
+        if behavior == Some(CardBehavior::Triskelion) {
+            return Self::damage_target_score(observation, target, 1);
+        }
+        if let Some(amount) = declarative.and_then(|profile| profile.damage) {
+            return Self::damage_target_score(observation, target, amount);
+        }
+        if declarative.is_some_and(|profile| {
+            profile.has(DeclarativeSpellProfile::REMOVES | DeclarativeSpellProfile::TAPS)
+        }) {
+            return Self::removal_target_score(observation, target);
+        }
+        if declarative.is_some_and(|profile| profile.has(DeclarativeSpellProfile::APPLIES)) {
+            return match target {
+                Target::Permanent(id) => observation
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.id == id)
+                    .map_or(-10_000, |permanent| {
+                        let useful_combat_window = observation.step == Step::DeclareBlockers
+                            || (observation.step == Step::CombatDamage
+                                && observation.regular_combat_damage_pending);
+                        if permanent.controller == observation.viewer
+                            && useful_combat_window
+                            && (permanent.attacking || permanent.blocking.is_some())
+                        {
+                            1_500
+                        } else {
+                            -10_000
+                        }
+                    }),
+                Target::Player(_) | Target::Card(_) | Target::Spell(_) => -10_000,
+            };
+        }
+        Self::target_score(observation, target)
+    }
+
+    fn discard_source_cost(
+        &self,
+        source_definition: Option<CardDefinitionId>,
+        origin: AbilityOrigin,
+    ) -> i32 {
+        let Some(source_definition) = source_definition else {
+            return 0;
+        };
+        let AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } = origin
+        else {
+            return 0;
+        };
+        if definition != source_definition {
+            return 0;
+        }
+        self.catalog
+            .get(definition)
+            .and_then(|card| card.part(part))
+            .and_then(|part| part.rules.ability(ability))
+            .and_then(|ability| match ability.definition {
+                DeclarativeAbilityDef::Activated(definition)
+                    if definition.costs.contains(&AbilityCostDef::DiscardSource) =>
+                {
+                    Some(self.card_value(source_definition))
+                }
+                _ => None,
+            })
+            .unwrap_or(0)
     }
 
     fn score_ability(
@@ -625,7 +815,8 @@ impl HandcraftedPolicy {
         sacrifice: Option<GameObjectId>,
         x: u16,
     ) -> i32 {
-        let source_definition = Self::permanent_definition(observation, source);
+        let source_definition = Self::permanent_definition(observation, source)
+            .or_else(|| Self::hand_definition(observation, source));
         let behavior = source_definition.and_then(|id| self.behavior(id));
         let declarative = source_definition
             .and_then(|definition| self.declarative_activated_profile(definition, ability));
@@ -634,11 +825,17 @@ impl HandcraftedPolicy {
             .flat_map(crate::TargetSelection::targets)
             .next()
             .copied();
-        let target_score = Self::ability_target_score(observation, targets, behavior, declarative);
+        let target_score = targets
+            .iter()
+            .flat_map(crate::TargetSelection::targets)
+            .copied()
+            .map(|value| Self::activated_target_score(observation, value, behavior, declarative))
+            .sum::<i32>();
         let sacrifice_cost = sacrifice
             .filter(|card| *card != source)
             .and_then(|card| Self::permanent_definition(observation, card))
             .map_or(0, |definition| self.card_value(definition));
+        let discard_source_cost = self.discard_source_cost(source_definition, ability);
         let score = match behavior {
             Some(CardBehavior::ChaosOrb | CardBehavior::OrcishMechanics) => 7_200 + target_score,
             // Animating a Factory that is already a creature does nothing but
@@ -730,37 +927,7 @@ impl HandcraftedPolicy {
         {
             return -1_000;
         }
-        score - sacrifice_cost
-    }
-
-    /// What the chosen targets are worth, read through whatever the ability
-    /// is going to do to them.
-    fn ability_target_score(
-        observation: &PlayerObservation,
-        targets: &[crate::TargetSelection],
-        behavior: Option<CardBehavior>,
-        declarative: Option<DeclarativeSpellProfile>,
-    ) -> i32 {
-        targets
-            .iter()
-            .flat_map(crate::TargetSelection::targets)
-            .copied()
-            .map(|value| {
-                if behavior == Some(CardBehavior::OrcishMechanics) {
-                    Self::damage_target_score(observation, value, 2)
-                } else if behavior == Some(CardBehavior::Triskelion) {
-                    Self::damage_target_score(observation, value, 1)
-                } else if let Some(amount) = declarative.and_then(|profile| profile.damage) {
-                    Self::damage_target_score(observation, value, amount)
-                } else if declarative.is_some_and(|profile| {
-                    profile.has(DeclarativeSpellProfile::REMOVES | DeclarativeSpellProfile::TAPS)
-                }) {
-                    Self::removal_target_score(observation, value)
-                } else {
-                    Self::target_score(observation, value)
-                }
-            })
-            .sum()
+        score - sacrifice_cost - discard_source_cost
     }
 
     /// Whether the ability changes nothing a greedy policy can use: a

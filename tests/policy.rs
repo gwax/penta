@@ -1,9 +1,11 @@
-use penta::game::{PermanentObservation, StackObjectKind, StackObservation};
+use penta::card::{self, cards};
+use penta::game::{PermanentObservation, StackObservation};
 use penta::poc;
 use penta::{
-    AbilityId, AbilityOrigin, Action, BasicLandType, CardInstanceId, CardPartId, CastChoices, Game,
-    GameResult, HandcraftedPolicy, ManaPool, PlayOptionId, PlayerId, PlayerObservation, Policy,
-    RandomPolicy, Step, Target, TargetSelection, TargetSlotId, play_game,
+    AbilityId, AbilityOrigin, Action, AlternativeCostId, BasicLandType, CardInstanceId, CardPartId,
+    CastChoices, CastSignature, CostConfiguration, Game, GameResult, HandcraftedPolicy, ManaPool,
+    PlayOptionId, PlayerId, PlayerObservation, Policy, RandomPolicy, SpellForm, StackObjectKind,
+    Step, Target, TargetSelection, TargetSlotId, play_game,
 };
 
 const ACTION_LIMIT: usize = 50_000;
@@ -28,6 +30,7 @@ fn policy_observation(
         active_player: PlayerId::One,
         priority: PlayerId::One,
         step: Step::PrecombatMain,
+        regular_combat_damage_pending: false,
         life_totals: [20, 20],
         mana_pools: [ManaPool::default(), ManaPool::default()],
         hand: Vec::new(),
@@ -66,6 +69,50 @@ fn permanent(
         flying: false,
         can_attack: false,
         entered_this_turn: false,
+    }
+}
+
+fn stack_object(
+    id: u32,
+    definition: penta::CardDefinitionId,
+    controller: PlayerId,
+    kind: StackObjectKind,
+    targets: Vec<Target>,
+) -> StackObservation {
+    StackObservation {
+        id: CardInstanceId(id),
+        kind,
+        source: None,
+        ability: None,
+        ability_text: None,
+        definition,
+        controller,
+        counterable: true,
+        signature: (kind == StackObjectKind::Spell).then(|| {
+            CastSignature::from_validated_choices(
+                SpellForm::Part(CardPartId::PRIMARY),
+                CastChoices::default(),
+            )
+        }),
+        targets,
+        chosen_permanents: Vec::new(),
+        x: 0,
+    }
+}
+
+const BLOODRUSH: AbilityOrigin = AbilityOrigin::Printed {
+    definition: cards::GHOR_CLAN_RAMPAGER,
+    part: CardPartId::PRIMARY,
+    ability: AbilityId(1),
+};
+
+fn bloodrush_action(source: CardInstanceId, target: CardInstanceId) -> Action {
+    Action::ActivateAbility {
+        source,
+        ability: BLOODRUSH,
+        targets: activated_targets(Target::Permanent(target)),
+        sacrifice: None,
+        x: 0,
     }
 }
 
@@ -641,4 +688,256 @@ fn handcrafted_animates_a_factory_once_rather_than_every_priority() {
         Some(Action::PassPriority),
         "animating a Factory that is already a creature only burns mana",
     );
+}
+
+#[test]
+fn handcrafted_bloodrush_prefers_its_own_attacking_creature() {
+    let source = CardInstanceId(100);
+    let own_attacker_id = CardInstanceId(101);
+    let opposing_attacker_id = CardInstanceId(102);
+    let mut own_attacker = permanent(
+        own_attacker_id.0,
+        cards::SAVANNAH_LIONS,
+        PlayerId::One,
+        Some(2),
+        Some(1),
+    );
+    own_attacker.attacking = true;
+    let mut opposing_attacker = permanent(
+        opposing_attacker_id.0,
+        cards::SAVANNAH_LIONS,
+        PlayerId::Two,
+        Some(2),
+        Some(1),
+    );
+    opposing_attacker.attacking = true;
+    let own_action = bloodrush_action(source, own_attacker_id);
+    let mut observation = policy_observation(
+        vec![own_attacker, opposing_attacker],
+        vec![
+            Action::PassPriority,
+            bloodrush_action(source, opposing_attacker_id),
+            own_action.clone(),
+        ],
+    );
+    observation.step = Step::DeclareBlockers;
+    observation.hand = vec![(source, cards::GHOR_CLAN_RAMPAGER)];
+    let mut policy = HandcraftedPolicy::new(card::catalog().unwrap());
+
+    assert_eq!(policy.choose_action(&observation), Some(own_action));
+}
+
+#[test]
+fn handcrafted_bloodrush_passes_when_only_an_opposing_attacker_is_available() {
+    let source = CardInstanceId(100);
+    let opposing_attacker_id = CardInstanceId(102);
+    let mut opposing_attacker = permanent(
+        opposing_attacker_id.0,
+        cards::SAVANNAH_LIONS,
+        PlayerId::Two,
+        Some(2),
+        Some(1),
+    );
+    opposing_attacker.attacking = true;
+    let mut observation = policy_observation(
+        vec![opposing_attacker],
+        vec![
+            Action::PassPriority,
+            bloodrush_action(source, opposing_attacker_id),
+        ],
+    );
+    observation.step = Step::DeclareBlockers;
+    observation.hand = vec![(source, cards::GHOR_CLAN_RAMPAGER)];
+    let mut policy = HandcraftedPolicy::new(card::catalog().unwrap());
+
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(Action::PassPriority)
+    );
+}
+
+#[test]
+fn handcrafted_bloodrush_waits_for_blockers_and_stops_after_damage() {
+    for step in [
+        Step::DeclareAttackers,
+        Step::CombatDamage,
+        Step::EndOfCombat,
+    ] {
+        let source = CardInstanceId(100);
+        let attacker_id = CardInstanceId(101);
+        let mut attacker = permanent(
+            attacker_id.0,
+            cards::SAVANNAH_LIONS,
+            PlayerId::One,
+            Some(2),
+            Some(1),
+        );
+        attacker.attacking = true;
+        let mut observation = policy_observation(
+            vec![attacker],
+            vec![Action::PassPriority, bloodrush_action(source, attacker_id)],
+        );
+        observation.step = step;
+        observation.hand = vec![(source, cards::GHOR_CLAN_RAMPAGER)];
+        let mut policy = HandcraftedPolicy::new(card::catalog().unwrap());
+
+        assert_eq!(
+            policy.choose_action(&observation),
+            Some(Action::PassPriority),
+            "Bloodrush should not be spent during {step:?}",
+        );
+    }
+}
+
+#[test]
+fn handcrafted_bloodrush_is_used_between_strike_damage_waves() {
+    let source = CardInstanceId(100);
+    let attacker_id = CardInstanceId(101);
+    let mut attacker = permanent(
+        attacker_id.0,
+        cards::SAVANNAH_LIONS,
+        PlayerId::One,
+        Some(2),
+        Some(1),
+    );
+    attacker.attacking = true;
+    let bloodrush = bloodrush_action(source, attacker_id);
+    let mut observation = policy_observation(
+        vec![attacker],
+        vec![Action::PassPriority, bloodrush.clone()],
+    );
+    observation.step = Step::CombatDamage;
+    observation.regular_combat_damage_pending = true;
+    observation.hand = vec![(source, cards::GHOR_CLAN_RAMPAGER)];
+    let mut policy = HandcraftedPolicy::new(card::catalog().unwrap());
+
+    assert_eq!(policy.choose_action(&observation), Some(bloodrush));
+}
+
+#[test]
+fn handcrafted_does_not_overload_counterflux_into_an_empty_stack() {
+    let source = CardInstanceId(100);
+    let overload = Action::CastSpell {
+        card: source,
+        choices: CastChoices::default().with_costs(CostConfiguration::new(
+            Some(AlternativeCostId(2)),
+            Vec::new(),
+        )),
+        sacrifices: Vec::new(),
+    };
+    let mut observation = policy_observation(Vec::new(), vec![Action::PassPriority, overload]);
+    observation.hand = vec![(source, cards::COUNTERFLUX)];
+    let mut policy = HandcraftedPolicy::new(card::catalog().unwrap());
+
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(Action::PassPriority)
+    );
+}
+
+#[test]
+fn handcrafted_does_not_counter_an_observed_uncounterable_spell() {
+    let source = CardInstanceId(100);
+    let threat = CardInstanceId(200);
+    let normal = Action::CastSpell {
+        card: source,
+        choices: CastChoices::default().with_targets(vec![TargetSelection::single(
+            TargetSlotId(0),
+            Target::Spell(threat),
+        )]),
+        sacrifices: Vec::new(),
+    };
+    let mut observation = policy_observation(Vec::new(), vec![Action::PassPriority, normal]);
+    observation.hand = vec![(source, cards::COUNTERFLUX)];
+    let mut uncounterable = stack_object(
+        threat.0,
+        cards::COUNTERFLUX,
+        PlayerId::Two,
+        StackObjectKind::Spell,
+        Vec::new(),
+    );
+    uncounterable.counterable = false;
+    observation.stack = vec![uncounterable];
+    let mut policy = HandcraftedPolicy::new(card::catalog().unwrap());
+
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(Action::PassPriority)
+    );
+}
+
+#[test]
+fn handcrafted_overload_counts_only_effective_unanswered_spells() {
+    let source = CardInstanceId(100);
+    let answered = CardInstanceId(200);
+    let uncounterable = CardInstanceId(201);
+    let ability = CardInstanceId(202);
+    let overload = Action::CastSpell {
+        card: source,
+        choices: CastChoices::default().with_costs(CostConfiguration::new(
+            Some(AlternativeCostId(2)),
+            Vec::new(),
+        )),
+        sacrifices: Vec::new(),
+    };
+    let mut observation =
+        policy_observation(Vec::new(), vec![Action::PassPriority, overload.clone()]);
+    observation.hand = vec![(source, cards::COUNTERFLUX)];
+    let mut uncounterable_spell = stack_object(
+        uncounterable.0,
+        cards::COUNTERFLUX,
+        PlayerId::Two,
+        StackObjectKind::Spell,
+        Vec::new(),
+    );
+    uncounterable_spell.counterable = false;
+    observation.stack = vec![
+        stack_object(
+            answered.0,
+            cards::SERRA_ANGEL,
+            PlayerId::Two,
+            StackObjectKind::Spell,
+            Vec::new(),
+        ),
+        uncounterable_spell,
+        stack_object(
+            ability.0,
+            cards::SAVANNAH_LIONS,
+            PlayerId::Two,
+            StackObjectKind::ActivatedAbility,
+            Vec::new(),
+        ),
+        stack_object(
+            203,
+            cards::COUNTERSPELL,
+            PlayerId::One,
+            StackObjectKind::Spell,
+            vec![Target::Spell(answered)],
+        ),
+    ];
+    let mut policy = HandcraftedPolicy::new(card::catalog().unwrap());
+
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(Action::PassPriority),
+        "uncounterable, already-answered, and nonspell objects provide no overload value",
+    );
+
+    observation.stack = vec![
+        stack_object(
+            210,
+            cards::SERRA_ANGEL,
+            PlayerId::Two,
+            StackObjectKind::Spell,
+            Vec::new(),
+        ),
+        stack_object(
+            211,
+            cards::TRISKELION,
+            PlayerId::Two,
+            StackObjectKind::Spell,
+            Vec::new(),
+        ),
+    ];
+    assert_eq!(policy.choose_action(&observation), Some(overload));
 }

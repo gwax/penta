@@ -196,10 +196,31 @@ pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::ne
     )
     .with_abilities(&[
         abilities::trample(),
-        AbilityDef::not_implemented(
+        abilities::bloodrush(
+            mana_cost!("{R}{G}"),
             "Bloodrush — {R}{G}, Discard this card: Target attacking creature gets +4/+4 and gains trample until end of turn.",
-            "The bloodrush activated ability is not executed.",
-        ),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(4),
+                        toughness: ValueDef::Constant(4),
+                    },
+                    AppliedEffectDef::GrantAbility(&abilities::trample()),
+                ]),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "attacking creature",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Attacking,
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )]),
     ]),
 );
 
@@ -315,9 +336,7 @@ pub(in crate::card::sets) static SEPULCHRAL_PRIMORDIAL: CardRecord = CardRecord:
         4,
     )
     .with_abilities(&[
-        abilities::intimidate().with_text(
-            "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)",
-        ),
+        abilities::intimidate(),
         AbilityDef::not_implemented(
             "When this creature enters, for each opponent, you may put up to one target creature card from that player's graveyard onto the battlefield under your control.",
             "The enters-the-battlefield reanimation trigger is not executed.",

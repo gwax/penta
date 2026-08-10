@@ -106,9 +106,7 @@ pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new
     "Ray of Revelation",
     CardArt::new("d7e2c5a4-cf92-46bd-9033-8036436488cb", "Cliff Childs"),
     CardSet::DarkAscension,
-    CardRules::new_instant(mana_cost!("{1}{W}"))
-        .with_flashback(mana_cost!("{G}"))
-        .with_abilities(&[
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[
         AbilityDef::spell(
             "Destroy target enchantment.",
             EffectDef::Destroy {
@@ -126,9 +124,7 @@ pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new
                 owner: None,
             },
         )]),
-        abilities::flashback(
-            "Flashback {G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-        ),
+        abilities::flashback(mana_cost!("{G}")),
     ]),
 );
 

@@ -152,9 +152,7 @@ pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
         1,
     )
     .with_abilities(&[
-        abilities::intimidate().with_text(
-            "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)",
-        ),
+        abilities::intimidate(),
         AbilityDef::triggered(
             "When this creature enters, target opponent reveals their hand. You choose a green or white creature card from it and exile that card.",
             TriggerEventDef::ZoneChanged {

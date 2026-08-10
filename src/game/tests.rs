@@ -1,17 +1,19 @@
 use super::*;
 use crate::card::abilities;
+use crate::mana_cost;
 use crate::poc::{self, cards};
 use crate::{
     AbilityTargetDef, AbilityTargetPredicate, AdditionalCostDef, AdditionalCostId,
-    AlternativeCostDef, AlternativeCostId, CardComposition, CardDefinition, CardEffectStatus,
-    CardInstanceId, CardPart, CardPartId, CardPrinting, CardRules, CardStructure, CastChoices,
-    DoubleFacedKind, LandEntry, ManaSpendEffectDef, ModeDef, ModeSetDef, PlayOptionDef,
-    PlayOptionId, PlayerRelation, SpellForm, StackObjectId, TargetPredicate, TargetSelection,
-    TargetSlotDef, TargetSlotId,
+    AlternativeCastManaCostDef, AlternativeCostDef, AlternativeCostId, CardComposition,
+    CardDefinition, CardEffectStatus, CardInstanceId, CardPart, CardPartId, CardPrinting,
+    CardRules, CardStructure, CastChoices, DoubleFacedKind, LandEntry, ManaSpendEffectDef, ModeDef,
+    ModeSetDef, PlayOptionDef, PlayOptionId, PlayerRelation, SpellForm, StackObjectId,
+    TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId,
 };
 
 static TEST_FLYING_ABILITY: [AbilityDef; 1] = [abilities::flying()];
 static TEST_FLYING_TRAMPLE_ABILITIES: [AbilityDef; 2] = [abilities::flying(), abilities::trample()];
+static CARD_COST_FLASHBACK: AbilityDef = abilities::flashback_for_card_mana_cost();
 
 fn ready_game() -> Game {
     let deck = poc::mono_red_atog();
@@ -24,6 +26,8 @@ fn ready_game() -> Game {
     game.stack.clear();
     game.pending_decisions.clear();
     game.pending_combat_attackers.clear();
+    game.combat_damage_stage = CombatDamageStage::NotStarted;
+    game.combat_blocked_attackers.clear();
     for player in &mut game.players {
         player.hand.clear();
         player.graveyard.clear();
@@ -138,6 +142,7 @@ fn spell(id: u32, definition: CardDefinitionId, controller: PlayerId, x: u16) ->
         chosen_permanents: Vec::new(),
         applied_effects: Vec::new(),
         text_changes: Vec::new(),
+        cast_via_flashback: false,
         is_copy: false,
     }
 }
@@ -906,7 +911,7 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
             slot_id,
             Target::Player(PlayerId::Two),
         )]);
-    let (signature, cost, _) = game
+    let (signature, cost, _, _) = game
         .validated_cast_signature(PlayerId::One, card_id, &valid)
         .expect("all structured choices are recognized and payable");
     assert_eq!(signature.play_option(), option_id);
@@ -974,6 +979,82 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
                 .is_none(),
             "invalid structured choices were accepted: {choices:?}",
         );
+    }
+}
+
+#[test]
+fn cost_configuration_visitor_preserves_option_order() {
+    let definition = CardDefinition::new(
+        CardDefinitionId(10_201),
+        "Ordered Costs",
+        CardSet::Alpha,
+        false,
+        CardBehavior::Unsupported,
+    );
+    let mut option = PlayOptionDef::cast(
+        PlayOptionId::DEFAULT,
+        "Cast Ordered Costs",
+        SpellForm::Part(CardPartId::PRIMARY),
+        ManaCost::new(1, 0),
+        CardEffectStatus::Implemented,
+    );
+    let alternatives = [AlternativeCostId(3), AlternativeCostId(7)];
+    let additional = [AdditionalCostId(11), AdditionalCostId(13)];
+    option.alternative_costs = alternatives
+        .into_iter()
+        .map(|id| AlternativeCostDef {
+            id,
+            label: format!("Alternative {}", id.0),
+            mana_cost: ManaCost::new(1, 0),
+        })
+        .collect();
+    option.additional_costs = additional
+        .into_iter()
+        .map(|id| AdditionalCostDef {
+            id,
+            label: format!("Additional {}", id.0),
+            mana_cost: Some(ManaCost::new(1, 0)),
+        })
+        .collect();
+
+    let game = ready_game();
+    let mut actual = Vec::new();
+    assert!(
+        game.visit_cost_configurations(
+            &definition,
+            GameObjectId(10_201),
+            &option,
+            CastSourceZone::Hand,
+            |configuration| {
+                actual.push(configuration);
+                ControlFlow::Continue(())
+            },
+        )
+        .is_continue()
+    );
+
+    let additional_sets = [
+        vec![],
+        vec![additional[0]],
+        vec![additional[1]],
+        vec![additional[0], additional[1]],
+    ];
+    let expected = [None, Some(alternatives[0]), Some(alternatives[1])]
+        .into_iter()
+        .flat_map(|alternative| {
+            additional_sets
+                .iter()
+                .cloned()
+                .map(move |additional| CostConfiguration::new(alternative, additional))
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(actual, expected);
+    for invalid in [
+        vec![additional[1], additional[0]],
+        vec![additional[0], additional[0]],
+        vec![AdditionalCostId(99)],
+    ] {
+        assert!(!actual.contains(&CostConfiguration::new(None, invalid)));
     }
 }
 
@@ -2541,6 +2622,36 @@ fn swords_cannot_target_order_of_the_ebon_hand() {
 
     let swords_action = cast_action(swords.id, vec![Target::Permanent(order_id)], Vec::new(), 0);
     assert!(!game.legal_actions(PlayerId::One).contains(&swords_action));
+}
+
+#[test]
+fn order_of_leitbur_can_gain_first_strike() {
+    let mut game = ready_game();
+    let order = creature(10_000, cards::ORDER_OF_LEITBUR, PlayerId::One);
+    let order_id = order.card.id;
+    game.battlefield.push(order);
+    game.players[0].mana_pool.white = 1;
+    let activation = Action::ActivateAbility {
+        source: order_id,
+        ability: activated_ability_for(&game, order_id, 0),
+        targets: Vec::new(),
+        sacrifice: None,
+        x: 0,
+    };
+
+    assert!(game.legal_actions(PlayerId::One).contains(&activation));
+    game.apply(PlayerId::One, activation).unwrap();
+    pass_priority_pair(&mut game);
+
+    let order = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == order_id)
+        .unwrap();
+    assert!(
+        game.permanent_has_executable_keyword(order, KeywordAbility::FirstStrike),
+        "the resolved declarative activation grants executable first strike",
+    );
 }
 
 #[test]
@@ -4395,6 +4506,381 @@ fn attacker_controller_assigns_damage_freely_across_multiple_blockers() {
 }
 
 #[test]
+fn first_strike_kills_a_normal_blocker_before_it_can_hit_back() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut knight = creature(10_000, cards::BLACK_KNIGHT, PlayerId::One);
+    knight.attacking = true;
+    let knight_id = knight.card.id;
+    let mut blocker = creature(10_001, cards::ATOG, PlayerId::Two);
+    blocker.blocking = Some(knight_id);
+    let blocker_id = blocker.card.id;
+    game.battlefield = vec![knight, blocker];
+    let opponent_life = game.players[1].life;
+
+    game.advance_step();
+
+    assert_eq!(game.step, Step::CombatDamage);
+    assert!(game.regular_combat_damage_pending());
+    assert!(
+        game.observe(PlayerId::One).regular_combat_damage_pending,
+        "the public observation distinguishes the priority window between damage waves",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != blocker_id),
+        "the 2/2 first striker kills the 1/2 blocker in the strike wave",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == knight_id)
+            .unwrap()
+            .damage,
+        0,
+        "the normal blocker does not hit back in the strike wave",
+    );
+
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.step,
+        Step::CombatDamage,
+        "a second combat-damage step begins after both players get priority",
+    );
+    assert!(!game.regular_combat_damage_pending());
+    assert!(
+        !game.observe(PlayerId::One).regular_combat_damage_pending,
+        "ordinary priority after regular damage is not an inter-wave window",
+    );
+    assert_eq!(
+        game.players[1].life, opponent_life,
+        "killing the blocker does not make the first striker unblocked later",
+    );
+    assert_eq!(
+        game.events()
+            .iter()
+            .filter(|event| matches!(
+                event,
+                GameEvent::StepChanged {
+                    step: Step::CombatDamage,
+                    ..
+                }
+            ))
+            .count(),
+        2,
+        "both strike waves are observable as CombatDamage steps",
+    );
+}
+
+#[test]
+fn first_strike_blocker_kills_a_normal_attacker_before_it_deals_damage() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    let mut knight = creature(10_001, cards::BLACK_KNIGHT, PlayerId::Two);
+    knight.blocking = Some(attacker_id);
+    let knight_id = knight.card.id;
+    game.battlefield = vec![attacker, knight];
+
+    game.advance_step();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != attacker_id),
+        "the normal attacker dies during the first-strike damage step",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == knight_id)
+            .unwrap()
+            .damage,
+        0,
+        "the normal attacker never deals its combat damage",
+    );
+}
+
+#[test]
+fn double_strike_hits_an_unblocked_player_in_both_damage_steps() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    attacker
+        .temporary_keywords
+        .push(KeywordAbility::DoubleStrike);
+    game.battlefield.push(attacker);
+    let life_before = game.players[1].life;
+
+    game.advance_step();
+    assert_eq!(game.players[1].life, life_before - 2);
+
+    pass_priority_pair(&mut game);
+    assert_eq!(game.step, Step::CombatDamage);
+    assert_eq!(
+        game.players[1].life,
+        life_before - 4,
+        "double strike deals damage once in each combat-damage step",
+    );
+}
+
+#[test]
+fn double_striker_stays_blocked_after_killing_its_only_blocker() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    attacker
+        .temporary_keywords
+        .push(KeywordAbility::DoubleStrike);
+    let attacker_id = attacker.card.id;
+    let mut blocker = creature(10_001, cards::ATOG, PlayerId::Two);
+    blocker.blocking = Some(attacker_id);
+    let blocker_id = blocker.card.id;
+    game.battlefield = vec![attacker, blocker];
+    let life_before = game.players[1].life;
+
+    game.advance_step();
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != blocker_id),
+        "the blocker dies in the first damage step",
+    );
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[1].life, life_before,
+        "a blocked nontrampling attacker cannot redirect its second hit to the player",
+    );
+}
+
+#[test]
+fn double_striker_can_trample_after_killing_its_only_blocker() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_000, cards::BALL_LIGHTNING, PlayerId::One);
+    attacker.attacking = true;
+    attacker
+        .temporary_keywords
+        .push(KeywordAbility::DoubleStrike);
+    let attacker_id = attacker.card.id;
+    let mut blocker = creature(10_001, cards::ATOG, PlayerId::Two);
+    blocker.blocking = Some(attacker_id);
+    game.battlefield = vec![attacker, blocker];
+    let life_before = game.players[1].life;
+
+    game.advance_step();
+    assert_eq!(
+        game.players[1].life,
+        life_before - 4,
+        "the strike wave assigns lethal to the blocker and tramples over",
+    );
+
+    pass_priority_pair(&mut game);
+    assert_eq!(
+        game.players[1].life,
+        life_before - 10,
+        "trample can assign the whole second hit after every blocker has left",
+    );
+}
+
+#[test]
+fn double_strike_recomputes_multi_blocker_assignment_for_the_second_step() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    attacker
+        .temporary_keywords
+        .push(KeywordAbility::DoubleStrike);
+    let attacker_id = attacker.card.id;
+    let mut first = creature(10_001, cards::SERRA_ANGEL, PlayerId::Two);
+    first.blocking = Some(attacker_id);
+    let mut second = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two);
+    second.blocking = Some(attacker_id);
+    let mut blocker_ids = [first.card.id, second.card.id];
+    blocker_ids.sort_unstable();
+    game.battlefield = vec![attacker, first, second];
+
+    game.advance_step();
+    let first_assignment = Action::AssignCombatDamage {
+        attacker: attacker_id,
+        assignments: blocker_ids
+            .iter()
+            .copied()
+            .zip([2, 0])
+            .map(|(recipient, amount)| CombatDamageAssignment {
+                recipient: Target::Permanent(recipient),
+                amount,
+            })
+            .collect(),
+    };
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&first_assignment)
+    );
+    game.apply(PlayerId::One, first_assignment).unwrap();
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker_id)
+            .unwrap()
+            .combat_damage_assignment
+            .is_empty(),
+    );
+
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.pending_combat_attackers, vec![attacker_id]);
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker_id)
+            .unwrap()
+            .combat_damage_assignment
+            .is_empty(),
+        "the first wave's assignment cannot leak into the regular wave",
+    );
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::AssignCombatDamage { attacker, .. } if *attacker == attacker_id)),
+        "the still-double-striking attacker assigns again against the surviving blockers",
+    );
+}
+
+#[test]
+fn first_strike_step_does_not_prompt_an_ineligible_multi_blocked_attacker() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut first_striker = creature(10_000, cards::BLACK_KNIGHT, PlayerId::One);
+    first_striker.attacking = true;
+    let mut normal_attacker = creature(10_001, cards::SU_CHI, PlayerId::One);
+    normal_attacker.attacking = true;
+    let normal_id = normal_attacker.card.id;
+    let mut first_blocker = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two);
+    first_blocker.blocking = Some(normal_id);
+    let mut second_blocker = creature(10_003, cards::SERRA_ANGEL, PlayerId::Two);
+    second_blocker.blocking = Some(normal_id);
+    game.battlefield = vec![
+        first_striker,
+        normal_attacker,
+        first_blocker,
+        second_blocker,
+    ];
+
+    game.advance_step();
+
+    assert!(
+        game.pending_combat_attackers.is_empty(),
+        "the normal attacker is not asked to assign during the strike wave",
+    );
+    pass_priority_pair(&mut game);
+    assert_eq!(
+        game.pending_combat_attackers,
+        vec![normal_id],
+        "the normal attacker assigns when the regular damage step begins",
+    );
+}
+
+#[test]
+fn losing_double_strike_between_damage_steps_prevents_the_second_hit() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    attacker
+        .temporary_keywords
+        .push(KeywordAbility::DoubleStrike);
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let life_before = game.players[1].life;
+
+    game.advance_step();
+    assert_eq!(game.players[1].life, life_before - 2);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == attacker_id)
+        .unwrap()
+        .temporary_keywords
+        .retain(|keyword| *keyword != KeywordAbility::DoubleStrike);
+
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[1].life,
+        life_before - 2,
+        "a combatant in the strike-wave snapshot needs double strike now to hit again",
+    );
+}
+
+#[test]
+fn a_normal_attacker_that_gains_a_strike_keyword_still_hits_in_the_regular_wave() {
+    for gained_keyword in [KeywordAbility::FirstStrike, KeywordAbility::DoubleStrike] {
+        let mut game = ready_game();
+        game.step = Step::DeclareBlockers;
+        let mut first_striker = creature(10_000, cards::BLACK_KNIGHT, PlayerId::One);
+        first_striker.attacking = true;
+        let mut normal_attacker = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One);
+        normal_attacker.attacking = true;
+        let normal_id = normal_attacker.card.id;
+        game.battlefield = vec![first_striker, normal_attacker];
+
+        game.advance_step();
+        let life_after_first_wave = game.players[1].life;
+        game.battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == normal_id)
+            .unwrap()
+            .temporary_keywords
+            .push(gained_keyword);
+
+        pass_priority_pair(&mut game);
+
+        assert_eq!(
+            game.players[1].life,
+            life_after_first_wave - 2,
+            "a normal combatant that gains {gained_keyword:?} after the strike wave remains eligible for regular damage",
+        );
+    }
+}
+
+#[test]
+fn a_first_striker_that_gains_double_strike_hits_in_the_regular_wave() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_000, cards::BLACK_KNIGHT, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let life_before = game.players[1].life;
+
+    game.advance_step();
+    assert_eq!(game.players[1].life, life_before - 2);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == attacker_id)
+        .unwrap()
+        .temporary_keywords
+        .push(KeywordAbility::DoubleStrike);
+
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[1].life,
+        life_before - 4,
+        "gaining double strike makes a first-wave combatant eligible again",
+    );
+}
+
+#[test]
 fn a_single_blocker_needs_no_damage_assignment() {
     let mut game = ready_game();
     let mut attacker = creature(10_000, cards::BALL_LIGHTNING, PlayerId::One);
@@ -5821,6 +6307,72 @@ fn a_nonmatching_grant_site_still_advances_the_structural_origin() {
     );
 }
 
+#[test]
+fn nonmatching_composite_grant_sites_still_advance_structural_origins() {
+    static GRANTED_ABILITY: AbilityDef = abilities::flying();
+    static MISSED_COMPONENTS: [AppliedEffectDef; 1] =
+        [AppliedEffectDef::GrantAbility(&GRANTED_ABILITY)];
+    static EFFECTS: [EffectDef; 2] = [
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::Composite(&MISSED_COMPONENTS),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    ];
+    static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+        "The attached permanent has flying.\nThis permanent has flying.",
+        EffectDef::Sequence(&EFFECTS),
+    )];
+    let definition_id = CardDefinitionId(10_064);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Conditional composite grant identity test card",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    let source = CardInstanceId(10_001);
+    game.battlefield
+        .push(creature(source.0, definition_id, PlayerId::One));
+
+    let granted = game
+        .effective_abilities(&game.battlefield[0])
+        .into_iter()
+        .filter_map(|effective| match effective.origin {
+            AbilityOrigin::Granted { .. } => Some(effective.origin),
+            AbilityOrigin::Printed { .. } | AbilityOrigin::IntrinsicBasicLand(_) => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        granted,
+        vec![AbilityOrigin::Granted {
+            source,
+            source_definition: definition_id,
+            source_part: CardPartId::PRIMARY,
+            source_ability: AbilityId::PRIMARY,
+            grant: GrantId(1),
+        }]
+    );
+}
+
 static COPY_GRANT_A: AbilityDef = AbilityDef::activated(
     "Gain 1 life.",
     &[],
@@ -6425,6 +6977,7 @@ fn resolving_ability_masks_an_illegal_target_in_each_frozen_slot() {
         chosen_permanents: Vec::new(),
         applied_effects: Vec::new(),
         text_changes: Vec::new(),
+        cast_via_flashback: false,
         is_copy: false,
     });
 
@@ -7317,6 +7870,8 @@ fn intimidate_only_lets_artifacts_and_matching_colours_block() {
         .push(creature(10_002, cards::JUZAM_DJINN, PlayerId::Two)); // black
     game.battlefield
         .push(creature(10_003, cards::SAVANNAH_LIONS, PlayerId::Two)); // white
+    game.battlefield
+        .push(creature(10_004, cards::JUGGERNAUT, PlayerId::Two)); // artifact
 
     let blockers: Vec<_> = game
         .blocker_actions(PlayerId::Two)
@@ -7333,6 +7888,10 @@ fn intimidate_only_lets_artifacts_and_matching_colours_block() {
     assert!(
         !blockers.contains(&CardInstanceId(10_003)),
         "a white creature may not"
+    );
+    assert!(
+        blockers.contains(&CardInstanceId(10_004)),
+        "an artifact creature may block regardless of colour",
     );
 }
 
@@ -7763,6 +8322,500 @@ fn a_counterspell_may_target_supreme_verdict_and_accomplish_nothing() {
         game.players[0].graveyard[0].definition,
         cards::SUPREME_VERDICT,
         "the Verdict resolved rather than being countered"
+    );
+}
+
+#[test]
+fn mizzium_mortars_normally_targets_one_opposing_creature() {
+    let mut game = ready_game();
+    let friendly = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    let friendly_id = friendly.card.id;
+    let opposing = creature(10_001, cards::SERRA_ANGEL, PlayerId::Two);
+    let opposing_id = opposing.card.id;
+    let hexproof = creature(10_002, cards::SIGARDA_HOST_OF_HERONS, PlayerId::Two);
+    let hexproof_id = hexproof.card.id;
+    game.battlefield.extend([friendly, opposing, hexproof]);
+    let mortars = card(10_003, cards::MIZZIUM_MORTARS, PlayerId::One);
+    game.players[0].hand.push(mortars.clone());
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    let casts = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == mortars.id))
+        .collect::<Vec<_>>();
+    assert_eq!(casts.len(), 1, "only the ordinary affordable cast is legal");
+    let Action::CastSpell { choices, .. } = &casts[0] else {
+        unreachable!("the filtered action is a spell cast")
+    };
+    assert_eq!(choices.costs().alternative(), None);
+    assert_eq!(
+        choices.iter_targets().copied().collect::<Vec<_>>(),
+        [Target::Permanent(opposing_id)]
+    );
+    assert!(!choices.iter_targets().any(|target| {
+        matches!(target, Target::Permanent(id) if *id == friendly_id || *id == hexproof_id)
+    }));
+
+    game.apply(PlayerId::One, casts.into_iter().next().unwrap())
+        .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != opposing_id),
+        "four damage destroys Serra Angel"
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == friendly_id),
+        "the friendly creature is not a legal normal target"
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == hexproof_id),
+        "the hexproof creature was not targeted"
+    );
+}
+
+#[test]
+fn overloaded_mizzium_mortars_is_targetless_and_hits_hexproof_opposing_creatures() {
+    let mut game = ready_game();
+    let friendly = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    let friendly_id = friendly.card.id;
+    let opposing = creature(10_001, cards::SERRA_ANGEL, PlayerId::Two);
+    let opposing_id = opposing.card.id;
+    let hexproof = creature(10_002, cards::SIGARDA_HOST_OF_HERONS, PlayerId::Two);
+    let hexproof_id = hexproof.card.id;
+    let mut protected = creature(10_003, cards::SAVANNAH_LIONS, PlayerId::Two);
+    protected
+        .temporary_keywords
+        .push(KeywordAbility::ProtectionFrom(ManaColor::Red));
+    let protected_id = protected.card.id;
+    game.battlefield
+        .extend([friendly, opposing, hexproof, protected]);
+    let mortars = card(10_004, cards::MIZZIUM_MORTARS, PlayerId::One);
+    game.players[0].hand.push(mortars.clone());
+    game.players[0].mana_pool.red = 3;
+    game.players[0].mana_pool.colorless = 3;
+
+    let overload = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::CastSpell { card, choices, .. }
+                    if *card == mortars.id
+                        && choices.costs().alternative() == Some(AlternativeCostId(1))
+            )
+        })
+        .expect("the overload cost is payable");
+    let Action::CastSpell { choices, .. } = &overload else {
+        unreachable!("the filtered action is a spell cast")
+    };
+    assert!(
+        choices.targets().is_empty(),
+        "overload removes every target"
+    );
+
+    game.apply(PlayerId::One, overload).unwrap();
+    assert_eq!(
+        game.observe(PlayerId::One)
+            .stack
+            .last()
+            .and_then(|object| object.ability_text.as_deref()),
+        Some("Mizzium Mortars deals 4 damage to each creature you don't control."),
+        "the stack presents the transformed spell instruction rather than only the reminder text",
+    );
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != opposing_id),
+        "the opposing 4/4 takes lethal damage"
+    );
+    let sigarda = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == hexproof_id)
+        .expect("four damage does not destroy the 5/5");
+    assert_eq!(sigarda.damage, 4, "a targetless sweep ignores hexproof");
+    let friendly = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == friendly_id)
+        .expect("Mizzium Mortars only affects creatures you don't control");
+    assert_eq!(friendly.damage, 0);
+    let protected = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == protected_id)
+        .expect("protection from red prevents Mizzium Mortars' damage");
+    assert_eq!(protected.damage, 0);
+}
+
+#[test]
+fn overloaded_mizzium_mortars_resolves_with_no_matching_creatures() {
+    let mut game = ready_game();
+    let mortars = card(10_000, cards::MIZZIUM_MORTARS, PlayerId::One);
+    game.players[0].hand.push(mortars.clone());
+    game.players[0].mana_pool.red = 3;
+    game.players[0].mana_pool.colorless = 3;
+    let choices = CastChoices::default().with_costs(CostConfiguration::new(
+        Some(AlternativeCostId(1)),
+        Vec::new(),
+    ));
+
+    game.apply(
+        PlayerId::One,
+        Action::CastSpell {
+            card: mortars.id,
+            choices,
+            sacrifices: Vec::new(),
+        },
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.stack.is_empty());
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MIZZIUM_MORTARS),
+        "the targetless spell resolves rather than fizzling"
+    );
+}
+
+#[test]
+fn overloaded_mizzium_mortars_matches_creatures_when_it_resolves() {
+    let mut game = ready_game();
+    let mortars = card(10_000, cards::MIZZIUM_MORTARS, PlayerId::One);
+    game.players[0].hand.push(mortars.clone());
+    game.players[0].mana_pool.red = 3;
+    game.players[0].mana_pool.colorless = 3;
+    let choices = CastChoices::default().with_costs(CostConfiguration::new(
+        Some(AlternativeCostId(1)),
+        Vec::new(),
+    ));
+    game.apply(
+        PlayerId::One,
+        Action::CastSpell {
+            card: mortars.id,
+            choices,
+            sacrifices: Vec::new(),
+        },
+    )
+    .unwrap();
+    let late_creature = creature(10_001, cards::SIGARDA_HOST_OF_HERONS, PlayerId::Two);
+    let late_creature_id = late_creature.card.id;
+    game.battlefield.push(late_creature);
+    pass_priority_pair(&mut game);
+
+    let late_creature = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == late_creature_id)
+        .expect("the 5/5 survives four damage");
+    assert_eq!(
+        late_creature.damage, 4,
+        "the targetless overload effect determines its recipients at resolution",
+    );
+}
+
+#[test]
+fn counterflux_normally_counters_one_opposing_spell_and_cannot_be_countered() {
+    let mut game = ready_game();
+    let threat = spell(10_000, cards::SERRA_ANGEL, PlayerId::Two, 0);
+    let threat_id = threat.id;
+    game.stack.push(threat);
+    let counterflux = card(10_001, cards::COUNTERFLUX, PlayerId::One);
+    let counterspell = card(10_002, cards::COUNTERSPELL, PlayerId::Two);
+    game.players[0].hand.push(counterflux.clone());
+    game.players[0].mana_pool.blue = 2;
+    game.players[0].mana_pool.red = 1;
+    game.players[1].hand.push(counterspell.clone());
+    game.players[1].mana_pool.blue = 2;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            counterflux.id,
+            vec![Target::Spell(threat_id)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    let counterflux_on_stack = game.stack.last().unwrap().id;
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            counterspell.id,
+            vec![Target::Spell(counterflux_on_stack)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+
+    pass_priority_pair(&mut game);
+    assert!(
+        game.stack
+            .iter()
+            .any(|object| object.id == counterflux_on_stack),
+        "Counterspell resolves but cannot counter Counterflux"
+    );
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.stack.is_empty(),
+        "Counterflux counters the original spell"
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL)
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::COUNTERSPELL)
+    );
+}
+
+#[test]
+fn counterflux_uses_not_you_for_both_casting_modes() {
+    let catalog = poc::catalog().unwrap();
+    let counterflux = catalog.get(cards::COUNTERFLUX).unwrap();
+
+    let normal = counterflux.rules.ability(AbilityId(1)).unwrap();
+    let DeclarativeAbilityDef::Spell(normal) = normal.definition else {
+        panic!("Counterflux's normal instruction should be a spell ability")
+    };
+    assert!(matches!(
+        normal.targets()[0].predicate,
+        AbilityTargetPredicate::Object {
+            controller: Some(PlayerRelation::NotYou),
+            ..
+        }
+    ));
+
+    let overload = counterflux.rules.ability(AbilityId(2)).unwrap();
+    assert!(matches!(
+        overload.effect,
+        EffectDef::Counter {
+            object: EffectRecipientDef::MatchingObjects {
+                controller: PlayerRelation::NotYou,
+                ..
+            }
+        }
+    ));
+}
+
+#[test]
+fn a_non_executable_cannot_be_countered_clause_does_not_change_gameplay() {
+    static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+        "This spell can't be countered.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::CannotBeCountered,
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )
+    .with_source_zones(&[ZoneKind::Stack])
+    .with_implementation(AbilityImplementationDef::NotImplemented {
+        explanation: "Test-only incomplete clause.",
+    })];
+    let definition_id = CardDefinitionId(20_000);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Incomplete uncounterable spell",
+        CardSet::ReturnToRavnica,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_instant(ManaCost::default()).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+    let mut game = ready_game();
+    game.catalog = CardCatalog::new([definition]).unwrap();
+    game.stack
+        .push(spell(20_000, definition_id, PlayerId::One, 0));
+
+    assert!(game.can_be_countered(&game.stack[0]));
+}
+
+#[test]
+fn a_composite_static_clause_can_make_its_source_uncounterable() {
+    static COMPONENTS: [AppliedEffectDef; 1] = [AppliedEffectDef::CannotBeCountered];
+    static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+        "This spell can't be countered.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::Composite(&COMPONENTS),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )
+    .with_source_zones(&[ZoneKind::Stack])];
+    let definition_id = CardDefinitionId(20_001);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Composite uncounterable spell",
+        CardSet::ReturnToRavnica,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_instant(ManaCost::default()).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+    let mut game = ready_game();
+    game.catalog = CardCatalog::new([definition]).unwrap();
+    game.stack
+        .push(spell(20_001, definition_id, PlayerId::One, 0));
+
+    assert!(!game.can_be_countered(&game.stack[0]));
+}
+
+#[test]
+fn a_composite_mana_spend_effect_can_make_a_spell_uncounterable() {
+    static COMPONENTS: [AppliedEffectDef; 1] = [AppliedEffectDef::CannotBeCountered];
+    let mut object = spell(20_002, cards::SAVANNAH_LIONS, PlayerId::One, 0);
+    object.applied_effects.push(AppliedStackEffect {
+        source: None,
+        effect: AppliedEffectDef::Composite(&COMPONENTS),
+    });
+    let game = ready_game();
+
+    assert!(!game.can_be_countered(&object));
+}
+
+#[test]
+fn overload_does_not_silently_discard_selected_modal_effects() {
+    static MODES: [AbilityDef; 1] = [AbilityDef::spell(
+        "Draw a card.",
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )];
+    static ABILITIES: [AbilityDef; 2] = [
+        AbilityDef::choose_one_spell("Choose one.", &MODES),
+        abilities::overload(
+            mana_cost!("{0}"),
+            "Draw two cards.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ];
+
+    let definition_id = CardDefinitionId(20_003);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Modal overload test",
+        CardSet::ReturnToRavnica,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_instant(ManaCost::default()).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+    let mut game = ready_game();
+    game.catalog = CardCatalog::new([definition]).unwrap();
+    let card = card(20_003, definition_id, PlayerId::One);
+    let card_id = card.id;
+    game.players[0].hand.push(card);
+
+    assert!(game.legal_actions(PlayerId::One).iter().all(|action| {
+        !matches!(
+            action,
+            Action::CastSpell { card, choices, .. }
+                if *card == card_id
+                    && choices.costs().alternative() == Some(AlternativeCostId(1))
+        )
+    }));
+
+    let forged = CastChoices::default()
+        .with_modes(vec![ModeId(0)])
+        .with_costs(CostConfiguration::new(
+            Some(AlternativeCostId(1)),
+            Vec::new(),
+        ));
+    assert!(
+        game.validated_cast_signature(PlayerId::One, card_id, &forged)
+            .is_none(),
+        "validation must reject overload when its selected mode effects would be dropped",
+    );
+}
+
+#[test]
+fn overloaded_counterflux_is_targetless_and_counters_each_opposing_spell() {
+    let mut game = ready_game();
+    let friendly_spell = spell(10_000, cards::SAVANNAH_LIONS, PlayerId::One, 0);
+    let friendly_id = friendly_spell.id;
+    game.stack.push(friendly_spell);
+    let mut opposing_ability = spell(10_004, cards::SAVANNAH_LIONS, PlayerId::Two, 0);
+    opposing_ability.kind = StackObjectKind::ActivatedAbility;
+    opposing_ability.source = Some(GameObjectId(99_000));
+    opposing_ability.signature = None;
+    let opposing_ability_id = opposing_ability.id;
+    game.stack.push(opposing_ability);
+    let uncounterable = spell(10_005, cards::COUNTERFLUX, PlayerId::Two, 0);
+    let uncounterable_id = uncounterable.id;
+    game.stack.push(uncounterable);
+    game.stack
+        .push(spell(10_001, cards::SERRA_ANGEL, PlayerId::Two, 0));
+    game.stack
+        .push(spell(10_002, cards::TRISKELION, PlayerId::Two, 0));
+    let counterflux = card(10_003, cards::COUNTERFLUX, PlayerId::One);
+    game.players[0].hand.push(counterflux.clone());
+    game.players[0].mana_pool.blue = 2;
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    let overload = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::CastSpell { card, choices, .. }
+                    if *card == counterflux.id
+                        && choices.costs().alternative() == Some(AlternativeCostId(2))
+            )
+        })
+        .expect("the overload cost is payable");
+    let Action::CastSpell { choices, .. } = &overload else {
+        unreachable!("the filtered action is a spell cast")
+    };
+    assert!(choices.targets().is_empty());
+
+    game.apply(PlayerId::One, overload).unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.stack.len(), 3);
+    assert!(
+        [friendly_id, opposing_ability_id, uncounterable_id]
+            .into_iter()
+            .all(|id| game.stack.iter().any(|object| object.id == id)),
+        "your spell, an opposing ability, and an uncounterable opposing spell all remain",
+    );
+    assert_eq!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .filter(|card| matches!(card.definition, cards::SERRA_ANGEL | cards::TRISKELION))
+            .count(),
+        2,
+        "each opposing spell is countered"
     );
 }
 
@@ -9392,6 +10445,144 @@ fn put_onto_battlefield_reaches_a_board_state_directly() {
     );
 }
 
+fn alternative_cast_action(
+    game: &Game,
+    player: PlayerId,
+    source: GameObjectId,
+    alternative: AlternativeCostId,
+) -> Action {
+    game.legal_actions(player)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::CastSpell { card, choices, .. }
+                    if *card == source
+                        && choices.costs().alternative() == Some(alternative)
+            )
+        })
+        .expect("the requested alternative cast is legal")
+}
+
+fn grant_card_cost_flashback(game: &mut Game, object: GameObjectId) {
+    game.temporary_ability_grants.push(TemporaryAbilityGrant {
+        object,
+        ability: &CARD_COST_FLASHBACK,
+    });
+}
+
+#[test]
+fn snapcaster_grants_an_ordinary_card_cost_flashback_ability() {
+    let catalog = poc::catalog().unwrap();
+    let snapcaster = catalog.get(cards::SNAPCASTER_MAGE).unwrap();
+    let trigger = snapcaster.rules.ability(AbilityId(1)).unwrap();
+    let EffectDef::Apply {
+        effect: AppliedEffectDef::GrantAbility(granted),
+        duration: EffectDurationDef::UntilEndOfTurn,
+        ..
+    } = trigger.effect
+    else {
+        panic!("Snapcaster's trigger should use the generic ability-grant effect")
+    };
+    assert!(matches!(
+        granted.definition,
+        DeclarativeAbilityDef::AlternativeCast(alternative)
+            if alternative.kind == AlternativeCastKindDef::Flashback
+                && alternative.mana_cost == AlternativeCastManaCostDef::ThisCardManaCost
+    ));
+}
+
+#[test]
+fn think_twice_can_be_flashed_back_and_is_exiled_after_resolving() {
+    let mut game = ready_game();
+    let spell = card(20_000, cards::THINK_TWICE, PlayerId::One);
+    let graveyard_id = spell.id;
+    game.players[0].graveyard.push(spell);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 2;
+    let library_before = game.players[0].library.len();
+
+    let action = alternative_cast_action(&game, PlayerId::One, graveyard_id, AlternativeCostId(1));
+    game.apply(PlayerId::One, action).unwrap();
+    assert!(game.players[0].graveyard.is_empty());
+    assert!(game.stack.last().unwrap().cast_via_flashback);
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.players[0].library.len(), library_before - 1);
+    assert_eq!(game.players[0].exile.len(), 1);
+    assert_eq!(game.players[0].exile[0].definition, cards::THINK_TWICE);
+}
+
+#[test]
+fn flashback_exiles_a_spell_that_is_countered_or_fizzles() {
+    // Countered.
+    let mut game = ready_game();
+    let think_twice = card(20_000, cards::THINK_TWICE, PlayerId::One);
+    let counterspell = card(20_001, cards::COUNTERSPELL, PlayerId::Two);
+    game.players[0].graveyard.push(think_twice.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 2;
+    game.players[1].hand.push(counterspell.clone());
+    game.players[1].mana_pool.blue = 2;
+    let flashback =
+        alternative_cast_action(&game, PlayerId::One, think_twice.id, AlternativeCostId(1));
+    game.apply(PlayerId::One, flashback).unwrap();
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    let flashed_back_spell = game.stack.last().unwrap().id;
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            counterspell.id,
+            vec![Target::Spell(flashed_back_spell)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::THINK_TWICE)
+    );
+
+    // All targets illegal on resolution.
+    let mut game = ready_game();
+    let enchantment = creature(20_010, cards::ENERGY_FLUX, PlayerId::Two);
+    let enchantment_id = enchantment.card.id;
+    game.battlefield.push(enchantment);
+    let ray = card(20_011, cards::RAY_OF_REVELATION, PlayerId::One);
+    game.players[0].graveyard.push(ray.clone());
+    game.players[0].mana_pool.green = 1;
+    let flashback = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::CastSpell { card, choices, .. }
+                    if *card == ray.id
+                        && choices.costs().alternative() == Some(AlternativeCostId(1))
+                        && choices.iter_targets().copied().eq([Target::Permanent(enchantment_id)])
+            )
+        })
+        .expect("Ray can target the enchantment from the graveyard");
+    game.apply(PlayerId::One, flashback).unwrap();
+    game.destroy_permanent(enchantment_id);
+    pass_priority_pair(&mut game);
+    assert!(game
+        .events
+        .iter()
+        .any(|event| matches!(event, GameEvent::SpellFizzled { definition, .. } if *definition == cards::RAY_OF_REVELATION)));
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::RAY_OF_REVELATION)
+    );
+}
+
 #[test]
 fn put_onto_battlefield_runs_the_entry_trigger() {
     // Thragtusk gains 5 life when it enters, so a board set up this way is a
@@ -9411,6 +10602,654 @@ fn put_onto_battlefield_runs_the_entry_trigger() {
     assert_eq!(game.players[0].life, 25);
 }
 
+#[test]
+fn snapcaster_grants_a_second_flashback_cost_until_cleanup() {
+    let mut game = ready_game();
+    let think_twice = card(20_000, cards::THINK_TWICE, PlayerId::One);
+    let graveyard_id = think_twice.id;
+    game.players[0].graveyard.push(think_twice);
+    let snapcaster = card(20_001, cards::SNAPCASTER_MAGE, PlayerId::One);
+    game.players[0].hand.push(snapcaster.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(snapcaster.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("Snapcaster asks for its graveyard target");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![0],
+        },
+    )
+    .unwrap();
+    assert_eq!(game.stack.len(), 1, "Snapcaster's ETB is on the stack");
+    pass_priority_pair(&mut game);
+
+    game.players[0].mana_pool.blue = 2;
+    game.players[0].mana_pool.colorless = 5;
+    let flashback_ids = game
+        .legal_actions(PlayerId::One)
+        .iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if *card == graveyard_id => {
+                choices.costs().alternative()
+            }
+            _ => None,
+        })
+        .collect::<std::collections::HashSet<_>>();
+    assert_eq!(flashback_ids.len(), 2, "printed and granted costs coexist");
+    assert!(flashback_ids.contains(&AlternativeCostId(1)));
+
+    game.finish_cleanup();
+    let after_cleanup = game
+        .legal_actions(PlayerId::One)
+        .iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == graveyard_id))
+        .count();
+    assert_eq!(after_cleanup, 1, "only printed flashback remains");
+}
+
+#[test]
+fn snapcaster_granted_flashback_uses_the_card_mana_cost_and_exiles_on_resolution() {
+    let mut game = ready_game();
+    let mortars = card(20_000, cards::MIZZIUM_MORTARS, PlayerId::One);
+    let graveyard_id = mortars.id;
+    game.players[0].graveyard.push(mortars);
+    let snapcaster = card(20_001, cards::SNAPCASTER_MAGE, PlayerId::One);
+    game.players[0].hand.push(snapcaster.clone());
+    let target = creature(20_002, cards::DESECRATION_DEMON, PlayerId::Two);
+    let target_id = target.card.id;
+    game.battlefield.push(target);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(snapcaster.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![0],
+        },
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 1;
+    let actions = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == graveyard_id))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        actions.len(),
+        1,
+        "the overload alternative is unavailable from the graveyard"
+    );
+    let Action::CastSpell { choices, .. } = &actions[0] else {
+        unreachable!("the filtered action is a cast")
+    };
+    assert_ne!(
+        choices.costs().alternative(),
+        Some(AlternativeCostId(1)),
+        "the affordable action is Snapcaster's synthetic flashback cost",
+    );
+    game.apply(PlayerId::One, actions.into_iter().next().unwrap())
+        .unwrap();
+    assert_eq!(game.players[0].mana_pool, ManaPool::default());
+    assert!(game.stack.last().unwrap().cast_via_flashback);
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == target_id)
+            .expect("Desecration Demon survives four damage")
+            .damage,
+        4,
+    );
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::MIZZIUM_MORTARS)
+    );
+}
+
+#[test]
+fn snapcaster_flashback_does_not_bypass_a_from_hand_only_fuse_option() {
+    let mut game = ready_game();
+    let catalog = poc::catalog().unwrap();
+    let mut turn_burn = catalog.get(cards::TURN_BURN).unwrap().clone();
+    for option in &mut turn_burn.play_options {
+        option.effect_status = CardEffectStatus::Implemented;
+    }
+    let lions = catalog.get(cards::SAVANNAH_LIONS).unwrap().clone();
+    game.catalog = CardCatalog::new([turn_burn, lions]).unwrap();
+    let split = card(20_000, cards::TURN_BURN, PlayerId::One);
+    let split_id = split.id;
+    game.players[0].graveyard.push(split);
+    grant_card_cost_flashback(&mut game, split_id);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 3;
+    let target = creature(20_001, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let target_id = target.card.id;
+    game.battlefield.push(target);
+
+    let graveyard_options = game
+        .legal_actions(PlayerId::One)
+        .iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if *card == split_id => {
+                Some(choices.play_option())
+            }
+            _ => None,
+        })
+        .collect::<std::collections::HashSet<_>>();
+    assert!(graveyard_options.contains(&PlayOptionId::DEFAULT));
+    assert!(graveyard_options.contains(&PlayOptionId(1)));
+    assert!(!graveyard_options.contains(&PlayOptionId(2)));
+
+    let forged_fuse = Action::CastSpell {
+        card: split_id,
+        choices: CastChoices::new(PlayOptionId(2))
+            .with_costs(CostConfiguration::new(
+                Some(AlternativeCostId(u8::MAX)),
+                Vec::new(),
+            ))
+            .with_targets(vec![
+                TargetSelection::single(TargetSlotId(0), Target::Permanent(target_id)),
+                TargetSelection::single(TargetSlotId(1), Target::Player(PlayerId::Two)),
+            ]),
+        sacrifices: Vec::new(),
+    };
+    assert!(!game.is_legal_action(PlayerId::One, &forged_fuse));
+}
+
+#[test]
+fn snapcaster_granted_recall_can_discard_every_card_in_hand_for_x() {
+    let mut game = ready_game();
+    let recall = card(20_000, cards::RECALL, PlayerId::One);
+    let recall_id = recall.id;
+    game.players[0].graveyard.push(recall);
+    grant_card_cost_flashback(&mut game, recall_id);
+    game.players[0].hand.extend([
+        card(20_001, cards::MOUNTAIN, PlayerId::One),
+        card(20_002, cards::MOUNTAIN, PlayerId::One),
+    ]);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 4;
+
+    assert!(game.legal_actions(PlayerId::One).iter().any(|action| {
+        matches!(
+            action,
+            Action::CastSpell { card, choices, .. }
+                if *card == recall_id
+                    && choices.x() == 2
+                    && choices.costs().alternative() == Some(AlternativeCostId(u8::MAX))
+        )
+    }));
+}
+
+#[test]
+fn snapcaster_flashback_cannot_be_combined_with_overload() {
+    let mut game = ready_game();
+    let mortars = card(20_000, cards::MIZZIUM_MORTARS, PlayerId::One);
+    let mortars_id = mortars.id;
+    game.players[0].graveyard.push(mortars);
+    grant_card_cost_flashback(&mut game, mortars_id);
+    game.players[0].mana_pool.red = 3;
+    game.players[0].mana_pool.colorless = 3;
+    let target = creature(20_001, cards::SERRA_ANGEL, PlayerId::Two);
+    let target_id = target.card.id;
+    game.battlefield.push(target);
+
+    let casts = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == mortars_id))
+        .collect::<Vec<_>>();
+    assert_eq!(casts.len(), 1);
+    let Action::CastSpell { choices, .. } = &casts[0] else {
+        unreachable!("the filtered action is a cast")
+    };
+    assert_eq!(
+        choices.costs().alternative(),
+        Some(AlternativeCostId(u8::MAX)),
+        "only the synthetic flashback alternative is offered from the graveyard",
+    );
+    assert_eq!(
+        choices.iter_targets().copied().collect::<Vec<_>>(),
+        [Target::Permanent(target_id)],
+        "flashback retains the ordinary targeted spell rather than the overloaded form",
+    );
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn incomplete_alternative_cast_clauses_do_not_enable_or_transform_their_costs() {
+    let definition_id = CardDefinitionId(20_100);
+    let flashback = AlternativeCostId(1);
+    let overload = AlternativeCostId(2);
+    let targets = Box::leak(
+        vec![AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "opponent",
+            AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+        )]
+        .into_boxed_slice(),
+    );
+    let abilities = Box::leak(
+        vec![
+            AbilityDef::spell(
+                "Test spell deals 1 damage to target opponent.",
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    amount: ValueDef::Constant(1),
+                },
+            )
+            .with_targets(targets),
+            AbilityDef::alternative_cast(
+                ManaCost::default(),
+                AlternativeCastKindDef::Flashback,
+                None,
+                EffectDef::None,
+            )
+            .with_implementation(AbilityImplementationDef::NotImplemented {
+                explanation: "Test-only incomplete flashback.",
+            }),
+            AbilityDef::alternative_cast(
+                ManaCost::default(),
+                AlternativeCastKindDef::Overload,
+                Some("Test spell deals 1 damage to each opponent."),
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Opponent,
+                    amount: ValueDef::Constant(1),
+                },
+            )
+            .with_implementation(AbilityImplementationDef::NotImplemented {
+                explanation: "Test-only incomplete overload.",
+            }),
+        ]
+        .into_boxed_slice(),
+    );
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Incomplete Alternatives",
+        CardSet::ReturnToRavnica,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_sorcery(ManaCost::new(1, 0)).with_abilities(abilities);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    game.catalog = CardCatalog::new([definition]).unwrap();
+    let hand = card(20_100, definition_id, PlayerId::One);
+    let graveyard = card(20_101, definition_id, PlayerId::One);
+    game.players[0].hand.push(hand.clone());
+    game.players[0].graveyard.push(graveyard.clone());
+    game.players[0].mana_pool.colorless = 1;
+
+    let hand_casts = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == hand.id))
+        .collect::<Vec<_>>();
+    assert_eq!(hand_casts.len(), 1, "only the normal cast is offered");
+    let Action::CastSpell { choices, .. } = &hand_casts[0] else {
+        unreachable!("the filtered action is a cast")
+    };
+    assert_eq!(choices.costs().alternative(), None);
+    assert_eq!(
+        choices.iter_targets().copied().collect::<Vec<_>>(),
+        [Target::Player(PlayerId::Two)],
+    );
+    assert!(
+        game.legal_actions(PlayerId::One).iter().all(
+            |action| !matches!(action, Action::CastSpell { card, .. } if *card == graveyard.id)
+        ),
+        "incomplete flashback does not grant graveyard casting permission",
+    );
+
+    for alternative in [flashback, overload] {
+        let forged = Action::CastSpell {
+            card: hand.id,
+            choices: CastChoices::default()
+                .with_costs(CostConfiguration::new(Some(alternative), Vec::new()))
+                .with_targets(vec![TargetSelection::single(
+                    TargetSlotId(0),
+                    Target::Player(PlayerId::Two),
+                )]),
+            sacrifices: Vec::new(),
+        };
+        assert!(
+            !game.is_legal_action(PlayerId::One, &forged),
+            "an incomplete alternative cannot be paid as a generic cost or transform the spell",
+        );
+    }
+}
+
+#[test]
+fn unburial_rites_reanimates_its_target_and_exiles_itself() {
+    let mut game = ready_game();
+    let rites = card(20_000, cards::UNBURIAL_RITES, PlayerId::One);
+    let creature_card = card(20_001, cards::SAVANNAH_LIONS, PlayerId::One);
+    let creature_id = creature_card.id;
+    game.players[0]
+        .graveyard
+        .extend([rites.clone(), creature_card]);
+    game.players[0].mana_pool.white = 1;
+    game.players[0].mana_pool.colorless = 3;
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::CastSpell { card, choices, .. }
+                    if *card == rites.id
+                        && choices.costs().alternative() == Some(AlternativeCostId(1))
+                        && choices.iter_targets().copied().eq([Target::Card(creature_id)])
+            )
+        })
+        .expect("Unburial Rites can flash back targeting your creature card");
+    game.apply(PlayerId::One, action).unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS)
+    );
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::UNBURIAL_RITES)
+    );
+}
+
+#[test]
+fn ghor_clan_rampager_uses_one_shared_bloodrush_effect() {
+    let catalog = poc::catalog().unwrap();
+    let rampager = catalog.get(cards::GHOR_CLAN_RAMPAGER).unwrap();
+    let bloodrush = rampager.rules.ability(AbilityId(1)).unwrap();
+    let DeclarativeAbilityDef::Activated(definition) = bloodrush.definition else {
+        panic!("Bloodrush should be an activated ability")
+    };
+
+    assert_eq!(bloodrush.activation_text, None);
+    assert_eq!(definition.source_zones, [ZoneKind::Hand]);
+    assert_eq!(
+        definition.costs.as_slice(),
+        [
+            AbilityCostDef::Mana(mana_cost!("{R}{G}")),
+            AbilityCostDef::DiscardSource,
+        ],
+    );
+    let EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+        effect: AppliedEffectDef::Composite(components),
+        duration: EffectDurationDef::UntilEndOfTurn,
+    } = bloodrush.effect
+    else {
+        panic!("Rampager should apply one composite effect until end of turn")
+    };
+    assert!(matches!(
+        components,
+        [
+            AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(4),
+                toughness: ValueDef::Constant(4),
+            },
+            AppliedEffectDef::GrantAbility(ability),
+        ] if ability.definition == DeclarativeAbilityDef::Keyword(KeywordAbility::Trample)
+    ));
+}
+
+#[test]
+fn bloodrush_can_use_mana_restricted_to_activating_creature_abilities() {
+    static RESTRICTIONS: [ManaRestrictionDef; 1] = [ManaRestrictionDef::ActivateAbility(
+        ObjectPredicateDef::HasType(CardType::Creature),
+    )];
+
+    let mut game = ready_game();
+    let mut attacker = creature(20_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let rampager = card(20_001, cards::GHOR_CLAN_RAMPAGER, PlayerId::One);
+    let rampager_id = rampager.id;
+    game.players[0].hand.push(rampager);
+
+    let mana_source = ManaSource {
+        object: CardInstanceId(20_002),
+        ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
+    };
+    game.add_mana(
+        PlayerId::One,
+        [
+            Mana::from_ability(ManaColor::Red, mana_source, &RESTRICTIONS, &[]),
+            Mana::unrestricted(ManaColor::Red),
+            Mana::from_ability(ManaColor::Green, mana_source, &RESTRICTIONS, &[]),
+        ],
+    );
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, targets, .. }
+                    if *source == rampager_id
+                        && targets.iter().flat_map(TargetSelection::targets).copied()
+                            .eq([Target::Permanent(attacker_id)])
+            )
+        })
+        .expect("creature-ability-restricted mana can pay for Bloodrush");
+
+    game.apply(PlayerId::One, action).unwrap();
+
+    assert_eq!(game.players[0].mana_pool.red, 1);
+    assert_eq!(game.players[0].mana_pool.green, 0);
+    assert_eq!(
+        game.players[0].mana,
+        vec![Mana::unrestricted(ManaColor::Red)],
+        "purpose-aware payment prefers the eligible restricted units",
+    );
+}
+
+#[test]
+fn bloodrush_discards_its_source_and_pumps_an_attacker_until_cleanup() {
+    let mut game = ready_game();
+    let mut attacker = creature(20_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let rampager = card(20_001, cards::GHOR_CLAN_RAMPAGER, PlayerId::One);
+    let rampager_id = rampager.id;
+    game.players[0].hand.push(rampager);
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.green = 1;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, targets, .. }
+                    if *source == rampager_id
+                        && targets.iter().flat_map(TargetSelection::targets).copied()
+                            .eq([Target::Permanent(attacker_id)])
+            )
+        })
+        .expect("Bloodrush is available from hand");
+    game.apply(PlayerId::One, action).unwrap();
+
+    assert!(game.players[0].hand.is_empty());
+    assert_eq!(
+        game.players[0].graveyard[0].definition,
+        cards::GHOR_CLAN_RAMPAGER
+    );
+    assert_ne!(game.players[0].graveyard[0].id, rampager_id);
+    assert!(game.events.iter().any(|event| matches!(
+        event,
+        GameEvent::CardsDiscarded { player: PlayerId::One, cards }
+            if cards.iter().any(|(_, definition)| *definition == cards::GHOR_CLAN_RAMPAGER)
+    )));
+    pass_priority_pair(&mut game);
+
+    let attacker = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == attacker_id)
+        .unwrap();
+    assert_eq!(game.power(attacker), Some(6));
+    assert_eq!(game.toughness(attacker), Some(5));
+    assert!(game.permanent_has_executable_keyword(attacker, KeywordAbility::Trample));
+
+    game.finish_cleanup();
+    let attacker = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == attacker_id)
+        .unwrap();
+    assert_eq!(game.power(attacker), Some(2));
+    assert_eq!(game.toughness(attacker), Some(1));
+    assert!(!game.permanent_has_executable_keyword(attacker, KeywordAbility::Trample));
+}
+
+#[test]
+fn bloodrush_uses_real_mana_sources_and_tramples_over_a_blocker() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = true;
+    let mut attacker = creature(20_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    let mut blocker = creature(20_001, cards::SAVANNAH_LIONS, PlayerId::Two);
+    blocker.blocking = Some(attacker_id);
+    let blocker_id = blocker.card.id;
+    let mountain = creature(20_002, cards::MOUNTAIN, PlayerId::One);
+    let mountain_id = mountain.card.id;
+    let forest = creature(20_003, cards::FOREST, PlayerId::One);
+    let forest_id = forest.card.id;
+    game.battlefield
+        .extend([attacker, blocker, mountain, forest]);
+    game.combat_blocked_attackers.push(attacker_id);
+    let rampager = card(20_004, cards::GHOR_CLAN_RAMPAGER, PlayerId::One);
+    let rampager_id = rampager.id;
+    game.players[0].hand.push(rampager);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, targets, .. }
+                    if *source == rampager_id
+                        && targets.iter().flat_map(TargetSelection::targets).copied()
+                            .eq([Target::Permanent(attacker_id)])
+            )
+        })
+        .expect("the lands make Bloodrush payable");
+    let mana_sources = game
+        .mana_sources_for_action(PlayerId::One, &action)
+        .into_iter()
+        .collect::<std::collections::HashSet<_>>();
+    assert_eq!(mana_sources, [mountain_id, forest_id].into_iter().collect());
+    game.apply(PlayerId::One, action).unwrap();
+    assert!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| [mountain_id, forest_id].contains(&permanent.card.id))
+            .all(|permanent| permanent.tapped)
+    );
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[1].life, 15,
+        "five damage tramples over the 2/1 blocker"
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != blocker_id)
+    );
+    let attacker = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == attacker_id)
+        .unwrap();
+    assert_eq!(attacker.damage, 2);
+}
+
+#[test]
+fn bloodrush_rechecks_that_its_target_is_still_attacking() {
+    let mut game = ready_game();
+    let mut attacker = creature(20_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let rampager = card(20_001, cards::GHOR_CLAN_RAMPAGER, PlayerId::One);
+    let rampager_id = rampager.id;
+    game.players[0].hand.push(rampager);
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.green = 1;
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == rampager_id))
+        .unwrap();
+    game.apply(PlayerId::One, action).unwrap();
+    let ability_object = game.stack.last().unwrap().id;
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GHOR_CLAN_RAMPAGER)
+    );
+    game.battlefield[0].attacking = false;
+    pass_priority_pair(&mut game);
+
+    let attacker = &game.battlefield[0];
+    assert_eq!(attacker.card.id, attacker_id);
+    assert_eq!(game.power(attacker), Some(2));
+    assert_eq!(game.toughness(attacker), Some(1));
+    assert!(!game.permanent_has_executable_keyword(attacker, KeywordAbility::Trample));
+    assert!(game.events.iter().any(|event| matches!(
+        event,
+        GameEvent::AbilityFizzled { object, source, definition }
+            if *object == ability_object
+                && *source == rampager_id
+                && *definition == cards::GHOR_CLAN_RAMPAGER
+    )));
+    assert!(!game.events.iter().any(|event| matches!(
+        event,
+        GameEvent::AbilityResolved { object, .. } if *object == ability_object
+    )));
+}
 fn acceptance_cast_action_for_card(game: &Game, player: PlayerId, spell: GameObjectId) -> Action {
     game.legal_actions(player)
         .into_iter()
@@ -9543,6 +11382,7 @@ fn countering_acceptance_cards_report_complete_shared_implementations() {
                 | DeclarativeAbilityDef::Triggered(_)
                 | DeclarativeAbilityDef::Static(_)
                 | DeclarativeAbilityDef::Replacement(_)
+                | DeclarativeAbilityDef::AlternativeCast(_)
                 | DeclarativeAbilityDef::SpecialAction(_)
                 | DeclarativeAbilityDef::Keyword(_)
                 | DeclarativeAbilityDef::Legacy => None,
@@ -10584,6 +12424,33 @@ fn a_discard_with_no_choice_left_needs_no_decision() {
 
 #[test]
 fn selesnya_charm_pumps_and_grants_trample() {
+    let catalog = poc::catalog().unwrap();
+    let charm_definition = catalog.get(cards::SELESNYA_CHARM).unwrap();
+    let DeclarativeAbilityDef::Spell(spell) =
+        charm_definition.rules.ability_clauses()[0].definition
+    else {
+        panic!("Selesnya Charm should have a spell ability")
+    };
+    let mode = spell.mode(ModeId(0)).unwrap();
+    let EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+        effect: AppliedEffectDef::Composite(components),
+        duration: EffectDurationDef::UntilEndOfTurn,
+    } = mode.effect
+    else {
+        panic!("Selesnya Charm should apply one composite effect until end of turn")
+    };
+    assert!(matches!(
+        components,
+        [
+            AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(2),
+                toughness: ValueDef::Constant(2),
+            },
+            AppliedEffectDef::GrantAbility(ability),
+        ] if ability.definition == DeclarativeAbilityDef::Keyword(KeywordAbility::Trample)
+    ));
+
     let mut game = ready_game();
     game.battlefield
         .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
@@ -10724,6 +12591,44 @@ fn boros_charm_burns_a_player_for_four() {
         game.players[0].life, 20,
         "it is a targeted burn, not a sweep"
     );
+}
+
+#[test]
+fn boros_charm_grants_double_strike_until_cleanup() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
+    let charm = card(10_001, cards::BOROS_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.white = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_mode(
+            charm.id,
+            ModeId(2),
+            TargetSlotId(1),
+            vec![Target::Permanent(CardInstanceId(10_000))],
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == CardInstanceId(10_000))
+        .unwrap();
+    assert!(game.permanent_has_executable_keyword(lions, KeywordAbility::DoubleStrike));
+
+    game.finish_cleanup();
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == CardInstanceId(10_000))
+        .unwrap();
+    assert!(!game.permanent_has_executable_keyword(lions, KeywordAbility::DoubleStrike));
 }
 
 #[test]
@@ -10966,39 +12871,25 @@ fn order_of_leitbur_can_pump_itself() {
         .put_onto_battlefield(PlayerId::One, cards::ORDER_OF_LEITBUR)
         .expect("cataloged");
     game.players[0].mana_pool.white = 2;
+    let pump = activated_ability_for(&game, order, 1);
 
     // The Order also grants itself first strike for {W}; the pump is the
     // later printed clause.
-    let mut activations = game
+    let activate = game
         .legal_actions(PlayerId::One)
         .into_iter()
-        .filter_map(|action| match action {
-            Action::ActivateAbility {
-                source,
-                ability: AbilityOrigin::Printed { ability, .. },
-                ..
-            } if source == order => Some((ability, source)),
-            _ => None,
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility {
+                    source,
+                    ability,
+                    ..
+                } if *source == order && *ability == pump
+            )
         })
-        .collect::<Vec<_>>();
-    activations.sort_by_key(|(ability, _)| *ability);
-    assert_eq!(activations.len(), 2, "first strike and the pump");
-    let (pump, source) = activations[1];
-    game.apply(
-        PlayerId::One,
-        Action::ActivateAbility {
-            source,
-            ability: AbilityOrigin::Printed {
-                definition: cards::ORDER_OF_LEITBUR,
-                part: CardPartId::PRIMARY,
-                ability: pump,
-            },
-            targets: Vec::new(),
-            sacrifice: None,
-            x: 0,
-        },
-    )
-    .unwrap();
+        .expect("the pump is activatable");
+    game.apply(PlayerId::One, activate).unwrap();
     pass_priority_pair(&mut game);
 
     let order = game
@@ -11218,7 +13109,10 @@ fn a_first_striker_kills_a_smaller_blocker_before_it_can_answer() {
     let blocker_id = blocker.card.id;
     game.battlefield = vec![attacker, blocker];
 
-    game.deal_combat_damage();
+    game.step = Step::DeclareBlockers;
+    game.advance_step();
+    assert!(game.regular_combat_damage_pending());
+    pass_priority_pair(&mut game);
 
     let survivor = game
         .battlefield
@@ -11259,7 +13153,16 @@ fn boros_charm_double_strike_hits_an_unblocked_player_twice() {
     )
     .unwrap();
     pass_priority_pair(&mut game);
-    game.deal_combat_damage();
+    game.step = Step::DeclareBlockers;
+    game.advance_step();
+    assert_eq!(
+        game.players[1].life,
+        life_before - 2,
+        "double strike deals once before the inter-wave priority window",
+    );
+    assert!(game.regular_combat_damage_pending());
+
+    pass_priority_pair(&mut game);
 
     assert_eq!(
         game.players[1].life,
@@ -11765,16 +13668,33 @@ fn an_order_can_buy_first_strike_and_win_a_trade_it_would_have_lost() {
     blocker.blocking = Some(order_id);
     game.battlefield.push(blocker);
     game.players[0].mana_pool.black = 1;
+    let first_strike = activated_ability_for(&game, order_id, 0);
 
     let activate = game
         .legal_actions(PlayerId::One)
         .into_iter()
-        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == order_id))
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility {
+                    source,
+                    ability,
+                    ..
+                } if *source == order_id && *ability == first_strike
+            )
+        })
         .expect("the first-strike ability is activatable");
     game.apply(PlayerId::One, activate).unwrap();
     pass_priority_pair(&mut game);
 
-    game.deal_combat_damage();
+    game.step = Step::DeclareBlockers;
+    game.advance_step();
+    assert_eq!(game.step, Step::CombatDamage);
+    assert!(
+        game.regular_combat_damage_pending(),
+        "the bought first strike creates an inter-wave priority window",
+    );
+    pass_priority_pair(&mut game);
 
     assert_eq!(
         game.battlefield

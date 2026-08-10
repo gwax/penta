@@ -274,14 +274,17 @@ mod tests {
 
     use super::{CardRecord, SET_MODULES, y1993, y1994, y2011, y2012, y2013};
     use crate::card::{
-        AbilityCostDef, AbilityDef, AbilityImplementationDef, AppliedEffectDef, BasicLandType,
-        CardPrinting, CardPrintingId, CardStructure, CardSupertype, DeclarativeAbilityDef,
-        DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus,
-        KeywordAbility, ManaColor, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
-        ObjectPredicateDef, PlayActionKind, PlayRestriction, PlayerRelation, ReplacementEventDef,
-        SpellForm, TargetPredicate, TriggerEventDef, ZoneKind, ZoneMoveCauseDef, cards,
+        AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
+        AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardPrinting, CardPrintingId,
+        CardStructure, CardSupertype, DeclarativeAbilityDef, DoubleFacedKind, EffectDef,
+        EffectDurationDef, EffectRecipientDef, ImplementationStatus, KeywordAbility, ManaColor,
+        ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
+        PlayActionKind, PlayRestriction, PlayerRelation, ReplacementEventDef, SpellForm,
+        TargetPredicate, TriggerEventDef, ZoneKind, ZoneMoveCauseDef, cards,
     };
-    use crate::{AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ModeId, PlayOptionId};
+    use crate::{
+        AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ManaCost, ModeId, PlayOptionId,
+    };
 
     fn standard_records() -> Vec<&'static CardRecord> {
         let mut records = SET_MODULES
@@ -338,7 +341,8 @@ mod tests {
             | ObjectPredicateDef::Supertype(_)
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
-            | ObjectPredicateDef::HasKeyword(_) => true,
+            | ObjectPredicateDef::HasKeyword(_)
+            | ObjectPredicateDef::Attacking => true,
         }
     }
 
@@ -408,6 +412,24 @@ mod tests {
         )
     }
 
+    fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> bool {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                !effects.is_empty()
+                    && effects
+                        .iter()
+                        .copied()
+                        .all(shared_cannot_be_countered_effect)
+            }
+            AppliedEffectDef::CannotBeCountered => true,
+            AppliedEffectDef::ModifyPowerToughness { .. }
+            | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::GrantAbility(_)
+            | AppliedEffectDef::Special(_) => false,
+        }
+    }
+
     fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool) -> bool {
         let EffectDef::AddMana(mana) = effect else {
             return false;
@@ -429,11 +451,11 @@ mod tests {
                         false
                     }
                 })
-            && mana.spend_effects.iter().all(|effect| {
-                matches!(
-                    effect,
-                    ManaSpendEffectDef::ApplyToPaidSpell(AppliedEffectDef::CannotBeCountered)
-                )
+            && mana.spend_effects.iter().copied().all(|effect| {
+                let ManaSpendEffectDef::ApplyToPaidSpell(effect) = effect else {
+                    return false;
+                };
+                shared_cannot_be_countered_effect(effect)
             })
     }
 
@@ -445,11 +467,25 @@ mod tests {
         if duration != EffectDurationDef::UntilEndOfTurn || !shared_effect_recipient(recipient) {
             return false;
         }
+        shared_resolving_applied_effect(effect)
+    }
+
+    fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool {
         match effect {
+            AppliedEffectDef::Composite(effects) => {
+                !effects.is_empty() && effects.iter().copied().all(shared_resolving_applied_effect)
+            }
             AppliedEffectDef::ModifyPowerToughness { .. } => true,
             AppliedEffectDef::GrantAbility(ability) => {
                 ability.implementation == AbilityImplementationDef::Definition
-                    && matches!(ability.definition, DeclarativeAbilityDef::Keyword(keyword) if shared_keyword(keyword))
+                    && match ability.definition {
+                        DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),
+                        DeclarativeAbilityDef::AlternativeCast(definition) => {
+                            definition.kind == AlternativeCastKindDef::Flashback
+                                && ability.effect == EffectDef::None
+                        }
+                        _ => false,
+                    }
             }
             // A blocking restriction is continuous, not an until-end-of-turn
             // rider a spell hands out.
@@ -566,7 +602,9 @@ mod tests {
         }
     }
 
-    fn shared_activated_costs(costs: &[AbilityCostDef]) -> bool {
+    fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[AbilityCostDef]) -> bool {
+        let battlefield = source_zones == [ZoneKind::Battlefield];
+        let hand = source_zones == [ZoneKind::Hand];
         let sacrifice_choices = costs
             .iter()
             .filter(|cost| matches!(cost, AbilityCostDef::SacrificePermanent { .. }))
@@ -578,11 +616,12 @@ mod tests {
                 // enumerates a cost that charges X twice.
                 AbilityCostDef::Mana(cost) => cost.x_multiplier <= 1,
                 AbilityCostDef::SacrificePermanent { object, .. } => {
-                    shared_object_predicate(*object)
+                    battlefield && shared_object_predicate(*object)
                 }
                 AbilityCostDef::TapSource
                 | AbilityCostDef::SacrificeSource
-                | AbilityCostDef::PayLife(_) => true,
+                | AbilityCostDef::PayLife(_) => battlefield,
+                AbilityCostDef::DiscardSource => hand,
                 AbilityCostDef::UntapSource
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::ExileSource
@@ -630,26 +669,8 @@ mod tests {
                     | EffectRecipientDef::ControllerOfTriggeringObject
                     | EffectRecipientDef::EventPlayer => false,
                 };
-                let battlefield_effect_is_supported = match effect {
-                    AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
-                        // The static bonus path evaluates exactly these two.
-                        let supported = |value| {
-                            matches!(
-                                value,
-                                crate::card::ValueDef::Constant(_)
-                                    | crate::card::ValueDef::AnyMatchingObject(_)
-                            )
-                        };
-                        supported(power) && supported(toughness)
-                    }
-                    AppliedEffectDef::AddLandTypes(land_types) => !land_types.is_empty(),
-                    AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
-                    AppliedEffectDef::CannotBeBlockedBy(predicate) => {
-                        recipient == EffectRecipientDef::Source
-                            && shared_object_predicate(predicate)
-                    }
-                    AppliedEffectDef::CannotBeCountered | AppliedEffectDef::Special(_) => false,
-                };
+                let battlefield_effect_is_supported =
+                    shared_static_applied_effect(recipient, effect);
                 let battlefield_effect = battlefield_only(source_zones)
                     && battlefield_recipient_is_supported
                     && battlefield_effect_is_supported
@@ -660,7 +681,7 @@ mod tests {
                     );
                 let stack_source_effect = source_zones == [ZoneKind::Stack]
                     && recipient == EffectRecipientDef::Source
-                    && effect == AppliedEffectDef::CannotBeCountered
+                    && shared_cannot_be_countered_effect(effect)
                     && duration == EffectDurationDef::WhileSourceRemainsInZone;
                 battlefield_effect || stack_source_effect
             }
@@ -696,6 +717,38 @@ mod tests {
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
+        }
+    }
+
+    fn shared_static_applied_effect(
+        recipient: EffectRecipientDef,
+        effect: AppliedEffectDef,
+    ) -> bool {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                !effects.is_empty()
+                    && effects
+                        .iter()
+                        .copied()
+                        .all(|effect| shared_static_applied_effect(recipient, effect))
+            }
+            AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
+                let supported = |value| {
+                    matches!(
+                        value,
+                        crate::card::ValueDef::Constant(_)
+                            | crate::card::ValueDef::AnyMatchingObject(_)
+                    )
+                };
+                supported(power) && supported(toughness)
+            }
+            AppliedEffectDef::AddLandTypes(land_types) => !land_types.is_empty(),
+            AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
+            AppliedEffectDef::CannotBeBlockedBy(predicate) => {
+                recipient == EffectRecipientDef::Source && shared_object_predicate(predicate)
+            }
+            AppliedEffectDef::CannotBeCountered => true,
+            AppliedEffectDef::Special(_) => false,
         }
     }
 
@@ -785,8 +838,10 @@ mod tests {
                     && immediate_mana_effect(ability.effect)
             }
             DeclarativeAbilityDef::Activated(definition) => {
-                battlefield_only(definition.source_zones)
-                    && shared_activated_costs(definition.costs)
+                matches!(
+                    definition.source_zones,
+                    [ZoneKind::Battlefield | ZoneKind::Hand]
+                ) && shared_activated_costs(definition.source_zones, definition.costs.as_slice())
                     && shared_stack_effect(ability.effect)
             }
             DeclarativeAbilityDef::Triggered(definition) => {
@@ -825,6 +880,10 @@ mod tests {
                 }
                 ReplacementEventDef::Special(_) => false,
             },
+            DeclarativeAbilityDef::AlternativeCast(definition) => match definition.kind {
+                AlternativeCastKindDef::Flashback => ability.effect == EffectDef::None,
+                AlternativeCastKindDef::Overload => shared_stack_effect(ability.effect),
+            },
             DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),
             DeclarativeAbilityDef::SpecialAction(_) | DeclarativeAbilityDef::Legacy => false,
         }
@@ -840,17 +899,8 @@ mod tests {
             EffectDef::OptionalManaPayment { effect, .. } | EffectDef::May(effect) => {
                 assert_nested_definition_abilities(card_name, *effect);
             }
-            EffectDef::Apply {
-                effect: AppliedEffectDef::GrantAbility(ability),
-                ..
-            } => {
-                if ability.implementation == AbilityImplementationDef::Definition {
-                    assert!(
-                        shared_definition_ability(ability),
-                        "{card_name} contains a nested Definition ability outside the shared runtime boundary: {ability:?}",
-                    );
-                }
-                assert_nested_definition_abilities(card_name, ability.effect);
+            EffectDef::Apply { effect, .. } => {
+                assert_nested_definition_applied_effect(card_name, effect);
             }
             EffectDef::None
             | EffectDef::AddMana(_)
@@ -882,8 +932,31 @@ mod tests {
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCreatureType { .. }
-            | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {}
+        }
+    }
+
+    fn assert_nested_definition_applied_effect(card_name: &str, effect: AppliedEffectDef) {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                for effect in effects {
+                    assert_nested_definition_applied_effect(card_name, *effect);
+                }
+            }
+            AppliedEffectDef::GrantAbility(ability) => {
+                if ability.implementation == AbilityImplementationDef::Definition {
+                    assert!(
+                        shared_definition_ability(ability),
+                        "{card_name} contains a nested Definition ability outside the shared runtime boundary: {ability:?}",
+                    );
+                }
+                assert_nested_definition_abilities(card_name, ability.effect);
+            }
+            AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::ModifyPowerToughness { .. }
+            | AppliedEffectDef::Special(_) => {}
         }
     }
 
@@ -1508,6 +1581,73 @@ mod tests {
 
         assert_eq!(y1993::beta::VOLCANIC_ISLAND.id, cards::VOLCANIC_ISLAND);
         assert_eq!(y1993::beta::VOLCANIC_ISLAND.debut_set, CardSet::Beta);
+    }
+
+    #[test]
+    fn activated_cost_boundary_is_specific_to_the_source_zone() {
+        let mana = AbilityCostDef::Mana(ManaCost::colored(0, 0, 0, 0, 1, 1));
+        assert!(shared_activated_costs(
+            &[ZoneKind::Hand],
+            &[mana, AbilityCostDef::DiscardSource],
+        ));
+        assert!(!shared_activated_costs(
+            &[ZoneKind::Hand],
+            &[AbilityCostDef::PayLife(1)],
+        ));
+        assert!(shared_activated_costs(
+            &[ZoneKind::Battlefield],
+            &[mana, AbilityCostDef::TapSource],
+        ));
+        assert!(!shared_activated_costs(
+            &[ZoneKind::Battlefield],
+            &[AbilityCostDef::DiscardSource],
+        ));
+    }
+
+    #[test]
+    fn composite_uncounterability_stays_within_the_shared_runtime_boundary() {
+        static CANNOT_BE_COUNTERED: [AppliedEffectDef; 1] = [AppliedEffectDef::CannotBeCountered];
+        static MIXED: [AppliedEffectDef; 2] = [
+            AppliedEffectDef::CannotBeCountered,
+            AppliedEffectDef::Special("unsupported"),
+        ];
+        static RIDERS: [ManaSpendEffectDef; 1] = [ManaSpendEffectDef::ApplyToPaidSpell(
+            AppliedEffectDef::Composite(&CANNOT_BE_COUNTERED),
+        )];
+        static MIXED_RIDERS: [ManaSpendEffectDef; 1] = [ManaSpendEffectDef::ApplyToPaidSpell(
+            AppliedEffectDef::Composite(&MIXED),
+        )];
+
+        let stack_effect = |effect| EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect,
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        };
+        assert!(shared_static_effect(
+            &[ZoneKind::Stack],
+            stack_effect(AppliedEffectDef::Composite(&CANNOT_BE_COUNTERED)),
+        ));
+        assert!(!shared_static_effect(
+            &[ZoneKind::Stack],
+            stack_effect(AppliedEffectDef::Composite(&MIXED)),
+        ));
+        assert!(!shared_static_effect(
+            &[ZoneKind::Stack],
+            stack_effect(AppliedEffectDef::Composite(&[])),
+        ));
+
+        assert!(shared_mana_effect(
+            EffectDef::AddMana(
+                AddManaEffectDef::one(ManaColor::Colorless).with_spend_effects(&RIDERS),
+            ),
+            false,
+        ));
+        assert!(!shared_mana_effect(
+            EffectDef::AddMana(
+                AddManaEffectDef::one(ManaColor::Colorless).with_spend_effects(&MIXED_RIDERS),
+            ),
+            false,
+        ));
     }
 
     #[test]

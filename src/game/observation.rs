@@ -95,6 +95,9 @@ pub struct PlayerObservation {
     pub active_player: PlayerId,
     pub priority: PlayerId,
     pub step: Step,
+    /// Whether priority is currently between the first-strike and regular
+    /// combat-damage steps. Both steps otherwise share [`Step::CombatDamage`].
+    pub regular_combat_damage_pending: bool,
     pub life_totals: [i16; 2],
     pub mana_pools: [ManaPool; 2],
     pub hand: Vec<(GameObjectId, CardDefinitionId)>,

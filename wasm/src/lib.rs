@@ -557,6 +557,12 @@ impl WebGame {
                     object, definition, ..
                 } => Some((*object, *definition, false)),
                 GameEvent::SpellFizzled { card, definition } => Some((*card, *definition, true)),
+                GameEvent::AbilityFizzled {
+                    object, definition, ..
+                }
+                | GameEvent::TriggeredAbilityFizzled {
+                    object, definition, ..
+                } => Some((*object, *definition, true)),
                 _ => None,
             })
             .collect();
@@ -703,6 +709,7 @@ impl WebGame {
         automatic_human_action_for_context(
             AutoPassContext {
                 step: observation.step,
+                regular_combat_damage_pending: observation.regular_combat_damage_pending,
                 human_is_active: observation.active_player == self.human,
                 stack_is_empty: observation.stack.is_empty(),
                 has_attacker: observation
@@ -750,10 +757,10 @@ impl WebGame {
         let mut sim = self.game.clone();
         sim.apply(self.human, Action::PassPriority).ok()?;
         // Combat damage is the loudest thing a pass can cause, so it names the
-        // button even when the yield carries on past it. Watching for attackers
-        // standing in a pre-damage step and then for the step advancing past it
-        // catches the combats where every attacker dies on the way through.
-        let mut attack_pending = Self::attack_awaiting_damage(&observation);
+        // button even when the yield carries on past it. Watch both attackers
+        // in a pre-damage step and the explicit inter-wave discriminator, then
+        // keep that fact as the simulation advances through the damage event.
+        let mut combat_damage_pending = Self::combat_damage_awaiting(&observation);
         let mut deals_combat_damage = false;
         // Every exit below labels the step the simulation reached, so a pass
         // that runs the game out (lethal damage) or that the preview cannot
@@ -766,9 +773,9 @@ impl WebGame {
             let sim_observation = sim.observe(player);
             // Only this turn's combat is the pass's doing; an attack a whole
             // turn away is not what the button is about to cause.
-            attack_pending |= sim_observation.turn == start_turn
-                && Self::attack_awaiting_damage(&sim_observation);
-            if attack_pending
+            combat_damage_pending |= sim_observation.turn == start_turn
+                && Self::combat_damage_awaiting(&sim_observation);
+            if combat_damage_pending
                 && (sim_observation.turn != start_turn
                     || matches!(
                         sim_observation.step,
@@ -852,6 +859,13 @@ impl WebGame {
             .battlefield
             .iter()
             .any(|permanent| permanent.attacking)
+    }
+
+    /// Combat is awaiting either its first damage wave or the regular wave
+    /// after first-strike damage. The latter cannot be inferred from `step`
+    /// because both waves are exposed as `CombatDamage`.
+    fn combat_damage_awaiting(observation: &PlayerObservation) -> bool {
+        observation.regular_combat_damage_pending || Self::attack_awaiting_damage(observation)
     }
 
     fn pass_destination_label(
@@ -1269,6 +1283,7 @@ impl WebGame {
             "turn": observation.active_turn,
             "gameTurn": observation.turn,
             "step": readable_debug(observation.step),
+            "regularCombatDamagePending": observation.regular_combat_damage_pending,
             // Turn one has not started yet, so the board should not be
             // claiming an upkeep is happening.
             "pregame": self.game.in_pregame(),
@@ -1326,10 +1341,7 @@ impl WebGame {
         source: CardInstanceId,
         origin: AbilityOrigin,
     ) -> Option<ActivatedAbilityText> {
-        observation
-            .battlefield
-            .iter()
-            .find(|permanent| permanent.id == source)?;
+        Self::instance_definition(observation, source)?;
         let AbilityOrigin::Printed {
             definition,
             part,
@@ -1475,7 +1487,7 @@ impl WebGame {
             )),
             GameEvent::CardDrawn { .. } => Some("Opponent drew a card".into()),
             GameEvent::CardsDiscarded { player, cards } => Some(format!(
-                "{} discarded {} at random",
+                "{} discarded {}",
                 self.player_name(*player),
                 cards
                     .iter()
@@ -1590,7 +1602,9 @@ impl WebGame {
                     "opponent’s"
                 }
             )),
-            GameEvent::SpellFizzled { definition, .. } => Some(format!(
+            GameEvent::SpellFizzled { definition, .. }
+            | GameEvent::AbilityFizzled { definition, .. }
+            | GameEvent::TriggeredAbilityFizzled { definition, .. } => Some(format!(
                 "{} fizzled — its target was gone",
                 self.card_name(*definition)
             )),
@@ -1710,6 +1724,25 @@ impl WebGame {
                     .play_option_label(observation, *card, choices.play_option())
                     .unwrap_or_else(|| self.instance_name(observation, *card));
                 let mut label = format!("Cast {option}");
+                if let Some(alternative) = choices.costs().alternative() {
+                    let cast_option = Self::instance_definition(observation, *card)
+                        .and_then(|definition| self.catalog.get(definition))
+                        .and_then(|definition| definition.play_option(choices.play_option()));
+                    let printed = cast_option.and_then(|option| {
+                        option
+                            .alternative_costs
+                            .iter()
+                            .find(|cost| cost.id == alternative)
+                    });
+                    let alternative_label = printed.map_or("Flashback", |cost| cost.label.as_str());
+                    let _ = write!(label, " via {alternative_label}");
+                    if let Some(cost) = printed
+                        .map(|cost| cost.mana_cost)
+                        .or_else(|| cast_option.and_then(|option| option.mana_cost))
+                    {
+                        let _ = write!(label, " {}", mana_cost_label(cost));
+                    }
+                }
                 let modes =
                     self.mode_labels(observation, *card, choices.play_option(), choices.modes());
                 if !modes.is_empty() {
@@ -1875,6 +1908,34 @@ fn hand_mana_cost_value(card: Option<&penta::CardDefinition>) -> Value {
                 "x": cost.variable_x,
             })
         })
+}
+
+fn mana_cost_label(cost: penta::ManaCost) -> String {
+    let mut label = String::new();
+    if cost.generic > 0 {
+        let _ = write!(label, "{{{}}}", cost.generic);
+    }
+    if cost.variable_x {
+        for _ in 0..cost.x_multiplier.max(1) {
+            label.push_str("{X}");
+        }
+    }
+    for (amount, symbol) in [
+        (cost.white, "W"),
+        (cost.blue, "U"),
+        (cost.black, "B"),
+        (cost.red, "R"),
+        (cost.green, "G"),
+        (cost.white_red_hybrid, "R/W"),
+    ] {
+        for _ in 0..amount {
+            let _ = write!(label, "{{{symbol}}}");
+        }
+    }
+    if label.is_empty() {
+        label.push_str("{0}");
+    }
+    label
 }
 
 fn cast_signature_value(signature: &penta::CastSignature, human: PlayerId) -> Value {
@@ -2114,6 +2175,7 @@ fn action_kind(action: &Action) -> &'static str {
 #[allow(clippy::struct_excessive_bools)]
 struct AutoPassContext {
     step: Step,
+    regular_combat_damage_pending: bool,
     human_is_active: bool,
     stack_is_empty: bool,
     has_attacker: bool,
@@ -2191,10 +2253,12 @@ fn is_routine_window(context: &AutoPassContext, actions: &[Action]) -> bool {
             Action::CastSpell { .. } | Action::PlayLand { .. } | Action::ActivateAbility { .. }
         )
     });
-    // Damage lands on the way into the damage step, so by the time anyone
-    // holds priority there it is history. Neither window can change the
-    // combat, on either player's turn — they just cost a click each.
-    let combat_is_settled = matches!(context.step, Step::CombatDamage | Step::EndOfCombat);
+    // Damage ordinarily lands on the way into the damage step, so by the time
+    // anyone holds priority there it is history. First strike is the exception:
+    // after its damage, players receive priority before the regular damage
+    // step, and spells or abilities can still change that second wave.
+    let combat_is_settled = context.step == Step::EndOfCombat
+        || (context.step == Step::CombatDamage && !context.regular_combat_damage_pending);
     let routine_own_turn_step = context.human_is_active
         && (context.step == Step::BeginningOfCombat
             || (context.step == Step::PostcombatMain && !has_second_main_action)
@@ -2331,6 +2395,7 @@ fn automatic_human_action(
     automatic_human_action_for_context(
         AutoPassContext {
             step,
+            regular_combat_damage_pending: false,
             human_is_active,
             stack_is_empty,
             has_attacker,
@@ -2361,6 +2426,7 @@ fn automatic_human_action_with_blockers(
     automatic_human_action_for_context(
         AutoPassContext {
             step,
+            regular_combat_damage_pending: false,
             human_is_active,
             stack_is_empty,
             has_attacker,
@@ -2608,11 +2674,155 @@ mod tests {
         game.act(action_index).expect("legal action succeeds");
     }
 
+    fn apply_engine_action(game: &mut Game, predicate: impl Fn(&Action) -> bool) {
+        let player = game.decision_player().expect("game has a decision player");
+        let action = game
+            .observe(player)
+            .legal_actions
+            .into_iter()
+            .find(predicate)
+            .expect("matching engine action");
+        game.apply(player, action).expect("engine action succeeds");
+    }
+
+    fn advance_engine_quietly_until(game: &mut Game, stop: impl Fn(&PlayerObservation) -> bool) {
+        for _ in 0..200 {
+            let player = game.decision_player().expect("game remains in progress");
+            let observation = game.observe(player);
+            if stop(&observation) {
+                return;
+            }
+            let action = observation
+                .legal_actions
+                .into_iter()
+                .find(|action| {
+                    matches!(
+                        action,
+                        Action::PassPriority
+                            | Action::FinishDeclaringAttackers
+                            | Action::FinishDeclaringBlockers
+                            | Action::DiscardCards { .. }
+                            | Action::ChooseUntap { .. }
+                    )
+                })
+                .expect("a quiet action advances the test game");
+            game.apply(player, action).expect("quiet action succeeds");
+        }
+        panic!("test game did not reach the requested state");
+    }
+
     fn choices_targeting(target: Target) -> penta::CastChoices {
         penta::CastChoices::default().with_targets(vec![penta::TargetSelection::single(
             penta::TargetSlotId(0),
             target,
         )])
+    }
+
+    #[test]
+    fn cast_action_labels_distinguish_normal_flashback_and_overload() {
+        let game = WebGame::new(
+            "Briksza Naya Midrange",
+            "Greer G/R Aggro",
+            "Handcrafted",
+            true,
+            2,
+            Some("isd-rtr-standard".into()),
+        )
+        .unwrap();
+        let mut observation = game.game.observe(game.human);
+        let normal = CardInstanceId(90_000);
+        let flashback = CardInstanceId(90_001);
+        let overload = CardInstanceId(90_002);
+        let granted_flashback = CardInstanceId(90_003);
+        observation
+            .hand
+            .push((normal, penta::card::cards::THINK_TWICE));
+        observation.graveyards[game.human.index()]
+            .push((flashback, penta::card::cards::THINK_TWICE));
+        observation.graveyards[game.human.index()]
+            .push((granted_flashback, penta::card::cards::THINK_TWICE));
+        observation
+            .hand
+            .push((overload, penta::card::cards::MIZZIUM_MORTARS));
+
+        let normal = Action::CastSpell {
+            card: normal,
+            choices: penta::CastChoices::default(),
+            sacrifices: Vec::new(),
+        };
+        let flashback = Action::CastSpell {
+            card: flashback,
+            choices: penta::CastChoices::default().with_costs(penta::CostConfiguration::new(
+                Some(penta::AlternativeCostId(1)),
+                Vec::new(),
+            )),
+            sacrifices: Vec::new(),
+        };
+        let overload = Action::CastSpell {
+            card: overload,
+            choices: penta::CastChoices::default().with_costs(penta::CostConfiguration::new(
+                Some(penta::AlternativeCostId(1)),
+                Vec::new(),
+            )),
+            sacrifices: Vec::new(),
+        };
+        let granted_flashback = Action::CastSpell {
+            card: granted_flashback,
+            choices: penta::CastChoices::default().with_costs(penta::CostConfiguration::new(
+                Some(penta::AlternativeCostId(u8::MAX)),
+                Vec::new(),
+            )),
+            sacrifices: Vec::new(),
+        };
+
+        assert_eq!(game.action_label(&observation, &normal), "Cast Think Twice");
+        assert_eq!(
+            game.action_label(&observation, &flashback),
+            "Cast Think Twice via Flashback {2}{U}"
+        );
+        assert_eq!(
+            game.action_label(&observation, &overload),
+            "Cast Mizzium Mortars via Overload {3}{R}{R}{R}"
+        );
+        assert_eq!(
+            game.action_label(&observation, &granted_flashback),
+            "Cast Think Twice via Flashback {1}{U}"
+        );
+    }
+
+    #[test]
+    fn hand_source_bloodrush_needs_no_custom_action_presentation() {
+        let game = WebGame::new(
+            "Briksza Naya Midrange",
+            "Greer G/R Aggro",
+            "Handcrafted",
+            true,
+            2,
+            Some("isd-rtr-standard".into()),
+        )
+        .unwrap();
+        let mut observation = game.game.observe(game.human);
+        let source = CardInstanceId(90_003);
+        observation
+            .hand
+            .push((source, penta::card::cards::GHOR_CLAN_RAMPAGER));
+        let definition = game
+            .catalog
+            .get(penta::card::cards::GHOR_CLAN_RAMPAGER)
+            .expect("Ghor-Clan Rampager is cataloged");
+        let ability = definition
+            .rules
+            .indexed_abilities()
+            .find(|ability| ability.definition.text.starts_with("Bloodrush"))
+            .expect("Bloodrush is a printed ability");
+        assert_eq!(ability.definition.activation_text, None);
+        let origin = AbilityOrigin::Printed {
+            definition: definition.id,
+            part: penta::CardPartId::PRIMARY,
+            ability: ability.id,
+        };
+
+        assert_eq!(game.ability_text(&observation, source, origin), None);
     }
 
     #[test]
@@ -2770,6 +2980,129 @@ mod tests {
             hand.iter().all(|card| card.get("metadataOnly").is_none()),
             "the WASM surface exposes the derived status, not its former boolean projection",
         );
+    }
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn interwave_snapshot_and_pass_preview_expose_pending_regular_damage() {
+        let mut game = WebGame::new("Goblins", "Sligh", "Handcrafted", true, 9_394, None)
+            .expect("game starts");
+        while game.game.in_pregame() {
+            apply_engine_action(&mut game.game, |action| matches!(action, Action::KeepHand));
+        }
+        game.game
+            .set_hand(
+                game.human,
+                &[
+                    penta::card::cards::BLACK_LOTUS,
+                    penta::card::cards::BLACK_KNIGHT,
+                ],
+            )
+            .expect("test hand is cataloged");
+        game.game
+            .set_hand(game.human.opponent(), &[])
+            .expect("an empty hand is valid");
+
+        advance_engine_quietly_until(&mut game.game, |observation| {
+            observation.active_player == game.human && observation.step == Step::PrecombatMain
+        });
+        let opening = game.game.observe(game.human);
+        let lotus_in_hand = opening
+            .hand
+            .iter()
+            .find_map(|(id, definition)| {
+                (*definition == penta::card::cards::BLACK_LOTUS).then_some(*id)
+            })
+            .expect("Black Lotus is in hand");
+        let knight = opening
+            .hand
+            .iter()
+            .find_map(|(id, definition)| {
+                (*definition == penta::card::cards::BLACK_KNIGHT).then_some(*id)
+            })
+            .expect("Black Knight is in hand");
+        apply_engine_action(
+            &mut game.game,
+            |action| matches!(action, Action::CastSpell { card, .. } if *card == lotus_in_hand),
+        );
+        advance_engine_quietly_until(&mut game.game, |observation| {
+            observation.stack.is_empty() && observation.step == Step::PrecombatMain
+        });
+        let lotus = game
+            .game
+            .observe(game.human)
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.definition == penta::card::cards::BLACK_LOTUS)
+            .expect("Black Lotus resolved")
+            .id;
+        apply_engine_action(&mut game.game, |action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility {
+                    source,
+                    color: penta::ManaColor::Black,
+                    ..
+                } if *source == lotus
+            )
+        });
+        apply_engine_action(
+            &mut game.game,
+            |action| matches!(action, Action::CastSpell { card, .. } if *card == knight),
+        );
+        advance_engine_quietly_until(&mut game.game, |observation| {
+            observation.stack.is_empty() && observation.step == Step::PrecombatMain
+        });
+
+        advance_engine_quietly_until(&mut game.game, |observation| {
+            observation.active_player == game.human
+                && observation.active_turn == 2
+                && observation.step == Step::DeclareAttackers
+                && observation
+                    .legal_actions
+                    .iter()
+                    .any(|action| matches!(action, Action::DeclareAttacker { .. }))
+        });
+        let knight = game
+            .game
+            .observe(game.human)
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.definition == penta::card::cards::BLACK_KNIGHT)
+            .expect("Black Knight resolved")
+            .id;
+        apply_engine_action(
+            &mut game.game,
+            |action| matches!(action, Action::DeclareAttacker { attacker } if *attacker == knight),
+        );
+        apply_engine_action(&mut game.game, |action| {
+            matches!(action, Action::FinishDeclaringAttackers)
+        });
+        advance_engine_quietly_until(&mut game.game, |observation| {
+            observation.step == Step::DeclareBlockers
+                && observation
+                    .legal_actions
+                    .iter()
+                    .any(|action| matches!(action, Action::FinishDeclaringBlockers))
+        });
+        apply_engine_action(&mut game.game, |action| {
+            matches!(action, Action::FinishDeclaringBlockers)
+        });
+        advance_engine_quietly_until(&mut game.game, |observation| {
+            observation.regular_combat_damage_pending
+        });
+
+        let observation = game.game.observe(game.human);
+        assert!(
+            !WebGame::attack_awaiting_damage(&observation),
+            "the older preview heuristic cannot recognize an already-open damage step",
+        );
+        assert!(WebGame::combat_damage_awaiting(&observation));
+        assert_eq!(
+            game.snapshot_value(false)["regularCombatDamagePending"],
+            true,
+        );
+        assert_eq!(game.pass_preview_label().as_deref(), Some("Go to damage"));
     }
 
     #[test]
@@ -3033,6 +3366,7 @@ mod tests {
     fn second_main_waits_for_spells_lands_and_non_mana_abilities() {
         let context = AutoPassContext {
             step: Step::PostcombatMain,
+            regular_combat_damage_pending: false,
             human_is_active: true,
             stack_is_empty: true,
             has_attacker: false,
@@ -3327,6 +3661,48 @@ mod tests {
             ),
             Some(Action::PassPriority),
             "but damage is already dealt by the time priority comes back",
+        );
+    }
+
+    #[test]
+    fn first_strike_keeps_the_interwave_priority_window_open() {
+        let actions = [
+            Action::Concede,
+            Action::CastSpell {
+                card: CardInstanceId(7),
+                choices: choices_targeting(Target::Player(PlayerId::Two)),
+                sacrifices: Vec::new(),
+            },
+            Action::PassPriority,
+        ];
+        let settled = AutoPassContext {
+            step: Step::CombatDamage,
+            regular_combat_damage_pending: false,
+            human_is_active: true,
+            stack_is_empty: true,
+            has_attacker: true,
+            has_blocker: false,
+            stop_here: false,
+            autopass_enabled: true,
+            only_human_objects_on_stack: false,
+            human_has_floating_mana: false,
+        };
+
+        assert_eq!(
+            automatic_human_action_for_context(settled, &actions),
+            Some(Action::PassPriority),
+            "ordinary post-damage priority remains routine",
+        );
+        assert_eq!(
+            automatic_human_action_for_context(
+                AutoPassContext {
+                    regular_combat_damage_pending: true,
+                    ..settled
+                },
+                &actions,
+            ),
+            None,
+            "the same public step must pause before regular combat damage",
         );
     }
 

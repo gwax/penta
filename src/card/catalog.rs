@@ -6,7 +6,7 @@ use std::sync::Arc;
 use super::{
     AbilityDef, AbilityImplementationDef, AbilityTargetDef, CardDefinition, CardEffectStatus,
     CardPrinting, CardPrintingId, CardSet, CardStructure, DeclarativeAbilityDef, EffectDef,
-    ModeSetDef, PlayActionKind, PlayOptionDef, SpellForm, TargetSlotDef,
+    ManaCost, ModeSetDef, PlayActionKind, PlayOptionDef, SpellForm, TargetSlotDef,
 };
 use crate::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, Format, GrantId,
@@ -306,7 +306,6 @@ fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError>
     }
 
     let mut play_options = HashSet::new();
-    let mut alternative_costs = HashSet::new();
     let mut additional_costs = HashSet::new();
     for option in &definition.play_options {
         if !play_options.insert(option.id) {
@@ -316,17 +315,77 @@ fn validate_composition(definition: &CardDefinition) -> Result<(), CatalogError>
             });
         }
         validate_spell_form(definition, option, &defined_parts, &structure_parts)?;
-        validate_cost_ids(
-            definition,
-            option,
-            &mut alternative_costs,
-            &mut additional_costs,
-        )?;
+        validate_cost_ids(definition, option, &mut additional_costs)?;
         validate_modes_and_targets(definition, option)?;
         validate_semantic_spell_presentation(definition, option)?;
     }
 
+    validate_alternative_cast_abilities(definition)?;
+
     validate_fused_option(definition)
+}
+
+fn validate_alternative_cast_abilities(definition: &CardDefinition) -> Result<(), CatalogError> {
+    for part in &definition.parts {
+        for attached in part.rules.indexed_abilities() {
+            let DeclarativeAbilityDef::AlternativeCast(alternative_cast) =
+                attached.definition.definition
+            else {
+                continue;
+            };
+            let cost = AlternativeCostId(attached.id.0);
+            let mut owning_option_found = false;
+            for option in definition.play_options.iter().filter(
+                |option| matches!(option.form, SpellForm::Part(candidate) if candidate == part.id),
+            ) {
+                owning_option_found = true;
+                let Some(expected) =
+                    alternative_cast.alternative_cost(attached.id, option.mana_cost)
+                else {
+                    return Err(CatalogError::MissingAlternativeCostForAbility {
+                        definition: definition.id,
+                        part: part.id,
+                        ability: attached.id,
+                        cost,
+                    });
+                };
+                let Some(actual) = option
+                    .alternative_costs
+                    .iter()
+                    .find(|cost| cost.id == expected.id)
+                else {
+                    return Err(CatalogError::MissingAlternativeCostForAbility {
+                        definition: definition.id,
+                        part: part.id,
+                        ability: attached.id,
+                        cost: expected.id,
+                    });
+                };
+                if actual != &expected {
+                    return Err(CatalogError::MismatchedAlternativeCostForAbility {
+                        definition: definition.id,
+                        part: part.id,
+                        ability: attached.id,
+                        option: option.id,
+                        cost: expected.id,
+                        expected_label: expected.label,
+                        actual_label: actual.label.clone(),
+                        expected_mana_cost: expected.mana_cost,
+                        actual_mana_cost: actual.mana_cost,
+                    });
+                }
+            }
+            if !owning_option_found {
+                return Err(CatalogError::MissingAlternativeCostForAbility {
+                    definition: definition.id,
+                    part: part.id,
+                    ability: attached.id,
+                    cost,
+                });
+            }
+        }
+    }
+    Ok(())
 }
 
 fn validate_abilities(
@@ -372,17 +431,9 @@ fn validate_attached_ability(
             definition, part, ability_id, &problem,
         ));
     }
-    validate_granted_abilities(
-        definition,
-        part,
-        ability_id,
-        ability.effect,
-        &mut Vec::new(),
-    )?;
-    if let DeclarativeAbilityDef::Spell(spell) = ability.definition {
-        let Some(modal) = spell.modal() else {
-            return Ok(());
-        };
+    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
+        && let Some(modal) = spell.modal()
+    {
         if ability.implementation != AbilityImplementationDef::Definition
             || ability.effect != EffectDef::None
         {
@@ -453,21 +504,20 @@ fn validate_attached_ability(
                     problem,
                 });
             }
-            validate_granted_abilities(definition, part, ability_id, mode.effect, &mut Vec::new())?;
         }
     }
-    Ok(())
+    validate_granted_abilities(definition, part, ability_id, ability, &mut Vec::new())
 }
 
 fn validate_granted_abilities(
     definition: &CardDefinition,
     part: CardPartId,
     outer_ability: AbilityId,
-    effect: super::EffectDef,
+    ability: &AbilityDef,
     path: &mut Vec<GrantId>,
 ) -> Result<(), CatalogError> {
     let mut grants = Vec::new();
-    collect_ability_grants(effect, &mut grants);
+    collect_direct_ability_grants(ability, &mut grants);
     for (index, granted) in grants.into_iter().enumerate() {
         let grant = GrantId::from_index(index)
             .expect("the containing ability's grant-site capacity was validated");
@@ -492,10 +542,24 @@ fn validate_granted_abilities(
                 problem: GrantedAbilityValidationError::ExecutableStaticAbility,
             });
         }
-        validate_granted_abilities(definition, part, outer_ability, granted.effect, path)?;
+        validate_granted_abilities(definition, part, outer_ability, granted, path)?;
         path.pop();
     }
     Ok(())
+}
+
+/// Collects the grant sites owned directly by one ability clause. Modal spell
+/// branches are part of their parent clause's effect tree, so their sites
+/// continue the same [`GrantId`] sequence in printed mode order.
+fn collect_direct_ability_grants<'a>(ability: &'a AbilityDef, grants: &mut Vec<&'a AbilityDef>) {
+    collect_ability_grants(ability.effect, grants);
+    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
+        && let Some(modal) = spell.modal()
+    {
+        for mode in modal.modes {
+            collect_ability_grants(mode.effect, grants);
+        }
+    }
 }
 
 fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilityValidationError> {
@@ -551,7 +615,9 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
         DeclarativeAbilityDef::SpecialAction(special_action) => {
             (Some(special_action.source_zones), &[][..], false)
         }
-        DeclarativeAbilityDef::Keyword(_) | DeclarativeAbilityDef::Legacy => (None, &[][..], false),
+        DeclarativeAbilityDef::AlternativeCast(_)
+        | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::Legacy => (None, &[][..], false),
     };
 
     if source_zones.is_some_and(<[super::ZoneKind]>::is_empty) {
@@ -648,10 +714,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::AtNextStep { effect, .. } => {
             collect_ability_grants(*effect, grants);
         }
-        super::EffectDef::Apply {
-            effect: super::AppliedEffectDef::GrantAbility(ability),
-            ..
-        } => grants.push(ability),
+        super::EffectDef::Apply { effect, .. } => collect_applied_ability_grants(effect, grants),
         super::EffectDef::None
         | super::EffectDef::AddMana(_)
         | super::EffectDef::DealDamage { .. }
@@ -681,8 +744,23 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCreatureType { .. }
-        | super::EffectDef::Apply { .. }
         | super::EffectDef::Special(_) => {}
+    }
+}
+
+fn collect_applied_ability_grants(effect: super::AppliedEffectDef, grants: &mut Vec<&AbilityDef>) {
+    match effect {
+        super::AppliedEffectDef::Composite(effects) => {
+            for effect in effects {
+                collect_applied_ability_grants(*effect, grants);
+            }
+        }
+        super::AppliedEffectDef::GrantAbility(ability) => grants.push(ability),
+        super::AppliedEffectDef::CannotBeCountered
+        | super::AppliedEffectDef::CannotBeBlockedBy(_)
+        | super::AppliedEffectDef::AddLandTypes(_)
+        | super::AppliedEffectDef::ModifyPowerToughness { .. }
+        | super::AppliedEffectDef::Special(_) => {}
     }
 }
 
@@ -692,13 +770,10 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
             .iter()
             .map(|effect| ability_grant_sites(*effect))
             .fold(0, usize::saturating_add),
-        super::EffectDef::OptionalManaPayment { effect, .. }
-        | super::EffectDef::May(effect)
-        | super::EffectDef::AtNextStep { effect, .. } => ability_grant_sites(*effect),
-        super::EffectDef::Apply {
-            effect: super::AppliedEffectDef::GrantAbility(_),
-            ..
-        } => 1,
+        super::EffectDef::OptionalManaPayment { effect, .. } | super::EffectDef::May(effect) => {
+            ability_grant_sites(*effect)
+        }
+        super::EffectDef::Apply { effect, .. } => applied_ability_grant_sites(effect),
         super::EffectDef::None
         | super::EffectDef::AddMana(_)
         | super::EffectDef::DealDamage { .. }
@@ -726,10 +801,25 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::MakeUnblockableThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
         | super::EffectDef::MultiplyEventAmount(_)
+        | super::EffectDef::AtNextStep { .. }
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCreatureType { .. }
-        | super::EffectDef::Apply { .. }
         | super::EffectDef::Special(_) => 0,
+    }
+}
+
+fn applied_ability_grant_sites(effect: super::AppliedEffectDef) -> usize {
+    match effect {
+        super::AppliedEffectDef::Composite(effects) => effects
+            .iter()
+            .map(|effect| applied_ability_grant_sites(*effect))
+            .fold(0, usize::saturating_add),
+        super::AppliedEffectDef::GrantAbility(_) => 1,
+        super::AppliedEffectDef::CannotBeCountered
+        | super::AppliedEffectDef::CannotBeBlockedBy(_)
+        | super::AppliedEffectDef::AddLandTypes(_)
+        | super::AppliedEffectDef::ModifyPowerToughness { .. }
+        | super::AppliedEffectDef::Special(_) => 0,
     }
 }
 
@@ -835,13 +925,17 @@ fn validate_spell_form(
 fn validate_cost_ids(
     definition: &CardDefinition,
     option: &PlayOptionDef,
-    alternative_costs: &mut HashSet<AlternativeCostId>,
     additional_costs: &mut HashSet<AdditionalCostId>,
 ) -> Result<(), CatalogError> {
+    // Alternative identities are interpreted together with their play option.
+    // In particular, alternative-cast clauses on two split-card parts may
+    // have the same positional AbilityId and therefore the same projected ID.
+    let mut alternative_costs = HashSet::new();
     for cost in &option.alternative_costs {
         if !alternative_costs.insert(cost.id) {
             return Err(CatalogError::DuplicateAlternativeCostId {
                 definition: definition.id,
+                option: option.id,
                 cost: cost.id,
             });
         }
@@ -1603,7 +1697,25 @@ pub enum CatalogError {
     },
     DuplicateAlternativeCostId {
         definition: CardDefinitionId,
+        option: PlayOptionId,
         cost: AlternativeCostId,
+    },
+    MissingAlternativeCostForAbility {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        cost: AlternativeCostId,
+    },
+    MismatchedAlternativeCostForAbility {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        option: PlayOptionId,
+        cost: AlternativeCostId,
+        expected_label: String,
+        actual_label: String,
+        expected_mana_cost: ManaCost,
+        actual_mana_cost: ManaCost,
     },
     DuplicateAdditionalCostId {
         definition: CardDefinitionId,
@@ -2055,9 +2167,36 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "spell mode {mode:?} in play option {option:?} of card definition {definition:?} is labeled {presentation:?} but its semantic branch is labeled {semantic:?}"
             ),
-            Self::DuplicateAlternativeCostId { definition, cost } => write!(
+            Self::DuplicateAlternativeCostId {
+                definition,
+                option,
+                cost,
+            } => write!(
                 formatter,
-                "card definition {definition:?} defines alternative cost {cost:?} more than once"
+                "play option {option:?} of card definition {definition:?} defines alternative cost {cost:?} more than once"
+            ),
+            Self::MissingAlternativeCostForAbility {
+                definition,
+                part,
+                ability,
+                cost,
+            } => write!(
+                formatter,
+                "alternative-cast ability {ability:?} on part {part:?} of card definition {definition:?} references missing cost {cost:?}"
+            ),
+            Self::MismatchedAlternativeCostForAbility {
+                definition,
+                part,
+                ability,
+                option,
+                cost,
+                expected_label,
+                actual_label,
+                expected_mana_cost,
+                actual_mana_cost,
+            } => write!(
+                formatter,
+                "alternative cost {cost:?} on play option {option:?}, projected from ability {ability:?} on part {part:?} of card definition {definition:?}, must be labeled {expected_label:?} with mana cost {expected_mana_cost}, but is labeled {actual_label:?} with mana cost {actual_mana_cost}"
             ),
             Self::DuplicateAdditionalCostId { definition, cost } => write!(
                 formatter,
@@ -2112,11 +2251,11 @@ mod tests {
     use super::{CardCatalog, CatalogError, GrantedAbilityValidationError};
     use crate::card::{
         AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef,
-        AbilityTargetPredicate, AdditionalCostDef, AlternateSpellKind, AlternativeCostDef,
-        AppliedEffectDef, CardBehavior, CardDefinition, CardEffectStatus, CardPart, CardPrinting,
-        CardPrintingId, CardSet, CardStructure, DoubleFacedKind, EffectDef, EffectDurationDef,
-        EffectRecipientDef, ManaCost, ModeDef, ModeSetDef, PlayOptionDef, PlayerRelation,
-        PrintedManaCost, SpellForm, TargetPredicate, TargetSlotDef,
+        AbilityTargetPredicate, AdditionalCostDef, AlternateSpellKind, AlternativeCastKindDef,
+        AlternativeCostDef, AppliedEffectDef, CardBehavior, CardDefinition, CardEffectStatus,
+        CardPart, CardPrinting, CardPrintingId, CardSet, CardStructure, DoubleFacedKind, EffectDef,
+        EffectDurationDef, EffectRecipientDef, ManaCost, ModeDef, ModeSetDef, PlayOptionDef,
+        PlayerRelation, PrintedManaCost, SpellForm, TargetPredicate, TargetSlotDef,
     };
     use crate::{
         AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, Format,
@@ -2553,6 +2692,85 @@ mod tests {
     }
 
     #[test]
+    fn granted_modal_branches_validate_nested_grants_in_printed_order() {
+        static VALID: AbilityDef = AbilityDef::not_implemented(
+            "A valid granted ability.",
+            "Only nested validation matters in this fixture.",
+        );
+        static INVALID: AbilityDef = AbilityDef::spell("", EffectDef::None);
+        static MODES: [AbilityDef; 2] = [
+            AbilityDef::spell(
+                "The first mode grants a valid ability.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::GrantAbility(&VALID),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::spell(
+                "The second mode grants an invalid ability.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::GrantAbility(&INVALID),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ];
+        static GRANTED_MODAL: AbilityDef = AbilityDef::choose_one_spell("Choose one.", &MODES);
+
+        assert_eq!(
+            error(definition_granting(&GRANTED_MODAL)),
+            CatalogError::InvalidGrantedAbility {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                grant_path: vec![GrantId::PRIMARY, GrantId(1)],
+                problem: GrantedAbilityValidationError::EmptyText,
+            }
+        );
+    }
+
+    #[test]
+    fn granted_modal_capacity_counts_grants_across_all_modes() {
+        static TERMINAL: AbilityDef = AbilityDef::not_implemented(
+            "A terminal granted ability.",
+            "The terminal ability is intentionally not executable.",
+        );
+        let grants = |count| {
+            Box::leak(
+                vec![
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Source,
+                        effect: AppliedEffectDef::GrantAbility(&TERMINAL),
+                        duration: EffectDurationDef::UntilEndOfTurn,
+                    };
+                    count
+                ]
+                .into_boxed_slice(),
+            )
+        };
+        let modes = Box::leak(
+            vec![
+                AbilityDef::spell("First mode.", EffectDef::Sequence(grants(128))),
+                AbilityDef::spell("Second mode.", EffectDef::Sequence(grants(129))),
+            ]
+            .into_boxed_slice(),
+        );
+        let granted_modal = Box::leak(Box::new(AbilityDef::choose_one_spell("Choose one.", modes)));
+
+        assert_eq!(
+            error(definition_granting(granted_modal)),
+            CatalogError::InvalidGrantedAbility {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                grant_path: vec![GrantId::PRIMARY],
+                problem: GrantedAbilityValidationError::TooManyGrantSites { count: 257 },
+            }
+        );
+    }
+
+    #[test]
     fn granted_ability_validation_checks_zones_mana_targets_and_target_slots() {
         static MANA_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
             TargetSlotId(4),
@@ -2841,7 +3059,7 @@ mod tests {
     }
 
     #[test]
-    fn mode_ids_are_positional_per_option_and_cost_ids_are_unique_per_definition() {
+    fn mode_and_alternative_cost_ids_are_local_to_options() {
         let modes = ModeSetDef::choose_one(vec![mode(3, Vec::new()), mode(3, Vec::new())]);
         let mut duplicate_mode = definition(1, "Test Card", CardSet::Alpha);
         duplicate_mode.play_options[0].modes = Some(modes);
@@ -2884,9 +3102,21 @@ mod tests {
             error(duplicate_alternative),
             CatalogError::DuplicateAlternativeCostId {
                 definition: CardDefinitionId(1),
+                option: PlayOptionId::DEFAULT,
                 cost: AlternativeCostId(4),
             }
         );
+
+        let mut alternatives_on_distinct_options = split_definition(None);
+        for option in &mut alternatives_on_distinct_options.play_options {
+            option.alternative_costs.push(AlternativeCostDef {
+                id: AlternativeCostId(4),
+                label: "Generic alternative".into(),
+                mana_cost: ManaCost::default(),
+            });
+        }
+        CardCatalog::new([alternatives_on_distinct_options])
+            .expect("alternative-cost identities are local to a play option");
 
         let mut duplicate_additional = definition(1, "Test Card", CardSet::Alpha);
         duplicate_additional.play_options[0].additional_costs = vec![
@@ -2907,6 +3137,142 @@ mod tests {
                 definition: CardDefinitionId(1),
                 cost: AdditionalCostId(5),
             }
+        );
+    }
+
+    #[test]
+    fn alternative_cast_ability_requires_its_derived_cost_projection() {
+        let flashback_cost = ManaCost {
+            generic: 2,
+            blue: 1,
+            ..ManaCost::default()
+        };
+        let missing_abilities = Box::leak(
+            vec![AbilityDef::alternative_cast(
+                flashback_cost,
+                AlternativeCastKindDef::Flashback,
+                None,
+                EffectDef::None,
+            )]
+            .into_boxed_slice(),
+        );
+        let mut missing = definition(1, "Test Card", CardSet::Alpha);
+        let rules =
+            crate::CardRules::new_instant(ManaCost::default()).with_abilities(missing_abilities);
+        set_primary_rules(&mut missing, &rules);
+        assert_eq!(
+            error(missing),
+            CatalogError::MissingAlternativeCostForAbility {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                cost: AlternativeCostId(AbilityId::PRIMARY.0),
+            }
+        );
+
+        let projected_abilities = Box::leak(
+            vec![
+                AbilityDef::spell("Draw a card.", EffectDef::None),
+                AbilityDef::alternative_cast(
+                    flashback_cost,
+                    AlternativeCastKindDef::Flashback,
+                    None,
+                    EffectDef::None,
+                ),
+            ]
+            .into_boxed_slice(),
+        );
+        let mut projected = definition(1, "Test Card", CardSet::Alpha);
+        projected.play_options[0]
+            .alternative_costs
+            .push(AlternativeCostDef {
+                id: AlternativeCostId(1),
+                label: "Flashback".into(),
+                mana_cost: flashback_cost,
+            });
+        let rules =
+            crate::CardRules::new_instant(ManaCost::default()).with_abilities(projected_abilities);
+        set_primary_rules(&mut projected, &rules);
+        CardCatalog::new([projected.clone()])
+            .expect("the ability's positional ID derives its matching cost projection");
+
+        let mut mismatched_label = projected.clone();
+        mismatched_label.play_options[0].alternative_costs[0].label = "Overload".into();
+        assert_eq!(
+            error(mismatched_label),
+            CatalogError::MismatchedAlternativeCostForAbility {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId(1),
+                option: PlayOptionId::DEFAULT,
+                cost: AlternativeCostId(1),
+                expected_label: "Flashback".into(),
+                actual_label: "Overload".into(),
+                expected_mana_cost: flashback_cost,
+                actual_mana_cost: flashback_cost,
+            }
+        );
+
+        let mut mismatched_mana = projected;
+        mismatched_mana.play_options[0].alternative_costs[0].mana_cost = ManaCost::default();
+        assert_eq!(
+            error(mismatched_mana),
+            CatalogError::MismatchedAlternativeCostForAbility {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId(1),
+                option: PlayOptionId::DEFAULT,
+                cost: AlternativeCostId(1),
+                expected_label: "Flashback".into(),
+                actual_label: "Flashback".into(),
+                expected_mana_cost: flashback_cost,
+                actual_mana_cost: ManaCost::default(),
+            }
+        );
+    }
+
+    #[test]
+    fn incomplete_alternative_cast_ability_remains_non_executable_catalog_metadata() {
+        let alternative = AlternativeCostId(1);
+        let abilities = Box::leak(
+            vec![
+                AbilityDef::spell("Draw a card.", EffectDef::None),
+                AbilityDef::alternative_cast(
+                    ManaCost::default(),
+                    AlternativeCastKindDef::Overload,
+                    Some("Draw a card for each opponent."),
+                    EffectDef::None,
+                )
+                .with_implementation(AbilityImplementationDef::NotImplemented {
+                    explanation: "Test-only incomplete overload.",
+                }),
+            ]
+            .into_boxed_slice(),
+        );
+        let mut definition = definition(1, "Test Card", CardSet::Alpha);
+        definition.play_options[0]
+            .alternative_costs
+            .push(AlternativeCostDef {
+                id: alternative,
+                label: "Overload".into(),
+                mana_cost: ManaCost::default(),
+            });
+        let rules = crate::CardRules::new_instant(ManaCost::default()).with_abilities(abilities);
+        set_primary_rules(&mut definition, &rules);
+
+        let catalog = CardCatalog::new([definition]).expect("incomplete clauses stay cataloged");
+        let stored = catalog.get(CardDefinitionId(1)).unwrap();
+        assert_eq!(
+            stored.implementation_status(),
+            crate::ImplementationStatus::Partial,
+        );
+        assert!(
+            !stored.parts[0]
+                .rules
+                .ability(AbilityId(1))
+                .unwrap()
+                .implementation
+                .is_executable(),
         );
     }
 

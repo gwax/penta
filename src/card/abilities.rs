@@ -4,8 +4,9 @@
 //! intrinsic rule, or grant site assigns identity when it attaches the clause.
 
 use super::model::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, AppliedEffectDef,
-    EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ZoneKind,
+    AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
+    AlternativeCastKindDef, AppliedEffectDef, EffectDef, EffectDurationDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ManaCost, ZoneKind,
 };
 
 const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
@@ -51,22 +52,6 @@ pub const fn double_strike() -> AbilityDef {
     keyword("Double strike", KeywordAbility::DoubleStrike)
 }
 
-/// The printed flashback clause. The cost itself lives on
-/// [`crate::card::CardRules::with_flashback`], which is what gives the card a
-/// second play option; this clause only carries the text.
-#[must_use]
-pub const fn flashback(text: &'static str) -> AbilityDef {
-    AbilityDef::static_ability(
-        text,
-        EffectDef::Special("Cast this card from your graveyard for its flashback cost"),
-    )
-    .with_source_zones(&[ZoneKind::Graveyard])
-    .with_implementation(AbilityImplementationDef::CustomFull {
-        behavior: None,
-        explanation: "The flashback play option is implemented by the shared casting path.",
-    })
-}
-
 #[must_use]
 pub const fn banding() -> AbilityDef {
     unsupported_keyword(
@@ -108,7 +93,10 @@ pub const fn hexproof() -> AbilityDef {
 
 #[must_use]
 pub const fn intimidate() -> AbilityDef {
-    keyword("Intimidate", KeywordAbility::Intimidate)
+    keyword(
+        "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)",
+        KeywordAbility::Intimidate,
+    )
 }
 
 #[must_use]
@@ -134,7 +122,62 @@ pub const fn protection_from(color: ManaColor) -> AbilityDef {
     keyword(text, KeywordAbility::ProtectionFrom(color))
 }
 
-/// The static ability carried by a spell that says it can't be countered.
+/// A printed flashback clause. Its attached ability identity becomes the
+/// spell play option's alternative-cost identity.
+#[must_use]
+pub const fn flashback(mana_cost: ManaCost) -> AbilityDef {
+    AbilityDef::alternative_cast(
+        mana_cost,
+        AlternativeCastKindDef::Flashback,
+        None,
+        EffectDef::None,
+    )
+}
+
+/// A flashback ability whose cost is the mana cost of the card carrying it.
+/// This is the form granted by Snapcaster Mage.
+#[must_use]
+pub const fn flashback_for_card_mana_cost() -> AbilityDef {
+    AbilityDef::alternative_cast_for_card_mana_cost(
+        AlternativeCastKindDef::Flashback,
+        None,
+        EffectDef::None,
+    )
+}
+
+/// A printed overload clause. `effect` is the spell after every instance of
+/// "target" has been changed to "each."
+#[must_use]
+pub const fn overload(
+    mana_cost: ManaCost,
+    stack_text: &'static str,
+    effect: EffectDef,
+) -> AbilityDef {
+    AbilityDef::alternative_cast(
+        mana_cost,
+        AlternativeCastKindDef::Overload,
+        Some(stack_text),
+        effect,
+    )
+}
+
+/// A Bloodrush ability activated from the card carrying it in hand. The
+/// mechanic always discards that card in addition to paying its mana cost;
+/// the card supplies its exact rules text, target declaration, and effect.
+#[must_use]
+pub const fn bloodrush(mana_cost: ManaCost, text: &'static str, effect: EffectDef) -> AbilityDef {
+    AbilityDef::activated_with_cost_list(
+        text,
+        AbilityCostList::two(
+            AbilityCostDef::Mana(mana_cost),
+            AbilityCostDef::DiscardSource,
+        ),
+        effect,
+    )
+    .with_source_zones(&[ZoneKind::Hand])
+}
+
+/// The intrinsic stack-zone rule carried by spells that cannot be countered.
 #[must_use]
 pub const fn cannot_be_countered() -> AbilityDef {
     AbilityDef::static_ability(
@@ -168,11 +211,16 @@ pub const fn tap_for(mana: ManaColor) -> AbilityDef {
 
 #[cfg(test)]
 mod tests {
-    use super::{banding, flying, tap_for};
-    use crate::card::{
-        AbilityCostDef, AbilityDef, AbilityImplementationDef, AddManaEffectDef, CardRules,
-        DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost,
+    use super::{
+        banding, bloodrush, double_strike, first_strike, flashback, flashback_for_card_mana_cost,
+        flying, intimidate, overload, tap_for,
     };
+    use crate::card::{
+        AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
+        AlternativeCastKindDef, AlternativeCastManaCostDef, CardRules, DeclarativeAbilityDef,
+        EffectDef, KeywordAbility, ManaColor, ManaCost, ZoneKind,
+    };
+    use crate::mana_cost;
 
     #[test]
     fn tap_for_builds_a_complete_executable_mana_ability() {
@@ -193,7 +241,7 @@ mod tests {
             assert!(matches!(
                 ability.definition,
                 DeclarativeAbilityDef::ActivatedMana(definition)
-                    if definition.costs == [AbilityCostDef::TapSource]
+                    if definition.costs.as_slice() == [AbilityCostDef::TapSource]
             ));
             assert_eq!(
                 ability.effect,
@@ -212,5 +260,103 @@ mod tests {
         assert!(rules.has_executable_keyword(KeywordAbility::Flying));
         assert!(rules.has_keyword(KeywordAbility::Banding));
         assert!(!rules.has_executable_keyword(KeywordAbility::Banding));
+    }
+
+    #[test]
+    fn common_combat_keywords_are_complete_definitions() {
+        let cases = [
+            (first_strike(), KeywordAbility::FirstStrike),
+            (double_strike(), KeywordAbility::DoubleStrike),
+            (intimidate(), KeywordAbility::Intimidate),
+        ];
+
+        for (ability, expected) in cases {
+            assert_eq!(ability.implementation, AbilityImplementationDef::Definition);
+            assert!(ability.implementation.is_executable());
+            assert_eq!(ability.definition, DeclarativeAbilityDef::Keyword(expected));
+        }
+        assert_eq!(
+            intimidate().text,
+            "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)"
+        );
+    }
+
+    #[test]
+    fn alternative_cast_helpers_own_costs_and_render_canonical_text() {
+        let flashback = flashback(mana_cost!("{2}{U}"));
+        let overload = overload(
+            mana_cost!("{3}{R}{R}{R}"),
+            "Deal 4 damage to each creature you don't control.",
+            EffectDef::None,
+        );
+
+        assert!(matches!(
+            flashback.definition,
+            DeclarativeAbilityDef::AlternativeCast(definition)
+                if definition.kind == AlternativeCastKindDef::Flashback
+                    && definition.mana_cost
+                        == AlternativeCastManaCostDef::Fixed(mana_cost!("{2}{U}"))
+        ));
+        assert_eq!(
+            flashback.rules_text(),
+            "Flashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+        );
+        assert!(matches!(
+            overload.definition,
+            DeclarativeAbilityDef::AlternativeCast(definition)
+                if definition.kind == AlternativeCastKindDef::Overload
+                    && definition.mana_cost
+                        == AlternativeCastManaCostDef::Fixed(mana_cost!("{3}{R}{R}{R}"))
+                    && definition.stack_text
+                        == Some("Deal 4 damage to each creature you don't control.")
+        ));
+        assert_eq!(
+            overload.rules_text(),
+            "Overload {3}{R}{R}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+        );
+
+        let granted = flashback_for_card_mana_cost();
+        assert!(matches!(
+            granted.definition,
+            DeclarativeAbilityDef::AlternativeCast(definition)
+                if definition.kind == AlternativeCastKindDef::Flashback
+                    && definition.mana_cost == AlternativeCastManaCostDef::ThisCardManaCost
+                    && definition.mana_cost.resolve(Some(mana_cost!("{1}{U}")))
+                        == Some(mana_cost!("{1}{U}"))
+        ));
+        let DeclarativeAbilityDef::AlternativeCast(definition) = granted.definition else {
+            unreachable!("the helper always builds an alternative-cast ability")
+        };
+        assert_eq!(definition.mana_cost.resolve(None), None);
+    }
+
+    #[test]
+    fn bloodrush_owns_its_hand_zone_and_discard_procedure() {
+        let effect = EffectDef::Special("Test Bloodrush effect");
+        let text = "Bloodrush — {R}{G}, Discard this card: Test Bloodrush effect.";
+        let ability = bloodrush(mana_cost!("{R}{G}"), text, effect);
+        let DeclarativeAbilityDef::Activated(definition) = ability.definition else {
+            panic!("Bloodrush should be an activated ability")
+        };
+
+        assert_eq!(ability.text, text);
+        assert_eq!(ability.activation_text, None);
+        assert_eq!(definition.source_zones, [ZoneKind::Hand]);
+        assert_eq!(
+            definition.costs,
+            AbilityCostList::borrowed(&[
+                AbilityCostDef::Mana(mana_cost!("{R}{G}")),
+                AbilityCostDef::DiscardSource,
+            ]),
+            "inline and borrowed cost storage should compare by their costs",
+        );
+        assert_eq!(
+            definition.costs.as_slice(),
+            [
+                AbilityCostDef::Mana(mana_cost!("{R}{G}")),
+                AbilityCostDef::DiscardSource,
+            ],
+        );
+        assert_eq!(ability.effect, effect);
     }
 }

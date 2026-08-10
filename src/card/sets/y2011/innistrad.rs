@@ -314,22 +314,6 @@ pub(in crate::card::sets) static MULCH: CardRecord = CardRecord::new(
     ),
 );
 
-static INSTANT_OR_SORCERY_CARD: [ObjectPredicateDef; 2] = [
-    ObjectPredicateDef::HasType(CardType::Instant),
-    ObjectPredicateDef::HasType(CardType::Sorcery),
-];
-
-static SNAPCASTER_MAGE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
-    TargetSlotId(0),
-    "instant or sorcery card in your graveyard",
-    AbilityTargetPredicate::Object {
-        object: ObjectPredicateDef::AnyOf(&INSTANT_OR_SORCERY_CARD),
-        zones: &[ZoneKind::Graveyard],
-        controller: None,
-        owner: Some(PlayerRelation::You),
-    },
-)];
-
 pub(in crate::card::sets) static SNAPCASTER_MAGE: CardRecord = CardRecord::new(
     cards::SNAPCASTER_MAGE,
     "Snapcaster Mage",
@@ -352,16 +336,25 @@ pub(in crate::card::sets) static SNAPCASTER_MAGE: CardRecord = CardRecord::new(
             },
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                effect: AppliedEffectDef::Special(
-                    "Grant flashback with a flashback cost equal to this card's mana cost",
+                effect: AppliedEffectDef::GrantAbility(
+                    &abilities::flashback_for_card_mana_cost(),
                 ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         )
-        .with_targets(&SNAPCASTER_MAGE_TARGETS)
-        .with_implementation(AbilityImplementationDef::NotImplemented {
-            explanation: "The declared ETB target, flashback grant, graveyard casting, flashback cost, and exile-after-casting behavior are not executed.",
-        }),
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "instant or sorcery card in your graveyard",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::HasType(CardType::Instant),
+                    ObjectPredicateDef::HasType(CardType::Sorcery),
+                ]),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: Some(PlayerRelation::You),
+            },
+        )]),
     ]),
 );
 
@@ -399,9 +392,7 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
     "Think Twice",
     CardArt::new("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco"),
     CardSet::Innistrad,
-    CardRules::new_instant(mana_cost!("{1}{U}"))
-        .with_flashback(mana_cost!("{2}{U}"))
-        .with_abilities(&[
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
         AbilityDef::spell(
             "Draw a card.",
             EffectDef::DrawCards {
@@ -409,9 +400,7 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
                 amount: ValueDef::Constant(1),
             },
         ),
-        abilities::flashback(
-            "Flashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-        ),
+        abilities::flashback(mana_cost!("{2}{U}")),
     ]),
 );
 
@@ -420,9 +409,7 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
     "Unburial Rites",
     CardArt::new("2794c82b-e5ce-4369-894e-bf56c6402ae1", "Ryan Pancoast"),
     CardSet::Innistrad,
-    CardRules::new_sorcery(mana_cost!("{4}{B}"))
-        .with_flashback(mana_cost!("{3}{W}"))
-        .with_abilities(&[
+    CardRules::new_sorcery(mana_cost!("{4}{B}")).with_abilities(&[
         AbilityDef::spell(
             "Return target creature card from your graveyard to the battlefield.",
             EffectDef::MoveToZone {
@@ -440,9 +427,7 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
                 owner: Some(PlayerRelation::You),
             },
         )]),
-        abilities::flashback(
-            "Flashback {3}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
-        ),
+        abilities::flashback(mana_cost!("{3}{W}")),
     ]),
 );
 

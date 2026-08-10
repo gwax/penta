@@ -172,6 +172,7 @@ export type GameState = {
   turn: number;
   gameTurn: number;
   step: string;
+  regularCombatDamagePending: boolean;
   /// Opening hands are still being settled, so no turn or step has begun.
   pregame: boolean;
   active: string;

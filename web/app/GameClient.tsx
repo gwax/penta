@@ -729,7 +729,9 @@ export function GameClient({
     const matching = state?.actions.filter((action) => action.cardId === id) ?? [];
     const targeted = matching.filter(
       (action) =>
-        (action.spellAction || (declaringBlockers && action.kind === "combat")) &&
+        (action.spellAction ||
+          action.ability != null ||
+          (declaringBlockers && action.kind === "combat")) &&
         !action.manaAbility &&
         singleTargetKey(action) !== null,
     );
@@ -853,6 +855,13 @@ export function GameClient({
       if (declaringBlockers && action.kind === "combat") return false;
       if (declaringBlockers && action.label === "Finish blocking") return false;
       if (action.kind === "pass" || action.cardId == null) return true;
+      // The graveyard is currently summarized as a counter rather than a card
+      // tray. Keep Flashback usable by listing actions whose source is in no
+      // visible hand or battlefield zone; their full labels include targets.
+      const sourceIsInGraveyard =
+        !state.human.hand.some((card) => card.id === action.cardId) &&
+        !state.battlefield.some((card) => card.id === action.cardId);
+      if (sourceIsInGraveyard) return true;
       if (action.cardId !== selectedCard) return false;
       if (selectedTargetCard !== null) {
         return action.targetCardId === selectedTargetCard;
@@ -939,7 +948,9 @@ export function GameClient({
     state?.actions.filter(
       (action) =>
         action.cardId === id &&
-        (action.spellAction || (declaringBlockers && action.kind === "combat")) &&
+        (action.spellAction ||
+          action.ability != null ||
+          (declaringBlockers && action.kind === "combat")) &&
         !action.manaAbility &&
         // Dropping on a target would also settle the sacrifice, which the
         // player has to choose deliberately.

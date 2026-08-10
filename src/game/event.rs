@@ -111,6 +111,13 @@ pub enum GameEvent {
         source: GameObjectId,
         definition: CardDefinitionId,
     },
+    /// An activated ability resolved with every target illegal, so it did
+    /// nothing even though its activation costs remain paid.
+    AbilityFizzled {
+        object: GameObjectId,
+        source: GameObjectId,
+        definition: CardDefinitionId,
+    },
     AbilityTriggered {
         player: PlayerId,
         trigger: u32,
@@ -125,6 +132,12 @@ pub enum GameEvent {
         definition: CardDefinitionId,
     },
     TriggeredAbilityResolved {
+        object: GameObjectId,
+        source: GameObjectId,
+        definition: CardDefinitionId,
+    },
+    /// A triggered ability resolved with every target illegal.
+    TriggeredAbilityFizzled {
         object: GameObjectId,
         source: GameObjectId,
         definition: CardDefinitionId,

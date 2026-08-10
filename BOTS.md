@@ -5,9 +5,10 @@ ships Eternal Central Old School 93/94 and the final pre-Theros ISD–RTR
 Standard format. This guide is for writing a program that plays it: from
 Python, C, C++, or Rust, against the included bots or against itself.
 
-This guide describes protocol 3, shipped by engine version 0.6.0. Old School
-remains the default for compatibility; new integrations should record and pass
-an explicit format slug with each game.
+This guide describes the current development wire contract, protocol 7. The
+engine crate remains version 0.6.0 while these changes are unreleased. Old
+School remains the default for compatibility; new integrations should record
+and pass an explicit format slug with each game.
 
 A bot is a function from an **observation** (your seat's view of the game,
 as JSON) to an **action index** (a position in that observation's
@@ -237,6 +238,7 @@ simulating in their own process, where there is nobody to hide from.
 | `seat` | whose view this is: `"p1"` or `"p2"` |
 | `pregame` | true while mulligans are being settled |
 | `turn`, `activeSeat`, `prioritySeat`, `step` | where the game is; `step` is one of `Upkeep`, `Draw`, `PrecombatMain`, `BeginningOfCombat`, `DeclareAttackers`, `DeclareBlockers`, `CombatDamage`, `EndOfCombat`, `PostcombatMain`, `End`, `Cleanup` |
+| `regularCombatDamagePending` | true during the priority window after first-strike damage and before regular combat damage; both damage waves otherwise use `step: "CombatDamage"` |
 | `life`, `manaPools`, `librarySizes` | two-element arrays, indexed p1 then p2 |
 | `hand` | your cards: `{instance, definition, name}` |
 | `opponentHandSize` | their hand as a count — never the cards |

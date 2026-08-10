@@ -40,8 +40,12 @@ use crate::{
 /// were developed across several commits. Version 4 adds executable modal
 /// spell choices, public counterability and permanent-choice state, and
 /// enables previously metadata-only cards whose actions now appear in
+/// legal-action lists. Version 5 is upstream's post-Innistrad action contract.
+/// Version 6 adds one activation action per affordable value of X. Version 7
+/// exposes the priority window between first-strike and regular combat damage
+/// and adds newly executable keyword and alternative-casting actions to
 /// legal-action lists.
-pub const PROTOCOL_VERSION: u32 = 6;
+pub const PROTOCOL_VERSION: u32 = 7;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -689,6 +693,7 @@ pub fn observation_json_for_format(
         "activeSeat": seat_name(observation.active_player),
         "prioritySeat": seat_name(observation.priority),
         "step": format!("{:?}", observation.step),
+        "regularCombatDamagePending": observation.regular_combat_damage_pending,
         "life": observation.life_totals,
         "manaPools": [
             mana_pool_json(&observation.mana_pools[0]),
@@ -920,7 +925,6 @@ fn play_option_json(option: &PlayOptionDef) -> Value {
         "restriction": match option.restriction {
             PlayRestriction::Normal => "normal",
             PlayRestriction::FromHandOnly => "fromHandOnly",
-            PlayRestriction::Flashback => "flashback",
         },
         "modes": option.modes.as_ref().map(|modes| json!({
             "minimum": modes.minimum,
@@ -2146,7 +2150,7 @@ mod tests {
     }
 
     #[test]
-    fn battlefield_name_uses_the_presented_card_part() {
+    fn observation_json_carries_interwave_state_and_presented_card_part() {
         let catalog = poc::catalog().expect("catalog builds");
         let observation = PlayerObservation {
             viewer: PlayerId::One,
@@ -2154,7 +2158,8 @@ mod tests {
             active_turn: 1,
             active_player: PlayerId::One,
             priority: PlayerId::One,
-            step: crate::game::Step::PrecombatMain,
+            step: crate::game::Step::CombatDamage,
+            regular_combat_damage_pending: true,
             life_totals: [20, 20],
             mana_pools: [crate::ManaPool::default(); 2],
             hand: Vec::new(),
@@ -2187,6 +2192,7 @@ mod tests {
 
         let value =
             observation_json_for_format(&catalog, Format::IsdRtrStandard, &observation, false, &[]);
+        assert_eq!(value["regularCombatDamagePending"], true);
         assert_eq!(value["battlefield"][0]["objectId"], 30);
         assert_eq!(value["battlefield"][0]["presentedPartId"], 1);
         assert_eq!(value["battlefield"][0]["name"], "Ravager of the Fells");

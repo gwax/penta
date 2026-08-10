@@ -146,15 +146,7 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
     CardArt::new("94e4b773-40a4-4272-85dd-f728ada22748", "Scott M. Fischer"),
     CardSet::ReturnToRavnica,
     CardRules::new_instant(mana_cost!("{U}{U}{R}")).with_abilities(&[
-        AbilityDef::static_ability(
-            "This spell can't be countered.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeCountered,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
-            },
-        )
-        .with_source_zones(&[ZoneKind::Stack]),
+        abilities::cannot_be_countered(),
         AbilityDef::spell(
             "Counter target spell you don't control.",
             EffectDef::Counter {
@@ -167,13 +159,20 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
             AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::Spell,
                 zones: &[ZoneKind::Stack],
-                controller: Some(PlayerRelation::Opponent),
+                controller: Some(PlayerRelation::NotYou),
                 owner: None,
             },
         )]),
-        AbilityDef::not_implemented(
-            "Overload {1}{U}{U}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
-            "Alternative overload costs that rewrite a spell's targeting are not implemented.",
+        abilities::overload(
+            mana_cost!("{1}{U}{U}{R}"),
+            "Counter each spell you don't control.",
+            EffectDef::Counter {
+                object: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::Spell,
+                    zones: &[ZoneKind::Stack],
+                    controller: PlayerRelation::NotYou,
+                },
+            },
         ),
     ]),
 );
@@ -469,13 +468,21 @@ pub(in crate::card::sets) static MIZZIUM_MORTARS: CardRecord = CardRecord::new(
             AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 zones: &[ZoneKind::Battlefield],
-                controller: Some(PlayerRelation::Opponent),
+                controller: Some(PlayerRelation::NotYou),
                 owner: None,
             },
         )]),
-        AbilityDef::not_implemented(
-            "Overload {3}{R}{R}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
-            "Alternative overload costs that rewrite a spell's targeting are not implemented.",
+        abilities::overload(
+            mana_cost!("{3}{R}{R}{R}"),
+            "Mizzium Mortars deals 4 damage to each creature you don't control.",
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::NotYou,
+                },
+                amount: ValueDef::Constant(4),
+            },
         ),
     ]),
 );
@@ -551,21 +558,17 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
         &[
             AbilityDef::spell(
                 "Target creature gets +2/+2 and gains trample until end of turn",
-                EffectDef::Sequence(&[
-                    EffectDef::Apply {
-                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                        effect: AppliedEffectDef::ModifyPowerToughness {
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::ModifyPowerToughness {
                             power: ValueDef::Constant(2),
                             toughness: ValueDef::Constant(2),
                         },
-                        duration: EffectDurationDef::UntilEndOfTurn,
-                    },
-                    EffectDef::Apply {
-                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                        effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
-                        duration: EffectDurationDef::UntilEndOfTurn,
-                    },
-                ]),
+                        AppliedEffectDef::GrantAbility(&abilities::trample()),
+                    ]),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
             )
             .with_targets(&[AbilityTargetDef::exactly_one_permanent(
                 TargetSlotId(0),

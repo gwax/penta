@@ -12,18 +12,23 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
-## 0.6.0 — protocol 6
+## 0.6.0 — protocol 7
 
 ### Changed
 
 - Activated abilities can cost X. `ActivateAbility` carries the chosen value
   and `legal_actions` offers one activation per affordable X, so a bot that
   assumed a single activation per ability and target now sees several.
-- Flashback. A card in its owner's graveyard can offer a second cast play
-  option, so `legal_actions` now reports `CastSpell` for objects outside the
-  hand; a bot that assumed every castable card was in hand needs updating.
-  Play options carry a new `"flashback"` restriction, and a spell cast that way
-  exiles itself instead of returning to the graveyard.
+- Flashback and Overload are alternative-casting ability clauses. Their costs
+  are exposed in a play option's `alternativeCosts`; selecting Flashback lets
+  a card in its owner's graveyard produce a `CastSpell` action and exiles that
+  spell when it leaves the stack. A bot that assumed every castable card was
+  in hand, or that every spell used its ordinary cost and targets, needs
+  updating.
+- First strike and double strike deal combat damage in separate waves with a
+  priority window between them. Observations expose that window as
+  `regularCombatDamagePending`, and newly executable strike and Bloodrush
+  abilities add legal actions that older bots did not see.
 - Activated, mana, and triggered actions identify the exact printed,
   intrinsic, or granted ability that created them. Triggered abilities become
   independent stack objects with frozen source information and may be answered
@@ -49,7 +54,7 @@ minor for breaking changes, per Cargo's 0.x convention.
   `"manaCost": null`; a printed `{0}` remains a mana-cost object whose
   `generic` value is zero.
 
-All incompatible wire changes above ship together as protocol 3. A protocol
+All incompatible wire changes above ship together as protocol 7. A protocol
 number identifies the compatibility boundary for a release, branch, or pull
 request; it does not increment once per field or intermediate commit.
 
