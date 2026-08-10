@@ -1,10 +1,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardBehavior,
-    CardRules, CardSet, CardType, CounterKind, EffectDef, EffectDurationDef, EffectExecutionDef,
-    EffectRecipientDef, ManaColor, ManaRestrictionDef, ObjectPredicateDef, PlayerRelation,
-    ReplacementEffectDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    AddManaEffectDef, AnimationDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt,
+    CardBehavior, CardRules, CardSet, CardType, CardTypeSet, CounterKind, EffectDef,
+    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor, ManaRestrictionDef,
+    ObjectPredicateDef, PlayerRelation, ReplacementEffectDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -58,38 +59,56 @@ pub(in crate::card::sets) static SU_CHI: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Animating keeps the land: the creature and artifact types are added on
+/// top of what is printed.
+static MISHRAS_FACTORY_ANIMATION: AnimationDef = AnimationDef::new(2, 2)
+    .with_types(CardTypeSet::single(CardType::Creature).with(CardType::Artifact))
+    .with_subtypes(&["Assembly-Worker"]);
+
+/// The pump reaches any Assembly-Worker, including a Factory that has already
+/// animated itself and a second Factory across the table.
+static MISHRAS_FACTORY_PUMP_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Subtype("Assembly-Worker"),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
 pub(in crate::card::sets) static MISHRA_S_FACTORY: CardRecord = CardRecord::new(
     cards::MISHRA_S_FACTORY,
     "Mishra's Factory",
     CardArt::new("a696c5b6-f216-454d-8029-74e84bbd1428", "Kaja Foglio & Phil Foglio"),
     CardSet::Antiquities,
-    CardRules::new_land(&[])
-        .with_abilities(&[
-            abilities::tap_for(ManaColor::Colorless),
-            AbilityDef::activated(
-                "{1}: This land becomes a 2/2 Assembly-Worker artifact creature until end of turn. It's still a land.",
-                &[AbilityCostDef::Mana(mana_cost!("{1}"))],
-                EffectDef::Special("Animate this land as a 2/2 Assembly-Worker artifact creature"),
-            )
-            .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::MishrasFactory))
-            .with_coverage(AbilityCoverageDef::partial(
-                "The animation ability is implemented, but currently resolves immediately instead of using the stack.",
-            ))
-            .with_legacy_procedure(),
-            AbilityDef::activated_with_targets("{T}: Target Assembly-Worker creature gets +1/+1 until end of turn.", &[AbilityCostDef::TapSource], &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Special("Assembly-Worker permanent"),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: None,
-                    owner: None,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated(
+            "{1}: This land becomes a 2/2 Assembly-Worker artifact creature until end of turn. It's still a land.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Animate(&MISHRAS_FACTORY_ANIMATION),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{T}: Target Assembly-Worker creature gets +1/+1 until end of turn.",
+            &[AbilityCostDef::TapSource],
+            &MISHRAS_FACTORY_PUMP_TARGET,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(1),
+                    toughness: ValueDef::Constant(1),
                 },
-            )], EffectDef::Special("Give the target Assembly-Worker +1/+1 until end of turn"))
-            .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::MishrasFactory))
-            .with_coverage(AbilityCoverageDef::partial(
-                "The pump ability is implemented, but currently resolves immediately instead of using the stack.",
-            ))
-            .with_legacy_procedure(),
-        ]),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static ORCISH_MECHANICS: CardRecord = CardRecord::new(

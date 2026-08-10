@@ -2169,6 +2169,7 @@ impl Game {
                     definition: permanent.card.definition,
                     presented: permanent.presented,
                     controller: permanent.controller,
+                    types: self.permanent_types(permanent).unwrap_or_default(),
                     chosen_creature_type: permanent.chosen_creature_type.clone(),
                     tapped: permanent.tapped,
                     power: self.power_ignoring_static_effects(permanent),
@@ -7625,19 +7626,10 @@ impl Game {
                 }
             });
             if let Some((origin, behavior)) = untyped_legacy_activation {
-                self.add_legacy_activated_actions(
-                    player, permanent, origin, None, behavior, actions,
-                );
+                self.add_legacy_activated_actions(player, permanent, origin, behavior, actions);
             }
-            for (origin, definition, behavior) in legacy_activations {
-                self.add_legacy_activated_actions(
-                    player,
-                    permanent,
-                    origin,
-                    Some(definition),
-                    behavior,
-                    actions,
-                );
+            for (origin, _definition, behavior) in legacy_activations {
+                self.add_legacy_activated_actions(player, permanent, origin, behavior, actions);
             }
         }
         self.add_hand_ability_actions(player, actions);
@@ -7649,7 +7641,6 @@ impl Game {
         player: PlayerId,
         permanent: &Permanent,
         ability: AbilityOrigin,
-        definition: Option<ActivatedAbilityDef>,
         behavior: CardBehavior,
         actions: &mut Vec<Action>,
     ) {
@@ -7724,41 +7715,6 @@ impl Game {
                     cost_object: None,
                     x: 0,
                 });
-            }
-            CardBehavior::MishrasFactory
-                if definition.is_some_and(|definition| definition.targets.is_empty())
-                    && self.can_pay_cost(player, ManaCost::new(1, 0), 0) =>
-            {
-                actions.push(Action::ActivateAbility {
-                    source: permanent.card.id,
-                    ability,
-                    targets: Vec::new(),
-                    cost_object: None,
-                    x: 0,
-                });
-            }
-            CardBehavior::MishrasFactory
-                if definition.is_some_and(|definition| !definition.targets.is_empty())
-                    && !permanent.tapped
-                    && self.can_use_tap_ability(permanent) =>
-            {
-                actions.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|candidate| {
-                            candidate.controller == player && self.is_assembly_worker(candidate)
-                        })
-                        .map(|candidate| Action::ActivateAbility {
-                            source: permanent.card.id,
-                            ability,
-                            targets: vec![TargetSelection::single(
-                                ability_target_slot,
-                                Target::Permanent(candidate.card.id),
-                            )],
-                            cost_object: None,
-                            x: 0,
-                        }),
-                );
             }
             CardBehavior::ChaosOrb
                 if !permanent.tapped && self.can_pay_cost(player, ManaCost::new(1, 0), 0) =>
@@ -11624,13 +11580,6 @@ impl Game {
         Cow::Owned(subtypes)
     }
 
-    /// Whether this permanent is an Assembly-Worker, which is only ever true
-    /// of an animated Mishra's Factory today.
-    fn is_assembly_worker(&self, permanent: &Permanent) -> bool {
-        self.effective_subtypes(permanent)
-            .contains(&"Assembly-Worker")
-    }
-
     /// Basic land subtypes in effective type-line order, with duplicate types
     /// collapsed before the rules grant one intrinsic ability for each type.
     fn visit_effective_basic_land_types(
@@ -13206,12 +13155,8 @@ impl Game {
                 ))
             }
             Action::ActivateAbility {
-                source,
-                ability,
-                targets,
-                x,
-                ..
-            } => self.ability_mana_requirement(player, *source, *ability, targets, *x),
+                source, ability, x, ..
+            } => self.ability_mana_requirement(player, *source, *ability, *x),
             _ => None,
         }
     }
@@ -13223,7 +13168,6 @@ impl Game {
         player: PlayerId,
         source: GameObjectId,
         ability: AbilityOrigin,
-        targets: &[TargetSelection],
         x: u16,
     ) -> Option<(ManaCost, u16, Option<GameObjectId>, ManaPaymentPurpose)> {
         if let Some(card) = self.players[player.index()]
@@ -13266,12 +13210,13 @@ impl Game {
             .battlefield
             .iter()
             .find(|permanent| permanent.card.id == source)?;
-        if let Some((definition, selected_behavior)) = self
+        if let Some((definition, animates_source)) = self
             .find_effective_ability(permanent, |effective| effective.origin == ability)
             .and_then(|effective| match effective.ability.definition {
-                DeclarativeAbilityDef::Activated(definition) => {
-                    Some((definition, effective.ability.custom_behavior()))
-                }
+                DeclarativeAbilityDef::Activated(definition) => Some((
+                    definition,
+                    Self::effect_animates_source(effective.ability.declarative_effect()),
+                )),
                 DeclarativeAbilityDef::Spell(_)
                 | DeclarativeAbilityDef::ActivatedMana(_)
                 | DeclarativeAbilityDef::TriggeredMana(_)
@@ -13290,8 +13235,10 @@ impl Game {
                 (
                     cost,
                     x,
-                    (taps_source || selected_behavior == Some(CardBehavior::MishrasFactory))
-                        .then_some(source),
+                    // Tapping the source to pay would hand back a tapped
+                    // creature, so auto-payment leaves it alone even though
+                    // the tap itself is legal.
+                    (taps_source || animates_source).then_some(source),
                     ManaPaymentPurpose::Ability {
                         source,
                         taps_source,
@@ -13302,13 +13249,6 @@ impl Game {
 
         let behavior = self.effective_behavior(permanent)?;
         let cost = match behavior {
-            CardBehavior::MishrasFactory
-                if targets
-                    .iter()
-                    .all(|selection| selection.targets().is_empty()) =>
-            {
-                ManaCost::new(1, 0)
-            }
             CardBehavior::ChaosOrb
             | CardBehavior::NevinyrralsDisk
             | CardBehavior::IcyManipulator => ManaCost::new(1, 0),
@@ -13318,14 +13258,27 @@ impl Game {
         Some((
             cost,
             0,
-            (behavior == CardBehavior::MishrasFactory).then_some(source),
-            // Mishra's Factory animates without tapping, so tapping it for the
-            // mana is legal even if it is rarely wanted.
+            None,
             ManaPaymentPurpose::Ability {
                 source,
                 taps_source: false,
             },
         ))
+    }
+
+    /// Whether an ability turns its own source into a creature.
+    fn effect_animates_source(effect: Option<EffectDef>) -> bool {
+        match effect {
+            Some(EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Animate(_),
+                ..
+            }) => true,
+            Some(EffectDef::Sequence(effects)) => effects
+                .iter()
+                .any(|effect| Self::effect_animates_source(Some(*effect))),
+            _ => false,
+        }
     }
 
     fn activated_ability_mana_cost(definition: ActivatedAbilityDef) -> Option<ManaCost> {
@@ -14092,6 +14045,7 @@ impl Game {
                 unreachable!("the declarative activation filter checked its category")
             };
             let taps_source = definition.costs.contains(&AbilityCostDef::TapSource);
+            let animates_source = Self::effect_animates_source(ability_def.declarative_effect());
             let has_generic_sacrifice = definition
                 .costs
                 .iter()
@@ -14104,7 +14058,10 @@ impl Game {
                             player,
                             *cost,
                             x,
-                            taps_source.then_some(source),
+                            // Tapping the source to pay would hand back a
+                            // tapped creature, so auto-payment leaves it
+                            // alone even though the tap itself is legal.
+                            (taps_source || animates_source).then_some(source),
                             &ManaPaymentPurpose::Ability {
                                 source,
                                 taps_source,
@@ -14269,30 +14226,6 @@ impl Game {
                     .find(|permanent| permanent.card.id == source)
                 {
                     permanent.power_bonus += 1;
-                }
-            }
-            Some(CardBehavior::MishrasFactory) => {
-                if let Some(Target::Permanent(target)) = target {
-                    let _ = self.tap_permanent(source);
-                    if let Some(worker) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                    {
-                        worker.power_bonus += 1;
-                        worker.toughness_bonus += 1;
-                    }
-                } else {
-                    let cost = ManaCost::new(1, 0);
-                    self.activate_mana_for_cost_avoiding(player, cost, 0, Some(source));
-                    let _ = self.pay_player_cost(player, cost, 0);
-                    if let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == source)
-                    {
-                        permanent.animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
-                    }
                 }
             }
             Some(CardBehavior::ChaosOrb) => {

@@ -1027,16 +1027,23 @@ impl WebGame {
                     || card.and_then(|card| card.rules.mana_cost()),
                     penta::CardPart::mana_cost,
                 );
-                let current_kind = rules.map_or("unknown".into(), |rules| {
-                    if card.is_some_and(|card| {
-                        card.rules.special_behavior() == Some(penta::CardBehavior::MishrasFactory)
-                    }) && permanent.power.is_some()
-                    {
-                        "artifactcreature".into()
-                    } else {
+                // The engine reports what the permanent is right now, so an
+                // animated land renders as the creature it became rather than
+                // as the land it is printed as.
+                let printed_types = rules.map(penta::CardRules::types);
+                let current_kind = if permanent.types.is_empty() {
+                    rules.map_or("unknown".into(), |rules| {
                         rules.kind_name().to_ascii_lowercase()
-                    }
-                });
+                    })
+                } else {
+                    permanent.types.kind_name().to_ascii_lowercase()
+                };
+                // The printed line still carries the subtypes, so it is only
+                // replaced when the permanent has stopped matching it.
+                let current_type_line = match printed_types {
+                    Some(printed) if printed != permanent.types => permanent.types.type_name(),
+                    _ => rules.map_or_else(String::new, penta::CardRules::type_line),
+                };
                 json!({
                     "id": permanent.id.0,
                     "partId": permanent.presented.0,
@@ -1046,7 +1053,7 @@ impl WebGame {
                     ),
                     "art": card_art_value(art),
                     "kind": current_kind,
-                    "typeLine": rules.map_or_else(String::new, penta::CardRules::type_line),
+                    "typeLine": current_type_line,
                     "implementationStatus": rules.map_or("complete", |rules| {
                         implementation_status_name(rules.implementation_status())
                     }),

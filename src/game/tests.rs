@@ -4545,6 +4545,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
         },
     )
     .unwrap();
+    drain_pending(&mut game);
     assert_eq!(
         game.battlefield
             .iter()
@@ -4627,6 +4628,7 @@ fn mishras_factory_can_use_its_own_mana_to_animate() {
 
     assert!(game.legal_actions(PlayerId::One).contains(&animate));
     game.apply(PlayerId::One, animate).unwrap();
+    drain_pending(&mut game);
 
     let factory = game
         .battlefield
@@ -7059,6 +7061,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
         "the copied Factory animation coexists with Stage's retained ability",
     );
     game.apply(PlayerId::One, animate).unwrap();
+    drain_pending(&mut game);
     assert!(game.battlefield[0].animation.is_some());
 
     let retained_copy_ability = activated_ability_for(&game, stage_id, 2);

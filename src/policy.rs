@@ -861,22 +861,6 @@ impl HandcraftedPolicy {
         let discard_source_cost = self.discard_source_cost(source_definition, ability);
         let score = match behavior {
             Some(CardBehavior::ChaosOrb) => 7_200 + target_score,
-            // Animating a Factory that is already a creature does nothing but
-            // spend mana, so only the +1/+1 mode stays repeatable.
-            Some(CardBehavior::MishrasFactory)
-                if target.is_none() && Self::is_already_a_creature(observation, source) =>
-            {
-                -100
-            }
-            // The +1/+1 costs the Factory its tap, so it only pays for itself
-            // once the creature it feeds is in combat. Pumping earlier — most
-            // often itself — spends the attack it was about to make.
-            Some(CardBehavior::MishrasFactory)
-                if target.is_some() && !Self::target_is_fighting(observation, target) =>
-            {
-                -100
-            }
-            Some(CardBehavior::MishrasFactory) => 5_800 + target_score,
             Some(CardBehavior::DragonWhelp) => 5_200,
             Some(CardBehavior::Atog) if self.atog_can_attack_for_lethal(observation, source) => {
                 10_000
@@ -965,9 +949,11 @@ impl HandcraftedPolicy {
         }
         // Animating a land turns a mana source into a creature that can be
         // killed, and the creature is worth nothing unless it can attack.
+        // Animating one that is already a creature buys nothing at all.
         if source_definition
             .is_some_and(|definition| self.ability_animates_the_source(definition, ability))
-            && !Self::can_attack_this_combat(observation, source)
+            && (!Self::can_attack_this_combat(observation, source)
+                || Self::is_already_a_creature(observation, source))
         {
             return true;
         }

@@ -59,6 +59,7 @@ fn permanent(
         definition,
         presented: CardPartId::PRIMARY,
         controller,
+        types: penta::CardTypeSet::empty(),
         chosen_creature_type: None,
         tapped: false,
         power,
@@ -826,9 +827,16 @@ fn handcrafted_still_spends_removal_on_the_opponent() {
 #[test]
 fn handcrafted_animates_a_factory_once_rather_than_every_priority() {
     let catalog = poc::catalog().unwrap();
+    // The animation is the Factory's second clause; the first taps for mana.
+    // Scoring reads the real ability now, so a stand-in origin would find the
+    // mana ability instead.
     let animate = Action::ActivateAbility {
         source: CardInstanceId(1),
-        ability: PRIMARY_PRINTED_ABILITY,
+        ability: AbilityOrigin::Printed {
+            definition: poc::cards::MISHRA_S_FACTORY,
+            part: CardPartId::PRIMARY,
+            ability: AbilityId(1),
+        },
         targets: Vec::new(),
         cost_object: None,
         x: 0,

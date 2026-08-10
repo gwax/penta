@@ -301,10 +301,19 @@ test("Mishra's Factory offers both modes and manual mana can be undone", async (
   game.set_phase_stop("Main 1", true);
   game.act(animate.index);
   state = JSON.parse(game.state_json());
+  assert.equal(state.stack.length, 1, "the animation waits on the stack");
+  const resolve = state.actions.find(
+    (action) => action.label === "Pass priority" || action.label.startsWith("Resolve"),
+  );
+  game.act(resolve.index);
+  state = JSON.parse(game.state_json());
   const animatedFactory = state.battlefield.find(
     (card) => card.id === factory.id,
   );
-  assert.equal(animatedFactory.kind, "artifactcreature");
+  // It is still a land, so the animation adds to the printed type line
+  // rather than replacing it.
+  assert.equal(animatedFactory.kind, "artifactlandcreature");
+  assert.equal(animatedFactory.typeLine, "Artifact Land Creature");
   assert.equal(animatedFactory.isLand, true);
   assert.equal(animatedFactory.power, 2);
   assert.equal(animatedFactory.toughness, 2);

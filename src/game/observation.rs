@@ -1,6 +1,6 @@
 use crate::{
-    AbilityOrigin, Action, CardDefinitionId, CardPartId, CastSignature, GameObjectId, PlayerId,
-    Target,
+    AbilityOrigin, Action, CardDefinitionId, CardPartId, CardTypeSet, CastSignature, GameObjectId,
+    PlayerId, Target,
 };
 
 use super::{DecisionObservation, GameResult, ManaPool, StackObjectKind, Step};
@@ -49,6 +49,10 @@ pub struct PermanentObservation {
     /// characteristics. Changing faces does not change `id`.
     pub presented: CardPartId,
     pub controller: PlayerId,
+    /// The card types this permanent presents right now. An animated land
+    /// reports the creature types its animation added, which is what the
+    /// printed rules alone cannot say.
+    pub types: CardTypeSet,
     /// Public choice associated with permanents such as Cavern of Souls.
     pub chosen_creature_type: Option<String>,
     pub tapped: bool,

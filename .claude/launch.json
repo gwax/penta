@@ -4,7 +4,7 @@
     {
       "name": "penta-web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--dir", "/Users/lacker/penta/web", "run", "dev"],
+      "runtimeArgs": ["--dir", "./web", "run", "dev"],
       "port": 17524
     }
   ]

@@ -47,7 +47,7 @@ use crate::{
 /// and adds newly executable keyword and alternative-casting actions to
 /// legal-action lists. Version 11 assigns instantiated spell and ability target
 /// slots positionally, including flattened target ranges for selected modes.
-pub const PROTOCOL_VERSION: u32 = 12;
+pub const PROTOCOL_VERSION: u32 = 13;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -2193,6 +2193,7 @@ mod tests {
                 definition: crate::card::cards::HUNTMASTER_OF_THE_FELLS,
                 presented: crate::CardPartId(1),
                 controller: PlayerId::One,
+                types: crate::CardTypeSet::single(crate::CardType::Creature),
                 chosen_creature_type: Some("Werewolf".into()),
                 tapped: false,
                 power: Some(4),
