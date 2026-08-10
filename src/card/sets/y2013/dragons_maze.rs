@@ -3,11 +3,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus, CardPart,
-    CardRules, CardSet, CardStructure, CardSupertype, CardType, EffectDef, EffectDurationDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm,
-    TargetPredicate, TargetSlotDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, abilities, cards,
+    AnimationDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ColorSet, EffectDef,
+    EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayOptionDef,
+    PlayerRelation, SpellForm, TargetPredicate, TargetSlotDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -194,23 +194,31 @@ pub(in crate::card::sets) static SIN_COLLECTOR: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Turn repaints its target rather than adding to it: the printed subtypes,
+/// abilities, and colours all give way.
+static TURN_ANIMATION: AnimationDef =
+    AnimationDef::new(0, 1).becoming(&["Weird"], ColorSet::from_colors(&[ManaColor::Red]));
+
 const fn turn_rules() -> CardRules {
-    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(
-        AbilityDef::not_implemented(
-            "Until end of turn, target creature loses all abilities and becomes a red Weird with base power and toughness 0/1.\nFuse (You may cast one or both halves of this card from your hand.)",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
-    )
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
+        "Until end of turn, target creature loses all abilities and becomes a red Weird with base power and toughness 0/1.\nFuse (You may cast one or both halves of this card from your hand.)",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+            effect: AppliedEffectDef::Animate(&TURN_ANIMATION),
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+    ))
 }
 
 fn turn_burn_composition() -> CardComposition {
     let turn = turn_rules();
-    let burn = CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(
-        AbilityDef::not_implemented(
-            "Burn deals 2 damage to any target.\nFuse (You may cast one or both halves of this card from your hand.)",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
-    );
+    let burn = CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell(
+        "Burn deals 2 damage to any target.\nFuse (You may cast one or both halves of this card from your hand.)",
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetSlotId(1)),
+            amount: ValueDef::Constant(2),
+        },
+    ));
     let turn_target = || {
         TargetSlotDef::exactly_one(
             TargetSlotId(0),

@@ -13,11 +13,11 @@ use crate::card::{
     ActivatedAbilityDef, AddManaEffectDef, AlternativeCastAbilityDef, AlternativeCastKindDef,
     AnimationDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CREATURE_TYPES,
     CardBehavior, CardCatalog, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
-    CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext, ComparisonDef,
-    ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, DoubleFacedKind, EffectDef,
-    EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility, LibraryPlacement, ManaCost,
-    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
-    PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
+    CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext, ColorSet,
+    ComparisonDef, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, DoubleFacedKind,
+    EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility, LibraryPlacement,
+    ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
+    ObjectQueryDef, PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
     ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
     abilities, applicable_part_ids,
@@ -10363,7 +10363,7 @@ impl Game {
                 .expect("a battlefield object has effective types"),
             controller: permanent.controller,
             attacking_or_blocking: permanent.attacking || permanent.blocking.is_some(),
-            colors: rules.colors(),
+            colors: Self::effective_colors(permanent, rules),
             subtypes: self.effective_subtypes(permanent),
             mana_value: self.permanent_mana_value(permanent),
             power: self.power_ignoring_static_effects(permanent),
@@ -10394,7 +10394,7 @@ impl Game {
                 .expect("a battlefield object has effective types"),
             controller: permanent.controller,
             attacking_or_blocking: permanent.attacking || permanent.blocking.is_some(),
-            colors: rules.colors(),
+            colors: Self::effective_colors(permanent, rules),
             subtypes: self.effective_subtypes_with_prospective(permanent, prospective),
             mana_value: self.permanent_mana_value(permanent),
             power: self.power_ignoring_static_effects(permanent),
@@ -10539,6 +10539,9 @@ impl Game {
             }
         }
         if let Some(animation) = animation {
+            if animation.replaces_subtypes {
+                subtypes.clear();
+            }
             if animation.all_creature_types {
                 subtypes.extend(CREATURE_TYPES.iter().copied());
             }
@@ -10609,7 +10612,15 @@ impl Game {
         mut visitor: impl FnMut(EffectiveAbility) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         let blood_moon_applies = self.is_nonbasic_land(permanent) && self.blood_moon_active();
-        if !blood_moon_applies && let Some(rules) = self.effective_rules(permanent) {
+        // An animation that repaints the permanent takes its printed
+        // abilities with it, the same way Blood Moon does.
+        let animation_removes_abilities = permanent
+            .animation
+            .is_some_and(|animation| animation.loses_abilities);
+        if !blood_moon_applies
+            && !animation_removes_abilities
+            && let Some(rules) = self.effective_rules(permanent)
+        {
             let (definition, part) = Self::effective_rules_source(permanent);
             for attached in rules.indexed_abilities() {
                 if visitor(EffectiveAbility {
@@ -11244,6 +11255,15 @@ impl Game {
         } else {
             self.copiable_behavior(permanent)
         }
+    }
+
+    /// The colours a permanent actually is. An animation that repaints it
+    /// replaces the printed colours rather than adding to them.
+    fn effective_colors(permanent: &Permanent, rules: &CardRules) -> [bool; 5] {
+        permanent
+            .animation
+            .and_then(|animation| animation.colors)
+            .map_or_else(|| rules.colors(), ColorSet::to_flags)
     }
 
     fn is_protected_from_colors(&self, permanent: &Permanent, source_colors: [bool; 5]) -> bool {

@@ -1133,6 +1133,13 @@ pub struct AnimationDef {
     /// "With all creature types", which no fixed subtype list can express
     /// because changelings must keep matching types printed later.
     pub all_creature_types: bool,
+    /// Whether the printed subtypes are replaced rather than added to, for
+    /// "becomes a Weird" as opposed to "becomes an Assembly-Worker as well".
+    pub replaces_subtypes: bool,
+    /// Whether the permanent loses its printed abilities.
+    pub loses_abilities: bool,
+    /// The colours the permanent becomes, when the animation repaints it.
+    pub colors: Option<ColorSet>,
 }
 
 impl AnimationDef {
@@ -1144,7 +1151,21 @@ impl AnimationDef {
             types: CardTypeSet::single(CardType::Creature),
             subtypes: &[],
             all_creature_types: false,
+            replaces_subtypes: false,
+            loses_abilities: false,
+            colors: None,
         }
+    }
+
+    /// "Loses all abilities and becomes a ..." — the printed subtypes,
+    /// abilities, and colours all give way to what the effect names.
+    #[must_use]
+    pub const fn becoming(mut self, subtypes: &'static [&'static str], colors: ColorSet) -> Self {
+        self.subtypes = subtypes;
+        self.replaces_subtypes = true;
+        self.loses_abilities = true;
+        self.colors = Some(colors);
+        self
     }
 
     #[must_use]

@@ -17528,3 +17528,76 @@ fn voice_of_resurgence_makes_a_token_that_counts_the_board() {
     assert_eq!(game.power(&token), Some(3));
     assert_eq!(game.toughness(&token), Some(3));
 }
+
+#[test]
+fn turn_strips_a_creature_and_burn_finishes_it() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    // Serra Angel is a 4/4 with flying and vigilance, so all three of power,
+    // abilities, and colour are visible before and after.
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    let before = game.battlefield[0].clone();
+    assert_eq!(game.power(&before), Some(4));
+    assert!(game.permanent_has_executable_keyword(&before, KeywordAbility::Flying));
+
+    let turn = spell_with_targets(
+        22_000,
+        cards::TURN_BURN,
+        PlayerId::One,
+        vec![Target::Permanent(angel)],
+        0,
+    );
+    game.resolve_effect_def(
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+            effect: AppliedEffectDef::Animate(&TURN_TEST_ANIMATION),
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+        &turn,
+        TriggerContext::empty(),
+    );
+
+    let turned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel)
+        .expect("still on the battlefield")
+        .clone();
+    assert_eq!(game.power(&turned), Some(0), "base power is replaced");
+    assert_eq!(game.toughness(&turned), Some(1));
+    assert!(
+        !game.permanent_has_executable_keyword(&turned, KeywordAbility::Flying),
+        "and the printed abilities are gone"
+    );
+    let subtypes = game.effective_subtypes(&turned);
+    assert_eq!(
+        subtypes.as_ref(),
+        &["Weird"],
+        "the printed creature types gave way rather than being added to"
+    );
+
+    // Two damage now finishes a 0/1 that used to be a 4/4.
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == angel)
+    {
+        permanent.damage = 2;
+    }
+    game.check_state_based_actions();
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel),
+        "Burn kills what Turn shrank"
+    );
+}
+
+static TURN_TEST_ANIMATION: crate::card::AnimationDef = crate::card::AnimationDef::new(0, 1)
+    .becoming(
+        &["Weird"],
+        crate::card::ColorSet::from_colors(&[crate::card::ManaColor::Red]),
+    );

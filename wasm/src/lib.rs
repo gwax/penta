@@ -2911,7 +2911,7 @@ mod tests {
         assert_eq!(burn.type_line, "Instant");
         assert_eq!(
             burn.implementation_status,
-            penta::ImplementationStatus::MetadataOnly
+            penta::ImplementationStatus::Complete
         );
         assert_eq!(
             burn.mana_cost,
@@ -2936,7 +2936,7 @@ mod tests {
         assert!(fused.rules_text.contains("Burn — Burn deals 2 damage"));
         assert_eq!(
             fused.implementation_status,
-            penta::ImplementationStatus::MetadataOnly
+            penta::ImplementationStatus::Complete
         );
     }
 
