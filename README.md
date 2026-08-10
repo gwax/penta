@@ -330,9 +330,12 @@ configuration, compiler/tool versions, workload, seed, and measurement
 settings separately. Comparisons still run main and current together rather
 than treating an older saved mean as same-session evidence. A deterministic
 outcome mismatch is reported because timing then includes changed game paths
-as well as implementation cost. There is no regression threshold or CI
-performance gate; when measured, report the distribution and delta as review
-context.
+as well as implementation cost. Measurements are advisory. The workflow is
+mainly intended to reveal multiplier-sized runtime regressions, such as work
+becoming 2× or 4× slower; a roughly 20% slowdown is normally review context
+rather than a reason to optimize or block. Those figures calibrate judgment
+rather than define a regression threshold, and there is no CI performance
+gate.
 
 Use [Samply](https://github.com/mstange/samply) to locate CPU hotspots with the
 Firefox Profiler call tree, flame graph, timeline, and source views. The

@@ -95,8 +95,12 @@ and the freshly built branch binary in the same Hyperfine session. Do not
 calculate a speedup from a new branch mean and an old saved main mean. Check the
 reported game outcomes and toolchains; if either differs, describe that limit
 because the delta may include different game paths or compiler behavior. Small
-noisy movements may be inconclusive. Baseline tracking is review context, not
-a threshold or CI gate, and it does not justify recording a routine Samply CPU
+noisy movements may be inconclusive. Focus attention on multiplier-sized
+runtime regressions, such as work becoming 2× or 4× slower; a roughly 20%
+slowdown is ordinarily context rather than a reason to optimize. Those figures
+are calibration examples, not pass/fail cutoffs, and workload frequency and
+user-visible impact still matter. Baseline tracking is review context, not a CI
+or validation gate, and it does not justify recording a routine Samply CPU
 capture.
 
 ## Capture and inspect CPU samples

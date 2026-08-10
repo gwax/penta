@@ -82,6 +82,12 @@ in either direction when the tradeoff is justified. Still be mindful of work
 on hot paths, and avoid unnecessary work when an equally clear design is
 available.
 
+The main concern is multiplier-sized runtime regressions that alter practical
+behavior—for example, work becoming 2× or 4× slower—not modest percentage
+movement. A roughly 20% slowdown is ordinarily review context rather than a
+reason to optimize or block. These are calibration examples, not pass/fail
+thresholds; workload frequency, scale, and user-visible impact still matter.
+
 Use judgment about whether and when to measure. Do not put performance checks
 in the normal edit-test loop, run them after every relevant change, or delay
 unrelated development to chase small movements. Most changes need at most a
