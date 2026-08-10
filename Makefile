@@ -6,6 +6,8 @@ PROFILE_OUTPUT ?=
 BENCHMARK_RUNS ?= 10
 BENCHMARK_WARMUP ?= 1
 BENCHMARK_OUTPUT ?=
+PERFORMANCE_BASELINE_REF ?= refs/heads/main
+PENTA_PERFORMANCE_CACHE_DIR ?=
 override RUST_TEST_FILTER := $(value FILTER)
 override TEST_PATTERN := $(value PATTERN)
 export RUST_TEST_FILTER
@@ -16,6 +18,8 @@ export PROFILE_OUTPUT
 export BENCHMARK_RUNS
 export BENCHMARK_WARMUP
 export BENCHMARK_OUTPUT
+export PERFORMANCE_BASELINE_REF
+export PENTA_PERFORMANCE_CACHE_DIR
 
 WEB_WASM_CONTRACT_SUITE := tests/wasm-contract.suite.mjs
 WEB_WASM_CASTING_SUITE := tests/wasm-casting.suite.mjs
@@ -49,7 +53,8 @@ endef
 	test test-rust test-rust-full test-rust-slow \
 	test-engine test-engine-unit test-engine-integration test-policy test-wasm-rust \
 	test-profile-attribution test-rust-budget \
-	build-profile-engine benchmark-engine profile-engine profile-engine-all profile-engine-open \
+	build-profile-engine benchmark-engine benchmark-engine-baseline benchmark-engine-compare \
+	profile-engine profile-engine-all profile-engine-open \
 	build-wasm build-web \
 	test-web test-web-fast test-web-unit test-web-full \
 	test-web-wasm test-web-wasm-full test-web-wasm-slow \
@@ -71,6 +76,7 @@ help: ## List the available validation and build targets.
 	@printf '  BENCHMARK_WARMUP=<count>     Hyperfine warmup runs (default: 1).\n'
 	@printf '  BENCHMARK_RUNS=<count>       Hyperfine measured runs (default: 10).\n'
 	@printf '  BENCHMARK_OUTPUT=<path>      Optional Hyperfine JSON export.\n'
+	@printf '  PERFORMANCE_BASELINE_REF=<ref> Local main ref for shared baselines.\n'
 
 doctor: ## Verify the local toolchain and exact generator versions.
 	./scripts/doctor.sh
@@ -142,7 +148,7 @@ test-rust-budget: ## Fail when the Rust suite runs longer than its time budget.
 		exit 1; \
 	fi
 
-test-profile-attribution: ## Test the repository-local Samply attribution analyzer.
+test-profile-attribution: ## Test the repository-local engine performance tooling.
 	python3 -m unittest discover \
 		-s .agents/skills/profile-engine-performance/tests -p 'test_*.py'
 
@@ -151,6 +157,12 @@ build-profile-engine: ## Build the optimized engine workloads with profiling sym
 
 benchmark-engine: ## Benchmark deterministic native-engine throughput with Hyperfine.
 	./scripts/profile-engine.sh benchmark
+
+benchmark-engine-baseline: ## Ensure an advisory main baseline exists in Git's common directory.
+	python3 ./scripts/benchmark_engine.py baseline
+
+benchmark-engine-compare: ## Compare this worktree with the matching local-main baseline.
+	python3 ./scripts/benchmark_engine.py compare
 
 profile-engine: ## Record a deterministic engine CPU profile with Samply.
 	./scripts/profile-engine.sh record

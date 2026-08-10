@@ -298,6 +298,50 @@ hot path can be isolated as a stable in-process benchmark; whole-game
 throughput remains the primary regression measure. [Criterion](https://github.com/bheisler/criterion.rs)
 is not a dependency until such a benchmark exists.
 
+Performance measurement is deliberately outside the normal edit-test loop.
+Most changes do not need a benchmark, and a qualitative expected-impact note
+is often enough. Contributors and agents should use judgment and measure when
+the result is likely to inform a design or review decision, preferably once at
+a coherent checkpoint rather than repeatedly during implementation. For
+routine work, if that comparison rules out a scale-changing regression, report
+the result and stop. Do not keep rerunning benchmarks or start profiling merely
+to recover another roughly 10% or other modest movement. Iterative performance
+work belongs in an explicit optimization task, a concrete user-visible need,
+or an investigation of an apparent multiplier-sized regression.
+
+For a selected advisory branch comparison, ensure a baseline exists for the
+exact commit currently named by the local `main` ref, then benchmark its saved
+binary and the current worktree together in one Hyperfine session:
+
+```sh
+make benchmark-engine-baseline
+make benchmark-engine-compare
+```
+
+`benchmark-engine-baseline` reuses a matching saved result and measures only
+when the selected revision or relevant environment has changed.
+`benchmark-engine-compare` performs the same lazy baseline check, so when local
+`main` advances the next chosen comparison uses the new commit without
+touching or switching the current worktree. Neither command fetches; use
+`PERFORMANCE_BASELINE_REF=origin/main` when that is deliberately the local ref
+to measure. The shared release binary, deterministic outcome, metadata, and
+baseline Hyperfine JSON live under
+`$(git rev-parse --path-format=absolute --git-common-dir)/penta-performance-cache/layout-v1/`,
+where every linked worktree in the clone can reuse them. The comparison JSON
+and its metadata default to `target/profiles/engine-main-compare*.json`.
+
+The cache keys main revision, machine, build environment, effective Cargo
+configuration, compiler/tool versions, workload, seed, and measurement
+settings separately. Comparisons still run main and current together rather
+than treating an older saved mean as same-session evidence. A deterministic
+outcome mismatch is reported because timing then includes changed game paths
+as well as implementation cost. Measurements are advisory. The workflow is
+mainly intended to reveal multiplier-sized runtime regressions, such as work
+becoming 2× or 4× slower; a roughly 20% slowdown is normally review context
+rather than a reason to optimize or block. Those figures calibrate judgment
+rather than define a regression threshold, and there is no CI performance
+gate.
+
 Use [Samply](https://github.com/mstange/samply) to locate CPU hotspots with the
 Firefox Profiler call tree, flame graph, timeline, and source views. The
 separate `profiling` build keeps release optimization and adds symbols:
@@ -313,11 +357,12 @@ make profile-engine-open \
 The profiler UI visualizes a native process capture; it does not profile
 Penta's browser interface.
 
-Captures, Hyperfine exports, and allocation traces belong under the ignored
-`target/profiles/` directory. Samply releases that store symbols in an adjacent
-`.syms.json` sidecar need that file kept beside the capture. For a broader CPU
-sample covering every built-in deck in both formats, use `make
-profile-engine-all`.
+Branch captures, ad hoc Hyperfine exports, and allocation traces belong under
+the ignored `target/profiles/` directory. The maintained main benchmark above
+is the exception and is managed under Git's common directory. Samply releases
+that store symbols in an adjacent `.syms.json` sidecar need that file kept
+beside the capture. For a broader CPU sample covering every built-in deck in
+both formats, use `make profile-engine-all`.
 
 Samples in allocator functions measure allocator CPU time, not allocation
 counts or bytes. When heap churn is the question, run the same symbol-rich
@@ -348,7 +393,8 @@ game count, seed, build profile, and machine before and after the change. The
 shared `profile-engine-performance` skill also provides an optional,
 schema-guarded headless attribution script for agent workflows. Standard
 profiler views remain the primary way to inspect a capture. Profiling is opt-in
-and is not part of CI.
+and is not part of CI; routine baseline tracking does not record a Samply
+capture.
 
 ## Web interface
 

@@ -74,6 +74,26 @@ migration inventory rather than precedent; when a repeated pattern emerges or
 an existing case is already being changed, move it toward a reusable definition
 or card-scoped implementation when that work is reasonably in scope.
 
+## Performance awareness
+
+Treat performance as review context, not a merge gate, and prefer clear,
+correct designs. Watch mainly for accidental multiplier-sized slowdowns, such
+as 2× or 4×; roughly 20% slower is ordinarily context, not a reason to optimize
+or block. These examples calibrate judgment rather than set thresholds.
+
+Keep performance checks out of the normal edit-test loop. Most changes need
+only a qualitative assessment. Measure only when evidence is likely to change
+a decision, then prefer one `$profile-engine-performance` comparison at a
+coherent checkpoint. It uses a lazily refreshed local-`main` baseline shared
+under Git's common directory; compare like-for-like and note any limits. Once a
+routine check rules out a scale-changing regression, report and stop rather
+than profiling or rerunning to recover another roughly 10%, unless performance
+is explicitly the task or a concrete user-visible requirement exists.
+
+In pull requests and handoffs, include brief performance context only when
+useful. “No expected impact” and “Not measured” are valid; never benchmark just
+to fill in a report.
+
 ## Protocol versioning
 
 A branch or pull request containing one or more incompatible protocol changes
