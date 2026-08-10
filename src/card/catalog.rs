@@ -761,6 +761,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::AddMana(_)
         | super::EffectDef::AddManaEqualTo { .. }
         | super::EffectDef::DealDamage { .. }
+        | EffectDef::DrainLife { .. }
         | super::EffectDef::GainLife { .. }
         | super::EffectDef::DrawCards { .. }
         | super::EffectDef::DiscardCards { .. }
@@ -850,6 +851,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::AddMana(_)
         | super::EffectDef::AddManaEqualTo { .. }
         | super::EffectDef::DealDamage { .. }
+        | EffectDef::DrainLife { .. }
         | super::EffectDef::GainLife { .. }
         | super::EffectDef::DrawCards { .. }
         | super::EffectDef::DiscardCards { .. }
@@ -1055,6 +1057,7 @@ fn validate_effect_target_references(
             Ok(())
         }
         EffectDef::DealDamage { recipient, amount }
+        | EffectDef::DrainLife { recipient, amount }
         | EffectDef::GainLife { recipient, amount }
         | EffectDef::DrawCards { recipient, amount }
         | EffectDef::DiscardCards { recipient, amount }

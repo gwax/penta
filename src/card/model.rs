@@ -1492,6 +1492,14 @@ pub enum EffectDef {
     Counter {
         object: EffectRecipientDef,
     },
+    /// Deals damage and gains its controller that much life, but no more
+    /// than the recipient had to give: a player's life total, a
+    /// planeswalker's loyalty, or a creature's toughness, each read before
+    /// the damage. Draining an almost-dead target gains only what was there.
+    DrainLife {
+        recipient: EffectRecipientDef,
+        amount: ValueDef,
+    },
     /// Adds mana of one colour, however much a value says. Mana abilities use
     /// [`Self::AddMana`] with a fixed amount so the mana planner can read
     /// them without resolving anything; this is for the effects that cannot
@@ -4000,6 +4008,8 @@ pub enum CardBehavior {
     Dispel,
     Dissipate,
     DoomBlade,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative drain that respects the life-gain cap.
     DrainLife,
     /// Legacy dispatch key retained for source compatibility; the card now
     /// uses a declarative pump and a conditional delayed sacrifice.

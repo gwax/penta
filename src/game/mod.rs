@@ -3643,6 +3643,7 @@ impl Game {
                 ..
             })
             | EffectDef::DealDamage { .. }
+            | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
@@ -7496,7 +7497,6 @@ impl Game {
             | CardBehavior::ChainLightning
             | CardBehavior::PillarOfFlame
             | CardBehavior::GoblinGrenade
-            | CardBehavior::DrainLife
             | CardBehavior::WarleadersHelix => self
                 .damage_targets()
                 .into_iter()
@@ -9190,6 +9190,18 @@ impl Game {
                     std::iter::repeat_n(mana, usize::from(amount)),
                 );
             }
+            EffectDef::DrainLife { recipient, amount } => {
+                let amount = self
+                    .effect_value(amount, object, context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    let available = self.drainable_from(target);
+                    self.damage_target_from(Some(object.id), Some(target), amount);
+                    self.gain_life(object.controller, amount.min(available));
+                }
+            }
             EffectDef::DealDamage { recipient, amount } => {
                 // A divided total is chosen per target when the spell is
                 // cast, so each one takes its own share rather than the same
@@ -10783,10 +10795,6 @@ impl Game {
                     self.damage_target(Some(target), amount);
                 }
             }
-            CardBehavior::DrainLife => {
-                self.damage_target(object.first_target(), object.x());
-                self.gain_life(object.controller, object.x());
-            }
             CardBehavior::Earthquake => {
                 for player in [PlayerId::One, PlayerId::Two] {
                     self.deal_damage(player, object.x());
@@ -12331,6 +12339,7 @@ impl Game {
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }
+            | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
@@ -12891,6 +12900,7 @@ impl Game {
             | EffectDef::None
             | EffectDef::Sequence(_)
             | EffectDef::DealDamage { .. }
+            | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
@@ -13038,6 +13048,7 @@ impl Game {
                 | EffectDef::None
                 | EffectDef::Sequence(_)
                 | EffectDef::DealDamage { .. }
+                | EffectDef::DrainLife { .. }
                 | EffectDef::GainLife { .. }
                 | EffectDef::DrawCards { .. }
                 | EffectDef::DiscardCards { .. }
@@ -15048,6 +15059,26 @@ impl Game {
                 .any(|permanent| permanent.card.id == id && permanent.combat_damage_prevented))
     }
 
+    /// How much life a drain can take from a recipient: what it had before
+    /// the damage, which is all it can give however much is dealt.
+    fn drainable_from(&self, target: Target) -> u16 {
+        match target {
+            Target::Player(player) => self.players[player.index()].life.max(0).cast_unsigned(),
+            Target::Permanent(id) => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == id)
+                .and_then(|permanent| {
+                    permanent
+                        .loyalty
+                        .or_else(|| self.toughness(permanent))
+                        .map(|value| value.max(0).cast_unsigned())
+                })
+                .unwrap_or(0),
+            Target::Card(_) | Target::Spell(_) => 0,
+        }
+    }
+
     /// Raises the event for damage a player took, whatever dealt it. Only a
     /// battlefield source can be recognised, which is what every trigger that
     /// reads this needs.
@@ -15737,6 +15768,7 @@ impl Game {
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }
+            | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }

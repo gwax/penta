@@ -20666,3 +20666,70 @@ fn hypnotic_specter_notices_damage_it_did_not_deal_in_combat() {
         "the card says an opponent, so hitting its own controller takes nothing"
     );
 }
+
+#[test]
+fn drain_life_gains_only_what_the_target_had_to_give() {
+    // A player on 3 can only give 3, however much the drain deals.
+    let mut game = ready_game();
+    game.players[1].life = 3;
+    let drain = card(10_000, cards::DRAIN_LIFE, PlayerId::One);
+    game.players[0].hand.push(drain.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 8);
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == drain.id
+                && choices.x() == 6
+                && choices.iter_targets().copied().eq(std::iter::once(
+                    Target::Player(PlayerId::Two)
+                )))
+        })
+        .expect("six is affordable");
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, -3, "all six landed");
+    assert_eq!(
+        game.players[0].life, 23,
+        "but only the three they had came back"
+    );
+}
+
+#[test]
+fn drain_life_is_capped_by_a_creatures_toughness() {
+    let mut game = ready_game();
+    // Savannah Lions is a 2/1, so a big drain still only gains one.
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two));
+    let drain = card(10_000, cards::DRAIN_LIFE, PlayerId::One);
+    game.players[0].hand.push(drain.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 8);
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == drain.id
+                && choices.x() == 6
+                && choices.iter_targets().copied().eq(std::iter::once(
+                    Target::Permanent(GameObjectId(10_001))
+                )))
+        })
+        .expect("the Lions are a legal target");
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_001)),
+        "six damage killed it"
+    );
+    assert_eq!(
+        game.players[0].life, 21,
+        "and its one toughness is all it had to give"
+    );
+}

@@ -273,7 +273,8 @@ impl HandcraftedPolicy {
             }
             // An optional effect is worth what it would do if taken.
             EffectDef::May(inner) => Self::collect_spell_effect_profile(*inner, x, profile),
-            EffectDef::DealDamage { recipient, amount } => {
+            EffectDef::DealDamage { recipient, amount }
+            | EffectDef::DrainLife { recipient, amount } => {
                 profile.damage = Self::policy_value(amount, x);
                 profile.opponent_creature_sweep |= Self::hits_every_opposing_creature(recipient);
             }

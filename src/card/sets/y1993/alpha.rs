@@ -945,10 +945,15 @@ pub(in crate::card::sets) static DRAIN_LIFE: CardRecord = CardRecord::new(
             CardBehavior::DrainLife,
             "The black-mana spending restriction is not fully enforced.",
         ),
-        AbilityDef::custom_partial(
+        AbilityDef::spell_with_targets(
             "Drain Life deals X damage to any target. You gain life equal to the damage dealt, but not more life than the player's life total before the damage was dealt, the planeswalker's loyalty before the damage was dealt, or the creature's toughness.",
-            CardBehavior::DrainLife,
-            "The life-gain cap is not fully enforced.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DrainLife {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::ChosenX,
+            },
         ),
     ]),
 );

@@ -585,6 +585,7 @@ mod tests {
             }
             EffectDef::AddMana(_) => shared_mana_effect(effect, false),
             EffectDef::DealDamage { recipient, .. }
+            | EffectDef::DrainLife { recipient, .. }
             | EffectDef::GainLife { recipient, .. }
             | EffectDef::DrawCards { recipient, .. }
             | EffectDef::DiscardCards { recipient, .. }
@@ -851,6 +852,7 @@ mod tests {
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }
+            | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
@@ -1047,6 +1049,7 @@ mod tests {
                         | EffectDef::May(_)
                         | EffectDef::None
                         | EffectDef::DealDamage { .. }
+                        | EffectDef::DrainLife { .. }
                         | EffectDef::GainLife { .. }
                         | EffectDef::DrawCards { .. }
                         | EffectDef::DiscardCards { .. }
@@ -1235,6 +1238,7 @@ mod tests {
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }
+            | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
