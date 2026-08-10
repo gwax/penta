@@ -757,6 +757,10 @@ pub enum CostDef {
         controller: PlayerRelation,
     },
     ExileSource,
+    /// Add or remove that many loyalty counters. A planeswalker's abilities
+    /// are the only costs paid this way, and paying one is what makes them
+    /// once per turn at sorcery speed.
+    Loyalty(i8),
     Special(&'static str),
 }
 
@@ -1327,6 +1331,12 @@ pub enum EffectDef {
         /// player does" means; a compulsory one runs it either way, so an
         /// amount read off nothing is zero rather than skipped.
         optional: bool,
+    },
+    /// Put that many cards from the top of a library into its owner's
+    /// graveyard.
+    Mill {
+        player: EffectRecipientDef,
+        amount: ValueDef,
     },
     /// Search a library for one matching card and put it somewhere, then
     /// shuffle. Searching a hidden zone never obliges the searcher to find,

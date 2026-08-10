@@ -209,18 +209,62 @@ pub(in crate::card::sets) static GLACIAL_FORTRESS: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static JACE_MEMORY_ADEPT: CardRecord = CardRecord::new(
     cards::JACE_MEMORY_ADEPT,
     "Jace, Memory Adept",
-    CardArt::new("96b2a335-2f01-4ba7-a037-453dbb1045e9", "D. Alexander Gregory"),
+    CardArt::new(
+        "96b2a335-2f01-4ba7-a037-453dbb1045e9",
+        "D. Alexander Gregory",
+    ),
     CardSet::Magic2013,
-    CardRules::new_planeswalker(
-        mana_cost!("{3}{U}{U}"),
-        &["Jace"],
-        4,
-    )
-    .with_supertype(CardSupertype::Legendary)
-    .with_ability(AbilityDef::not_implemented(
-        "+1: Draw a card. Target player mills a card.\n0: Target player mills ten cards.\n−7: Any number of target players each draw twenty cards.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    CardRules::new_planeswalker(mana_cost!("{3}{U}{U}"), &["Jace"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::activated(
+                "+1: Draw a card. Target player mills a card.",
+                &[AbilityCostDef::Loyalty(1)],
+                EffectDef::Sequence(&[
+                    EffectDef::DrawCards {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::Constant(1),
+                    },
+                    EffectDef::Mill {
+                        player: EffectRecipientDef::Target(TargetSlotId(0)),
+                        amount: ValueDef::Constant(1),
+                    },
+                ]),
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one(
+                TargetSlotId(0),
+                "player",
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )]),
+            AbilityDef::activated(
+                "0: Target player mills ten cards.",
+                &[AbilityCostDef::Loyalty(0)],
+                EffectDef::Mill {
+                    player: EffectRecipientDef::Target(TargetSlotId(0)),
+                    amount: ValueDef::Constant(10),
+                },
+            )
+            .with_targets(&[AbilityTargetDef::exactly_one(
+                TargetSlotId(0),
+                "player",
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )]),
+            AbilityDef::activated(
+                "−7: Any number of target players each draw twenty cards.",
+                &[AbilityCostDef::Loyalty(-7)],
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    amount: ValueDef::Constant(20),
+                },
+            )
+            // Two players means "any number" is up to two.
+            .with_targets(&[AbilityTargetDef::up_to(
+                TargetSlotId(0),
+                "player",
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+                2,
+            )]),
+        ]),
 );
 
 /// Mutilate scales with your Swamps, and reads the same count twice.

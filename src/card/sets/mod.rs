@@ -542,6 +542,8 @@ mod tests {
             // The searcher is a player and the choices come out of their own
             // library, so only the predicate and the destination need
             // checking.
+            // The mill count and the milled player are both ordinary values.
+            EffectDef::Mill { player, .. } => shared_effect_recipient(player),
             EffectDef::SearchLibrary {
                 player,
                 object,
@@ -668,7 +670,8 @@ mod tests {
                 }
                 AbilityCostDef::TapSource
                 | AbilityCostDef::SacrificeSource
-                | AbilityCostDef::PayLife(_) => battlefield,
+                | AbilityCostDef::PayLife(_)
+                | AbilityCostDef::Loyalty(_) => battlefield,
                 AbilityCostDef::DiscardSource => hand,
                 AbilityCostDef::UntapSource
                 | AbilityCostDef::DiscardCards(_)
@@ -756,6 +759,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::Mill { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -929,6 +933,7 @@ mod tests {
                         | EffectDef::Destroy { .. }
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::SacrificeOfChoice { .. }
+                        | EffectDef::Mill { .. }
                         | EffectDef::SearchLibrary { .. }
                         | EffectDef::Counter { .. }
                         | EffectDef::CounterUnlessPaid { .. }
@@ -1062,6 +1067,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::Mill { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }

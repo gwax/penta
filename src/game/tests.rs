@@ -16902,3 +16902,124 @@ fn extort_drains_when_paid_with_either_half_of_its_hybrid() {
     assert_eq!(drain_with(cards::PLAINS), (21, 19));
     assert_eq!(drain_with(cards::SWAMP), (21, 19));
 }
+
+#[test]
+fn a_loyalty_ability_costs_counters_and_runs_once_a_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let jace = game
+        .put_onto_battlefield(PlayerId::One, cards::JACE_MEMORY_ADEPT)
+        .expect("cataloged");
+    game.players[0].library = (0..30)
+        .map(|index| card(16_000 + index, cards::PLAINS, PlayerId::One))
+        .collect();
+    game.players[1].library = (0..30)
+        .map(|index| card(17_000 + index, cards::FOREST, PlayerId::Two))
+        .collect();
+    game.players[0].hand.clear();
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == jace)
+            .and_then(|permanent| permanent.loyalty),
+        Some(4),
+        "a planeswalker enters with its printed loyalty"
+    );
+
+    // The ultimate costs seven and Jace has four, so it is not offered.
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == jace))
+            .count()
+    };
+    assert!(offered(&game) > 0, "the affordable abilities are offered");
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { ability, .. }
+                if matches!(ability, AbilityOrigin::Printed { ability, .. } if *ability == AbilityId(2)))
+        }),
+        "minus seven cannot be paid from four loyalty"
+    );
+
+    let plus_one = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, targets, .. }
+                if *source == jace
+                    && matches!(ability, AbilityOrigin::Printed { ability, .. } if *ability == AbilityId::PRIMARY)
+                    && targets.iter().flat_map(TargetSelection::targets).any(|target| *target == Target::Player(PlayerId::Two)))
+        })
+        .expect("plus one aimed at the opponent is offered");
+    game.apply(PlayerId::One, plus_one).unwrap();
+    drain_pending(&mut game);
+
+    let permanent = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == jace)
+        .expect("Jace is still there");
+    assert_eq!(permanent.loyalty, Some(5), "the plus one added a counter");
+    assert_eq!(game.players[0].hand.len(), 1, "and drew a card");
+    assert_eq!(game.players[1].graveyard.len(), 1, "and milled one");
+
+    assert_eq!(
+        offered(&game),
+        0,
+        "one loyalty ability per planeswalker per turn"
+    );
+}
+
+#[test]
+fn a_loyalty_ability_is_sorcery_speed_and_only_its_controller_may_use_it() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let jace = game
+        .put_onto_battlefield(PlayerId::One, cards::JACE_MEMORY_ADEPT)
+        .expect("cataloged");
+    game.players[1].library = (0..30)
+        .map(|index| card(18_000 + index, cards::FOREST, PlayerId::Two))
+        .collect();
+    game.turn = 2;
+    let offered = |game: &Game, player: PlayerId| {
+        game.legal_actions(player)
+            .into_iter()
+            .filter(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == jace))
+            .count()
+    };
+
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert!(offered(&game, PlayerId::One) > 0, "your own main phase");
+    assert_eq!(
+        offered(&game, PlayerId::Two),
+        0,
+        "an opponent may not use your planeswalker"
+    );
+
+    game.step = Step::DeclareBlockers;
+    assert_eq!(offered(&game, PlayerId::One), 0, "not outside a main phase");
+
+    // A main phase with something on the stack is still not sorcery speed.
+    game.step = Step::PrecombatMain;
+    game.players[0].hand = vec![card(18_500, cards::DARK_RITUAL, PlayerId::One)];
+    game.put_onto_battlefield(PlayerId::One, cards::SWAMP)
+        .expect("cataloged");
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { .. }))
+        .expect("the spell is castable");
+    game.apply(PlayerId::One, cast).unwrap();
+    assert!(!game.stack.is_empty(), "the spell is waiting to resolve");
+    assert_eq!(
+        offered(&game, PlayerId::One),
+        0,
+        "not while anything is on the stack"
+    );
+}

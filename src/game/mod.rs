@@ -163,6 +163,9 @@ struct Permanent {
     power_bonus: i16,
     toughness_bonus: i16,
     attacking: bool,
+    /// Whether a loyalty ability has already been activated this turn. CR
+    /// 606.3 allows one per planeswalker per turn.
+    activated_loyalty_this_turn: bool,
     /// Whether nothing may block this creature for the rest of the turn.
     /// Cleared in cleanup with the other until-end-of-turn state.
     unblockable_this_turn: bool,
@@ -241,6 +244,7 @@ impl Permanent {
             power_bonus: 0,
             toughness_bonus: 0,
             attacking: false,
+            activated_loyalty_this_turn: false,
             unblockable_this_turn: false,
             control_reverts_to: None,
             blocked: false,
@@ -3266,6 +3270,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::Mill { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -4723,6 +4728,25 @@ impl Game {
             options,
             DecisionContinuation::LibrarySearch { destination },
         );
+    }
+
+    /// Whether a loyalty ability can be activated right now. CR 606.3: only
+    /// during your own main phase with an empty stack, and only one loyalty
+    /// ability per planeswalker per turn. CR 606.5: the cost cannot remove
+    /// more counters than the permanent has.
+    fn can_activate_loyalty(&self, permanent: &Permanent, player: PlayerId, change: i8) -> bool {
+        let Some(loyalty) = permanent.loyalty else {
+            return false;
+        };
+        if permanent.controller != player
+            || permanent.activated_loyalty_this_turn
+            || self.active_player != player
+            || !matches!(self.step, Step::PrecombatMain | Step::PostcombatMain)
+            || !self.stack.is_empty()
+        {
+            return false;
+        }
+        loyalty.saturating_add(i16::from(change)) >= 0
     }
 
     fn queue_chosen_sacrifice(
@@ -6564,6 +6588,11 @@ impl Game {
                             self.players[player.index()].life
                                 < i16::try_from(*amount).unwrap_or(i16::MAX)
                         }
+                        // A loyalty ability is sorcery speed, once per turn,
+                        // and only removes counters the permanent has.
+                        AbilityCostDef::Loyalty(change) => {
+                            !self.can_activate_loyalty(permanent, player, *change)
+                        }
                         AbilityCostDef::TapSource
                         | AbilityCostDef::SacrificeSource
                         | AbilityCostDef::SacrificePermanent { .. } => false,
@@ -7039,6 +7068,7 @@ impl Game {
                         | AbilityCostDef::DiscardCards(_)
                         | AbilityCostDef::SacrificePermanent { .. }
                         | AbilityCostDef::ExileSource
+                        | AbilityCostDef::Loyalty(_)
                         | AbilityCostDef::Special(_) => supported = false,
                     }
                 }
@@ -7257,6 +7287,7 @@ impl Game {
                 AbilityCostDef::Mana(_)
                 | AbilityCostDef::DiscardSource
                 | AbilityCostDef::UntapSource
+                | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::ExileSource
@@ -8155,6 +8186,21 @@ impl Game {
                         effect,
                     });
                     self.queue_chosen_sacrifice(player, predicate, source, followup, optional);
+                }
+            }
+            EffectDef::Mill {
+                player: recipient,
+                amount,
+            } => {
+                let count = self.effect_value(amount, object, context).max(0);
+                let Ok(count) = usize::try_from(count) else {
+                    return;
+                };
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Player(player) = target {
+                        let milled = self.take_top_of_library(player, count);
+                        self.bury_cards(player, milled);
+                    }
                 }
             }
             EffectDef::SearchLibrary {
@@ -11058,6 +11104,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
+                | EffectDef::Mill { .. }
                 | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::CounterUnlessPaid { .. }
@@ -11157,6 +11204,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
+                | EffectDef::Mill { .. }
                 | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::CounterUnlessPaid { .. }
@@ -12328,6 +12376,7 @@ impl Game {
                     | AbilityCostDef::DiscardCards(_)
                     | AbilityCostDef::SacrificePermanent { .. }
                     | AbilityCostDef::ExileSource
+                    | AbilityCostDef::Loyalty(_)
                     | AbilityCostDef::Special(_) => {
                         unreachable!("unsupported hand-zone costs are not offered")
                     }
@@ -12415,6 +12464,18 @@ impl Game {
                         self.sacrifice_permanent(
                             sacrifice.expect("a legal activation chose the sacrificed permanent"),
                         );
+                    }
+                    AbilityCostDef::Loyalty(change) => {
+                        if let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == source)
+                        {
+                            permanent.loyalty = permanent
+                                .loyalty
+                                .map(|loyalty| loyalty.saturating_add(i16::from(*change)));
+                            permanent.activated_loyalty_this_turn = true;
+                        }
                     }
                     AbilityCostDef::UntapSource
                     | AbilityCostDef::DiscardCards(_)
@@ -13768,6 +13829,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::Mill { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -14274,6 +14336,9 @@ impl Game {
             if permanent.forestwalk_until_upkeep_of == Some(self.active_player) {
                 permanent.forestwalk_until_upkeep_of = None;
             }
+            // One loyalty ability per planeswalker per turn, so the allowance
+            // returns as the turn does.
+            permanent.activated_loyalty_this_turn = false;
         }
         let winter_orb = self.winter_orb_active();
         let smoke = self.count_behavior(CardBehavior::Smoke) > 0;
