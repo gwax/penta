@@ -1,3 +1,5 @@
+mod session;
+
 use penta::card;
 use penta::game::{DecisionKind, DecisionOrderSemantics};
 use penta::{
@@ -6,6 +8,7 @@ use penta::{
     PlayerObservation, Policy, RandomPolicy, Step, Target,
 };
 use serde_json::{Value, json};
+use session::{Checkpoint, LocalSession};
 use std::fmt::Write as _;
 use wasm_bindgen::prelude::*;
 
@@ -29,16 +32,16 @@ impl BotPolicy {
 /// rules and bot decisions remain inside the Rust engine.
 #[wasm_bindgen]
 pub struct WebGame {
-    game: Game,
+    session: LocalSession,
     catalog: CardCatalog,
     human: PlayerId,
     bot: BotPolicy,
     opponent_actions: Vec<Value>,
     pending_opponent_mana: Vec<String>,
-    mana_undo_history: Vec<Game>,
+    mana_undo_history: Vec<Checkpoint>,
     phase_stops: Vec<String>,
     autopass_enabled: bool,
-    attack_undo: Option<Game>,
+    attack_undo: Option<Checkpoint>,
     /// The turn the presentation has already announced, so a turn nobody acts
     /// on still gets its banner instead of being skipped over in silence.
     announced_turn: Option<u32>,
@@ -88,7 +91,7 @@ impl WebGame {
             _ => return Err(JsValue::from_str("unknown bot policy")),
         };
         let mut web_game = Self {
-            game,
+            session: LocalSession::new(game),
             catalog,
             human,
             bot,
@@ -113,10 +116,10 @@ impl WebGame {
     /// Returns a JavaScript error when the game is not waiting for the human,
     /// the index is stale, the action is rejected, or the bot cannot finish.
     pub fn act(&mut self, action_index: usize) -> Result<(), JsValue> {
-        if self.game.decision_player() != Some(self.human) {
+        if self.session.decision_seat() != Some(self.human) {
             return Err(JsValue::from_str("the game is not waiting for the human"));
         }
-        let observation = self.game.observe(self.human);
+        let observation = self.session.observe(self.human);
         let action = observation
             .legal_actions
             .get(action_index)
@@ -135,7 +138,7 @@ impl WebGame {
     /// Returns a JavaScript error when the game is not waiting for the human,
     /// the JSON is malformed, or the engine rejects the selection.
     pub fn choose_decision(&mut self, decision: u32, options_json: &str) -> Result<(), JsValue> {
-        if self.game.decision_player() != Some(self.human) {
+        if self.session.decision_seat() != Some(self.human) {
             return Err(JsValue::from_str("the game is not waiting for the human"));
         }
         let options: Vec<u32> = serde_json::from_str(options_json).map_err(js_error)?;
@@ -144,18 +147,18 @@ impl WebGame {
 
     fn apply_human_action(&mut self, action: Action) -> Result<(), JsValue> {
         let mana_checkpoint =
-            matches!(action, Action::ActivateManaAbility { .. }).then(|| self.game.clone());
+            matches!(action, Action::ActivateManaAbility { .. }).then(|| self.session.checkpoint());
         if mana_checkpoint.is_none() {
             self.mana_undo_history.clear();
         }
         // The first declaration of the combat is the point a cancel returns to.
         if matches!(action, Action::DeclareAttacker { .. }) && self.attack_undo.is_none() {
-            self.attack_undo = Some(self.game.clone());
+            self.attack_undo = Some(self.session.checkpoint());
         }
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
-        let event_start = self.game.event_cursor();
-        self.game.apply(self.human, action).map_err(js_error)?;
+        let event_start = self.session.event_cursor();
+        self.session.apply(self.human, action).map_err(js_error)?;
         // What you just did, before anything the game does in response. The
         // replay is told from here, so a land you played is on the board
         // before the turn it ended is announced.
@@ -172,9 +175,9 @@ impl WebGame {
         self.advance_until_human_choice()?;
         self.forget_attack_undo_unless_still_declaring();
         if let Some(checkpoint) = mana_checkpoint {
-            let before = checkpoint.observe(self.human);
-            let after = self.game.observe(self.human);
-            if self.game.decision_player() == Some(self.human)
+            let before = checkpoint.observed_by(self.human);
+            let after = self.session.observe(self.human);
+            if self.session.decision_seat() == Some(self.human)
                 && before.turn == after.turn
                 && before.step == after.step
                 && before.active_player == after.active_player
@@ -195,8 +198,8 @@ impl WebGame {
     /// Returns a JavaScript error unless the human is declaring attackers or
     /// the engine rejects one of the otherwise-legal actions.
     pub fn attack_all(&mut self) -> Result<(), JsValue> {
-        if self.game.decision_player() != Some(self.human)
-            || self.game.observe(self.human).step != Step::DeclareAttackers
+        if self.session.decision_seat() != Some(self.human)
+            || self.session.observe(self.human).step != Step::DeclareAttackers
         {
             return Err(JsValue::from_str("the human is not declaring attackers"));
         }
@@ -204,11 +207,11 @@ impl WebGame {
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
         if self.attack_undo.is_none() {
-            self.attack_undo = Some(self.game.clone());
+            self.attack_undo = Some(self.session.checkpoint());
         }
         loop {
             let action = self
-                .game
+                .session
                 .observe(self.human)
                 .legal_actions
                 .into_iter()
@@ -216,16 +219,16 @@ impl WebGame {
             let Some(action) = action else {
                 break;
             };
-            self.game.apply(self.human, action).map_err(js_error)?;
+            self.session.apply(self.human, action).map_err(js_error)?;
         }
         if let Some(finish) = self
-            .game
+            .session
             .observe(self.human)
             .legal_actions
             .into_iter()
             .find(|action| matches!(action, Action::FinishDeclaringAttackers))
         {
-            self.game.apply(self.human, finish).map_err(js_error)?;
+            self.session.apply(self.human, finish).map_err(js_error)?;
         }
         self.forget_attack_undo_unless_still_declaring();
         self.advance_until_human_choice()?;
@@ -243,7 +246,7 @@ impl WebGame {
             .attack_undo
             .take()
             .ok_or_else(|| JsValue::from_str("there are no declared attackers to take back"))?;
-        self.game = previous;
+        self.session.restore(previous);
         self.mana_undo_history.clear();
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
@@ -256,9 +259,9 @@ impl WebGame {
         if self.attack_undo.is_none() {
             return;
         }
-        let still_declaring = self.game.decision_player() == Some(self.human)
+        let still_declaring = self.session.decision_seat() == Some(self.human)
             && self
-                .game
+                .session
                 .observe(self.human)
                 .legal_actions
                 .iter()
@@ -278,15 +281,15 @@ impl WebGame {
     /// Returns a JavaScript error unless the human is declaring blockers or an
     /// assignment is duplicated, malformed, or no longer legal.
     pub fn finalize_blocks(&mut self, assignments_json: &str) -> Result<(), JsValue> {
-        if self.game.decision_player() != Some(self.human)
-            || self.game.observe(self.human).step != Step::DeclareBlockers
+        if self.session.decision_seat() != Some(self.human)
+            || self.session.observe(self.human).step != Step::DeclareBlockers
         {
             return Err(JsValue::from_str("the human is not declaring blockers"));
         }
         let assignments: Vec<[u32; 2]> =
             serde_json::from_str(assignments_json).map_err(js_error)?;
         let mut used_blockers = Vec::with_capacity(assignments.len());
-        let legal_actions = self.game.observe(self.human).legal_actions;
+        let legal_actions = self.session.observe(self.human).legal_actions;
         let mut block_actions = Vec::with_capacity(assignments.len());
         for [blocker, attacker] in assignments {
             let blocker = CardInstanceId(blocker);
@@ -307,9 +310,9 @@ impl WebGame {
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
         for action in block_actions {
-            self.game.apply(self.human, action).map_err(js_error)?;
+            self.session.apply(self.human, action).map_err(js_error)?;
         }
-        self.game
+        self.session
             .apply(self.human, Action::FinishDeclaringBlockers)
             .map_err(js_error)?;
         self.advance_until_human_choice()
@@ -325,7 +328,7 @@ impl WebGame {
             .mana_undo_history
             .pop()
             .ok_or_else(|| JsValue::from_str("there is no mana ability to undo"))?;
-        self.game = previous;
+        self.session.restore(previous);
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
         Ok(())
@@ -401,7 +404,7 @@ impl WebGame {
             .catalog
             .find_by_name(card_name)
             .ok_or_else(|| js_error(format!("no card named {card_name:?}")))?;
-        self.game
+        self.session
             .put_onto_battlefield(player, definition)
             .map_err(|error| js_error(error.to_string()))?;
         Ok(())
@@ -429,7 +432,7 @@ impl WebGame {
             .catalog
             .find_by_name(card_name)
             .ok_or_else(|| js_error(format!("no card named {card_name:?}")))?;
-        self.game
+        self.session
             .put_into_graveyard(player, definition)
             .map_err(|error| js_error(error.to_string()))?;
         Ok(())
@@ -437,10 +440,10 @@ impl WebGame {
 
     fn advance_until_human_choice(&mut self) -> Result<(), JsValue> {
         for _ in 0..BOT_ACTION_LIMIT {
-            let Some(player) = self.game.decision_player() else {
+            let Some(player) = self.session.decision_seat() else {
                 return Ok(());
             };
-            let observation = self.game.observe(player);
+            let observation = self.session.observe(player);
             let action = if player == self.human {
                 let automatic_action = self.automatic_human_action_for(&observation);
                 let Some(action) = automatic_action else {
@@ -488,15 +491,15 @@ impl WebGame {
                 .iter()
                 .map(|object| (object.id, object.controller))
                 .collect();
-            let event_start = self.game.event_cursor();
-            self.game.apply(player, action).map_err(js_error)?;
+            let event_start = self.session.event_cursor();
+            self.session.apply(player, action).map_err(js_error)?;
             if pending_animation.is_none() {
                 self.record_resolutions(event_start, &stack_owners);
             }
             self.record_combat_damage(event_start);
             self.record_draw_step(event_start);
             if let Some(mut animation) = pending_animation.take() {
-                let caused = self.game.events_for_since(self.human, event_start);
+                let caused = self.session.events_for_since(self.human, event_start);
                 let mana_sources = caused
                     .iter()
                     .filter_map(|event| match event {
@@ -547,7 +550,7 @@ impl WebGame {
         event_start: usize,
         stack_owners: &[(CardInstanceId, PlayerId)],
     ) {
-        let caused = self.game.events_for_since(self.human, event_start);
+        let caused = self.session.events_for_since(self.human, event_start);
         let resolved: Vec<_> = caused
             .iter()
             .filter_map(|event| match event {
@@ -597,7 +600,7 @@ impl WebGame {
     /// beat the card arrives in a frame the board already labels "first main".
     /// Holding it here draws the card where the phase strip says it happens.
     fn record_draw_step(&mut self, event_start: usize) {
-        let events = self.game.events_for_since(self.human, event_start);
+        let events = self.session.events_for_since(self.human, event_start);
         let drew = events
             .iter()
             .any(|event| matches!(event, GameEvent::CardDrawn { .. }));
@@ -629,7 +632,7 @@ impl WebGame {
     /// now the normal way an unblocked attack ends. Without a beat the life
     /// totals and the dead creatures would change between frames.
     fn record_combat_damage(&mut self, event_start: usize) {
-        let events = self.game.events_for_since(self.human, event_start);
+        let events = self.session.events_for_since(self.human, event_start);
         let entered_damage = events.iter().any(|event| {
             matches!(
                 event,
@@ -670,7 +673,7 @@ impl WebGame {
     /// announced. This beat carries no action of its own — the client shows
     /// the banner and moves on.
     fn record_turn_change(&mut self, event_start: usize) {
-        let caused = self.game.events_for_since(self.human, event_start);
+        let caused = self.session.events_for_since(self.human, event_start);
         let Some(turn) = caused
             .iter()
             .filter_map(|event| match event {
@@ -750,10 +753,10 @@ impl WebGame {
     /// else: whether they block does not move the human's next window, but
     /// whether they attack decides whether there is a block step at all.
     fn pass_preview_label(&self) -> Option<String> {
-        if self.game.decision_player() != Some(self.human) {
+        if self.session.decision_seat() != Some(self.human) {
             return None;
         }
-        let observation = self.game.observe(self.human);
+        let observation = self.session.observe(self.human);
         if !observation
             .legal_actions
             .iter()
@@ -766,7 +769,7 @@ impl WebGame {
         }
         let start_turn = observation.turn;
         let start_active_is_human = observation.active_player == self.human;
-        let mut sim = self.game.clone();
+        let mut sim = self.session.fork_for_preview();
         sim.apply(self.human, Action::PassPriority).ok()?;
         // Combat damage is the loudest thing a pass can cause, so it names the
         // button even when the yield carries on past it. Watch both attackers
@@ -972,7 +975,7 @@ impl WebGame {
     }
 
     fn automatic_mana_sources(&self, action: &Action) -> Vec<u32> {
-        self.game
+        self.session
             .mana_sources_for_action(self.human, action)
             .into_iter()
             .map(|source| source.0)
@@ -981,7 +984,7 @@ impl WebGame {
 
     #[allow(clippy::too_many_lines)]
     fn snapshot_value(&self, include_opponent_actions: bool) -> Value {
-        let observation = self.game.observe(self.human);
+        let observation = self.session.observe(self.human);
         let opponent = self.human.opponent();
         let actions = observation
             .legal_actions
@@ -1267,7 +1270,7 @@ impl WebGame {
                 .map(|(id, definition)| card_in_zone(*id, *definition))
                 .collect::<Vec<_>>()
         };
-        let result = self.game.result().map(|result| match result {
+        let result = self.session.result().map(|result| match result {
             GameResult::Winner { winner, reason } => json!({
                 "outcome": if winner == self.human { "win" } else { "loss" },
                 "message": format!(
@@ -1283,8 +1286,8 @@ impl WebGame {
         });
         // `events_for` withholds the seed. This client owns the engine, so it
         // may still show it; a remote one would not have it to show.
-        let seat_events = self.game.events_for(self.human);
-        let events = std::iter::once(Some(format!("Game started · seed {}", self.game.seed())))
+        let seat_events = self.session.events_for(self.human);
+        let events = std::iter::once(Some(format!("Game started · seed {}", self.session.seed())))
             .chain(
                 seat_events
                     .iter()
@@ -1344,14 +1347,14 @@ impl WebGame {
         });
 
         json!({
-            "format": self.game.format().slug(),
+            "format": self.session.format().slug(),
             "turn": observation.active_turn,
             "gameTurn": observation.turn,
             "step": readable_debug(observation.step),
             "regularCombatDamagePending": observation.regular_combat_damage_pending,
             // Turn one has not started yet, so the board should not be
             // claiming an upkeep is happening.
-            "pregame": self.game.in_pregame(),
+            "pregame": self.session.in_pregame(),
             "active": if observation.active_player == self.human { "You" } else { "Opponent" },
             "priority": if observation.priority == self.human { "You" } else { "Opponent" },
             "human": {
@@ -1548,7 +1551,7 @@ impl WebGame {
     }
 
     fn ability_rules_text(&self, source: CardInstanceId, origin: AbilityOrigin) -> Option<String> {
-        self.game
+        self.session
             .ability_for_origin(source, origin)
             .map(|ability| ability.rules_text().into_owned())
     }
@@ -2864,7 +2867,7 @@ mod tests {
 
     fn act_matching(game: &mut WebGame, predicate: impl Fn(&Action) -> bool) {
         let action_index = game
-            .game
+            .session
             .observe(game.human)
             .legal_actions
             .iter()
@@ -2928,7 +2931,7 @@ mod tests {
             Some("isd-rtr-standard".into()),
         )
         .unwrap();
-        let mut observation = game.game.observe(game.human);
+        let mut observation = game.session.engine().observe(game.human);
         let normal = CardInstanceId(90_000);
         let flashback = CardInstanceId(90_001);
         let overload = CardInstanceId(90_002);
@@ -3001,10 +3004,11 @@ mod tests {
         )
         .unwrap();
         let source = game
-            .game
+            .session
+            .engine_mut()
             .put_onto_battlefield(game.human, penta::card::cards::MISHRA_S_FACTORY)
             .expect("Mishra's Factory enters the test battlefield");
-        let mut observation = game.game.observe(game.human);
+        let mut observation = game.session.engine_mut().observe(game.human);
         assert!(
             observation
                 .battlefield
@@ -3081,15 +3085,18 @@ mod tests {
         )
         .unwrap();
         let source = game
-            .game
+            .session
+            .engine_mut()
             .put_onto_battlefield(game.human, penta::card::cards::KESSIG_WOLF_RUN)
             .expect("Kessig Wolf Run enters the test battlefield");
         let pilgrim = game
-            .game
+            .session
+            .engine_mut()
             .put_onto_battlefield(game.human, penta::card::cards::AVACYNS_PILGRIM)
             .expect("Avacyn's Pilgrim enters the test battlefield");
         let thragtusk = game
-            .game
+            .session
+            .engine_mut()
             .put_onto_battlefield(game.human, penta::card::cards::THRAGTUSK)
             .expect("Thragtusk enters the test battlefield");
         let ability = AbilityOrigin::Printed {
@@ -3109,7 +3116,7 @@ mod tests {
         };
         let zero = action(0);
         let two = action(2);
-        let mut observation = game.game.observe(game.human);
+        let mut observation = game.session.engine_mut().observe(game.human);
         observation.legal_actions = vec![zero.clone(), two.clone()];
 
         assert_eq!(
@@ -3309,25 +3316,29 @@ mod tests {
         // decision in either direction.
         let mut game = WebGame::new("Sligh", "Goblins", "Handcrafted", false, 4_242, None)
             .expect("game starts");
-        while game.game.in_pregame() {
-            apply_engine_action(&mut game.game, |action| matches!(action, Action::KeepHand));
+        while game.session.engine_mut().in_pregame() {
+            apply_engine_action(game.session.engine_mut(), |action| {
+                matches!(action, Action::KeepHand)
+            });
         }
-        game.game
+        game.session
+            .engine_mut()
             .set_hand(game.human, &[])
             .expect("an empty hand is valid");
         let human = game.human;
         // Given to them a turn early, so it is not summoning sick when their
         // combat comes around.
-        advance_engine_quietly_until(&mut game.game, |observation| {
+        advance_engine_quietly_until(game.session.engine_mut(), |observation| {
             observation.active_player == human && observation.step == Step::PrecombatMain
         });
-        game.game
+        game.session
+            .engine_mut()
             .put_onto_battlefield(human.opponent(), penta::card::cards::SAVANNAH_LIONS)
             .expect("the Lions are cataloged");
-        advance_engine_quietly_until(&mut game.game, |observation| {
+        advance_engine_quietly_until(game.session.engine_mut(), |observation| {
             observation.active_player == human.opponent() && observation.viewer == human
         });
-        assert_eq!(game.game.decision_player(), Some(human));
+        assert_eq!(game.session.engine_mut().decision_player(), Some(human));
 
         assert_eq!(
             game.pass_preview_label().as_deref(),
@@ -3340,10 +3351,13 @@ mod tests {
     fn interwave_snapshot_and_pass_preview_expose_pending_regular_damage() {
         let mut game = WebGame::new("Goblins", "Sligh", "Handcrafted", true, 9_394, None)
             .expect("game starts");
-        while game.game.in_pregame() {
-            apply_engine_action(&mut game.game, |action| matches!(action, Action::KeepHand));
+        while game.session.engine_mut().in_pregame() {
+            apply_engine_action(game.session.engine_mut(), |action| {
+                matches!(action, Action::KeepHand)
+            });
         }
-        game.game
+        game.session
+            .engine_mut()
             .set_hand(
                 game.human,
                 &[
@@ -3352,14 +3366,15 @@ mod tests {
                 ],
             )
             .expect("test hand is cataloged");
-        game.game
+        game.session
+            .engine_mut()
             .set_hand(game.human.opponent(), &[])
             .expect("an empty hand is valid");
 
-        advance_engine_quietly_until(&mut game.game, |observation| {
+        advance_engine_quietly_until(game.session.engine_mut(), |observation| {
             observation.active_player == game.human && observation.step == Step::PrecombatMain
         });
-        let opening = game.game.observe(game.human);
+        let opening = game.session.engine_mut().observe(game.human);
         let lotus_in_hand = opening
             .hand
             .iter()
@@ -3375,21 +3390,21 @@ mod tests {
             })
             .expect("Black Knight is in hand");
         apply_engine_action(
-            &mut game.game,
+            game.session.engine_mut(),
             |action| matches!(action, Action::CastSpell { card, .. } if *card == lotus_in_hand),
         );
-        advance_engine_quietly_until(&mut game.game, |observation| {
+        advance_engine_quietly_until(game.session.engine_mut(), |observation| {
             observation.stack.is_empty() && observation.step == Step::PrecombatMain
         });
         let lotus = game
-            .game
+            .session
             .observe(game.human)
             .battlefield
             .iter()
             .find(|permanent| permanent.definition == penta::card::cards::BLACK_LOTUS)
             .expect("Black Lotus resolved")
             .id;
-        apply_engine_action(&mut game.game, |action| {
+        apply_engine_action(game.session.engine_mut(), |action| {
             matches!(
                 action,
                 Action::ActivateManaAbility {
@@ -3400,14 +3415,14 @@ mod tests {
             )
         });
         apply_engine_action(
-            &mut game.game,
+            game.session.engine_mut(),
             |action| matches!(action, Action::CastSpell { card, .. } if *card == knight),
         );
-        advance_engine_quietly_until(&mut game.game, |observation| {
+        advance_engine_quietly_until(game.session.engine_mut(), |observation| {
             observation.stack.is_empty() && observation.step == Step::PrecombatMain
         });
 
-        advance_engine_quietly_until(&mut game.game, |observation| {
+        advance_engine_quietly_until(game.session.engine_mut(), |observation| {
             observation.active_player == game.human
                 && observation.active_turn == 2
                 && observation.step == Step::DeclareAttackers
@@ -3417,7 +3432,7 @@ mod tests {
                     .any(|action| matches!(action, Action::DeclareAttacker { .. }))
         });
         let knight = game
-            .game
+            .session
             .observe(game.human)
             .battlefield
             .iter()
@@ -3425,27 +3440,27 @@ mod tests {
             .expect("Black Knight resolved")
             .id;
         apply_engine_action(
-            &mut game.game,
+            game.session.engine_mut(),
             |action| matches!(action, Action::DeclareAttacker { attacker, .. } if *attacker == knight),
         );
-        apply_engine_action(&mut game.game, |action| {
+        apply_engine_action(game.session.engine_mut(), |action| {
             matches!(action, Action::FinishDeclaringAttackers)
         });
-        advance_engine_quietly_until(&mut game.game, |observation| {
+        advance_engine_quietly_until(game.session.engine_mut(), |observation| {
             observation.step == Step::DeclareBlockers
                 && observation
                     .legal_actions
                     .iter()
                     .any(|action| matches!(action, Action::FinishDeclaringBlockers))
         });
-        apply_engine_action(&mut game.game, |action| {
+        apply_engine_action(game.session.engine_mut(), |action| {
             matches!(action, Action::FinishDeclaringBlockers)
         });
-        advance_engine_quietly_until(&mut game.game, |observation| {
+        advance_engine_quietly_until(game.session.engine_mut(), |observation| {
             observation.regular_combat_damage_pending
         });
 
-        let observation = game.game.observe(game.human);
+        let observation = game.session.engine_mut().observe(game.human);
         assert!(
             !WebGame::attack_awaiting_damage(&observation),
             "the older preview heuristic cannot recognize an already-open damage step",
