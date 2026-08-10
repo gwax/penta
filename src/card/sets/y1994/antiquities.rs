@@ -276,6 +276,13 @@ pub(in crate::card::sets) static SAGE_OF_LAT_NAM: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Both of Tetravus's assembly triggers fire at the same moment, so its
+/// controller orders them and can answer both in one upkeep.
+const UPKEEP: TriggerEventDef = TriggerEventDef::StepBegins {
+    step: TurnStepDef::Upkeep,
+    player: PlayerRelation::You,
+};
+
 pub(in crate::card::sets) static TETRAVUS: CardRecord = CardRecord::new(
     cards::TETRAVUS,
     "Tetravus",
@@ -293,14 +300,24 @@ pub(in crate::card::sets) static TETRAVUS: CardRecord = CardRecord::new(
                 },
             ),
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "At the beginning of your upkeep, you may remove any number of +1/+1 counters from this creature. If you do, create that many 1/1 colorless Tetravite artifact creature tokens. They each have flying and \"This token can't be enchanted.\"",
-            "Creating Tetravite tokens and choosing how many counters to remove are not implemented.",
-        ),
-        AbilityDef::not_implemented(
+            UPKEEP,
+            EffectDef::None,
+        )
+        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::TetravusDetach))
+        .with_coverage(AbilityCoverageDef::explained_complete(
+            "The upkeep trigger uses the shared stack; a card-local resolver asks how many counters to trade and links each token it creates back to this permanent.",
+        )),
+        AbilityDef::triggered(
             "At the beginning of your upkeep, you may exile any number of tokens created with this creature. If you do, put that many +1/+1 counters on this creature.",
-            "Exiling linked Tetravite tokens and returning their counters are not implemented.",
-        ),
+            UPKEEP,
+            EffectDef::None,
+        )
+        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::TetravusAssemble))
+        .with_coverage(AbilityCoverageDef::explained_complete(
+            "The upkeep trigger uses the shared stack; a card-local resolver offers only the tokens this permanent created and returns one counter per token exiled.",
+        )),
     ]),
 );
 

@@ -1127,6 +1127,10 @@ pub enum AppliedEffectDef {
     /// continuous effect.
     Composite(&'static [AppliedEffectDef]),
     CannotBeCountered,
+    /// No Aura may attach to the affected permanent. This restricts both the
+    /// Aura spell's targeting and whether an existing attachment stays legal,
+    /// so an Aura already on the permanent falls off.
+    CannotBeEnchanted,
     /// A creature matching this predicate cannot block the affected creature.
     CannotBeBlockedBy(ObjectPredicateDef),
     /// Adds land subtypes without removing the object's existing subtypes.
@@ -3853,6 +3857,11 @@ pub enum CardBehavior {
     SwordsToPlowshares,
     TimeWalk,
     Tetravus,
+    /// Tetravus's first upkeep trigger: trade +1/+1 counters for Tetravites.
+    TetravusDetach,
+    /// Tetravus's second upkeep trigger: exile its own Tetravites to take the
+    /// counters back.
+    TetravusAssemble,
     TheAbyss,
     UltimatePrice,
     WarleadersHelix,

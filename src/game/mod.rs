@@ -228,6 +228,11 @@ struct Permanent {
     /// with deathtouch. The source may leave before state-based actions are
     /// checked, so this is damage-event state rather than a live lookup.
     deathtouch_damage: bool,
+    /// The permanent whose ability created this token, for the cards that
+    /// later refer to "tokens created with this creature". A token that
+    /// outlives its creator keeps pointing at an object ID nothing matches,
+    /// which is what makes those tokens permanently orphaned.
+    created_by: Option<GameObjectId>,
 }
 
 impl Permanent {
@@ -278,6 +283,7 @@ impl Permanent {
             forestwalk_until_upkeep_of: None,
             damage_sources: Vec::new(),
             deathtouch_damage: false,
+            created_by: None,
         }
     }
 
@@ -1124,6 +1130,16 @@ enum DecisionContinuation {
     },
     ErhnamForestwalk {
         player: PlayerId,
+        source: GameObjectId,
+    },
+    /// How many +1/+1 counters Tetravus is trading for Tetravites. Every
+    /// option stands for one counter, so the count selected is the answer.
+    TetravusDetach {
+        source: GameObjectId,
+    },
+    /// Which of Tetravus's own Tetravites it is exiling to take the counters
+    /// back. The options are the tokens themselves.
+    TetravusAssemble {
         source: GameObjectId,
     },
     /// Sin Collector and Lifebane Zombie, holding the hand they exile from.
@@ -2891,6 +2907,7 @@ impl Game {
                 Self::is_external_entry_replacement(ability),
             ),
             AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Animate(_)
@@ -5842,6 +5859,67 @@ impl Game {
                     });
                 }
             }
+            DecisionContinuation::TetravusDetach { source } => {
+                // The counters have to still be there: two upkeep triggers
+                // resolve one after the other, and the assemble trigger can
+                // run first.
+                let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == source)
+                else {
+                    return;
+                };
+                let removed = options
+                    .len()
+                    .min(usize::from(permanent.counters(CounterKind::PlusOnePlusOne)));
+                let Ok(removed) = u16::try_from(removed) else {
+                    return;
+                };
+                if removed == 0 {
+                    return;
+                }
+                permanent.remove_counters(CounterKind::PlusOnePlusOne, removed);
+                let controller = permanent.controller;
+                for _ in 0..removed {
+                    self.create_token_from(
+                        controller,
+                        crate::card::cards::TETRAVITE_TOKEN,
+                        Some(source),
+                    );
+                }
+            }
+            DecisionContinuation::TetravusAssemble { source } => {
+                let exiled = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| option.card)
+                    .map(|(card, _)| card)
+                    .collect::<Vec<_>>();
+                let mut returned: u16 = 0;
+                for token in exiled {
+                    // Only tokens this Tetravus still owns count, in case one
+                    // changed hands or left between the offer and the answer.
+                    if self.battlefield.iter().any(|permanent| {
+                        permanent.card.id == token && permanent.created_by == Some(source)
+                    }) {
+                        self.exile_permanent(token);
+                        returned = returned.saturating_add(1);
+                    }
+                }
+                if returned == 0 {
+                    return;
+                }
+                if let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == source)
+                {
+                    permanent.add_counters(CounterKind::PlusOnePlusOne, returned);
+                }
+            }
             DecisionContinuation::TriggerOrder { batch, remaining } => {
                 self.complete_trigger_order(&batch, remaining, options);
             }
@@ -8536,6 +8614,81 @@ impl Game {
         true
     }
 
+    /// Tetravus offers one option per +1/+1 counter it carries, so the number
+    /// of options taken is the number of counters traded away.
+    fn queue_tetravus_detach(&mut self, controller: PlayerId, source: GameObjectId) {
+        let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+        else {
+            return;
+        };
+        let counters = usize::from(permanent.counters(CounterKind::PlusOnePlusOne));
+        if counters == 0 {
+            return;
+        }
+        let options = (0..counters)
+            .map(|index| DecisionOption {
+                id: u32::try_from(index).unwrap_or(u32::MAX),
+                label: "Trade a +1/+1 counter for a Tetravite".into(),
+                card: None,
+                ability_text: None,
+                zone: DecisionZone::Battlefield,
+            })
+            .collect();
+        self.queue_decision(
+            controller,
+            "Remove any number of +1/+1 counters from Tetravus",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            0..=counters,
+            false,
+            options,
+            DecisionContinuation::TetravusDetach { source },
+        );
+    }
+
+    /// Only the Tetravites this Tetravus made are eligible; a second Tetravus
+    /// keeps its own, and a token that outlived its creator can never come
+    /// back.
+    fn queue_tetravus_assemble(&mut self, controller: PlayerId, source: GameObjectId) {
+        let tokens = self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.created_by == Some(source))
+            .map(|permanent| (permanent.card.id, permanent.card.definition))
+            .collect::<Vec<_>>();
+        if tokens.is_empty() {
+            return;
+        }
+        let options = tokens
+            .iter()
+            .enumerate()
+            .map(|(index, (id, definition))| DecisionOption {
+                id: u32::try_from(index).unwrap_or(u32::MAX),
+                label: self.catalog.get(*definition).map_or_else(
+                    || "Unknown token".into(),
+                    |definition| definition.name.clone(),
+                ),
+                card: Some((*id, *definition)),
+                ability_text: None,
+                zone: DecisionZone::Battlefield,
+            })
+            .collect();
+        let total = tokens.len();
+        self.queue_decision(
+            controller,
+            "Exile any number of Tetravites created with Tetravus",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            0..=total,
+            false,
+            options,
+            DecisionContinuation::TetravusAssemble { source },
+        );
+    }
+
     fn resolve_custom_triggered_ability(&mut self, object: &StackObject, behavior: CardBehavior) {
         if matches!(
             behavior,
@@ -8543,6 +8696,18 @@ impl Game {
         ) {
             if let Some(Target::Player(victim)) = self.first_legal_ability_target(object) {
                 self.queue_reveal_and_exile(object.controller, victim, behavior);
+            }
+            return;
+        }
+        if matches!(
+            behavior,
+            CardBehavior::TetravusDetach | CardBehavior::TetravusAssemble
+        ) {
+            let source = object.source.unwrap_or(object.id);
+            if behavior == CardBehavior::TetravusDetach {
+                self.queue_tetravus_detach(object.controller, source);
+            } else {
+                self.queue_tetravus_assemble(object.controller, source);
             }
             return;
         }
@@ -9416,6 +9581,7 @@ impl Game {
                 }
             }
             AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Special(_) => {}
@@ -10854,6 +11020,7 @@ impl Game {
             // Animation adds creature types, never land types, so it leaves
             // the land-type operations alone.
             AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
@@ -11200,6 +11367,7 @@ impl Game {
                 ability: *ability,
             }),
             AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Animate(_)
@@ -11517,6 +11685,7 @@ impl Game {
                 ControlFlow::Continue(())
             }
             AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Animate(_)
@@ -11618,6 +11787,20 @@ impl Game {
         }
     }
 
+    /// Whether a static effect forbids Auras on this permanent. This is not a
+    /// targeting restriction like hexproof: it also makes an Aura that somehow
+    /// arrived anyway fall off.
+    fn cannot_be_enchanted(&self, permanent: &Permanent) -> bool {
+        self.visit_static_applied_effects(permanent, |applied| {
+            if Self::applied_effect_contains(applied.effect, AppliedEffectDef::CannotBeEnchanted) {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+
     /// Whether an Aura may stay attached to `host`: the host has to still be
     /// on the battlefield and still satisfy what the Aura enchants.
     fn is_legal_aura_host(&self, aura: &Permanent, host: GameObjectId) -> bool {
@@ -11628,6 +11811,9 @@ impl Game {
         else {
             return false;
         };
+        if self.cannot_be_enchanted(host) {
+            return false;
+        }
         let Some(rules) = self.effective_rules(aura) else {
             return false;
         };
@@ -11717,6 +11903,18 @@ impl Game {
     /// format allows, so it can be looked up and rendered like any other card
     /// while never being deck-legal.
     fn create_token(&mut self, controller: PlayerId, token: CardDefinitionId) {
+        self.create_token_from(controller, token, None);
+    }
+
+    /// Puts one token onto the battlefield, remembering which permanent's
+    /// ability made it. Only the cards that later refer to their own tokens
+    /// pass a creator; for everything else the link is dead weight.
+    fn create_token_from(
+        &mut self,
+        controller: PlayerId,
+        token: CardDefinitionId,
+        creator: Option<GameObjectId>,
+    ) {
         let Some(definition) = self.catalog.get(token) else {
             return;
         };
@@ -11724,12 +11922,13 @@ impl Game {
         // A token has no physical card behind it, which is exactly what an
         // unbacked object is.
         let card = self.unbacked_object(token, controller, CharacteristicSource::Card(token));
-        let permanent = Permanent::entering(
+        let mut permanent = Permanent::entering(
             card,
             presented,
             controller,
             self.turns_started[controller.index()],
         );
+        permanent.created_by = creator;
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Stack,

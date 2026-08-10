@@ -1979,9 +1979,9 @@ mod tests {
         assert!(pilgrim["parts"][0].get("effectStatus").is_none());
 
         // Any card with a mix of executable and pending clauses will do here.
-        // Tetravus flies, but its counter-for-token exchange needs machinery
-        // the engine lacks; repoint this if that lands.
-        let partial = find("Tetravus");
+        // Chaos Orb's tap ability works, but the flip itself is a
+        // deterministic approximation; repoint this if that changes.
+        let partial = find("Chaos Orb");
         assert_eq!(partial["implementationStatus"], "partial");
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 

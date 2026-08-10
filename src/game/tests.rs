@@ -19042,3 +19042,164 @@ fn domri_fights_and_hands_out_an_emblem() {
         );
     }
 }
+
+/// Answers every pending decision until the stack is quiet, taking the named
+/// number of options from any prompt that starts with `prompt` and the
+/// smallest legal answer everywhere else. Tetravus puts two triggers on the
+/// stack at once, so the test cannot assume which one is asked about first.
+fn answer_upkeep(game: &mut Game, prompt: &str, take: usize) -> Vec<usize> {
+    let mut offered = Vec::new();
+    for _ in 0..16 {
+        if game.stack.is_empty()
+            && game.pending_triggers.is_empty()
+            && game.pending_decisions.is_empty()
+        {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let wanted = if decision.prompt.starts_with(prompt) {
+                offered.push(decision.options.len());
+                take
+            } else {
+                decision.minimum
+            };
+            let options = decision
+                .options
+                .iter()
+                .map(|option| option.id)
+                .take(wanted.max(decision.minimum))
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .unwrap();
+            continue;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    offered
+}
+
+#[test]
+fn tetravus_trades_counters_for_tetravites_that_remember_which_one_made_them() {
+    let mut game = ready_game();
+    game.turn = 2;
+    game.step = Step::Upkeep;
+    let mut tetravus = creature(10_000, cards::TETRAVUS, PlayerId::One);
+    tetravus.add_counters(CounterKind::PlusOnePlusOne, 3);
+    game.battlefield.push(tetravus);
+
+    game.handle_upkeep_triggers();
+    answer_upkeep(&mut game, "Remove any number", 2);
+
+    let tetravus = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("it is still there");
+    assert_eq!(
+        tetravus.counters(CounterKind::PlusOnePlusOne),
+        1,
+        "two of the three counters were traded away"
+    );
+    assert_eq!(game.power(tetravus), Some(2), "and it shrank with them");
+
+    let tetravites = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == cards::TETRAVITE_TOKEN)
+        .collect::<Vec<_>>();
+    assert_eq!(tetravites.len(), 2, "one Tetravite per counter");
+    assert!(
+        tetravites
+            .iter()
+            .all(|token| token.created_by == Some(GameObjectId(10_000))),
+        "each one remembers the Tetravus that made it"
+    );
+    assert!(
+        tetravites
+            .iter()
+            .all(|token| game.permanent_has_executable_keyword(token, KeywordAbility::Flying)),
+        "a Tetravite flies"
+    );
+}
+
+#[test]
+fn tetravus_takes_back_only_the_tetravites_it_made() {
+    let mut game = ready_game();
+    game.turn = 2;
+    game.step = Step::Upkeep;
+    game.battlefield
+        .push(creature(10_000, cards::TETRAVUS, PlayerId::One));
+
+    // Two of its own, and one that belongs to a Tetravus that is not here.
+    for (id, creator) in [(10_001, 10_000), (10_002, 10_000), (10_003, 10_999)] {
+        let mut token = creature(id, cards::TETRAVITE_TOKEN, PlayerId::One);
+        token.created_by = Some(GameObjectId(creator));
+        game.battlefield.push(token);
+    }
+
+    game.handle_upkeep_triggers();
+    let offered = answer_upkeep(&mut game, "Exile any number", 1);
+
+    assert_eq!(
+        offered,
+        vec![2],
+        "the orphaned Tetravite was never on the menu"
+    );
+    let tetravus = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("it is still there");
+    assert_eq!(
+        tetravus.counters(CounterKind::PlusOnePlusOne),
+        1,
+        "one Tetravite came home as one counter"
+    );
+    assert_eq!(game.power(tetravus), Some(2));
+    let remaining = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == cards::TETRAVITE_TOKEN)
+        .map(|permanent| permanent.card.id)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        remaining,
+        vec![GameObjectId(10_002), GameObjectId(10_003)],
+        "only the one that was exiled left"
+    );
+}
+
+#[test]
+fn an_aura_cannot_stay_on_a_tetravite() {
+    let mut game = ready_game();
+    let token = creature(10_000, cards::TETRAVITE_TOKEN, PlayerId::One);
+    let bear = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One);
+    game.battlefield.push(token);
+    game.battlefield.push(bear);
+
+    let mut aura = creature(10_002, cards::VOLCANIC_STRENGTH, PlayerId::One);
+    aura.attached_to = Some(GameObjectId(10_001));
+    let bear = game.battlefield[1].clone();
+    assert!(
+        game.is_legal_aura_host(&aura, GameObjectId(10_001)),
+        "an ordinary creature is a fine host"
+    );
+    assert_eq!(game.power(&bear), Some(2), "and no Aura is on it yet");
+    assert!(
+        !game.is_legal_aura_host(&aura, GameObjectId(10_000)),
+        "a Tetravite can't be enchanted"
+    );
+}

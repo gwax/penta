@@ -11,9 +11,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, ValueDef, ZoneKind, abilities, cards,
+    AbilityCoverageDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
+    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, ValueDef, ZoneKind, abilities, cards,
 };
 
 pub(in crate::card::sets) static BEAST_TOKEN_3_3_GREEN: CardRecord = CardRecord::new(
@@ -111,6 +111,30 @@ pub(in crate::card::sets) static WOLF_TOKEN_1_1_BLACK: CardRecord = CardRecord::
         .with_abilities(&[abilities::deathtouch()]),
 );
 
+/// Tetravus detaches these, and can exile its own back to rebuild itself.
+pub(in crate::card::sets) static TETRAVITE_TOKEN: CardRecord = CardRecord::new(
+    cards::TETRAVITE_TOKEN,
+    "Tetravite",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Tetravite"], 1, 1)
+        .with_type(CardType::Artifact)
+        .with_abilities(&[
+            abilities::flying(),
+            AbilityDef::static_ability(
+                "This token can't be enchanted.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::CannotBeEnchanted,
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            )
+            .with_coverage(AbilityCoverageDef::partial(
+                "An Aura may still be cast at this token; it enters attached and is then put into its owner's graveyard, rather than the target being illegal to choose.",
+            )),
+        ]),
+);
+
 /// Domri's emblem. An emblem is an object with abilities and no other
 /// characteristics, so it is cataloged like a token and lives in its own
 /// list rather than on the battlefield.
@@ -155,6 +179,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOLF_TOKEN_2_2_GREEN,
     &WOLF_TOKEN_1_1_BLACK,
     &DOMRI_RADE_EMBLEM,
+    &TETRAVITE_TOKEN,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

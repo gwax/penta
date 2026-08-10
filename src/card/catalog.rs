@@ -804,6 +804,7 @@ fn collect_applied_ability_grants(effect: super::AppliedEffectDef, grants: &mut 
         }
         super::AppliedEffectDef::GrantAbility(ability) => grants.push(ability),
         super::AppliedEffectDef::CannotBeCountered
+        | AppliedEffectDef::CannotBeEnchanted
         | super::AppliedEffectDef::CannotBeBlockedBy(_)
         | super::AppliedEffectDef::AddLandTypes(_)
         | super::AppliedEffectDef::Animate(_)
@@ -876,6 +877,7 @@ fn applied_ability_grant_sites(effect: super::AppliedEffectDef) -> usize {
             .fold(0, usize::saturating_add),
         super::AppliedEffectDef::GrantAbility(_) => 1,
         super::AppliedEffectDef::CannotBeCountered
+        | AppliedEffectDef::CannotBeEnchanted
         | super::AppliedEffectDef::CannotBeBlockedBy(_)
         | super::AppliedEffectDef::AddLandTypes(_)
         | super::AppliedEffectDef::Animate(_)
@@ -999,6 +1001,7 @@ fn validate_applied_effect_target_references(
         // separately when the grant tree is traversed.
         AppliedEffectDef::GrantAbility(_)
         | AppliedEffectDef::CannotBeCountered
+        | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::AddLandTypes(_)
         | AppliedEffectDef::Animate(_)

@@ -254,7 +254,9 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::SinCollector => &y2013::dragons_maze::SIN_COLLECTOR.rules,
         CardBehavior::SphinxsRevelation => &y2012::return_to_ravnica::SPHINXS_REVELATION.rules,
         CardBehavior::SupremeVerdict => &y2012::return_to_ravnica::SUPREME_VERDICT.rules,
-        CardBehavior::Tetravus => &y1994::antiquities::TETRAVUS.rules,
+        CardBehavior::Tetravus | CardBehavior::TetravusDetach | CardBehavior::TetravusAssemble => {
+            &y1994::antiquities::TETRAVUS.rules
+        }
         CardBehavior::TheAbyss => &y1994::legends::THE_ABYSS.rules,
         CardBehavior::UltimatePrice => &y2012::return_to_ravnica::ULTIMATE_PRICE.rules,
         CardBehavior::WarleadersHelix => &y2013::dragons_maze::WARLEADERS_HELIX.rules,
@@ -426,7 +428,7 @@ mod tests {
                         .copied()
                         .all(shared_cannot_be_countered_effect)
             }
-            AppliedEffectDef::CannotBeCountered => true,
+            AppliedEffectDef::CannotBeCountered | AppliedEffectDef::CannotBeEnchanted => true,
             AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
@@ -498,6 +500,7 @@ mod tests {
             // A blocking restriction is continuous, not an until-end-of-turn
             // rider a spell hands out.
             AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Special(_) => false,
@@ -842,7 +845,7 @@ mod tests {
             AppliedEffectDef::CannotBeBlockedBy(predicate) => {
                 recipient == EffectRecipientDef::Source && shared_object_predicate(predicate)
             }
-            AppliedEffectDef::CannotBeCountered => true,
+            AppliedEffectDef::CannotBeCountered | AppliedEffectDef::CannotBeEnchanted => true,
             // Only a resolving animation is supported; nothing reads one off
             // a static ability.
             AppliedEffectDef::Animate(_) | AppliedEffectDef::Special(_) => false,
@@ -1180,6 +1183,7 @@ mod tests {
                 assert_nested_definition_abilities(card_name, ability.effect.definition);
             }
             AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::Animate(_)
@@ -1248,13 +1252,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 258);
+        assert_eq!(records.len(), 259);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=258).collect::<Vec<_>>()
+            (1..=259).collect::<Vec<_>>()
         );
         // Names identify the cards a decklist can name. Tokens are not among
         // them, and Magic prints several that share a name.
@@ -1275,7 +1279,7 @@ mod tests {
     #[test]
     fn built_in_catalog_indexes_definitions_and_printings_separately() {
         let catalog = crate::card::catalog().unwrap();
-        let printing_count = (1..=258)
+        let printing_count = (1..=259)
             .filter(|id| {
                 *id != cards::BEAST_TOKEN_3_3_GREEN.0
                     && *id != cards::KNIGHT_TOKEN_2_2_WHITE.0
@@ -1286,6 +1290,7 @@ mod tests {
                     && *id != cards::WOLF_TOKEN_2_2_GREEN.0
                     && *id != cards::WOLF_TOKEN_1_1_BLACK.0
                     && *id != cards::DOMRI_RADE_EMBLEM.0
+                    && *id != cards::TETRAVITE_TOKEN.0
             })
             .map(|id| catalog.printings_for(CardDefinitionId(id)).len())
             .sum::<usize>();
@@ -1311,7 +1316,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 258);
+        assert_eq!(records.len(), 259);
 
         for record in records {
             let definition = record.definition();
