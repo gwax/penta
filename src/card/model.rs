@@ -1084,6 +1084,10 @@ pub enum ValueDef {
     /// The power of what a target slot points at, for "damage equal to its
     /// power".
     TargetPower(TargetIndex),
+    /// The mana value of what a target slot points at, read from last-known
+    /// information so a countered spell can still be measured after it has
+    /// left the stack.
+    TargetManaValue(TargetIndex),
 }
 
 /// An object or player affected by an effect. Targets are chosen when a spell
@@ -1483,6 +1487,14 @@ pub enum EffectDef {
     },
     Counter {
         object: EffectRecipientDef,
+    },
+    /// Adds mana of one colour, however much a value says. Mana abilities use
+    /// [`Self::AddMana`] with a fixed amount so the mana planner can read
+    /// them without resolving anything; this is for the effects that cannot
+    /// know their amount until they resolve.
+    AddManaEqualTo {
+        color: ManaColor,
+        amount: ValueDef,
     },
     /// Counters unless the spell's own controller pays this much generic
     /// mana. `zone` is where a spell countered this way goes, which is the
@@ -3997,6 +4009,8 @@ pub enum CardBehavior {
     KirdApe,
     LifebaneZombie,
     LibraryOfAlexandria,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// counters declaratively and schedules its own mana.
     ManaDrain,
     ManaVault,
     /// Legacy dispatch key retained for source compatibility; the card now

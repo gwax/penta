@@ -1349,7 +1349,6 @@ pub struct Game {
     combat_damage_stage: CombatDamageStage,
     combat_blocked_attackers: Vec<GameObjectId>,
     extra_turns: Vec<PlayerId>,
-    mana_drain_pending: [u16; 2],
     channel_active: [bool; 2],
     skipped_turns: [u16; 2],
     result: Option<GameResult>,
@@ -1504,7 +1503,6 @@ impl Game {
             combat_damage_stage: CombatDamageStage::NotStarted,
             combat_blocked_attackers: Vec::new(),
             extra_turns: Vec::new(),
-            mana_drain_pending: [0, 0],
             channel_active: [false, false],
             skipped_turns: [0, 0],
             result: None,
@@ -3641,6 +3639,7 @@ impl Game {
             | EffectDef::DiscardAtRandom { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
+            | EffectDef::AddManaEqualTo { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventCombatDamageThisTurn { .. }
@@ -7553,7 +7552,7 @@ impl Game {
                 })
                 .map(|object| vec![Target::Spell(object.id)])
                 .collect(),
-            CardBehavior::ManaDrain | CardBehavior::Dissipate => self
+            CardBehavior::Dissipate => self
                 .stack
                 .iter()
                 .filter(|object| object.kind == StackObjectKind::Spell)
@@ -8041,6 +8040,18 @@ impl Game {
         }
         self.effective_rules(permanent)
             .map_or(0, |rules| rules.printed_mana_cost().mana_value())
+    }
+
+    /// A spell's mana value, still readable after it has left the stack so a
+    /// delayed effect can measure what it countered.
+    fn current_or_last_known_spell_mana_value(&self, id: GameObjectId) -> Option<u16> {
+        if let Some(object) = self.stack.iter().find(|object| object.id == id) {
+            return Some(self.stack_spell_mana_value(object));
+        }
+        match self.retired_objects.get(&id) {
+            Some(RetiredObject::Stack(object)) => Some(self.stack_spell_mana_value(object)),
+            _ => None,
+        }
     }
 
     fn stack_spell_mana_value(&self, object: &StackObject) -> u16 {
@@ -9568,6 +9579,14 @@ impl Game {
                     effect: scoped.with_effect(*effect),
                 });
             }
+            EffectDef::AddManaEqualTo { color, amount } => {
+                let amount = self
+                    .effect_value(amount, object, context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                self.add_unrestricted_mana(object.controller, color, amount);
+            }
             EffectDef::Counter { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Spell(spell) = target {
@@ -9768,6 +9787,14 @@ impl Game {
                     .find_map(|target| match target {
                         Target::Permanent(id) => self.current_or_last_known_power(id),
                         Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+                    })
+                    .map_or(0, i32::from)
+            }
+            ValueDef::TargetManaValue(target) => {
+                Self::chosen_targets(object, scoped.target_slot(target))
+                    .find_map(|target| match target {
+                        Target::Spell(id) => self.current_or_last_known_spell_mana_value(id),
+                        Target::Permanent(_) | Target::Player(_) | Target::Card(_) => None,
                     })
                     .map_or(0, i32::from)
             }
@@ -10644,18 +10671,6 @@ impl Game {
                 let player = object.controller;
                 self.gain_life(player, object.x());
                 self.draw_cards(player, object.x());
-            }
-            CardBehavior::ManaDrain => {
-                if let Some(Target::Spell(target)) = object.first_target() {
-                    let drained = self
-                        .stack
-                        .iter()
-                        .find(|candidate| candidate.id == target)
-                        .map_or(0, |candidate| self.stack_spell_mana_value(candidate));
-                    self.counter_spell(target);
-                    self.mana_drain_pending[object.controller.index()] =
-                        self.mana_drain_pending[object.controller.index()].saturating_add(drained);
-                }
             }
             CardBehavior::LightningBolt => {
                 self.damage_target(object.first_target(), 3);
@@ -12266,6 +12281,7 @@ impl Game {
                 .find_map(|effect| Self::immediate_attachment_target(*effect)),
             EffectDef::None
             | EffectDef::AddMana(_)
+            | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
@@ -12802,6 +12818,7 @@ impl Game {
                 ));
             }
             EffectDef::AddMana(_)
+            | EffectDef::AddManaEqualTo { .. }
             | EffectDef::None
             | EffectDef::Sequence(_)
             | EffectDef::DealDamage { .. }
@@ -12948,6 +12965,7 @@ impl Game {
                     colors.extend(self.fellwar_stone_colors(permanent, visiting));
                 }
                 EffectDef::AddMana(_)
+                | EffectDef::AddManaEqualTo { .. }
                 | EffectDef::None
                 | EffectDef::Sequence(_)
                 | EffectDef::DealDamage { .. }
@@ -15621,6 +15639,7 @@ impl Game {
             } => Self::applied_effect_contains(effect, expected) && actual_duration == duration,
             EffectDef::None
             | EffectDef::AddMana(_)
+            | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
@@ -16097,12 +16116,7 @@ impl Game {
                     }
                 }
             }
-            Step::Draw => {
-                self.step = Step::PrecombatMain;
-                let amount =
-                    std::mem::take(&mut self.mana_drain_pending[self.active_player.index()]);
-                self.add_unrestricted_mana(self.active_player, ManaColor::Colorless, amount);
-            }
+            Step::Draw => self.step = Step::PrecombatMain,
             Step::PrecombatMain => self.step = Step::BeginningOfCombat,
             Step::BeginningOfCombat => {
                 self.step = Step::DeclareAttackers;

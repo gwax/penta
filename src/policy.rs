@@ -326,6 +326,7 @@ impl HandcraftedPolicy {
             EffectDef::LoseTheGame { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
+            | EffectDef::AddManaEqualTo { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Sacrifice { .. }
@@ -384,6 +385,7 @@ impl HandcraftedPolicy {
             | ValueDef::CountersOnSource(_)
             | ValueDef::DividedAmongTargets
             | ValueDef::TargetPower(_)
+            | ValueDef::TargetManaValue(_)
             | ValueDef::IfCreatureDiedThisTurn(_)
             | ValueDef::IfTargetMatches(_)
             | ValueDef::IfMatchingObjectCount(_)

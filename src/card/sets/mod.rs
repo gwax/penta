@@ -639,7 +639,10 @@ mod tests {
             // Neither needs a recipient: a token is created under the
             // resolving object's controller, and the flash grant is about its
             // controller's next spell.
-            EffectDef::CreateToken { .. }
+            // The amount is computed when the effect resolves, so nothing has
+            // to read it ahead of time the way a mana ability does.
+            EffectDef::AddManaEqualTo { .. }
+            | EffectDef::CreateToken { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
@@ -844,6 +847,7 @@ mod tests {
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
+            | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
@@ -1035,7 +1039,10 @@ mod tests {
                                 && effects.iter().copied().all(immediate_mana_effect)
                         }
                         EffectDef::AddMana(_) => shared_mana_effect(effect, false),
-                        EffectDef::May(_)
+                        // A mana ability's amount has to be knowable without
+                        // resolving it, which this one is not.
+                        EffectDef::AddManaEqualTo { .. }
+                        | EffectDef::May(_)
                         | EffectDef::None
                         | EffectDef::DealDamage { .. }
                         | EffectDef::GainLife { .. }
@@ -1224,6 +1231,7 @@ mod tests {
             }
             EffectDef::None
             | EffectDef::AddMana(_)
+            | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }

@@ -759,6 +759,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         super::EffectDef::TriggerUntilYourNextTurn { .. }
         | super::EffectDef::None
         | super::EffectDef::AddMana(_)
+        | super::EffectDef::AddManaEqualTo { .. }
         | super::EffectDef::DealDamage { .. }
         | super::EffectDef::GainLife { .. }
         | super::EffectDef::DrawCards { .. }
@@ -847,6 +848,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         super::EffectDef::TriggerUntilYourNextTurn { .. }
         | super::EffectDef::None
         | super::EffectDef::AddMana(_)
+        | super::EffectDef::AddManaEqualTo { .. }
         | super::EffectDef::DealDamage { .. }
         | super::EffectDef::GainLife { .. }
         | super::EffectDef::DrawCards { .. }
@@ -995,7 +997,8 @@ fn validate_value_target_references(
             validate_value_target_references(condition.then, target_count)?;
             validate_value_target_references(condition.otherwise, target_count)
         }
-        ValueDef::TargetPower(target) => validate_target_index(target, target_count),
+        ValueDef::TargetPower(target)
+        | ValueDef::TargetManaValue(target) => validate_target_index(target, target_count),
         ValueDef::Constant(_)
         | ValueDef::ChosenX
         | ValueDef::SourcePower
@@ -1134,6 +1137,7 @@ fn validate_effect_target_references(
         | EffectDef::TriggerUntilYourNextTurn { .. }
         | EffectDef::None
         | EffectDef::AddMana(_)
+        | EffectDef::AddManaEqualTo { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }

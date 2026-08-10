@@ -13721,7 +13721,6 @@ fn a_failed_mana_drain_still_records_abrupt_decays_mana_value() {
     pass_priority_pair(&mut game);
 
     assert_eq!(game.stack.len(), 1, "Abrupt Decay was not countered");
-    assert_eq!(game.mana_drain_pending[PlayerId::Two.index()], 2);
     pass_priority_pair(&mut game);
     assert!(
         game.battlefield
@@ -20585,5 +20584,47 @@ fn copy_artifact_may_decline_and_never_targets() {
     assert!(
         entered.copy_effect.is_none(),
         "declining leaves an ordinary Copy Artifact"
+    );
+}
+
+#[test]
+fn mana_drain_pays_out_at_its_controllers_next_main_phase() {
+    let mut game = ready_game();
+    let angel = card(10_000, cards::SERRA_ANGEL, PlayerId::One);
+    game.players[0].hand.push(angel.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 5);
+    let drain = card(10_001, cards::MANA_DRAIN, PlayerId::Two);
+    game.players[1].hand.push(drain.clone());
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    game.apply(
+        PlayerId::One,
+        cast_action(angel.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    let on_stack = game.stack.last().expect("the Angel is on the stack").id;
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    game.apply(
+        PlayerId::Two,
+        cast_action(drain.id, vec![Target::Spell(on_stack)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.stack.is_empty(), "the Angel was countered");
+    assert_eq!(
+        game.players[1].mana_pool.colorless, 0,
+        "the mana is not paid on the spot"
+    );
+
+    // Their own next main phase is what the card waits for, not the caster's.
+    game.finish_cleanup();
+    game.start_next_turn();
+    assert_eq!(game.active_player, PlayerId::Two);
+    game.step = Step::Draw;
+    game.advance_step();
+    assert_eq!(
+        game.players[1].mana_pool.colorless, 5,
+        "five for the Angel's mana value"
     );
 }

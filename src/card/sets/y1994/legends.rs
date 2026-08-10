@@ -40,16 +40,37 @@ pub(in crate::card::sets) static DIVINE_OFFERING: CardRecord = CardRecord::new(
     )]),
 );
 
+/// The mana arrives later, so the amount is read from what the countered
+/// spell was rather than from anything still on the stack.
+static MANA_DRAIN_EFFECT: [EffectDef; 2] = [
+    EffectDef::Counter {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::AtNextStep {
+        step: TurnStepDef::PrecombatMain,
+        player: PlayerRelation::You,
+        effect: &EffectDef::AddManaEqualTo {
+            color: ManaColor::Colorless,
+            amount: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+        },
+    },
+];
+
 pub(in crate::card::sets) static MANA_DRAIN: CardRecord = CardRecord::new(
     cards::MANA_DRAIN,
     "Mana Drain",
     CardArt::new("e691adef-3027-4e6a-889f-9f4e2df36a7c", "Mark Tedin"),
     CardSet::Legends,
     CardRules::new_instant(mana_cost!("{U}{U}"))
-        .with_abilities(&[AbilityDef::custom_partial(
+        .with_abilities(&[AbilityDef::spell_with_targets(
             "Counter target spell. At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value.",
-            CardBehavior::ManaDrain,
-            "The delayed mana trigger is stored as a scalar and never becomes a stack object.",
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            })],
+            EffectDef::Sequence(&MANA_DRAIN_EFFECT),
         )]),
 );
 
