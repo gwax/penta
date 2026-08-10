@@ -145,6 +145,10 @@ static BOTTLED: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
 ]);
 
+/// The casting prohibition has no "other": City in a Bottle was itself
+/// printed in Arabian Nights, so a second copy cannot be cast either.
+static FROM_THE_BOTTLE: ObjectPredicateDef = ObjectPredicateDef::DebutSet(CardSet::ArabianNights);
+
 static BOTTLED_PERMANENTS_EXIST: TriggerConditionDef = TriggerConditionDef::ObjectCount {
     query: ObjectQueryDef {
         object: BOTTLED,
@@ -173,9 +177,9 @@ pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new(
                 },
             },
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::static_ability(
             "Players can't cast spells or play lands with a name originally printed in the Arabian Nights expansion.",
-            "Nothing yet stops a card being cast or played because of where it was printed.",
+            EffectDef::PlayersCantPlay(&FROM_THE_BOTTLE),
         ),
     ]),
 );

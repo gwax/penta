@@ -799,6 +799,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::MakeUnblockableThisTurn { .. }
         | super::EffectDef::GainControlThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
+        | super::EffectDef::PlayersCantPlay(_)
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::Replacement(_)
         | super::EffectDef::MoveToZone { .. }
@@ -889,6 +890,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::MakeUnblockableThisTurn { .. }
         | super::EffectDef::GainControlThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
+        | super::EffectDef::PlayersCantPlay(_)
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::Replacement(_)
         | super::EffectDef::MoveToZone { .. }
@@ -1135,7 +1137,9 @@ fn validate_effect_target_references(
         // nothing in it can refer to this ability's target slots.
         // The chosen player is recorded on the permanent, not read from a
         // target slot.
-        EffectDef::ChoosePlayer { .. }
+        // A prohibition names a card shape, never a target.
+        EffectDef::PlayersCantPlay(_)
+        | EffectDef::ChoosePlayer { .. }
         | EffectDef::CopyPermanentAsItEnters { .. }
         | EffectDef::TriggerUntilYourNextTurn { .. }
         | EffectDef::None

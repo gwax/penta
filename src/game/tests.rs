@@ -1001,6 +1001,64 @@ fn changing_a_permanents_presented_face_keeps_its_object_identity() {
 }
 
 #[test]
+fn city_in_a_bottle_stops_arabian_nights_cards_being_played() {
+    // The prohibition is about where a card was printed, not who holds it, so
+    // it binds the Bottle's own controller too -- including a second Bottle.
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::CITY_IN_A_BOTTLE, PlayerId::One));
+    game.players[0].hand.extend([
+        card(10_001, cards::KIRD_APE, PlayerId::One),
+        card(10_002, cards::CITY_IN_A_BOTTLE, PlayerId::One),
+        card(10_003, cards::SAVANNAH_LIONS, PlayerId::One),
+        card(10_004, cards::CITY_OF_BRASS, PlayerId::One),
+        card(10_005, cards::PLAINS, PlayerId::One),
+    ]);
+    game.players[0].mana_pool = ManaPool {
+        white: 3,
+        red: 3,
+        colorless: 3,
+        ..ManaPool::default()
+    };
+
+    let playable = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, .. } | Action::PlayLand { card, .. } => Some(card),
+            _ => None,
+        })
+        .collect::<std::collections::HashSet<_>>();
+
+    assert!(
+        !playable.contains(&GameObjectId(10_001)),
+        "Kird Ape is bottled"
+    );
+    assert!(
+        !playable.contains(&GameObjectId(10_002)),
+        "and so is a second City in a Bottle"
+    );
+    assert!(
+        !playable.contains(&GameObjectId(10_004)),
+        "the land is bottled too, not only the spells"
+    );
+    assert!(
+        playable.contains(&GameObjectId(10_003)),
+        "a card from another expansion is unaffected"
+    );
+    assert!(playable.contains(&GameObjectId(10_005)));
+
+    assert!(
+        game.apply(
+            PlayerId::One,
+            cast_action(GameObjectId(10_001), Vec::new(), Vec::new(), 0),
+        )
+        .is_err(),
+        "and submitting the cast directly is refused too"
+    );
+}
+
+#[test]
 fn city_in_a_bottle_uses_canonical_origin_even_when_a_reprint_exists() {
     let mut game = ready_game();
     // Kird Ape debuted in Arabian Nights; a later printing does not move it.

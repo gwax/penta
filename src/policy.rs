@@ -260,6 +260,23 @@ impl HandcraftedPolicy {
         )
     }
 
+    /// A destroy is removal; a destroy aimed at every creature on the
+    /// battlefield, whoever controls it, is a sweeper as well.
+    fn collect_destroy_profile(object: EffectRecipientDef, profile: &mut DeclarativeSpellProfile) {
+        profile.mark(DeclarativeSpellProfile::REMOVES);
+        if let EffectRecipientDef::MatchingObjects {
+            object,
+            zones,
+            controller,
+        } = object
+            && object == ObjectPredicateDef::HasType(CardType::Creature)
+            && zones == [ZoneKind::Battlefield]
+            && controller == PlayerRelation::Any
+        {
+            profile.mark(DeclarativeSpellProfile::SWEEPS_CREATURES);
+        }
+    }
+
     fn collect_spell_effect_profile(
         effect: EffectDef,
         x: u16,
@@ -303,20 +320,7 @@ impl HandcraftedPolicy {
             EffectDef::CounterUnlessPaid { .. } => {
                 profile.mark(DeclarativeSpellProfile::COUNTERS);
             }
-            EffectDef::Destroy { object, .. } => {
-                profile.mark(DeclarativeSpellProfile::REMOVES);
-                if let EffectRecipientDef::MatchingObjects {
-                    object,
-                    zones,
-                    controller,
-                } = object
-                    && object == ObjectPredicateDef::HasType(CardType::Creature)
-                    && zones == [ZoneKind::Battlefield]
-                    && controller == PlayerRelation::Any
-                {
-                    profile.mark(DeclarativeSpellProfile::SWEEPS_CREATURES);
-                }
-            }
+            EffectDef::Destroy { object, .. } => Self::collect_destroy_profile(object, profile),
             EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventCombatDamageThisTurn { .. } => {
@@ -358,6 +362,7 @@ impl HandcraftedPolicy {
             | EffectDef::IfCondition { .. }
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::PlayersCantPlay(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }

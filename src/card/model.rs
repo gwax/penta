@@ -1609,6 +1609,10 @@ pub enum EffectDef {
     /// This card costs that much less generic mana to cast. A static ability
     /// that works from the hand, where casting reads it.
     ReduceGenericCostBy(ValueDef),
+    /// "Players can't cast spells or play lands with ..." A static
+    /// prohibition read while play options are being offered, so a card it
+    /// matches is never a legal action rather than a spell that fizzles.
+    PlayersCantPlay(&'static ObjectPredicateDef),
     /// Adds a combat phase after the one now ending.
     AdditionalCombatPhase,
     /// Gives its controller an emblem, an object that sits outside every

@@ -3699,6 +3699,7 @@ impl Game {
             | EffectDef::IfCondition { .. }
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::PlayersCantPlay(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
@@ -6491,6 +6492,9 @@ impl Game {
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
             };
+            if self.play_is_prohibited(card, player) {
+                continue;
+            }
             actions.extend(
                 definition
                     .play_options
@@ -6527,6 +6531,9 @@ impl Game {
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
             };
+            if self.play_is_prohibited(card, player) {
+                continue;
+            }
             for option in definition
                 .play_options
                 .iter()
@@ -8524,6 +8531,9 @@ impl Game {
                     .map(|card| (card, CastSourceZone::Graveyard))
             })?;
         let definition = self.catalog.get(card.definition)?;
+        if self.play_is_prohibited(card, player) {
+            return None;
+        }
         let option = definition
             .play_option(choices.play_option())
             .filter(|option| option.action == PlayActionKind::CastSpell)?;
@@ -9886,6 +9896,7 @@ impl Game {
             })
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::PlayersCantPlay(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
@@ -12467,6 +12478,7 @@ impl Game {
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::PlayersCantPlay(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
@@ -13030,6 +13042,7 @@ impl Game {
             | EffectDef::IfCondition { .. }
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::PlayersCantPlay(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
@@ -13178,6 +13191,7 @@ impl Game {
                 | EffectDef::IfCondition { .. }
                 | EffectDef::TriggerUntilYourNextTurn { .. }
                 | EffectDef::ReduceGenericCostBy(_)
+                | EffectDef::PlayersCantPlay(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::Replacement(_)
                 | EffectDef::MoveToZone { .. }
@@ -13966,6 +13980,38 @@ impl Game {
 
     /// How much generic mana this card's own static clauses take off its
     /// cost. Read from the hand, which is where casting reads it.
+    /// "Players can't cast spells or play lands with ..." Read while play
+    /// options are offered, so a prohibited card is simply not a legal action.
+    /// The prohibition is a property of the card, not of who holds it, so it
+    /// applies to both players.
+    fn play_is_prohibited(&self, card: &CardInstance, controller: PlayerId) -> bool {
+        let prohibitions = self
+            .battlefield
+            .iter()
+            .filter_map(|permanent| self.effective_rules(permanent))
+            .flat_map(CardRules::ability_clauses)
+            .filter(|ability| ability.is_executable())
+            .filter_map(|ability| match ability.declarative_effect()? {
+                EffectDef::PlayersCantPlay(predicate) => Some(predicate),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        if prohibitions.is_empty() {
+            return false;
+        }
+        let Some(object) = self.printed_trigger_event_object(
+            card.id,
+            card.definition,
+            controller,
+            &CharacteristicContext::Hand,
+        ) else {
+            return false;
+        };
+        prohibitions
+            .into_iter()
+            .any(|predicate| self.trigger_object_matches(*predicate, &object, card.id, false))
+    }
+
     fn spell_cost_reduction(&self, definition: CardDefinitionId, player: PlayerId) -> u16 {
         let Some(card) = self.catalog.get(definition) else {
             return 0;
@@ -15975,6 +16021,7 @@ impl Game {
             | EffectDef::IfCondition { .. }
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::PlayersCantPlay(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }

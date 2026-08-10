@@ -689,6 +689,7 @@ mod tests {
             EffectDef::None
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::PlayersCantPlay(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::ChooseCardName { .. }
@@ -780,6 +781,11 @@ mod tests {
     fn shared_static_non_apply_effect(source_zones: &[ZoneKind], effect: EffectDef) -> bool {
         match effect {
             EffectDef::CannotBeForcedToSacrifice => battlefield_only(source_zones),
+            // The prohibition is read off the battlefield while play options
+            // are offered, and only against a card's printed shape.
+            EffectDef::PlayersCantPlay(predicate) => {
+                battlefield_only(source_zones) && shared_object_predicate(*predicate)
+            }
             EffectDef::ReduceGenericCostBy(value) => {
                 source_zones == [ZoneKind::Hand]
                     && matches!(
@@ -803,6 +809,7 @@ mod tests {
         match effect {
             EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::PlayersCantPlay(_)
             | EffectDef::Sequence(_) => shared_static_non_apply_effect(source_zones, effect),
             EffectDef::Apply {
                 recipient,
@@ -1096,6 +1103,7 @@ mod tests {
                         | EffectDef::IfCondition { .. }
                         | EffectDef::TriggerUntilYourNextTurn { .. }
                         | EffectDef::ReduceGenericCostBy(_)
+                        | EffectDef::PlayersCantPlay(_)
                         | EffectDef::MultiplyEventAmount(_)
                         | EffectDef::Replacement(_)
                         | EffectDef::MoveToZone { .. }
@@ -1280,6 +1288,7 @@ mod tests {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::PlayersCantPlay(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
