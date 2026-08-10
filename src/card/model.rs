@@ -1912,6 +1912,9 @@ pub enum TriggerConditionDef {
         comparison: ComparisonDef,
         amount: u8,
     },
+    /// Whether this ability's own source has dealt damage to an opponent of
+    /// its controller at any point this turn, by any means.
+    SourceDealtDamageToOpponentThisTurn,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -4016,6 +4019,8 @@ pub enum CardBehavior {
     UltimatePrice,
     WarleadersHelix,
     WheelOfFortune,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative end-step trigger with an intervening-if.
     WhirlingDervish,
     WinterOrb,
     // Compatibility rules keys retained while CardDefinition::new still

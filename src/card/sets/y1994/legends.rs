@@ -1,9 +1,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, EffectDef,
-    EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ValueDef, ZoneKind,
-    abilities, cards,
+    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
+    EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -91,6 +91,9 @@ pub(in crate::card::sets) static THUNDER_SPIRIT: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::flying(), abilities::first_strike()]),
 );
 
+static DERVISH_DREW_BLOOD: TriggerConditionDef =
+    TriggerConditionDef::SourceDealtDamageToOpponentThisTurn;
+
 pub(in crate::card::sets) static WHIRLING_DERVISH: CardRecord = CardRecord::new(
     cards::WHIRLING_DERVISH,
     "Whirling Dervish",
@@ -99,10 +102,18 @@ pub(in crate::card::sets) static WHIRLING_DERVISH: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{G}{G}"), &["Human", "Monk"], 1, 1)
         .with_abilities(&[
             abilities::protection_from(ManaColor::Black),
-            AbilityDef::custom_partial(
+            AbilityDef::triggered_if(
                 "At the beginning of each end step, if this creature dealt damage to an opponent this turn, put a +1/+1 counter on it.",
-                CardBehavior::WhirlingDervish,
-                "The end-step trigger currently resolves outside the stack.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::End,
+                    player: PlayerRelation::Any,
+                },
+                &DERVISH_DREW_BLOOD,
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
             ),
         ]),
 );

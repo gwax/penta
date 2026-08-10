@@ -20347,3 +20347,65 @@ fn a_forked_copy_is_red_whatever_it_copies() {
         "the copy is red, not the black of what it copied"
     );
 }
+
+#[test]
+fn hypnotic_specter_takes_exactly_one_card_per_connection() {
+    let mut game = ready_game();
+    game.step = Step::CombatDamage;
+    let mut specter = creature(10_000, cards::HYPNOTIC_SPECTER, PlayerId::One);
+    specter.attacking = true;
+    game.battlefield.push(specter);
+    game.players[1].hand.clear();
+    for index in 0..3 {
+        game.players[1]
+            .hand
+            .push(card(10_001 + index, cards::MOUNTAIN, PlayerId::Two));
+    }
+
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].hand.len(),
+        2,
+        "one card at random, not one per path through the combat step"
+    );
+}
+
+#[test]
+fn whirling_dervish_grows_at_the_end_step_only_after_drawing_blood() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::WHIRLING_DERVISH, PlayerId::One));
+
+    // A quiet turn leaves it alone.
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    let dervish = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("still there");
+    assert_eq!(dervish.counters(CounterKind::PlusOnePlusOne), 0);
+
+    // Damage from anything at all counts, not just an attack.
+    game.damage_target_from(
+        Some(GameObjectId(10_000)),
+        Some(Target::Player(PlayerId::Two)),
+        1,
+    );
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    let dervish = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("still there");
+    assert_eq!(
+        dervish.counters(CounterKind::PlusOnePlusOne),
+        1,
+        "it drew blood this turn"
+    );
+    assert_eq!(game.power(dervish), Some(2));
+}

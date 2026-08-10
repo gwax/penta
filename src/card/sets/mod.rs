@@ -914,6 +914,7 @@ mod tests {
             TriggerConditionDef::ActivePlayer(_)
             | TriggerConditionDef::SourceLoyalty { .. }
             | TriggerConditionDef::SourceActivationsThisTurn { .. }
+            | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
             | TriggerConditionDef::SpellsCastLastTurn { .. } => true,
         }
     }

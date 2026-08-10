@@ -231,6 +231,10 @@ struct Permanent {
     /// IDs deliberately refer to the damaging object incarnation so a later
     /// death trigger can use the live source or its retired LKI snapshot.
     damage_sources: Vec<GameObjectId>,
+    /// Whether this permanent has dealt damage to an opponent of its
+    /// controller this turn, by any means. Cleared in cleanup with the rest
+    /// of the once-a-turn state.
+    dealt_damage_to_opponent_this_turn: bool,
     /// Whether any damage still marked on this permanent came from a source
     /// with deathtouch. The source may leave before state-based actions are
     /// checked, so this is damage-event state rather than a live lookup.
@@ -290,6 +294,7 @@ impl Permanent {
             attacks_this_turn: 0,
             forestwalk_until_upkeep_of: None,
             damage_sources: Vec::new(),
+            dealt_damage_to_opponent_this_turn: false,
             deathtouch_damage: false,
             created_by: None,
         }
@@ -10157,6 +10162,11 @@ impl Game {
                             amount,
                         )
                     }),
+                TriggerConditionDef::SourceDealtDamageToOpponentThisTurn => self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == source)
+                    .is_some_and(|permanent| permanent.dealt_damage_to_opponent_this_turn),
                 TriggerConditionDef::ObjectCount { .. } => {
                     unreachable!("the object-count arm is destructured above")
                 }
@@ -11095,6 +11105,16 @@ impl Game {
         let dealt_damage = match target {
             Some(Target::Player(player)) => {
                 self.deal_damage(player, amount);
+                if amount > 0
+                    && let Some(damager) = source.and_then(|source| {
+                        self.battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == source)
+                    })
+                    && damager.controller != player
+                {
+                    damager.dealt_damage_to_opponent_this_turn = true;
+                }
                 true
             }
             Some(Target::Permanent(id)) => {
@@ -14947,22 +14967,6 @@ impl Game {
                     self.active_player.opponent(),
                     power,
                 );
-                match self.effective_behavior(&self.battlefield[attacker_index]) {
-                    Some(CardBehavior::HypnoticSpecter) => {
-                        self.discard_random(
-                            self.active_player.opponent(),
-                            1,
-                            ZoneMoveCause::Effect {
-                                controller: self.active_player,
-                            },
-                        );
-                    }
-                    Some(CardBehavior::WhirlingDervish) => {
-                        self.battlefield[attacker_index]
-                            .add_counters(CounterKind::PlusOnePlusOne, 1);
-                    }
-                    _ => {}
-                }
             } else if !blockers.is_empty() {
                 self.exchange_blocked_combat_damage(
                     attacker_id,
@@ -16235,6 +16239,7 @@ impl Game {
             permanent.destroy_at_end = false;
             permanent.animation = None;
             permanent.activations_this_turn.clear();
+            permanent.dealt_damage_to_opponent_this_turn = false;
             permanent.regeneration_shields = 0;
             permanent.berserked = false;
             permanent.attacked_this_turn = false;
