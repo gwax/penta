@@ -2183,6 +2183,8 @@ fn win_reason_text(reason: penta::WinReason, human_lost: bool) -> &'static str {
         (penta::WinReason::OpponentTriedToDrawFromEmptyLibrary, true) => {
             "you drew from an empty library"
         }
+        (penta::WinReason::OpponentLostToAnEffect, false) => "opponent lost to an effect",
+        (penta::WinReason::OpponentLostToAnEffect, true) => "you lost to an effect",
     }
 }
 

@@ -47,7 +47,7 @@ use crate::{
 /// and adds newly executable keyword and alternative-casting actions to
 /// legal-action lists. Version 11 assigns instantiated spell and ability target
 /// slots positionally, including flattened target ranges for selected modes.
-pub const PROTOCOL_VERSION: u32 = 11;
+pub const PROTOCOL_VERSION: u32 = 12;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -591,6 +591,7 @@ fn result_json(result: GameResult) -> Value {
             "reason": match reason {
                 WinReason::OpponentConceded => "OpponentConceded",
                 WinReason::OpponentLostAllLife => "OpponentLostAllLife",
+                WinReason::OpponentLostToAnEffect => "OpponentLostToAnEffect",
                 WinReason::OpponentTriedToDrawFromEmptyLibrary =>
                     "OpponentTriedToDrawFromEmptyLibrary",
             },
@@ -1986,8 +1987,8 @@ mod tests {
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 
         // Any card with a metadata-only ability clause will do here; repoint
-        // this assertion when Vraska's clause becomes executable.
-        let legacy = find("Vraska the Unseen");
+        // this assertion when Jace's clauses become executable.
+        let legacy = find("Jace, Architect of Thought");
         assert_eq!(legacy["implementationStatus"], "metadataOnly");
         assert_eq!(legacy["parts"][0]["implementationStatus"], "metadataOnly");
 

@@ -759,6 +759,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::DrawCards { .. }
         | super::EffectDef::DiscardCards { .. }
         | super::EffectDef::LoseLife { .. }
+        | EffectDef::LoseTheGame { .. }
         | super::EffectDef::Tap { .. }
         | super::EffectDef::Untap { .. }
         | super::EffectDef::Attach { .. }
@@ -833,6 +834,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::DrawCards { .. }
         | super::EffectDef::DiscardCards { .. }
         | super::EffectDef::LoseLife { .. }
+        | EffectDef::LoseTheGame { .. }
         | super::EffectDef::Tap { .. }
         | super::EffectDef::Untap { .. }
         | super::EffectDef::Attach { .. }
@@ -1029,7 +1031,8 @@ fn validate_effect_target_references(
             validate_recipient_target_references(recipient, target_count)?;
             validate_value_target_references(amount, target_count)
         }
-        EffectDef::Tap { object }
+        EffectDef::LoseTheGame { player: object }
+        | EffectDef::Tap { object }
         | EffectDef::Untap { object }
         | EffectDef::Attach { object }
         | EffectDef::Destroy { object, .. }

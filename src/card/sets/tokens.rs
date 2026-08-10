@@ -13,7 +13,7 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCoverageDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
     EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, ValueDef, ZoneKind, abilities, cards,
+    ObjectQueryDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 
 pub(in crate::card::sets) static BEAST_TOKEN_3_3_GREEN: CardRecord = CardRecord::new(
@@ -135,6 +135,26 @@ pub(in crate::card::sets) static TETRAVITE_TOKEN: CardRecord = CardRecord::new(
         ]),
 );
 
+/// Vraska's ultimate. One connection ends the game, so the token's whole
+/// point is the trigger rather than its body.
+pub(in crate::card::sets) static ASSASSIN_TOKEN_1_1_BLACK: CardRecord = CardRecord::new(
+    cards::ASSASSIN_TOKEN_1_1_BLACK,
+    "Assassin",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Assassin"], 1, 1)
+        .printed_colors(&[ManaColor::Black])
+        .with_ability(AbilityDef::triggered(
+            "Whenever this token deals combat damage to a player, that player loses the game.",
+            TriggerEventDef::CombatDamageDealtToPlayer {
+                source: ObjectPredicateDef::Source,
+            },
+            EffectDef::LoseTheGame {
+                player: EffectRecipientDef::EventPlayer,
+            },
+        )),
+);
+
 /// Domri's emblem. An emblem is an object with abilities and no other
 /// characteristics, so it is cataloged like a token and lives in its own
 /// list rather than on the battlefield.
@@ -180,6 +200,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOLF_TOKEN_1_1_BLACK,
     &DOMRI_RADE_EMBLEM,
     &TETRAVITE_TOKEN,
+    &ASSASSIN_TOKEN_1_1_BLACK,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

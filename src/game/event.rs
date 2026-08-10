@@ -43,6 +43,9 @@ pub enum WinReason {
     OpponentConceded,
     OpponentLostAllLife,
     OpponentTriedToDrawFromEmptyLibrary,
+    /// An effect said the opponent loses the game, with no life total or
+    /// empty library involved.
+    OpponentLostToAnEffect,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

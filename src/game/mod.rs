@@ -600,6 +600,11 @@ enum CommittedTriggerEvent {
         object: TriggerEventObject,
         amount: u16,
     },
+    CombatDamageDealtToPlayer {
+        object: TriggerEventObject,
+        player: PlayerId,
+        amount: u16,
+    },
     SpellCast {
         object: TriggerEventObject,
     },
@@ -633,6 +638,16 @@ impl CommittedTriggerEvent {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: None,
+                amount: Some(i32::from(*amount)),
+            },
+            Self::CombatDamageDealtToPlayer {
+                object,
+                player,
+                amount,
+            } => TriggerContext {
+                object: Some(object.id),
+                object_controller: Some(object.controller),
+                event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
             },
             Self::LifeGained { player, amount } => TriggerContext {
@@ -3444,6 +3459,7 @@ impl Game {
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::LoseLife { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Destroy { .. }
@@ -3636,6 +3652,10 @@ impl Game {
             | (
                 TriggerEventDef::TappedForMana(predicate),
                 CommittedTriggerEvent::TappedForMana { object },
+            )
+            | (
+                TriggerEventDef::CombatDamageDealtToPlayer { source: predicate },
+                CommittedTriggerEvent::CombatDamageDealtToPlayer { object, .. },
             ) => self.trigger_object_matches(predicate, object, source, false),
             (TriggerEventDef::Attacks(predicate), CommittedTriggerEvent::Attacks { object }) => {
                 self.trigger_object_matches(predicate, object, source, false)
@@ -8891,6 +8911,16 @@ impl Game {
                     }
                 }
             }
+            EffectDef::LoseTheGame { player: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.finish(GameResult::Winner {
+                            winner: player.opponent(),
+                            reason: WinReason::OpponentLostToAnEffect,
+                        });
+                    }
+                }
+            }
             EffectDef::Tap { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Permanent(permanent) = target {
@@ -11747,6 +11777,7 @@ impl Game {
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::LoseLife { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Destroy { .. }
@@ -12253,6 +12284,7 @@ impl Game {
                 | EffectDef::DrawCards { .. }
                 | EffectDef::DiscardCards { .. }
                 | EffectDef::LoseLife { .. }
+                | EffectDef::LoseTheGame { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
                 | EffectDef::Attach { .. }
@@ -12366,6 +12398,7 @@ impl Game {
                 | EffectDef::DrawCards { .. }
                 | EffectDef::DiscardCards { .. }
                 | EffectDef::LoseLife { .. }
+                | EffectDef::LoseTheGame { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
                 | EffectDef::Attach { .. }
@@ -14403,6 +14436,34 @@ impl Game {
         }
     }
 
+    /// Combat damage from an attacker to a player, which is the one kind of
+    /// damage the "whenever this deals combat damage to a player" triggers
+    /// listen for. Ordinary damage to a player carries no such event.
+    fn deal_combat_damage_to_player(
+        &mut self,
+        attacker: GameObjectId,
+        player: PlayerId,
+        amount: u16,
+    ) {
+        self.damage_target_from(Some(attacker), Some(Target::Player(player)), amount);
+        if amount == 0 {
+            return;
+        }
+        let Some(source) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker)
+        else {
+            return;
+        };
+        let event = CommittedTriggerEvent::CombatDamageDealtToPlayer {
+            object: self.trigger_event_object(source),
+            player,
+            amount,
+        };
+        self.capture_battlefield_triggers(&event);
+    }
+
     fn deal_combat_damage(&mut self) {
         let attackers: Vec<_> = self
             .battlefield
@@ -14436,9 +14497,9 @@ impl Game {
                 if was_blocked && !self.has_trample(&self.battlefield[attacker_index]) {
                     continue;
                 }
-                self.damage_target_from(
-                    Some(attacker_id),
-                    Some(Target::Player(self.active_player.opponent())),
+                self.deal_combat_damage_to_player(
+                    attacker_id,
+                    self.active_player.opponent(),
                     power,
                 );
                 match self.effective_behavior(&self.battlefield[attacker_index]) {
@@ -14462,18 +14523,22 @@ impl Game {
                     .combat_damage_assignment
                     .clone();
                 if attacker_deals_damage {
-                    if assignments.is_empty() {
-                        for (recipient, amount) in self.default_damage_split(attacker_id, &blockers)
-                        {
-                            self.damage_target_from(Some(attacker_id), Some(recipient), amount);
-                        }
+                    let split = if assignments.is_empty() {
+                        self.default_damage_split(attacker_id, &blockers)
                     } else {
-                        for assignment in assignments {
-                            self.damage_target_from(
-                                Some(attacker_id),
-                                Some(assignment.recipient),
-                                assignment.amount,
-                            );
+                        assignments
+                            .into_iter()
+                            .map(|assignment| (assignment.recipient, assignment.amount))
+                            .collect()
+                    };
+                    for (recipient, amount) in split {
+                        // Trample past a blocker is still combat damage to a
+                        // player, so it goes through the same path as an
+                        // unblocked hit.
+                        if let Target::Player(player) = recipient {
+                            self.deal_combat_damage_to_player(attacker_id, player, amount);
+                        } else {
+                            self.damage_target_from(Some(attacker_id), Some(recipient), amount);
                         }
                     }
                 }
@@ -15030,6 +15095,7 @@ impl Game {
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::LoseLife { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Attach { .. }

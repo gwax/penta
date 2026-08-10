@@ -314,7 +314,9 @@ impl HandcraftedPolicy {
                 profile.mark(DeclarativeSpellProfile::TAPS);
             }
             EffectDef::Apply { .. } => profile.mark(DeclarativeSpellProfile::APPLIES),
-            EffectDef::None
+            // Nothing outranks winning, so it needs no profile of its own.
+            EffectDef::LoseTheGame { .. }
+            | EffectDef::None
             | EffectDef::AddMana(_)
             | EffectDef::GainLife { .. }
             | EffectDef::LoseLife { .. }

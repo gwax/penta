@@ -269,3 +269,4 @@ pub const WOLF_TOKEN_2_2_GREEN: CardDefinitionId = CardDefinitionId(256);
 pub const WOLF_TOKEN_1_1_BLACK: CardDefinitionId = CardDefinitionId(257);
 pub const DOMRI_RADE_EMBLEM: CardDefinitionId = CardDefinitionId(258);
 pub const TETRAVITE_TOKEN: CardDefinitionId = CardDefinitionId(259);
+pub const ASSASSIN_TOKEN_1_1_BLACK: CardDefinitionId = CardDefinitionId(260);

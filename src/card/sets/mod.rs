@@ -547,13 +547,12 @@ mod tests {
             // The searcher is a player and the choices come out of their own
             // library, so only the predicate and the destination need
             // checking.
-            // The mill count and the milled player are both ordinary values.
-            EffectDef::Mill { player, .. } => shared_effect_recipient(player),
-            // The lock reads a player and lasts until the turn ends, so only
-            // the recipient needs checking.
-            EffectDef::CannotCastNoncreatureSpellsThisTurn { player } => {
-                shared_effect_recipient(player)
-            }
+            // Each of these reads a player and nothing else: the mill count
+            // is an ordinary value, the lock lasts until the turn ends, and
+            // losing the game takes no argument at all.
+            EffectDef::Mill { player, .. }
+            | EffectDef::CannotCastNoncreatureSpellsThisTurn { player }
+            | EffectDef::LoseTheGame { player } => shared_effect_recipient(player),
             // Both halves of the split are decisions the shared procedure
             // asks for, so only the player needs checking.
             EffectDef::SplitPermanentsAndSacrificeAPile { player } => {
@@ -675,6 +674,9 @@ mod tests {
             TriggerEventDef::DamageDealt { source, recipient } => {
                 recipient == EffectRecipientDef::Source && source == ObjectPredicateDef::Any
             }
+            TriggerEventDef::CombatDamageDealtToPlayer { source } => {
+                shared_object_predicate(source)
+            }
             TriggerEventDef::AbilityActivated(_)
             | TriggerEventDef::ManaAdded(_)
             | TriggerEventDef::Special(_) => false,
@@ -787,6 +789,7 @@ mod tests {
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::LoseLife { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Attach { .. }
@@ -968,6 +971,7 @@ mod tests {
                         | EffectDef::DrawCards { .. }
                         | EffectDef::DiscardCards { .. }
                         | EffectDef::LoseLife { .. }
+                        | EffectDef::LoseTheGame { .. }
                         | EffectDef::Tap { .. }
                         | EffectDef::Untap { .. }
                         | EffectDef::Attach { .. }
@@ -1130,6 +1134,7 @@ mod tests {
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::LoseLife { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Attach { .. }
@@ -1252,13 +1257,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 259);
+        assert_eq!(records.len(), 260);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=259).collect::<Vec<_>>()
+            (1..=260).collect::<Vec<_>>()
         );
         // Names identify the cards a decklist can name. Tokens are not among
         // them, and Magic prints several that share a name.
@@ -1279,7 +1284,7 @@ mod tests {
     #[test]
     fn built_in_catalog_indexes_definitions_and_printings_separately() {
         let catalog = crate::card::catalog().unwrap();
-        let printing_count = (1..=259)
+        let printing_count = (1..=260)
             .filter(|id| {
                 *id != cards::BEAST_TOKEN_3_3_GREEN.0
                     && *id != cards::KNIGHT_TOKEN_2_2_WHITE.0
@@ -1291,6 +1296,7 @@ mod tests {
                     && *id != cards::WOLF_TOKEN_1_1_BLACK.0
                     && *id != cards::DOMRI_RADE_EMBLEM.0
                     && *id != cards::TETRAVITE_TOKEN.0
+                    && *id != cards::ASSASSIN_TOKEN_1_1_BLACK.0
             })
             .map(|id| catalog.printings_for(CardDefinitionId(id)).len())
             .sum::<usize>();
@@ -1316,7 +1322,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 259);
+        assert_eq!(records.len(), 260);
 
         for record in records {
             let definition = record.definition();

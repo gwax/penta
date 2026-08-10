@@ -689,17 +689,43 @@ pub(in crate::card::sets) static VRASKA_THE_UNSEEN: CardRecord = CardRecord::new
     "Vraska the Unseen",
     CardArt::new("8971938c-cd26-4b83-96d7-1408cd0b0de6", "Aleksi Briclot"),
     CardSet::ReturnToRavnica,
-    CardRules::new_planeswalker(
-        mana_cost!("{3}{B}{G}"),
-        &["Vraska"],
-        5,
-    )
-    .with_supertype(CardSupertype::Legendary)
-    .with_ability(AbilityDef::not_implemented(
-        "+1: Until your next turn, whenever a creature deals combat damage to Vraska, destroy that creature.\n−3: Destroy target nonland permanent.\n−7: Create three 1/1 black Assassin creature tokens with \"Whenever this token deals combat damage to a player, that player loses the game.\"",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    CardRules::new_planeswalker(mana_cost!("{3}{B}{G}"), &["Vraska"], 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&VRASKA_ABILITIES),
 );
+
+static VRASKA_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::not_implemented(
+        "+1: Until your next turn, whenever a creature deals combat damage to Vraska, destroy that creature.",
+        "A creature can only ever attack a player, so nothing can deal combat damage to a planeswalker for this to notice.",
+    ),
+    AbilityDef::activated_with_targets(
+        "−3: Destroy target nonland permanent.",
+        &[AbilityCostDef::Loyalty(-3)],
+        &VRASKA_DESTROY_TARGET,
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+        },
+    ),
+    AbilityDef::activated(
+        "−7: Create three 1/1 black Assassin creature tokens with \"Whenever this token deals combat damage to a player, that player loses the game.\"",
+        &[AbilityCostDef::Loyalty(-7)],
+        EffectDef::CreateToken {
+            token: cards::ASSASSIN_TOKEN_1_1_BLACK,
+            count: ValueDef::Constant(3),
+        },
+    ),
+];
+
+static VRASKA_DESTROY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABRUPT_DECAY,
     &ANGEL_OF_SERENITY,

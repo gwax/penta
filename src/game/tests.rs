@@ -19203,3 +19203,135 @@ fn an_aura_cannot_stay_on_a_tetravite() {
         "a Tetravite can't be enchanted"
     );
 }
+
+#[test]
+fn an_assassin_that_connects_ends_the_game_no_matter_the_life_total() {
+    let mut game = ready_game();
+    game.step = Step::CombatDamage;
+    let mut assassin = creature(10_000, cards::ASSASSIN_TOKEN_1_1_BLACK, PlayerId::One);
+    assassin.attacking = true;
+    game.battlefield.push(assassin);
+    game.players[1].life = 40;
+
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].life, 39,
+        "the token still dealt only its one damage"
+    );
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::OpponentLostToAnEffect,
+        }),
+        "and the trigger ended it anyway"
+    );
+}
+
+#[test]
+fn a_blocked_assassin_never_triggers() {
+    let mut game = ready_game();
+    game.step = Step::CombatDamage;
+    let mut assassin = creature(10_000, cards::ASSASSIN_TOKEN_1_1_BLACK, PlayerId::One);
+    assassin.attacking = true;
+    let mut wall = creature(10_001, cards::WALL_OF_STONE, PlayerId::Two);
+    wall.blocking = Some(GameObjectId(10_000));
+    game.battlefield.extend([assassin, wall]);
+
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, 20, "the wall soaked it up");
+    assert_eq!(
+        game.result, None,
+        "no combat damage reached a player, so nobody lost"
+    );
+}
+
+#[test]
+fn vraska_destroys_a_nonland_permanent_and_ultimates_into_three_assassins() {
+    let mut game = ready_game();
+    let mut vraska = creature(10_000, cards::VRASKA_THE_UNSEEN, PlayerId::One);
+    vraska.loyalty = Some(7);
+    game.battlefield.push(vraska);
+    game.battlefield
+        .push(creature(10_001, cards::SERRA_ANGEL, PlayerId::Two));
+    game.battlefield
+        .push(creature(10_002, cards::PLAINS, PlayerId::Two));
+
+    let destroy = Action::ActivateAbility {
+        source: GameObjectId(10_000),
+        ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+        targets: activated_targets(Target::Permanent(GameObjectId(10_001))),
+        cost_object: None,
+        x: 0,
+    };
+    let at_the_land = Action::ActivateAbility {
+        source: GameObjectId(10_000),
+        ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+        targets: activated_targets(Target::Permanent(GameObjectId(10_002))),
+        cost_object: None,
+        x: 0,
+    };
+    let actions = game.legal_actions(PlayerId::One);
+    assert!(actions.contains(&destroy), "the angel is a legal target");
+    assert!(
+        !actions.contains(&at_the_land),
+        "a land is not a nonland permanent"
+    );
+
+    game.apply(PlayerId::One, destroy).unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_001)),
+        "the angel was destroyed"
+    );
+    let vraska = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("she paid three of her seven");
+    assert_eq!(vraska.loyalty, Some(4));
+}
+
+#[test]
+fn vraskas_ultimate_makes_three_assassins() {
+    let mut game = ready_game();
+    let mut vraska = creature(10_000, cards::VRASKA_THE_UNSEEN, PlayerId::One);
+    vraska.loyalty = Some(7);
+    game.battlefield.push(vraska);
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: GameObjectId(10_000),
+            ability: activated_ability_for(&game, GameObjectId(10_000), 1),
+            targets: Vec::new(),
+            cost_object: None,
+            x: 0,
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::ASSASSIN_TOKEN_1_1_BLACK)
+            .count(),
+        3
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_000)),
+        "paying all seven left her behind"
+    );
+}

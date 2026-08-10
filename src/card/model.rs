@@ -1340,6 +1340,11 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// A state-based loss with no life total involved (CR 104.3b). Nothing
+    /// can be done about it once the effect resolves.
+    LoseTheGame {
+        player: EffectRecipientDef,
+    },
     Tap {
         object: EffectRecipientDef,
     },
@@ -1599,6 +1604,13 @@ pub enum TriggerEventDef {
     DamageDealt {
         source: ObjectPredicateDef,
         recipient: EffectRecipientDef,
+    },
+    /// A creature matching `source` dealt combat damage to a player. The
+    /// damaged player is the event player and the amount is available as
+    /// [`ValueDef::TriggerEventAmount`]. Only damage dealt in a combat damage
+    /// step counts, which is what separates this from [`Self::DamageDealt`].
+    CombatDamageDealtToPlayer {
+        source: ObjectPredicateDef,
     },
     ManaAdded(PlayerRelation),
     /// A state trigger (CR 603.8). It has no event at all: it triggers
