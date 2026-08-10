@@ -363,6 +363,7 @@ impl HandcraftedPolicy {
             | EffectDef::CreateToken { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
+            | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
         }

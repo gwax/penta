@@ -877,6 +877,10 @@ enum BattlefieldEntryReplacementEffect {
     ChooseCreatureType,
     ChooseCardName,
     ChoosePlayer(PlayerRelation),
+    CopyAsItEnters {
+        object: ObjectPredicateDef,
+        added_types: CardTypeSet,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1248,6 +1252,12 @@ enum DecisionContinuation {
     },
     BattlefieldEntryCardName {
         choices: Vec<String>,
+    },
+    /// The permanents an entering copy effect could imitate, plus the option
+    /// of entering as itself.
+    BattlefieldEntryCopy {
+        choices: Vec<GameObjectId>,
+        added_types: CardTypeSet,
     },
     BattlefieldEntryCreatureType {
         choices: Vec<String>,
@@ -2704,6 +2714,39 @@ impl Game {
 
     /// Applies one queued replacement operation. `None` means the operation
     /// suspended the event behind a decision that will resume it.
+    /// Offers the copy choice an entering permanent may make, or lets it enter
+    /// as itself when there is nothing to copy.
+    fn offer_entry_copy(
+        &mut self,
+        pending: PendingEvent,
+        object: ObjectPredicateDef,
+        added_types: CardTypeSet,
+    ) -> Option<PendingEvent> {
+        let player = Self::pending_event_controller(&pending);
+        let ReplaceableEvent::BattlefieldEntry(entry) = &pending.event;
+        let entering = entry.permanent.card.id;
+        let choices = self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.card.id != entering)
+            .filter(|permanent| {
+                self.trigger_object_matches(
+                    object,
+                    &self.trigger_event_object(permanent),
+                    entering,
+                    false,
+                )
+            })
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>();
+        if choices.is_empty() {
+            return Some(pending);
+        }
+        self.pending_events.push_front(pending);
+        self.queue_entry_copy_choice(player, choices, added_types);
+        None
+    }
+
     fn apply_pending_replacement_effect(
         &mut self,
         mut pending: PendingEvent,
@@ -2723,6 +2766,10 @@ impl Game {
                 self.queue_creature_type_choice(player);
                 None
             }
+            BattlefieldEntryReplacementEffect::CopyAsItEnters {
+                object,
+                added_types,
+            } => self.offer_entry_copy(pending, object, added_types),
             // With two players every relation this appears on names exactly
             // one candidate, so the choice is recorded rather than asked.
             BattlefieldEntryReplacementEffect::ChoosePlayer(relation) => {
@@ -2987,7 +3034,8 @@ impl Game {
                             } | EffectDef::ChoosePlayer {
                                 object: EffectRecipientDef::Source,
                                 ..
-                            },
+                            }
+                            | EffectDef::CopyPermanentAsItEnters { .. },
                         ),
                     ) if definition.event == ReplacementEventDef::EntersBattlefield
                 )
@@ -3162,6 +3210,16 @@ impl Game {
                             relation,
                         },
                     ) => BattlefieldEntryReplacementEffect::ChoosePlayer(relation),
+                    (
+                        ReplacementEventDef::EntersBattlefield,
+                        EffectDef::CopyPermanentAsItEnters {
+                            object,
+                            added_types,
+                        },
+                    ) => BattlefieldEntryReplacementEffect::CopyAsItEnters {
+                        object,
+                        added_types,
+                    },
                     _ => return ControlFlow::Continue(()),
                 };
                 let source = AbilitySourceRef {
@@ -3625,6 +3683,7 @@ impl Game {
             | EffectDef::CreateToken { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
+            | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {
@@ -5799,6 +5858,35 @@ impl Game {
                     self.continue_pending_events();
                 }
             }
+            DecisionContinuation::BattlefieldEntryCopy {
+                choices,
+                added_types,
+            } => {
+                let copied = options
+                    .first()
+                    .and_then(|option| usize::try_from(*option).ok())
+                    .filter(|option| *option > 0)
+                    .and_then(|option| choices.get(option - 1).copied())
+                    .and_then(|id| {
+                        self.battlefield
+                            .iter()
+                            .find(|permanent| permanent.card.id == id)
+                    })
+                    .map(|permanent| {
+                        let mut copy = Self::copiable_characteristics(permanent);
+                        copy.added_types = copy.added_types.union(added_types);
+                        copy
+                    });
+                if let Some(mut pending) = self.pending_events.pop_front() {
+                    if let Some(copy) = copied {
+                        let ReplaceableEvent::BattlefieldEntry(entry) = &mut pending.event;
+                        entry.permanent.copied_from = Some(copy.base);
+                        entry.permanent.copy_effect = Some(copy);
+                    }
+                    self.pending_events.push_front(pending);
+                    self.continue_pending_events();
+                }
+            }
             DecisionContinuation::BattlefieldEntryCardName { choices } => {
                 let Some(selected) = options
                     .first()
@@ -7384,12 +7472,6 @@ impl Game {
                 .filter(|permanent| self.is_artifact_permanent(permanent))
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
-            CardBehavior::CopyArtifact => self
-                .battlefield
-                .iter()
-                .filter(|permanent| self.is_artifact_permanent(permanent))
-                .map(|permanent| vec![Target::Permanent(permanent.card.id)])
-                .collect(),
             CardBehavior::DustToDust => {
                 let artifacts: Vec<_> = self
                     .battlefield
@@ -8050,6 +8132,53 @@ impl Game {
     /// Offers the card names worth naming. Naming a card with no activated
     /// ability does nothing at all, so leaving those out of the list changes
     /// no outcome and keeps the choice readable.
+    /// "You may have this enter as a copy of ...": the copy is picked as the
+    /// permanent enters, and entering as itself is always an option.
+    fn queue_entry_copy_choice(
+        &mut self,
+        player: PlayerId,
+        choices: Vec<GameObjectId>,
+        added_types: CardTypeSet,
+    ) {
+        let mut options = vec![DecisionOption {
+            id: 0,
+            label: "Enter as itself".into(),
+            card: None,
+            ability_text: None,
+            zone: DecisionZone::None,
+        }];
+        options.extend(choices.iter().enumerate().filter_map(|(index, id)| {
+            let permanent = self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == *id)?;
+            let definition = permanent.card.definition;
+            Some(DecisionOption {
+                id: u32::try_from(index + 1).unwrap_or(u32::MAX),
+                label: self.catalog.get(definition).map_or_else(
+                    || "Copy an unknown permanent".into(),
+                    |card| format!("Enter as a copy of {}", card.name),
+                ),
+                card: Some((*id, definition)),
+                ability_text: None,
+                zone: DecisionZone::Battlefield,
+            })
+        }));
+        self.queue_decision(
+            player,
+            "Choose what this permanent enters as",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::BattlefieldEntryCopy {
+                choices,
+                added_types,
+            },
+        );
+    }
+
     fn queue_card_name_choice(&mut self, player: PlayerId) {
         let mut names = self
             .catalog
@@ -8630,23 +8759,6 @@ impl Game {
                 Some(Target::Player(player)) => Some(player),
                 _ => None,
             };
-            let copy_effect = if behavior == CardBehavior::CopyArtifact {
-                object.first_target().and_then(|target| match target {
-                    Target::Permanent(id) => self
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == id)
-                        .filter(|permanent| self.is_artifact_permanent(permanent))
-                        .map(|permanent| {
-                            let mut copy = Self::copiable_characteristics(permanent);
-                            copy.added_types = copy.added_types.with(CardType::Enchantment);
-                            copy
-                        }),
-                    Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
-                })
-            } else {
-                None
-            };
             let presented = object
                 .signature
                 .as_ref()
@@ -8669,8 +8781,6 @@ impl Game {
             );
             permanent.loyalty = starting_loyalty;
             permanent.chosen_player = chosen_player;
-            permanent.copy_effect = copy_effect;
-            permanent.copied_from = permanent.copy_effect.as_ref().map(|copy| copy.base);
             permanent.text_changes = object.text_changes;
             permanent.attached_to = aura_host;
             self.enqueue_battlefield_entry(PendingBattlefieldEntry {
@@ -9620,6 +9730,7 @@ impl Game {
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
+            | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing mana and the remaining declarative effect
@@ -12204,6 +12315,7 @@ impl Game {
             | EffectDef::CreateToken { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
+            | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => None,
@@ -12741,6 +12853,7 @@ impl Game {
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
+            | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {}
@@ -12886,6 +12999,7 @@ impl Game {
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::ChooseCardName { .. }
                 | EffectDef::ChoosePlayer { .. }
+                | EffectDef::CopyPermanentAsItEnters { .. }
                 | EffectDef::ChooseCreatureType { .. }
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_) => {}
@@ -15556,6 +15670,7 @@ impl Game {
             | EffectDef::CreateToken { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
+            | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => false,

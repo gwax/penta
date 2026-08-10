@@ -544,8 +544,10 @@ mod tests {
             // The reveal, the split, and the choice are all asked for, and
             // the library is the resolving object's controller's own.
             EffectDef::RevealAndSplitIntoPiles { .. } => true,
-            // Looking is private and the offer is the only visible part.
-            EffectDef::LookAtTopAndMayTake { player, object } => {
+            // Looking is private and the offer is the only visible part, and
+            // a chosen destruction reaches only the chooser's own battlefield.
+            EffectDef::LookAtTopAndMayTake { player, object }
+            | EffectDef::DestroyOfChoice { player, object, .. } => {
                 shared_effect_recipient(player) && shared_object_predicate(object)
             }
             _ => false,
@@ -597,15 +599,8 @@ mod tests {
             // The choice is asked of whoever controls the candidates, and the
             // candidates are their own battlefield, so only the player and
             // the predicate need checking.
-            EffectDef::DestroyOfChoice { player, object, .. } => {
-                deferred_decision_allowed
-                    && shared_effect_recipient(player)
-                    && shared_object_predicate(object)
-            }
-            // The searcher is a player and the choices come out of their own
-            // library, so only the predicate and the destination need
-            // checking.
-            EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+            EffectDef::DestroyOfChoice { .. }
+            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::LookAtTopAndMayTake { .. } => {
                 deferred_decision_allowed && shared_decision_effect(effect)
@@ -690,6 +685,7 @@ mod tests {
             | EffectDef::Replacement(_)
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
+            | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
         }
@@ -882,6 +878,7 @@ mod tests {
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
+            | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
@@ -1088,6 +1085,7 @@ mod tests {
                         | EffectDef::MoveToZone { .. }
                         | EffectDef::ChooseCardName { .. }
                         | EffectDef::ChoosePlayer { .. }
+                        | EffectDef::CopyPermanentAsItEnters { .. }
                         | EffectDef::ChooseCreatureType { .. }
                         | EffectDef::Apply { .. }
                         | EffectDef::Special(_) => false,
@@ -1152,7 +1150,7 @@ mod tests {
                             } | EffectDef::ChoosePlayer {
                                 object: EffectRecipientDef::Source,
                                 ..
-                            }
+                            } | EffectDef::CopyPermanentAsItEnters { .. }
                         )
                 }
                 ReplacementEventDef::WouldMove { from, to, cause } => {
@@ -1269,6 +1267,7 @@ mod tests {
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
+            | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
         }

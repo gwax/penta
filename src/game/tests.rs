@@ -7132,6 +7132,33 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
     );
 }
 
+/// Casts a Copy Artifact already in hand and answers the entry choice with
+/// the named permanent. The copy is chosen as the enchantment enters, so
+/// there is no target to pick at cast time.
+fn resolve_copy_artifact(game: &mut Game, copy: GameObjectId, copied: GameObjectId) {
+    game.apply(PlayerId::One, cast_action(copy, Vec::new(), Vec::new(), 0))
+        .unwrap();
+    pass_priority_pair(game);
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("entering asks what to copy");
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(id, _)| id == copied))
+        .expect("the permanent is on the menu")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .unwrap();
+}
+
 #[test]
 fn stage_does_not_copy_a_land_that_leaves_before_the_ability_resolves() {
     let mut game = ready_game();
@@ -7177,15 +7204,16 @@ fn copy_artifact_copies_an_artifact_creature() {
     game.players[0].hand.push(copy.clone());
     game.players[0].mana_pool.blue = 1;
     game.players[0].mana_pool.colorless = 1;
-    let action = cast_action(
-        copy.id,
-        vec![Target::Permanent(CardInstanceId(10_000))],
-        Vec::new(),
-        0,
+    assert!(
+        game.legal_actions(PlayerId::One).contains(&cast_action(
+            copy.id,
+            Vec::new(),
+            Vec::new(),
+            0
+        )),
+        "it is cast without naming what it copies"
     );
-    assert!(game.legal_actions(PlayerId::One).contains(&action));
-    game.apply(PlayerId::One, action).unwrap();
-    pass_priority_pair(&mut game);
+    resolve_copy_artifact(&mut game, copy.id, CardInstanceId(10_000));
     let copied = game
         .battlefield
         .iter()
@@ -7222,17 +7250,7 @@ fn copy_artifact_resolves_a_copied_icy_manipulator_ability_from_its_frozen_origi
     game.players[0].hand.push(copy.clone());
     game.players[0].mana_pool.blue = 1;
     game.players[0].mana_pool.colorless = 1;
-    game.apply(
-        PlayerId::One,
-        cast_action(
-            copy.id,
-            vec![Target::Permanent(CardInstanceId(10_000))],
-            Vec::new(),
-            0,
-        ),
-    )
-    .unwrap();
-    pass_priority_pair(&mut game);
+    resolve_copy_artifact(&mut game, copy.id, CardInstanceId(10_000));
 
     let copied_id = game
         .battlefield
@@ -8465,14 +8483,7 @@ fn copy_artifact_copies_declarative_mana_abilities_without_a_behavior_hook() {
     game.players[0].hand.push(copy.clone());
     game.players[0].mana_pool.blue = 1;
     game.players[0].mana_pool.colorless = 1;
-    let action = cast_action(
-        copy.id,
-        vec![Target::Permanent(CardInstanceId(10_000))],
-        Vec::new(),
-        0,
-    );
-    game.apply(PlayerId::One, action).unwrap();
-    pass_priority_pair(&mut game);
+    resolve_copy_artifact(&mut game, copy.id, CardInstanceId(10_000));
 
     let copied_id = game
         .battlefield
@@ -20517,4 +20528,62 @@ fn the_abyss_lets_each_player_pick_which_of_their_own_creatures_it_takes() {
         "the other player's creature was never at risk"
     );
     assert!(survivors.contains(&GameObjectId(10_004)), "nor the Su-Chi");
+}
+
+#[test]
+fn copy_artifact_may_decline_and_never_targets() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SOL_RING, PlayerId::Two));
+    let copy = card(10_001, cards::COPY_ARTIFACT, PlayerId::One);
+    game.players[0].hand.push(copy.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    // Nothing about it is chosen while it is a spell, so there is exactly one
+    // way to cast it however many artifacts are around.
+    assert_eq!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == copy.id))
+            .count(),
+        1,
+        "the copy is picked as it enters, not targeted"
+    );
+
+    game.apply(
+        PlayerId::One,
+        cast_action(copy.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("entering asks what to copy");
+    let decline = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_none())
+        .expect("entering as itself is always allowed")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decline],
+        },
+    )
+    .unwrap();
+
+    let entered = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::COPY_ARTIFACT)
+        .expect("it entered either way");
+    assert!(
+        entered.copy_effect.is_none(),
+        "declining leaves an ordinary Copy Artifact"
+    );
 }

@@ -1618,6 +1618,14 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         relation: PlayerRelation,
     },
+    /// "You may have this permanent enter as a copy of ...". The copy is
+    /// chosen as the permanent enters rather than targeted by the spell, so
+    /// nothing about it can be responded to and declining is always allowed.
+    /// `added_types` are kept on top of what is copied.
+    CopyPermanentAsItEnters {
+        object: ObjectPredicateDef,
+        added_types: CardTypeSet,
+    },
     /// Choose and store a creature type for an object as it enters. This is a
     /// replacement procedure rather than a resolving stack effect.
     ChooseCreatureType {

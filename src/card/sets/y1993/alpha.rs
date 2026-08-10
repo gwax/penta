@@ -2,10 +2,10 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, ComparisonDef, CounterKind, EffectDef, EffectDurationDef, EffectExecutionDef,
-    EffectRecipientDef, LibraryPlacement, ManaColor, ObjectPredicateDef, PlayerRelation,
-    ReplacementEventDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    abilities, cards,
+    CardType, CardTypeSet, ComparisonDef, CounterKind, EffectDef, EffectDurationDef,
+    EffectExecutionDef, EffectRecipientDef, LibraryPlacement, ManaColor, ObjectPredicateDef,
+    PlayerRelation, ReplacementEventDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1319,10 +1319,12 @@ pub(in crate::card::sets) static COPY_ARTIFACT: CardRecord = CardRecord::new(
     CardArt::new("fd5ed955-1193-4e6a-a3e2-f54c1f9bf063", "Amy Weber"),
     CardSet::Alpha,
     CardRules::new_enchantment(mana_cost!("{1}{U}"))
-    .with_abilities(&[AbilityDef::custom_partial(
+    .with_abilities(&[AbilityDef::replacement(
         "You may have this enchantment enter as a copy of any artifact on the battlefield, except it's an enchantment in addition to its other types.",
-        CardBehavior::CopyArtifact,
-        "The optional copy choice is incorrectly modeled as a targeted spell choice.",
+        EffectDef::CopyPermanentAsItEnters {
+            object: ObjectPredicateDef::HasType(CardType::Artifact),
+            added_types: CardTypeSet::single(CardType::Enchantment),
+        },
     )]),
 );
 
