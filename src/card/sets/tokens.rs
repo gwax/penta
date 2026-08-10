@@ -83,12 +83,23 @@ static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
     controller: PlayerRelation::You,
 };
 
+pub(in crate::card::sets) static SPIRIT_TOKEN_1_1_WHITE: CardRecord = CardRecord::new(
+    cards::SPIRIT_TOKEN_1_1_WHITE,
+    "Spirit",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Spirit"], 1, 1)
+        .printed_colors(&[ManaColor::White])
+        .with_abilities(&[abilities::flying()]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BEAST_TOKEN_3_3_GREEN,
     &KNIGHT_TOKEN_2_2_WHITE,
     &SOLDIER_TOKEN_1_1_RED_WHITE,
     &DEMON_TOKEN_5_5_BLACK,
     &ELEMENTAL_TOKEN_GREEN_WHITE,
+    &SPIRIT_TOKEN_1_1_WHITE,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

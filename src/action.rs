@@ -94,7 +94,10 @@ pub enum Action {
         source: GameObjectId,
         ability: AbilityOrigin,
         targets: Vec<TargetSelection>,
-        sacrifice: Option<GameObjectId>,
+        /// The object chosen to pay a cost that names one, such as the
+        /// permanent a sacrifice cost takes or the card an exile cost lifts
+        /// from a graveyard.
+        cost_object: Option<GameObjectId>,
         /// The value chosen for X in the activation cost, zero when the cost
         /// has no X.
         x: u16,

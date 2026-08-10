@@ -763,6 +763,10 @@ pub enum CostDef {
         controller: PlayerRelation,
     },
     ExileSource,
+    /// Exile a matching card from the controller's own graveyard. The card is
+    /// chosen when the cost is paid, so it travels with the action rather
+    /// than being a target.
+    ExileCardFromGraveyard(ObjectPredicateDef),
     /// Add or remove that many loyalty counters. A planeswalker's abilities
     /// are the only costs paid this way, and paying one is what makes them
     /// once per turn at sorcery speed.

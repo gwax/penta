@@ -1744,9 +1744,9 @@ impl Game {
                 source,
                 ability,
                 targets,
-                sacrifice,
+                cost_object,
                 x,
-            } => self.activate_ability(player, source, ability, targets, sacrifice, x),
+            } => self.activate_ability(player, source, ability, targets, cost_object, x),
             Action::DeclareAttacker { attacker } => self.declare_attacker(attacker),
             Action::FinishDeclaringAttackers => self.finish_declaring_attackers(),
             Action::DeclareBlocker { blocker, attacker } => {
@@ -6864,7 +6864,10 @@ impl Game {
                         }
                         AbilityCostDef::TapSource
                         | AbilityCostDef::SacrificeSource
-                        | AbilityCostDef::SacrificePermanent { .. } => false,
+                        | AbilityCostDef::SacrificePermanent { .. }
+                        // Payability is decided by whether any card qualifies,
+                        // which the choice list below answers.
+                        | AbilityCostDef::ExileCardFromGraveyard(_) => false,
                         AbilityCostDef::UntapSource
                         | AbilityCostDef::DiscardSource
                         | AbilityCostDef::DiscardCards(_)
@@ -6874,38 +6877,55 @@ impl Game {
                 {
                     return;
                 }
-                let mut sacrifice_costs = definition.costs.iter().filter_map(|cost| match cost {
-                    AbilityCostDef::SacrificePermanent { object, controller } => {
-                        Some((*object, *controller))
-                    }
-                    _ => None,
+                // At most one cost names an object, so one activation per
+                // eligible object covers every choice the player has.
+                let mut object_costs = definition.costs.iter().filter(|cost| {
+                    matches!(
+                        cost,
+                        AbilityCostDef::SacrificePermanent { .. }
+                            | AbilityCostDef::ExileCardFromGraveyard(_)
+                    )
                 });
-                let sacrifice_cost = sacrifice_costs.next();
-                if sacrifice_costs.next().is_some() {
+                let object_cost = object_costs.next();
+                if object_costs.next().is_some() {
                     return;
                 }
-                let sacrifice_choices = sacrifice_cost.map_or_else(
-                    || vec![None],
-                    |(predicate, relation)| {
-                        self.battlefield
-                            .iter()
-                            .filter(|candidate| {
-                                self.player_relation_matches(
-                                    candidate.controller,
-                                    relation,
-                                    player,
-                                    TriggerContext::empty(),
-                                ) && self.trigger_object_matches(
-                                    predicate,
-                                    &self.trigger_event_object(candidate),
-                                    permanent.card.id,
-                                    false,
-                                )
-                            })
-                            .map(|candidate| Some(candidate.card.id))
-                            .collect()
-                    },
-                );
+                let sacrifice_choices = match object_cost {
+                    None => vec![None],
+                    Some(AbilityCostDef::SacrificePermanent { object, controller }) => self
+                        .battlefield
+                        .iter()
+                        .filter(|candidate| {
+                            self.player_relation_matches(
+                                candidate.controller,
+                                *controller,
+                                player,
+                                TriggerContext::empty(),
+                            ) && self.trigger_object_matches(
+                                *object,
+                                &self.trigger_event_object(candidate),
+                                permanent.card.id,
+                                false,
+                            )
+                        })
+                        .map(|candidate| Some(candidate.card.id))
+                        .collect(),
+                    Some(AbilityCostDef::ExileCardFromGraveyard(object)) => self.players
+                        [player.index()]
+                    .graveyard
+                    .iter()
+                    .filter(|card| {
+                        self.card_object_matches(
+                            *object,
+                            card,
+                            ZoneKind::Graveyard,
+                            permanent.card.id,
+                        )
+                    })
+                    .map(|card| Some(card.id))
+                    .collect(),
+                    Some(_) => unreachable!("the filter admits only object costs"),
+                };
                 if sacrifice_choices.is_empty() {
                     return;
                 }
@@ -6934,7 +6954,7 @@ impl Game {
                                 source: permanent.card.id,
                                 ability: effective.origin,
                                 targets: selections.clone(),
-                                sacrifice: *sacrifice,
+                                cost_object: *sacrifice,
                                 x,
                             });
                         }
@@ -6961,7 +6981,7 @@ impl Game {
                                 source: permanent.card.id,
                                 ability,
                                 targets: Vec::new(),
-                                sacrifice: Some(candidate.card.id),
+                                cost_object: Some(candidate.card.id),
                                 x: 0,
                             }),
                     );
@@ -6975,7 +6995,7 @@ impl Game {
                                 ability_target_slot,
                                 Target::Player(target),
                             )],
-                            sacrifice: None,
+                            cost_object: None,
                             x: 0,
                         });
                     }
@@ -6993,7 +7013,7 @@ impl Game {
                                 ability_target_slot,
                                 Target::Permanent(candidate.card.id),
                             )],
-                            sacrifice: None,
+                            cost_object: None,
                             x: 0,
                         }
                     }));
@@ -7015,7 +7035,7 @@ impl Game {
                                     ability_target_slot,
                                     Target::Permanent(candidate.card.id),
                                 )],
-                                sacrifice: None,
+                                cost_object: None,
                                 x: 0,
                             }),
                     );
@@ -7027,7 +7047,7 @@ impl Game {
                         source: permanent.card.id,
                         ability,
                         targets: Vec::new(),
-                        sacrifice: None,
+                        cost_object: None,
                         x: 0,
                     });
                 }
@@ -7049,7 +7069,7 @@ impl Game {
                                     ability_target_slot,
                                     Target::Permanent(candidate.card.id),
                                 )],
-                                sacrifice: None,
+                                cost_object: None,
                                 x: 0,
                             }),
                     );
@@ -7061,7 +7081,7 @@ impl Game {
                         source: permanent.card.id,
                         ability,
                         targets: Vec::new(),
-                        sacrifice: None,
+                        cost_object: None,
                         x: 0,
                     });
                 }
@@ -7072,7 +7092,7 @@ impl Game {
                         source: permanent.card.id,
                         ability,
                         targets: Vec::new(),
-                        sacrifice: None,
+                        cost_object: None,
                         x: 0,
                     });
                     if !permanent.tapped && self.can_use_tap_ability(permanent) {
@@ -7090,7 +7110,7 @@ impl Game {
                                         secondary_target_slot,
                                         Target::Permanent(candidate.card.id),
                                     )],
-                                    sacrifice: None,
+                                    cost_object: None,
                                     x: 0,
                                 }),
                         );
@@ -7112,7 +7132,7 @@ impl Game {
                                     secondary_target_slot,
                                     Target::Permanent(candidate.card.id),
                                 )],
-                                sacrifice: None,
+                                cost_object: None,
                                 x: 0,
                             }),
                     );
@@ -7131,7 +7151,7 @@ impl Game {
                                     ability_target_slot,
                                     Target::Permanent(candidate.card.id),
                                 )],
-                                sacrifice: None,
+                                cost_object: None,
                                 x: 0,
                             }),
                     );
@@ -7149,7 +7169,7 @@ impl Game {
                                 source: permanent.card.id,
                                 ability,
                                 targets: vec![TargetSelection::single(ability_target_slot, target)],
-                                sacrifice: Some(sacrificed.card.id),
+                                cost_object: Some(sacrificed.card.id),
                                 x: 0,
                             }
                         }));
@@ -7163,7 +7183,7 @@ impl Game {
                             source: permanent.card.id,
                             ability,
                             targets: vec![TargetSelection::single(ability_target_slot, target)],
-                            sacrifice: None,
+                            cost_object: None,
                             x: 0,
                         }
                     }));
@@ -7177,7 +7197,7 @@ impl Game {
                         source: permanent.card.id,
                         ability,
                         targets: Vec::new(),
-                        sacrifice: None,
+                        cost_object: None,
                         x: 0,
                     });
                 }
@@ -7195,7 +7215,7 @@ impl Game {
                                     ability_target_slot,
                                     Target::Permanent(candidate.card.id),
                                 )],
-                                sacrifice: None,
+                                cost_object: None,
                                 x: 0,
                             }),
                     );
@@ -7209,7 +7229,7 @@ impl Game {
                         source: permanent.card.id,
                         ability,
                         targets: Vec::new(),
-                        sacrifice: None,
+                        cost_object: None,
                         x: 0,
                     });
                 }
@@ -7223,7 +7243,7 @@ impl Game {
                             source: permanent.card.id,
                             ability,
                             targets: vec![TargetSelection::single(ability_target_slot, target)],
-                            sacrifice: None,
+                            cost_object: None,
                             x: 0,
                         }
                     }));
@@ -7235,7 +7255,7 @@ impl Game {
                         source: permanent.card.id,
                         ability,
                         targets: Vec::new(),
-                        sacrifice: None,
+                        cost_object: None,
                         x: 0,
                     });
                 }
@@ -7338,6 +7358,7 @@ impl Game {
                         | AbilityCostDef::SacrificePermanent { .. }
                         | AbilityCostDef::ExileSource
                         | AbilityCostDef::Loyalty(_)
+                        | AbilityCostDef::ExileCardFromGraveyard(_)
                         | AbilityCostDef::Special(_) => supported = false,
                     }
                 }
@@ -7364,7 +7385,7 @@ impl Game {
                             source: card.id,
                             ability: effective.origin,
                             targets: targets.clone(),
-                            sacrifice: None,
+                            cost_object: None,
                             x,
                         });
                     }
@@ -7607,6 +7628,7 @@ impl Game {
                 | AbilityCostDef::DiscardSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::Loyalty(_)
+                | AbilityCostDef::ExileCardFromGraveyard(_)
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::ExileSource
@@ -12756,7 +12778,7 @@ impl Game {
         source: GameObjectId,
         ability: AbilityOrigin,
         targets: Vec<TargetSelection>,
-        sacrifice: Option<GameObjectId>,
+        cost_object: Option<GameObjectId>,
         x: u16,
     ) {
         if let Some(source_card) = self.players[player.index()]
@@ -12828,6 +12850,7 @@ impl Game {
                     | AbilityCostDef::SacrificePermanent { .. }
                     | AbilityCostDef::ExileSource
                     | AbilityCostDef::Loyalty(_)
+                    | AbilityCostDef::ExileCardFromGraveyard(_)
                     | AbilityCostDef::Special(_) => {
                         unreachable!("unsupported hand-zone costs are not offered")
                     }
@@ -12913,8 +12936,17 @@ impl Game {
                     }
                     AbilityCostDef::SacrificePermanent { .. } => {
                         self.sacrifice_permanent(
-                            sacrifice.expect("a legal activation chose the sacrificed permanent"),
+                            cost_object.expect("a legal activation chose the sacrificed permanent"),
                         );
+                    }
+                    AbilityCostDef::ExileCardFromGraveyard(_) => {
+                        let chosen = cost_object.expect("a legal activation chose the exiled card");
+                        if let Some(card) =
+                            remove_card(&mut self.players[player.index()].graveyard, chosen)
+                        {
+                            let (card, _zone_change) = self.zone_change_card(card);
+                            self.players[player.index()].exile.push(card);
+                        }
                     }
                     AbilityCostDef::Loyalty(change) => {
                         if let Some(permanent) = self
@@ -12944,7 +12976,7 @@ impl Game {
                     Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
                 })
                 .collect::<Vec<_>>();
-            if let Some(sacrificed) = sacrifice
+            if let Some(sacrificed) = cost_object
                 && !chosen_permanents.contains(&sacrificed)
             {
                 chosen_permanents.push(sacrificed);
@@ -12963,7 +12995,7 @@ impl Game {
         }
         match behavior {
             Some(CardBehavior::Atog) => {
-                if let Some(sacrificed) = sacrifice {
+                if let Some(sacrificed) = cost_object {
                     self.sacrifice_permanent(sacrificed);
                     if let Some(atog) = self
                         .battlefield
@@ -13107,10 +13139,10 @@ impl Game {
                 let card = self
                     .tap_permanent(source)
                     .expect("legal Orcish Mechanics activation has a source");
-                if let Some(sacrificed) = sacrifice {
+                if let Some(sacrificed) = cost_object {
                     self.sacrifice_permanent(sacrificed);
                 }
-                let chosen_permanents: Vec<_> = sacrifice.into_iter().collect();
+                let chosen_permanents: Vec<_> = cost_object.into_iter().collect();
                 self.push_activated_ability(
                     source,
                     &card,

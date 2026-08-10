@@ -1784,7 +1784,7 @@ impl WebGame {
                 source,
                 ability,
                 targets,
-                sacrifice,
+                cost_object,
                 ..
             } => {
                 let source_name = self.instance_name(observation, *source);
@@ -1807,13 +1807,13 @@ impl WebGame {
                 let mut label = described
                     .clone()
                     .unwrap_or_else(|| format!("Activate {source_name}"));
-                if let Some(sacrifice) = sacrifice
-                    && sacrifice != source
+                if let Some(cost_object) = cost_object
+                    && cost_object != source
                 {
                     let _ = write!(
                         label,
                         " (sacrifice {})",
-                        self.instance_name(observation, *sacrifice)
+                        self.instance_name(observation, *cost_object)
                     );
                 }
                 if let Some(target) = target
@@ -2527,9 +2527,9 @@ fn action_sacrifices(action: &Action) -> Vec<u32> {
         Action::CastSpell { sacrifices, .. } => sacrifices.iter().map(|id| id.0).collect(),
         Action::ActivateAbility {
             source,
-            sacrifice: Some(sacrifice),
+            cost_object: Some(cost_object),
             ..
-        } if sacrifice != source => vec![sacrifice.0],
+        } if cost_object != source => vec![cost_object.0],
         _ => Vec::new(),
     }
 }
@@ -3335,7 +3335,7 @@ mod tests {
                     ],
                 ),
             ],
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         };
         assert_eq!(
@@ -3383,7 +3383,7 @@ mod tests {
                 grant: penta::GrantId(3),
             },
             targets: Vec::new(),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         };
         assert_eq!(
@@ -3501,7 +3501,7 @@ mod tests {
                     ability: penta::AbilityId::PRIMARY,
                 },
                 targets: Vec::new(),
-                sacrifice: None,
+                cost_object: None,
                 x: 0,
             },
         ];
@@ -3734,7 +3734,7 @@ mod tests {
                     penta::TargetSlotId(0),
                     Target::Permanent(CardInstanceId(9)),
                 )],
-                sacrifice: None,
+                cost_object: None,
                 x: 0,
             },
             Action::PassPriority,

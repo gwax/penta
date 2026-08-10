@@ -380,7 +380,7 @@ fn ability_events_distinguish_the_stack_object_from_a_source_that_left_play() {
             source: source_id,
             ability: activated_ability_for(&game, source_id, 0),
             targets: activated_targets(Target::Permanent(target_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -1660,7 +1660,7 @@ fn a_resolving_tap_effect_uses_the_same_city_trigger_path() {
         source: CardInstanceId(10_000),
         ability: activated_ability_for(&game, CardInstanceId(10_000), 0),
         targets: activated_targets(Target::Permanent(CardInstanceId(10_001))),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
@@ -2794,7 +2794,7 @@ fn triskelion_enters_with_counters_and_spends_one_to_deal_damage() {
             source: permanent_id,
             ability: activated_ability_for(&game, permanent_id, 0),
             targets: activated_targets(Target::Player(PlayerId::Two)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -2964,7 +2964,7 @@ fn order_of_leitbur_can_gain_first_strike() {
         source: order_id,
         ability: activated_ability_for(&game, order_id, 0),
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
 
@@ -3222,7 +3222,7 @@ fn ivory_tower_and_jayemdae_tome_provide_control_card_advantage() {
             source: tome_id,
             ability: activated_ability_for(&game, tome_id, 0),
             targets: Vec::new(),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -3252,7 +3252,7 @@ fn library_of_alexandria_draw_activation_keeps_its_printed_ability_id() {
         source: library_id,
         ability: expected_origin,
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
 
@@ -3901,7 +3901,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         source: tome_id,
         ability: activated_ability_for(&game, tome_id, 0),
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
 
@@ -3943,7 +3943,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         source,
         ability: activated_ability_for(&game, source, 0),
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
 
@@ -3969,7 +3969,7 @@ fn orcish_mechanics_can_sacrifice_an_artifact_to_damage_a_creature() {
         source: mechanics_id,
         ability: activated_ability_for(&game, mechanics_id, 0),
         targets: activated_targets(Target::Permanent(target_id)),
-        sacrifice: Some(artifact_id),
+        cost_object: Some(artifact_id),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -4312,7 +4312,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
             source: factory_id,
             ability: activated_ability_for(&game, factory_id, 0),
             targets: Vec::new(),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -4334,7 +4334,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
                     ability: crate::AbilityId(2),
                 },
                 targets: activated_targets(Target::Permanent(factory_id)),
-                sacrifice: None,
+                cost_object: None,
                 x: 0,
             })
     );
@@ -4345,7 +4345,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
             source: strip_id,
             ability: activated_ability_for(&game, strip_id, 0),
             targets: activated_targets(Target::Permanent(opposing_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -4393,7 +4393,7 @@ fn mishras_factory_can_use_its_own_mana_to_animate() {
         source: factory_id,
         ability: activated_ability_for(&game, factory_id, 0),
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
 
@@ -4462,7 +4462,7 @@ fn strip_mine_can_be_activated_in_response_to_strip_mine() {
             source: second_strip_id,
             ability: activated_ability_for(&game, second_strip_id, 0),
             targets: activated_targets(Target::Permanent(first_strip_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -4473,7 +4473,7 @@ fn strip_mine_can_be_activated_in_response_to_strip_mine() {
         source: first_strip_id,
         ability: activated_ability_for(&game, first_strip_id, 0),
         targets: activated_targets(Target::Permanent(other_land_id)),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&response));
@@ -4510,7 +4510,7 @@ fn chaos_orb_uses_the_documented_deterministic_success_rule() {
         source: orb_id,
         ability: activated_ability_for(&game, orb_id, 0),
         targets: activated_targets(Target::Permanent(target_id)),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -4552,7 +4552,7 @@ fn chaos_orb_can_be_activated_the_turn_it_enters_using_untapped_mana() {
         source: orb_id,
         ability: activated_ability_for(&game, orb_id, 0),
         targets: activated_targets(Target::Permanent(target_id)),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
 
@@ -4587,7 +4587,7 @@ fn icatian_javelineers_cannot_activate_until_their_controller_turn() {
         source,
         ability: activated_ability_for(&game, source, 0),
         targets: activated_targets(Target::Player(PlayerId::Two)),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     assert_eq!(game.power(&game.battlefield[0]), Some(1));
@@ -4625,7 +4625,7 @@ fn removing_chaos_orb_in_response_nullifies_its_flip() {
             source: orb_id,
             ability: activated_ability_for(&game, orb_id, 0),
             targets: activated_targets(Target::Permanent(target_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -5887,7 +5887,7 @@ fn magical_hack_on_stage_applies_to_land_types_that_stage_later_copies() {
             source: stage_id,
             ability: activated_ability_for(&game, stage_id, 0),
             targets: activated_targets(Target::Permanent(arbor_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -6158,7 +6158,7 @@ fn stage_copies_dryad_arbors_copiable_values_but_not_hack_or_presence() {
             source: stage_id,
             ability: copy_ability,
             targets: activated_targets(Target::Permanent(arbor_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -6239,7 +6239,7 @@ fn a_new_stage_can_copy_dryad_arbor_but_the_result_is_summoning_sick() {
         source: stage_id,
         ability: copy_ability,
         targets: activated_targets(Target::Permanent(arbor_id)),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     assert!(
@@ -6285,7 +6285,7 @@ fn stage_copying_stage_does_not_duplicate_indistinguishable_legal_actions() {
             source: copying_stage,
             ability: copy_ability,
             targets: activated_targets(Target::Permanent(copied_stage)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -6313,7 +6313,7 @@ fn stage_copying_stage_does_not_duplicate_indistinguishable_legal_actions() {
         source: copying_stage,
         ability: copy_ability,
         targets: activated_targets(Target::Permanent(mountain)),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     assert_eq!(
@@ -6347,7 +6347,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
             source: stage_id,
             ability: original_copy_ability,
             targets: activated_targets(Target::Permanent(factory_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -6359,7 +6359,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
         source: stage_id,
         ability: activated_ability_for(&game, stage_id, 0),
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     game.players[0].mana_pool.colorless = 1;
@@ -6378,7 +6378,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
             source: stage_id,
             ability: retained_copy_ability,
             targets: activated_targets(Target::Permanent(mountain_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -6400,7 +6400,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
         source: factory_id,
         ability: activated_ability_for(&game, factory_id, 1),
         targets: activated_targets(Target::Permanent(stage_id)),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     assert!(
@@ -6425,7 +6425,7 @@ fn stage_does_not_copy_a_land_that_leaves_before_the_ability_resolves() {
             source: stage_id,
             ability: activated_ability_for(&game, stage_id, 0),
             targets: activated_targets(Target::Permanent(target_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -6529,7 +6529,7 @@ fn copy_artifact_resolves_a_copied_icy_manipulator_ability_from_its_frozen_origi
             source: copied_id,
             ability,
             targets: activated_targets(Target::Permanent(target_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -6627,7 +6627,7 @@ fn granted_activation_freezes_payload_before_sacrificing_grant_source() {
         source: receiver,
         ability: origin,
         targets: activated_targets(Target::Player(PlayerId::Two)),
-        sacrifice: Some(grantor),
+        cost_object: Some(grantor),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
@@ -7009,7 +7009,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         source: receiver,
         ability: first_origin,
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&stale_action));
@@ -7027,7 +7027,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         source: receiver,
         ability: second_origin,
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     }));
 }
@@ -7103,7 +7103,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
         source,
         ability: primary_ability(definition_id),
         targets: targets.clone(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
 
@@ -7114,7 +7114,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
             TargetSelection::single(TargetSlotId(7), Target::Player(PlayerId::Two)),
             TargetSelection::single(TargetSlotId(3), Target::Permanent(creature_target)),
         ],
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     assert!(game.apply(PlayerId::One, invalid_slots).is_err());
@@ -7218,7 +7218,7 @@ fn one_ability_target_slot_resolves_for_every_selected_legal_target() {
                 Target::Permanent(second_target),
             ],
         )],
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
 
@@ -10267,7 +10267,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             source: sage_id,
             ability: activated_ability_for(&game, sage_id, 0),
             targets: Vec::new(),
-            sacrifice: Some(ring_id),
+            cost_object: Some(ring_id),
             x: 0,
         },
     )
@@ -10294,7 +10294,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             source: barrier_id,
             ability: activated_ability_for(&game, barrier_id, 0),
             targets: activated_targets(Target::Permanent(ring_id)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -14918,7 +14918,7 @@ fn ratchet_bomb_sweeps_the_mana_value_it_ticked_up_to() {
                             ability,
                         },
                         targets: Vec::new(),
-                        sacrifice: None,
+                        cost_object: None,
                         x: 0,
                     },
                 )),
@@ -15257,7 +15257,7 @@ fn izzet_staticaster_reads_the_name_copied_by_thespians_stage() {
             source: stage,
             ability: activated_ability_for(&game, stage, 0),
             targets: activated_targets(Target::Permanent(arbor)),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         },
     )
@@ -15723,7 +15723,7 @@ fn aetherling_dodges_a_blocker_and_comes_back_at_the_end_step() {
                     ability,
                 },
                 targets: Vec::new(),
-                sacrifice: None,
+                cost_object: None,
                 x: 0,
             },
         )
@@ -17690,4 +17690,75 @@ fn flames_of_the_firebrand_splits_its_three_damage() {
         .find(|permanent| permanent.card.id == angel)
         .expect("the Angel survived");
     assert_eq!(angel.damage, 1, "and took only its share");
+}
+
+#[test]
+fn moorland_haunt_pays_with_a_creature_card_from_its_own_graveyard() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let haunt = game
+        .put_onto_battlefield(PlayerId::One, cards::MOORLAND_HAUNT)
+        .expect("cataloged");
+    game.players[0].mana_pool = ManaPool {
+        white: 1,
+        blue: 1,
+        ..ManaPool::default()
+    };
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let token_activations = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| {
+                matches!(action, Action::ActivateAbility { source, ability, .. }
+                    if *source == haunt
+                        && matches!(ability, AbilityOrigin::Printed { ability, .. } if *ability == AbilityId(1)))
+            })
+            .collect::<Vec<_>>()
+    };
+    assert!(
+        token_activations(&game).is_empty(),
+        "an empty graveyard cannot pay the cost"
+    );
+
+    // A noncreature card is not a legal payment either.
+    game.players[0]
+        .graveyard
+        .push(card(24_000, cards::PLAINS, PlayerId::One));
+    assert!(token_activations(&game).is_empty(), "and neither is a land");
+
+    game.players[0]
+        .graveyard
+        .push(card(24_001, cards::SAVANNAH_LIONS, PlayerId::One));
+    let activations = token_activations(&game);
+    assert_eq!(
+        activations.len(),
+        1,
+        "one activation for the one creature card that can pay"
+    );
+    game.apply(PlayerId::One, activations[0].clone()).unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::SAVANNAH_LIONS),
+        "the creature card paid the cost"
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::PLAINS),
+        "and the land stayed put"
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SPIRIT_TOKEN_1_1_WHITE),
+        "and a Spirit arrived"
+    );
 }

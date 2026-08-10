@@ -264,3 +264,4 @@ pub const THESPIANS_STAGE: CardDefinitionId = CardDefinitionId(251);
 pub const DRYAD_ARBOR: CardDefinitionId = CardDefinitionId(252);
 pub const NYLEAS_PRESENCE: CardDefinitionId = CardDefinitionId(253);
 pub const ELEMENTAL_TOKEN_GREEN_WHITE: CardDefinitionId = CardDefinitionId(254);
+pub const SPIRIT_TOKEN_1_1_WHITE: CardDefinitionId = CardDefinitionId(255);

@@ -111,7 +111,7 @@ fn bloodrush_action(source: CardInstanceId, target: CardInstanceId) -> Action {
         source,
         ability: BLOODRUSH,
         targets: activated_targets(Target::Permanent(target)),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     }
 }
@@ -590,7 +590,7 @@ fn handcrafted_only_uses_orcish_mechanics_on_a_player_for_lethal() {
                 source: mechanics,
                 ability: PRIMARY_PRINTED_ABILITY,
                 targets: activated_targets(Target::Player(PlayerId::Two)),
-                sacrifice: Some(vise),
+                cost_object: Some(vise),
                 x: 0,
             },
         ],
@@ -623,14 +623,14 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
                 source: atog,
                 ability: PRIMARY_PRINTED_ABILITY,
                 targets: Vec::new(),
-                sacrifice: Some(vise),
+                cost_object: Some(vise),
                 x: 0,
             },
             Action::ActivateAbility {
                 source: atog,
                 ability: PRIMARY_PRINTED_ABILITY,
                 targets: Vec::new(),
-                sacrifice: Some(mox),
+                cost_object: Some(mox),
                 x: 0,
             },
         ],
@@ -645,7 +645,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
             source: atog,
             ability: PRIMARY_PRINTED_ABILITY,
             targets: Vec::new(),
-            sacrifice: Some(vise),
+            cost_object: Some(vise),
             x: 0,
         })
     );
@@ -791,7 +791,7 @@ fn handcrafted_animates_a_factory_once_rather_than_every_priority() {
         source: CardInstanceId(1),
         ability: PRIMARY_PRINTED_ABILITY,
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
 
@@ -1088,7 +1088,7 @@ fn handcrafted_animates_a_manland_only_when_it_can_attack() {
             ability: AbilityId(1),
         },
         targets: Vec::new(),
-        sacrifice: None,
+        cost_object: None,
         x: 0,
     };
     let vault = || permanent(1, cards::MUTAVAULT, PlayerId::One, None, None);

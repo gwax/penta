@@ -46,7 +46,7 @@ use crate::{
 /// exposes the priority window between first-strike and regular combat damage
 /// and adds newly executable keyword and alternative-casting actions to
 /// legal-action lists.
-pub const PROTOCOL_VERSION: u32 = 9;
+pub const PROTOCOL_VERSION: u32 = 10;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -428,7 +428,7 @@ pub fn action_json(action: &Action) -> Value {
             source,
             ability,
             targets,
-            sacrifice,
+            cost_object,
             x,
         } => json!({
             "type": "ActivateAbility",
@@ -448,7 +448,7 @@ pub fn action_json(action: &Action) -> Value {
                 .map(target_json)
                 .collect::<Vec<_>>(),
             "targetSelections": target_selections_json(targets),
-            "sacrifice": sacrifice.map(|card| card.0),
+            "costObject": cost_object.map(|card| card.0),
         }),
         Action::DeclareAttacker { attacker } => {
             json!({ "type": "DeclareAttacker", "attacker": attacker.0 })
@@ -1385,7 +1385,7 @@ mod tests {
                     Target::Permanent(GameObjectId(11)),
                 ),
             ],
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         });
         assert_eq!(activated["ability"]["kind"], "printed");
@@ -1414,7 +1414,7 @@ mod tests {
                 grant: crate::GrantId(3),
             },
             targets: Vec::new(),
-            sacrifice: None,
+            cost_object: None,
             x: 0,
         });
         assert_eq!(granted["ability"]["kind"], "granted");
@@ -1978,9 +1978,9 @@ mod tests {
         assert!(pilgrim["parts"][0].get("effectStatus").is_none());
 
         // Any card with a mix of executable and pending clauses will do here.
-        // Moorland Haunt taps for mana, but its token ability pays a cost the
-        // action space cannot express; repoint this if that lands.
-        let partial = find("Moorland Haunt");
+        // Huntmaster's back face has trample, but transforming needs
+        // machinery the engine lacks; repoint this if that lands.
+        let partial = find("Huntmaster of the Fells");
         assert_eq!(partial["implementationStatus"], "partial");
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 

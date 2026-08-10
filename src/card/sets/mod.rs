@@ -156,7 +156,7 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let mut definitions = Vec::with_capacity(254);
+    let mut definitions = Vec::with_capacity(255);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }
@@ -674,7 +674,11 @@ mod tests {
                 // value. More than one X in the same cost is not: nothing
                 // enumerates a cost that charges X twice.
                 AbilityCostDef::Mana(cost) => cost.x_multiplier <= 1,
-                AbilityCostDef::SacrificePermanent { object, .. } => {
+                // The chosen object comes from the battlefield or from the
+                // activating player's own graveyard, so only the predicate
+                // needs checking.
+                AbilityCostDef::SacrificePermanent { object, .. }
+                | AbilityCostDef::ExileCardFromGraveyard(object) => {
                     battlefield && shared_object_predicate(*object)
                 }
                 AbilityCostDef::TapSource
@@ -1202,13 +1206,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 254);
+        assert_eq!(records.len(), 255);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=254).collect::<Vec<_>>()
+            (1..=255).collect::<Vec<_>>()
         );
         assert_eq!(
             records
@@ -1223,13 +1227,14 @@ mod tests {
     #[test]
     fn built_in_catalog_indexes_definitions_and_printings_separately() {
         let catalog = crate::card::catalog().unwrap();
-        let printing_count = (1..=254)
+        let printing_count = (1..=255)
             .filter(|id| {
                 *id != cards::BEAST_TOKEN_3_3_GREEN.0
                     && *id != cards::KNIGHT_TOKEN_2_2_WHITE.0
                     && *id != cards::SOLDIER_TOKEN_1_1_RED_WHITE.0
                     && *id != cards::DEMON_TOKEN_5_5_BLACK.0
                     && *id != cards::ELEMENTAL_TOKEN_GREEN_WHITE.0
+                    && *id != cards::SPIRIT_TOKEN_1_1_WHITE.0
             })
             .map(|id| catalog.printings_for(CardDefinitionId(id)).len())
             .sum::<usize>();
@@ -1255,7 +1260,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 254);
+        assert_eq!(records.len(), 255);
 
         for record in records {
             let definition = record.definition();

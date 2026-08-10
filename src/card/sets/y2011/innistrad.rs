@@ -333,9 +333,19 @@ pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
     CardSet::Innistrad,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
-        AbilityDef::not_implemented(
+        AbilityDef::activated(
             "{W}{U}, {T}, Exile a creature card from your graveyard: Create a 1/1 white Spirit creature token with flying.",
-            "The graveyard cost and token-creating activated ability are not executed.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{W}{U}")),
+                AbilityCostDef::TapSource,
+                AbilityCostDef::ExileCardFromGraveyard(ObjectPredicateDef::HasType(
+                    CardType::Creature,
+                )),
+            ],
+            EffectDef::CreateToken {
+                token: cards::SPIRIT_TOKEN_1_1_WHITE,
+                count: ValueDef::Constant(1),
+            },
         ),
     ]),
 );
