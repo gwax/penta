@@ -100,7 +100,8 @@ export type Action = {
   targetStackIds?: number[];
   targetCount?: number;
   ability?: AbilityOriginMetadata | null;
-  abilitySummary?: string | null;
+  /** Target-independent activation label; includes exact ability text when disambiguation is needed. */
+  abilityLabel?: string | null;
   manaAbility?: boolean;
   spellAction?: boolean;
   playOptionId?: number | null;
