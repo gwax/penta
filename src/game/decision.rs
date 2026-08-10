@@ -28,6 +28,10 @@ pub enum DecisionVisibility {
 pub enum DecisionPreference {
     HigherCardValue,
     LowerCardValue,
+    /// Divide all card-backed options into two piles with similar aggregate
+    /// value. The decision still exposes the ordinary subset-selection
+    /// contract; this only guides automated policies toward a useful split.
+    BalancedPartition,
     /// Prefer opposing battlefield cards and cards in the chooser's own
     /// graveyard. Linked-exile effects use this to separate removal and
     /// recovery targets from cards whose eventual return would be harmful.
@@ -57,6 +61,9 @@ pub struct DecisionOption {
     pub id: u32,
     pub label: String,
     pub card: Option<(GameObjectId, CardDefinitionId)>,
+    /// Cards represented collectively by this option, such as one pile in a
+    /// choose-a-pile decision. This remains empty for ordinary card options.
+    pub members: Vec<(GameObjectId, CardDefinitionId)>,
     /// Frozen creating-ability text when this option represents a pending
     /// trigger. This distinguishes multiple abilities from the same source.
     pub ability_text: Option<String>,

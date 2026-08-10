@@ -1,6 +1,6 @@
 use crate::{
-    AbilityOrigin, Action, CardDefinitionId, CardPartId, CardTypeSet, CastSignature, GameObjectId,
-    PlayerId, Target,
+    AbilityOrigin, Action, AttackDefender, CardDefinitionId, CardPartId, CardTypeSet,
+    CastSignature, GameObjectId, PlayerId, Target,
 };
 
 use super::{DecisionObservation, GameResult, ManaPool, StackObjectKind, Step};
@@ -40,6 +40,16 @@ impl std::fmt::Display for ZoneError {
 
 impl std::error::Error for ZoneError {}
 
+/// A command-zone emblem and the printed ability that created it.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EmblemObservation {
+    pub id: GameObjectId,
+    pub controller: PlayerId,
+    pub name: String,
+    pub source_ability: AbilityOrigin,
+    pub ability_texts: Vec<String>,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct PermanentObservation {
@@ -55,11 +65,21 @@ pub struct PermanentObservation {
     pub types: CardTypeSet,
     /// Public choice associated with permanents such as Cavern of Souls.
     pub chosen_creature_type: Option<String>,
+    /// Public card name associated with permanents such as Pithing Needle.
+    pub chosen_card_name: Option<String>,
     pub tapped: bool,
     pub power: Option<i16>,
     pub toughness: Option<i16>,
     pub damage: u16,
+    /// Loyalty counters, present only for planeswalkers.
+    pub loyalty: Option<u16>,
+    pub loyalty_ability_used_this_turn: bool,
+    /// The declared player or planeswalker defender while this permanent is
+    /// attacking. Declaring an attack does not target that defender.
+    pub attack_defender: Option<AttackDefender>,
     pub attacking: bool,
+    /// Whether this attacker has been blocked at any point this combat.
+    pub blocked_this_combat: bool,
     pub blocking: Option<GameObjectId>,
     pub flying: bool,
     pub can_attack: bool,
@@ -111,6 +131,7 @@ pub struct PlayerObservation {
     pub graveyards: [Vec<(GameObjectId, CardDefinitionId)>; 2],
     pub exiles: [Vec<(GameObjectId, CardDefinitionId)>; 2],
     pub battlefield: Vec<PermanentObservation>,
+    pub emblems: Vec<EmblemObservation>,
     pub stack: Vec<StackObservation>,
     pub decision: Option<DecisionObservation>,
     pub result: Option<GameResult>,

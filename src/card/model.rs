@@ -1114,6 +1114,10 @@ pub enum EffectRecipientDef {
     ObjectsSharingNameWithTarget(TargetIndex),
     Controller,
     Opponent,
+    /// Every player in turn order, starting with the ability's controller.
+    /// This keeps effects such as Liliana's +1 simultaneous rather than
+    /// resolving one player's discard before the other chooses.
+    EachPlayer,
     Target(TargetIndex),
     TriggeringObject,
     /// The triggering object's controller when this effect resolves, using
@@ -1155,6 +1159,9 @@ pub enum EffectDurationDef {
     /// upkeep, which outlives the cleanup that ends an until-end-of-turn
     /// effect.
     UntilYourNextUpkeep,
+    /// Until the next turn of the effect's controller begins. The affected
+    /// turn is captured when the resolving effect is created.
+    UntilYourNextTurn,
     WhileSourceRemainsInZone,
     UntilSourceLeavesZone,
 }
@@ -4169,16 +4176,18 @@ pub enum CounterKind {
     Javelin,
     Muster,
     Charge,
+    Loyalty,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 4;
+    pub const COUNT: usize = 5;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
         Self::Javelin,
         Self::Muster,
         Self::Charge,
+        Self::Loyalty,
     ];
 
     #[must_use]
@@ -4188,6 +4197,7 @@ impl CounterKind {
             Self::Javelin => 1,
             Self::Muster => 2,
             Self::Charge => 3,
+            Self::Loyalty => 4,
         }
     }
 
@@ -4198,6 +4208,7 @@ impl CounterKind {
             Self::Javelin => "javelin",
             Self::Muster => "muster",
             Self::Charge => "charge",
+            Self::Loyalty => "loyalty",
         }
     }
 }

@@ -54,6 +54,18 @@ pub struct CombatDamageAssignment {
     pub amount: u16,
 }
 
+/// The player or planeswalker a creature is attacking.
+///
+/// Declaring an attack does not target, so this is deliberately distinct from
+/// [`Target`]. Keeping the defender on the attacker also prevents a
+/// planeswalker that leaves combat from silently redirecting that attack to
+/// its controller.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum AttackDefender {
+    Player(PlayerId),
+    Planeswalker(GameObjectId),
+}
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Action {
     KeepHand,
@@ -104,6 +116,7 @@ pub enum Action {
     },
     DeclareAttacker {
         attacker: GameObjectId,
+        defender: AttackDefender,
     },
     FinishDeclaringAttackers,
     DeclareBlocker {

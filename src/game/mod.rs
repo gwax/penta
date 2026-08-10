@@ -4,7 +4,6 @@ use std::error::Error;
 use std::fmt;
 use std::ops::ControlFlow;
 
-use crate::Format;
 use crate::action::{
     AbilityOrigin, Action, ActionError, CombatDamageAssignment, ManaColor, Target,
 };
@@ -32,6 +31,7 @@ use crate::ids::{
 use crate::rng::ReplayRng;
 #[cfg(test)]
 use crate::rules;
+use crate::{AttackDefender, Format};
 
 mod decision;
 mod event;
@@ -45,7 +45,8 @@ pub use decision::{
 pub use event::{BattlefieldExit, GameEvent, GameResult, StackObjectKind, Step, WinReason};
 pub use mana::{Mana, ManaPool, ManaSource};
 pub use observation::{
-    PermanentObservation, PlayerObservation, StackObservation, ZoneCard, ZoneError,
+    EmblemObservation, PermanentObservation, PlayerObservation, StackObservation, ZoneCard,
+    ZoneError,
 };
 
 use observation::{LastSeenHand, PublicCard};
@@ -122,6 +123,18 @@ struct BasicLandTypeChange {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct TemporaryGrantedAbility {
+    ability: &'static AbilityDef,
+    source: GameObjectId,
+    source_definition: CardDefinitionId,
+    source_part: CardPartId,
+    source_ability: AbilityId,
+    grant: GrantId,
+    /// The ability stops existing as the named player's indicated turn begins.
+    expires_at_turn: Option<(PlayerId, u32)>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum LandTypeOperation {
     SetTo(BasicLandType),
     Add(&'static [BasicLandType]),
@@ -158,12 +171,11 @@ struct Permanent {
     entered_controller_turn: u32,
     damage: u16,
     /// Loyalty counters are distinct from marked creature damage and persist
-    /// across cleanup. Planeswalker abilities remain deferred, but supported
-    /// damage spells can already target and remove a planeswalker correctly.
-    loyalty: Option<i16>,
     power_bonus: i16,
     toughness_bonus: i16,
     attacking: bool,
+    attack_defender: Option<crate::AttackDefender>,
+    emblem_source: Option<AbilityOrigin>,
     /// Whether a loyalty ability has already been activated this turn. CR
     /// 606.3 allows one per planeswalker per turn.
     activated_loyalty_this_turn: bool,
@@ -188,6 +200,7 @@ struct Permanent {
     chosen_card_name: Option<String>,
     destroy_at_end: bool,
     temporary_keywords: Vec<KeywordAbility>,
+    temporary_granted_abilities: Vec<TemporaryGrantedAbility>,
     /// The creature this permanent has become for the turn, if a manland's
     /// animation ability has resolved.
     animation: Option<&'static AnimationDef>,
@@ -266,10 +279,11 @@ impl Permanent {
             tapped: false,
             entered_controller_turn,
             damage: 0,
-            loyalty: None,
             power_bonus: 0,
             toughness_bonus: 0,
             attacking: false,
+            attack_defender: None,
+            emblem_source: None,
             activated_loyalty_this_turn: false,
             unblockable_this_turn: false,
             combat_damage_prevented: false,
@@ -281,6 +295,7 @@ impl Permanent {
             chosen_card_name: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
+            temporary_granted_abilities: Vec::new(),
             animation: None,
             activations_this_turn: Vec::new(),
             counters: [0; CounterKind::COUNT],
@@ -313,6 +328,10 @@ impl Permanent {
     const fn remove_counters(&mut self, kind: CounterKind, amount: u16) {
         let index = kind.index();
         self.counters[index] = self.counters[index].saturating_sub(amount);
+    }
+
+    const fn set_counters(&mut self, kind: CounterKind, amount: u16) {
+        self.counters[kind.index()] = amount;
     }
 }
 
@@ -419,6 +438,129 @@ enum StackAbilityResolver {
         behavior: CardBehavior,
     },
     Custom(CardBehavior),
+    CardOwned(&'static CardAbilityResolver),
+}
+
+/// One card-owned stack-ability entry point. Equality and hashing use the
+/// stable key rather than a function address so frozen rules remain
+/// deterministic across builds and platforms.
+#[derive(Clone, Copy)]
+pub(crate) struct CardAbilityResolver {
+    key: &'static str,
+    start: for<'game> fn(&mut CardRuntime<'game>, &ResolvedAbility),
+}
+
+impl CardAbilityResolver {
+    #[must_use]
+    pub(crate) const fn new(
+        key: &'static str,
+        start: for<'game> fn(&mut CardRuntime<'game>, &ResolvedAbility),
+    ) -> Self {
+        Self { key, start }
+    }
+
+    fn resolve(self, runtime: &mut CardRuntime<'_>, ability: &ResolvedAbility) {
+        (self.start)(runtime, ability);
+    }
+}
+
+impl fmt::Debug for CardAbilityResolver {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("CardAbilityResolver")
+            .field("key", &self.key)
+            .finish_non_exhaustive()
+    }
+}
+
+impl PartialEq for CardAbilityResolver {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
+}
+
+impl Eq for CardAbilityResolver {}
+
+impl std::hash::Hash for CardAbilityResolver {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&self.key, state);
+    }
+}
+
+/// Frozen public facts supplied to a card-owned resolver after target fizzle
+/// checking has completed.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct ResolvedAbility {
+    controller: PlayerId,
+    targets: Vec<TargetSelection>,
+}
+
+impl ResolvedAbility {
+    #[must_use]
+    pub(crate) const fn controller(&self) -> PlayerId {
+        self.controller
+    }
+
+    #[must_use]
+    pub(crate) fn target_player(&self, index: TargetIndex) -> Option<PlayerId> {
+        self.targets.get(index.index()).and_then(|selection| {
+            selection.targets().iter().find_map(|target| match target {
+                Target::Player(player) => Some(*player),
+                Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+            })
+        })
+    }
+}
+
+/// Result of assigning a frozen set of object-backed options to two piles.
+#[derive(Clone, Debug)]
+pub(crate) struct PileSplit {
+    resolving_controller: PlayerId,
+    subject: PlayerId,
+    first: Vec<DecisionOption>,
+    second: Vec<DecisionOption>,
+}
+
+impl PileSplit {
+    #[must_use]
+    pub(crate) const fn subject(&self) -> PlayerId {
+        self.subject
+    }
+}
+
+/// Result of choosing one of two piles.
+#[derive(Clone, Debug)]
+pub(crate) struct PileChoice {
+    resolving_controller: PlayerId,
+    subject: PlayerId,
+    chosen: Vec<GameObjectId>,
+    unchosen: Vec<GameObjectId>,
+}
+
+impl PileChoice {
+    #[must_use]
+    pub(crate) const fn resolving_controller(&self) -> PlayerId {
+        self.resolving_controller
+    }
+
+    #[must_use]
+    pub(crate) const fn subject(&self) -> PlayerId {
+        self.subject
+    }
+
+    #[must_use]
+    pub(crate) fn into_parts(self) -> (Vec<GameObjectId>, Vec<GameObjectId>) {
+        (self.chosen, self.unchosen)
+    }
+}
+
+pub(crate) type PilesSeparated = for<'game> fn(&mut CardRuntime<'game>, PileSplit);
+pub(crate) type PileChosen = for<'game> fn(&mut CardRuntime<'game>, PileChoice);
+
+/// Narrow capability surface available to card-owned resolution callbacks.
+/// Its game reference is private so set modules cannot mutate unrelated state.
+pub(crate) struct CardRuntime<'game> {
+    game: &'game mut Game,
 }
 
 /// One authored effect together with the start of its clause-local target
@@ -623,8 +765,10 @@ enum CommittedTriggerEvent {
         object: TriggerEventObject,
     },
     DamageDealt {
-        object: TriggerEventObject,
+        source: TriggerEventObject,
+        recipient: Target,
         amount: u16,
+        combat: bool,
     },
     CombatDamageDealtToPlayer {
         object: TriggerEventObject,
@@ -665,10 +809,18 @@ impl CommittedTriggerEvent {
                 event_player: None,
                 amount: None,
             },
-            Self::DamageDealt { object, amount } => TriggerContext {
-                object: Some(object.id),
-                object_controller: Some(object.controller),
-                event_player: None,
+            Self::DamageDealt {
+                source,
+                recipient,
+                amount,
+                ..
+            } => TriggerContext {
+                object: Some(source.id),
+                object_controller: Some(source.controller),
+                event_player: match recipient {
+                    Target::Player(player) => Some(*player),
+                    Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                },
                 amount: Some(i32::from(*amount)),
             },
             Self::CombatDamageDealtToPlayer {
@@ -1091,6 +1243,15 @@ enum CounteredSpellZone {
 
 #[derive(Clone, Debug)]
 enum DecisionContinuation {
+    /// One of several players choosing cards for an effect before any chosen
+    /// card changes zones.
+    DiscardForEffect {
+        player: PlayerId,
+        amount: usize,
+        remaining: Vec<PlayerId>,
+        chosen: Vec<(PlayerId, Vec<GameObjectId>)>,
+        cause: ZoneMoveCause,
+    },
     Tutor,
     LibrarySearch {
         destination: ZoneKind,
@@ -1176,6 +1337,19 @@ enum DecisionContinuation {
         first: Vec<GameObjectId>,
         second: Vec<GameObjectId>,
     },
+    /// A card-owned resolver has separated object-backed options into two
+    /// piles. The shared runtime owns choice mechanics; the card owns what a
+    /// chosen pile means.
+    SeparateIntoPiles {
+        resolving_controller: PlayerId,
+        subject: PlayerId,
+        items: Vec<DecisionOption>,
+        on_complete: PilesSeparated,
+    },
+    ChoosePile {
+        piles: PileSplit,
+        on_complete: PileChosen,
+    },
     /// A sacrifice an effect demanded, chosen by the sacrificing player.
     SacrificeOfChoice {
         followup: Option<SacrificeFollowup>,
@@ -1192,11 +1366,6 @@ enum DecisionContinuation {
         player: PlayerId,
         cost: ManaCost,
         zone: CounteredSpellZone,
-    },
-    /// A discard an effect demanded, chosen by the discarding player.
-    DiscardToEffect {
-        player: PlayerId,
-        cause: ZoneMoveCause,
     },
     /// Holds the revealed cards while the caster decides which to keep; they
     /// have already left the library, so the continuation must place them all.
@@ -1372,6 +1541,69 @@ pub struct Game {
     skipped_turns: [u16; 2],
     result: Option<GameResult>,
     events: Vec<GameEvent>,
+}
+
+impl CardRuntime<'_> {
+    #[must_use]
+    pub(crate) fn controlled_permanents(&self, player: PlayerId) -> Vec<GameObjectId> {
+        self.game
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == player)
+            .map(|permanent| permanent.card.id)
+            .collect()
+    }
+
+    pub(crate) fn queue_permanent_partition(
+        &mut self,
+        resolving_controller: PlayerId,
+        divider: PlayerId,
+        subject: PlayerId,
+        permanents: &[GameObjectId],
+        on_complete: PilesSeparated,
+    ) {
+        let options = self.game.permanent_decision_options(permanents);
+        self.game.queue_two_pile_partition(
+            resolving_controller,
+            divider,
+            subject,
+            "Choose the permanents in pile 1",
+            options,
+            on_complete,
+        );
+    }
+
+    pub(crate) fn queue_pile_choice(
+        &mut self,
+        chooser: PlayerId,
+        piles: PileSplit,
+        prompt: impl Into<String>,
+        option_prefix: &str,
+        on_complete: PileChosen,
+    ) {
+        self.game
+            .queue_card_owned_pile_choice(chooser, piles, prompt, option_prefix, on_complete);
+    }
+
+    pub(crate) fn sacrifice_permanents_simultaneously(
+        &mut self,
+        permanents: &[GameObjectId],
+        player: PlayerId,
+        resolving_controller: PlayerId,
+    ) {
+        if !self
+            .game
+            .can_be_forced_to_sacrifice(player, resolving_controller)
+        {
+            return;
+        }
+        let controlled = permanents
+            .iter()
+            .copied()
+            .filter(|id| self.game.permanent_controller(*id) == Some(player))
+            .collect::<Vec<_>>();
+        self.game.destroy_permanents(&controlled, false);
+    }
 }
 
 impl Game {
@@ -1955,7 +2187,9 @@ impl Game {
                 cost_object,
                 x,
             } => self.activate_ability(player, source, ability, targets, cost_object, x),
-            Action::DeclareAttacker { attacker } => self.declare_attacker(attacker),
+            Action::DeclareAttacker { attacker, defender } => {
+                self.declare_attacker(attacker, defender)
+            }
             Action::FinishDeclaringAttackers => self.finish_declaring_attackers(),
             Action::DeclareBlocker { blocker, attacker } => {
                 self.declare_blocker(blocker, attacker);
@@ -2085,10 +2319,6 @@ impl Game {
             return Err(ZoneError::UnknownCard(definition));
         };
         let presented = card.primary_part_id();
-        let starting_loyalty = card
-            .part(presented)
-            .and_then(|part| part.rules.starting_loyalty())
-            .map(|loyalty| i16::try_from(loyalty).unwrap_or(i16::MAX));
         let built = self.build_zone(player, &[definition])?;
         let card = built
             .into_iter()
@@ -2097,7 +2327,7 @@ impl Game {
         let id = card.id;
         let mut permanent =
             Permanent::entering(card, presented, player, self.turns_started[player.index()]);
-        permanent.loyalty = starting_loyalty;
+        self.initialize_battlefield_entry(&mut permanent);
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Stack,
@@ -2223,16 +2453,49 @@ impl Game {
                     controller: permanent.controller,
                     types: self.permanent_types(permanent).unwrap_or_default(),
                     chosen_creature_type: permanent.chosen_creature_type.clone(),
+                    chosen_card_name: permanent.chosen_card_name.clone(),
                     tapped: permanent.tapped,
-                    power: self.power_ignoring_static_effects(permanent),
+                    power: self.power(permanent),
                     toughness: self.toughness(permanent),
                     damage: permanent.damage,
+                    loyalty: self
+                        .permanent_types(permanent)
+                        .is_some_and(|types| types.contains(CardType::Planeswalker))
+                        .then(|| permanent.counters(CounterKind::Loyalty)),
+                    loyalty_ability_used_this_turn: permanent.activated_loyalty_this_turn,
+                    attack_defender: permanent.attack_defender,
                     attacking: permanent.attacking,
+                    blocked_this_combat: permanent.blocked,
                     blocking: permanent.blocking,
                     flying: self.has_flying(permanent),
                     can_attack: self.can_attack(permanent),
                     entered_this_turn: self.turns_started[permanent.controller.index()]
                         == permanent.entered_controller_turn,
+                })
+                .collect(),
+            emblems: self
+                .emblems
+                .iter()
+                .map(|emblem| EmblemObservation {
+                    id: emblem.card.id,
+                    controller: emblem.controller,
+                    name: self.catalog.get(emblem.card.definition).map_or_else(
+                        || "Unknown emblem".to_owned(),
+                        |definition| definition.name.clone(),
+                    ),
+                    source_ability: emblem.emblem_source.unwrap_or(AbilityOrigin::Printed {
+                        definition: emblem.card.definition,
+                        part: emblem.presented,
+                        ability: AbilityId::PRIMARY,
+                    }),
+                    ability_texts: self
+                        .catalog
+                        .get(emblem.card.definition)
+                        .and_then(|definition| definition.part(emblem.presented))
+                        .into_iter()
+                        .flat_map(|part| part.rules.ability_clauses().iter())
+                        .map(|ability| ability.text.to_owned())
+                        .collect(),
                 })
                 .collect(),
             stack: self
@@ -2496,10 +2759,6 @@ impl Game {
             .ok()
             .and_then(|parts| parts.first().copied())
             .unwrap_or(CardPartId::PRIMARY);
-        let starting_loyalty = definition
-            .part(presented)
-            .and_then(|part| part.rules.starting_loyalty())
-            .map(|loyalty| i16::try_from(loyalty).unwrap_or(i16::MAX));
         let entered_card = card.clone();
         let mut permanent = Permanent::entering(
             card,
@@ -2507,7 +2766,7 @@ impl Game {
             controller,
             self.turns_started[controller.index()],
         );
-        permanent.loyalty = starting_loyalty;
+        self.initialize_battlefield_entry(&mut permanent);
         if let Some(keyword) = grant {
             permanent.temporary_keywords.push(keyword);
         }
@@ -2704,6 +2963,7 @@ impl Game {
                                 id: u32::try_from(index).ok()?,
                                 label: candidate.text.to_string(),
                                 card: Some((candidate.context.source.object, candidate.definition)),
+                                members: Vec::new(),
                                 ability_text: Some(candidate.text.to_string()),
                                 zone: if self.battlefield.iter().any(|permanent| {
                                     permanent.card.id == candidate.context.source.object
@@ -2981,6 +3241,7 @@ impl Game {
                     id: 0,
                     label: "Do not pay".into(),
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 },
@@ -2988,6 +3249,7 @@ impl Game {
                     id: 1,
                     label: payment_label,
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 },
@@ -3405,6 +3667,7 @@ impl Game {
                             .expect("the basic-land-type choice id fits u32"),
                         label: format!("{} → {}", from.subtype(), to.subtype()),
                         card: None,
+                        members: Vec::new(),
                         ability_text: None,
                         zone: DecisionZone::None,
                     })
@@ -3556,7 +3819,7 @@ impl Game {
                         text: ability.text,
                         target_defs: definition.targets,
                         effect: ability.effect.definition,
-                        resolver: Self::ability_resolver(&ability),
+                        resolver: Self::ability_resolver(effective.origin, &ability),
                         context: TriggerContext::empty(),
                         condition: definition.condition,
                     },
@@ -3687,6 +3950,7 @@ impl Game {
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -3738,7 +4002,7 @@ impl Game {
                         effective.ability.text,
                         definition.targets,
                         effective.ability.effect.definition,
-                        Self::ability_resolver(&effective.ability),
+                        Self::ability_resolver(effective.origin, &effective.ability),
                     ))
                 }
                 DeclarativeAbilityDef::Spell(_)
@@ -3778,7 +4042,10 @@ impl Game {
         }
     }
 
-    const fn ability_resolver(ability: &AbilityDef) -> StackAbilityResolver {
+    fn ability_resolver(origin: AbilityOrigin, ability: &AbilityDef) -> StackAbilityResolver {
+        if let Some(binding) = crate::card::ability_binding(origin, ability) {
+            return StackAbilityResolver::CardOwned(binding.resolver());
+        }
         if let Some(behavior) = ability.custom_behavior() {
             StackAbilityResolver::Custom(behavior)
         } else {
@@ -3787,6 +4054,28 @@ impl Game {
                 None => EffectDef::None,
             };
             StackAbilityResolver::Declarative(ScopedEffect::primary(effect))
+        }
+    }
+
+    fn ability_origin_components(
+        origin: AbilityOrigin,
+        fallback: CardDefinitionId,
+    ) -> (CardDefinitionId, CardPartId, AbilityId) {
+        match origin {
+            AbilityOrigin::Printed {
+                definition,
+                part,
+                ability,
+            } => (definition, part, ability),
+            AbilityOrigin::Granted {
+                source_definition,
+                source_part,
+                source_ability,
+                ..
+            } => (source_definition, source_part, source_ability),
+            AbilityOrigin::IntrinsicBasicLand(_) => {
+                (fallback, CardPartId::PRIMARY, AbilityId::PRIMARY)
+            }
         }
     }
 
@@ -3821,7 +4110,10 @@ impl Game {
                     | DeclarativeAbilityDef::Keyword(_)
                     | DeclarativeAbilityDef::Legacy => &[],
                 };
-                (target_defs, Self::ability_resolver(&effective.ability))
+                (
+                    target_defs,
+                    Self::ability_resolver(effective.origin, &effective.ability),
+                )
             },
         );
         FrozenActivatedAbility {
@@ -3886,19 +4178,14 @@ impl Game {
                         .is_some_and(|permanent| permanent.attacks_this_turn == 1)
             }
 
-            // Both name the ability's own source as the subject: the face
-            // that was turned over, or the permanent that was damaged.
             (
                 TriggerEventDef::TransformsIntoThisFace,
                 CommittedTriggerEvent::Transformed { object },
-            )
-            | (
-                TriggerEventDef::DamageDealt {
-                    source: _,
-                    recipient: EffectRecipientDef::Source,
-                },
-                CommittedTriggerEvent::DamageDealt { object, .. },
             ) => object.id == source,
+            (
+                trigger @ (TriggerEventDef::DamageDealt { .. }),
+                damage @ CommittedTriggerEvent::DamageDealt { .. },
+            ) => self.damage_to_player_trigger_matches(trigger, damage, source),
             (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },
@@ -4380,6 +4667,7 @@ impl Game {
                 id: u32::try_from(index).unwrap_or(u32::MAX),
                 label: self.target_label(trigger.controller, *candidate),
                 card: self.target_card(*candidate),
+                members: Vec::new(),
                 ability_text: None,
                 zone: match candidate {
                     Target::Player(_) => DecisionZone::None,
@@ -4462,6 +4750,7 @@ impl Game {
                     id: trigger.id,
                     label: format!("{name} triggered ability"),
                     card: Some((trigger.source.object, trigger.definition)),
+                    members: Vec::new(),
                     ability_text: Some(trigger.text.into()),
                     zone: DecisionZone::Battlefield,
                 }
@@ -4598,6 +4887,7 @@ impl Game {
                 id,
                 label: label.into(),
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::None,
             })
@@ -4632,6 +4922,7 @@ impl Game {
             id: 0,
             label: "Decline".into(),
             card: None,
+            members: Vec::new(),
             ability_text: None,
             zone: DecisionZone::None,
         }];
@@ -4640,6 +4931,7 @@ impl Game {
                 id: 1,
                 label: "Pay the cost".into(),
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::None,
             });
@@ -4697,6 +4989,7 @@ impl Game {
                     id: 0,
                     label: "Let it be countered".into(),
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 },
@@ -4704,6 +4997,7 @@ impl Game {
                     id: 1,
                     label: "Pay the cost".into(),
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 },
@@ -4738,6 +5032,7 @@ impl Game {
                     id: 0,
                     label: "Decline".into(),
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 },
@@ -4745,6 +5040,7 @@ impl Game {
                     id: 1,
                     label: "Do it".into(),
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 },
@@ -4796,6 +5092,7 @@ impl Game {
             id: 0,
             label: "Don't copy Chain Lightning".into(),
             card: None,
+            members: Vec::new(),
             ability_text: None,
             zone: DecisionZone::None,
         }];
@@ -4810,6 +5107,7 @@ impl Game {
                         self.target_label(player, *target)
                     ),
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 }),
@@ -4857,6 +5155,7 @@ impl Game {
                     format!("Copy with targets {labels}")
                 },
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::None,
             })
@@ -5000,6 +5299,7 @@ impl Game {
             id: 0,
             label: "Leave Mana Vault tapped".into(),
             card: None,
+            members: Vec::new(),
             ability_text: None,
             zone: DecisionZone::None,
         }];
@@ -5008,6 +5308,7 @@ impl Game {
                 id: 1,
                 label: "Pay 4 to untap Mana Vault".into(),
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::None,
             });
@@ -5145,10 +5446,146 @@ impl Game {
                     |definition| definition.name.clone(),
                 ),
                 card: Some((card.id, card.definition)),
+                members: Vec::new(),
                 ability_text: None,
                 zone,
             })
             .collect()
+    }
+
+    fn permanent_decision_options(&self, permanents: &[GameObjectId]) -> Vec<DecisionOption> {
+        permanents
+            .iter()
+            .enumerate()
+            .filter_map(|(index, id)| {
+                let permanent = self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == *id)?;
+                let label = self
+                    .effective_permanent_name(permanent)
+                    .map_or_else(|| "Unknown permanent".into(), str::to_owned);
+                Some(DecisionOption {
+                    id: u32::try_from(index).unwrap_or(u32::MAX),
+                    label,
+                    card: Some((permanent.card.id, permanent.card.definition)),
+                    members: Vec::new(),
+                    ability_text: None,
+                    zone: DecisionZone::Battlefield,
+                })
+            })
+            .collect()
+    }
+
+    fn queue_two_pile_partition(
+        &mut self,
+        resolving_controller: PlayerId,
+        divider: PlayerId,
+        subject: PlayerId,
+        prompt: impl Into<String>,
+        items: Vec<DecisionOption>,
+        on_complete: PilesSeparated,
+    ) {
+        if items.is_empty() {
+            let mut runtime = CardRuntime { game: self };
+            on_complete(
+                &mut runtime,
+                PileSplit {
+                    resolving_controller,
+                    subject,
+                    first: Vec::new(),
+                    second: Vec::new(),
+                },
+            );
+            return;
+        }
+        self.queue_decision(
+            divider,
+            prompt,
+            DecisionVisibility::Public,
+            DecisionPreference::BalancedPartition,
+            0..=items.len(),
+            false,
+            items.clone(),
+            DecisionContinuation::SeparateIntoPiles {
+                resolving_controller,
+                subject,
+                items,
+                on_complete,
+            },
+        );
+    }
+
+    fn queue_card_owned_pile_choice(
+        &mut self,
+        chooser: PlayerId,
+        piles: PileSplit,
+        prompt: impl Into<String>,
+        option_prefix: &str,
+        on_complete: PileChosen,
+    ) {
+        if piles.first.is_empty() && piles.second.is_empty() {
+            let mut runtime = CardRuntime { game: self };
+            on_complete(
+                &mut runtime,
+                PileChoice {
+                    resolving_controller: piles.resolving_controller,
+                    subject: piles.subject,
+                    chosen: Vec::new(),
+                    unchosen: Vec::new(),
+                },
+            );
+            return;
+        }
+        let pile_label = |pile: &[DecisionOption]| {
+            if pile.is_empty() {
+                "Empty pile".to_owned()
+            } else {
+                pile.iter()
+                    .map(|option| option.label.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            }
+        };
+        let pile_members = |pile: &[DecisionOption]| {
+            let mut members = Vec::new();
+            for option in pile {
+                if option.members.is_empty() {
+                    members.extend(option.card);
+                } else {
+                    members.extend(option.members.iter().copied());
+                }
+            }
+            members
+        };
+        let options = vec![
+            DecisionOption {
+                id: 0,
+                label: format!("{option_prefix} 1: {}", pile_label(&piles.first)),
+                card: None,
+                members: pile_members(&piles.first),
+                ability_text: None,
+                zone: DecisionZone::None,
+            },
+            DecisionOption {
+                id: 1,
+                label: format!("{option_prefix} 2: {}", pile_label(&piles.second)),
+                card: None,
+                members: pile_members(&piles.second),
+                ability_text: None,
+                zone: DecisionZone::None,
+            },
+        ];
+        self.queue_decision(
+            chooser,
+            prompt,
+            DecisionVisibility::Public,
+            DecisionPreference::LowerCardValue,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::ChoosePile { piles, on_complete },
+        );
     }
 
     fn queue_balance_task(
@@ -5180,21 +5617,44 @@ impl Game {
         );
     }
 
-    /// Asks `player` to pick the cards an effect makes them discard. A hand
-    /// too small to cover the demand simply goes away in full, and an empty
-    /// hand raises no decision at all.
-    fn queue_effect_discard(&mut self, player: PlayerId, amount: i32, cause: ZoneMoveCause) {
-        let hand = self.players[player.index()].hand.clone();
-        let count = usize::try_from(amount).unwrap_or(0).min(hand.len());
-        if count == 0 {
+    /// Freezes every affected player's choice before any selected cards move.
+    fn queue_effect_discards(
+        &mut self,
+        mut players: Vec<PlayerId>,
+        amount: i32,
+        cause: ZoneMoveCause,
+    ) {
+        let amount = usize::try_from(amount).unwrap_or(0);
+        if amount == 0 || players.is_empty() {
             return;
         }
-        if count == hand.len() {
-            let cards = hand.iter().map(|card| card.id).collect::<Vec<_>>();
-            self.discard_cards_with_cause(player, &cards, cause);
+        players.sort_by_key(|player| (*player != self.active_player, player.index()));
+        players.dedup();
+        let first = players.remove(0);
+        self.queue_next_effect_discard(first, amount, players, Vec::new(), cause);
+    }
+
+    fn queue_next_effect_discard(
+        &mut self,
+        player: PlayerId,
+        amount: usize,
+        mut remaining: Vec<PlayerId>,
+        mut chosen: Vec<(PlayerId, Vec<GameObjectId>)>,
+        cause: ZoneMoveCause,
+    ) {
+        let hand = &self.players[player.index()].hand;
+        let count = amount.min(hand.len());
+        if count == 0 || count == hand.len() {
+            chosen.push((player, hand.iter().map(|card| card.id).collect()));
+            if remaining.is_empty() {
+                self.complete_effect_discards(chosen, cause);
+            } else {
+                let next = remaining.remove(0);
+                self.queue_next_effect_discard(next, amount, remaining, chosen, cause);
+            }
             return;
         }
-        let options = self.card_decision_options(&hand, DecisionZone::Hand);
+        let options = self.card_decision_options(hand, DecisionZone::Hand);
         self.queue_decision(
             player,
             format!("Choose {count} card(s) to discard"),
@@ -5203,8 +5663,24 @@ impl Game {
             count..=count,
             false,
             options,
-            DecisionContinuation::DiscardToEffect { player, cause },
+            DecisionContinuation::DiscardForEffect {
+                player,
+                amount,
+                remaining,
+                chosen,
+                cause,
+            },
         );
+    }
+
+    fn complete_effect_discards(
+        &mut self,
+        chosen: Vec<(PlayerId, Vec<GameObjectId>)>,
+        cause: ZoneMoveCause,
+    ) {
+        for (player, cards) in chosen {
+            self.discard_cards_with_cause(player, &cards, cause);
+        }
     }
 
     /// Whether a spell or ability an opponent of `player` controls can make
@@ -5285,6 +5761,7 @@ impl Game {
                     .get(card.definition)
                     .map_or_else(|| "Unknown card".into(), |card| card.name.clone()),
                 card: Some((card.id, card.definition)),
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::Library,
             })
@@ -5337,9 +5814,6 @@ impl Game {
     }
 
     fn can_activate_loyalty(&self, permanent: &Permanent, player: PlayerId, change: i8) -> bool {
-        let Some(loyalty) = permanent.loyalty else {
-            return false;
-        };
         if permanent.controller != player
             || permanent.activated_loyalty_this_turn
             || self.active_player != player
@@ -5348,7 +5822,7 @@ impl Game {
         {
             return false;
         }
-        loyalty.saturating_add(i16::from(change)) >= 0
+        i32::from(permanent.counters(CounterKind::Loyalty)) + i32::from(change) >= 0
     }
 
     /// The ability's controller separates everything the other player
@@ -5437,6 +5911,7 @@ impl Game {
                 id: u32::try_from(index).unwrap_or(u32::MAX),
                 label: format!("Take {}", describe(self, pile)),
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::Library,
             })
@@ -5487,6 +5962,7 @@ impl Game {
                 id: 0,
                 label: format!("Sacrifice {}", describe(self, &first)),
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::Battlefield,
             },
@@ -5494,6 +5970,7 @@ impl Game {
                 id: 1,
                 label: format!("Sacrifice {}", describe(self, &second)),
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::Battlefield,
             },
@@ -5686,6 +6163,7 @@ impl Game {
                     id: 0,
                     label: "Leave Time Vault tapped".into(),
                     card,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::Battlefield,
                 },
@@ -5693,6 +6171,7 @@ impl Game {
                     id: 1,
                     label: "Untap Time Vault and skip your next turn".into(),
                     card,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::Battlefield,
                 },
@@ -5771,6 +6250,7 @@ impl Game {
             id: 0,
             label: format!("Put {card_name} back on top"),
             card: card_info,
+            members: Vec::new(),
             ability_text: None,
             zone: DecisionZone::DrawnThisStep,
         }];
@@ -5779,6 +6259,7 @@ impl Game {
                 id: 1,
                 label: format!("Pay 4 life to keep {card_name}"),
                 card: card_info,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::DrawnThisStep,
             });
@@ -5805,6 +6286,28 @@ impl Game {
         let pending = self.pending_decisions.remove(0);
         debug_assert_eq!(pending.observation.id, decision);
         match pending.continuation {
+            DecisionContinuation::DiscardForEffect {
+                player,
+                amount,
+                mut remaining,
+                mut chosen,
+                cause,
+            } => {
+                let selected = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                chosen.push((player, selected));
+                if remaining.is_empty() {
+                    self.complete_effect_discards(chosen, cause);
+                } else {
+                    let next = remaining.remove(0);
+                    self.queue_next_effect_discard(next, amount, remaining, chosen, cause);
+                }
+            }
             DecisionContinuation::BasicLandTypeTextChange { target } => {
                 let Some(option) = options.first().copied() else {
                     return;
@@ -6170,6 +6673,67 @@ impl Game {
                     .collect::<Vec<_>>();
                 self.destroy_permanents(&doomed, can_regenerate);
             }
+            DecisionContinuation::SeparateIntoPiles {
+                resolving_controller,
+                subject,
+                items,
+                on_complete,
+            } => {
+                let first = items
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .cloned()
+                    .collect();
+                let second = items
+                    .iter()
+                    .filter(|option| !options.contains(&option.id))
+                    .cloned()
+                    .collect();
+                let mut runtime = CardRuntime { game: self };
+                on_complete(
+                    &mut runtime,
+                    PileSplit {
+                        resolving_controller,
+                        subject,
+                        first,
+                        second,
+                    },
+                );
+            }
+            DecisionContinuation::ChoosePile { piles, on_complete } => {
+                let chosen = if options.contains(&0) {
+                    &piles.first
+                } else {
+                    &piles.second
+                };
+                let unchosen = if options.contains(&0) {
+                    &piles.second
+                } else {
+                    &piles.first
+                };
+                let object_ids = |pile: &[DecisionOption]| {
+                    pile.iter()
+                        .flat_map(|option| {
+                            if option.members.is_empty() {
+                                option.card.into_iter().collect::<Vec<_>>()
+                            } else {
+                                option.members.clone()
+                            }
+                        })
+                        .map(|(id, _)| id)
+                        .collect::<Vec<_>>()
+                };
+                let mut runtime = CardRuntime { game: self };
+                on_complete(
+                    &mut runtime,
+                    PileChoice {
+                        resolving_controller: piles.resolving_controller,
+                        subject: piles.subject,
+                        chosen: object_ids(chosen),
+                        unchosen: object_ids(unchosen),
+                    },
+                );
+            }
             DecisionContinuation::SacrificeOfChoice { followup, optional } => {
                 let sacrificed = pending
                     .observation
@@ -6187,16 +6751,6 @@ impl Game {
                 {
                     self.resolve_sacrifice_followup(&followup, chosen);
                 }
-            }
-            DecisionContinuation::DiscardToEffect { player, cause } => {
-                let discarded = pending
-                    .observation
-                    .options
-                    .iter()
-                    .filter(|option| options.contains(&option.id))
-                    .filter_map(|option| option.card.map(|(card, _)| card))
-                    .collect::<Vec<_>>();
-                self.discard_cards_with_cause(player, &discarded, cause);
             }
             DecisionContinuation::Duress { victim, cause } => {
                 let Some(option) = pending
@@ -6945,7 +7499,7 @@ impl Game {
                 target_defs: Vec::new(),
                 targets: signature.targets().to_vec(),
                 context: TriggerContext::empty(),
-                resolver: Self::ability_resolver(&ability),
+                resolver: Self::ability_resolver(origin, &ability),
                 condition: None,
                 mode_effects: Vec::new(),
                 x: signature.x(),
@@ -6981,7 +7535,7 @@ impl Game {
                         behavior,
                     }
                 }
-                _ => Self::ability_resolver(&ability),
+                _ => Self::ability_resolver(origin, &ability),
             },
             mode_effects: plan.mode_effects,
             x: signature.x(),
@@ -8244,6 +8798,7 @@ impl Game {
             id: 0,
             label: "Enter as itself".into(),
             card: None,
+            members: Vec::new(),
             ability_text: None,
             zone: DecisionZone::None,
         }];
@@ -8260,6 +8815,7 @@ impl Game {
                     |card| format!("Enter as a copy of {}", card.name),
                 ),
                 card: Some((*id, definition)),
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::Battlefield,
             })
@@ -8310,6 +8866,7 @@ impl Game {
                 id: u32::try_from(index).unwrap_or(u32::MAX),
                 label: name.clone(),
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::None,
             })
@@ -8341,6 +8898,7 @@ impl Game {
                 id: u32::try_from(index).unwrap_or(u32::MAX),
                 label: creature_type.clone(),
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::None,
             })
@@ -8836,19 +9394,13 @@ impl Game {
                     crate::card::SpellForm::Combined(parts) => parts.first().copied(),
                 })
                 .unwrap_or(CardPartId::PRIMARY);
-            let starting_loyalty = self
-                .catalog
-                .get(object.card.definition)
-                .and_then(|definition| definition.part(presented))
-                .and_then(|part| part.rules.starting_loyalty())
-                .map(|loyalty| i16::try_from(loyalty).unwrap_or(i16::MAX));
             let mut permanent = Permanent::entering(
                 object.card,
                 presented,
                 object.controller,
                 self.turns_started[object.controller.index()],
             );
-            permanent.loyalty = starting_loyalty;
+            self.initialize_battlefield_entry(&mut permanent);
             permanent.chosen_player = chosen_player;
             permanent.text_changes = object.text_changes;
             permanent.attached_to = aura_host;
@@ -9003,6 +9555,20 @@ impl Game {
                     self.resolve_custom_triggered_ability(object, behavior);
                 }
             },
+            StackAbilityResolver::CardOwned(resolver) => {
+                let targets = object
+                    .ability
+                    .as_ref()
+                    .map_or_else(Vec::new, |ability| ability.targets.clone());
+                let mut runtime = CardRuntime { game: self };
+                resolver.resolve(
+                    &mut runtime,
+                    &ResolvedAbility {
+                        controller: object.controller,
+                        targets,
+                    },
+                );
+            }
         }
         true
     }
@@ -9026,6 +9592,7 @@ impl Game {
                 id: u32::try_from(index).unwrap_or(u32::MAX),
                 label: "Trade a +1/+1 counter for a Tetravite".into(),
                 card: None,
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::Battlefield,
             })
@@ -9065,6 +9632,7 @@ impl Game {
                     |definition| definition.name.clone(),
                 ),
                 card: Some((*id, *definition)),
+                members: Vec::new(),
                 ability_text: None,
                 zone: DecisionZone::Battlefield,
             })
@@ -9101,6 +9669,7 @@ impl Game {
                     id: 0,
                     label: "Do not draw".into(),
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 },
@@ -9108,6 +9677,7 @@ impl Game {
                     id: 1,
                     label: "Draw two additional cards".into(),
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 },
@@ -9356,11 +9926,15 @@ impl Game {
                 let cause = ZoneMoveCause::Effect {
                     controller: object.controller,
                 };
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.queue_effect_discard(player, amount, cause);
-                    }
-                }
+                let players = self
+                    .effect_recipients(recipient, object, context, scoped)
+                    .into_iter()
+                    .filter_map(|target| match target {
+                        Target::Player(player) => Some(player),
+                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                    })
+                    .collect();
+                self.queue_effect_discards(players, amount, cause);
             }
             EffectDef::DiscardAtRandom { recipient, amount } => {
                 let amount = self
@@ -9571,12 +10145,35 @@ impl Game {
                 let controller = object.controller;
                 let card =
                     self.unbacked_object(emblem, controller, CharacteristicSource::Ability(emblem));
-                self.emblems.push(Permanent::entering(
+                let mut emblem = Permanent::entering(
                     card,
                     CardPartId::PRIMARY,
                     controller,
                     self.turns_started[controller.index()],
-                ));
+                );
+                emblem.emblem_source = object.ability_origin();
+                self.emblems.push(emblem);
+            }
+            EffectDef::LoseTheGame { player: recipient } => {
+                let mut losers = self
+                    .effect_recipients(recipient, object, context, scoped)
+                    .into_iter()
+                    .filter_map(|target| match target {
+                        Target::Player(player) => Some(player),
+                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                    })
+                    .collect::<Vec<_>>();
+                losers.sort_unstable();
+                losers.dedup();
+                match losers.as_slice() {
+                    [loser] => self.finish(GameResult::Winner {
+                        winner: loser.opponent(),
+                        reason: WinReason::OpponentLostToAnEffect,
+                    }),
+                    [_, _] => self.finish(GameResult::Draw),
+                    [] => {}
+                    _ => unreachable!("a two-player game has at most two losers"),
+                }
             }
             EffectDef::Transform { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
@@ -9696,7 +10293,7 @@ impl Game {
                         text: ability.text,
                         target_defs: definition.targets,
                         effect: ability.effect.definition,
-                        resolver: Self::ability_resolver(ability),
+                        resolver: Self::ability_resolver(frozen.origin, ability),
                         context: TriggerContext::empty(),
                         condition: definition.condition,
                     },
@@ -10124,6 +10721,7 @@ impl Game {
             EffectDurationDef::UntilEndOfTurn
                 | EffectDurationDef::Permanent
                 | EffectDurationDef::UntilYourNextUpkeep
+                | EffectDurationDef::UntilYourNextTurn
         ));
     }
 
@@ -10157,6 +10755,10 @@ impl Game {
                     }
                 }
                 Target::Permanent(target) => {
+                    // A keyword grant lands in one of the keyword lists,
+                    // whose durations the cleanup and upkeep steps read. Any
+                    // other ability is a real grant carrying its own
+                    // provenance, and only the two long durations take one.
                     let until_upkeep_of = (duration == EffectDurationDef::UntilYourNextUpkeep)
                         .then_some(object.controller);
                     if let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
@@ -10174,6 +10776,48 @@ impl Game {
                             }
                         } else if !permanent.temporary_keywords.contains(&keyword) {
                             permanent.temporary_keywords.push(keyword);
+                        }
+                    } else if matches!(
+                        duration,
+                        EffectDurationDef::UntilYourNextTurn | EffectDurationDef::Permanent
+                    ) {
+                        let source = object.source.unwrap_or(object.id);
+                        let origin = object.ability_origin().unwrap_or(AbilityOrigin::Printed {
+                            definition: object.presentation_definition(),
+                            part: CardPartId::PRIMARY,
+                            ability: AbilityId::PRIMARY,
+                        });
+                        let (source_definition, source_part, source_ability) =
+                            Self::ability_origin_components(
+                                origin,
+                                object.presentation_definition(),
+                            );
+                        let expires_at_turn = (duration == EffectDurationDef::UntilYourNextTurn)
+                            .then(|| {
+                                (
+                                    object.controller,
+                                    self.turns_started[object.controller.index()].saturating_add(1),
+                                )
+                            });
+                        if let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == target)
+                        {
+                            let grant =
+                                GrantId::from_index(permanent.temporary_granted_abilities.len())
+                                    .expect("one permanent has at most 256 temporary grants");
+                            permanent
+                                .temporary_granted_abilities
+                                .push(TemporaryGrantedAbility {
+                                    ability,
+                                    source,
+                                    source_definition,
+                                    source_part,
+                                    source_ability,
+                                    grant,
+                                    expires_at_turn,
+                                });
                         }
                     }
                 }
@@ -10338,6 +10982,13 @@ impl Game {
             return self.objects_sharing_name_with_target(scoped.target_slot(target), object);
         }
 
+        if recipient == EffectRecipientDef::EachPlayer {
+            return vec![
+                Target::Player(object.controller),
+                Target::Player(object.controller.opponent()),
+            ];
+        }
+
         let EffectRecipientDef::MatchingObjects {
             object: predicate,
             zones,
@@ -10352,6 +11003,7 @@ impl Game {
                     .map(Target::Permanent),
                 EffectRecipientDef::Controller => Some(Target::Player(object.controller)),
                 EffectRecipientDef::Opponent => Some(Target::Player(object.controller.opponent())),
+                EffectRecipientDef::EachPlayer => unreachable!("each player returned above"),
                 EffectRecipientDef::TriggeringObject => context
                     .object
                     .and_then(|object| self.live_object_target(object)),
@@ -10449,8 +11101,13 @@ impl Game {
                     .battlefield
                     .iter()
                     .find(|permanent| permanent.card.id == source)
-                    .and_then(|permanent| permanent.loyalty)
-                    .is_some_and(|loyalty| compare(&loyalty, *comparison, &i16::from(*amount))),
+                    .is_some_and(|permanent| {
+                        compare(
+                            &permanent.counters(CounterKind::Loyalty),
+                            *comparison,
+                            &u16::from(*amount),
+                        )
+                    }),
                 // Counting the activation now resolving is what makes
                 // "activated four or more times" true on the fourth one.
                 TriggerConditionDef::SourceActivationsThisTurn { comparison, amount } => ability
@@ -10982,6 +11639,7 @@ impl Game {
                             .get(card.definition)
                             .map_or_else(|| "Unknown card".into(), |card| card.name.clone()),
                         card: Some((card.id, card.definition)),
+                        members: Vec::new(),
                         ability_text: None,
                         zone: DecisionZone::Library,
                     })
@@ -11379,6 +12037,16 @@ impl Game {
         target: Option<Target>,
         amount: u16,
     ) {
+        self.damage_target_from_kind(source, target, amount, false);
+    }
+
+    fn damage_target_from_kind(
+        &mut self,
+        source: Option<GameObjectId>,
+        target: Option<Target>,
+        amount: u16,
+        combat: bool,
+    ) {
         let source_colors = source.map_or([false; 5], |source| self.object_colors(source));
         let lifelink_controller = source.and_then(|source| {
             self.source_controller_with_keyword(source, KeywordAbility::Lifelink)
@@ -11418,13 +12086,11 @@ impl Game {
                         .permanent_types(&self.battlefield[index])
                         .is_some_and(|types| types.contains(CardType::Planeswalker))
                     {
-                        let loyalty_loss = i16::try_from(amount).unwrap_or(i16::MAX);
-                        if let Some(loyalty) = &mut self.battlefield[index].loyalty {
-                            *loyalty = loyalty.saturating_sub(loyalty_loss);
-                            true
-                        } else {
-                            false
-                        }
+                        let remaining = self.battlefield[index]
+                            .counters(CounterKind::Loyalty)
+                            .saturating_sub(amount);
+                        self.battlefield[index].set_counters(CounterKind::Loyalty, remaining);
+                        true
                     } else {
                         let permanent = &mut self.battlefield[index];
                         permanent.damage = permanent.damage.saturating_add(amount);
@@ -11452,17 +12118,37 @@ impl Game {
         }
         if dealt_damage
             && amount > 0
-            && let Some(Target::Permanent(id)) = target
-            && let Some(damaged) = self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == id)
+            && let Some(source) = source
+            && let Some(recipient) = target
+            && let Some(source) = self.damage_source_event_object(source)
         {
             let event = CommittedTriggerEvent::DamageDealt {
-                object: self.trigger_event_object(damaged),
+                source,
+                recipient,
                 amount,
+                combat,
             };
             self.capture_battlefield_triggers(&event);
+        }
+    }
+
+    fn damage_source_event_object(&self, source: GameObjectId) -> Option<TriggerEventObject> {
+        if let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+        {
+            return Some(self.trigger_event_object(permanent));
+        }
+        if let Some(object) = self.stack.iter().find(|object| object.id == source) {
+            return self.stack_trigger_event_object(object);
+        }
+        match self.retired_objects.get(&source) {
+            Some(RetiredObject::Permanent { permanent, .. }) => {
+                Some(self.trigger_event_object(permanent))
+            }
+            Some(RetiredObject::Stack(object)) => self.stack_trigger_event_object(object),
+            Some(RetiredObject::Card(_)) | None => None,
         }
     }
 
@@ -11513,6 +12199,26 @@ impl Game {
     fn is_artifact_permanent(&self, permanent: &Permanent) -> bool {
         self.permanent_types(permanent)
             .is_some_and(|types| types.contains(CardType::Artifact))
+    }
+
+    fn initialize_battlefield_entry(&self, permanent: &mut Permanent) {
+        let starting_loyalty = self.effective_rules(permanent).and_then(|rules| {
+            rules
+                .has_type(CardType::Planeswalker)
+                .then(|| rules.starting_loyalty())
+                .flatten()
+        });
+        if let Some(loyalty) = starting_loyalty {
+            permanent.set_counters(CounterKind::Loyalty, loyalty);
+        }
+    }
+
+    fn effective_permanent_name<'a>(&'a self, permanent: &Permanent) -> Option<&'a str> {
+        let (definition, part) = Self::effective_rules_source(permanent);
+        self.catalog
+            .get(definition)?
+            .part(part)
+            .map(|part| part.name.as_str())
     }
 
     /// Resolves the printed rules currently supplying baseline permanent
@@ -12043,6 +12749,22 @@ impl Game {
         {
             return ControlFlow::Break(());
         }
+        for granted in &permanent.temporary_granted_abilities {
+            if visitor(EffectiveAbility {
+                origin: AbilityOrigin::Granted {
+                    source: granted.source,
+                    source_definition: granted.source_definition,
+                    source_part: granted.source_part,
+                    source_ability: granted.source_ability,
+                    grant: granted.grant,
+                },
+                ability: *granted.ability,
+            })
+            .is_break()
+            {
+                return ControlFlow::Break(());
+            }
+        }
         self.visit_static_applied_effects(permanent, |applied| match applied.effect {
             AppliedEffectDef::GrantAbility(ability) => visitor(EffectiveAbility {
                 origin: AbilityOrigin::Granted {
@@ -12457,6 +13179,7 @@ impl Game {
             | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::CreateEmblem { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -12580,7 +13303,7 @@ impl Game {
         let primary = match ability.resolver {
             StackAbilityResolver::Declarative(effect)
             | StackAbilityResolver::DeclarativeWithCustomFollowup { effect, .. } => Some(effect),
-            StackAbilityResolver::Custom(_) => None,
+            StackAbilityResolver::Custom(_) | StackAbilityResolver::CardOwned(_) => None,
         };
         primary
             .into_iter()
@@ -12692,6 +13415,7 @@ impl Game {
             | EffectRecipientDef::ObjectsOwnedByTarget { .. }
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
+            | EffectRecipientDef::EachPlayer
             | EffectRecipientDef::Target(_)
             | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
             | EffectRecipientDef::TriggeringObject
@@ -13215,6 +13939,7 @@ impl Game {
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::CreateEmblem { .. }
+                | EffectDef::LoseTheGame { .. }
                 | EffectDef::Transform { .. }
                 | EffectDef::AdditionalCombatPhase
                 | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -14492,7 +15217,7 @@ impl Game {
                 ),
                 text: Some(effective.ability.text),
                 target_defs: definition.targets,
-                resolver: Self::ability_resolver(&effective.ability),
+                resolver: Self::ability_resolver(effective.origin, &effective.ability),
                 x,
             };
             let payment_purpose = ManaPaymentPurpose::Ability {
@@ -14673,9 +15398,17 @@ impl Game {
                             .iter_mut()
                             .find(|permanent| permanent.card.id == source)
                         {
-                            permanent.loyalty = permanent
-                                .loyalty
-                                .map(|loyalty| loyalty.saturating_add(i16::from(*change)));
+                            if *change >= 0 {
+                                permanent.add_counters(
+                                    CounterKind::Loyalty,
+                                    u16::from(change.unsigned_abs()),
+                                );
+                            } else {
+                                permanent.remove_counters(
+                                    CounterKind::Loyalty,
+                                    u16::from(change.unsigned_abs()),
+                                );
+                            }
                             permanent.activated_loyalty_this_turn = true;
                         }
                     }
@@ -14832,6 +15565,18 @@ impl Game {
     }
 
     fn attacker_actions(&self, player: PlayerId) -> Vec<Action> {
+        let mut defenders = vec![AttackDefender::Player(player.opponent())];
+        defenders.extend(
+            self.battlefield
+                .iter()
+                .filter(|permanent| {
+                    permanent.controller == player.opponent()
+                        && self
+                            .permanent_types(permanent)
+                            .is_some_and(|types| types.contains(CardType::Planeswalker))
+                })
+                .map(|permanent| AttackDefender::Planeswalker(permanent.card.id)),
+        );
         self.battlefield
             .iter()
             .filter(|permanent| {
@@ -14841,8 +15586,14 @@ impl Game {
                     && self.power(permanent).is_some()
                     && self.can_attack(permanent)
             })
-            .map(|permanent| Action::DeclareAttacker {
-                attacker: permanent.card.id,
+            .flat_map(|permanent| {
+                defenders
+                    .iter()
+                    .copied()
+                    .map(|defender| Action::DeclareAttacker {
+                        attacker: permanent.card.id,
+                        defender,
+                    })
             })
             .collect()
     }
@@ -14861,7 +15612,7 @@ impl Game {
         })
     }
 
-    fn declare_attacker(&mut self, attacker: GameObjectId) {
+    fn declare_attacker(&mut self, attacker: GameObjectId, defender: AttackDefender) {
         let vigilance = self
             .battlefield
             .iter()
@@ -14875,6 +15626,7 @@ impl Game {
             .find(|permanent| permanent.card.id == attacker)
         {
             permanent.attacking = true;
+            permanent.attack_defender = Some(defender);
             permanent.attacked_this_turn = true;
             permanent.attacks_this_turn = permanent.attacks_this_turn.saturating_add(1);
         }
@@ -15169,9 +15921,15 @@ impl Game {
             .map(|permanent| Target::Permanent(permanent.card.id))
             .collect();
         recipients.sort_unstable();
-        if trample {
-            recipients.push(Target::Player(self.active_player.opponent()));
-        }
+        let blocker_count = recipients.len();
+        let defender_index = trample
+            .then(|| self.combat_defender_target(attacker))
+            .flatten()
+            .map(|defender| {
+                let index = recipients.len();
+                recipients.push(defender);
+                index
+            });
 
         damage_distributions(recipients.len(), power)
             .into_iter()
@@ -15179,27 +15937,19 @@ impl Game {
                 let blockers = || {
                     recipients
                         .iter()
+                        .take(blocker_count)
                         .zip(amounts)
                         .filter_map(|(target, amount)| match target {
                             Target::Permanent(id) => Some((*id, *amount)),
                             Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
                         })
                 };
-                // 510.1c: damage is assigned in an order, and a blocker only
-                // gets any once every blocker ahead of it has lethal. Whatever
-                // order the player picks, that leaves at most one blocker
-                // holding a non-lethal share.
-                if blockers()
-                    .filter(|(id, amount)| {
-                        *amount > 0 && *amount < self.lethal_damage_from(*id, attacker_id)
-                    })
-                    .count()
-                    > 1
-                {
-                    return false;
-                }
                 // 510.1d: trample only spills once every blocker has lethal.
-                if !trample || amounts.last().copied().unwrap_or(0) == 0 {
+                let defender_damage = defender_index
+                    .and_then(|index| amounts.get(index))
+                    .copied()
+                    .unwrap_or(0);
+                if defender_damage == 0 {
                     return true;
                 }
                 blockers().all(|(id, amount)| amount >= self.lethal_damage_from(id, attacker_id))
@@ -15217,8 +15967,8 @@ impl Game {
     }
 
     /// How an unassigned attacker spreads its damage: enough to kill each
-    /// blocker in turn, then the remainder over the top if it tramples and
-    /// onto the last blocker if it does not.
+    /// blocker in turn, then the remainder over the top when it can trample
+    /// onto its defender, or onto the last blocker otherwise.
     fn default_damage_split(
         &self,
         attacker_id: GameObjectId,
@@ -15242,8 +15992,8 @@ impl Game {
             split.push((Target::Permanent(*blocker), amount));
         }
         if remaining > 0 {
-            if trample {
-                split.push((Target::Player(self.active_player.opponent()), remaining));
+            if trample && let Some(defender) = self.combat_defender_target(attacker) {
+                split.push((defender, remaining));
             } else if let Some(last) = split.last_mut() {
                 last.1 += remaining;
             }
@@ -15315,9 +16065,13 @@ impl Game {
                 .iter()
                 .find(|permanent| permanent.card.id == id)
                 .and_then(|permanent| {
-                    permanent
-                        .loyalty
-                        .or_else(|| self.toughness(permanent))
+                    if self
+                        .permanent_types(permanent)
+                        .is_some_and(|types| types.contains(CardType::Planeswalker))
+                    {
+                        return Some(permanent.counters(CounterKind::Loyalty));
+                    }
+                    self.toughness(permanent)
                         .map(|value| value.max(0).cast_unsigned())
                 })
                 .unwrap_or(0),
@@ -15355,6 +16109,18 @@ impl Game {
     /// Combat damage from an attacker to a player, which is the one kind of
     /// damage the "whenever this deals combat damage to a player" triggers
     /// listen for. Ordinary damage to a player carries no such event.
+    /// Combat damage from an attacker to whatever it is attacking. A player
+    /// also gets the "deals combat damage to a player" event; a planeswalker
+    /// takes the damage as a permanent, which its loyalty counters absorb.
+    fn deal_combat_damage_to(&mut self, attacker: GameObjectId, defender: Target, amount: u16) {
+        match defender {
+            Target::Player(player) => self.deal_combat_damage_to_player(attacker, player, amount),
+            Target::Permanent(_) | Target::Card(_) | Target::Spell(_) => {
+                self.damage_target_from(Some(attacker), Some(defender), amount);
+            }
+        }
+    }
+
     fn deal_combat_damage_to_player(
         &mut self,
         attacker: GameObjectId,
@@ -15436,6 +16202,29 @@ impl Game {
         }
     }
 
+    fn combat_defender(attacker: &Permanent) -> AttackDefender {
+        attacker
+            .attack_defender
+            .unwrap_or(AttackDefender::Player(attacker.controller.opponent()))
+    }
+
+    fn combat_defender_target(&self, attacker: &Permanent) -> Option<Target> {
+        match Self::combat_defender(attacker) {
+            AttackDefender::Player(player) => Some(Target::Player(player)),
+            AttackDefender::Planeswalker(id) => self
+                .battlefield
+                .iter()
+                .find(|permanent| {
+                    permanent.card.id == id
+                        && permanent.controller != attacker.controller
+                        && self
+                            .permanent_types(permanent)
+                            .is_some_and(|types| types.contains(CardType::Planeswalker))
+                })
+                .map(|permanent| Target::Permanent(permanent.card.id)),
+        }
+    }
+
     fn deal_combat_damage(&mut self) {
         let attackers: Vec<_> = self
             .battlefield
@@ -15470,11 +16259,11 @@ impl Game {
                 if was_blocked && !self.has_trample(&self.battlefield[attacker_index]) {
                     continue;
                 }
-                self.deal_combat_damage_to_player(
-                    attacker_id,
-                    self.active_player.opponent(),
-                    power,
-                );
+                let Some(defender) = self.combat_defender_target(&self.battlefield[attacker_index])
+                else {
+                    continue;
+                };
+                self.deal_combat_damage_to(attacker_id, defender, power);
             } else if !blockers.is_empty() {
                 self.exchange_blocked_combat_damage(
                     attacker_id,
@@ -16045,6 +16834,7 @@ impl Game {
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -16181,7 +16971,11 @@ impl Game {
                     die.push(permanent.card.id);
                     continue;
                 }
-                if permanent.loyalty.is_some_and(|loyalty| loyalty <= 0) {
+                if self
+                    .permanent_types(permanent)
+                    .is_some_and(|types| types.contains(CardType::Planeswalker))
+                    && permanent.counters(CounterKind::Loyalty) == 0
+                {
                     die.push(permanent.card.id);
                     continue;
                 }
@@ -16525,6 +17319,14 @@ impl Game {
         }
         self.active_player = next_player;
         self.turns_started[self.active_player.index()] += 1;
+        let turns_started = self.turns_started;
+        for permanent in &mut self.battlefield {
+            permanent.temporary_granted_abilities.retain(|grant| {
+                grant
+                    .expires_at_turn
+                    .is_none_or(|(player, turn)| turns_started[player.index()] < turn)
+            });
+        }
         self.creature_died_this_turn = false;
         self.sorcery_flash_grants = [0; 2];
         self.additional_combat_phases = 0;
@@ -16744,6 +17546,7 @@ impl Game {
                     id: 0,
                     label: "Keep it hidden".into(),
                     card: None,
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::None,
                 },
@@ -16751,6 +17554,7 @@ impl Game {
                     id: 1,
                     label: format!("Reveal {name}"),
                     card: Some((card, CardDefinitionId(0))),
+                    members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::Hand,
                 },
@@ -17300,5 +18104,9 @@ fn damage_distributions(recipient_count: usize, total: u16) -> Vec<Vec<u16>> {
     result
 }
 
+#[cfg(test)]
+mod planeswalker_combat_tests;
+#[cfg(test)]
+mod planeswalker_tests;
 #[cfg(test)]
 mod tests;

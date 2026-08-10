@@ -352,6 +352,12 @@ test("X spells expose explicit affordable values to the browser", async () => {
   );
   assert.ok(twoTargetFireball, "the UI receives complete multi-target Fireball actions");
   assert.deepEqual(twoTargetFireball.targetCardIds, []);
+  assert.equal(twoTargetFireball.targetSelections.length, 1);
+  assert.equal(twoTargetFireball.targetSelections[0].slotId, 0);
+  assert.deepEqual(
+    [...twoTargetFireball.targetSelections[0].targetPlayers].sort(),
+    ["human", "opponent"],
+  );
   const fireballForThree = fireballs.find(
     (action) => action.x === 3 && action.targetPlayer === "opponent",
   );

@@ -93,7 +93,7 @@ static TEST_OPPONENT_ENCHANTMENTS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] =
         )),
     )];
 
-fn ready_game() -> Game {
+pub(super) fn ready_game() -> Game {
     let deck = poc::mono_red_atog();
     let mut game = Game::new(poc::catalog().unwrap(), [deck.clone(), deck], 0).unwrap();
     game.pregame = None;
@@ -127,7 +127,7 @@ fn card(id: u32, definition: CardDefinitionId, owner: PlayerId) -> CardInstance 
     }
 }
 
-fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Permanent {
+pub(super) fn creature(id: u32, definition: CardDefinitionId, controller: PlayerId) -> Permanent {
     Permanent::entering(
         card(id, definition, controller),
         CardPartId::PRIMARY,
@@ -3355,12 +3355,14 @@ fn juggernaut_must_attack_if_able() {
     assert!(!actions.contains(&Action::FinishDeclaringAttackers));
     assert!(actions.contains(&Action::DeclareAttacker {
         attacker: juggernaut_id,
+        defender: AttackDefender::Player(PlayerId::Two),
     }));
 
     game.apply(
         PlayerId::One,
         Action::DeclareAttacker {
             attacker: juggernaut_id,
+            defender: AttackDefender::Player(PlayerId::Two),
         },
     )
     .unwrap();
@@ -3739,7 +3741,10 @@ fn serra_angel_attacks_without_tapping() {
 
     game.apply(
         PlayerId::One,
-        Action::DeclareAttacker { attacker: serra_id },
+        Action::DeclareAttacker {
+            attacker: serra_id,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
     )
     .unwrap();
 
@@ -3770,8 +3775,14 @@ fn hellrider_burns_once_per_attacker_including_itself() {
     let life_before = game.players[1].life;
 
     for attacker in [hellrider_id, lions_id] {
-        game.apply(PlayerId::One, Action::DeclareAttacker { attacker })
-            .unwrap();
+        game.apply(
+            PlayerId::One,
+            Action::DeclareAttacker {
+                attacker,
+                defender: AttackDefender::Player(PlayerId::Two),
+            },
+        )
+        .unwrap();
     }
     game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
         .unwrap();
@@ -9344,10 +9355,12 @@ fn moat_prevents_nonfliers_and_argothian_pixies_dodge_artifact_blockers() {
         .push(creature(10_002, cards::SERENDIB_EFREET, PlayerId::One));
     let actions = game.legal_actions(PlayerId::One);
     assert!(!actions.contains(&Action::DeclareAttacker {
-        attacker: CardInstanceId(10_001)
+        attacker: CardInstanceId(10_001),
+        defender: AttackDefender::Player(PlayerId::Two),
     }));
     assert!(actions.contains(&Action::DeclareAttacker {
-        attacker: CardInstanceId(10_002)
+        attacker: CardInstanceId(10_002),
+        defender: AttackDefender::Player(PlayerId::Two),
     }));
 
     let mut game = ready_game();
@@ -11603,7 +11616,7 @@ fn any_target_damage_can_remove_a_planeswalker() {
     definitions.push(definition);
     game.catalog = CardCatalog::new(definitions).unwrap();
     let mut planeswalker = creature(10_000, definition_id, PlayerId::Two);
-    planeswalker.loyalty = Some(3);
+    planeswalker.set_counters(CounterKind::Loyalty, 3);
     let planeswalker_id = planeswalker.card.id;
     game.battlefield.push(planeswalker);
     let bolt = card(10_001, cards::LIGHTNING_BOLT, PlayerId::One);
@@ -16009,7 +16022,7 @@ fn a_wall_may_block_but_never_attacks_and_never_stops_a_juggernaut() {
 
     assert!(
         !game.legal_actions(PlayerId::Two).iter().any(
-            |action| matches!(action, Action::DeclareAttacker { attacker } if *attacker == wall_id)
+            |action| matches!(action, Action::DeclareAttacker { attacker, defender: AttackDefender::Player(PlayerId::Two) } if *attacker == wall_id)
         ),
         "defender keeps the Wall home",
     );
@@ -16018,6 +16031,7 @@ fn a_wall_may_block_but_never_attacks_and_never_stops_a_juggernaut() {
         PlayerId::One,
         Action::DeclareAttacker {
             attacker: juggernaut_id,
+            defender: AttackDefender::Player(PlayerId::Two),
         },
     )
     .unwrap();
@@ -18065,13 +18079,22 @@ fn a_creature_that_attacks_each_combat_holds_the_declaration_open() {
         "the declaration cannot be finished while Ruric Thar could still attack"
     );
     assert!(
-        actions.contains(&Action::DeclareAttacker { attacker: lions }),
+        actions.contains(&Action::DeclareAttacker {
+            attacker: lions,
+            defender: AttackDefender::Player(PlayerId::Two)
+        }),
         "another creature may still be declared first"
     );
 
     // Declaring the free attacker does not satisfy the requirement.
-    game.apply(PlayerId::One, Action::DeclareAttacker { attacker: lions })
-        .unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: lions,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .unwrap();
     assert!(
         !game
             .legal_actions(PlayerId::One)
@@ -18079,8 +18102,14 @@ fn a_creature_that_attacks_each_combat_holds_the_declaration_open() {
         "only Ruric Thar attacking releases the declaration"
     );
 
-    game.apply(PlayerId::One, Action::DeclareAttacker { attacker: ruric })
-        .unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: ruric,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .unwrap();
     assert!(
         game.legal_actions(PlayerId::One)
             .contains(&Action::FinishDeclaringAttackers),
@@ -18595,7 +18624,7 @@ fn a_loyalty_ability_costs_counters_and_runs_once_a_turn() {
         game.battlefield
             .iter()
             .find(|permanent| permanent.card.id == jace)
-            .and_then(|permanent| permanent.loyalty),
+            .map(|permanent| permanent.counters(CounterKind::Loyalty)),
         Some(4),
         "a planeswalker enters with its printed loyalty"
     );
@@ -18634,7 +18663,11 @@ fn a_loyalty_ability_costs_counters_and_runs_once_a_turn() {
         .iter()
         .find(|permanent| permanent.card.id == jace)
         .expect("Jace is still there");
-    assert_eq!(permanent.loyalty, Some(5), "the plus one added a counter");
+    assert_eq!(
+        permanent.counters(CounterKind::Loyalty),
+        5,
+        "the plus one added a counter"
+    );
     assert_eq!(game.players[0].hand.len(), 1, "and drew a card");
     assert_eq!(game.players[1].graveyard.len(), 1, "and milled one");
 
@@ -18707,7 +18740,7 @@ fn liliana_splits_a_board_and_the_victim_picks_the_pile() {
         .find(|permanent| permanent.card.id == liliana)
     {
         // Enough loyalty for the ultimate.
-        permanent.loyalty = Some(6);
+        permanent.set_counters(CounterKind::Loyalty, 6);
     }
     let lions = game
         .put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
@@ -18820,8 +18853,14 @@ fn aurelia_untaps_the_team_and_buys_exactly_one_extra_combat() {
     game.step = Step::DeclareAttackers;
     game.attackers_declared = false;
 
-    game.apply(PlayerId::One, Action::DeclareAttacker { attacker: aurelia })
-        .unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: aurelia,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .unwrap();
     game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
         .unwrap();
     drain_pending(&mut game);
@@ -18883,8 +18922,14 @@ fn an_attack_trigger_for_the_first_time_each_turn_does_not_loop() {
             permanent.attacking = false;
             permanent.tapped = false;
         }
-        game.apply(PlayerId::One, Action::DeclareAttacker { attacker: aurelia })
-            .unwrap();
+        game.apply(
+            PlayerId::One,
+            Action::DeclareAttacker {
+                attacker: aurelia,
+                defender: AttackDefender::Player(PlayerId::Two),
+            },
+        )
+        .unwrap();
         game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
             .unwrap();
         drain_pending(game);
@@ -19652,7 +19697,7 @@ fn garruk_turns_over_when_his_own_ability_wounds_him() {
         .iter()
         .find(|permanent| permanent.card.id == garruk)
         .expect("Garruk is there");
-    assert_eq!(front.loyalty, Some(3));
+    assert_eq!(front.counters(CounterKind::Loyalty), 3);
     assert_eq!(front.presented, CardPartId::PRIMARY, "he starts face up");
 
     let fight = game
@@ -19673,7 +19718,11 @@ fn garruk_turns_over_when_his_own_ability_wounds_him() {
         .iter()
         .find(|permanent| permanent.card.id == garruk)
         .expect("Garruk survived");
-    assert_eq!(turned.loyalty, Some(1), "the creature hit back for two");
+    assert_eq!(
+        turned.counters(CounterKind::Loyalty),
+        1,
+        "the creature hit back for two"
+    );
     assert_ne!(
         turned.presented,
         CardPartId::PRIMARY,
@@ -19826,7 +19875,7 @@ fn domri_fights_and_hands_out_an_emblem() {
         .iter_mut()
         .find(|permanent| permanent.card.id == domri)
     {
-        permanent.loyalty = Some(7);
+        permanent.set_counters(CounterKind::Loyalty, 7);
         permanent.activated_loyalty_this_turn = false;
     }
     let ultimate = game
@@ -20145,7 +20194,7 @@ fn a_blocked_assassin_never_triggers() {
 fn vraska_destroys_a_nonland_permanent_and_ultimates_into_three_assassins() {
     let mut game = ready_game();
     let mut vraska = creature(10_000, cards::VRASKA_THE_UNSEEN, PlayerId::One);
-    vraska.loyalty = Some(7);
+    vraska.set_counters(CounterKind::Loyalty, u16::try_from(7).unwrap_or(0));
     game.battlefield.push(vraska);
     game.battlefield
         .push(creature(10_001, cards::SERRA_ANGEL, PlayerId::Two));
@@ -20188,14 +20237,14 @@ fn vraska_destroys_a_nonland_permanent_and_ultimates_into_three_assassins() {
         .iter()
         .find(|permanent| permanent.card.id == GameObjectId(10_000))
         .expect("she paid three of her seven");
-    assert_eq!(vraska.loyalty, Some(4));
+    assert_eq!(vraska.counters(CounterKind::Loyalty), 4);
 }
 
 #[test]
 fn vraskas_ultimate_makes_three_assassins() {
     let mut game = ready_game();
     let mut vraska = creature(10_000, cards::VRASKA_THE_UNSEEN, PlayerId::One);
-    vraska.loyalty = Some(7);
+    vraska.set_counters(CounterKind::Loyalty, u16::try_from(7).unwrap_or(0));
     game.battlefield.push(vraska);
 
     game.apply(
@@ -20231,7 +20280,7 @@ fn vraskas_ultimate_makes_three_assassins() {
 fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
     let mut game = ready_game();
     let mut jace = creature(10_000, cards::JACE_ARCHITECT_OF_THOUGHT, PlayerId::One);
-    jace.loyalty = Some(4);
+    jace.set_counters(CounterKind::Loyalty, u16::try_from(4).unwrap_or(0));
     game.battlefield.push(jace);
     game.players[0].library.clear();
     game.players[0].hand.clear();
@@ -20332,14 +20381,14 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
         .iter()
         .find(|permanent| permanent.card.id == GameObjectId(10_000))
         .expect("he stayed");
-    assert_eq!(jace.loyalty, Some(2));
+    assert_eq!(jace.counters(CounterKind::Loyalty), 2);
 }
 
 #[test]
 fn jaces_first_ability_taxes_attackers_until_his_controller_comes_back_around() {
     let mut game = ready_game();
     let mut jace = creature(10_000, cards::JACE_ARCHITECT_OF_THOUGHT, PlayerId::One);
-    jace.loyalty = Some(4);
+    jace.set_counters(CounterKind::Loyalty, u16::try_from(4).unwrap_or(0));
     game.battlefield.push(jace);
 
     game.apply(
@@ -20359,8 +20408,8 @@ fn jaces_first_ability_taxes_attackers_until_his_controller_comes_back_around() 
             .iter()
             .find(|permanent| permanent.card.id == GameObjectId(10_000))
             .expect("he stayed")
-            .loyalty,
-        Some(5)
+            .counters(CounterKind::Loyalty),
+        5
     );
 
     // The opponent's turn: their attacker is taxed, and Jace's own creature
@@ -20375,6 +20424,7 @@ fn jaces_first_ability_taxes_attackers_until_his_controller_comes_back_around() 
         PlayerId::Two,
         Action::DeclareAttacker {
             attacker: GameObjectId(10_001),
+            defender: AttackDefender::Player(PlayerId::One),
         },
     )
     .unwrap();

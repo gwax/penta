@@ -14,7 +14,9 @@ pub mod protocol;
 mod rng;
 pub mod rules;
 
-pub use action::{AbilityOrigin, Action, ActionError, CombatDamageAssignment, ManaColor, Target};
+pub use action::{
+    AbilityOrigin, Action, ActionError, AttackDefender, CombatDamageAssignment, ManaColor, Target,
+};
 pub use card::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityEffectDef,
     AbilityProcedureDef, AbilityTargetDef, AbilityTargetPredicate, ActivatedAbilityDef,
@@ -43,8 +45,9 @@ pub use deck::{Deck, DeckError, ValidatedDeck};
 pub use format::{Format, FormatRules};
 pub use game::{
     BattlefieldExit, DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility,
-    DecisionZone, Game, GameError, GameEvent, GameResult, Mana, ManaPool, ManaSource,
-    PlayerObservation, StackObjectKind, Step, WinReason, ZoneCard, ZoneChangeOutcome, ZoneError,
+    DecisionZone, EmblemObservation, Game, GameError, GameEvent, GameResult, Mana, ManaPool,
+    ManaSource, PermanentObservation, PlayerObservation, StackObjectKind, Step, WinReason,
+    ZoneCard, ZoneChangeOutcome, ZoneError,
 };
 pub use ids::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardInstanceId, CardPartId,

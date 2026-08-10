@@ -1,11 +1,14 @@
 use penta::card::{self, cards};
-use penta::game::{PermanentObservation, StackObservation};
+use penta::game::{
+    DecisionKind, DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility,
+    DecisionZone, PermanentObservation, StackObservation,
+};
 use penta::poc;
 use penta::{
-    AbilityId, AbilityOrigin, Action, AlternativeCostId, BasicLandType, CardInstanceId, CardPartId,
-    CastChoices, CastSignature, CostConfiguration, Game, GameResult, HandcraftedPolicy, ManaPool,
-    PlayOptionId, PlayerId, PlayerObservation, Policy, RandomPolicy, SpellForm, StackObjectKind,
-    Step, Target, TargetSelection, TargetSlotId, play_game,
+    AbilityId, AbilityOrigin, Action, AlternativeCostId, AttackDefender, BasicLandType,
+    CardInstanceId, CardPartId, CastChoices, CastSignature, CostConfiguration, Game, GameResult,
+    HandcraftedPolicy, ManaPool, PlayOptionId, PlayerId, PlayerObservation, Policy, RandomPolicy,
+    SpellForm, StackObjectKind, Step, Target, TargetSelection, TargetSlotId, play_game,
 };
 
 const ACTION_LIMIT: usize = 50_000;
@@ -17,6 +20,14 @@ const PRIMARY_PRINTED_ABILITY: AbilityOrigin = AbilityOrigin::Printed {
 
 fn activated_targets(target: Target) -> Vec<TargetSelection> {
     vec![TargetSelection::single(TargetSlotId(0), target)]
+}
+
+const fn printed_ability(definition: penta::CardDefinitionId, ability: u8) -> AbilityOrigin {
+    AbilityOrigin::Printed {
+        definition,
+        part: CardPartId::PRIMARY,
+        ability: AbilityId(ability),
+    }
 }
 
 fn policy_observation(
@@ -40,6 +51,7 @@ fn policy_observation(
         graveyards: [Vec::new(), Vec::new()],
         exiles: [Vec::new(), Vec::new()],
         battlefield,
+        emblems: Vec::new(),
         stack: Vec::new(),
         decision: None,
         result: None,
@@ -61,16 +73,145 @@ fn permanent(
         controller,
         types: penta::CardTypeSet::empty(),
         chosen_creature_type: None,
+        chosen_card_name: None,
         tapped: false,
         power,
         toughness,
         damage: 0,
+        loyalty: None,
+        loyalty_ability_used_this_turn: false,
+        attack_defender: None,
         attacking: false,
+        blocked_this_combat: false,
         blocking: None,
         flying: false,
         can_attack: false,
         entered_this_turn: false,
     }
+}
+
+#[test]
+fn handcrafted_balanced_partition_is_deterministic_nonempty_and_near_balanced() {
+    let catalog = poc::catalog().unwrap();
+    let decision = DecisionObservation {
+        id: 41,
+        player: PlayerId::One,
+        kind: DecisionKind::Choice,
+        order_semantics: None,
+        prompt: "Separate these permanents into two piles".to_owned(),
+        visibility: DecisionVisibility::Public,
+        preference: DecisionPreference::BalancedPartition,
+        minimum: 0,
+        maximum: 4,
+        cancellable: false,
+        options: vec![
+            DecisionOption {
+                id: 0,
+                label: "Mountain".to_owned(),
+                card: Some((CardInstanceId(10), poc::cards::MOUNTAIN)),
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::Battlefield,
+            },
+            DecisionOption {
+                id: 1,
+                label: "Lightning Bolt".to_owned(),
+                card: Some((CardInstanceId(11), poc::cards::LIGHTNING_BOLT)),
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::Battlefield,
+            },
+            DecisionOption {
+                id: 2,
+                label: "Goblin Balloon Brigade".to_owned(),
+                card: Some((CardInstanceId(12), poc::cards::GOBLIN_BALLOON_BRIGADE)),
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::Battlefield,
+            },
+            DecisionOption {
+                id: 3,
+                label: "Black Vise".to_owned(),
+                card: Some((CardInstanceId(13), poc::cards::BLACK_VISE)),
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::Battlefield,
+            },
+        ],
+    };
+    let mut observation = policy_observation(Vec::new(), Vec::new());
+    observation.decision = Some(decision);
+    let mut policy = HandcraftedPolicy::new(catalog);
+
+    let first = policy.choose_action(&observation);
+    assert_eq!(first, policy.choose_action(&observation));
+    let Some(Action::ChooseDecision { options, .. }) = first else {
+        panic!("the partition has a policy choice");
+    };
+    assert_eq!(
+        options,
+        vec![0, 3],
+        "the 80+55 and 75+65 piles are both nonempty and differ by only five policy-value points",
+    );
+
+    for (minimum, maximum, expected_count) in [(0, 1, 1), (3, 4, 3)] {
+        let mut bounded = observation.clone();
+        let pending = bounded.decision.as_mut().expect("decision exists");
+        pending.minimum = minimum;
+        pending.maximum = maximum;
+        let Some(Action::ChooseDecision { options, .. }) = policy.choose_action(&bounded) else {
+            panic!("a valid bounded partition has a policy choice");
+        };
+        assert_eq!(options.len(), expected_count);
+    }
+}
+
+#[test]
+fn handcrafted_lower_card_value_uses_members_to_choose_the_cheaper_pile() {
+    let catalog = poc::catalog().unwrap();
+    let mut observation = policy_observation(Vec::new(), Vec::new());
+    observation.decision = Some(DecisionObservation {
+        id: 42,
+        player: PlayerId::One,
+        kind: DecisionKind::Choice,
+        order_semantics: None,
+        prompt: "Choose a pile to sacrifice".to_owned(),
+        visibility: DecisionVisibility::Public,
+        preference: DecisionPreference::LowerCardValue,
+        minimum: 1,
+        maximum: 1,
+        cancellable: false,
+        options: vec![
+            DecisionOption {
+                id: 0,
+                label: "Mountain, Lightning Bolt".to_owned(),
+                card: None,
+                members: vec![
+                    (CardInstanceId(20), poc::cards::MOUNTAIN),
+                    (CardInstanceId(21), poc::cards::LIGHTNING_BOLT),
+                ],
+                ability_text: None,
+                zone: DecisionZone::None,
+            },
+            DecisionOption {
+                id: 1,
+                label: "Goblin Balloon Brigade".to_owned(),
+                card: None,
+                members: vec![(CardInstanceId(22), poc::cards::GOBLIN_BALLOON_BRIGADE)],
+                ability_text: None,
+                zone: DecisionZone::None,
+            },
+        ],
+    });
+    let mut policy = HandcraftedPolicy::new(catalog);
+
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(Action::ChooseDecision {
+            decision: 42,
+            options: vec![1],
+        })
+    );
 }
 
 fn stack_object(
@@ -412,6 +553,7 @@ fn handcrafted_does_not_feed_a_creature_to_a_superior_blocker() {
             Action::FinishDeclaringAttackers,
             Action::DeclareAttacker {
                 attacker: CardInstanceId(1),
+                defender: AttackDefender::Player(PlayerId::Two),
             },
         ],
     );
@@ -422,6 +564,103 @@ fn handcrafted_does_not_feed_a_creature_to_a_superior_blocker() {
         policy.choose_action(&observation),
         Some(Action::FinishDeclaringAttackers)
     );
+}
+
+#[test]
+fn handcrafted_attacks_a_killable_opposing_planeswalker() {
+    let catalog = card::catalog().unwrap();
+    let attacker = permanent(1, cards::GOBLIN_KING, PlayerId::One, Some(3), Some(3));
+    let mut domri = permanent(2, cards::DOMRI_RADE, PlayerId::Two, None, None);
+    domri.loyalty = Some(3);
+    let attack_domri = Action::DeclareAttacker {
+        attacker: CardInstanceId(1),
+        defender: AttackDefender::Planeswalker(CardInstanceId(2)),
+    };
+    let mut observation = policy_observation(
+        vec![attacker, domri],
+        vec![
+            Action::FinishDeclaringAttackers,
+            Action::DeclareAttacker {
+                attacker: CardInstanceId(1),
+                defender: AttackDefender::Player(PlayerId::Two),
+            },
+            attack_domri.clone(),
+        ],
+    );
+    observation.step = Step::DeclareAttackers;
+    let mut policy = HandcraftedPolicy::new(catalog);
+
+    assert_eq!(policy.choose_action(&observation), Some(attack_domri));
+}
+
+#[test]
+fn handcrafted_attacks_the_player_when_combat_damage_is_lethal() {
+    let catalog = card::catalog().unwrap();
+    let attacker = permanent(1, cards::GOBLIN_KING, PlayerId::One, Some(3), Some(3));
+    let mut domri = permanent(2, cards::DOMRI_RADE, PlayerId::Two, None, None);
+    domri.loyalty = Some(3);
+    let attack_player = Action::DeclareAttacker {
+        attacker: CardInstanceId(1),
+        defender: AttackDefender::Player(PlayerId::Two),
+    };
+    let mut observation = policy_observation(
+        vec![attacker, domri],
+        vec![
+            Action::FinishDeclaringAttackers,
+            attack_player.clone(),
+            Action::DeclareAttacker {
+                attacker: CardInstanceId(1),
+                defender: AttackDefender::Planeswalker(CardInstanceId(2)),
+            },
+        ],
+    );
+    observation.life_totals = [20, 3];
+    observation.step = Step::DeclareAttackers;
+    let mut policy = HandcraftedPolicy::new(catalog);
+
+    assert_eq!(policy.choose_action(&observation), Some(attack_player));
+}
+
+#[test]
+fn handcrafted_uses_domri_to_win_a_favorable_fight() {
+    let catalog = card::catalog().unwrap();
+    let mut domri = permanent(1, cards::DOMRI_RADE, PlayerId::One, None, None);
+    domri.loyalty = Some(3);
+    let fighter = permanent(2, cards::SU_CHI, PlayerId::One, Some(4), Some(4));
+    let victim = permanent(
+        3,
+        cards::GOBLIN_BALLOON_BRIGADE,
+        PlayerId::Two,
+        Some(1),
+        Some(1),
+    );
+    let fight = Action::ActivateAbility {
+        source: CardInstanceId(1),
+        ability: printed_ability(cards::DOMRI_RADE, 1),
+        targets: vec![
+            TargetSelection::single(TargetSlotId(0), Target::Permanent(CardInstanceId(2))),
+            TargetSelection::single(TargetSlotId(1), Target::Permanent(CardInstanceId(3))),
+        ],
+        cost_object: None,
+        x: 0,
+    };
+    let observation = policy_observation(
+        vec![domri, fighter, victim],
+        vec![
+            Action::PassPriority,
+            Action::ActivateAbility {
+                source: CardInstanceId(1),
+                ability: printed_ability(cards::DOMRI_RADE, 0),
+                targets: Vec::new(),
+                cost_object: None,
+                x: 0,
+            },
+            fight.clone(),
+        ],
+    );
+    let mut policy = HandcraftedPolicy::new(catalog);
+
+    assert_eq!(policy.choose_action(&observation), Some(fight));
 }
 
 #[test]
@@ -658,6 +897,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
     };
     let mut attacking_atog = permanent(1, poc::cards::ATOG, PlayerId::One, Some(1), Some(2));
     attacking_atog.attacking = true;
+    attacking_atog.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
     let mut observation = policy_observation(
         vec![
             attacking_atog,

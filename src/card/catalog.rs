@@ -790,6 +790,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::BecomeCopyOf { .. }
         | super::EffectDef::CannotBeForcedToSacrifice
         | super::EffectDef::CreateEmblem { .. }
+        | super::EffectDef::LoseTheGame { .. }
         | super::EffectDef::Transform { .. }
         | super::EffectDef::AdditionalCombatPhase
         | super::EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -881,6 +882,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::BecomeCopyOf { .. }
         | super::EffectDef::CannotBeForcedToSacrifice
         | super::EffectDef::CreateEmblem { .. }
+        | super::EffectDef::LoseTheGame { .. }
         | super::EffectDef::Transform { .. }
         | super::EffectDef::AdditionalCombatPhase
         | super::EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -979,6 +981,7 @@ fn validate_recipient_target_references(
         | EffectRecipientDef::ControllerOfTriggeringObject
         | EffectRecipientDef::EventPlayer
         | EffectRecipientDef::MatchingObjects { .. } => Ok(()),
+        EffectRecipientDef::EachPlayer => Ok(()),
     }
 }
 

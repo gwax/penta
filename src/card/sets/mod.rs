@@ -13,8 +13,9 @@ mod y2011;
 mod y2012;
 mod y2013;
 
-use super::record::{CardRecord, PrintingRecord};
-use crate::card::{CardBehavior, CardDefinition, CardPrinting, CardRules, CardSet};
+use super::record::{CardAbilityBinding, CardRecord, PrintingRecord};
+use crate::AbilityOrigin;
+use crate::card::{AbilityDef, CardBehavior, CardDefinition, CardPrinting, CardRules, CardSet};
 
 static UNSUPPORTED_RULES: CardRules = CardRules::unsupported();
 
@@ -161,6 +162,29 @@ pub(super) fn definitions() -> Vec<CardDefinition> {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }
     definitions
+}
+
+pub(crate) fn ability_binding(
+    origin: AbilityOrigin,
+    actual: &AbilityDef,
+) -> Option<&'static CardAbilityBinding> {
+    let AbilityOrigin::Printed {
+        definition,
+        part,
+        ability,
+    } = origin
+    else {
+        return None;
+    };
+    SET_MODULES
+        .iter()
+        .flat_map(|module| module.cards.iter().copied())
+        .find(|record| record.id == definition)?
+        .ability_bindings
+        .iter()
+        .find(|binding| {
+            binding.part == part && binding.ability == ability && binding.expected == *actual
+        })
 }
 
 pub(super) fn additional_printings() -> Vec<CardPrinting> {
@@ -382,6 +406,7 @@ mod tests {
             | EffectRecipientDef::AttachedPermanent
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
+            | EffectRecipientDef::EachPlayer
             | EffectRecipientDef::Target(_)
             | EffectRecipientDef::ControllerOfTarget(_)
             | EffectRecipientDef::TriggeringObject
@@ -823,6 +848,7 @@ mod tests {
                     }
                     EffectRecipientDef::Controller
                     | EffectRecipientDef::Opponent
+                    | EffectRecipientDef::EachPlayer
                     | EffectRecipientDef::Target(_)
                     | EffectRecipientDef::ControllerOfTarget(_)
                     | EffectRecipientDef::ObjectsControlledByTarget { .. }
@@ -899,6 +925,7 @@ mod tests {
             | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::CreateEmblem { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -1091,6 +1118,7 @@ mod tests {
                         | EffectDef::UnlessPaid { .. }
                         | EffectDef::CannotBeForcedToSacrifice
                         | EffectDef::CreateEmblem { .. }
+                        | EffectDef::LoseTheGame { .. }
                         | EffectDef::Transform { .. }
                         | EffectDef::AdditionalCombatPhase
                         | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -1279,6 +1307,7 @@ mod tests {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
+            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }

@@ -397,6 +397,20 @@ button {
   font-style: normal;
 }
 
+.card-action-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.card-action-copy small {
+  color: #786a58;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .card-action-cancel {
   margin-top: 16px;
   padding: 4px 0;
@@ -862,6 +876,64 @@ button {
   align-content: center;
   gap: 4px;
   padding: 0 6px;
+}
+
+.emblem-zone {
+  position: absolute;
+  z-index: 16;
+  left: 8px;
+  bottom: 7px;
+  display: flex;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.emblem-zone-opponent {
+  right: 8px;
+  left: auto;
+  top: 7px;
+  bottom: auto;
+}
+
+.emblem {
+  width: 142px;
+  min-height: 43px;
+  padding: 5px 7px;
+  display: grid;
+  gap: 1px;
+  border: 1px solid rgba(208, 174, 109, 0.75);
+  border-radius: 3px;
+  color: #ece0c7;
+  background:
+    linear-gradient(135deg, rgba(174, 123, 62, 0.22), transparent 65%),
+    rgba(22, 18, 15, 0.93);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.42);
+}
+
+.emblem > span {
+  color: #d4a958;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.emblem strong {
+  overflow: hidden;
+  font-family: Georgia, serif;
+  font-size: 10px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emblem small {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #b9ad98;
+  font-size: 7px;
+  line-height: 1.1;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .battlefield-row {
@@ -1541,6 +1613,45 @@ button {
   font-size: 9px;
 }
 
+.card-loyalty {
+  position: absolute;
+  z-index: 3;
+  right: 6px;
+  bottom: 5px;
+  min-width: 26px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid #4b374e;
+  border-radius: 50% 50% 42% 42%;
+  color: #fff7e5;
+  background: linear-gradient(145deg, #76547c, #33253a);
+  font-family: Georgia, serif;
+  font-size: 13px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+
+.card-loyalty > span {
+  color: #d6b4dc;
+  font-size: 7px;
+}
+
+.card-loyalty.is-used {
+  color: #c5bdb0;
+  background: #4c4744;
+  filter: saturate(0.3);
+}
+
+.game-card-compact .card-loyalty {
+  right: 3px;
+  bottom: 3px;
+  min-width: 20px;
+  height: 18px;
+  font-size: 10px;
+}
+
 .card-hover-stats {
   position: fixed;
   z-index: 100;
@@ -2174,6 +2285,35 @@ button {
   text-align: left;
   font-size: 14px;
   line-height: 1.25;
+}
+
+.action-copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.action-target-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.action-target-slots > span {
+  padding: 3px 5px;
+  display: inline-flex;
+  gap: 4px;
+  border: 1px solid rgba(218, 178, 95, 0.35);
+  color: #d5c9b5;
+  background: rgba(91, 69, 34, 0.34);
+  font-size: 9px;
+}
+
+.action-target-slots b {
+  color: #e6b85d;
+  font-size: 8px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .action:hover {
