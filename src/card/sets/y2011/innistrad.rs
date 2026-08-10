@@ -403,6 +403,7 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::Target(TargetSlotId(0)),
                 zone: ZoneKind::Battlefield,
+                controller: None,
             },
         )
         .with_targets(&[AbilityTargetDef::exactly_one(

@@ -126,6 +126,7 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
                 EffectDef::MoveToZone {
                     object: EffectRecipientDef::Target(TargetSlotId(2)),
                     zone: ZoneKind::Library,
+                    controller: None,
                 },
             )
             .with_targets(&[AbilityTargetDef::exactly_one_permanent(
@@ -445,6 +446,7 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Battlefield,
+                controller: None,
             },
         )
         .with_source_zones(&[ZoneKind::Hand]),
@@ -530,6 +532,7 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
                     controller: PlayerRelation::Any,
                 },
                 zone: ZoneKind::Exile,
+                controller: None,
             },
         ),
         AbilityDef::replacement_for(
@@ -540,6 +543,7 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Exile,
+                controller: None,
             },
         ),
     ]),
@@ -577,6 +581,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
                 EffectDef::MoveToZone {
                     object: EffectRecipientDef::Target(TargetSlotId(1)),
                     zone: ZoneKind::Exile,
+                    controller: None,
                 },
             )
             .with_targets(&[AbilityTargetDef::exactly_one_permanent(

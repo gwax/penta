@@ -2108,6 +2108,7 @@ impl Game {
                 if let EffectDef::MoveToZone {
                     object: EffectRecipientDef::Source,
                     zone,
+                    ..
                 } = ability.effect
                 {
                     replacement = Some(zone);
@@ -2185,6 +2186,7 @@ impl Game {
                     && let EffectDef::MoveToZone {
                         object: EffectRecipientDef::Source,
                         zone,
+                        ..
                     } = ability.effect
                 {
                     return Some(zone);
@@ -2242,6 +2244,10 @@ impl Game {
         expected_from: ZoneKind,
         requested_to: ZoneKind,
         cause: ZoneMoveCause,
+        // Who controls the permanent when it arrives on the battlefield.
+        // Reanimation that steals names a player; everything else leaves this
+        // empty and the card arrives under its owner's control.
+        arriving_controller: Option<PlayerId>,
     ) -> Option<(CardInstance, ZoneKind)> {
         let (from, card) = self
             .card_in_nonbattlefield_zone(id)
@@ -2266,7 +2272,12 @@ impl Game {
         };
         let card = remove_card(cards, id)?;
         let card = if destination == ZoneKind::Battlefield {
-            self.put_card_onto_battlefield_from(card, from, owner, None)
+            self.put_card_onto_battlefield_from(
+                card,
+                from,
+                arriving_controller.unwrap_or(owner),
+                None,
+            )
         } else {
             let (card, _zone_change) = self.zone_change_card(card);
             match destination {
@@ -2303,6 +2314,7 @@ impl Game {
                 ZoneKind::Hand,
                 ZoneKind::Graveyard,
                 cause,
+                None,
             ) else {
                 continue;
             };
@@ -8352,7 +8364,20 @@ impl Game {
             EffectDef::MoveToZone {
                 object: recipient,
                 zone,
+                controller,
             } => {
+                let arriving_controller = controller.map(|relation| {
+                    if self.player_relation_matches(
+                        object.controller,
+                        relation,
+                        object.controller,
+                        context,
+                    ) {
+                        object.controller
+                    } else {
+                        object.controller.opponent()
+                    }
+                });
                 for target in self.effect_recipients(recipient, object, context) {
                     self.move_target_to_zone(
                         target,
@@ -8360,6 +8385,7 @@ impl Game {
                         ZoneMoveCause::Effect {
                             controller: object.controller,
                         },
+                        arriving_controller,
                     );
                 }
             }
@@ -8489,7 +8515,13 @@ impl Game {
 
     /// Moves one object to a zone. Only the moves a supported card actually
     /// makes are handled; the rest stay seams rather than guesses.
-    fn move_target_to_zone(&mut self, target: Target, zone: ZoneKind, cause: ZoneMoveCause) {
+    fn move_target_to_zone(
+        &mut self,
+        target: Target,
+        zone: ZoneKind,
+        cause: ZoneMoveCause,
+        arriving_controller: Option<PlayerId>,
+    ) {
         if let Target::Permanent(id) = target {
             // Leaving the battlefield has its own procedure: last-known
             // information, exit events, and the triggers watching for them.
@@ -8511,7 +8543,7 @@ impl Game {
         else {
             return;
         };
-        let _ = self.move_card_from_nonbattlefield_zone(id, from, zone, cause);
+        let _ = self.move_card_from_nonbattlefield_zone(id, from, zone, cause, arriving_controller);
     }
 
     fn resolve_applied_effect(

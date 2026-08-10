@@ -593,7 +593,7 @@ mod tests {
             } => shared_resolving_apply(recipient, effect, duration),
             // Only the moves the runtime actually performs are inside the
             // boundary. A move to the stack or command zone is still a seam.
-            EffectDef::MoveToZone { object, zone } => {
+            EffectDef::MoveToZone { object, zone, .. } => {
                 matches!(
                     zone,
                     ZoneKind::Battlefield
@@ -1005,6 +1005,7 @@ mod tests {
                             == EffectDef::MoveToZone {
                                 object: EffectRecipientDef::Source,
                                 zone: ZoneKind::Battlefield,
+                                controller: None,
                             }
                 }
                 ReplacementEventDef::AnyObjectWouldMove { .. } => {
@@ -1014,6 +1015,7 @@ mod tests {
                             == EffectDef::MoveToZone {
                                 object: EffectRecipientDef::Source,
                                 zone: ZoneKind::Exile,
+                                controller: None,
                             }
                 }
                 ReplacementEventDef::WouldGainLife(_) => {

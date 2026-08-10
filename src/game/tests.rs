@@ -12735,6 +12735,7 @@ fn loxodon_smiter_replaces_an_opponent_caused_hand_to_graveyard_move() {
         EffectDef::MoveToZone {
             object: EffectRecipientDef::Source,
             zone: ZoneKind::Battlefield,
+            controller: None,
         }
     );
 }
@@ -12800,6 +12801,7 @@ fn general_effect_zone_moves_consult_would_move_replacements() {
         ZoneMoveCause::Effect {
             controller: PlayerId::Two,
         },
+        None,
     );
 
     assert!(game.players[0].graveyard.is_empty());
@@ -16798,5 +16800,44 @@ fn rest_in_peace_exiles_everything_headed_for_a_graveyard() {
         game.players[0].graveyard.len(),
         1,
         "the replacement stopped when its source left"
+    );
+}
+
+#[test]
+fn sepulchral_primordial_reanimates_under_its_controller() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[1]
+        .graveyard
+        .push(card(14_000, cards::SERRA_ANGEL, PlayerId::Two));
+    // Your own graveyard is not a legal source, so this one stays put.
+    game.players[0]
+        .graveyard
+        .push(card(14_001, cards::SAVANNAH_LIONS, PlayerId::One));
+
+    game.put_onto_battlefield(PlayerId::One, cards::SEPULCHRAL_PRIMORDIAL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let reanimated = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SERRA_ANGEL)
+        .expect("the Angel was reanimated");
+    assert_eq!(
+        reanimated.controller,
+        PlayerId::One,
+        "under your control, not its owner's"
+    );
+    assert_eq!(
+        reanimated.card.owner,
+        PlayerId::Two,
+        "ownership is unchanged, so it goes home if it dies"
+    );
+    assert!(game.players[1].graveyard.is_empty());
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        1,
+        "your own graveyard was never a legal target"
     );
 }

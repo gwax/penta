@@ -328,10 +328,32 @@ pub(in crate::card::sets) static SEPULCHRAL_PRIMORDIAL: CardRecord = CardRecord:
     )
     .with_abilities(&[
         abilities::intimidate(),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "When this creature enters, for each opponent, you may put up to one target creature card from that player's graveyard onto the battlefield under your control.",
-            "The enters-the-battlefield reanimation trigger is not executed.",
-        ),
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            // One opponent means one target here. Choosing none is already a
+            // legal target selection, so the printed "may" adds nothing.
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetSlotId(0)),
+                zone: ZoneKind::Battlefield,
+                controller: Some(PlayerRelation::You),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::up_to(
+            TargetSlotId(0),
+            "creature card in an opponent's graveyard",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: Some(PlayerRelation::Opponent),
+            },
+            1,
+        )]),
     ]),
 );
 

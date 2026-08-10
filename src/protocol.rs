@@ -1968,10 +1968,10 @@ mod tests {
         assert!(pilgrim["parts"][0].get("effectStatus").is_none());
 
         // Any card with a mix of executable and pending clauses will do here.
-        // Sepulchral Primordial has intimidate but its per-opponent
-        // reanimation trigger needs machinery the engine lacks, so it should
-        // stay partial for a while; repoint this if that lands.
-        let partial = find("Sepulchral Primordial");
+        // Blind Obedience taps what its opponents play, but extort needs
+        // hybrid mana the cost model cannot express yet; repoint this if that
+        // lands.
+        let partial = find("Blind Obedience");
         assert_eq!(partial["implementationStatus"], "partial");
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 

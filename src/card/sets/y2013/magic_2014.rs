@@ -348,6 +348,7 @@ pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new(
                 EffectDef::MoveToZone {
                     object: EffectRecipientDef::Target(TargetSlotId(0)),
                     zone: ZoneKind::Exile,
+                    controller: None,
                 },
             ]),
         )

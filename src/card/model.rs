@@ -1403,6 +1403,11 @@ pub enum EffectDef {
     MoveToZone {
         object: EffectRecipientDef,
         zone: ZoneKind,
+        /// Who controls the permanent when the destination is the
+        /// battlefield. `None` is the ordinary case, where a card arrives
+        /// under its owner's control; reanimation that steals names a
+        /// relation instead.
+        controller: Option<PlayerRelation>,
     },
     /// Choose and store a creature type for an object as it enters. This is a
     /// replacement procedure rather than a resolving stack effect.
