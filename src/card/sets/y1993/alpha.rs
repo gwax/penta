@@ -939,11 +939,12 @@ pub(in crate::card::sets) static DRAIN_LIFE: CardRecord = CardRecord::new(
     CardArt::new("5d077a49-73d4-4958-b42a-31b814e110e8", "Douglas Shuler"),
     CardSet::Alpha,
     CardRules::new_sorcery(mana_cost!("{X}{1}{B}"))
+    .spend_only_on_x(ManaColor::Black)
     .with_abilities(&[
-        AbilityDef::custom_partial(
+        AbilityDef::play_restriction_note(
             "Spend only black mana on X.",
-            CardBehavior::DrainLife,
-            "The black-mana spending restriction is not fully enforced.",
+            "The payment layer folds X into the black requirement, so no other \
+             mana can cover it.",
         ),
         AbilityDef::spell_with_targets(
             "Drain Life deals X damage to any target. You gain life equal to the damage dealt, but not more life than the player's life total before the damage was dealt, the planeswalker's loyalty before the damage was dealt, or the creature's toughness.",

@@ -20698,6 +20698,63 @@ fn drain_life_gains_only_what_the_target_had_to_give() {
 }
 
 #[test]
+fn drain_life_spends_only_black_mana_on_x() {
+    // Three black and five green. The B symbol takes one black and the green
+    // covers the generic, so only two black are left for X -- not the six the
+    // pool could otherwise afford.
+    let mut game = ready_game();
+    let drain = card(10_000, cards::DRAIN_LIFE, PlayerId::One);
+    game.players[0].hand.push(drain.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 3);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 5);
+
+    let offered: Vec<u16> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. }
+                if card == drain.id
+                    && choices
+                        .iter_targets()
+                        .copied()
+                        .eq(std::iter::once(Target::Player(PlayerId::Two))) =>
+            {
+                Some(choices.x())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(offered, vec![0, 1, 2], "green cannot be spent on X");
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == drain.id
+                && choices.x() == 2
+                && choices.iter_targets().copied().eq(std::iter::once(
+                    Target::Player(PlayerId::Two)
+                )))
+        })
+        .expect("two is affordable");
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, 18, "two damage landed");
+    assert_eq!(
+        game.players[0].mana_pool.amount(ManaColor::Black),
+        0,
+        "all three black went to the symbol and to X"
+    );
+    assert_eq!(
+        game.players[0].mana_pool.amount(ManaColor::Green),
+        4,
+        "and the green paid only the one generic"
+    );
+}
+
+#[test]
 fn drain_life_is_capped_by_a_creatures_toughness() {
     let mut game = ready_game();
     // Savannah Lions is a 2/1, so a big drain still only gains one.

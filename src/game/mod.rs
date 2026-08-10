@@ -13237,6 +13237,21 @@ impl Game {
             })
     }
 
+    /// The colour a spell's printed cost demands for X, if it prints such a
+    /// restriction. Read from the compatibility primary-part view: no
+    /// multi-part card prints one today.
+    fn x_spend_restriction(&self, purpose: &ManaPaymentPurpose) -> Option<ManaColor> {
+        let ManaPaymentPurpose::Spell { definition, .. } = purpose else {
+            return None;
+        };
+        self.catalog.get(*definition)?.rules.x_spend_restriction()
+    }
+
+    fn restrict_x(&self, cost: ManaCost, x: u16, purpose: &ManaPaymentPurpose) -> (ManaCost, u16) {
+        self.x_spend_restriction(purpose)
+            .map_or((cost, x), |color| fold_restricted_x(cost, x, color))
+    }
+
     fn mana_can_pay_for(&self, mana: Mana, purpose: &ManaPaymentPurpose) -> bool {
         mana.restrictions
             .iter()
@@ -13327,6 +13342,7 @@ impl Game {
         x: u16,
         purpose: &ManaPaymentPurpose,
     ) -> Vec<Mana> {
+        let (cost, x) = self.restrict_x(cost, x, purpose);
         self.reconcile_mana(player);
         let before = self.eligible_mana_pool(player, purpose);
         let mut after = before;
@@ -13653,6 +13669,7 @@ impl Game {
         x: u16,
         purpose: &ManaPaymentPurpose,
     ) -> Option<Vec<PlannedManaActivation>> {
+        let (cost, x) = self.restrict_x(cost, x, purpose);
         let mut pool = self.eligible_mana_pool(player, purpose);
         let mut assigned = Vec::new();
         let mut flexible = Vec::new();
@@ -13745,6 +13762,7 @@ impl Game {
         purpose: &ManaPaymentPurpose,
     ) -> Option<Vec<PlannedManaActivation>> {
         let mut available = self.assigned_mana_activations_for(player, cost, x, purpose)?;
+        let (cost, x) = self.restrict_x(cost, x, purpose);
         let mut pool = self.eligible_mana_pool(player, purpose);
         let mut selected = Vec::new();
 
@@ -16974,6 +16992,26 @@ fn colored_mana() -> Vec<ManaColor> {
         ManaColor::Red,
         ManaColor::Green,
     ]
+}
+
+/// "Spend only black mana on X." The restriction does not change how much the
+/// spell costs, only which mana may pay for it, so folding the X portion out
+/// of the generic requirement and into the coloured one says exactly that in
+/// the vocabulary every payment path already speaks.
+fn fold_restricted_x(cost: ManaCost, x: u16, color: ManaColor) -> (ManaCost, u16) {
+    let amount = x.saturating_mul(cost.x_multiplier);
+    let mut folded = cost;
+    match color {
+        ManaColor::White => folded.white = folded.white.saturating_add(amount),
+        ManaColor::Blue => folded.blue = folded.blue.saturating_add(amount),
+        ManaColor::Black => folded.black = folded.black.saturating_add(amount),
+        ManaColor::Red => folded.red = folded.red.saturating_add(amount),
+        ManaColor::Green => folded.green = folded.green.saturating_add(amount),
+        // No printed card restricts X to colourless, and generic already
+        // accepts it, so there is nothing to fold.
+        ManaColor::Colorless => return (cost, x),
+    }
+    (folded, 0)
 }
 
 const fn mana_cost_amount(cost: ManaCost, color: ManaColor) -> u16 {

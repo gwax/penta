@@ -4052,7 +4052,8 @@ pub enum CardBehavior {
     Dissipate,
     DoomBlade,
     /// Legacy dispatch key retained for source compatibility; the card now
-    /// uses a declarative drain that respects the life-gain cap.
+    /// uses a declarative drain that respects the life-gain cap, and a
+    /// cost-level restriction on which mana may pay for X.
     DrainLife,
     /// Legacy dispatch key retained for source compatibility; the card now
     /// uses a declarative pump and a conditional delayed sacrifice.
@@ -4907,6 +4908,9 @@ pub struct CardRules {
     /// A timing or zone restriction the card prints on its own casting, which
     /// the derived play option carries into the runtime.
     play_restriction: PlayRestriction,
+    /// "Spend only black mana on X." The X portion of the cost stops being
+    /// generic and has to come from this colour.
+    x_spend_restriction: Option<ManaColor>,
 }
 
 /// Whether any hybrid symbol in this cost can be paid with one colour.
@@ -4953,6 +4957,7 @@ impl CardRules {
             abilities: CardAbilityList::None,
             colors,
             play_restriction: PlayRestriction::Normal,
+            x_spend_restriction: None,
         }
     }
 
@@ -5397,6 +5402,18 @@ impl CardRules {
     #[must_use]
     pub const fn play_restriction(&self) -> PlayRestriction {
         self.play_restriction
+    }
+
+    /// "Spend only <colour> mana on X."
+    #[must_use]
+    pub const fn spend_only_on_x(mut self, color: ManaColor) -> Self {
+        self.x_spend_restriction = Some(color);
+        self
+    }
+
+    #[must_use]
+    pub const fn x_spend_restriction(&self) -> Option<ManaColor> {
+        self.x_spend_restriction
     }
 
     #[must_use]
