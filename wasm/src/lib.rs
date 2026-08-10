@@ -733,10 +733,19 @@ impl WebGame {
         )
     }
 
-    /// Predicts where a pass would land by replaying the real auto-pass
-    /// policy on a cloned game, assuming the opponent declines to act. The
-    /// result is the label for the UI's pass button, so the button always
-    /// names the destination the engine will actually reach.
+    /// Where a pass lands if the opponent takes no action of their own.
+    ///
+    /// A conditional promise about the rules, not a prediction about the
+    /// opponent. The walk declines every optional action for them and takes
+    /// only the null ones -- pass the window, finish a declaration having
+    /// declared nothing -- so the destination is what the turn structure
+    /// produces when nobody responds. Anything they really do stops the pass
+    /// early, and the replay beats show it.
+    ///
+    /// The promise ends where their discretion could change which step the
+    /// human next acts in. That is their declare-attackers step and nothing
+    /// else: whether they block does not move the human's next window, but
+    /// whether they attack decides whether there is a block step at all.
     fn pass_preview_label(&self) -> Option<String> {
         if self.game.decision_player() != Some(self.human) {
             return None;
@@ -793,11 +802,12 @@ impl WebGame {
                     Some(action) => action,
                     None => break,
                 }
-            } else if let Some(action) = neutral_opponent_action(&sim_observation) {
+            } else if Self::opponent_holds_the_attack_decision(&sim_observation) {
+                break;
+            } else if let Some(action) = opponent_declines_action(&sim_observation) {
                 action
             } else {
-                // The opponent holds a real choice here, so this is where the
-                // human ends up waiting.
+                // A real decision of theirs is where the human ends up waiting.
                 break;
             };
             if sim.apply(player, action).is_err() {
@@ -818,6 +828,19 @@ impl WebGame {
             start_turn,
             start_active_is_human,
         ))
+    }
+
+    /// Whether the opponent is at the one window whose outcome decides which
+    /// step the human next acts in. Guessing here is what the preview must
+    /// not do: predicting the attack promises a block step, and predicting no
+    /// attack promises their end step, and both are the button answering a
+    /// question that is theirs.
+    fn opponent_holds_the_attack_decision(observation: &PlayerObservation) -> bool {
+        observation.step == Step::DeclareAttackers
+            && observation
+                .legal_actions
+                .iter()
+                .any(|action| matches!(action, Action::DeclareAttacker { .. }))
     }
 
     /// Whether this pass carries the defender through the block step without
@@ -2294,31 +2317,16 @@ struct AutoPassContext {
 /// possible, and resolve forced decisions (such as a cleanup discard) with an
 /// arbitrary minimal selection so the preview can keep moving. Returns `None`
 /// when the opponent holds a choice the preview cannot neutrally guess at.
-fn neutral_opponent_action(observation: &PlayerObservation) -> Option<Action> {
-    if let Some(decision) = observation.decision.as_ref() {
-        if decision.options.len() < decision.minimum {
-            return None;
-        }
-        return Some(Action::ChooseDecision {
-            decision: decision.id,
-            options: decision
-                .options
-                .iter()
-                .take(decision.minimum)
-                .map(|option| option.id)
-                .collect(),
-        });
-    }
-    // An opponent holding an untapped creature attacks with it almost every
-    // time, and the human needs to be told they are heading into blocks
-    // rather than idling through to an end step that never arrives.
-    if observation.step == Step::DeclareAttackers
-        && let Some(attack) = observation
-            .legal_actions
-            .iter()
-            .find(|action| matches!(action, Action::DeclareAttacker { .. }))
-    {
-        return Some(attack.clone());
+/// The opponent doing nothing of their own: pass the window, finish a
+/// declaration having declared nothing, take a forced discard.
+///
+/// `None` where they hold a real decision, which is where the promise runs
+/// out. Nothing here chooses on their behalf. Answering a decision for them,
+/// or declaring their attackers, would be a guess that the button then
+/// reports back to the human as though it were known.
+fn opponent_declines_action(observation: &PlayerObservation) -> Option<Action> {
+    if observation.decision.is_some() {
+        return None;
     }
     observation
         .legal_actions
@@ -3273,6 +3281,45 @@ mod tests {
         assert!(
             hand.iter().all(|card| card.get("metadataOnly").is_none()),
             "the WASM surface exposes the derived status, not its former boolean projection",
+        );
+    }
+
+    #[test]
+    fn the_pass_label_stops_where_the_opponents_attack_decision_begins() {
+        // The button must not answer a question that belongs to the opponent.
+        // Promising "their end step" would predict that they decline to
+        // attack; promising "blocks" would predict that they attack. The
+        // honest destination is the step where their choice happens.
+        //
+        // This does not change the label the old opponent-predicting preview
+        // produced here -- the human's own auto-pass stopped at the same step
+        // either way. It pins the label against a preview that walks past the
+        // decision in either direction.
+        let mut game = WebGame::new("Sligh", "Goblins", "Handcrafted", false, 4_242, None)
+            .expect("game starts");
+        while game.game.in_pregame() {
+            apply_engine_action(&mut game.game, |action| matches!(action, Action::KeepHand));
+        }
+        game.game
+            .set_hand(game.human, &[])
+            .expect("an empty hand is valid");
+        let human = game.human;
+        // Given to them a turn early, so it is not summoning sick when their
+        // combat comes around.
+        advance_engine_quietly_until(&mut game.game, |observation| {
+            observation.active_player == human && observation.step == Step::PrecombatMain
+        });
+        game.game
+            .put_onto_battlefield(human.opponent(), penta::card::cards::SAVANNAH_LIONS)
+            .expect("the Lions are cataloged");
+        advance_engine_quietly_until(&mut game.game, |observation| {
+            observation.active_player == human.opponent() && observation.viewer == human
+        });
+        assert_eq!(game.game.decision_player(), Some(human));
+
+        assert_eq!(
+            game.pass_preview_label().as_deref(),
+            Some("Go to their attack"),
         );
     }
 

@@ -143,6 +143,7 @@ test("[slow] the pass button label matches where the click actually lands", asyn
   // that name a turn boundary -- "End turn", "Your turn" -- are never quiet,
   // because handing over the turn is exactly when beats appear, and an
   // opponent acting on their own turn does not invalidate them.
+  console.log([...tally].map(([l,r])=>`${l}: ${r.hit}/${r.used} all, ${r.quietHit}/${r.quiet} quiet`).join("\n"));
   for (const [label, row] of tally) {
     if (guessed.has(label)) continue;
     const [hit, used] =
