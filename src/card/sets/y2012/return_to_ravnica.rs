@@ -2,11 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType,
-    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, LibraryPlacement, ManaColor,
-    ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZoneMoveCauseDef, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
+    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
+    CardType, CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, LibraryPlacement,
+    ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -506,12 +506,24 @@ pub(in crate::card::sets) static PITHING_NEEDLE: CardRecord = CardRecord::new(
     "Pithing Needle",
     CardArt::new("786c1e91-9d75-46a3-9e0d-56d29fcb01a7", "Anthony Palumbo"),
     CardSet::ReturnToRavnica,
-    CardRules::new_artifact(mana_cost!("{1}")).with_ability(
-        AbilityDef::not_implemented(
-            "As this artifact enters, choose a card name.\nActivated abilities of sources with the chosen name can't be activated unless they're mana abilities.",
-            "Printed rules are cataloged but are not executed by the engine.",
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
+        AbilityDef::replacement(
+            "As this artifact enters, choose a card name.",
+            EffectDef::ChooseCardName {
+                object: EffectRecipientDef::Source,
+            },
         ),
-    ),
+        // The named card's abilities are locked by the action generator, the
+        // same place every other activation restriction is enforced.
+        AbilityDef::static_ability(
+            "Activated abilities of sources with the chosen name can't be activated unless they're mana abilities.",
+            EffectDef::None,
+        )
+        .with_implementation(AbilityImplementationDef::CustomFull {
+            behavior: None,
+            explanation: "The activation lock is enforced where activated abilities are offered.",
+        }),
+    ]),
 );
 
 pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(

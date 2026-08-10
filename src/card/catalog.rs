@@ -748,6 +748,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::Replacement(_)
         | super::EffectDef::MoveToZone { .. }
+        | super::EffectDef::ChooseCardName { .. }
         | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Special(_) => {}
     }
@@ -813,6 +814,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::Replacement(_)
         | super::EffectDef::MoveToZone { .. }
+        | super::EffectDef::ChooseCardName { .. }
         | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Special(_) => 0,
     }

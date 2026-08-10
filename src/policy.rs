@@ -330,6 +330,7 @@ impl HandcraftedPolicy {
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
+            | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
         }

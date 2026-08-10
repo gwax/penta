@@ -617,6 +617,7 @@ mod tests {
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
+            | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
         }
@@ -779,6 +780,7 @@ mod tests {
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
+            | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::Special(_) => false,
@@ -964,6 +966,7 @@ mod tests {
                         | EffectDef::MultiplyEventAmount(_)
                         | EffectDef::Replacement(_)
                         | EffectDef::MoveToZone { .. }
+                        | EffectDef::ChooseCardName { .. }
                         | EffectDef::ChooseCreatureType { .. }
                         | EffectDef::Apply { .. }
                         | EffectDef::Special(_) => false,
@@ -1009,6 +1012,8 @@ mod tests {
                         && matches!(
                             ability.effect,
                             EffectDef::ChooseCreatureType {
+                                object: EffectRecipientDef::Source,
+                            } | EffectDef::ChooseCardName {
                                 object: EffectRecipientDef::Source,
                             }
                         )
@@ -1104,6 +1109,7 @@ mod tests {
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
+            | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
         }

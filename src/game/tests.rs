@@ -1020,9 +1020,14 @@ fn metadata_only_noncreature_spells_are_hidden_but_baseline_cards_remain_playabl
 
     // Izzet Charm is only partial, and the play gate follows the modes that
     // do work: its loot mode needs no target and is castable on an empty board.
+    // Doom Blade, Domri Rade, and Turn // Burn stay hidden as metadata only.
     assert_eq!(
         cast_cards,
-        vec![CardInstanceId(10_003), CardInstanceId(10_005)]
+        vec![
+            CardInstanceId(10_001),
+            CardInstanceId(10_003),
+            CardInstanceId(10_005)
+        ]
     );
     assert!(actions.contains(&Action::PlayLand {
         card: CardInstanceId(10_004),
@@ -17386,5 +17391,66 @@ fn terminus_is_castable_for_its_miracle_cost_only_on_the_turn_s_first_draw() {
             .map(|card| card.definition),
         Some(cards::SERRA_ANGEL),
         "and went to the bottom of its owner's library"
+    );
+}
+
+#[test]
+fn pithing_needle_locks_the_named_card_but_not_its_mana() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    // Mishra's Factory both animates and taps for mana, so one card shows
+    // which half a Needle stops.
+    let factory = game
+        .put_onto_battlefield(PlayerId::One, cards::MISHRA_S_FACTORY)
+        .expect("cataloged");
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let activations = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == factory))
+            .count()
+    };
+    let mana_actions = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| matches!(action, Action::ActivateManaAbility { source, .. } if *source == factory))
+            .count()
+    };
+    assert!(activations(&game) > 0, "the Factory starts unlocked");
+    assert!(mana_actions(&game) > 0);
+
+    game.put_onto_battlefield(PlayerId::One, cards::PITHING_NEEDLE)
+        .expect("cataloged");
+    let choice = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the Needle names a card as it enters");
+    let factory_name = choice
+        .options
+        .iter()
+        .find(|option| option.label == "Mishra's Factory")
+        .expect("a card with an activated ability is offered");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: vec![factory_name.id],
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        activations(&game),
+        0,
+        "the named card's activated abilities are locked"
+    );
+    assert!(
+        mana_actions(&game) > 0,
+        "but a mana ability is exempt from the lock"
     );
 }

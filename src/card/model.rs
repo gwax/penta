@@ -1443,6 +1443,11 @@ pub enum EffectDef {
         /// relation instead.
         controller: Option<PlayerRelation>,
     },
+    /// Choose and store a card name for an object as it enters, the same
+    /// replacement procedure as choosing a creature type.
+    ChooseCardName {
+        object: EffectRecipientDef,
+    },
     /// Choose and store a creature type for an object as it enters. This is a
     /// replacement procedure rather than a resolving stack effect.
     ChooseCreatureType {

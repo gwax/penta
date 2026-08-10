@@ -179,6 +179,8 @@ struct Permanent {
     blocking: Option<GameObjectId>,
     chosen_player: Option<PlayerId>,
     chosen_creature_type: Option<String>,
+    /// The card name a permanent named as it entered, for Pithing Needle.
+    chosen_card_name: Option<String>,
     destroy_at_end: bool,
     temporary_keywords: Vec<KeywordAbility>,
     /// The creature this permanent has become for the turn, if a manland's
@@ -256,6 +258,7 @@ impl Permanent {
             blocking: None,
             chosen_player: None,
             chosen_creature_type: None,
+            chosen_card_name: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
             animation: None,
@@ -765,6 +768,7 @@ struct ReplacementEffectContext {
 enum BattlefieldEntryReplacementEffect {
     Declarative(ReplacementEffectDef),
     ChooseCreatureType,
+    ChooseCardName,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1094,6 +1098,9 @@ enum DecisionContinuation {
         payment: PaymentDef,
         if_paid: &'static [ReplacementEffectDef],
         if_declined: &'static [ReplacementEffectDef],
+    },
+    BattlefieldEntryCardName {
+        choices: Vec<String>,
     },
     BattlefieldEntryCreatureType {
         choices: Vec<String>,
@@ -2492,6 +2499,12 @@ impl Game {
     ) -> Option<PendingEvent> {
         let PendingReplacementEffect { context, effect } = pending_effect;
         match effect {
+            BattlefieldEntryReplacementEffect::ChooseCardName => {
+                let player = Self::pending_event_controller(&pending);
+                self.pending_events.push_front(pending);
+                self.queue_card_name_choice(player);
+                None
+            }
             BattlefieldEntryReplacementEffect::ChooseCreatureType => {
                 let player = Self::pending_event_controller(&pending);
                 self.pending_events.push_front(pending);
@@ -2740,6 +2753,8 @@ impl Game {
                         DeclarativeAbilityDef::Replacement(definition),
                         EffectDef::ChooseCreatureType {
                             object: EffectRecipientDef::Source,
+                        } | EffectDef::ChooseCardName {
+                            object: EffectRecipientDef::Source,
                         },
                     ) if definition.event == ReplacementEventDef::EntersBattlefield
                 )
@@ -2892,6 +2907,12 @@ impl Game {
                             object: EffectRecipientDef::Source,
                         },
                     ) => BattlefieldEntryReplacementEffect::ChooseCreatureType,
+                    (
+                        ReplacementEventDef::EntersBattlefield,
+                        EffectDef::ChooseCardName {
+                            object: EffectRecipientDef::Source,
+                        },
+                    ) => BattlefieldEntryReplacementEffect::ChooseCardName,
                     _ => return ControlFlow::Continue(()),
                 };
                 let source = AbilitySourceRef {
@@ -3326,6 +3347,7 @@ impl Game {
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
+            | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {
@@ -4779,6 +4801,27 @@ impl Game {
     /// during your own main phase with an empty stack, and only one loyalty
     /// ability per planeswalker per turn. CR 606.5: the cost cannot remove
     /// more counters than the permanent has.
+    /// CR 602.5c as Pithing Needle writes it: a non-mana activated ability
+    /// cannot be activated while something has named its source's card. The
+    /// name is matched against the printed card, so a copy answering to the
+    /// same name is locked too.
+    fn activated_abilities_are_named(&self, permanent: &Permanent) -> bool {
+        let (definition, _part) = Self::effective_rules_source(permanent);
+        let Some(name) = self
+            .catalog
+            .get(definition)
+            .map(|definition| definition.name.as_str())
+        else {
+            return false;
+        };
+        self.battlefield.iter().any(|candidate| {
+            candidate
+                .chosen_card_name
+                .as_deref()
+                .is_some_and(|chosen| chosen == name)
+        })
+    }
+
     fn can_activate_loyalty(&self, permanent: &Permanent, player: PlayerId, change: i8) -> bool {
         let Some(loyalty) = permanent.loyalty else {
             return false;
@@ -5195,6 +5238,22 @@ impl Game {
                         context,
                         if paid { if_paid } else { if_declined },
                     );
+                    self.pending_events.push_front(pending);
+                    self.continue_pending_events();
+                }
+            }
+            DecisionContinuation::BattlefieldEntryCardName { choices } => {
+                let Some(selected) = options
+                    .first()
+                    .and_then(|option| usize::try_from(*option).ok())
+                    .and_then(|index| choices.get(index))
+                    .cloned()
+                else {
+                    return;
+                };
+                if let Some(mut pending) = self.pending_events.pop_front() {
+                    let ReplaceableEvent::BattlefieldEntry(entry) = &mut pending.event;
+                    entry.permanent.chosen_card_name = Some(selected);
                     self.pending_events.push_front(pending);
                     self.continue_pending_events();
                 }
@@ -6676,6 +6735,11 @@ impl Game {
             .iter()
             .filter(|permanent| permanent.controller == player)
         {
+            // Mana abilities are exempt, and they are enumerated elsewhere,
+            // so a named source contributes no actions from here at all.
+            if self.activated_abilities_are_named(permanent) {
+                continue;
+            }
             let mut has_declarative_activation = false;
             let mut has_custom_activation = false;
             let (definition, part) = Self::effective_rules_source(permanent);
@@ -7370,6 +7434,56 @@ impl Game {
                 .then_with(|| left_name.cmp(right_name))
         });
         choices.into_iter().map(|(name, _)| name).collect()
+    }
+
+    /// Offers the card names worth naming. Naming a card with no activated
+    /// ability does nothing at all, so leaving those out of the list changes
+    /// no outcome and keeps the choice readable.
+    fn queue_card_name_choice(&mut self, player: PlayerId) {
+        let mut names = self
+            .catalog
+            .definitions()
+            .into_iter()
+            .filter(|definition| {
+                definition.parts.iter().any(|part| {
+                    part.rules.ability_clauses().iter().any(|ability| {
+                        matches!(
+                            ability.definition,
+                            DeclarativeAbilityDef::Activated(_)
+                                | DeclarativeAbilityDef::ActivatedMana(_)
+                        )
+                    })
+                })
+            })
+            .map(|definition| definition.name.clone())
+            .collect::<Vec<_>>();
+        names.sort();
+        names.dedup();
+        // A catalog with nothing to name would strand the entry procedure.
+        if names.is_empty() {
+            names.push("Black Lotus".into());
+        }
+        let options = names
+            .iter()
+            .enumerate()
+            .map(|(index, name)| DecisionOption {
+                id: u32::try_from(index).unwrap_or(u32::MAX),
+                label: name.clone(),
+                card: None,
+                ability_text: None,
+                zone: DecisionZone::None,
+            })
+            .collect();
+        self.queue_decision(
+            player,
+            "Choose a card name",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::BattlefieldEntryCardName { choices: names },
+        );
     }
 
     fn queue_creature_type_choice(&mut self, player: PlayerId) {
@@ -8615,6 +8729,7 @@ impl Game {
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
+            | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing mana and the remaining declarative effect
@@ -11302,6 +11417,7 @@ impl Game {
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::Replacement(_)
                 | EffectDef::MoveToZone { .. }
+                | EffectDef::ChooseCardName { .. }
                 | EffectDef::ChooseCreatureType { .. }
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_) => {}
@@ -11404,6 +11520,7 @@ impl Game {
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::Replacement(_)
                 | EffectDef::MoveToZone { .. }
+                | EffectDef::ChooseCardName { .. }
                 | EffectDef::ChooseCreatureType { .. }
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_) => {}
@@ -14036,6 +14153,7 @@ impl Game {
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }
+            | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => false,
