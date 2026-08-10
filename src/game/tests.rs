@@ -16741,3 +16741,62 @@ fn desecration_demon_only_grows_when_an_opponent_feeds_it() {
         "and nothing was sacrificed"
     );
 }
+
+#[test]
+fn rest_in_peace_exiles_everything_headed_for_a_graveyard() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.put_onto_battlefield(PlayerId::One, cards::REST_IN_PEACE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    // A creature dying.
+    let lions = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.destroy_permanent(lions);
+    drain_pending(&mut game);
+
+    // A card discarded from hand.
+    game.players[0].hand = vec![card(13_000, cards::PLAINS, PlayerId::One)];
+    game.discard_cards(PlayerId::One, &[GameObjectId(13_000)]);
+
+    // A card put into a graveyard by an effect, from the library.
+    game.players[0].library = vec![card(13_001, cards::FOREST, PlayerId::One)];
+    let milled = game.players[0].library.pop().expect("a card to bury");
+    game.bury_cards(PlayerId::One, vec![milled]);
+
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "no card reached the graveyard from any zone: {:?}",
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>()
+    );
+    for definition in [cards::SAVANNAH_LIONS, cards::PLAINS, cards::FOREST] {
+        assert!(
+            game.players[0]
+                .exile
+                .iter()
+                .any(|card| card.definition == definition),
+            "{definition:?} was exiled instead"
+        );
+    }
+
+    // With the enchantment gone, the graveyard works again.
+    let rest = game.battlefield[0].card.id;
+    game.destroy_permanent(rest);
+    drain_pending(&mut game);
+    let ooze = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.destroy_permanent(ooze);
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        1,
+        "the replacement stopped when its source left"
+    );
+}

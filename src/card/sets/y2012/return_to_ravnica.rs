@@ -532,9 +532,15 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
                 zone: ZoneKind::Exile,
             },
         ),
-        AbilityDef::not_implemented(
+        AbilityDef::replacement_for(
             "If a card or token would be put into a graveyard from anywhere, exile it instead.",
-            "Replacing every graveyard placement with exile is not implemented.",
+            ReplacementEventDef::AnyObjectWouldMove {
+                to: ZoneKind::Graveyard,
+            },
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Source,
+                zone: ZoneKind::Exile,
+            },
         ),
     ]),
 );

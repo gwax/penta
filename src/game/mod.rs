@@ -2088,6 +2088,47 @@ impl Game {
         }
     }
 
+    /// Where a card headed for one zone actually goes, when a permanent on the
+    /// battlefield replaces every such move. Rest in Peace is the example:
+    /// nothing reaches a graveyard while it is out, from any zone at all.
+    fn external_zone_move_replacement(&self, to: ZoneKind) -> Option<ZoneKind> {
+        let mut replacement = None;
+        for permanent in &self.battlefield {
+            self.for_each_effective_ability(permanent, |effective| {
+                let ability = effective.ability;
+                if !ability.implementation.is_executable() {
+                    return;
+                }
+                let DeclarativeAbilityDef::Replacement(definition) = ability.definition else {
+                    return;
+                };
+                if definition.event != (ReplacementEventDef::AnyObjectWouldMove { to }) {
+                    return;
+                }
+                if let EffectDef::MoveToZone {
+                    object: EffectRecipientDef::Source,
+                    zone,
+                } = ability.effect
+                {
+                    replacement = Some(zone);
+                }
+            });
+            if replacement.is_some() {
+                break;
+            }
+        }
+        replacement
+    }
+
+    /// The one way a card reaches a graveyard, so a replacement that sends it
+    /// somewhere else has a single place to apply.
+    fn put_card_into_graveyard(&mut self, owner: PlayerId, card: CardInstance) {
+        match self.external_zone_move_replacement(ZoneKind::Graveyard) {
+            Some(ZoneKind::Exile) => self.players[owner.index()].exile.push(card),
+            _ => self.players[owner.index()].graveyard.push(card),
+        }
+    }
+
     fn zone_move_replacement_destination(
         &self,
         card: &CardInstance,
@@ -2231,7 +2272,7 @@ impl Game {
             match destination {
                 ZoneKind::Library => self.players[owner.index()].library.push(card.clone()),
                 ZoneKind::Hand => self.players[owner.index()].hand.push(card.clone()),
-                ZoneKind::Graveyard => self.players[owner.index()].graveyard.push(card.clone()),
+                ZoneKind::Graveyard => self.put_card_into_graveyard(owner, card.clone()),
                 ZoneKind::Exile => self.players[owner.index()].exile.push(card.clone()),
                 ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {
                     unreachable!("unsupported destinations returned before removing the card")
@@ -7730,7 +7771,7 @@ impl Game {
             if object.cast_via_flashback || behavior == CardBehavior::Recall {
                 self.players[owner.index()].exile.push(card);
             } else {
-                self.players[owner.index()].graveyard.push(card);
+                self.put_card_into_graveyard(owner, card);
             }
         }
         self.events.push(GameEvent::SpellResolved {
@@ -9414,7 +9455,7 @@ impl Game {
     fn bury_cards(&mut self, player: PlayerId, cards: Vec<CardInstance>) {
         for card in cards {
             let (card, _zone_change) = self.zone_change_card(card);
-            self.players[player.index()].graveyard.push(card);
+            self.put_card_into_graveyard(player, card);
         }
     }
 
@@ -12238,7 +12279,7 @@ impl Game {
                         let definition = discarded.definition;
                         let (discarded, _zone_change) = self.zone_change_card(discarded);
                         let discarded_id = discarded.id;
-                        self.players[player.index()].graveyard.push(discarded);
+                        self.put_card_into_graveyard(player, discarded);
                         self.events.push(GameEvent::CardsDiscarded {
                             player,
                             cards: vec![(discarded_id, definition)],
@@ -13330,6 +13371,11 @@ impl Game {
             })
             .collect::<Vec<_>>();
 
+        // CR 614.12: a replacement effect that applies as a permanent leaves
+        // the battlefield reads the state before the event, so a Rest in
+        // Peace that is itself dying still replaces its own placement.
+        let graveyard_replacement = self.external_zone_move_replacement(ZoneKind::Graveyard);
+
         self.creature_died_this_turn |=
             exits.iter().any(|(_, snapshot, _, exile_instead, _, _)| {
                 !exile_instead && snapshot.object.types.is_creature()
@@ -13381,11 +13427,11 @@ impl Game {
             }
             let owner = permanent.card.owner;
             let (card, _zone_change) = self.zone_change_card(permanent.card);
-            if exile_instead {
+            if exile_instead || graveyard_replacement == Some(ZoneKind::Exile) {
                 self.players[owner.index()].exile.push(card);
                 continue;
             }
-            self.players[owner.index()].graveyard.push(card);
+            self.put_card_into_graveyard(owner, card);
 
             // Undying observes the creature as it died, then returns the card
             // from the graveyard as a fresh object under its owner's control.
@@ -13797,7 +13843,7 @@ impl Game {
             } else {
                 zone
             } {
-                CounteredSpellZone::Graveyard => self.players[owner.index()].graveyard.push(card),
+                CounteredSpellZone::Graveyard => self.put_card_into_graveyard(owner, card),
                 CounteredSpellZone::Exile => self.players[owner.index()].exile.push(card),
             }
         }

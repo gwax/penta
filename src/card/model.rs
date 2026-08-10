@@ -1174,6 +1174,10 @@ pub enum ReplacementEventDef {
     /// A player would gain life, matched relative to the replacement
     /// ability's controller.
     WouldGainLife(PlayerRelation),
+    /// Any object anywhere would be put into this zone. Unlike
+    /// [`Self::WouldMove`] this does not describe the moving object's own
+    /// ability: the replacement source watches from the battlefield.
+    AnyObjectWouldMove { to: ZoneKind },
     /// Compatibility event for existing entry replacements whose exact
     /// subject is identified by their effect primitive.
     EntersBattlefield,

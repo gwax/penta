@@ -862,6 +862,9 @@ mod tests {
                 shared_object_predicate(object)
             }
             ReplacementEventDef::WouldMove { cause, .. } => shared_zone_move_cause(cause),
+            // Only graveyard placement funnels through one procedure the
+            // replacement can sit in front of.
+            ReplacementEventDef::AnyObjectWouldMove { to } => to == ZoneKind::Graveyard,
             ReplacementEventDef::Special(_) => false,
         }
     }
@@ -1002,6 +1005,15 @@ mod tests {
                             == EffectDef::MoveToZone {
                                 object: EffectRecipientDef::Source,
                                 zone: ZoneKind::Battlefield,
+                            }
+                }
+                ReplacementEventDef::AnyObjectWouldMove { .. } => {
+                    battlefield_only(definition.source_zones)
+                        && shared_replacement_event(definition.event)
+                        && ability.effect
+                            == EffectDef::MoveToZone {
+                                object: EffectRecipientDef::Source,
+                                zone: ZoneKind::Exile,
                             }
                 }
                 ReplacementEventDef::WouldGainLife(_) => {
