@@ -5,7 +5,7 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition, CardEffectStatus,
     CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CounterKind,
-    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LibraryPlacement, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef,
     ValueDef, ZoneKind, abilities, cards,
 };
@@ -445,6 +445,7 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetSlotId(0)),
                 zone: ZoneKind::Battlefield,
                 controller: None,
+                placement: LibraryPlacement::Top,
             },
         )
         .with_targets(&[AbilityTargetDef::exactly_one(

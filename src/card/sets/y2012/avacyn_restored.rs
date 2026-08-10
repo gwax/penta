@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType,
-    CountConditionDef, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
-    ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    CountConditionDef, EffectDef, EffectDurationDef, EffectRecipientDef, LibraryPlacement,
+    ManaColor, ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::{TargetSlotId, mana_cost};
 
@@ -189,12 +189,22 @@ pub(in crate::card::sets) static TERMINUS: CardRecord = CardRecord::new(
     "Terminus",
     CardArt::new("0982ea7e-05a4-4e40-98ab-ea9aa6c7342e", "James Paick"),
     CardSet::AvacynRestored,
-    CardRules::new_sorcery(mana_cost!("{4}{W}{W}")).with_ability(
-        AbilityDef::not_implemented(
-            "Put all creatures on the bottom of their owners' libraries.\nMiracle {W} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)",
-            "Printed rules are cataloged but are not executed by the engine.",
+    CardRules::new_sorcery(mana_cost!("{4}{W}{W}")).with_abilities(&[
+        AbilityDef::spell(
+            "Put all creatures on the bottom of their owners' libraries.",
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                zone: ZoneKind::Library,
+                controller: None,
+                placement: LibraryPlacement::Bottom,
+            },
         ),
-    ),
+        abilities::miracle(mana_cost!("{W}")),
+    ]),
 );
 
 /// Haste matters here because the permanent has not been under its new

@@ -277,10 +277,10 @@ mod tests {
         AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardPrinting, CardPrintingId,
         CardStructure, CardSupertype, ComparisonDef, ConditionDef, DeclarativeAbilityDef,
         DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus,
-        KeywordAbility, ManaColor, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
-        ObjectPredicateDef, ObjectQueryDef, PlayActionKind, PlayRestriction, PlayerRelation,
-        ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate, TriggerConditionDef,
-        TriggerEventDef, TurnStepDef, ZoneKind, ZoneMoveCauseDef, cards,
+        KeywordAbility, LibraryPlacement, ManaColor, ManaRestrictionDef, ManaSelectionDef,
+        ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayActionKind, PlayRestriction,
+        PlayerRelation, ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate,
+        TriggerConditionDef, TriggerEventDef, TurnStepDef, ZoneKind, ZoneMoveCauseDef, cards,
     };
     use crate::{
         AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ManaCost, ModeId, PlayOptionId,
@@ -1023,6 +1023,7 @@ mod tests {
                                 object: EffectRecipientDef::Source,
                                 zone: ZoneKind::Battlefield,
                                 controller: None,
+                                placement: LibraryPlacement::Top,
                             }
                 }
                 ReplacementEventDef::AnyObjectWouldMove { .. } => {
@@ -1033,6 +1034,7 @@ mod tests {
                                 object: EffectRecipientDef::Source,
                                 zone: ZoneKind::Exile,
                                 controller: None,
+                                placement: LibraryPlacement::Top,
                             }
                 }
                 ReplacementEventDef::WouldGainLife(_) => {
@@ -1042,7 +1044,11 @@ mod tests {
                 ReplacementEventDef::Special(_) => false,
             },
             DeclarativeAbilityDef::AlternativeCast(definition) => match definition.kind {
-                AlternativeCastKindDef::Flashback => ability.effect == EffectDef::None,
+                // Both are permission to cast rather than effects of their
+                // own; the card's spell clause does the work.
+                AlternativeCastKindDef::Flashback | AlternativeCastKindDef::Miracle => {
+                    ability.effect == EffectDef::None
+                }
                 AlternativeCastKindDef::Overload => shared_stack_effect(ability.effect),
             },
             DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),

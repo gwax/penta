@@ -7,9 +7,9 @@ use crate::{
     AlternativeCastManaCostDef, AlternativeCostDef, AlternativeCostId,
     BattlefieldEntryModificationDef, CardComposition, CardDefinition, CardEffectStatus,
     CardInstanceId, CardPart, CardPartId, CardPrinting, CardRules, CardStructure, CastChoices,
-    DoubleFacedKind, ManaSpendEffectDef, ModeDef, ModeSetDef, PlayOptionDef, PlayOptionId,
-    PlayerRelation, ReplacementEffectDef, ReplacementEventDef, SpellForm, StackObjectId,
-    TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId,
+    DoubleFacedKind, LibraryPlacement, ManaSpendEffectDef, ModeDef, ModeSetDef, PlayOptionDef,
+    PlayOptionId, PlayerRelation, ReplacementEffectDef, ReplacementEventDef, SpellForm,
+    StackObjectId, TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId,
 };
 
 static TEST_FLYING_ABILITY: [AbilityDef; 1] = [abilities::flying()];
@@ -12742,6 +12742,7 @@ fn loxodon_smiter_replaces_an_opponent_caused_hand_to_graveyard_move() {
             object: EffectRecipientDef::Source,
             zone: ZoneKind::Battlefield,
             controller: None,
+            placement: LibraryPlacement::Top,
         }
     );
 }
@@ -12808,6 +12809,7 @@ fn general_effect_zone_moves_consult_would_move_replacements() {
             controller: PlayerId::Two,
         },
         None,
+        LibraryPlacement::Top,
     );
 
     assert!(game.players[0].graveyard.is_empty());
@@ -17277,4 +17279,112 @@ fn the_top_of_a_library_is_the_same_card_however_it_is_reached() {
         "and the draw continues from where they were lifted"
     );
     assert!(game.players[0].library.is_empty());
+}
+
+#[test]
+fn terminus_is_castable_for_its_miracle_cost_only_on_the_turn_s_first_draw() {
+    let setup = || {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].hand.clear();
+        game.players[0].library = vec![
+            card(20_001, cards::PLAINS, PlayerId::One),
+            card(20_000, cards::TERMINUS, PlayerId::One),
+        ];
+        // One white source, which is the miracle cost but not the printed one.
+        game.put_onto_battlefield(PlayerId::One, cards::PLAINS)
+            .expect("cataloged");
+        game.turn = 2;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        game.cards_drawn_this_turn = [0; 2];
+        game
+    };
+
+    // Declining the reveal leaves an uncastable six-drop in hand.
+    let mut hidden = setup();
+    hidden.draw_card(PlayerId::One);
+    let reveal = hidden
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("drawing it offers the reveal");
+    hidden
+        .apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: reveal.id,
+                options: vec![0],
+            },
+        )
+        .unwrap();
+    assert!(
+        !hidden
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { .. })),
+        "a hidden miracle is just an expensive card"
+    );
+
+    // Drawing it second in a turn is not a miracle at all.
+    let mut second = setup();
+    second.players[0].library = vec![
+        card(20_003, cards::TERMINUS, PlayerId::One),
+        card(20_002, cards::PLAINS, PlayerId::One),
+    ];
+    second.draw_card(PlayerId::One);
+    drain_pending(&mut second);
+    second.draw_card(PlayerId::One);
+    assert!(
+        second.pending_decisions.is_empty(),
+        "only the first card drawn each turn offers a miracle"
+    );
+
+    // Revealing opens the window, and the sweep clears the board.
+    let mut revealed = setup();
+    revealed
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    revealed
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    revealed.draw_card(PlayerId::One);
+    let reveal = revealed
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("drawing it offers the reveal");
+    revealed
+        .apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: reveal.id,
+                options: vec![1],
+            },
+        )
+        .unwrap();
+    let cast = revealed
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { .. }))
+        .expect("the miracle cost is payable from one Plains");
+    revealed.apply(PlayerId::One, cast).unwrap();
+    drain_pending(&mut revealed);
+
+    assert!(
+        !revealed
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SERRA_ANGEL
+                || permanent.card.definition == cards::SAVANNAH_LIONS),
+        "every creature left the battlefield"
+    );
+    assert_eq!(
+        revealed.players[1]
+            .library
+            .first()
+            .map(|card| card.definition),
+        Some(cards::SERRA_ANGEL),
+        "and went to the bottom of its owner's library"
+    );
 }

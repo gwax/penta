@@ -154,6 +154,18 @@ pub const fn flashback(mana_cost: ManaCost) -> AbilityDef {
     )
 }
 
+/// Miracle, the permission to cast a card from hand for a different cost in
+/// the window opened by drawing it.
+#[must_use]
+pub const fn miracle(mana_cost: ManaCost) -> AbilityDef {
+    AbilityDef::alternative_cast(
+        mana_cost,
+        AlternativeCastKindDef::Miracle,
+        None,
+        EffectDef::None,
+    )
+}
+
 /// A flashback ability whose cost is the mana cost of the card carrying it.
 /// This is the form granted by Snapcaster Mage.
 #[must_use]

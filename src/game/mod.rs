@@ -15,7 +15,7 @@ use crate::card::{
     CardBehavior, CardCatalog, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
     CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext, ComparisonDef,
     ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, DoubleFacedKind, EffectDef,
-    EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility, ManaCost,
+    EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility, LibraryPlacement, ManaCost,
     ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
     PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
     ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef,
@@ -1011,6 +1011,10 @@ enum DecisionContinuation {
         context: TriggerContext,
         effect: &'static EffectDef,
     },
+    /// The card just drawn, offered to its controller to reveal.
+    MiracleReveal {
+        card: GameObjectId,
+    },
     /// One player separating another's permanents into two piles.
     PileSplit {
         owner: PlayerId,
@@ -1142,6 +1146,13 @@ pub struct Game {
     /// Combat phases still owed this turn, added by an effect rather than by
     /// the ordinary turn structure.
     additional_combat_phases: u8,
+    /// How many cards each player has drawn this turn. Miracle asks whether a
+    /// draw was the first one.
+    cards_drawn_this_turn: [u16; 2],
+    /// The revealed card a miracle cost may currently be paid for. The window
+    /// belongs to one card and closes as soon as its controller does anything
+    /// else.
+    miracle_window: Option<GameObjectId>,
     /// Effects waiting for a step to begin. Obzedat's return is one.
     delayed_triggers: Vec<DelayedTrigger>,
     blockers_declared: bool,
@@ -1291,6 +1302,8 @@ impl Game {
             linked_exiles: Vec::new(),
             sorcery_flash_grants: [0; 2],
             additional_combat_phases: 0,
+            cards_drawn_this_turn: [0; 2],
+            miracle_window: None,
             delayed_triggers: Vec::new(),
             blockers_declared: false,
             untap_pending: false,
@@ -5302,6 +5315,11 @@ impl Game {
                     self.resolve_effect_def(*effect, &object, context);
                 }
             }
+            DecisionContinuation::MiracleReveal { card } => {
+                if options.contains(&1) {
+                    self.miracle_window = Some(card);
+                }
+            }
             DecisionContinuation::PileSplit { owner } => {
                 let first = pending
                     .observation
@@ -6160,11 +6178,17 @@ impl Game {
             };
             let available = match (source_zone, kind) {
                 (CastSourceZone::Hand, Some(AlternativeCastKindDef::Flashback))
-                | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Overload) | None) => {
-                    false
-                }
+                | (
+                    CastSourceZone::Graveyard,
+                    Some(AlternativeCastKindDef::Overload | AlternativeCastKindDef::Miracle) | None,
+                ) => false,
                 (CastSourceZone::Hand, Some(AlternativeCastKindDef::Overload) | None)
                 | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Flashback)) => true,
+                // Only in the window the draw opened, and only for the card
+                // that was drawn.
+                (CastSourceZone::Hand, Some(AlternativeCastKindDef::Miracle)) => {
+                    self.miracle_window == Some(card)
+                }
             };
             if available
                 && Self::visit_additional_cost_configurations(
@@ -8553,6 +8577,7 @@ impl Game {
                 object: recipient,
                 zone,
                 controller,
+                placement,
             } => {
                 let arriving_controller = controller.map(|relation| {
                     if self.player_relation_matches(
@@ -8574,6 +8599,7 @@ impl Game {
                             controller: object.controller,
                         },
                         arriving_controller,
+                        placement,
                     );
                 }
             }
@@ -8709,6 +8735,7 @@ impl Game {
         zone: ZoneKind,
         cause: ZoneMoveCause,
         arriving_controller: Option<PlayerId>,
+        placement: LibraryPlacement,
     ) {
         if let Target::Permanent(id) = target {
             // Leaving the battlefield has its own procedure: last-known
@@ -8717,7 +8744,7 @@ impl Game {
                 ZoneKind::Exile => self.exile_permanent(id),
                 ZoneKind::Hand => self.return_permanent_to_hand(id),
                 ZoneKind::Graveyard => self.destroy_permanent_without_regeneration(id),
-                ZoneKind::Library => self.return_permanent_to_library_top(id),
+                ZoneKind::Library => self.return_permanent_to_library(id, placement),
                 ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {}
             }
             return;
@@ -13891,7 +13918,7 @@ impl Game {
 
     /// Puts a permanent on top of its owner's library. The exit is the same
     /// procedure a bounce uses; only the destination differs.
-    fn return_permanent_to_library_top(&mut self, id: GameObjectId) {
+    fn return_permanent_to_library(&mut self, id: GameObjectId, placement: LibraryPlacement) {
         let listeners = self.battlefield_trigger_listeners();
         let Some(index) = self
             .battlefield
@@ -13915,7 +13942,10 @@ impl Game {
         }
         let owner = permanent.card.owner;
         let (card, _zone_change) = self.zone_change_card(permanent.card);
-        self.players[owner.index()].library.push(card);
+        match placement {
+            LibraryPlacement::Top => self.players[owner.index()].library.push(card),
+            LibraryPlacement::Bottom => self.players[owner.index()].library.insert(0, card),
+        }
     }
 
     /// True when a spell had targets and every one of them is now illegal.
@@ -14104,6 +14134,7 @@ impl Game {
     }
 
     fn check_state_based_actions(&mut self) {
+        self.close_stale_miracle_window();
         loop {
             let battlefield_len = self.battlefield.len();
             let mut regenerate = Vec::new();
@@ -14361,6 +14392,20 @@ impl Game {
         }
     }
 
+    /// A miracle window belongs to one card sitting in hand. Once that card
+    /// has been cast, discarded, or otherwise moved, there is nothing left to
+    /// pay a miracle cost for.
+    fn close_stale_miracle_window(&mut self) {
+        if let Some(card) = self.miracle_window
+            && !self
+                .players
+                .iter()
+                .any(|player| player.hand.iter().any(|held| held.id == card))
+        {
+            self.miracle_window = None;
+        }
+    }
+
     fn advance_step(&mut self) {
         if self.step.ends_phase() || self.format.rules().mana_empties_at_end_of_step {
             self.empty_mana_pools();
@@ -14494,6 +14539,8 @@ impl Game {
         self.creature_died_this_turn = false;
         self.sorcery_flash_grants = [0; 2];
         self.additional_combat_phases = 0;
+        self.cards_drawn_this_turn = [0; 2];
+        self.miracle_window = None;
         self.step = Step::Upkeep;
         self.players[self.active_player.index()].land_played_this_turn = false;
         for permanent in &mut self.battlefield {
@@ -14713,12 +14760,74 @@ impl Game {
         };
         let (card, _zone_change) = self.zone_change_card(card);
         let card_id = card.id;
+        let definition = card.definition;
         self.players[player.index()].hand.push(card);
         self.events.push(GameEvent::CardDrawn {
             player,
             card: card_id,
         });
+        let drawn = &mut self.cards_drawn_this_turn[player.index()];
+        *drawn = drawn.saturating_add(1);
+        if self.cards_drawn_this_turn[player.index()] == 1 && self.has_miracle(definition) {
+            self.queue_miracle_reveal(player, card_id);
+        }
         Some(card_id)
+    }
+
+    /// Whether a card offers a miracle cost at all.
+    fn has_miracle(&self, definition: CardDefinitionId) -> bool {
+        self.catalog.get(definition).is_some_and(|definition| {
+            definition.parts.iter().any(|part| {
+                part.rules.ability_clauses().iter().any(|ability| {
+                    ability.implementation.is_executable()
+                        && matches!(
+                            ability.definition,
+                            DeclarativeAbilityDef::AlternativeCast(alternative)
+                                if alternative.kind == AlternativeCastKindDef::Miracle
+                        )
+                })
+            })
+        })
+    }
+
+    /// Offers the reveal that opens a miracle window. Revealing is the whole
+    /// choice: whether to then pay the cost is the ordinary cast decision,
+    /// and declining to cast simply lets the window close.
+    fn queue_miracle_reveal(&mut self, player: PlayerId, card: GameObjectId) {
+        let name = self.players[player.index()]
+            .hand
+            .iter()
+            .find(|held| held.id == card)
+            .and_then(|held| self.catalog.get(held.definition))
+            .map_or_else(
+                || "that card".to_string(),
+                |definition| definition.name.clone(),
+            );
+        self.queue_decision(
+            player,
+            format!("Reveal {name} for its miracle cost?"),
+            DecisionVisibility::Private,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            vec![
+                DecisionOption {
+                    id: 0,
+                    label: "Keep it hidden".into(),
+                    card: None,
+                    ability_text: None,
+                    zone: DecisionZone::None,
+                },
+                DecisionOption {
+                    id: 1,
+                    label: format!("Reveal {name}"),
+                    card: Some((card, CardDefinitionId(0))),
+                    ability_text: None,
+                    zone: DecisionZone::Hand,
+                },
+            ],
+            DecisionContinuation::MiracleReveal { card },
+        );
     }
 
     fn draw_cards(&mut self, player: PlayerId, count: u16) {

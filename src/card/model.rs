@@ -1434,6 +1434,9 @@ pub enum EffectDef {
     MoveToZone {
         object: EffectRecipientDef,
         zone: ZoneKind,
+        /// Which end of a library the card lands on. Meaningless for every
+        /// other destination.
+        placement: LibraryPlacement,
         /// Who controls the permanent when the destination is the
         /// battlefield. `None` is the ordinary case, where a card arrives
         /// under its owner's control; reanimation that steals names a
@@ -1756,6 +1759,9 @@ pub struct AlternativeCastAbilityDef {
 pub enum AlternativeCastKindDef {
     Flashback,
     Overload,
+    /// Cast from hand only in the window opened by drawing the card, as the
+    /// first card drawn that turn.
+    Miracle,
 }
 
 /// How an alternative-casting ability determines the cost it supplies.
@@ -1785,6 +1791,7 @@ impl AlternativeCastKindDef {
         match self {
             Self::Flashback => "Flashback",
             Self::Overload => "Overload",
+            Self::Miracle => "Miracle",
         }
     }
 }
@@ -1811,6 +1818,15 @@ impl AlternativeCastAbilityDef {
                 AlternativeCastKindDef::Overload,
                 AlternativeCastManaCostDef::ThisCardManaCost,
             ) => "Overload—the overload cost is equal to this card's mana cost. (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")".into(),
+            (AlternativeCastKindDef::Miracle, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Miracle {mana_cost} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)",
+                )
+            }
+            (
+                AlternativeCastKindDef::Miracle,
+                AlternativeCastManaCostDef::ThisCardManaCost,
+            ) => "Miracle—the miracle cost is equal to this card's mana cost. (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)".into(),
         }
     }
 
@@ -3151,6 +3167,14 @@ impl ImplementationStatus {
 pub enum CardEffectStatus {
     Implemented,
     MetadataOnly,
+}
+
+/// Which end of a library a card is put on.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub enum LibraryPlacement {
+    #[default]
+    Top,
+    Bottom,
 }
 
 /// One two-colour hybrid symbol, such as `{R/W}`. Either colour pays it.

@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType,
-    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRelation, ReplacementEventDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, abilities, cards,
+    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, LibraryPlacement, ManaColor,
+    ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZoneMoveCauseDef, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -127,6 +127,7 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
                     object: EffectRecipientDef::Target(TargetSlotId(2)),
                     zone: ZoneKind::Library,
                     controller: None,
+                    placement: LibraryPlacement::Top,
                 },
             )
             .with_targets(&[AbilityTargetDef::exactly_one_permanent(
@@ -447,6 +448,7 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Battlefield,
                 controller: None,
+                placement: LibraryPlacement::Top,
             },
         )
         .with_source_zones(&[ZoneKind::Hand]),
@@ -533,6 +535,7 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
                 },
                 zone: ZoneKind::Exile,
                 controller: None,
+                placement: LibraryPlacement::Top,
             },
         ),
         AbilityDef::replacement_for(
@@ -544,6 +547,7 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Exile,
                 controller: None,
+                placement: LibraryPlacement::Top,
             },
         ),
     ]),
@@ -582,6 +586,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
                     object: EffectRecipientDef::Target(TargetSlotId(1)),
                     zone: ZoneKind::Exile,
                     controller: None,
+                    placement: LibraryPlacement::Top,
                 },
             )
             .with_targets(&[AbilityTargetDef::exactly_one_permanent(

@@ -5,8 +5,9 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility,
-    ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation, ReplacementEffectDef,
-    ReplacementEventDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    LibraryPlacement, ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -368,6 +369,7 @@ pub(in crate::card::sets) static SEPULCHRAL_PRIMORDIAL: CardRecord = CardRecord:
                 object: EffectRecipientDef::Target(TargetSlotId(0)),
                 zone: ZoneKind::Battlefield,
                 controller: Some(PlayerRelation::You),
+                placement: LibraryPlacement::Top,
             },
         )
         .with_targets(&[AbilityTargetDef::up_to(
