@@ -5516,6 +5516,82 @@ fn wheel_discards_both_hands_and_draws_seven() {
 }
 
 #[test]
+fn a_wheel_that_decks_only_one_player_still_deals_the_other_a_full_hand() {
+    // The loser draws what is left before losing, and the survivor still gets
+    // all seven. The old shortcut checked library sizes first and dealt
+    // nobody anything.
+    let mut game = ready_game();
+    let wheel = card(10_000, cards::WHEEL_OF_FORTUNE, PlayerId::One);
+    game.players[0].hand.push(wheel.clone());
+    game.players[0].mana_pool.red = 3;
+    game.players[1].library.truncate(3);
+
+    game.apply(
+        PlayerId::One,
+        cast_action(wheel.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+        })
+    );
+    assert_eq!(game.players[0].hand.len(), 7, "the survivor drew all seven");
+    assert_eq!(
+        game.players[1].hand.len(),
+        3,
+        "and the loser drew the three they had before running out"
+    );
+}
+
+#[test]
+fn a_wheel_that_decks_both_players_is_a_draw() {
+    // One spell, two empty libraries. Whoever the loop happens to reach first
+    // must not win the game for it.
+    let mut game = ready_game();
+    let wheel = card(10_000, cards::WHEEL_OF_FORTUNE, PlayerId::One);
+    game.players[0].hand.push(wheel.clone());
+    game.players[0].mana_pool.red = 3;
+    game.players[0].library.truncate(2);
+    game.players[1].library.truncate(5);
+
+    game.apply(
+        PlayerId::One,
+        cast_action(wheel.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.result, Some(GameResult::Draw));
+}
+
+#[test]
+fn a_timetwister_that_decks_both_players_is_a_draw() {
+    // Timetwister shuffles hands and graveyards back first, so the libraries
+    // have to be short even after that to run out.
+    let mut game = ready_game();
+    let twister = card(10_000, cards::TIMETWISTER, PlayerId::One);
+    game.players[0].hand.push(twister.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 2;
+    game.players[0].library.truncate(1);
+    game.players[1].library.truncate(1);
+
+    game.apply(
+        PlayerId::One,
+        cast_action(twister.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.result, Some(GameResult::Draw));
+}
+
+#[test]
 fn cleanup_without_a_discard_advances_without_priority() {
     let mut game = ready_game();
     game.step = Step::End;

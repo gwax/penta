@@ -541,10 +541,10 @@ pub(in crate::card::sets) static WHEEL_OF_FORTUNE: CardRecord = CardRecord::new(
     CardArt::new("67b369c4-faa8-45c8-a1b9-98f228b69682", "Daniel Gelon"),
     CardSet::Alpha,
     CardRules::new_sorcery(mana_cost!("{2}{R}")).with_abilities(&[
-        AbilityDef::custom_partial(
+        AbilityDef::custom_full(
             "Each player discards their hand, then draws seven cards.",
             CardBehavior::WheelOfFortune,
-            "Simultaneous discard, draw, and loss handling still uses a legacy shortcut and needs review.",
+            "The card-local resolver discards both hands and then draws with empty-library losses settled together, so one spell decking both players is a draw.",
         ),
     ]),
 );
@@ -1265,10 +1265,10 @@ pub(in crate::card::sets) static TIMETWISTER: CardRecord = CardRecord::new(
     CardArt::new("9a49dc44-616e-4bdd-8220-0bb71eccc512", "Mark Tedin"),
     CardSet::Alpha,
     CardRules::new_sorcery(mana_cost!("{2}{U}"))
-    .with_abilities(&[AbilityDef::custom_partial(
+    .with_abilities(&[AbilityDef::custom_full(
         "Each player shuffles their hand and graveyard into their library, then draws seven cards. (Then put Timetwister into its owner's graveyard.)",
         CardBehavior::Timetwister,
-        "Simultaneous shuffle, draw, and loss handling still uses a legacy shortcut and needs review.",
+        "The card-local resolver shuffles both players back and then draws with empty-library losses settled together, so one spell decking both players is a draw.",
     )]),
 );
 

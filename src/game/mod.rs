@@ -1336,6 +1336,11 @@ pub struct Game {
     /// How many cards each player has drawn this turn. Miracle asks whether a
     /// draw was the first one.
     cards_drawn_this_turn: [u16; 2],
+    /// Set while an effect makes both players draw at once, so that decking
+    /// is settled after every draw rather than by whoever ran out first.
+    defer_empty_library_loss: bool,
+    /// Who has tried to draw from an empty library during the deferral.
+    tried_to_draw_from_empty: [bool; 2],
     /// The revealed card a miracle cost may currently be paid for. The window
     /// belongs to one card and closes as soon as its controller does anything
     /// else.
@@ -1496,6 +1501,8 @@ impl Game {
             spells_cast_this_turn: [0; 2],
             spells_cast_last_turn: [0; 2],
             cards_drawn_this_turn: [0; 2],
+            defer_empty_library_loss: false,
+            tried_to_draw_from_empty: [false; 2],
             miracle_window: None,
             delayed_triggers: Vec::new(),
             floating_triggers: Vec::new(),
@@ -11219,9 +11226,11 @@ impl Game {
             }
             self.rng.shuffle(&mut self.players[player.index()].library);
         }
-        for player in [PlayerId::One, PlayerId::Two] {
-            self.draw_cards(player, 7);
-        }
+        self.with_simultaneous_draws(|game| {
+            for player in [PlayerId::One, PlayerId::Two] {
+                game.draw_cards(player, 7);
+            }
+        });
     }
 
     fn resolve_wheel_of_fortune(&mut self, controller: PlayerId) {
@@ -11233,36 +11242,11 @@ impl Game {
                 .collect::<Vec<_>>();
             self.discard_cards_with_cause(player, &hand, ZoneMoveCause::Effect { controller });
         }
-        let can_draw = [
-            self.players[0].library.len() >= 7,
-            self.players[1].library.len() >= 7,
-        ];
-        match can_draw {
-            [false, false] => {
-                self.finish(GameResult::Draw);
-                return;
+        self.with_simultaneous_draws(|game| {
+            for player in [PlayerId::One, PlayerId::Two] {
+                game.draw_cards(player, 7);
             }
-            [false, true] => {
-                self.finish(GameResult::Winner {
-                    winner: PlayerId::Two,
-                    reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
-                });
-                return;
-            }
-            [true, false] => {
-                self.finish(GameResult::Winner {
-                    winner: PlayerId::One,
-                    reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
-                });
-                return;
-            }
-            [true, true] => {}
-        }
-        for player in [PlayerId::One, PlayerId::Two] {
-            for _ in 0..7 {
-                let _ = self.draw_card(player);
-            }
-        }
+        });
     }
 
     fn damage_target(&mut self, target: Option<Target>, amount: u16) {
@@ -16521,10 +16505,10 @@ impl Game {
 
     fn draw_card(&mut self, player: PlayerId) -> Option<GameObjectId> {
         let Some(card) = self.players[player.index()].library.pop() else {
-            self.finish(GameResult::Winner {
-                winner: player.opponent(),
-                reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
-            });
+            self.tried_to_draw_from_empty[player.index()] = true;
+            if !self.defer_empty_library_loss {
+                self.check_empty_libraries();
+            }
             return None;
         };
         let (card, _zone_change) = self.zone_change_card(card);
@@ -16621,6 +16605,36 @@ impl Game {
             }
         }
         self.check_life_totals();
+    }
+
+    /// One spell can deck both players. CR 104.3c settles that as a draw,
+    /// because the losses are checked together rather than the moment either
+    /// player runs out, so the effect has to finish before anyone loses.
+    fn with_simultaneous_draws(&mut self, body: impl FnOnce(&mut Self)) {
+        let was_deferred = self.defer_empty_library_loss;
+        self.defer_empty_library_loss = true;
+        body(self);
+        self.defer_empty_library_loss = was_deferred;
+        if !was_deferred {
+            self.check_empty_libraries();
+        }
+    }
+
+    fn check_empty_libraries(&mut self) {
+        let [one, two] = self.tried_to_draw_from_empty;
+        self.tried_to_draw_from_empty = [false; 2];
+        match (one, two) {
+            (true, true) => self.finish(GameResult::Draw),
+            (true, false) => self.finish(GameResult::Winner {
+                winner: PlayerId::Two,
+                reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+            }),
+            (false, true) => self.finish(GameResult::Winner {
+                winner: PlayerId::One,
+                reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+            }),
+            (false, false) => {}
+        }
     }
 
     fn check_life_totals(&mut self) {
