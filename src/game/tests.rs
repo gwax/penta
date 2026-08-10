@@ -16660,3 +16660,84 @@ fn zealous_conscripts_borrows_a_permanent_and_gives_it_back_at_cleanup() {
         "and the granted haste is gone with it"
     );
 }
+
+#[test]
+fn desecration_demon_only_grows_when_an_opponent_feeds_it() {
+    let feed = |accept: bool| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let demon = game
+            .put_onto_battlefield(PlayerId::One, cards::DESECRATION_DEMON)
+            .expect("cataloged");
+        game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+            .expect("cataloged");
+        game.turn = 2;
+        game.step = Step::BeginningOfCombat;
+        game.begin_step_triggers();
+        for _ in 0..8 {
+            if !game.pending_decisions.is_empty() {
+                break;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+
+        let decision = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+            .expect("the opponent is offered the sacrifice");
+        // Declining is a real answer, which is what makes it optional.
+        assert_eq!(decision.player, PlayerId::Two);
+        assert_eq!(decision.minimum, 0);
+        let options = if accept {
+            vec![decision.options[0].id]
+        } else {
+            Vec::new()
+        };
+        game.apply(
+            PlayerId::Two,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .unwrap();
+        drain_pending(&mut game);
+        (game, demon)
+    };
+
+    let (after_tribute, demon) = feed(true);
+    let permanent = after_tribute
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == demon)
+        .expect("the Demon is still there");
+    assert!(permanent.tapped, "a fed Demon stays home");
+    assert_eq!(permanent.counters(CounterKind::PlusOnePlusOne), 1);
+    assert!(
+        !after_tribute
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS),
+        "and the tribute was paid"
+    );
+
+    let (starved, demon) = feed(false);
+    let permanent = starved
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == demon)
+        .expect("the Demon is still there");
+    assert!(!permanent.tapped, "a refused Demon is free to attack");
+    assert_eq!(permanent.counters(CounterKind::PlusOnePlusOne), 0);
+    assert!(
+        starved
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS),
+        "and nothing was sacrificed"
+    );
+}

@@ -91,6 +91,7 @@ pub(in crate::card::sets) static DISCIPLE_OF_BOLAS: CardRecord = CardRecord::new
                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
             ]),
             then: Some(&DISCIPLE_OF_BOLAS_PAYOFF),
+            optional: false,
         },
     )),
 );

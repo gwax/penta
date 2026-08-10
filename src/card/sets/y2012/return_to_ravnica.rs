@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType,
-    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRelation, ReplacementEventDef, TriggerEventDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
-    abilities, cards,
+    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    PlayerRelation, ReplacementEventDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZoneMoveCauseDef, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -177,6 +177,19 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
     ]),
 );
 
+/// What the Demon takes when an opponent feeds it: it stays home for the turn
+/// and grows permanently.
+static DESECRATION_DEMON_TRIBUTE: EffectDef = EffectDef::Sequence(&[
+    EffectDef::Tap {
+        object: EffectRecipientDef::Source,
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+]);
+
 pub(in crate::card::sets) static DESECRATION_DEMON: CardRecord = CardRecord::new(
     cards::DESECRATION_DEMON,
     "Desecration Demon",
@@ -190,9 +203,19 @@ pub(in crate::card::sets) static DESECRATION_DEMON: CardRecord = CardRecord::new
     )
     .with_abilities(&[
         abilities::flying(),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "At the beginning of each combat, any opponent may sacrifice a creature of their choice. If a player does, tap this creature and put a +1/+1 counter on it.",
-            "The beginning-of-combat trigger and opponent choice are not executed.",
+            // Each combat, so on either player's turn.
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::BeginningOfCombat,
+                player: PlayerRelation::Any,
+            },
+            EffectDef::SacrificeOfChoice {
+                player: EffectRecipientDef::Opponent,
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                then: Some(&DESECRATION_DEMON_TRIBUTE),
+                optional: true,
+            },
         ),
     ]),
 );

@@ -79,6 +79,7 @@ pub(in crate::card::sets) static CELESTIAL_FLARE: CardRecord = CardRecord::new(
                     ObjectPredicateDef::AttackingOrBlocking,
                 ]),
                 then: None,
+                optional: false,
             },
         )
         .with_targets(&[AbilityTargetDef::exactly_one(
@@ -407,6 +408,7 @@ pub(in crate::card::sets) static SHADOWBORN_DEMON: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::Controller,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: None,
+                optional: false,
             },
         ),
     ]),

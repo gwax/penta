@@ -1002,7 +1002,10 @@ enum DecisionContinuation {
         effect: &'static EffectDef,
     },
     /// A sacrifice an effect demanded, chosen by the sacrificing player.
-    SacrificeOfChoice(Option<SacrificeFollowup>),
+    SacrificeOfChoice {
+        followup: Option<SacrificeFollowup>,
+        optional: bool,
+    },
     /// The spell's controller deciding whether to keep it alive.
     CounterUnlessPaid {
         spell: GameObjectId,
@@ -4675,6 +4678,7 @@ impl Game {
         predicate: ObjectPredicateDef,
         source: GameObjectId,
         followup: Option<SacrificeFollowup>,
+        optional: bool,
     ) {
         let candidates = self
             .battlefield
@@ -4690,36 +4694,37 @@ impl Game {
             })
             .map(|permanent| permanent.card.clone())
             .collect::<Vec<_>>();
-        match candidates.as_slice() {
-            // Nothing to choose between, so the sacrifice happens now and its
-            // follow-up runs in the same resolution rather than waiting on a
-            // decision that would only have one answer.
-            [] => {
-                if let Some(followup) = followup {
-                    self.resolve_sacrifice_followup(&followup, None);
-                }
-            }
-            [only] => {
-                let sacrificed = only.id;
+        // An optional sacrifice is always a question, even with one candidate
+        // or none: declining is a real answer. A compulsory one with a single
+        // candidate has only one answer, so it happens without asking.
+        if !optional && candidates.len() <= 1 {
+            let sacrificed = candidates.first().map(|only| only.id);
+            if let Some(sacrificed) = sacrificed {
                 self.destroy_permanents(&[sacrificed], false);
-                if let Some(followup) = followup {
-                    self.resolve_sacrifice_followup(&followup, Some(sacrificed));
-                }
             }
-            _ => {
-                let options = self.card_decision_options(&candidates, DecisionZone::Battlefield);
-                self.queue_decision(
-                    player,
-                    "Choose a permanent to sacrifice",
-                    DecisionVisibility::Public,
-                    DecisionPreference::LowerCardValue,
-                    1..=1,
-                    false,
-                    options,
-                    DecisionContinuation::SacrificeOfChoice(followup),
-                );
+            if let Some(followup) = followup {
+                self.resolve_sacrifice_followup(&followup, sacrificed);
             }
+            return;
         }
+        if optional && candidates.is_empty() {
+            return;
+        }
+        let options = self.card_decision_options(&candidates, DecisionZone::Battlefield);
+        self.queue_decision(
+            player,
+            if optional {
+                "You may sacrifice a permanent"
+            } else {
+                "Choose a permanent to sacrifice"
+            },
+            DecisionVisibility::Public,
+            DecisionPreference::LowerCardValue,
+            usize::from(!optional)..=1,
+            false,
+            options,
+            DecisionContinuation::SacrificeOfChoice { followup, optional },
+        );
     }
 
     /// Runs what a sacrifice owes once the permanent is chosen. The power is
@@ -5110,7 +5115,7 @@ impl Game {
                     self.resolve_effect_def(*effect, &object, context);
                 }
             }
-            DecisionContinuation::SacrificeOfChoice(followup) => {
+            DecisionContinuation::SacrificeOfChoice { followup, optional } => {
                 let sacrificed = pending
                     .observation
                     .options
@@ -5120,7 +5125,11 @@ impl Game {
                     .collect::<Vec<_>>();
                 let chosen = sacrificed.first().copied();
                 self.destroy_permanents(&sacrificed, false);
-                if let Some(followup) = followup {
+                // "If a player does" -- declining an optional sacrifice earns
+                // nothing, while a compulsory one pays out even for nothing.
+                if let Some(followup) = followup
+                    && (chosen.is_some() || !optional)
+                {
                     self.resolve_sacrifice_followup(&followup, chosen);
                 }
             }
@@ -8075,19 +8084,24 @@ impl Game {
                 player: recipient,
                 object: predicate,
                 then,
+                optional,
             } => {
                 let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context) {
-                    if let Target::Player(player) = target
-                        && self.can_be_forced_to_sacrifice(player, object.controller)
-                    {
-                        let followup = then.map(|effect| SacrificeFollowup {
-                            object: Box::new(object.clone()),
-                            context,
-                            effect,
-                        });
-                        self.queue_chosen_sacrifice(player, predicate, source, followup);
+                    let Target::Player(player) = target else {
+                        continue;
+                    };
+                    // A prohibition on being forced to sacrifice does not
+                    // reach an offer the player is free to decline.
+                    if !optional && !self.can_be_forced_to_sacrifice(player, object.controller) {
+                        continue;
                     }
+                    let followup = then.map(|effect| SacrificeFollowup {
+                        object: Box::new(object.clone()),
+                        context,
+                        effect,
+                    });
+                    self.queue_chosen_sacrifice(player, predicate, source, followup, optional);
                 }
             }
             EffectDef::SearchLibrary {

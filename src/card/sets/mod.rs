@@ -531,6 +531,7 @@ mod tests {
                 player,
                 object,
                 then,
+                ..
             } => {
                 shared_effect_recipient(player)
                     && shared_object_predicate(object)

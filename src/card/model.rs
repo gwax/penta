@@ -1305,6 +1305,11 @@ pub enum EffectDef {
         /// decision, so anything reading what was sacrificed has to be part
         /// of the same continuation rather than the next effect in sequence.
         then: Option<&'static EffectDef>,
+        /// Whether the player may decline. An optional sacrifice runs `then`
+        /// only when something was actually sacrificed, which is what "if a
+        /// player does" means; a compulsory one runs it either way, so an
+        /// amount read off nothing is zero rather than skipped.
+        optional: bool,
     },
     /// Search a library for one matching card and put it somewhere, then
     /// shuffle. Searching a hidden zone never obliges the searcher to find,
