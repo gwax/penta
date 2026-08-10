@@ -156,7 +156,7 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let mut definitions = Vec::with_capacity(255);
+    let mut definitions = Vec::with_capacity(257);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }
@@ -596,6 +596,7 @@ mod tests {
             // resolving object's controller, and the flash grant is about its
             // controller's next spell.
             EffectDef::CreateToken { .. }
+            | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::GrantFlashToNextSorcery => true,
             EffectDef::OptionalManaPayment { effect, .. } => {
@@ -659,6 +660,7 @@ mod tests {
             TriggerEventDef::StepBegins { .. }
             | TriggerEventDef::LifeGained(_)
             | TriggerEventDef::StateCondition
+            | TriggerEventDef::TransformsIntoThisFace
             | TriggerEventDef::DamagedCreatureDied => true,
             // Only "whenever this creature is dealt damage" is committed; a
             // wider recipient has no event behind it yet.
@@ -797,6 +799,7 @@ mod tests {
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
+            | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::Special(_) => false,
@@ -841,7 +844,9 @@ mod tests {
     fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         match condition {
             TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
-            TriggerConditionDef::ActivePlayer(_) => true,
+            TriggerConditionDef::ActivePlayer(_) | TriggerConditionDef::SourceLoyalty { .. } => {
+                true
+            }
         }
     }
 
@@ -973,6 +978,7 @@ mod tests {
                         | EffectDef::BecomeCopyOf { .. }
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::CannotBeForcedToSacrifice
+                        | EffectDef::Transform { .. }
                         | EffectDef::AdditionalCombatPhase
                         | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                         | EffectDef::GrantFlashToNextSorcery
@@ -1125,6 +1131,7 @@ mod tests {
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
@@ -1227,28 +1234,34 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 255);
+        assert_eq!(records.len(), 257);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=255).collect::<Vec<_>>()
+            (1..=257).collect::<Vec<_>>()
         );
+        // Names identify the cards a decklist can name. Tokens are not among
+        // them, and Magic prints several that share a name.
+        let deck_legal = records
+            .iter()
+            .filter(|record| record.debut_set != CardSet::Token)
+            .collect::<Vec<_>>();
         assert_eq!(
-            records
+            deck_legal
                 .iter()
                 .map(|record| record.name)
                 .collect::<HashSet<_>>()
                 .len(),
-            records.len()
+            deck_legal.len()
         );
     }
 
     #[test]
     fn built_in_catalog_indexes_definitions_and_printings_separately() {
         let catalog = crate::card::catalog().unwrap();
-        let printing_count = (1..=255)
+        let printing_count = (1..=257)
             .filter(|id| {
                 *id != cards::BEAST_TOKEN_3_3_GREEN.0
                     && *id != cards::KNIGHT_TOKEN_2_2_WHITE.0
@@ -1256,6 +1269,8 @@ mod tests {
                     && *id != cards::DEMON_TOKEN_5_5_BLACK.0
                     && *id != cards::ELEMENTAL_TOKEN_GREEN_WHITE.0
                     && *id != cards::SPIRIT_TOKEN_1_1_WHITE.0
+                    && *id != cards::WOLF_TOKEN_2_2_GREEN.0
+                    && *id != cards::WOLF_TOKEN_1_1_BLACK.0
             })
             .map(|id| catalog.printings_for(CardDefinitionId(id)).len())
             .sum::<usize>();
@@ -1281,7 +1296,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 255);
+        assert_eq!(records.len(), 257);
 
         for record in records {
             let definition = record.definition();

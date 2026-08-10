@@ -265,3 +265,5 @@ pub const DRYAD_ARBOR: CardDefinitionId = CardDefinitionId(252);
 pub const NYLEAS_PRESENCE: CardDefinitionId = CardDefinitionId(253);
 pub const ELEMENTAL_TOKEN_GREEN_WHITE: CardDefinitionId = CardDefinitionId(254);
 pub const SPIRIT_TOKEN_1_1_WHITE: CardDefinitionId = CardDefinitionId(255);
+pub const WOLF_TOKEN_2_2_GREEN: CardDefinitionId = CardDefinitionId(256);
+pub const WOLF_TOKEN_1_1_BLACK: CardDefinitionId = CardDefinitionId(257);

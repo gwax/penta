@@ -554,6 +554,9 @@ enum CommittedTriggerEvent {
     SpellCast {
         object: TriggerEventObject,
     },
+    Transformed {
+        object: TriggerEventObject,
+    },
     StepBegins {
         step: TurnStepDef,
         player: PlayerId,
@@ -570,6 +573,7 @@ impl CommittedTriggerEvent {
             Self::ZoneChanged { object, .. }
             | Self::BecomesTapped { object }
             | Self::Attacks { object }
+            | Self::Transformed { object }
             | Self::DamagedCreatureDied { object, .. } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
@@ -3338,6 +3342,7 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
@@ -3520,7 +3525,13 @@ impl Game {
                         .is_some_and(|permanent| permanent.attacks_this_turn == 1)
             }
 
+            // Both name the ability's own source as the subject: the face
+            // that was turned over, or the permanent that was damaged.
             (
+                TriggerEventDef::TransformsIntoThisFace,
+                CommittedTriggerEvent::Transformed { object },
+            )
+            | (
                 TriggerEventDef::DamageDealt {
                     source: _,
                     recipient: EffectRecipientDef::Source,
@@ -4932,6 +4943,34 @@ impl Game {
             false,
             options,
             DecisionContinuation::PileChoice { first, second },
+        );
+    }
+
+    /// Turns a double-faced permanent over. The face is which part the
+    /// permanent presents, so transforming is choosing the other one; the
+    /// object itself does not change, which is why counters and damage stay.
+    fn transform_permanent(&mut self, id: GameObjectId) {
+        let Some(index) = self
+            .battlefield
+            .iter()
+            .position(|permanent| permanent.card.id == id)
+        else {
+            return;
+        };
+        let definition = self.battlefield[index].card.definition;
+        let Some(other) = self
+            .catalog
+            .get(definition)
+            .and_then(|definition| definition.other_face(self.battlefield[index].presented))
+        else {
+            return;
+        };
+        self.battlefield[index].presented = other;
+        let listeners = self.battlefield_trigger_listeners();
+        let object = self.trigger_event_object(&self.battlefield[index]);
+        self.capture_battlefield_triggers_from_snapshot(
+            &listeners,
+            &CommittedTriggerEvent::Transformed { object },
         );
     }
 
@@ -8628,6 +8667,13 @@ impl Game {
                     }
                 }
             }
+            EffectDef::Transform { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Permanent(id) = target {
+                        self.transform_permanent(id);
+                    }
+                }
+            }
             EffectDef::AdditionalCombatPhase => {
                 self.additional_combat_phases = self.additional_combat_phases.saturating_add(1);
             }
@@ -8898,6 +8944,12 @@ impl Game {
             // Resolved per target by the divided-damage path; anything else
             // reading it has no target in hand and so no share.
             ValueDef::DividedAmongTargets => 0,
+            ValueDef::TargetPower(slot) => Self::chosen_targets(object, slot)
+                .find_map(|target| match target {
+                    Target::Permanent(id) => self.current_or_last_known_power(id),
+                    Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+                })
+                .map_or(0, i32::from),
             ValueDef::CountersOnSource(kind) => object.source.map_or(0, |source| {
                 i32::from(self.current_or_last_known_counters(source, kind))
             }),
@@ -9290,15 +9342,20 @@ impl Game {
             amount,
         } = condition
         else {
-            let TriggerConditionDef::ActivePlayer(relation) = condition else {
-                unreachable!("every condition variant is handled")
+            return match condition {
+                TriggerConditionDef::ActivePlayer(relation) => {
+                    self.player_relation_matches(self.active_player, *relation, controller, context)
+                }
+                TriggerConditionDef::SourceLoyalty { comparison, amount } => self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == source)
+                    .and_then(|permanent| permanent.loyalty)
+                    .is_some_and(|loyalty| compare(&loyalty, *comparison, &i16::from(*amount))),
+                TriggerConditionDef::ObjectCount { .. } => {
+                    unreachable!("the object-count arm is destructured above")
+                }
             };
-            return self.player_relation_matches(
-                self.active_player,
-                *relation,
-                controller,
-                context,
-            );
         };
         let mut count = 0;
         let result = self.visit_objects_matching_query_with_prospective(
@@ -9313,12 +9370,7 @@ impl Game {
             },
         );
         debug_assert!(result.is_continue());
-        let amount = usize::from(*amount);
-        match comparison {
-            ComparisonDef::AtLeast => count >= amount,
-            ComparisonDef::AtMost => count <= amount,
-            ComparisonDef::Exactly => count == amount,
-        }
+        compare(&i64::from(count), *comparison, &i64::from(*amount))
     }
 
     /// How much of a divided total one target takes, read off the selection
@@ -11662,6 +11714,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::Transform { .. }
                 | EffectDef::AdditionalCombatPhase
                 | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                 | EffectDef::GrantFlashToNextSorcery
@@ -11766,6 +11819,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::Transform { .. }
                 | EffectDef::AdditionalCombatPhase
                 | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                 | EffectDef::GrantFlashToNextSorcery
@@ -14422,6 +14476,7 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
@@ -15301,6 +15356,15 @@ fn public_cards(cards: &[CardInstance]) -> Vec<PublicCard> {
         .iter()
         .map(|card| (card.id, card.definition))
         .collect()
+}
+
+/// One comparison, so a condition reads the same however it is counted.
+fn compare<T: Ord>(left: &T, comparison: ComparisonDef, right: &T) -> bool {
+    match comparison {
+        ComparisonDef::AtLeast => left >= right,
+        ComparisonDef::AtMost => left <= right,
+        ComparisonDef::Exactly => left == right,
+    }
 }
 
 /// Every way to split `total` into exactly `parts` positive whole numbers,

@@ -17973,3 +17973,59 @@ fn aurelias_fury_taps_what_it_burns_and_locks_who_it_hits() {
         "but a creature spell is not"
     );
 }
+
+#[test]
+fn garruk_turns_over_when_his_own_ability_wounds_him() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let garruk = game
+        .put_onto_battlefield(PlayerId::One, cards::GARRUK_RELENTLESS)
+        .expect("cataloged");
+    // A 2/1 hits back for two, taking Garruk from three to one. Its own
+    // power is read after it dies, which is what last-known information is
+    // for.
+    let bear = game
+        .put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let front = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == garruk)
+        .expect("Garruk is there");
+    assert_eq!(front.loyalty, Some(3));
+    assert_eq!(front.presented, CardPartId::PRIMARY, "he starts face up");
+
+    let fight = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, targets, .. }
+                if *source == garruk
+                    && matches!(ability, AbilityOrigin::Printed { ability, .. } if *ability == AbilityId(1))
+                    && targets.iter().flat_map(TargetSelection::targets).any(|target| *target == Target::Permanent(bear)))
+        })
+        .expect("the damage ability is offered");
+    game.apply(PlayerId::One, fight).unwrap();
+    drain_pending(&mut game);
+
+    let turned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == garruk)
+        .expect("Garruk survived");
+    assert_eq!(turned.loyalty, Some(1), "the creature hit back for two");
+    assert_ne!(
+        turned.presented,
+        CardPartId::PRIMARY,
+        "two or fewer loyalty turned him over"
+    );
+    assert_eq!(
+        game.effective_subtypes(turned).as_ref(),
+        &["Garruk"],
+        "and the object is the same permanent, now showing its other face"
+    );
+}

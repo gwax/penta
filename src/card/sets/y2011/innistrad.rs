@@ -4,10 +4,10 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CounterKind,
-    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LibraryPlacement, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef,
-    ValueDef, ZoneKind, abilities, cards,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef,
+    CounterKind, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef,
+    LibraryPlacement, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
+    SpellForm, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -91,28 +91,123 @@ pub(in crate::card::sets) static DISSIPATE: CardRecord = CardRecord::new(
     ),
 );
 
+static GARRUK_FRONT_ABILITIES: [AbilityDef; 3] = [
+        AbilityDef::triggered_if(
+            "When Garruk has two or fewer loyalty counters on him, transform him.",
+            TriggerEventDef::StateCondition,
+            &GARRUK_LOW_LOYALTY,
+            EffectDef::Transform {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+        AbilityDef::activated(
+            "0: Garruk deals 3 damage to target creature. That creature deals damage equal to its power to him.",
+            &[AbilityCostDef::Loyalty(0)],
+            // The creature hits back with the power it had when the ability
+            // resolved, which is why the loyalty it costs Garruk is read off
+            // the target rather than printed.
+            EffectDef::Sequence(&[
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    amount: ValueDef::Constant(3),
+                },
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Source,
+                    amount: ValueDef::TargetPower(TargetSlotId(0)),
+                },
+            ]),
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "creature",
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )]),
+        AbilityDef::activated(
+            "0: Create a 2/2 green Wolf creature token.",
+            &[AbilityCostDef::Loyalty(0)],
+            EffectDef::CreateToken {
+                token: cards::WOLF_TOKEN_2_2_GREEN,
+                count: ValueDef::Constant(1),
+            },
+        ),
+];
+
 const fn garruk_front_rules() -> CardRules {
-    CardRules::new_planeswalker(
-        mana_cost!("{3}{G}"),
-        &["Garruk"],
-        3,
-    )
-    .with_supertype(CardSupertype::Legendary)
-    .with_ability(AbilityDef::not_implemented(
-        "When Garruk has two or fewer loyalty counters on him, transform him.\n0: Garruk deals 3 damage to target creature. That creature deals damage equal to its power to him.\n0: Create a 2/2 green Wolf creature token.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    ))
+    CardRules::new_planeswalker(mana_cost!("{3}{G}"), &["Garruk"], 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&GARRUK_FRONT_ABILITIES)
 }
+/// Two or fewer is at most two, checked as a state trigger so it turns the
+/// moment the damage lands rather than waiting for anything.
+static GARRUK_LOW_LOYALTY: TriggerConditionDef = TriggerConditionDef::SourceLoyalty {
+    comparison: ComparisonDef::AtMost,
+    amount: 2,
+};
+
+static GARRUK_TUTOR: EffectDef = EffectDef::SearchLibrary {
+    player: EffectRecipientDef::Controller,
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    destination: ZoneKind::Hand,
+};
+
+static GARRUK_TRAMPLE: AbilityDef = abilities::trample();
+
+static GARRUK_GRAVEYARD_CREATURES: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    zones: &[ZoneKind::Graveyard],
+    controller: PlayerRelation::You,
+};
+
+static GARRUK_BACK_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated(
+        "+1: Create a 1/1 black Wolf creature token with deathtouch.",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::CreateToken {
+            token: cards::WOLF_TOKEN_1_1_BLACK,
+            count: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::activated(
+        "−1: Sacrifice a creature. If you do, search your library for a creature card, reveal it, put it into your hand, then shuffle.",
+        &[AbilityCostDef::Loyalty(-1)],
+        EffectDef::SacrificeOfChoice {
+            player: EffectRecipientDef::Controller,
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            then: Some(&GARRUK_TUTOR),
+            optional: false,
+        },
+    ),
+    AbilityDef::activated(
+        "−3: Creatures you control gain trample and get +X/+X until end of turn, where X is the number of creature cards in your graveyard.",
+        &[AbilityCostDef::Loyalty(-3)],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::You,
+            },
+            effect: GARRUK_PUMP,
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+    ),
+];
+
+static GARRUK_PUMP_PARTS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::GrantAbility(&GARRUK_TRAMPLE),
+    AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::CountMatchingObjects(&GARRUK_GRAVEYARD_CREATURES),
+        toughness: ValueDef::CountMatchingObjects(&GARRUK_GRAVEYARD_CREATURES),
+    },
+];
+
+static GARRUK_PUMP: AppliedEffectDef = AppliedEffectDef::Composite(&GARRUK_PUMP_PARTS);
 
 fn garruk_composition() -> CardComposition {
     let front = garruk_front_rules();
     let back = CardRules::new_planeswalker_without_mana_cost(&["Garruk"])
-    .with_supertype(CardSupertype::Legendary)
-    .printed_colors(&[ManaColor::Black, ManaColor::Green])
-    .with_ability(AbilityDef::not_implemented(
-        "+1: Create a 1/1 black Wolf creature token with deathtouch.\n−1: Sacrifice a creature. If you do, search your library for a creature card, reveal it, put it into your hand, then shuffle.\n−3: Creatures you control gain trample and get +X/+X until end of turn, where X is the number of creature cards in your graveyard.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    ));
+        .with_supertype(CardSupertype::Legendary)
+        .printed_colors(&[ManaColor::Black, ManaColor::Green])
+        .with_abilities(&GARRUK_BACK_ABILITIES);
     CardComposition {
         parts: vec![
             CardPart::new(CardPartId::PRIMARY, "Garruk Relentless", front),

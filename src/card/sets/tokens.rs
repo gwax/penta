@@ -93,6 +93,24 @@ pub(in crate::card::sets) static SPIRIT_TOKEN_1_1_WHITE: CardRecord = CardRecord
         .with_abilities(&[abilities::flying()]),
 );
 
+pub(in crate::card::sets) static WOLF_TOKEN_2_2_GREEN: CardRecord = CardRecord::new(
+    cards::WOLF_TOKEN_2_2_GREEN,
+    "Wolf",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Wolf"], 2, 2).printed_colors(&[ManaColor::Green]),
+);
+
+pub(in crate::card::sets) static WOLF_TOKEN_1_1_BLACK: CardRecord = CardRecord::new(
+    cards::WOLF_TOKEN_1_1_BLACK,
+    "Wolf",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Wolf"], 1, 1)
+        .printed_colors(&[ManaColor::Black])
+        .with_abilities(&[abilities::deathtouch()]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BEAST_TOKEN_3_3_GREEN,
     &KNIGHT_TOKEN_2_2_WHITE,
@@ -100,6 +118,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEMON_TOKEN_5_5_BLACK,
     &ELEMENTAL_TOKEN_GREEN_WHITE,
     &SPIRIT_TOKEN_1_1_WHITE,
+    &WOLF_TOKEN_2_2_GREEN,
+    &WOLF_TOKEN_1_1_BLACK,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

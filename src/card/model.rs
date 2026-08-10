@@ -1078,6 +1078,9 @@ pub enum ValueDef {
     /// How much of a divided total the target being affected takes. Only
     /// meaningful for an effect aimed at a slot the card divides.
     DividedAmongTargets,
+    /// The power of what a target slot points at, for "damage equal to its
+    /// power".
+    TargetPower(TargetSlotId),
 }
 
 /// An object or player affected by an effect. Targets are chosen when a spell
@@ -1482,6 +1485,10 @@ pub enum EffectDef {
     ReduceGenericCostBy(ValueDef),
     /// Adds a combat phase after the one now ending.
     AdditionalCombatPhase,
+    /// Turns a double-faced permanent over to its other face.
+    Transform {
+        object: EffectRecipientDef,
+    },
     /// Multiplies the amount of the event a replacement ability is replacing.
     /// This means nothing outside a replacement whose event carries an amount.
     MultiplyEventAmount(u8),
@@ -1591,6 +1598,9 @@ pub enum TriggerEventDef {
     /// whenever its ability's condition is true, and does not trigger again
     /// while it is already waiting or on the stack.
     StateCondition,
+    /// This permanent turned over to the face carrying this ability, which is
+    /// what "whenever this transforms into ..." names.
+    TransformsIntoThisFace,
     /// A player gained life. The amount is available as
     /// [`ValueDef::TriggerEventAmount`].
     LifeGained(PlayerRelation),
@@ -1755,6 +1765,11 @@ pub enum TriggerConditionDef {
     },
     /// Whose turn it is, relative to the ability's controller.
     ActivePlayer(PlayerRelation),
+    /// How much loyalty the ability's own source has left.
+    SourceLoyalty {
+        comparison: ComparisonDef,
+        amount: u8,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -3039,6 +3054,22 @@ impl CardDefinition {
             CardStructure::DoubleFaced { front, .. } | CardStructure::MeldPart { front, .. } => {
                 *front
             }
+        }
+    }
+
+    /// The face on the other side of a double-faced card, or nothing when the
+    /// card has only one side to present.
+    #[must_use]
+    pub fn other_face(&self, presented: CardPartId) -> Option<CardPartId> {
+        let CardStructure::DoubleFaced { front, back, .. } = &self.structure else {
+            return None;
+        };
+        if presented == *front {
+            Some(*back)
+        } else if presented == *back {
+            Some(*front)
+        } else {
+            None
         }
     }
 
