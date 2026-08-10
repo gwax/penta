@@ -154,7 +154,7 @@ impl WebGame {
         }
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
-        let event_start = self.game.events().len();
+        let event_start = self.game.event_cursor();
         self.game.apply(self.human, action).map_err(js_error)?;
         // What you just did, before anything the game does in response. The
         // replay is told from here, so a land you played is on the board
@@ -488,7 +488,7 @@ impl WebGame {
                 .iter()
                 .map(|object| (object.id, object.controller))
                 .collect();
-            let event_start = self.game.events().len();
+            let event_start = self.game.event_cursor();
             self.game.apply(player, action).map_err(js_error)?;
             if pending_animation.is_none() {
                 self.record_resolutions(event_start, &stack_owners);
@@ -496,7 +496,8 @@ impl WebGame {
             self.record_combat_damage(event_start);
             self.record_draw_step(event_start);
             if let Some(mut animation) = pending_animation.take() {
-                let mana_sources = self.game.events()[event_start..]
+                let caused = self.game.events_for_since(self.human, event_start);
+                let mana_sources = caused
                     .iter()
                     .filter_map(|event| match event {
                         GameEvent::ManaAdded {
@@ -546,7 +547,8 @@ impl WebGame {
         event_start: usize,
         stack_owners: &[(CardInstanceId, PlayerId)],
     ) {
-        let resolved: Vec<_> = self.game.events()[event_start..]
+        let caused = self.game.events_for_since(self.human, event_start);
+        let resolved: Vec<_> = caused
             .iter()
             .filter_map(|event| match event {
                 GameEvent::SpellResolved { card, definition } => Some((*card, *definition, false)),
@@ -595,7 +597,7 @@ impl WebGame {
     /// beat the card arrives in a frame the board already labels "first main".
     /// Holding it here draws the card where the phase strip says it happens.
     fn record_draw_step(&mut self, event_start: usize) {
-        let events = &self.game.events()[event_start..];
+        let events = self.game.events_for_since(self.human, event_start);
         let drew = events
             .iter()
             .any(|event| matches!(event, GameEvent::CardDrawn { .. }));
@@ -627,7 +629,7 @@ impl WebGame {
     /// now the normal way an unblocked attack ends. Without a beat the life
     /// totals and the dead creatures would change between frames.
     fn record_combat_damage(&mut self, event_start: usize) {
-        let events = &self.game.events()[event_start..];
+        let events = self.game.events_for_since(self.human, event_start);
         let entered_damage = events.iter().any(|event| {
             matches!(
                 event,
@@ -668,7 +670,8 @@ impl WebGame {
     /// announced. This beat carries no action of its own — the client shows
     /// the banner and moves on.
     fn record_turn_change(&mut self, event_start: usize) {
-        let Some(turn) = self.game.events()[event_start..]
+        let caused = self.game.events_for_since(self.human, event_start);
+        let Some(turn) = caused
             .iter()
             .filter_map(|event| match event {
                 GameEvent::StepChanged { turn, .. } => Some(*turn),

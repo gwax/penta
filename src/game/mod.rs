@@ -2019,6 +2019,24 @@ impl Game {
         &self.events
     }
 
+    /// A mark in the event log, for asking what has happened since.
+    ///
+    /// Opaque: it indexes the raw log, not the projection, so a seat cannot
+    /// read anything out of the number itself.
+    #[must_use]
+    pub fn event_cursor(&self) -> usize {
+        self.events.len()
+    }
+
+    /// The events one seat may see since `cursor`. This is the windowed form
+    /// of [`Self::events_for`], for a caller that wants only what one action
+    /// caused.
+    #[must_use]
+    pub fn events_for_since(&self, viewer: PlayerId, cursor: usize) -> Vec<GameEvent> {
+        let tail = self.events.get(cursor..).unwrap_or_default();
+        Self::project_events(tail, viewer)
+    }
+
     /// The events one seat may see.
     ///
     /// The raw log opens with [`GameEvent::GameStarted`], and that carries the
@@ -2029,8 +2047,15 @@ impl Game {
     /// started; [`Self::seed`] is how a local viewer, or a finished game,
     /// gets it deliberately.
     #[must_use]
-    pub fn events_for(&self, _viewer: PlayerId) -> Vec<GameEvent> {
-        self.events
+    pub fn events_for(&self, viewer: PlayerId) -> Vec<GameEvent> {
+        Self::project_events(&self.events, viewer)
+    }
+
+    /// The one place that decides what a seat may see. Everything a seat is
+    /// handed goes through here, so a newly leaky event has exactly one
+    /// function to be caught in.
+    fn project_events(events: &[GameEvent], _viewer: PlayerId) -> Vec<GameEvent> {
+        events
             .iter()
             .filter(|event| !matches!(event, GameEvent::GameStarted { .. }))
             .cloned()
