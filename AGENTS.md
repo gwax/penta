@@ -76,45 +76,23 @@ or card-scoped implementation when that work is reasonably in scope.
 
 ## Performance awareness
 
-Treat performance as a review consideration, not a merge gate. Prefer clear,
-correct designs over speculative optimization, and allow measurements to move
-in either direction when the tradeoff is justified. Still be mindful of work
-on hot paths, and avoid unnecessary work when an equally clear design is
-available.
+Treat performance as review context, not a merge gate, and prefer clear,
+correct designs. Watch mainly for accidental multiplier-sized slowdowns, such
+as 2× or 4×; roughly 20% slower is ordinarily context, not a reason to optimize
+or block. These examples calibrate judgment rather than set thresholds.
 
-The main concern is multiplier-sized runtime regressions that alter practical
-behavior—for example, work becoming 2× or 4× slower—not modest percentage
-movement. A roughly 20% slowdown is ordinarily review context rather than a
-reason to optimize or block. These are calibration examples, not pass/fail
-thresholds; workload frequency, scale, and user-visible impact still matter.
+Keep performance checks out of the normal edit-test loop. Most changes need
+only a qualitative assessment. Measure only when evidence is likely to change
+a decision, then prefer one `$profile-engine-performance` comparison at a
+coherent checkpoint. It uses a lazily refreshed local-`main` baseline shared
+under Git's common directory; compare like-for-like and note any limits. Once a
+routine check rules out a scale-changing regression, report and stop rather
+than profiling or rerunning to recover another roughly 10%, unless performance
+is explicitly the task or a concrete user-visible requirement exists.
 
-Use judgment about whether and when to measure. Do not put performance checks
-in the normal edit-test loop, run them after every relevant change, or delay
-unrelated development to chase small movements. Most changes need at most a
-qualitative assessment. A benchmark is worthwhile when evidence is likely to
-change a design or review decision: for example, a change to a known hot path,
-a suspected regression, an explicit optimization, or a meaningful
-correctness-versus-throughput tradeoff. Prefer one comparison at a coherent
-checkpoint over repeated measurements during implementation.
-
-For routine work, once that comparison rules out a scale-changing regression,
-record the result and move on. Do not rerun benchmarks, collect profiles, or
-change an otherwise sound design merely to recover another roughly 10% or
-other modest movement. Iterative measurement and optimization are appropriate
-when performance is explicitly the task, a concrete user-visible requirement
-exists, or initial evidence reveals a multiplier-sized regression likely to
-change the decision.
-
-In pull requests and handoffs, include performance context when it is useful;
-a short expected-impact note is enough. Improvement, regression, no expected
-impact, and not measured are all valid, and agents should not benchmark merely
-to fill in a report. When measurement is warranted, use
-`$profile-engine-performance` to compare with the current local `main`
-baseline. The helper lazily creates a new shared baseline when `main` advances
-and otherwise reuses it. Compare only matching workloads, seeds, build
-profiles, toolchains, and machines; call out changed deterministic outcomes or
-other comparability limits. Measurements inform review but never impose a
-fixed threshold.
+In pull requests and handoffs, include brief performance context only when
+useful. “No expected impact” and “Not measured” are valid; never benchmark just
+to fill in a report.
 
 ## Protocol versioning
 
