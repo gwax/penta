@@ -1433,8 +1433,7 @@ button {
   background: #4e8a59;
 }
 
-.mana-white-red-symbol {
-  background: linear-gradient(135deg, #eee6c8 0 50%, #e26b4f 50% 100%);
+.mana-hybrid-symbol {
   font-size: 7px !important;
 }
 

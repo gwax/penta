@@ -1068,7 +1068,13 @@ impl WebGame {
                         "black": cost.black,
                         "red": cost.red,
                         "green": cost.green,
-                        "whiteRedHybrid": cost.white_red_hybrid,
+                        "hybrid": penta::HybridPair::ALL
+                            .into_iter()
+                            .filter(|pair| cost.hybrid[pair.index()] > 0)
+                            .map(|pair| {
+                                json!({ "symbol": pair.symbol(), "count": cost.hybrid[pair.index()] })
+                            })
+                            .collect::<Vec<_>>(),
                         "x": cost.variable_x,
                     })),
                     "rulesText": rules.map_or_else(String::new, |rules| {
@@ -1197,7 +1203,13 @@ impl WebGame {
                         "black": cost.black,
                         "red": cost.red,
                         "green": cost.green,
-                        "whiteRedHybrid": cost.white_red_hybrid,
+                        "hybrid": penta::HybridPair::ALL
+                            .into_iter()
+                            .filter(|pair| cost.hybrid[pair.index()] > 0)
+                            .map(|pair| {
+                                json!({ "symbol": pair.symbol(), "count": cost.hybrid[pair.index()] })
+                            })
+                            .collect::<Vec<_>>(),
                         "x": cost.variable_x,
                     })),
                     "rulesText": presentation.rules_text,
@@ -1904,7 +1916,11 @@ fn hand_mana_cost_value(card: Option<&penta::CardDefinition>) -> Value {
                 "black": cost.black,
                 "red": cost.red,
                 "green": cost.green,
-                "whiteRedHybrid": cost.white_red_hybrid,
+                "hybrid": penta::HybridPair::ALL
+                    .into_iter()
+                    .filter(|pair| cost.hybrid[pair.index()] > 0)
+                    .map(|pair| json!({ "symbol": pair.symbol(), "count": cost.hybrid[pair.index()] }))
+                    .collect::<Vec<_>>(),
                 "x": cost.variable_x,
             })
         })
@@ -1926,10 +1942,14 @@ fn mana_cost_label(cost: penta::ManaCost) -> String {
         (cost.black, "B"),
         (cost.red, "R"),
         (cost.green, "G"),
-        (cost.white_red_hybrid, "R/W"),
     ] {
         for _ in 0..amount {
             let _ = write!(label, "{{{symbol}}}");
+        }
+    }
+    for pair in penta::HybridPair::ALL {
+        for _ in 0..cost.hybrid[pair.index()] {
+            let _ = write!(label, "{{{}}}", pair.symbol());
         }
     }
     if label.is_empty() {

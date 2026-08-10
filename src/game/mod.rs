@@ -15,12 +15,12 @@ use crate::card::{
     CardBehavior, CardCatalog, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
     CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext, ComparisonDef,
     ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, DoubleFacedKind, EffectDef,
-    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaCost, ManaRestrictionDef,
-    ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef,
-    PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation, ReplacementEffectDef,
-    ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
-    applicable_part_ids,
+    EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility, ManaCost,
+    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
+    PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -11394,8 +11394,9 @@ impl Game {
                     && Self::mana_has_spend_effect_for(*mana, purpose)
             })
         };
-        let mut hybrid_order = [ManaColor::Red, ManaColor::White];
-        hybrid_order.sort_by_key(|color| !has_eligible_spend_effect(*color));
+        // A hybrid symbol prefers whichever of its colours carries a rider
+        // this payment can use.
+        let hybrid_preference = |color: ManaColor| !has_eligible_spend_effect(color);
         let mut generic_order = [
             ManaColor::Colorless,
             ManaColor::Green,
@@ -11405,7 +11406,7 @@ impl Game {
             ManaColor::Blue,
         ];
         generic_order.sort_by_key(|color| !has_eligible_spend_effect(*color));
-        pay_cost_with_orders(&mut after, cost, x, &hybrid_order, &generic_order);
+        pay_cost_with_orders(&mut after, cost, x, &hybrid_preference, &generic_order);
         let mut spent = Vec::new();
         for color in [
             ManaColor::White,
@@ -11736,8 +11737,7 @@ impl Game {
                     .first()
                     .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, purpose));
                 let pays_colored_symbol = mana_cost_amount(cost, activation.color) > 0
-                    || cost.white_red_hybrid > 0
-                        && matches!(activation.color, ManaColor::White | ManaColor::Red);
+                    || hybrid_pays_with(cost, activation.color);
                 (!benefits_payment, !pays_colored_symbol)
             });
             let outputs = activations
@@ -11819,26 +11819,30 @@ impl Game {
             }
         }
 
-        while available_white_red_hybrid(pool, cost) < cost.white_red_hybrid {
-            let index = available
-                .iter()
-                .enumerate()
-                .filter(|(_, activation)| {
-                    matches!(activation.color, ManaColor::White | ManaColor::Red)
-                })
-                .min_by_key(|(_, activation)| {
-                    (
-                        Some(activation.source) == avoid,
-                        !activation.benefits_payment,
-                        activation.flexibility,
-                        activation.production.total(),
-                        activation.order,
-                    )
-                })
-                .map(|(index, _)| index)?;
-            let activation = available.remove(index);
-            pool.add(activation.production);
-            selected.push(activation);
+        // Each pair is satisfied in turn. No printed cost mixes pairs that
+        // share a colour, so taking them one at a time cannot strand a symbol
+        // another pair had already claimed.
+        for pair in HybridPair::ALL {
+            let needed = cost.hybrid[pair.index()];
+            while available_hybrid(pool, cost, pair) < needed {
+                let index = available
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, activation)| pair.contains(activation.color))
+                    .min_by_key(|(_, activation)| {
+                        (
+                            Some(activation.source) == avoid,
+                            !activation.benefits_payment,
+                            activation.flexibility,
+                            activation.production.total(),
+                            activation.order,
+                        )
+                    })
+                    .map(|(index, _)| index)?;
+                let activation = available.remove(index);
+                pool.add(activation.production);
+                selected.push(activation);
+            }
         }
 
         let required_total = colored_cost_total(cost)
@@ -14622,7 +14626,9 @@ fn can_pay(pool: ManaPool, cost: ManaCost, x: u16) -> bool {
         && pool.black >= cost.black
         && pool.red >= cost.red
         && pool.green >= cost.green
-        && available_white_red_hybrid(pool, cost) >= cost.white_red_hybrid
+        && HybridPair::ALL
+            .into_iter()
+            .all(|pair| available_hybrid(pool, cost, pair) >= cost.hybrid[pair.index()])
         && pool.total()
             >= colored_cost_total(cost)
                 .saturating_add(cost.generic)
@@ -14666,7 +14672,8 @@ fn pay_cost(pool: &mut ManaPool, cost: ManaCost, x: u16) {
         pool,
         cost,
         x,
-        &[ManaColor::Red, ManaColor::White],
+        // No rider to prefer, so each pair spends in its printed order.
+        &|_| false,
         &[
             ManaColor::Colorless,
             ManaColor::Green,
@@ -14682,23 +14689,30 @@ fn pay_cost_with_orders(
     pool: &mut ManaPool,
     cost: ManaCost,
     x: u16,
-    hybrid_order: &[ManaColor],
+    hybrid_preference: &impl Fn(ManaColor) -> bool,
     generic_order: &[ManaColor],
 ) {
     for color in colored_mana() {
         pool.remove_color(color, mana_cost_amount(cost, color));
     }
-    let mut hybrid_remaining = cost.white_red_hybrid;
-    for color in hybrid_order {
-        debug_assert!(matches!(color, ManaColor::Red | ManaColor::White));
-        let spent = pool.amount(*color).min(hybrid_remaining);
-        pool.remove_color(*color, spent);
-        hybrid_remaining -= spent;
-        if hybrid_remaining == 0 {
-            break;
+    for pair in HybridPair::ALL {
+        let mut remaining = cost.hybrid[pair.index()];
+        if remaining == 0 {
+            continue;
         }
+        let (first, second) = pair.colors();
+        let mut order = [first, second];
+        order.sort_by_key(|color| hybrid_preference(*color));
+        for color in order {
+            let spent = pool.amount(color).min(remaining);
+            pool.remove_color(color, spent);
+            remaining -= spent;
+            if remaining == 0 {
+                break;
+            }
+        }
+        debug_assert_eq!(remaining, 0);
     }
-    debug_assert_eq!(hybrid_remaining, 0);
     pay_generic_in_order(
         pool,
         cost.generic
@@ -14726,9 +14740,9 @@ fn add_mana_cost(mut cost: ManaCost, additional: ManaCost) -> ManaCost {
     cost.black = cost.black.saturating_add(additional.black);
     cost.red = cost.red.saturating_add(additional.red);
     cost.green = cost.green.saturating_add(additional.green);
-    cost.white_red_hybrid = cost
-        .white_red_hybrid
-        .saturating_add(additional.white_red_hybrid);
+    for index in 0..HybridPair::COUNT {
+        cost.hybrid[index] = cost.hybrid[index].saturating_add(additional.hybrid[index]);
+    }
     cost.variable_x |= additional.variable_x;
     cost.x_multiplier = cost.x_multiplier.saturating_add(additional.x_multiplier);
     cost
@@ -14852,17 +14866,29 @@ const fn mana_cost_amount(cost: ManaCost, color: ManaColor) -> u16 {
 }
 
 const fn colored_cost_total(cost: ManaCost) -> u16 {
-    cost.white + cost.blue + cost.black + cost.red + cost.green + cost.white_red_hybrid
+    cost.white + cost.blue + cost.black + cost.red + cost.green + cost.hybrid_total()
 }
 
 const fn mana_cost_value(cost: ManaCost) -> u16 {
     cost.generic.saturating_add(colored_cost_total(cost))
 }
 
-const fn available_white_red_hybrid(pool: ManaPool, cost: ManaCost) -> u16 {
-    pool.white
-        .saturating_sub(cost.white)
-        .saturating_add(pool.red.saturating_sub(cost.red))
+/// How much of a hybrid pair's colours is left once the cost's own coloured
+/// symbols are covered.
+fn available_hybrid(pool: ManaPool, cost: ManaCost, pair: HybridPair) -> u16 {
+    let (first, second) = pair.colors();
+    let spare = |color: ManaColor| {
+        pool.amount(color)
+            .saturating_sub(mana_cost_amount(cost, color))
+    };
+    spare(first).saturating_add(spare(second))
+}
+
+/// Whether one colour can pay any hybrid symbol this cost carries.
+fn hybrid_pays_with(cost: ManaCost, color: ManaColor) -> bool {
+    HybridPair::ALL
+        .into_iter()
+        .any(|pair| cost.hybrid[pair.index()] > 0 && pair.contains(color))
 }
 
 fn one_or_none(values: &[GameObjectId]) -> Vec<Vec<GameObjectId>> {

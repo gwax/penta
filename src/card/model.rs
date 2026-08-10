@@ -319,6 +319,19 @@ pub enum ManaColor {
 }
 
 impl ManaColor {
+    /// The single letter Magic prints for this colour.
+    #[must_use]
+    pub const fn from_letter(letter: u8) -> Option<Self> {
+        match letter {
+            b'W' => Some(Self::White),
+            b'U' => Some(Self::Blue),
+            b'B' => Some(Self::Black),
+            b'R' => Some(Self::Red),
+            b'G' => Some(Self::Green),
+            _ => None,
+        }
+    }
+
     pub const COLORS: [Self; 5] = [Self::White, Self::Blue, Self::Black, Self::Red, Self::Green];
 
     pub const ALL: [Self; 6] = [
@@ -3118,6 +3131,109 @@ pub enum CardEffectStatus {
     MetadataOnly,
 }
 
+/// One two-colour hybrid symbol, such as `{R/W}`. Either colour pays it.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum HybridPair {
+    WhiteBlue,
+    WhiteBlack,
+    WhiteRed,
+    WhiteGreen,
+    BlueBlack,
+    BlueRed,
+    BlueGreen,
+    BlackRed,
+    BlackGreen,
+    RedGreen,
+}
+
+impl HybridPair {
+    pub const COUNT: usize = 10;
+
+    pub const ALL: [Self; Self::COUNT] = [
+        Self::WhiteBlue,
+        Self::WhiteBlack,
+        Self::WhiteRed,
+        Self::WhiteGreen,
+        Self::BlueBlack,
+        Self::BlueRed,
+        Self::BlueGreen,
+        Self::BlackRed,
+        Self::BlackGreen,
+        Self::RedGreen,
+    ];
+
+    #[must_use]
+    pub const fn index(self) -> usize {
+        self as usize
+    }
+
+    /// The two colours, in the order Magic prints them.
+    #[must_use]
+    pub const fn colors(self) -> (ManaColor, ManaColor) {
+        match self {
+            Self::WhiteBlue => (ManaColor::White, ManaColor::Blue),
+            Self::WhiteBlack => (ManaColor::White, ManaColor::Black),
+            Self::WhiteRed => (ManaColor::White, ManaColor::Red),
+            Self::WhiteGreen => (ManaColor::White, ManaColor::Green),
+            Self::BlueBlack => (ManaColor::Blue, ManaColor::Black),
+            Self::BlueRed => (ManaColor::Blue, ManaColor::Red),
+            Self::BlueGreen => (ManaColor::Blue, ManaColor::Green),
+            Self::BlackRed => (ManaColor::Black, ManaColor::Red),
+            Self::BlackGreen => (ManaColor::Black, ManaColor::Green),
+            Self::RedGreen => (ManaColor::Red, ManaColor::Green),
+        }
+    }
+
+    #[must_use]
+    pub const fn contains(self, color: ManaColor) -> bool {
+        let (first, second) = self.colors();
+        matches!(color, c if c as u8 == first as u8)
+            || matches!(color, c if c as u8 == second as u8)
+    }
+
+    /// The printed symbol between the braces, such as `R/W`. Magic prints
+    /// each pair in a fixed order that is not always alphabetical.
+    #[must_use]
+    pub const fn symbol(self) -> &'static str {
+        match self {
+            Self::WhiteBlue => "W/U",
+            Self::WhiteBlack => "W/B",
+            Self::WhiteRed => "R/W",
+            Self::WhiteGreen => "G/W",
+            Self::BlueBlack => "U/B",
+            Self::BlueRed => "U/R",
+            Self::BlueGreen => "G/U",
+            Self::BlackRed => "B/R",
+            Self::BlackGreen => "B/G",
+            Self::RedGreen => "R/G",
+        }
+    }
+
+    /// Parses the two colour letters of a hybrid symbol. The printed order
+    /// varies by pair, so both orders are accepted.
+    #[must_use]
+    pub const fn from_letters(first: u8, second: u8) -> Option<Self> {
+        let Some(first) = ManaColor::from_letter(first) else {
+            return None;
+        };
+        let Some(second) = ManaColor::from_letter(second) else {
+            return None;
+        };
+        let mut index = 0;
+        while index < Self::COUNT {
+            let pair = Self::ALL[index];
+            let (a, b) = pair.colors();
+            if (a as u8 == first as u8 && b as u8 == second as u8)
+                || (a as u8 == second as u8 && b as u8 == first as u8)
+            {
+                return Some(pair);
+            }
+            index += 1;
+        }
+        None
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub struct ManaCost {
     pub generic: u16,
@@ -3126,8 +3242,9 @@ pub struct ManaCost {
     pub black: u16,
     pub red: u16,
     pub green: u16,
-    /// Number of `{R/W}` hybrid symbols in this cost.
-    pub white_red_hybrid: u16,
+    /// How many hybrid symbols of each colour pair this cost carries, indexed
+    /// by [`HybridPair::index`].
+    pub hybrid: [u16; HybridPair::COUNT],
     pub variable_x: bool,
     pub x_multiplier: u16,
 }
@@ -3212,7 +3329,7 @@ impl ManaCost {
             black: 0,
             red: 0,
             green: 0,
-            white_red_hybrid: 0,
+            hybrid: [0; HybridPair::COUNT],
             variable_x: false,
             x_multiplier: 0,
         };
@@ -3283,11 +3400,12 @@ impl ManaCost {
                     _ => {}
                 }
             } else if symbol_len == 3
-                && bytes[symbol_start] == b'R'
                 && bytes[symbol_start + 1] == b'/'
-                && bytes[symbol_start + 2] == b'W'
+                && let Some(pair) =
+                    HybridPair::from_letters(bytes[symbol_start], bytes[symbol_start + 2])
             {
-                cost.white_red_hybrid = match Self::checked_increment(cost.white_red_hybrid) {
+                let index = pair.index();
+                cost.hybrid[index] = match Self::checked_increment(cost.hybrid[index]) {
                     Ok(value) => value,
                     Err(kind) => return Err(ManaCostParseError::new(symbol_start, kind)),
                 };
@@ -3367,7 +3485,7 @@ impl ManaCost {
             .saturating_add(self.black)
             .saturating_add(self.red)
             .saturating_add(self.green)
-            .saturating_add(self.white_red_hybrid)
+            .saturating_add(self.hybrid_total())
     }
 
     #[must_use]
@@ -3379,7 +3497,7 @@ impl ManaCost {
             black: 0,
             red,
             green: 0,
-            white_red_hybrid: 0,
+            hybrid: [0; HybridPair::COUNT],
             variable_x: false,
             x_multiplier: 0,
         }
@@ -3401,7 +3519,7 @@ impl ManaCost {
             black,
             red,
             green,
-            white_red_hybrid: 0,
+            hybrid: [0; HybridPair::COUNT],
             variable_x: false,
             x_multiplier: 0,
         }
@@ -3416,7 +3534,7 @@ impl ManaCost {
             black: 0,
             red,
             green: 0,
-            white_red_hybrid: 0,
+            hybrid: [0; HybridPair::COUNT],
             variable_x: true,
             x_multiplier: 1,
         }
@@ -3431,7 +3549,7 @@ impl ManaCost {
             black,
             red,
             green,
-            white_red_hybrid: 0,
+            hybrid: [0; HybridPair::COUNT],
             variable_x: true,
             x_multiplier: 1,
         }
@@ -3454,14 +3572,26 @@ impl ManaCost {
             black,
             red,
             green,
-            white_red_hybrid: 0,
+            hybrid: [0; HybridPair::COUNT],
             variable_x: true,
             x_multiplier,
         }
     }
 
+    /// How many hybrid symbols this cost carries in total.
     #[must_use]
-    pub const fn white_red_hybrid(count: u16) -> Self {
+    pub const fn hybrid_total(&self) -> u16 {
+        let mut total: u16 = 0;
+        let mut index = 0;
+        while index < HybridPair::COUNT {
+            total = total.saturating_add(self.hybrid[index]);
+            index += 1;
+        }
+        total
+    }
+
+    #[must_use]
+    pub const fn hybrid_pair(pair: HybridPair, count: u16) -> Self {
         Self {
             generic: 0,
             white: 0,
@@ -3469,7 +3599,11 @@ impl ManaCost {
             black: 0,
             red: 0,
             green: 0,
-            white_red_hybrid: count,
+            hybrid: {
+                let mut hybrid = [0; HybridPair::COUNT];
+                hybrid[pair.index()] = count;
+                hybrid
+            },
             variable_x: false,
             x_multiplier: 0,
         }
@@ -3495,10 +3629,15 @@ impl fmt::Display for ManaCost {
             (self.black, "B"),
             (self.red, "R"),
             (self.green, "G"),
-            (self.white_red_hybrid, "R/W"),
         ] {
             for _ in 0..amount {
                 write!(formatter, "{{{symbol}}}")?;
+                wrote_symbol = true;
+            }
+        }
+        for pair in HybridPair::ALL {
+            for _ in 0..self.hybrid[pair.index()] {
+                write!(formatter, "{{{}}}", pair.symbol())?;
                 wrote_symbol = true;
             }
         }
@@ -3633,6 +3772,18 @@ pub struct CardRules {
     colors: ColorSet,
 }
 
+/// Whether any hybrid symbol in this cost can be paid with one colour.
+const fn hybrid_includes(cost: ManaCost, color: ManaColor) -> bool {
+    let mut index = 0;
+    while index < HybridPair::COUNT {
+        if cost.hybrid[index] > 0 && HybridPair::ALL[index].contains(color) {
+            return true;
+        }
+        index += 1;
+    }
+    false
+}
+
 impl CardRules {
     const fn base(card_types: CardTypeSet, printed_mana_cost: PrintedManaCost) -> Self {
         let mana_cost = match printed_mana_cost {
@@ -3640,19 +3791,19 @@ impl CardRules {
             PrintedManaCost::Cost(cost) => cost,
         };
         let mut colors = ColorSet::empty();
-        if mana_cost.white > 0 || mana_cost.white_red_hybrid > 0 {
+        if mana_cost.white > 0 || hybrid_includes(mana_cost, ManaColor::White) {
             colors = colors.with(ManaColor::White);
         }
-        if mana_cost.blue > 0 {
+        if mana_cost.blue > 0 || hybrid_includes(mana_cost, ManaColor::Blue) {
             colors = colors.with(ManaColor::Blue);
         }
-        if mana_cost.black > 0 {
+        if mana_cost.black > 0 || hybrid_includes(mana_cost, ManaColor::Black) {
             colors = colors.with(ManaColor::Black);
         }
-        if mana_cost.red > 0 || mana_cost.white_red_hybrid > 0 {
+        if mana_cost.red > 0 || hybrid_includes(mana_cost, ManaColor::Red) {
             colors = colors.with(ManaColor::Red);
         }
-        if mana_cost.green > 0 {
+        if mana_cost.green > 0 || hybrid_includes(mana_cost, ManaColor::Green) {
             colors = colors.with(ManaColor::Green);
         }
         Self {

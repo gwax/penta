@@ -452,7 +452,7 @@ fn recall_charges_two_generic_mana_for_each_x() {
 
 #[test]
 fn white_red_hybrid_symbols_accept_either_color_but_not_colorless() {
-    let cost = ManaCost::white_red_hybrid(3);
+    let cost = ManaCost::hybrid_pair(HybridPair::WhiteRed, 3);
     assert!(can_pay(
         ManaPool {
             white: 2,
@@ -16840,4 +16840,65 @@ fn sepulchral_primordial_reanimates_under_its_controller() {
         1,
         "your own graveyard was never a legal target"
     );
+}
+
+#[test]
+fn extort_drains_when_paid_with_either_half_of_its_hybrid() {
+    let drain_with = |land: crate::CardDefinitionId| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.put_onto_battlefield(PlayerId::One, cards::BLIND_OBEDIENCE)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        // One land for the spell, one for the extort payment.
+        game.put_onto_battlefield(PlayerId::One, cards::SWAMP)
+            .expect("cataloged");
+        game.put_onto_battlefield(PlayerId::One, land)
+            .expect("cataloged");
+        game.players[0].hand = vec![card(15_000, cards::DARK_RITUAL, PlayerId::One)];
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { .. }))
+            .expect("the spell is castable");
+        game.apply(PlayerId::One, cast).unwrap();
+        for _ in 0..12 {
+            if !game.pending_decisions.is_empty() {
+                break;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+
+        let decision = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+            .expect("extort offers its payment");
+        let pay = decision
+            .options
+            .iter()
+            .find(|option| option.label != "Decline")
+            .expect("paying is an option")
+            .id;
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![pay],
+            },
+        )
+        .unwrap();
+        drain_pending(&mut game);
+        (game.players[0].life, game.players[1].life)
+    };
+
+    // A {W/B} symbol takes either colour.
+    assert_eq!(drain_with(cards::PLAINS), (21, 19));
+    assert_eq!(drain_with(cards::SWAMP), (21, 19));
 }

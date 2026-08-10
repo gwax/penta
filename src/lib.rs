@@ -26,7 +26,7 @@ pub use card::{
     CardTypeSet, CatalogError, CharacteristicContext, CharacteristicError, ColorSet, ComparisonDef,
     ConditionDef, ConditionalValueDef, CostDef, CountConditionDef, CounterKind, CreatureStats,
     DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef,
-    GrantedAbilityValidationError, ImplementationStatus, KeywordAbility, ManaCost,
+    GrantedAbilityValidationError, HybridPair, ImplementationStatus, KeywordAbility, ManaCost,
     ManaCostParseError, ManaCostParseErrorKind, ManaRestrictionDef, ManaSelectionDef,
     ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef, MeldResultDef, ModalSpellDef, ModeDef,
     ModeSetDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind, PlayOptionDef,

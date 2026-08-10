@@ -68,7 +68,8 @@ export type Card = {
     black: number;
     red: number;
     green: number;
-    whiteRedHybrid: number;
+    /** One entry per hybrid pair the cost carries, such as `{ symbol: "R/W", count: 3 }`. */
+    hybrid: { symbol: string; count: number }[];
     x: boolean;
   } | null;
   owner?: Owner;

@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility,
+    ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation, ReplacementEffectDef,
+    ReplacementEventDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -76,15 +76,32 @@ pub(in crate::card::sets) static AURELIA_THE_WARLEADER: CardRecord = CardRecord:
     ]),
 );
 
+/// One opponent means one life, so "that much" is the same constant on both
+/// halves.
+static EXTORT_DRAIN: EffectDef = EffectDef::Sequence(&[
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Opponent,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+]);
+
 pub(in crate::card::sets) static BLIND_OBEDIENCE: CardRecord = CardRecord::new(
     cards::BLIND_OBEDIENCE,
     "Blind Obedience",
     CardArt::new("07c3e78d-d917-4552-842f-feff99c059e0", "Seb McKinnon"),
     CardSet::Gatecrash,
     CardRules::new_enchantment(mana_cost!("{1}{W}")).with_abilities(&[
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)",
-            "The extort trigger and hybrid payment are not implemented.",
+            TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
+            EffectDef::OptionalManaPayment {
+                cost: ManaCost::hybrid_pair(HybridPair::WhiteBlack, 1),
+                effect: &EXTORT_DRAIN,
+            },
         ),
         AbilityDef::replacement_for(
             "Artifacts and creatures your opponents control enter tapped.",

@@ -14,8 +14,9 @@
 use serde_json::{Value, json};
 
 use crate::card::{
-    BasicLandType, CardDefinition, CardRules, CardSet, CardStructure, ImplementationStatus,
-    ManaCost, ModeDef, PlayActionKind, PlayOptionDef, PlayRestriction, SpellForm, TargetSlotDef,
+    BasicLandType, CardDefinition, CardRules, CardSet, CardStructure, HybridPair,
+    ImplementationStatus, ManaCost, ModeDef, PlayActionKind, PlayOptionDef, PlayRestriction,
+    SpellForm, TargetSlotDef,
 };
 use crate::casting::{CastChoices, CastSignature};
 use crate::game::{DecisionKind, DecisionObservation, DecisionOrderSemantics, StackObservation};
@@ -45,7 +46,7 @@ use crate::{
 /// exposes the priority window between first-strike and regular combat damage
 /// and adds newly executable keyword and alternative-casting actions to
 /// legal-action lists.
-pub const PROTOCOL_VERSION: u32 = 7;
+pub const PROTOCOL_VERSION: u32 = 8;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -798,7 +799,13 @@ fn mana_cost_json(cost: &ManaCost) -> Value {
         "black": cost.black,
         "red": cost.red,
         "green": cost.green,
-        "whiteRedHybrid": cost.white_red_hybrid,
+        // One entry per pair the cost actually carries, so a client renders
+        // the printed symbols without knowing every pair in the game.
+        "hybrid": HybridPair::ALL
+            .into_iter()
+            .filter(|pair| cost.hybrid[pair.index()] > 0)
+            .map(|pair| json!({ "symbol": pair.symbol(), "count": cost.hybrid[pair.index()] }))
+            .collect::<Vec<_>>(),
         "variableX": cost.variable_x,
         "xMultiplier": cost.x_multiplier,
     })
@@ -1968,10 +1975,9 @@ mod tests {
         assert!(pilgrim["parts"][0].get("effectStatus").is_none());
 
         // Any card with a mix of executable and pending clauses will do here.
-        // Blind Obedience taps what its opponents play, but extort needs
-        // hybrid mana the cost model cannot express yet; repoint this if that
-        // lands.
-        let partial = find("Blind Obedience");
+        // Aurelia flies, has vigilance and haste, but her extra combat phase
+        // needs machinery the engine lacks; repoint this if that lands.
+        let partial = find("Aurelia, the Warleader");
         assert_eq!(partial["implementationStatus"], "partial");
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 

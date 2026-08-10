@@ -3005,7 +3005,7 @@ function GameCard({
   const isRed =
     !card.kind.includes("artifact") &&
     !card.isLand &&
-    ((card.manaCost?.red ?? 0) > 0 || (card.manaCost?.whiteRedHybrid ?? 0) > 0);
+    ((card.manaCost?.red ?? 0) > 0 || hybridIncludes(card.manaCost, "R"));
   const showZeroCost =
     !card.isLand &&
     card.manaCost?.generic === 0 &&
@@ -3014,7 +3014,7 @@ function GameCard({
     card.manaCost.black === 0 &&
     card.manaCost.red === 0 &&
     card.manaCost.green === 0 &&
-    card.manaCost.whiteRedHybrid === 0 &&
+    hybridSymbolCount(card.manaCost) === 0 &&
     !card.manaCost.x;
   const manaSymbolCount = card.manaCost
     ? (card.manaCost.x ? 1 : 0) +
@@ -3024,7 +3024,7 @@ function GameCard({
       card.manaCost.black +
       card.manaCost.red +
       card.manaCost.green +
-      card.manaCost.whiteRedHybrid
+      hybridSymbolCount(card.manaCost)
     : 0;
   const manaCost = formatManaCost(card);
   const battlefieldState = [
@@ -3177,9 +3177,17 @@ function GameCard({
               {Array.from({ length: card.manaCost.green }, (_, index) => (
                 <i className="mana-green-symbol" key={`g${index}`}>G</i>
               ))}
-              {Array.from({ length: card.manaCost.whiteRedHybrid }, (_, index) => (
-                <i className="mana-white-red-symbol" key={`rw${index}`}>R/W</i>
-              ))}
+              {card.manaCost.hybrid.flatMap((pair) =>
+                Array.from({ length: pair.count }, (_, index) => (
+                  <i
+                    className="mana-hybrid-symbol"
+                    key={`${pair.symbol}${index}`}
+                    style={{ background: hybridGradient(pair.symbol) }}
+                  >
+                    {pair.symbol}
+                  </i>
+                )),
+              )}
             </span>
           )}
         </span>
@@ -3245,6 +3253,35 @@ function GameCard({
   );
 }
 
+type ManaCostView = NonNullable<Card["manaCost"]>;
+
+/** The face colour each mana letter is drawn in, matching the solid symbols. */
+const MANA_LETTER_COLORS: Record<string, string> = {
+  W: "#eee6c8",
+  U: "#6f9fc8",
+  B: "#403943",
+  R: "#e26b4f",
+  G: "#4e8a59",
+};
+
+/** A hybrid symbol is split diagonally between its two colours. */
+function hybridGradient(symbol: string) {
+  const [first, second] = symbol.split("/");
+  const from = MANA_LETTER_COLORS[first] ?? "#8b8378";
+  const to = MANA_LETTER_COLORS[second] ?? "#8b8378";
+  return `linear-gradient(135deg, ${from} 0 50%, ${to} 50% 100%)`;
+}
+
+/** How many hybrid symbols a cost prints, across every pair. */
+function hybridSymbolCount(cost: ManaCostView | null | undefined) {
+  return (cost?.hybrid ?? []).reduce((total, pair) => total + pair.count, 0);
+}
+
+/** Whether one colour letter can pay any hybrid symbol in this cost. */
+function hybridIncludes(cost: ManaCostView | null | undefined, letter: string) {
+  return (cost?.hybrid ?? []).some((pair) => pair.symbol.split("/").includes(letter));
+}
+
 function formatManaCost(card: Card) {
   if (card.isLand) return "—";
   if (!card.manaCost) return "Unknown";
@@ -3256,7 +3293,7 @@ function formatManaCost(card: Card) {
     "B".repeat(card.manaCost.black),
     "R".repeat(card.manaCost.red),
     "G".repeat(card.manaCost.green),
-    "{R/W}".repeat(card.manaCost.whiteRedHybrid),
+    ...card.manaCost.hybrid.map((pair) => `{${pair.symbol}}`.repeat(pair.count)),
   ].filter(Boolean);
   return parts.length > 0 ? parts.join(" ") : "0";
 }
