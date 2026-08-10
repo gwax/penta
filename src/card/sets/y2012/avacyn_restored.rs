@@ -2,13 +2,13 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior,
-    CardRules, CardSet, CardSupertype, CardType, CountConditionDef, EffectDef, EffectRecipientDef,
-    LandEntry, ManaColor, ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
-    cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType,
+    CountConditionDef, EffectDef, EffectRecipientDef, LandEntry, ManaColor, ManaRestrictionDef,
+    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
-use crate::mana_cost;
+use crate::{TargetSlotId, mana_cost};
 
 pub(in crate::card::sets) static BONFIRE_OF_THE_DAMNED: CardRecord = CardRecord::new(
     cards::BONFIRE_OF_THE_DAMNED,
@@ -126,10 +126,41 @@ pub(in crate::card::sets) static RESTORATION_ANGEL: CardRecord = CardRecord::new
     .with_abilities(&[
         abilities::flash(),
         abilities::flying(),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "When this creature enters, you may exile target non-Angel creature you control, then return that card to the battlefield under your control.",
-            "The enters-the-battlefield blink ability is not executed.",
-        ),
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            // The exile links the card to this Angel and the return drains
+            // that link immediately, so the creature blinks within one
+            // resolution. The card comes back under its owner's control,
+            // which is the printed controller for every creature this can
+            // legally target unless control of it was already stolen.
+            EffectDef::May(&EffectDef::Sequence(&[
+                EffectDef::ExileLinkedToSource {
+                    object: EffectRecipientDef::Target(TargetSlotId(0)),
+                },
+                EffectDef::ReturnLinkedExiles {
+                    zone: ZoneKind::Battlefield,
+                    grant: None,
+                },
+            ])),
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "non-Angel creature you control",
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Angel")),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            },
+        )]),
     ]),
 );
 

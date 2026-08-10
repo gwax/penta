@@ -14771,3 +14771,87 @@ fn aetherling_dodges_a_blocker_and_comes_back_at_the_end_step() {
         "and returned at the end step"
     );
 }
+
+#[test]
+fn restoration_angel_blinks_a_creature_within_one_resolution() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let lions = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    // A creature the Angel may not target, so the choice is not vacuous.
+    let serra = game
+        .put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.tap_permanent(lions);
+
+    game.put_onto_battlefield(PlayerId::One, cards::RESTORATION_ANGEL)
+        .expect("cataloged");
+    for _ in 0..12 {
+        if game.stack.is_empty()
+            && game.pending_triggers.is_empty()
+            && game.pending_decisions.is_empty()
+        {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let cards = decision
+                .options
+                .iter()
+                .filter(|option| option.card.is_some())
+                .map(|option| option.id)
+                .take(decision.maximum)
+                .collect::<Vec<_>>();
+            let options = if cards.is_empty() {
+                decision
+                    .options
+                    .iter()
+                    .filter(|option| option.label == "Do it")
+                    .map(|option| option.id)
+                    .chain(decision.options.iter().map(|option| option.id))
+                    .take(decision.minimum.max(1))
+                    .collect::<Vec<_>>()
+            } else {
+                cards
+            };
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .unwrap();
+            continue;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(
+        game.players[0].exile.is_empty(),
+        "the blink returned the card rather than leaving it exiled"
+    );
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS)
+        .expect("the Lions came back to the battlefield");
+    assert_ne!(
+        returned.card.id, lions,
+        "a blinked permanent returns as a new object"
+    );
+    assert!(!returned.tapped, "the new object is untapped");
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == serra),
+        "the untargetable Angel stayed put"
+    );
+}

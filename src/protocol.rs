@@ -1968,9 +1968,10 @@ mod tests {
         assert!(pilgrim["parts"][0].get("effectStatus").is_none());
 
         // Any card with a mix of executable and pending clauses will do here.
-        // Restoration Angel's blink needs exile-and-return, so it should stay
-        // partial for a while; repoint this if that lands.
-        let partial = find("Restoration Angel");
+        // Sepulchral Primordial has intimidate but its per-opponent
+        // reanimation trigger needs machinery the engine lacks, so it should
+        // stay partial for a while; repoint this if that lands.
+        let partial = find("Sepulchral Primordial");
         assert_eq!(partial["implementationStatus"], "partial");
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 
