@@ -1,9 +1,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, ComparisonDef, EffectDef,
-    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ZoneKind, abilities, cards,
+    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardType, ComparisonDef,
+    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -124,29 +125,40 @@ pub(in crate::card::sets) static FELLWAR_STONE: CardRecord = CardRecord::new(
     .with_legacy_procedure()]),
 );
 
+/// The Maze does not remove the creature from combat: it stays an attacker,
+/// keeps whatever is blocking it, and simply exchanges no combat damage.
+static MAZE_OF_ITH_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Attacking,
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+static MAZE_OF_ITH_EFFECT: [EffectDef; 2] = [
+    EffectDef::Untap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::PreventCombatDamageThisTurn {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+];
+
 pub(in crate::card::sets) static MAZE_OF_ITH: CardRecord = CardRecord::new(
     cards::MAZE_OF_ITH,
     "Maze of Ith",
     CardArt::new("42dcceee-2a47-4eaa-a6a3-2931b3d50244", "Anson Maddocks"),
     CardSet::TheDark,
-    CardRules::new_land(&[])
-        .with_abilities(&[
-            AbilityDef::activated_with_targets("{T}: Untap target attacking creature. Prevent all combat damage that would be dealt to and dealt by that creature this turn.", &[AbilityCostDef::TapSource], &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Special("attacking creature"),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: None,
-                    owner: None,
-                },
-            )], EffectDef::Special(
-                    "Untap the target attacker and prevent its combat damage for the turn",
-                ))
-            .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::MazeOfIth))
-            .with_coverage(AbilityCoverageDef::partial(
-                "The implementation removes the attacker from combat instead of creating combat-damage prevention.",
-            ))
-            .with_legacy_procedure(),
-        ]),
+    CardRules::new_land(&[]).with_abilities(&[AbilityDef::activated_with_targets(
+        "{T}: Untap target attacking creature. Prevent all combat damage that would be dealt to and dealt by that creature this turn.",
+        &[AbilityCostDef::TapSource],
+        &MAZE_OF_ITH_TARGET,
+        EffectDef::Sequence(&MAZE_OF_ITH_EFFECT),
+    )]),
 );
 
 pub(in crate::card::sets) static DUST_TO_DUST: CardRecord = CardRecord::new(

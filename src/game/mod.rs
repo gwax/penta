@@ -170,6 +170,10 @@ struct Permanent {
     /// Whether nothing may block this creature for the rest of the turn.
     /// Cleared in cleanup with the other until-end-of-turn state.
     unblockable_this_turn: bool,
+    /// Whether combat damage to and from this permanent is prevented for the
+    /// rest of the turn. Maze of Ith sets it; the creature stays an attacker
+    /// so its attack triggers and its blockers are unaffected.
+    combat_damage_prevented: bool,
     /// Who controls this permanent again once the turn ends, set while a
     /// control-changing effect holds it. Cleanup restores it.
     control_reverts_to: Option<PlayerId>,
@@ -262,6 +266,7 @@ impl Permanent {
             attacking: false,
             activated_loyalty_this_turn: false,
             unblockable_this_turn: false,
+            combat_damage_prevented: false,
             control_reverts_to: None,
             blocked: false,
             blocking: None,
@@ -3533,6 +3538,7 @@ impl Game {
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
@@ -7748,23 +7754,6 @@ impl Game {
                     x: 0,
                 });
             }
-            CardBehavior::MazeOfIth if !permanent.tapped && self.can_use_tap_ability(permanent) => {
-                actions.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|candidate| candidate.attacking)
-                        .map(|candidate| Action::ActivateAbility {
-                            source: permanent.card.id,
-                            ability,
-                            targets: vec![TargetSelection::single(
-                                ability_target_slot,
-                                Target::Permanent(candidate.card.id),
-                            )],
-                            cost_object: None,
-                            x: 0,
-                        }),
-                );
-            }
             CardBehavior::NevinyrralsDisk
                 if !permanent.tapped
                     && self.can_use_tap_ability(permanent)
@@ -9129,6 +9118,18 @@ impl Game {
                     }
                 }
             }
+            EffectDef::PreventCombatDamageThisTurn { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Permanent(id) = target
+                        && let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == id)
+                    {
+                        permanent.combat_damage_prevented = true;
+                    }
+                }
+            }
             EffectDef::Destroy {
                 object: recipient,
                 can_regenerate,
@@ -10409,19 +10410,6 @@ impl Game {
             }
             CardBehavior::LibraryOfAlexandria => {
                 self.draw_cards(object.controller, 1);
-            }
-            CardBehavior::MazeOfIth => {
-                if let Some(Target::Permanent(target)) = self.first_legal_ability_target(object)
-                    && let Some(creature) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                {
-                    creature.tapped = false;
-                    creature.attacking = false;
-                    creature.blocked = false;
-                    creature.combat_damage_assignment.clear();
-                }
             }
             CardBehavior::NevinyrralsDisk => {
                 let doomed = self
@@ -12076,6 +12064,7 @@ impl Game {
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
@@ -12603,6 +12592,7 @@ impl Game {
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::Destroy { .. }
@@ -12744,6 +12734,7 @@ impl Game {
                 | EffectDef::LoseLife { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
+                | EffectDef::PreventCombatDamageThisTurn { .. }
                 | EffectDef::Attach { .. }
                 | EffectDef::CreateToken { .. }
                 | EffectDef::Destroy { .. }
@@ -14252,7 +14243,6 @@ impl Game {
             }
             Some(
                 behavior @ (CardBehavior::LibraryOfAlexandria
-                | CardBehavior::MazeOfIth
                 | CardBehavior::NevinyrralsDisk
                 | CardBehavior::TimeVault),
             ) => {
@@ -14752,6 +14742,16 @@ impl Game {
         }
     }
 
+    /// Whether combat damage to this recipient is prevented for the turn.
+    /// Only a permanent can carry the prevention; a player never does.
+    fn combat_damage_is_prevented_for(&self, recipient: Target) -> bool {
+        matches!(recipient, Target::Permanent(id)
+            if self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == id && permanent.combat_damage_prevented))
+    }
+
     /// Combat damage from an attacker to a player, which is the one kind of
     /// damage the "whenever this deals combat damage to a player" triggers
     /// listen for. Ordinary damage to a player carries no such event.
@@ -14780,6 +14780,62 @@ impl Game {
         self.capture_battlefield_triggers(&event);
     }
 
+    /// Combat damage between one blocked attacker and everything blocking it,
+    /// in both directions.
+    fn exchange_blocked_combat_damage(
+        &mut self,
+        attacker_id: GameObjectId,
+        attacker_index: usize,
+        blockers: &[GameObjectId],
+        attacker_deals_damage: bool,
+    ) {
+        let assignments = self.battlefield[attacker_index]
+            .combat_damage_assignment
+            .clone();
+        if attacker_deals_damage {
+            let split = if assignments.is_empty() {
+                self.default_damage_split(attacker_id, blockers)
+            } else {
+                assignments
+                    .into_iter()
+                    .map(|assignment| (assignment.recipient, assignment.amount))
+                    .collect()
+            };
+            for (recipient, amount) in split {
+                if self.combat_damage_is_prevented_for(recipient) {
+                    continue;
+                }
+                // Trample past a blocker is still combat damage to a player,
+                // so it goes through the same path as an unblocked hit.
+                if let Target::Player(player) = recipient {
+                    self.deal_combat_damage_to_player(attacker_id, player, amount);
+                } else {
+                    self.damage_target_from(Some(attacker_id), Some(recipient), amount);
+                }
+            }
+        }
+        if self.combat_damage_is_prevented_for(Target::Permanent(attacker_id)) {
+            return;
+        }
+        let return_damage = blockers
+            .iter()
+            .filter_map(|id| {
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == *id)
+                    .filter(|permanent| {
+                        self.deals_damage_in_current_combat_step(permanent)
+                            && !permanent.combat_damage_prevented
+                    })
+                    .and_then(|permanent| self.power(permanent))
+                    .map(|power| (*id, power.max(0).cast_unsigned()))
+            })
+            .collect::<Vec<_>>();
+        for (blocker, amount) in return_damage {
+            self.damage_target_from(Some(blocker), Some(Target::Permanent(attacker_id)), amount);
+        }
+    }
+
     fn deal_combat_damage(&mut self) {
         let attackers: Vec<_> = self
             .battlefield
@@ -14800,8 +14856,9 @@ impl Game {
                 .unwrap_or(0)
                 .max(0)
                 .cast_unsigned();
-            let attacker_deals_damage =
-                self.deals_damage_in_current_combat_step(&self.battlefield[attacker_index]);
+            let attacker_deals_damage = self
+                .deals_damage_in_current_combat_step(&self.battlefield[attacker_index])
+                && !self.battlefield[attacker_index].combat_damage_prevented;
             let blockers: Vec<_> = self
                 .battlefield
                 .iter()
@@ -14835,47 +14892,12 @@ impl Game {
                     _ => {}
                 }
             } else if !blockers.is_empty() {
-                let assignments = self.battlefield[attacker_index]
-                    .combat_damage_assignment
-                    .clone();
-                if attacker_deals_damage {
-                    let split = if assignments.is_empty() {
-                        self.default_damage_split(attacker_id, &blockers)
-                    } else {
-                        assignments
-                            .into_iter()
-                            .map(|assignment| (assignment.recipient, assignment.amount))
-                            .collect()
-                    };
-                    for (recipient, amount) in split {
-                        // Trample past a blocker is still combat damage to a
-                        // player, so it goes through the same path as an
-                        // unblocked hit.
-                        if let Target::Player(player) = recipient {
-                            self.deal_combat_damage_to_player(attacker_id, player, amount);
-                        } else {
-                            self.damage_target_from(Some(attacker_id), Some(recipient), amount);
-                        }
-                    }
-                }
-                let return_damage = blockers
-                    .iter()
-                    .filter_map(|id| {
-                        self.battlefield
-                            .iter()
-                            .find(|permanent| permanent.card.id == *id)
-                            .filter(|permanent| self.deals_damage_in_current_combat_step(permanent))
-                            .and_then(|permanent| self.power(permanent))
-                            .map(|power| (*id, power.max(0).cast_unsigned()))
-                    })
-                    .collect::<Vec<_>>();
-                for (blocker, amount) in return_damage {
-                    self.damage_target_from(
-                        Some(blocker),
-                        Some(Target::Permanent(attacker_id)),
-                        amount,
-                    );
-                }
+                self.exchange_blocked_combat_damage(
+                    attacker_id,
+                    attacker_index,
+                    &blockers,
+                    attacker_deals_damage,
+                );
             }
         }
         self.check_state_based_actions();
@@ -15414,6 +15436,7 @@ impl Game {
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::Attach { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
@@ -16149,6 +16172,7 @@ impl Game {
                 permanent.controller = owner;
             }
             permanent.unblockable_this_turn = false;
+            permanent.combat_damage_prevented = false;
             permanent.destroy_at_end = false;
             permanent.animation = None;
             permanent.activations_this_turn.clear();

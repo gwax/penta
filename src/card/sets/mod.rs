@@ -598,6 +598,7 @@ mod tests {
             }
             EffectDef::Tap { object }
             | EffectDef::Untap { object }
+            | EffectDef::PreventCombatDamageThisTurn { object }
             | EffectDef::Destroy { object, .. }
             | EffectDef::Sacrifice { object }
             | EffectDef::Counter { object }
@@ -826,6 +827,7 @@ mod tests {
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::Destroy { .. }
@@ -1012,6 +1014,7 @@ mod tests {
                         | EffectDef::LoseTheGame { .. }
                         | EffectDef::Tap { .. }
                         | EffectDef::Untap { .. }
+                        | EffectDef::PreventCombatDamageThisTurn { .. }
                         | EffectDef::Attach { .. }
                         | EffectDef::CreateToken { .. }
                         | EffectDef::Destroy { .. }
@@ -1191,6 +1194,7 @@ mod tests {
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::Destroy { .. }
@@ -1705,7 +1709,7 @@ mod tests {
 
     #[test]
     fn migrated_activated_cards_preserve_their_derived_implementation_status() {
-        let partial = [&y1993::alpha::CHAOS_ORB, &y1994::the_dark::MAZE_OF_ITH];
+        let partial = [&y1993::alpha::CHAOS_ORB];
         let complete = [
             &y1993::alpha::GLASSES_OF_URZA,
             &y1993::alpha::ICY_MANIPULATOR,
@@ -1717,6 +1721,7 @@ mod tests {
             &y1994::fallen_empires::ICATIAN_JAVELINEERS,
             &y1994::legends::PENDELHAVEN,
             &y1994::legends::RELIC_BARRIER,
+            &y1994::the_dark::MAZE_OF_ITH,
         ];
 
         for record in partial {

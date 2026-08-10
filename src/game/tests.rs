@@ -19868,3 +19868,76 @@ fn stone_giant_throws_only_what_it_can_lift_and_the_landing_kills_it() {
         "nothing else was touched"
     );
 }
+
+#[test]
+fn maze_of_ith_stops_the_damage_without_calling_off_the_attack() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.blockers_declared = true;
+    game.priority = PlayerId::Two;
+    game.battlefield
+        .push(creature(10_000, cards::MAZE_OF_ITH, PlayerId::Two));
+    let mut angel = creature(10_001, cards::SERRA_ANGEL, PlayerId::One);
+    angel.attacking = true;
+    angel.tapped = true;
+    game.battlefield.push(angel);
+    // A blocker, so there is damage in both directions to prevent.
+    let mut lions = creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two);
+    lions.blocking = Some(GameObjectId(10_001));
+    game.battlefield.push(lions);
+
+    let maze = Action::ActivateAbility {
+        source: GameObjectId(10_000),
+        ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+        targets: activated_targets(Target::Permanent(GameObjectId(10_001))),
+        cost_object: None,
+        x: 0,
+    };
+    assert!(
+        game.legal_actions(PlayerId::Two).contains(&maze),
+        "an attacking creature is a legal target"
+    );
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::ActivateAbility { targets, .. }
+                if targets.iter().any(|selection| selection
+                    .targets()
+                    .contains(&Target::Permanent(GameObjectId(10_002)))))
+        ),
+        "a creature that is only blocking is not attacking"
+    );
+    game.apply(PlayerId::Two, maze).unwrap();
+    drain_pending(&mut game);
+
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still there");
+    assert!(!angel.tapped, "the Maze untapped it");
+    assert!(
+        angel.attacking,
+        "and left it attacking: the Maze prevents damage, it does not call off the attack"
+    );
+
+    game.step = Step::CombatDamage;
+    game.deal_combat_damage();
+
+    assert_eq!(game.players[1].life, 20, "no damage got through");
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_002)),
+        "the 4/4 dealt nothing to its blocker"
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == GameObjectId(10_001))
+            .expect("still there")
+            .damage,
+        0,
+        "and the blocker dealt nothing back"
+    );
+}

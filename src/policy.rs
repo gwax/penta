@@ -247,6 +247,19 @@ impl HandcraftedPolicy {
         Some(profile)
     }
 
+    /// Whether a recipient names every creature an opponent controls, which
+    /// is what makes a damage or counter effect a one-sided sweep.
+    fn hits_every_opposing_creature(recipient: EffectRecipientDef) -> bool {
+        matches!(
+            recipient,
+            EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasType(crate::CardType::Creature),
+                zones: [ZoneKind::Battlefield],
+                controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
+            }
+        )
+    }
+
     fn collect_spell_effect_profile(
         effect: EffectDef,
         x: u16,
@@ -262,14 +275,7 @@ impl HandcraftedPolicy {
             EffectDef::May(inner) => Self::collect_spell_effect_profile(*inner, x, profile),
             EffectDef::DealDamage { recipient, amount } => {
                 profile.damage = Self::policy_value(amount, x);
-                profile.opponent_creature_sweep |= matches!(
-                    recipient,
-                    EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::HasType(crate::CardType::Creature),
-                        zones: [ZoneKind::Battlefield],
-                        controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
-                    }
-                );
+                profile.opponent_creature_sweep |= Self::hits_every_opposing_creature(recipient);
             }
             EffectDef::DrawCards { amount, .. } => {
                 profile.cards_drawn = Self::policy_value(amount, x);
@@ -310,7 +316,9 @@ impl HandcraftedPolicy {
                     profile.mark(DeclarativeSpellProfile::SWEEPS_CREATURES);
                 }
             }
-            EffectDef::Tap { .. } | EffectDef::Untap { .. } => {
+            EffectDef::Tap { .. }
+            | EffectDef::Untap { .. }
+            | EffectDef::PreventCombatDamageThisTurn { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);
             }
             EffectDef::Apply { .. } => profile.mark(DeclarativeSpellProfile::APPLIES),

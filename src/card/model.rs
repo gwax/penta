@@ -1360,6 +1360,13 @@ pub enum EffectDef {
     Untap {
         object: EffectRecipientDef,
     },
+    /// No combat damage is dealt to or by the affected permanent for the rest
+    /// of the turn. This is prevention rather than removal from combat: the
+    /// creature is still attacking, and everything that reads that still
+    /// sees it.
+    PreventCombatDamageThisTurn {
+        object: EffectRecipientDef,
+    },
     /// Puts token copies of `token` onto the battlefield under the resolving
     /// object's controller.
     CreateToken {
@@ -3918,6 +3925,8 @@ pub enum CardBehavior {
     LibraryOfAlexandria,
     ManaDrain,
     ManaVault,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses declarative untap and combat-damage prevention.
     MazeOfIth,
     MindTwist,
     Moat,

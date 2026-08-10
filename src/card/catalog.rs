@@ -767,6 +767,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | EffectDef::LoseTheGame { .. }
         | super::EffectDef::Tap { .. }
         | super::EffectDef::Untap { .. }
+        | EffectDef::PreventCombatDamageThisTurn { .. }
         | super::EffectDef::Attach { .. }
         | super::EffectDef::CreateToken { .. }
         | super::EffectDef::Destroy { .. }
@@ -849,6 +850,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | EffectDef::LoseTheGame { .. }
         | super::EffectDef::Tap { .. }
         | super::EffectDef::Untap { .. }
+        | EffectDef::PreventCombatDamageThisTurn { .. }
         | super::EffectDef::Attach { .. }
         | super::EffectDef::CreateToken { .. }
         | super::EffectDef::Destroy { .. }
@@ -1048,6 +1050,7 @@ fn validate_effect_target_references(
         EffectDef::LoseTheGame { player: object }
         | EffectDef::Tap { object }
         | EffectDef::Untap { object }
+        | EffectDef::PreventCombatDamageThisTurn { object }
         | EffectDef::Attach { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
