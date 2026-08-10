@@ -16510,3 +16510,75 @@ fn a_state_trigger_fires_when_its_condition_becomes_true_and_only_once() {
         "and went to the graveyard"
     );
 }
+
+#[test]
+fn disciple_of_bolas_pays_out_the_power_of_what_it_ate() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].library = (0..5)
+        .map(|index| card(12_000 + index, cards::PLAINS, PlayerId::One))
+        .collect();
+    game.players[0].hand.clear();
+    // A 5/5 and a 2/1, so the choice is visible in the payout.
+    game.put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    let lions = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    let life_before = game.players[0].life;
+
+    let disciple = game
+        .put_onto_battlefield(PlayerId::One, cards::DISCIPLE_OF_BOLAS)
+        .expect("cataloged");
+    for _ in 0..12 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the sacrifice is a choice");
+    assert!(
+        decision
+            .options
+            .iter()
+            .all(|option| option.card.is_none_or(|(id, _)| id != disciple)),
+        "\"another creature\" excludes the Disciple itself"
+    );
+    let angel = decision
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(_, def)| def == cards::SERRA_ANGEL)
+        })
+        .expect("the Angel is a legal sacrifice");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![angel.id],
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    // Serra Angel is a 4/4, so four life and four cards.
+    assert_eq!(game.players[0].life, life_before + 4);
+    assert_eq!(game.players[0].hand.len(), 4);
+    assert_eq!(game.players[0].library.len(), 1);
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == lions),
+        "only the chosen creature was sacrificed"
+    );
+}

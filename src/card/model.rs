@@ -1300,6 +1300,11 @@ pub enum EffectDef {
     SacrificeOfChoice {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
+        /// Run after the sacrifice, with the sacrificed permanent's power as
+        /// [`ValueDef::TriggerEventAmount`]. A sacrifice of choice waits on a
+        /// decision, so anything reading what was sacrificed has to be part
+        /// of the same continuation rather than the next effect in sequence.
+        then: Option<&'static EffectDef>,
     },
     /// Search a library for one matching card and put it somewhere, then
     /// shuffle. Searching a hidden zone never obliges the searcher to find,

@@ -76,11 +76,37 @@ pub(in crate::card::sets) static DISCIPLE_OF_BOLAS: CardRecord = CardRecord::new
         2,
         1,
     )
-    .with_ability(AbilityDef::not_implemented(
+    .with_ability(AbilityDef::triggered(
         "When this creature enters, sacrifice another creature. You gain X life and draw X cards, where X is that creature's power.",
-        "Printed rules are cataloged but are not executed by the engine.",
+        TriggerEventDef::ZoneChanged {
+            object: ObjectPredicateDef::Source,
+            from: None,
+            to: Some(ZoneKind::Battlefield),
+        },
+        EffectDef::SacrificeOfChoice {
+            player: EffectRecipientDef::Controller,
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                // "Another" creature, so the Disciple cannot eat itself.
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+            ]),
+            then: Some(&DISCIPLE_OF_BOLAS_PAYOFF),
+        },
     )),
 );
+
+/// X is read off the sacrificed creature, so both halves take the power the
+/// sacrifice recorded rather than counting anything on the board.
+static DISCIPLE_OF_BOLAS_PAYOFF: EffectDef = EffectDef::Sequence(&[
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::TriggerEventAmount,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::TriggerEventAmount,
+    },
+]);
 
 pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new(
     cards::DURESS,

@@ -614,6 +614,16 @@ struct PendingTrigger {
 /// The immutable declaration captured when one event matches one source
 /// ability. The game assigns the ephemeral trigger ID when it accepts this
 /// record into the pending-trigger queue.
+/// What runs once a demanded sacrifice has been chosen and made. The
+/// sacrificed permanent's power travels as the trigger amount, so an effect
+/// measured by what was sacrificed can read it.
+#[derive(Clone, Debug)]
+struct SacrificeFollowup {
+    object: Box<StackObject>,
+    context: TriggerContext,
+    effect: &'static EffectDef,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct TriggerCapture {
     source: AbilitySourceRef,
@@ -988,7 +998,7 @@ enum DecisionContinuation {
         effect: &'static EffectDef,
     },
     /// A sacrifice an effect demanded, chosen by the sacrificing player.
-    SacrificeOfChoice,
+    SacrificeOfChoice(Option<SacrificeFollowup>),
     /// The spell's controller deciding whether to keep it alive.
     CounterUnlessPaid {
         spell: GameObjectId,
@@ -4659,6 +4669,7 @@ impl Game {
         player: PlayerId,
         predicate: ObjectPredicateDef,
         source: GameObjectId,
+        followup: Option<SacrificeFollowup>,
     ) {
         let candidates = self
             .battlefield
@@ -4675,8 +4686,21 @@ impl Game {
             .map(|permanent| permanent.card.clone())
             .collect::<Vec<_>>();
         match candidates.as_slice() {
-            [] => {}
-            [only] => self.destroy_permanents(&[only.id], false),
+            // Nothing to choose between, so the sacrifice happens now and its
+            // follow-up runs in the same resolution rather than waiting on a
+            // decision that would only have one answer.
+            [] => {
+                if let Some(followup) = followup {
+                    self.resolve_sacrifice_followup(&followup, None);
+                }
+            }
+            [only] => {
+                let sacrificed = only.id;
+                self.destroy_permanents(&[sacrificed], false);
+                if let Some(followup) = followup {
+                    self.resolve_sacrifice_followup(&followup, Some(sacrificed));
+                }
+            }
             _ => {
                 let options = self.card_decision_options(&candidates, DecisionZone::Battlefield);
                 self.queue_decision(
@@ -4687,10 +4711,32 @@ impl Game {
                     1..=1,
                     false,
                     options,
-                    DecisionContinuation::SacrificeOfChoice,
+                    DecisionContinuation::SacrificeOfChoice(followup),
                 );
             }
         }
+    }
+
+    /// Runs what a sacrifice owes once the permanent is chosen. The power is
+    /// read before the sacrifice, because by the time this runs the permanent
+    /// is already gone.
+    fn resolve_sacrifice_followup(
+        &mut self,
+        followup: &SacrificeFollowup,
+        sacrificed: Option<GameObjectId>,
+    ) {
+        // A negative power gives nothing rather than draining the controller.
+        let amount = i32::from(
+            sacrificed
+                .and_then(|id| self.current_or_last_known_power(id))
+                .unwrap_or(0),
+        )
+        .max(0);
+        let context = TriggerContext {
+            amount: Some(amount),
+            ..followup.context
+        };
+        self.resolve_effect_def(*followup.effect, &followup.object, context);
     }
 
     fn queue_time_vault_decision(&mut self, permanent: GameObjectId, remaining: Vec<GameObjectId>) {
@@ -5059,7 +5105,7 @@ impl Game {
                     self.resolve_effect_def(*effect, &object, context);
                 }
             }
-            DecisionContinuation::SacrificeOfChoice => {
+            DecisionContinuation::SacrificeOfChoice(followup) => {
                 let sacrificed = pending
                     .observation
                     .options
@@ -5067,7 +5113,11 @@ impl Game {
                     .filter(|option| options.contains(&option.id))
                     .filter_map(|option| option.card.map(|(card, _)| card))
                     .collect::<Vec<_>>();
+                let chosen = sacrificed.first().copied();
                 self.destroy_permanents(&sacrificed, false);
+                if let Some(followup) = followup {
+                    self.resolve_sacrifice_followup(&followup, chosen);
+                }
             }
             DecisionContinuation::DiscardToEffect { player, cause } => {
                 let discarded = pending
@@ -8019,13 +8069,19 @@ impl Game {
             EffectDef::SacrificeOfChoice {
                 player: recipient,
                 object: predicate,
+                then,
             } => {
                 let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context) {
                     if let Target::Player(player) = target
                         && self.can_be_forced_to_sacrifice(player, object.controller)
                     {
-                        self.queue_chosen_sacrifice(player, predicate, source);
+                        let followup = then.map(|effect| SacrificeFollowup {
+                            object: Box::new(object.clone()),
+                            context,
+                            effect,
+                        });
+                        self.queue_chosen_sacrifice(player, predicate, source, followup);
                     }
                 }
             }

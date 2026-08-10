@@ -527,8 +527,16 @@ mod tests {
             | EffectDef::LoseLife { recipient, .. } => shared_effect_recipient(recipient),
             // The chooser is a player, and the choices are their own
             // battlefield, so only the predicate needs checking.
-            EffectDef::SacrificeOfChoice { player, object } => {
-                shared_effect_recipient(player) && shared_object_predicate(object)
+            EffectDef::SacrificeOfChoice {
+                player,
+                object,
+                then,
+            } => {
+                shared_effect_recipient(player)
+                    && shared_object_predicate(object)
+                    // The follow-up runs inside the sacrifice's continuation,
+                    // where a further deferred decision has nowhere to resume.
+                    && then.is_none_or(|effect| shared_stack_effect_at_position(*effect, false))
             }
             // The searcher is a player and the choices come out of their own
             // library, so only the predicate and the destination need
