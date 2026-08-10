@@ -655,6 +655,9 @@ pub enum ObjectPredicateDef {
     HasKeyword(KeywordAbility),
     /// A creature currently declared as an attacker in combat.
     Attacking,
+    /// A creature that was declared as an attacker at any point this turn,
+    /// whether or not it is still attacking or even still in combat.
+    AttackedThisTurn,
     All(&'static [ObjectPredicateDef]),
     AnyOf(&'static [ObjectPredicateDef]),
     Not(&'static ObjectPredicateDef),
@@ -1970,6 +1973,13 @@ pub enum TriggerConditionDef {
     /// Whether this ability's own source has dealt damage to an opponent of
     /// its controller at any point this turn, by any means.
     SourceDealtDamageToOpponentThisTurn,
+    /// Whether what a target slot points at still matches. Read when the
+    /// condition is checked, so a delayed effect can ask about the target as
+    /// it is then rather than as it was.
+    TargetMatches {
+        slot: TargetIndex,
+        object: ObjectPredicateDef,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -2973,6 +2983,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -3004,6 +3015,7 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -3037,6 +3049,7 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -3074,6 +3087,7 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -3113,6 +3127,7 @@ fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
         | ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -3144,6 +3159,7 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -3177,6 +3193,7 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -3213,6 +3230,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -3983,6 +4001,8 @@ pub enum CardBehavior {
     Atog,
     AugurOfBolas,
     Balance,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// pumps declaratively and schedules its own delayed destruction.
     Berserk,
     /// Legacy dispatch key retained for source compatibility; the card now
     /// records its chosen opponent and triggers on the shared stack.

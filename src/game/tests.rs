@@ -20733,3 +20733,80 @@ fn drain_life_is_capped_by_a_creatures_toughness() {
         "and its one toughness is all it had to give"
     );
 }
+
+#[test]
+fn berserk_doubles_any_creature_and_only_kills_one_that_attacked() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.blockers_declared = true;
+    // An attacking creature the caster does not control, which the old
+    // targeting refused.
+    let mut angel = creature(10_000, cards::SERRA_ANGEL, PlayerId::Two);
+    angel.attacking = true;
+    angel.attacked_this_turn = true;
+    game.battlefield.push(angel);
+    // And one of their own sitting at home.
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+
+    let berserk = card(10_002, cards::BERSERK, PlayerId::One);
+    game.players[0].hand.push(berserk.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    let action = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        berserk.id,
+        Target::Permanent(GameObjectId(10_000)),
+    );
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("still there");
+    assert_eq!(game.power(angel), Some(8), "a 4/4 doubles to 8/4");
+    assert_eq!(game.toughness(angel), Some(4));
+    assert!(game.permanent_has_executable_keyword(angel, KeywordAbility::Trample));
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_000)),
+        "it attacked, so the end step collected it"
+    );
+}
+
+#[test]
+fn berserk_spares_a_creature_that_never_attacked() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
+    let berserk = card(10_001, cards::BERSERK, PlayerId::One);
+    game.players[0].hand.push(berserk.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    let action = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        berserk.id,
+        Target::Permanent(GameObjectId(10_000)),
+    );
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("it never attacked, so nothing came for it");
+    assert_eq!(game.power(lions), Some(4), "a 2/1 doubles to 4/1");
+}

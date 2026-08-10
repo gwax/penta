@@ -219,7 +219,6 @@ struct Permanent {
     /// Indefinite text changes applied to this object in timestamp order.
     text_changes: Vec<BasicLandTypeChange>,
     regeneration_shields: u8,
-    berserked: bool,
     attacked_this_turn: bool,
     /// How many times this creature has been declared as an attacker this
     /// turn. `attacked_this_turn` is already set by the time the attack
@@ -292,7 +291,6 @@ impl Permanent {
             copied_from: None,
             text_changes: Vec::new(),
             regeneration_shields: 0,
-            berserked: false,
             attacked_this_turn: false,
             attacks_this_turn: 0,
             keywords_until_upkeep_of: Vec::new(),
@@ -578,6 +576,9 @@ struct TriggerEventObject {
     /// Whether this creature is attacking, excluding a creature that is only
     /// blocking. Bloodrush and similar predicates need the narrower state.
     attacking: bool,
+    /// Whether this creature attacked at any point this turn, which outlives
+    /// combat and so is not the same question as `attacking`.
+    attacked_this_turn: bool,
 }
 
 /// The object or procedure a mana payment is paying for. Restrictions are
@@ -3447,6 +3448,7 @@ impl Game {
                 capture.controller,
                 capture.context,
                 Some(capture.source.ability),
+                None,
             )
         {
             return;
@@ -4040,7 +4042,7 @@ impl Game {
                     )
                 })
             }
-            ObjectPredicateDef::Attacking => {
+            ObjectPredicateDef::Attacking | ObjectPredicateDef::AttackedThisTurn => {
                 object.types.contains(CardType::Creature) && object.attacking
             }
             ObjectPredicateDef::All(predicates) => predicates
@@ -7448,6 +7450,7 @@ impl Game {
             toughness,
             supertypes,
             attacking: false,
+            attacked_this_turn: false,
         })
     }
 
@@ -7559,14 +7562,6 @@ impl Game {
                         && !self
                             .effective_rules(permanent)
                             .is_some_and(|rules| rules.colors()[2])
-                })
-                .map(|permanent| vec![Target::Permanent(permanent.card.id)])
-                .collect(),
-            CardBehavior::Berserk => self
-                .battlefield
-                .iter()
-                .filter(|permanent| {
-                    permanent.controller == player && self.power(permanent).is_some()
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
@@ -8952,6 +8947,7 @@ impl Game {
                 object.controller,
                 ability.context,
                 Some(ability.origin),
+                None,
             )
         {
             return false;
@@ -9620,6 +9616,7 @@ impl Game {
                     object.controller,
                     context,
                     object.ability.as_ref().map(|ability| ability.origin),
+                    Some((object, scoped)),
                 ) {
                     self.resolve_effect_def(scoped.with_effect(*then), object, context);
                 }
@@ -10318,6 +10315,7 @@ impl Game {
         controller: PlayerId,
         context: TriggerContext,
         ability: Option<AbilityOrigin>,
+        object: Option<(&StackObject, ScopedEffect)>,
     ) -> bool {
         let TriggerConditionDef::ObjectCount {
             query,
@@ -10367,6 +10365,28 @@ impl Game {
                             amount,
                         )
                     }),
+                // Read now rather than when the ability was created, so a
+                // delayed effect asks about the target as it is at that point.
+                TriggerConditionDef::TargetMatches {
+                    slot,
+                    object: predicate,
+                } => object.is_some_and(|(stack, scoped)| {
+                    Self::chosen_targets(stack, scoped.target_slot(*slot)).any(|target| {
+                        matches!(target, Target::Permanent(id)
+                        if self
+                            .battlefield
+                            .iter()
+                            .find(|permanent| permanent.card.id == id)
+                            .is_some_and(|permanent| {
+                                self.trigger_object_matches(
+                                    *predicate,
+                                    &self.trigger_event_object(permanent),
+                                    source,
+                                    false,
+                                )
+                            }))
+                    })
+                }),
                 TriggerConditionDef::SourceDealtDamageToOpponentThisTurn => self
                     .battlefield
                     .iter()
@@ -10658,6 +10678,7 @@ impl Game {
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::Attacking
+            | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::HasKeyword(_) => false,
         }
     }
@@ -10748,31 +10769,6 @@ impl Game {
             CardBehavior::WarleadersHelix => {
                 self.damage_target(object.first_target(), 4);
                 self.gain_life(object.controller, 4);
-            }
-            CardBehavior::Berserk => {
-                if let Some(Target::Permanent(target)) = object.first_target() {
-                    let current_power = self
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == target)
-                        .and_then(|permanent| self.power(permanent))
-                        .unwrap_or(0)
-                        .max(0);
-                    if let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                    {
-                        permanent.power_bonus += current_power;
-                        if !permanent
-                            .temporary_keywords
-                            .contains(&KeywordAbility::Trample)
-                        {
-                            permanent.temporary_keywords.push(KeywordAbility::Trample);
-                        }
-                        permanent.berserked = true;
-                    }
-                }
             }
             CardBehavior::GoblinGrenade => {
                 self.damage_target(object.first_target(), 5);
@@ -11668,6 +11664,7 @@ impl Game {
                 supertypes
             },
             attacking: permanent.attacking,
+            attacked_this_turn: permanent.attacked_this_turn,
         }
     }
 
@@ -11700,6 +11697,7 @@ impl Game {
                 supertypes
             },
             attacking: permanent.attacking,
+            attacked_this_turn: permanent.attacked_this_turn,
         }
     }
 
@@ -16413,9 +16411,7 @@ impl Game {
         let doomed: Vec<_> = self
             .battlefield
             .iter()
-            .filter(|permanent| {
-                permanent.destroy_at_end || permanent.berserked && permanent.attacked_this_turn
-            })
+            .filter(|permanent| permanent.destroy_at_end)
             .map(|permanent| permanent.card.id)
             .collect();
         for id in doomed {
@@ -16460,7 +16456,6 @@ impl Game {
             permanent.activations_this_turn.clear();
             permanent.dealt_damage_to_opponent_this_turn = false;
             permanent.regeneration_shields = 0;
-            permanent.berserked = false;
             permanent.attacked_this_turn = false;
             permanent.attacks_this_turn = 0;
         }

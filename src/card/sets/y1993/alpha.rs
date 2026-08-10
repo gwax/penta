@@ -1296,6 +1296,42 @@ pub(in crate::card::sets) static WHITE_KNIGHT: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The doubling reads the creature's power as Berserk resolves, and the
+/// death only comes for a creature that actually attacked.
+static BERSERK_EFFECT: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::Composite(&BERSERK_BONUS),
+        duration: EffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::AtNextStep {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+        effect: &EffectDef::IfCondition {
+            condition: &BERSERK_ATTACKED,
+            then: &EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+        },
+    },
+];
+
+static BERSERK_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::GrantAbility(&BERSERK_TRAMPLE),
+    AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::TargetPower(TargetIndex::PRIMARY),
+        toughness: ValueDef::Constant(0),
+    },
+];
+
+static BERSERK_TRAMPLE: AbilityDef = abilities::trample();
+
+static BERSERK_ATTACKED: TriggerConditionDef = TriggerConditionDef::TargetMatches {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::AttackedThisTurn,
+};
+
 pub(in crate::card::sets) static BERSERK: CardRecord = CardRecord::new(
     cards::BERSERK,
     "Berserk",
@@ -1308,10 +1344,12 @@ pub(in crate::card::sets) static BERSERK: CardRecord = CardRecord::new(
             CardBehavior::Berserk,
             "The casting restriction is not enforced.",
         ),
-        AbilityDef::custom_partial(
+        AbilityDef::spell_with_targets(
             "Target creature gains trample and gets +X/+0 until end of turn, where X is its power. At the beginning of the next end step, destroy that creature if it attacked this turn.",
-            CardBehavior::Berserk,
-            "Targeting is restricted to your creatures, and the delayed destruction bypasses the stack.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Sequence(&BERSERK_EFFECT),
         ),
     ]),
 );

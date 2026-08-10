@@ -346,7 +346,8 @@ mod tests {
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::HasKeyword(_)
-            | ObjectPredicateDef::Attacking => true,
+            | ObjectPredicateDef::Attacking
+            | ObjectPredicateDef::AttackedThisTurn => true,
         }
     }
 
@@ -935,6 +936,7 @@ mod tests {
     fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         match condition {
             TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
+            TriggerConditionDef::TargetMatches { object, .. } => shared_object_predicate(object),
             TriggerConditionDef::ActivePlayer(_)
             | TriggerConditionDef::SourceLoyalty { .. }
             | TriggerConditionDef::SourceActivationsThisTurn { .. }
