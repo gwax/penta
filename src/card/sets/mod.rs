@@ -671,6 +671,7 @@ mod tests {
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChoosePlayer { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => false,
         }
@@ -861,6 +862,7 @@ mod tests {
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChoosePlayer { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
@@ -1064,6 +1066,7 @@ mod tests {
                         | EffectDef::Replacement(_)
                         | EffectDef::MoveToZone { .. }
                         | EffectDef::ChooseCardName { .. }
+                        | EffectDef::ChoosePlayer { .. }
                         | EffectDef::ChooseCreatureType { .. }
                         | EffectDef::Apply { .. }
                         | EffectDef::Special(_) => false,
@@ -1125,6 +1128,9 @@ mod tests {
                                 object: EffectRecipientDef::Source,
                             } | EffectDef::ChooseCardName {
                                 object: EffectRecipientDef::Source,
+                            } | EffectDef::ChoosePlayer {
+                                object: EffectRecipientDef::Source,
+                                ..
                             }
                         )
                 }
@@ -1240,6 +1246,7 @@ mod tests {
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChoosePlayer { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
         }

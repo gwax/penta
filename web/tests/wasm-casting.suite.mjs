@@ -407,7 +407,22 @@ test("Orcish Mechanics exposes creature targets and distinct artifact costs", as
       actions.find((action) => action.label.startsWith("Cast Copper Tablet")) ??
       actions.find((action) => action.label.startsWith("Cast Ankh")) ??
       actions.find((action) => /^(Don't|Leave) /.test(action.label)) ??
+      // Black Vise's upkeep trigger uses the stack, so ordering and
+      // resolution show up as ordinary decisions on the way through.
       actions.find((action) => action.kind === "pass");
+    // Black Vise's upkeep trigger uses the stack now, so it shares the
+    // upkeep with Copper Tablet's and the two have to be ordered.
+    if (!next && state.decision) {
+      game.choose_decision(
+        state.decision.id,
+        JSON.stringify(
+          state.decision.options
+            .slice(0, Math.max(state.decision.minimum, 1))
+            .map((option) => option.id),
+        ),
+      );
+      continue;
+    }
     assert.ok(next, `seed 7 can advance from turn ${state.turn} ${state.step}`);
     game.act(next.index);
   }

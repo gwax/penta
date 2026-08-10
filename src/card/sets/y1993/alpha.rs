@@ -35,15 +35,26 @@ pub(in crate::card::sets) static BLACK_VISE: CardRecord = CardRecord::new(
     CardArt::new("76ac72f8-5b1e-4d67-a796-ef69cde27424", "Richard Thomas"),
     CardSet::Alpha,
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
-        AbilityDef::custom_partial(
+        AbilityDef::replacement(
             "As this artifact enters, choose an opponent.",
-            CardBehavior::BlackVise,
-            "The chosen-player state is still established by the card-local permanent-entry procedure.",
+            EffectDef::ChoosePlayer {
+                object: EffectRecipientDef::Source,
+                relation: PlayerRelation::Opponent,
+            },
         ),
-        AbilityDef::custom_partial(
+        AbilityDef::triggered(
             "At the beginning of the chosen player's upkeep, this artifact deals X damage to that player, where X is the number of cards in their hand minus 4.",
-            CardBehavior::BlackVise,
-            "The chosen-player upkeep trigger still resolves in the legacy upkeep procedure instead of using the stack.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::ChosenPlayer,
+            },
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::EventPlayer,
+                amount: ValueDef::CardsInHandAbove {
+                    player: PlayerRelation::EventPlayer,
+                    threshold: 4,
+                },
+            },
         ),
     ]),
 );

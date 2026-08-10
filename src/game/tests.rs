@@ -4037,6 +4037,7 @@ fn black_vise_needs_no_target_and_still_squeezes_the_opponent() {
     game.active_player = PlayerId::Two;
     game.step = Step::Upkeep;
     game.handle_upkeep_triggers();
+    drain_pending(&mut game);
     assert_eq!(game.players[1].life, before - 2);
 }
 
@@ -20229,5 +20230,39 @@ fn argothian_pixies_still_take_damage_from_an_ordinary_creature() {
             .iter()
             .any(|permanent| permanent.card.id == GameObjectId(10_000)),
         "the prevention only names artifact creatures"
+    );
+}
+
+#[test]
+fn black_vise_squeezes_only_the_player_it_chose() {
+    let mut game = ready_game();
+    // One Vise per side, each pointed at its own controller's opponent.
+    for (id, controller) in [(10_000, PlayerId::One), (10_001, PlayerId::Two)] {
+        let mut vise = creature(id, cards::BLACK_VISE, controller);
+        vise.chosen_player = Some(controller.opponent());
+        game.battlefield.push(vise);
+    }
+    for index in 0..7 {
+        game.players[0]
+            .hand
+            .push(card(20_000 + index, cards::MOUNTAIN, PlayerId::One));
+        game.players[1]
+            .hand
+            .push(card(20_100 + index, cards::MOUNTAIN, PlayerId::Two));
+    }
+
+    game.turn = 2;
+    game.active_player = PlayerId::One;
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].life, 17,
+        "the Vise aimed at player one fired on their upkeep"
+    );
+    assert_eq!(
+        game.players[1].life, 20,
+        "and the one aimed at player two waited for theirs"
     );
 }

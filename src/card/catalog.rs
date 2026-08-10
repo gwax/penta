@@ -800,6 +800,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::Replacement(_)
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCardName { .. }
+        | super::EffectDef::ChoosePlayer { .. }
         | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Special(_) => {}
     }
@@ -885,6 +886,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::Replacement(_)
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCardName { .. }
+        | super::EffectDef::ChoosePlayer { .. }
         | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Special(_) => 0,
     }
@@ -1120,7 +1122,10 @@ fn validate_effect_target_references(
         }
         // An installed ability chooses its own targets when it triggers, so
         // nothing in it can refer to this ability's target slots.
-        EffectDef::TriggerUntilYourNextTurn { .. }
+        // The chosen player is recorded on the permanent, not read from a
+        // target slot.
+        EffectDef::ChoosePlayer { .. }
+        | EffectDef::TriggerUntilYourNextTurn { .. }
         | EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::CreateEmblem { .. }

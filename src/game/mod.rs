@@ -861,6 +861,7 @@ enum BattlefieldEntryReplacementEffect {
     Declarative(ReplacementEffectDef),
     ChooseCreatureType,
     ChooseCardName,
+    ChoosePlayer(PlayerRelation),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -2706,6 +2707,22 @@ impl Game {
                 self.queue_creature_type_choice(player);
                 None
             }
+            // With two players every relation this appears on names exactly
+            // one candidate, so the choice is recorded rather than asked.
+            BattlefieldEntryReplacementEffect::ChoosePlayer(relation) => {
+                let controller = Self::pending_event_controller(&pending);
+                let chosen = [PlayerId::One, PlayerId::Two].into_iter().find(|player| {
+                    self.player_relation_matches(
+                        *player,
+                        relation,
+                        controller,
+                        TriggerContext::empty(),
+                    )
+                });
+                let ReplaceableEvent::BattlefieldEntry(entry) = &mut pending.event;
+                entry.permanent.chosen_player = chosen;
+                Some(pending)
+            }
             BattlefieldEntryReplacementEffect::Declarative(effect) => match effect {
                 ReplacementEffectDef::None => Some(pending),
                 ReplacementEffectDef::Sequence(effects) => {
@@ -2946,11 +2963,16 @@ impl Game {
                     (ability.definition, ability.declarative_effect()),
                     (
                         DeclarativeAbilityDef::Replacement(definition),
-                        Some(EffectDef::ChooseCreatureType {
-                            object: EffectRecipientDef::Source,
-                        } | EffectDef::ChooseCardName {
-                            object: EffectRecipientDef::Source,
-                        }),
+                        Some(
+                            EffectDef::ChooseCreatureType {
+                                object: EffectRecipientDef::Source,
+                            } | EffectDef::ChooseCardName {
+                                object: EffectRecipientDef::Source,
+                            } | EffectDef::ChoosePlayer {
+                                object: EffectRecipientDef::Source,
+                                ..
+                            },
+                        ),
                     ) if definition.event == ReplacementEventDef::EntersBattlefield
                 )
     }
@@ -3117,6 +3139,13 @@ impl Game {
                             object: EffectRecipientDef::Source,
                         },
                     ) => BattlefieldEntryReplacementEffect::ChooseCardName,
+                    (
+                        ReplacementEventDef::EntersBattlefield,
+                        EffectDef::ChoosePlayer {
+                            object: EffectRecipientDef::Source,
+                            relation,
+                        },
+                    ) => BattlefieldEntryReplacementEffect::ChoosePlayer(relation),
                     _ => return ControlFlow::Continue(()),
                 };
                 let source = AbilitySourceRef {
@@ -3578,6 +3607,7 @@ impl Game {
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChoosePlayer { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {
@@ -3789,16 +3819,16 @@ impl Game {
                     player: actual_player,
                 },
             ) => {
+                if step != *actual_step {
+                    return false;
+                }
+                if player == PlayerRelation::ChosenPlayer {
+                    return self.chosen_player_of(source) == Some(*actual_player);
+                }
                 let controller = self
                     .current_or_last_known_controller(source)
                     .unwrap_or(*actual_player);
-                step == *actual_step
-                    && self.player_relation_matches(
-                        *actual_player,
-                        player,
-                        controller,
-                        event.context(),
-                    )
+                self.player_relation_matches(*actual_player, player, controller, event.context())
             }
             (
                 TriggerEventDef::DamagedCreatureDied,
@@ -4109,7 +4139,19 @@ impl Game {
             PlayerRelation::ActivePlayer => player == self.active_player,
             PlayerRelation::NonactivePlayer => player == self.active_player.opponent(),
             PlayerRelation::EventPlayer => context.event_player == Some(player),
+            // The chosen player lives on the ability's source, which this
+            // does not have. The one trigger that names it resolves the
+            // relation where the source is known.
+            PlayerRelation::ChosenPlayer => false,
         }
+    }
+
+    /// The player a permanent chose as it entered.
+    fn chosen_player_of(&self, source: GameObjectId) -> Option<PlayerId> {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+            .and_then(|permanent| permanent.chosen_player)
     }
 
     fn begin_trigger_placement(&mut self) {
@@ -8574,9 +8616,6 @@ impl Game {
         if spell_types.is_permanent() && !aura_fizzles {
             let chosen_player = match object.first_target() {
                 Some(Target::Player(player)) => Some(player),
-                // "Choose an opponent" has exactly one answer with two players,
-                // so the card is cast without asking and the opponent is implied.
-                _ if behavior == CardBehavior::BlackVise => Some(object.controller.opponent()),
                 _ => None,
             };
             let copy_effect = if behavior == CardBehavior::CopyArtifact {
@@ -9556,6 +9595,7 @@ impl Game {
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChoosePlayer { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing mana and the remaining declarative effect
@@ -12108,6 +12148,7 @@ impl Game {
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChoosePlayer { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => None,
@@ -12639,6 +12680,7 @@ impl Game {
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChoosePlayer { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {}
@@ -12782,6 +12824,7 @@ impl Game {
                 | EffectDef::Replacement(_)
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::ChooseCardName { .. }
+                | EffectDef::ChoosePlayer { .. }
                 | EffectDef::ChooseCreatureType { .. }
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_) => {}
@@ -15475,6 +15518,7 @@ impl Game {
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChoosePlayer { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => false,
@@ -16055,21 +16099,6 @@ impl Game {
             player,
         });
         self.fire_delayed_triggers(TurnStepDef::Upkeep);
-        let vise_damage: u16 = self
-            .battlefield
-            .iter()
-            .filter(|permanent| {
-                self.effective_behavior(permanent) == Some(CardBehavior::BlackVise)
-                    && permanent.chosen_player == Some(player)
-            })
-            .map(|_| {
-                u16::try_from(self.players[player.index()].hand.len().saturating_sub(4))
-                    .unwrap_or(u16::MAX)
-            })
-            .sum();
-        if vise_damage > 0 {
-            self.deal_damage(player, vise_damage);
-        }
         if self.count_behavior(CardBehavior::TheAbyss) > 0 {
             let target = self
                 .battlefield

@@ -361,6 +361,7 @@ impl HandcraftedPolicy {
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChoosePlayer { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
         }
