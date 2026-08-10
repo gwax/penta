@@ -1005,6 +1005,15 @@ enum DecisionContinuation {
         context: TriggerContext,
         effect: &'static EffectDef,
     },
+    /// One player separating another's permanents into two piles.
+    PileSplit {
+        owner: PlayerId,
+    },
+    /// The split piles, offered to whoever must give one up.
+    PileChoice {
+        first: Vec<GameObjectId>,
+        second: Vec<GameObjectId>,
+    },
     /// A sacrifice an effect demanded, chosen by the sacrificing player.
     SacrificeOfChoice {
         followup: Option<SacrificeFollowup>,
@@ -3270,6 +3279,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
@@ -4749,6 +4759,84 @@ impl Game {
         loyalty.saturating_add(i16::from(change)) >= 0
     }
 
+    /// The ability's controller separates everything the other player
+    /// controls into two piles, then that player sacrifices one. The split is
+    /// recorded as the chosen pile; whatever is left is the other.
+    fn queue_pile_split(&mut self, splitter: PlayerId, owner: PlayerId) {
+        let permanents = self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == owner)
+            .map(|permanent| permanent.card.clone())
+            .collect::<Vec<_>>();
+        if permanents.is_empty() {
+            return;
+        }
+        let options = self.card_decision_options(&permanents, DecisionZone::Battlefield);
+        let maximum = options.len();
+        self.queue_decision(
+            splitter,
+            "Separate these permanents into two piles",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            0..=maximum,
+            false,
+            options,
+            DecisionContinuation::PileSplit { owner },
+        );
+    }
+
+    /// Offers the split piles to the player who must give one up.
+    fn queue_pile_choice(
+        &mut self,
+        owner: PlayerId,
+        first: Vec<GameObjectId>,
+        second: Vec<GameObjectId>,
+    ) {
+        let describe = |game: &Self, pile: &[GameObjectId]| {
+            if pile.is_empty() {
+                return "the empty pile".to_string();
+            }
+            let names = pile
+                .iter()
+                .filter_map(|id| {
+                    game.battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == *id)
+                })
+                .filter_map(|permanent| game.catalog.get(permanent.card.definition))
+                .map(|definition| definition.name.clone())
+                .collect::<Vec<_>>();
+            names.join(", ")
+        };
+        let options = vec![
+            DecisionOption {
+                id: 0,
+                label: format!("Sacrifice {}", describe(self, &first)),
+                card: None,
+                ability_text: None,
+                zone: DecisionZone::Battlefield,
+            },
+            DecisionOption {
+                id: 1,
+                label: format!("Sacrifice {}", describe(self, &second)),
+                card: None,
+                ability_text: None,
+                zone: DecisionZone::Battlefield,
+            },
+        ];
+        self.queue_decision(
+            owner,
+            "Choose the pile to sacrifice",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::PileChoice { first, second },
+        );
+    }
+
     fn queue_chosen_sacrifice(
         &mut self,
         player: PlayerId,
@@ -5191,6 +5279,27 @@ impl Game {
                 if options.contains(&1) {
                     self.resolve_effect_def(*effect, &object, context);
                 }
+            }
+            DecisionContinuation::PileSplit { owner } => {
+                let first = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                let second = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| !options.contains(&option.id))
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                self.queue_pile_choice(owner, first, second);
+            }
+            DecisionContinuation::PileChoice { first, second } => {
+                let chosen = if options.contains(&0) { first } else { second };
+                self.destroy_permanents(&chosen, false);
             }
             DecisionContinuation::SacrificeOfChoice { followup, optional } => {
                 let sacrificed = pending
@@ -8188,6 +8297,14 @@ impl Game {
                     self.queue_chosen_sacrifice(player, predicate, source, followup, optional);
                 }
             }
+            EffectDef::SplitPermanentsAndSacrificeAPile { player: recipient } => {
+                let splitter = object.controller;
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Player(player) = target {
+                        self.queue_pile_split(splitter, player);
+                    }
+                }
+            }
             EffectDef::Mill {
                 player: recipient,
                 amount,
@@ -11104,6 +11221,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
+                | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
                 | EffectDef::Mill { .. }
                 | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
@@ -11204,6 +11322,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
+                | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
                 | EffectDef::Mill { .. }
                 | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
@@ -13829,6 +13948,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }

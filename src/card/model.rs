@@ -1332,6 +1332,12 @@ pub enum EffectDef {
         /// amount read off nothing is zero rather than skipped.
         optional: bool,
     },
+    /// Separate everything a player controls into two piles, then let that
+    /// player sacrifice the pile of their choice. The ability's controller
+    /// makes the split, which is what makes the choice hard for both.
+    SplitPermanentsAndSacrificeAPile {
+        player: EffectRecipientDef,
+    },
     /// Put that many cards from the top of a library into its owner's
     /// graveyard.
     Mill {

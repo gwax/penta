@@ -544,6 +544,11 @@ mod tests {
             // checking.
             // The mill count and the milled player are both ordinary values.
             EffectDef::Mill { player, .. } => shared_effect_recipient(player),
+            // Both halves of the split are decisions the shared procedure
+            // asks for, so only the player needs checking.
+            EffectDef::SplitPermanentsAndSacrificeAPile { player } => {
+                deferred_decision_allowed && shared_effect_recipient(player)
+            }
             EffectDef::SearchLibrary {
                 player,
                 object,
@@ -759,6 +764,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
@@ -933,6 +939,7 @@ mod tests {
                         | EffectDef::Destroy { .. }
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::SacrificeOfChoice { .. }
+                        | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
                         | EffectDef::Mill { .. }
                         | EffectDef::SearchLibrary { .. }
                         | EffectDef::Counter { .. }
@@ -1067,6 +1074,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }

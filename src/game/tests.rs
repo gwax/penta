@@ -17023,3 +17023,110 @@ fn a_loyalty_ability_is_sorcery_speed_and_only_its_controller_may_use_it() {
         "not while anything is on the stack"
     );
 }
+
+#[test]
+fn liliana_splits_a_board_and_the_victim_picks_the_pile() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let liliana = game
+        .put_onto_battlefield(PlayerId::One, cards::LILIANA_OF_THE_VEIL)
+        .expect("cataloged");
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == liliana)
+    {
+        // Enough loyalty for the ultimate.
+        permanent.loyalty = Some(6);
+    }
+    let lions = game
+        .put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::FOREST)
+        .expect("cataloged");
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let ultimate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, targets, .. }
+                if *source == liliana
+                    && matches!(ability, AbilityOrigin::Printed { ability, .. } if *ability == AbilityId(2))
+                    && targets.iter().flat_map(TargetSelection::targets).any(|target| *target == Target::Player(PlayerId::Two)))
+        })
+        .expect("the ultimate is offered at six loyalty");
+    game.apply(PlayerId::One, ultimate).unwrap();
+    while game.pending_decisions.is_empty() && !game.stack.is_empty() {
+        let player = game.priority;
+        game.apply(player, Action::PassPriority).unwrap();
+    }
+
+    // Liliana's controller makes the split: the two creatures in one pile.
+    let split = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the split is offered to Liliana's controller");
+    assert_eq!(split.player, PlayerId::One);
+    let creatures = split
+        .options
+        .iter()
+        .filter(|option| {
+            option
+                .card
+                .is_some_and(|(id, _)| id == lions || id == angel)
+        })
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    assert_eq!(creatures.len(), 2);
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: split.id,
+            options: creatures,
+        },
+    )
+    .unwrap();
+
+    // The other player chooses which pile to give up, and takes the land.
+    let choice = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the victim chooses a pile");
+    assert_eq!(choice.player, PlayerId::Two);
+    assert_eq!(choice.options.len(), 2);
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: vec![choice.options[1].id],
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == lions)
+            && game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == angel),
+        "the creatures were in the pile they kept"
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::FOREST),
+        "and the pile they chose was sacrificed"
+    );
+}

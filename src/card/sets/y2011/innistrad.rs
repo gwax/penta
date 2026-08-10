@@ -279,10 +279,51 @@ pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::n
         3,
     )
     .with_supertype(CardSupertype::Legendary)
-    .with_ability(AbilityDef::not_implemented(
-        "+1: Each player discards a card.\n−2: Target player sacrifices a creature.\n−6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    .with_abilities(&[
+        AbilityDef::activated(
+            "+1: Each player discards a card.",
+            &[AbilityCostDef::Loyalty(1)],
+            // Two players, so "each player" is both of them, in turn order
+            // starting with the ability's controller.
+            EffectDef::Sequence(&[
+                EffectDef::DiscardCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+                EffectDef::DiscardCards {
+                    recipient: EffectRecipientDef::Opponent,
+                    amount: ValueDef::Constant(1),
+                },
+            ]),
+        ),
+        AbilityDef::activated(
+            "−2: Target player sacrifices a creature.",
+            &[AbilityCostDef::Loyalty(-2)],
+            EffectDef::SacrificeOfChoice {
+                player: EffectRecipientDef::Target(TargetSlotId(0)),
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                then: None,
+                optional: false,
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "player",
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )]),
+        AbilityDef::activated(
+            "−6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
+            &[AbilityCostDef::Loyalty(-6)],
+            EffectDef::SplitPermanentsAndSacrificeAPile {
+                player: EffectRecipientDef::Target(TargetSlotId(0)),
+            },
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "player",
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )]),
+    ]),
 );
 
 pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
