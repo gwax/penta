@@ -5,3 +5,9 @@ declare module "*.wasm?url" {
   const url: string;
   export default url;
 }
+
+// Workers import a .wasm file as a compiled module rather than fetching it.
+declare module "*.wasm" {
+  const compiled: WebAssembly.Module;
+  export default compiled;
+}

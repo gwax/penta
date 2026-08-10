@@ -1,3 +1,4 @@
+mod hosted;
 mod session;
 
 use penta::card;

@@ -1,4 +1,58 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
+type EngineModule = typeof import("../app/wasm/penta_wasm.js");
+
+// Loaded on first use, not at module scope: a request that never touches the
+// engine should not pay for it, and the server-render test evaluates this
+// module under Node, where a `.wasm` import is not a compiled module.
+let engineReady: Promise<EngineModule> | null = null;
+function engine(): Promise<EngineModule> {
+  engineReady ??= (async () => {
+    const [module, wasm] = await Promise.all([
+      import("../app/wasm/penta_wasm.js"),
+      // Workers have no `fetch` for local files, so the compiled module is
+      // handed to wasm-bindgen rather than fetched by URL.
+      import("../app/wasm/penta_wasm_bg.wasm"),
+    ]);
+    await module.default({ module_or_path: wasm.default });
+    return module;
+  })();
+  return engineReady;
+}
+
+/** Plays a game to its end inside the Worker and reports what happened. */
+async function selfCheck(): Promise<Response> {
+  const { HostedGame } = await engine();
+  const game = new HostedGame("old-school-93-94", "Sligh", "The Deck", "4242");
+  for (let step = 0; step < 20000; step += 1) {
+    const seat = game.decisionSeat();
+    if (!seat) break;
+    const observation = JSON.parse(game.observeJson(seat)) as {
+      legalActions: { type: string }[];
+    };
+    if (observation.legalActions.length === 0) break;
+    const index = observation.legalActions.findIndex(
+      (action) => action.type !== "PassPriority" && action.type !== "Concede",
+    );
+    game.act(index === -1 ? 0 : index);
+  }
+  const history = JSON.parse(game.historyJson()) as number[];
+  // The whole point of storing actions: rebuild and check it lands identically.
+  const rebuilt = HostedGame.replay(
+    "old-school-93-94",
+    "Sligh",
+    "The Deck",
+    "4242",
+    new Uint32Array(history),
+  );
+  return Response.json({
+    engineVersion: HostedGame.engineVersion(),
+    protocolVersion: HostedGame.protocolVersion(),
+    actions: history.length,
+    result: game.resultJson() ? JSON.parse(game.resultJson()!) : null,
+    replayMatches: rebuilt.historyJson() === game.historyJson()
+      && rebuilt.resultJson() === game.resultJson(),
+  });
+}
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 
@@ -33,6 +87,11 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    // Proof that the engine runs server-side, not a product endpoint.
+    if (url.pathname === "/_engine/self-check") {
+      return selfCheck();
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
