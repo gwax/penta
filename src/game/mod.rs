@@ -7385,7 +7385,7 @@ impl Game {
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
-            CardBehavior::GiantGrowth | CardBehavior::Berserk => self
+            CardBehavior::Berserk => self
                 .battlefield
                 .iter()
                 .filter(|permanent| {
@@ -10485,17 +10485,6 @@ impl Game {
                 self.damage_target(object.first_target(), 4);
                 self.gain_life(object.controller, 4);
             }
-            CardBehavior::GiantGrowth => {
-                if let Some(Target::Permanent(target)) = object.first_target()
-                    && let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                {
-                    permanent.power_bonus += 3;
-                    permanent.toughness_bonus += 3;
-                }
-            }
             CardBehavior::Berserk => {
                 if let Some(Target::Permanent(target)) = object.first_target() {
                     let current_power = self
@@ -10775,12 +10764,6 @@ impl Game {
                 );
             }
             CardBehavior::Balance => self.resolve_balance(object.controller),
-            CardBehavior::Regrowth => {
-                if let Some(card) = self.players[object.controller.index()].graveyard.pop() {
-                    let (card, _zone_change) = self.zone_change_card(card);
-                    self.players[object.controller.index()].hand.push(card);
-                }
-            }
             CardBehavior::Recall => {
                 let options = self.card_decision_options(
                     &self.players[object.controller.index()].graveyard,

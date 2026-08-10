@@ -3,8 +3,9 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
     CardType, ComparisonDef, CounterKind, EffectDef, EffectDurationDef, EffectExecutionDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEventDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    EffectRecipientDef, LibraryPlacement, ManaColor, ObjectPredicateDef, PlayerRelation,
+    ReplacementEventDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1063,15 +1064,31 @@ pub(in crate::card::sets) static PSIONIC_BLAST: CardRecord = CardRecord::new(
     )]),
 );
 
+/// Any card, not just a creature: Regrowth is happy to take back a land or
+/// the spell that killed something.
+static REGROWTH_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+)];
+
 pub(in crate::card::sets) static REGROWTH: CardRecord = CardRecord::new(
     cards::REGROWTH,
     "Regrowth",
     CardArt::new("badc73ec-3728-4246-90c7-5f4eb7051ed5", "Dameon Willich"),
     CardSet::Alpha,
-    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_abilities(&[AbilityDef::custom_partial(
+    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_abilities(&[AbilityDef::spell_with_targets(
         "Return target card from your graveyard to your hand.",
-        CardBehavior::Regrowth,
-        "The graveyard card is selected by position rather than as a target.",
+        &REGROWTH_TARGET,
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Hand,
+            controller: None,
+            placement: LibraryPlacement::Top,
+        },
     )]),
 );
 
@@ -1289,10 +1306,19 @@ pub(in crate::card::sets) static GIANT_GROWTH: CardRecord = CardRecord::new(
     "Giant Growth",
     CardArt::new("367dbefe-3366-408e-9fcf-7dc00f8cc201", "Sandra Everingham"),
     CardSet::Alpha,
-    CardRules::new_instant(mana_cost!("{G}")).with_abilities(&[AbilityDef::custom_partial(
+    CardRules::new_instant(mana_cost!("{G}")).with_abilities(&[AbilityDef::spell_with_targets(
         "Target creature gets +3/+3 until end of turn.",
-        CardBehavior::GiantGrowth,
-        "Targeting is incorrectly restricted to creatures you control.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(3),
+                toughness: ValueDef::Constant(3),
+            },
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
     )]),
 );
 

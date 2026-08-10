@@ -20001,3 +20001,96 @@ fn a_random_discard_spell_hits_the_player_it_targets() {
         "and the opponent, who was not targeted, kept everything"
     );
 }
+
+#[test]
+fn giant_growth_can_pump_a_creature_you_do_not_control() {
+    let mut game = ready_game();
+    let growth = card(10_000, cards::GIANT_GROWTH, PlayerId::One);
+    game.players[0].hand.push(growth.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+    game.battlefield
+        .push(creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two));
+
+    let at_theirs = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        growth.id,
+        Target::Permanent(GameObjectId(10_002)),
+    );
+    game.apply(PlayerId::One, at_theirs).unwrap();
+    drain_pending(&mut game);
+
+    let theirs = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_002))
+        .expect("still there");
+    assert_eq!(
+        (game.power(theirs), game.toughness(theirs)),
+        (Some(5), Some(4)),
+        "the card says target creature, not target creature you control"
+    );
+    let mine = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still there");
+    assert_eq!((game.power(mine), game.toughness(mine)), (Some(2), Some(1)));
+}
+
+#[test]
+fn regrowth_returns_the_card_you_choose_rather_than_the_last_one_buried() {
+    let mut game = ready_game();
+    let regrowth = card(10_000, cards::REGROWTH, PlayerId::One);
+    game.players[0].hand.push(regrowth.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+    game.players[0].graveyard = vec![
+        card(10_001, cards::BLACK_LOTUS, PlayerId::One),
+        card(10_002, cards::MOUNTAIN, PlayerId::One),
+    ];
+    // An opponent's graveyard is off limits.
+    game.players[1].graveyard = vec![card(10_003, cards::BLACK_LOTUS, PlayerId::Two)];
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == regrowth.id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Card(GameObjectId(10_003))))
+        ),
+        "only your own graveyard is a legal source"
+    );
+
+    // The Lotus is under the Mountain, so a positional resolver would take
+    // the Mountain instead.
+    let take_lotus = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        regrowth.id,
+        Target::Card(GameObjectId(10_001)),
+    );
+    game.apply(PlayerId::One, take_lotus).unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::BLACK_LOTUS],
+        "the chosen card came back"
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::MOUNTAIN, cards::REGROWTH],
+        "and the one on top stayed put"
+    );
+}

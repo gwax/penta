@@ -3915,6 +3915,8 @@ pub enum CardBehavior {
     EssenceScatter,
     Fireball,
     Fork,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative until-end-of-turn pump.
     GiantGrowth,
     /// Legacy dispatch key retained for source compatibility; the card now
     /// uses a declarative look-at-hand ability.
@@ -3943,6 +3945,8 @@ pub enum CardBehavior {
     PillarOfFlame,
     Putrefy,
     Recall,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// targets the graveyard card it returns.
     Regrowth,
     SedgeTroll,
     SinCollector,
