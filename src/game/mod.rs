@@ -1054,6 +1054,15 @@ enum DecisionContinuation {
         context: TriggerContext,
         effect: ScopedEffect,
     },
+    /// The same offer read the other way round: declining is what makes the
+    /// effect happen.
+    ManaPaymentOrElse {
+        player: PlayerId,
+        cost: ManaCost,
+        object: Box<StackObject>,
+        context: TriggerContext,
+        effect: ScopedEffect,
+    },
     ChainLightning {
         player: PlayerId,
         spell: StackObject,
@@ -3492,6 +3501,7 @@ impl Game {
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::OptionalManaPayment { .. }
+            | EffectDef::UnlessPaid { .. }
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
@@ -4324,6 +4334,48 @@ impl Game {
             source: trigger.source.object,
             definition: trigger.definition,
         });
+    }
+
+    /// Offers the payment that would call the effect off. A controller who
+    /// cannot pay has no decision to make, so the effect just happens.
+    fn queue_mana_payment_or_else(
+        &mut self,
+        player: PlayerId,
+        cost: ManaCost,
+        object: &StackObject,
+        context: TriggerContext,
+        effect: ScopedEffect,
+    ) {
+        if !self.can_pay_cost(player, cost, 0) {
+            self.resolve_effect_def(effect, object, context);
+            return;
+        }
+        let options = [(0, "Decline"), (1, "Pay the cost")]
+            .into_iter()
+            .map(|(id, label)| DecisionOption {
+                id,
+                label: label.into(),
+                card: None,
+                ability_text: None,
+                zone: DecisionZone::None,
+            })
+            .collect();
+        self.queue_decision(
+            player,
+            object.ability_text().unwrap_or("Pay the cost?"),
+            DecisionVisibility::Private,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::ManaPaymentOrElse {
+                player,
+                cost,
+                object: Box::new(object.clone()),
+                context,
+                effect,
+            },
+        );
     }
 
     fn queue_optional_mana_payment(
@@ -5631,6 +5683,20 @@ impl Game {
                 if options.contains(&1) {
                     self.activate_mana_for_cost(player, cost, 0);
                     let _ = self.pay_player_cost(player, cost, 0);
+                    self.resolve_effect_def(effect, &object, context);
+                }
+            }
+            DecisionContinuation::ManaPaymentOrElse {
+                player,
+                cost,
+                object,
+                context,
+                effect,
+            } => {
+                if options.contains(&1) {
+                    self.activate_mana_for_cost(player, cost, 0);
+                    let _ = self.pay_player_cost(player, cost, 0);
+                } else {
                     self.resolve_effect_def(effect, &object, context);
                 }
             }
@@ -9417,6 +9483,15 @@ impl Game {
                     scoped.with_effect(*effect),
                 );
             }
+            EffectDef::UnlessPaid { cost, otherwise } => {
+                self.queue_mana_payment_or_else(
+                    object.controller,
+                    cost,
+                    object,
+                    context,
+                    scoped.with_effect(*otherwise),
+                );
+            }
             EffectDef::Apply {
                 recipient,
                 effect,
@@ -11973,6 +12048,7 @@ impl Game {
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::OptionalManaPayment { .. }
+            | EffectDef::UnlessPaid { .. }
             | EffectDef::May(_)
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -12477,6 +12553,7 @@ impl Game {
                 | EffectDef::ChangeTextBasicLandType { .. }
                 | EffectDef::BecomeCopyOf { .. }
                 | EffectDef::OptionalManaPayment { .. }
+                | EffectDef::UnlessPaid { .. }
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::CreateEmblem { .. }
@@ -12614,6 +12691,7 @@ impl Game {
                 | EffectDef::ChangeTextBasicLandType { .. }
                 | EffectDef::BecomeCopyOf { .. }
                 | EffectDef::OptionalManaPayment { .. }
+                | EffectDef::UnlessPaid { .. }
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::CreateEmblem { .. }
@@ -15311,6 +15389,7 @@ impl Game {
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::OptionalManaPayment { .. }
+            | EffectDef::UnlessPaid { .. }
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }

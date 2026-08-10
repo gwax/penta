@@ -582,9 +582,6 @@ mod tests {
             EffectDef::ReturnLinkedExiles { zone, .. } => {
                 matches!(zone, ZoneKind::Battlefield | ZoneKind::Hand)
             }
-            EffectDef::May(inner) => {
-                deferred_decision_allowed && shared_stack_effect_at_position(*inner, true)
-            }
             EffectDef::Tap { object }
             | EffectDef::Untap { object }
             | EffectDef::Destroy { object, .. }
@@ -610,9 +607,14 @@ mod tests {
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::GrantFlashToNextSorcery => true,
-            EffectDef::OptionalManaPayment { effect, .. } => {
-                deferred_decision_allowed && shared_stack_effect_at_position(*effect, true)
-            }
+            // Each of these asks a question and then runs an inner effect,
+            // so the question has to be allowed here and the answer has to be
+            // something the shared procedure can carry out.
+            EffectDef::May(effect)
+            | EffectDef::OptionalManaPayment { effect, .. }
+            | EffectDef::UnlessPaid {
+                otherwise: effect, ..
+            } => deferred_decision_allowed && shared_stack_effect_at_position(*effect, true),
             // Scheduling creates a fresh resolution boundary. A decision may
             // therefore be the delayed effect's root even when scheduling it
             // is itself one component of a sequence.
@@ -812,6 +814,7 @@ mod tests {
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::OptionalManaPayment { .. }
+            | EffectDef::UnlessPaid { .. }
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
@@ -995,6 +998,7 @@ mod tests {
                         | EffectDef::ChangeTextBasicLandType { .. }
                         | EffectDef::BecomeCopyOf { .. }
                         | EffectDef::OptionalManaPayment { .. }
+                        | EffectDef::UnlessPaid { .. }
                         | EffectDef::CannotBeForcedToSacrifice
                         | EffectDef::CreateEmblem { .. }
                         | EffectDef::Transform { .. }
@@ -1126,6 +1130,9 @@ mod tests {
                 }
             }
             EffectDef::OptionalManaPayment { effect, .. }
+            | EffectDef::UnlessPaid {
+                otherwise: effect, ..
+            }
             | EffectDef::May(effect)
             | EffectDef::AtNextStep { effect, .. } => {
                 assert_nested_definition_abilities(card_name, *effect);

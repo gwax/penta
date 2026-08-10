@@ -1986,11 +1986,19 @@ mod tests {
         assert_eq!(partial["implementationStatus"], "partial");
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 
-        // Any card with a metadata-only ability clause will do here; repoint
-        // this assertion when Energy Flux's granted upkeep trigger runs.
-        let legacy = find("Energy Flux");
-        assert_eq!(legacy["implementationStatus"], "metadataOnly");
-        assert_eq!(legacy["parts"][0]["implementationStatus"], "metadataOnly");
+        // A card whose gap is a whole clause rather than a detail reports the
+        // same way: Vraska's first ability is cataloged and does nothing, and
+        // her other two play. No card in the catalog is metadata-only through
+        // and through any more, so that status has no example left to name.
+        let vraska = find("Vraska the Unseen");
+        assert_eq!(vraska["implementationStatus"], "partial");
+        assert_eq!(vraska["parts"][0]["implementationStatus"], "partial");
+        assert!(
+            cards
+                .iter()
+                .all(|card| card["implementationStatus"] != "metadataOnly"),
+            "every card in this format executes at least one clause"
+        );
 
         assert!(cards.iter().all(|card| {
             card["playOptions"].as_array().is_some_and(|options| {

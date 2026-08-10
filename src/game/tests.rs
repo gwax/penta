@@ -1038,31 +1038,83 @@ fn metadata_only_noncreature_spells_are_hidden_but_baseline_cards_remain_playabl
 }
 
 #[test]
-fn energy_flux_cannot_be_cast_as_an_inert_enchantment() {
+fn energy_flux_taxes_every_artifact_and_takes_the_ones_nobody_pays_for() {
     let mut game = ready_game();
-    let flux = card(10_000, crate::card::cards::ENERGY_FLUX, PlayerId::One);
-    let flux_id = flux.id;
-    game.players[0].hand.push(flux);
-    game.players[0].mana_pool.colorless = 2;
-    game.players[0].mana_pool.blue = 1;
-
-    assert!(
-        game.legal_actions(PlayerId::One)
-            .iter()
-            .all(|action| !matches!(action, Action::CastSpell { card, .. } if *card == flux_id))
-    );
-
-    let result = game.apply(
+    game.turn = 2;
+    game.step = Step::Upkeep;
+    game.battlefield.push(creature(
+        10_000,
+        crate::card::cards::ENERGY_FLUX,
         PlayerId::One,
-        Action::CastSpell {
-            card: flux_id,
-            choices: CastChoices::default(),
-            sacrifices: Vec::new(),
-        },
+    ));
+    // Two of the controller's artifacts, and one the opponent controls: the
+    // grant reaches every artifact, but only its controller's upkeep asks.
+    game.battlefield
+        .push(creature(10_001, cards::SU_CHI, PlayerId::One));
+    game.battlefield
+        .push(creature(10_002, cards::MANA_VAULT, PlayerId::One));
+    game.battlefield
+        .push(creature(10_003, cards::SU_CHI, PlayerId::Two));
+    // Enough for exactly one of the two taxes.
+    game.players[0].mana_pool.colorless = 2;
+
+    game.handle_upkeep_triggers();
+    let mut paid = false;
+    for _ in 0..24 {
+        if game.stack.is_empty()
+            && game.pending_triggers.is_empty()
+            && game.pending_decisions.is_empty()
+        {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            // Pay for the first artifact asked about and let the second go.
+            // Anything else on the way, such as ordering the two triggers,
+            // takes the smallest legal answer.
+            let options = if decision.prompt.contains("unless you pay") {
+                let pay = !paid && decision.options.iter().any(|option| option.id == 1);
+                paid |= pay;
+                vec![u32::from(pay)]
+            } else {
+                decision
+                    .options
+                    .iter()
+                    .map(|option| option.id)
+                    .take(decision.minimum)
+                    .collect()
+            };
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .unwrap();
+            continue;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(paid, "the tax was offered, not just charged");
+    let artifacts = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.id != GameObjectId(10_000))
+        .count();
+    assert_eq!(artifacts, 2, "the unpaid-for artifact was sacrificed");
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_003)),
+        "the opponent's artifact is not taxed on this player's upkeep"
     );
-    assert!(result.is_err());
-    assert!(game.stack.is_empty());
-    assert!(game.players[0].hand.iter().any(|card| card.id == flux_id));
 }
 
 #[test]

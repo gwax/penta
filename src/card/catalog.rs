@@ -744,6 +744,9 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
             }
         }
         super::EffectDef::OptionalManaPayment { effect, .. }
+        | super::EffectDef::UnlessPaid {
+            otherwise: effect, ..
+        }
         | super::EffectDef::May(effect)
         | super::EffectDef::AtNextStep { effect, .. } => {
             collect_ability_grants(*effect, grants);
@@ -822,6 +825,9 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
             .map(|effect| ability_grant_sites(*effect))
             .fold(0, usize::saturating_add),
         super::EffectDef::OptionalManaPayment { effect, .. }
+        | super::EffectDef::UnlessPaid {
+            otherwise: effect, ..
+        }
         | super::EffectDef::May(effect)
         | super::EffectDef::AtNextStep { effect, .. }
         | super::EffectDef::SacrificeOfChoice {
@@ -1081,6 +1087,9 @@ fn validate_effect_target_references(
             validate_value_target_references(amount, target_count)
         }
         EffectDef::OptionalManaPayment { effect, .. }
+        | EffectDef::UnlessPaid {
+            otherwise: effect, ..
+        }
         | EffectDef::May(effect)
         | EffectDef::AtNextStep { effect, .. } => {
             validate_effect_target_references(*effect, target_count)

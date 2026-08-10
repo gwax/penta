@@ -1456,6 +1456,13 @@ pub enum EffectDef {
         cost: ManaCost,
         effect: &'static EffectDef,
     },
+    /// The inverse of [`Self::OptionalManaPayment`]: `otherwise` happens
+    /// unless the resolving object's controller pays. A controller who cannot
+    /// pay is not asked, because there is nothing to decide.
+    UnlessPaid {
+        cost: ManaCost,
+        otherwise: &'static EffectDef,
+    },
     /// Stops the affected players casting noncreature spells for the rest of
     /// the turn.
     CannotCastNoncreatureSpellsThisTurn {

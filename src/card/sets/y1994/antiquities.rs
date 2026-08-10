@@ -327,11 +327,13 @@ static ENERGY_FLUX_GRANTED_ABILITY: AbilityDef = AbilityDef::triggered(
         step: TurnStepDef::Upkeep,
         player: PlayerRelation::You,
     },
-    EffectDef::Special("Sacrifice this artifact unless its controller pays {2}"),
-)
-.with_coverage(AbilityCoverageDef::metadata_only(
-    "The per-artifact upkeep trigger and its unless-payment branch are not executed yet.",
-));
+    EffectDef::UnlessPaid {
+        cost: mana_cost!("{2}"),
+        otherwise: &EffectDef::Sacrifice {
+            object: EffectRecipientDef::Source,
+        },
+    },
+);
 
 pub(in crate::card::sets) static ENERGY_FLUX: CardRecord = CardRecord::new(
     cards::ENERGY_FLUX,
@@ -350,10 +352,7 @@ pub(in crate::card::sets) static ENERGY_FLUX: CardRecord = CardRecord::new(
             effect: AppliedEffectDef::GrantAbility(&ENERGY_FLUX_GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
-    )
-    .with_coverage(AbilityCoverageDef::metadata_only(
-        "Static ability granting, per-artifact upkeep triggers, and optional payments are represented but not executed yet.",
-    ))]),
+    )]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
@@ -383,7 +382,7 @@ mod tests {
     };
 
     #[test]
-    fn energy_flux_models_its_granted_trigger_without_claiming_execution() {
+    fn energy_flux_grants_every_artifact_a_real_upkeep_tax() {
         let definition = ENERGY_FLUX.definition();
         let clauses = definition.rules.ability_clauses();
         assert_eq!(clauses.len(), 1);
@@ -395,10 +394,7 @@ mod tests {
             clauses[0].definition,
             DeclarativeAbilityDef::Static(_)
         ));
-        assert_eq!(
-            clauses[0].coverage.status,
-            ImplementationStatus::MetadataOnly
-        );
+        assert_eq!(clauses[0].coverage.status, ImplementationStatus::Complete);
         assert!(matches!(
             clauses[0].effect.definition,
             EffectDef::Apply {
@@ -412,15 +408,15 @@ mod tests {
         ));
         assert_eq!(
             ENERGY_FLUX_GRANTED_ABILITY.coverage.status,
-            ImplementationStatus::MetadataOnly
+            ImplementationStatus::Complete
         );
         assert_eq!(
             definition.implementation_status(),
-            ImplementationStatus::MetadataOnly
+            ImplementationStatus::Complete
         );
         assert_eq!(
             definition.play_options[0].effect_status,
-            CardEffectStatus::MetadataOnly
+            CardEffectStatus::Implemented
         );
     }
 }
