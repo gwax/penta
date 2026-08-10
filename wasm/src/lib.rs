@@ -3198,6 +3198,89 @@ mod tests {
     }
 
     #[test]
+    fn shock_land_entry_stays_prospective_until_the_browser_choice_commits_it() {
+        let mut game = WebGame::new(
+            "Briksza Naya Midrange",
+            "Greer G/R Aggro",
+            "Handcrafted",
+            true,
+            2,
+            Some("isd-rtr-standard".into()),
+        )
+        .unwrap();
+        act_matching(&mut game, |action| matches!(action, Action::KeepHand));
+
+        let before = game.snapshot_value(false);
+        let temple_garden = before["human"]["hand"]
+            .as_array()
+            .expect("hand array")
+            .iter()
+            .find(|card| card["name"] == "Temple Garden")
+            .expect("the deterministic opening hand contains Temple Garden")["id"]
+            .as_u64()
+            .and_then(|id| u32::try_from(id).ok())
+            .map(CardInstanceId)
+            .expect("card ID fits the engine ID type");
+
+        act_matching(
+            &mut game,
+            |action| matches!(action, Action::PlayLand { card, .. } if *card == temple_garden),
+        );
+
+        let prospective = game.snapshot_value(false);
+        assert_eq!(prospective["human"]["life"], 20);
+        assert_eq!(prospective["decision"]["kind"], "Choice");
+        assert_eq!(
+            prospective["decision"]["prompt"],
+            "Pay 2 life as Temple Garden enters the battlefield?"
+        );
+        assert_eq!(prospective["decision"]["minimum"], 1);
+        assert_eq!(prospective["decision"]["maximum"], 1);
+        assert_eq!(prospective["decision"]["cancellable"], false);
+        assert_eq!(
+            prospective["decision"]["options"],
+            json!([
+                { "id": 0, "triggerId": null, "label": "Do not pay", "cardId": null, "cardName": null, "abilityText": null, "zone": "None" },
+                { "id": 1, "triggerId": null, "label": "Pay 2 life", "cardId": null, "cardName": null, "abilityText": null, "zone": "None" },
+            ])
+        );
+        assert!(
+            prospective["human"]["hand"]
+                .as_array()
+                .expect("hand array")
+                .iter()
+                .all(|card| card["id"] != temple_garden.0),
+            "the prospective card has left the hand"
+        );
+        assert!(
+            prospective["battlefield"]
+                .as_array()
+                .expect("battlefield array")
+                .iter()
+                .all(|card| card["name"] != "Temple Garden"),
+            "the prospective card is not a permanent before replacement choices finish"
+        );
+
+        let decision = prospective["decision"]["id"]
+            .as_u64()
+            .and_then(|id| u32::try_from(id).ok())
+            .expect("decision ID fits the engine ID type");
+        game.choose_decision(decision, "[1]")
+            .expect("pay-life choice succeeds");
+
+        let committed = game.snapshot_value(false);
+        assert_eq!(committed["human"]["life"], 18);
+        assert!(committed["decision"].is_null());
+        let temple_garden = committed["battlefield"]
+            .as_array()
+            .expect("battlefield array")
+            .iter()
+            .find(|card| card["name"] == "Temple Garden")
+            .expect("the chosen entry commits to the battlefield");
+        assert_eq!(temple_garden["tapped"], false);
+    }
+
+    #[test]
     fn blocker_actions_expose_the_attacker_as_their_board_target() {
         let attacker = CardInstanceId(7);
         let blocker = CardInstanceId(8);

@@ -2,10 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardComposition, CardEffectStatus,
     CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CounterKind,
-    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, LandEntry, ManaColor,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerEventDef,
     ValueDef, ZoneKind, abilities, cards,
 };
@@ -61,19 +61,11 @@ pub(in crate::card::sets) static CLIFFTOP_RETREAT: CardRecord = CardRecord::new(
     "Clifftop Retreat",
     CardArt::new("fd7e1bf9-bd6a-48e3-9331-178e5142c06a", "John Avon"),
     CardSet::Innistrad,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::TappedUnlessControlsLandType([
-        true, false, false, true, false,
-    ]))
-    .with_abilities(&[
-        AbilityDef::replacement(
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::check_land_enters(
             "This land enters tapped unless you control a Mountain or a Plains.",
-            EffectDef::Special("Apply the declared conditional land-entry procedure"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The conditional land-entry procedure is implemented by shared land-entry rules.",
-        }),
+            &[BasicLandType::Mountain, BasicLandType::Plains],
+        ),
         AbilityDef::activated_mana(
             "{T}: Add {R} or {W}.",
             &[AbilityCostDef::TapSource],
@@ -157,30 +149,28 @@ pub(in crate::card::sets) static GAVONY_TOWNSHIP: CardRecord = CardRecord::new(
     "Gavony Township",
     CardArt::new("b5f73443-2fe8-424f-8e71-fc7ce1f3a3eb", "Peter Mohrbacher"),
     CardSet::Innistrad,
-    CardRules::new_land(&[])
-        .land_entry(LandEntry::Untapped)
-        .with_abilities(&[
-            abilities::tap_for(ManaColor::Colorless),
-            AbilityDef::activated(
-                "{2}{G}{W}, {T}: Put a +1/+1 counter on each creature you control.",
-                &[
-                    AbilityCostDef::Mana(mana_cost!("{2}{G}{W}")),
-                    AbilityCostDef::TapSource,
-                ],
-                EffectDef::AddCounters {
-                    kind: CounterKind::PlusOnePlusOne,
-                    object: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                        ]),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
-                    amount: ValueDef::Constant(1),
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated(
+            "{2}{G}{W}, {T}: Put a +1/+1 counter on each creature you control.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}{G}{W}")),
+                AbilityCostDef::TapSource,
+            ],
+            EffectDef::AddCounters {
+                kind: CounterKind::PlusOnePlusOne,
+                object: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::You,
                 },
-            ),
-        ]),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static GHOST_QUARTER: CardRecord = CardRecord::new(
@@ -188,9 +178,7 @@ pub(in crate::card::sets) static GHOST_QUARTER: CardRecord = CardRecord::new(
     "Ghost Quarter",
     CardArt::new("1c6456ed-0ffb-4d22-b252-5775076030ce", "Peter Mohrbacher"),
     CardSet::Innistrad,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::Untapped)
-    .with_abilities(&[
+    CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
         AbilityDef::activated(
             "{T}, Sacrifice this land: Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle.",
@@ -227,19 +215,11 @@ pub(in crate::card::sets) static ISOLATED_CHAPEL: CardRecord = CardRecord::new(
     "Isolated Chapel",
     CardArt::new("b3c1a371-5ded-4a3a-bf96-503c4f1a665d", "Cliff Childs"),
     CardSet::Innistrad,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::TappedUnlessControlsLandType([
-        true, false, true, false, false,
-    ]))
-    .with_abilities(&[
-        AbilityDef::replacement(
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::check_land_enters(
             "This land enters tapped unless you control a Plains or a Swamp.",
-            EffectDef::Special("Apply the declared conditional land-entry procedure"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The conditional land-entry procedure is implemented by shared land-entry rules.",
-        }),
+            &[BasicLandType::Plains, BasicLandType::Swamp],
+        ),
         AbilityDef::activated_mana(
             "{T}: Add {W} or {B}.",
             &[AbilityCostDef::TapSource],
@@ -256,38 +236,36 @@ pub(in crate::card::sets) static KESSIG_WOLF_RUN: CardRecord = CardRecord::new(
     "Kessig Wolf Run",
     CardArt::new("4a8447fe-7368-470a-911a-1083ec6cc831", "Eytan Zana"),
     CardSet::Innistrad,
-    CardRules::new_land(&[])
-        .land_entry(LandEntry::Untapped)
-        .with_abilities(&[
-            abilities::tap_for(ManaColor::Colorless),
-            AbilityDef::activated(
-                "{X}{R}{G}, {T}: Target creature gets +X/+0 and gains trample until end of turn.",
-                &[
-                    AbilityCostDef::Mana(mana_cost!("{X}{R}{G}")),
-                    AbilityCostDef::TapSource,
-                ],
-                EffectDef::Sequence(&[
-                    EffectDef::Apply {
-                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                        effect: AppliedEffectDef::ModifyPowerToughness {
-                            power: ValueDef::ChosenX,
-                            toughness: ValueDef::Constant(0),
-                        },
-                        duration: EffectDurationDef::UntilEndOfTurn,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated(
+            "{X}{R}{G}, {T}: Target creature gets +X/+0 and gains trample until end of turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{X}{R}{G}")),
+                AbilityCostDef::TapSource,
+            ],
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::ChosenX,
+                        toughness: ValueDef::Constant(0),
                     },
-                    EffectDef::Apply {
-                        recipient: EffectRecipientDef::Target(TargetSlotId(0)),
-                        effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
-                        duration: EffectDurationDef::UntilEndOfTurn,
-                    },
-                ]),
-            )
-            .with_targets(&[AbilityTargetDef::exactly_one_permanent(
-                TargetSlotId(0),
-                "creature",
-                ObjectPredicateDef::HasType(CardType::Creature),
-            )]),
-        ]),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ]),
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "creature",
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )]),
+    ]),
 );
 
 pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::new(
@@ -312,9 +290,7 @@ pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
     "Moorland Haunt",
     CardArt::new("1d5569e3-278c-4cf3-860e-712010333fe6", "James Paick"),
     CardSet::Innistrad,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::Untapped)
-    .with_abilities(&[
+    CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
         AbilityDef::not_implemented(
             "{W}{U}, {T}, Exile a creature card from your graveyard: Create a 1/1 white Spirit creature token with flying.",
@@ -386,26 +362,15 @@ pub(in crate::card::sets) static SULFUR_FALLS: CardRecord = CardRecord::new(
     "Sulfur Falls",
     CardArt::new("4968b65d-50e5-4d7e-b78b-cdada1cbf7a7", "Cliff Childs"),
     CardSet::Innistrad,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::TappedUnlessControlsLandType([
-        false, true, false, true, false,
-    ]))
-    .with_abilities(&[
-        AbilityDef::replacement(
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::check_land_enters(
             "This land enters tapped unless you control an Island or a Mountain.",
-            EffectDef::Special("Apply the declared conditional land-entry procedure"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The conditional land-entry procedure is implemented by shared land-entry rules.",
-        }),
+            &[BasicLandType::Island, BasicLandType::Mountain],
+        ),
         AbilityDef::activated_mana(
             "{T}: Add {U} or {R}.",
             &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::choice(&[
-                ManaColor::Blue,
-                ManaColor::Red,
-            ])),
+            EffectDef::AddMana(AddManaEffectDef::choice(&[ManaColor::Blue, ManaColor::Red])),
         ),
     ]),
 );
@@ -486,19 +451,11 @@ pub(in crate::card::sets) static WOODLAND_CEMETERY: CardRecord = CardRecord::new
     "Woodland Cemetery",
     CardArt::new("67139101-ec5e-434b-be3a-21338cc33840", "Lars Grant-West"),
     CardSet::Innistrad,
-    CardRules::new_land(&[])
-    .land_entry(LandEntry::TappedUnlessControlsLandType([
-        false, false, true, false, true,
-    ]))
-    .with_abilities(&[
-        AbilityDef::replacement(
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::check_land_enters(
             "This land enters tapped unless you control a Swamp or a Forest.",
-            EffectDef::Special("Apply the declared conditional land-entry procedure"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: None,
-            explanation: "The conditional land-entry procedure is implemented by shared land-entry rules.",
-        }),
+            &[BasicLandType::Swamp, BasicLandType::Forest],
+        ),
         AbilityDef::activated_mana(
             "{T}: Add {B} or {G}.",
             &[AbilityCostDef::TapSource],

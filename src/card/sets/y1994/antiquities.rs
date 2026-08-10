@@ -1,9 +1,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardBehavior,
+    CardRules, CardSet, CardType, CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef,
+    ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEffectDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -173,14 +174,15 @@ pub(in crate::card::sets) static TRISKELION: CardRecord = CardRecord::new(
     CardSet::Antiquities,
     CardRules::new_artifact_creature(mana_cost!("{6}"), &["Construct"], 1, 1)
         .with_abilities(&[
-            AbilityDef::replacement(
+            AbilityDef::as_enters(
                 "This creature enters with three +1/+1 counters on it.",
-                EffectDef::Special("Enter with three +1/+1 counters"),
-            )
-            .with_implementation(AbilityImplementationDef::CustomPartial {
-                behavior: Some(CardBehavior::Triskelion),
-                explanation: "The entry counters are applied when Triskelion resolves normally, but copied Triskelion rules do not apply them.",
-            }),
+                ReplacementEffectDef::ModifyBattlefieldEntry(
+                    BattlefieldEntryModificationDef::AddCounters {
+                        kind: CounterKind::PlusOnePlusOne,
+                        amount: 3,
+                    },
+                ),
+            ),
             AbilityDef::activated(
                 "Remove a +1/+1 counter from this creature: It deals 1 damage to any target.",
                 &[AbilityCostDef::Special(
@@ -310,14 +312,15 @@ pub(in crate::card::sets) static TETRAVUS: CardRecord = CardRecord::new(
     CardRules::new_artifact_creature(mana_cost!("{6}"), &["Construct"], 1, 1)
     .with_abilities(&[
         abilities::flying(),
-        AbilityDef::replacement(
+        AbilityDef::as_enters(
             "This creature enters with three +1/+1 counters on it.",
-            EffectDef::Special("Enter with three +1/+1 counters"),
-        )
-        .with_implementation(AbilityImplementationDef::CustomFull {
-            behavior: Some(CardBehavior::Tetravus),
-            explanation: "The entry counters are applied by the legacy permanent-entry resolver.",
-        }),
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: 3,
+                },
+            ),
+        ),
         AbilityDef::not_implemented(
             "At the beginning of your upkeep, you may remove any number of +1/+1 counters from this creature. If you do, create that many 1/1 colorless Tetravite artifact creature tokens. They each have flying and \"This token can't be enchanted.\"",
             "Creating Tetravite tokens and choosing how many counters to remove are not implemented.",

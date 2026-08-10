@@ -4,16 +4,93 @@ use crate::mana_cost;
 use crate::poc::{self, cards};
 use crate::{
     AbilityTargetDef, AbilityTargetPredicate, AdditionalCostDef, AdditionalCostId,
-    AlternativeCastManaCostDef, AlternativeCostDef, AlternativeCostId, CardComposition,
-    CardDefinition, CardEffectStatus, CardInstanceId, CardPart, CardPartId, CardPrinting,
-    CardRules, CardStructure, CastChoices, DoubleFacedKind, LandEntry, ManaSpendEffectDef, ModeDef,
-    ModeSetDef, PlayOptionDef, PlayOptionId, PlayerRelation, SpellForm, StackObjectId,
+    AlternativeCastManaCostDef, AlternativeCostDef, AlternativeCostId,
+    BattlefieldEntryModificationDef, CardComposition, CardDefinition, CardEffectStatus,
+    CardInstanceId, CardPart, CardPartId, CardPrinting, CardRules, CardStructure, CastChoices,
+    DoubleFacedKind, ManaSpendEffectDef, ModeDef, ModeSetDef, PlayOptionDef, PlayOptionId,
+    PlayerRelation, ReplacementEffectDef, ReplacementEventDef, SpellForm, StackObjectId,
     TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId,
 };
 
 static TEST_FLYING_ABILITY: [AbilityDef; 1] = [abilities::flying()];
 static TEST_FLYING_TRAMPLE_ABILITIES: [AbilityDef; 2] = [abilities::flying(), abilities::trample()];
 static CARD_COST_FLASHBACK: AbilityDef = abilities::flashback_for_card_mana_cost();
+const TEST_OPPONENT_LAND_ENTRY_TEXT: &str = "Lands your opponents control enter tapped.";
+static TEST_OPPONENT_LANDS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement_for(
+    TEST_OPPONENT_LAND_ENTRY_TEXT,
+    ReplacementEventDef::ObjectEntersBattlefield {
+        object: ObjectPredicateDef::HasType(CardType::Land),
+        controller: PlayerRelation::Opponent,
+    },
+    EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
+        BattlefieldEntryModificationDef::Tapped,
+    )),
+)];
+static TEST_EXTERNAL_PAYMENT_COST: [CostDef; 1] = [CostDef::PayLife(2)];
+static TEST_EXTERNAL_ENTER_TAPPED: [ReplacementEffectDef; 1] =
+    [ReplacementEffectDef::ModifyBattlefieldEntry(
+        BattlefieldEntryModificationDef::Tapped,
+    )];
+static TEST_EXTERNAL_PAYMENT: [ReplacementEffectDef; 1] = [ReplacementEffectDef::OptionalPayment {
+    payment: PaymentDef::new(PlayerRelation::You, &TEST_EXTERNAL_PAYMENT_COST),
+    if_paid: &[],
+    if_declined: &TEST_EXTERNAL_ENTER_TAPPED,
+}];
+static TEST_EXTERNAL_CONTEXT_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement_for(
+    "Lands your opponents control enter tapped unless you control a Plains and pay 2 life.",
+    ReplacementEventDef::ObjectEntersBattlefield {
+        object: ObjectPredicateDef::HasType(CardType::Land),
+        controller: PlayerRelation::Opponent,
+    },
+    EffectDef::Replacement(ReplacementEffectDef::Conditional {
+        condition: ConditionDef::Exists(ObjectQueryDef {
+            object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
+            zones: &[ZoneKind::Battlefield],
+            controller: PlayerRelation::You,
+        }),
+        if_true: &TEST_EXTERNAL_PAYMENT,
+        if_false: &TEST_EXTERNAL_ENTER_TAPPED,
+    }),
+)];
+static TEST_GRANTED_ENTRY_REPLACEMENT: AbilityDef =
+    abilities::enters_tapped("This permanent enters tapped.");
+static TEST_SELF_GRANTED_ENTRY_ABILITY: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "This permanent has \"This permanent enters tapped.\"",
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::GrantAbility(&TEST_GRANTED_ENTRY_REPLACEMENT),
+        duration: EffectDurationDef::WhileSourceRemainsInZone,
+    },
+)];
+static TEST_SELF_PLAINS_ABILITY: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "This land is a Plains in addition to its other types.",
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::AddLandTypes(&[BasicLandType::Plains]),
+        duration: EffectDurationDef::WhileSourceRemainsInZone,
+    },
+)];
+static TEST_PLAINS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement_for(
+    "Plains your opponents control enter tapped.",
+    ReplacementEventDef::ObjectEntersBattlefield {
+        object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
+        controller: PlayerRelation::Opponent,
+    },
+    EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
+        BattlefieldEntryModificationDef::Tapped,
+    )),
+)];
+static TEST_OPPONENT_ENCHANTMENTS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] =
+    [AbilityDef::replacement_for(
+        "Enchantments your opponents control enter tapped.",
+        ReplacementEventDef::ObjectEntersBattlefield {
+            object: ObjectPredicateDef::HasType(CardType::Enchantment),
+            controller: PlayerRelation::Opponent,
+        },
+        EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::Tapped,
+        )),
+    )];
 
 fn ready_game() -> Game {
     let deck = poc::mono_red_atog();
@@ -454,69 +531,223 @@ fn declarative_mana_production_drives_generic_mana_sources() {
 }
 
 #[test]
-fn declarative_land_entry_handles_check_tapped_and_shock_lands() {
-    let check_id = CardDefinitionId(10_000);
-    let gate_id = CardDefinitionId(10_001);
-    let shock_id = CardDefinitionId(10_002);
-    let mut check = CardDefinition::new(
-        check_id,
-        "Test check land",
-        CardSet::Magic2013,
-        false,
-        CardBehavior::Unsupported,
-    );
-    check.rules = CardRules::new_land(&[]).land_entry(LandEntry::TappedUnlessControlsLandType([
-        true, false, false, false, false,
-    ]));
-    synchronize_single_part_definition(&mut check);
-    let mut gate = CardDefinition::new(
-        gate_id,
-        "Test gate",
-        CardSet::Gatecrash,
-        false,
-        CardBehavior::Unsupported,
-    );
-    gate.rules = CardRules::new_land(&[]).land_entry(LandEntry::Tapped);
-    synchronize_single_part_definition(&mut gate);
-    let mut shock = CardDefinition::new(
-        shock_id,
-        "Test shock land",
-        CardSet::Gatecrash,
-        false,
-        CardBehavior::Unsupported,
-    );
-    shock.rules =
-        CardRules::new_land(&["Plains", "Swamp"]).land_entry(LandEntry::PayLifeOrTapped(2));
-    synchronize_single_part_definition(&mut shock);
-
-    let plains = CardDefinition::new(
-        cards::PLAINS,
-        "Plains",
-        CardSet::Alpha,
-        true,
-        CardBehavior::Plains,
-    );
-    let mut test_game = ready_game();
-    test_game.catalog = CardCatalog::new([check, gate, shock, plains]).unwrap();
-    test_game
-        .battlefield
-        .push(creature(9_999, cards::PLAINS, PlayerId::One));
-
-    for (instance, definition) in [(10_000, check_id), (10_001, gate_id), (10_002, shock_id)] {
-        test_game.players[0]
-            .hand
-            .push(card(instance, definition, PlayerId::One));
-        test_game.play_land(
+fn deterministic_land_entry_replacements_use_object_queries() {
+    for (qualifier, expected_tapped) in [
+        (None, true),
+        (Some((PlayerId::Two, PlayerId::One)), false),
+        (Some((PlayerId::One, PlayerId::Two)), true),
+    ] {
+        let mut game = ready_game();
+        game.catalog = crate::card::catalog().unwrap();
+        if let Some((owner, controller)) = qualifier {
+            game.battlefield.push(Permanent::entering(
+                card(9_999, cards::PLAINS, owner),
+                CardPartId::PRIMARY,
+                controller,
+                0,
+            ));
+        }
+        let retreat = card(10_000, cards::CLIFFTOP_RETREAT, PlayerId::One);
+        game.players[0].hand.push(retreat.clone());
+        game.apply(
             PlayerId::One,
-            CardInstanceId(instance),
-            PlayOptionId::DEFAULT,
-        );
+            Action::PlayLand {
+                card: retreat.id,
+                option: PlayOptionId::DEFAULT,
+            },
+        )
+        .unwrap();
+
+        let retreat = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::CLIFFTOP_RETREAT)
+            .expect("the check land committed");
+        assert_eq!(retreat.tapped, expected_tapped);
+        assert!(game.pending_decisions.is_empty());
     }
 
-    assert!(!test_game.battlefield[1].tapped);
-    assert!(test_game.battlefield[2].tapped);
-    assert!(test_game.battlefield[3].tapped);
-    assert_eq!(test_game.players[0].life, 20);
+    let mut game = ready_game();
+    game.catalog = crate::card::catalog().unwrap();
+    let guildgate = card(10_001, cards::GOLGARI_GUILDGATE, PlayerId::One);
+    game.players[0].hand.push(guildgate.clone());
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: guildgate.id,
+            option: PlayOptionId::DEFAULT,
+        },
+    )
+    .unwrap();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::GOLGARI_GUILDGATE)
+            .expect("the guildgate committed")
+            .tapped
+    );
+}
+
+#[test]
+fn check_land_queries_use_land_types_added_by_static_effects() {
+    for with_presence in [false, true] {
+        let mut game = ready_game();
+        game.catalog = crate::card::catalog().unwrap();
+        let land_id = CardInstanceId(9_998);
+        game.battlefield
+            .push(creature(land_id.0, cards::THESPIANS_STAGE, PlayerId::One));
+        if with_presence {
+            let mut presence = creature(9_999, cards::NYLEAS_PRESENCE, PlayerId::One);
+            presence.attached_to = Some(land_id);
+            game.battlefield.push(presence);
+        }
+
+        assert_eq!(
+            game.effective_land_types(&game.battlefield[0]),
+            if with_presence { [true; 5] } else { [false; 5] }
+        );
+        let retreat = card(10_000, cards::CLIFFTOP_RETREAT, PlayerId::One);
+        game.players[0].hand.push(retreat.clone());
+        game.apply(
+            PlayerId::One,
+            Action::PlayLand {
+                card: retreat.id,
+                option: PlayOptionId::DEFAULT,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.definition == cards::CLIFFTOP_RETREAT)
+                .expect("the check land committed")
+                .tapped,
+            !with_presence,
+            "the condition uses the controlled land's effective basic land types"
+        );
+    }
+}
+
+#[test]
+fn an_entering_permanents_own_static_ability_can_grant_its_entry_replacement() {
+    let definition_id = CardDefinitionId(10_101);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Test self-granted entry replacement",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_land(&[]).with_abilities(&TEST_SELF_GRANTED_ENTRY_ABILITY);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    game.catalog = CardCatalog::new([definition]).unwrap();
+    let land = card(10_000, definition_id, PlayerId::One);
+    game.players[0].hand.push(land.clone());
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: land.id,
+            option: PlayOptionId::DEFAULT,
+        },
+    )
+    .unwrap();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition_id)
+            .expect("the land committed")
+            .tapped,
+        "prospective characteristics include the entrant's own static grants"
+    );
+}
+
+#[test]
+fn an_entering_permanents_own_static_land_types_match_external_replacements() {
+    let external_id = CardDefinitionId(10_101);
+    let land_id = CardDefinitionId(10_102);
+    let mut external = CardDefinition::new(
+        external_id,
+        "Test Plains entry restriction",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    external.rules = CardRules::new_enchantment(ManaCost::default())
+        .with_abilities(&TEST_PLAINS_ENTER_TAPPED_ABILITY);
+    synchronize_single_part_definition(&mut external);
+    let mut land = CardDefinition::new(
+        land_id,
+        "Test self-typed land",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    land.rules = CardRules::new_land(&[]).with_abilities(&TEST_SELF_PLAINS_ABILITY);
+    synchronize_single_part_definition(&mut land);
+
+    let mut game = ready_game();
+    game.catalog = CardCatalog::new([external, land]).unwrap();
+    game.battlefield
+        .push(creature(9_999, external_id, PlayerId::Two));
+    let land = card(10_000, land_id, PlayerId::One);
+    game.players[0].hand.push(land.clone());
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: land.id,
+            option: PlayOptionId::DEFAULT,
+        },
+    )
+    .unwrap();
+
+    let entered = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == land_id)
+        .expect("the land committed");
+    assert!(entered.tapped);
+    assert_eq!(
+        game.effective_land_types(entered),
+        [true, false, false, false, false]
+    );
+}
+
+#[test]
+fn an_entering_static_effect_does_not_change_existing_replacement_sources_early() {
+    let source_id = CardDefinitionId(10_101);
+    let mut source = CardDefinition::new(
+        source_id,
+        "Test nonbasic replacement source",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    source.rules =
+        CardRules::new_land(&[]).with_abilities(&TEST_OPPONENT_ENCHANTMENTS_ENTER_TAPPED_ABILITY);
+    synchronize_single_part_definition(&mut source);
+
+    let mut game = ready_game();
+    let blood_moon = game.catalog.get(cards::BLOOD_MOON).unwrap().clone();
+    game.catalog = CardCatalog::new([source, blood_moon]).unwrap();
+    game.battlefield
+        .push(creature(9_999, source_id, PlayerId::Two));
+
+    game.put_onto_battlefield(PlayerId::One, cards::BLOOD_MOON)
+        .expect("Blood Moon is in the focused catalog");
+
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::BLOOD_MOON)
+            .expect("Blood Moon committed")
+            .tapped,
+        "Blood Moon does not remove an existing nonbasic source's ability before it enters"
+    );
 }
 
 #[test]
@@ -525,7 +756,8 @@ fn a_land_play_option_locks_the_presented_part_on_the_permanent() {
     let land_part = CardPartId(1);
     let land_option = PlayOptionId(1);
     let front_rules = CardRules::new_sorcery(ManaCost::new(1, 0));
-    let land_rules = CardRules::new_land(&[]).land_entry(LandEntry::Tapped);
+    let land_rules =
+        CardRules::new_land(&[]).with_ability(abilities::enters_tapped("This land enters tapped."));
     let mut definition = CardDefinition::new(
         definition_id,
         "Test modal card",
@@ -2255,6 +2487,96 @@ fn balance_defers_one_apnap_trigger_batch_until_its_decisions_finish() {
             .iter()
             .all(|object| object.kind == StackObjectKind::TriggeredAbility)
     );
+}
+
+#[test]
+fn artifact_entry_replacements_apply_during_spell_resolution() {
+    for (definition, mana) in [(cards::TIME_VAULT, 2), (cards::NEVINYRRALS_DISK, 4)] {
+        let mut game = ready_game();
+        let artifact = card(10_000, definition, PlayerId::One);
+        let hand_id = artifact.id;
+        game.players[0].hand.push(artifact);
+        game.players[0].mana_pool.colorless = mana;
+
+        game.apply(
+            PlayerId::One,
+            cast_action(hand_id, Vec::new(), Vec::new(), 0),
+        )
+        .unwrap();
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.definition != definition),
+            "a spell is not yet a prospective battlefield entry"
+        );
+        pass_priority_pair(&mut game);
+
+        let entered = game
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == definition)
+            .collect::<Vec<_>>();
+        assert_eq!(entered.len(), 1);
+        assert!(entered[0].tapped);
+        assert_ne!(entered[0].card.id, hand_id);
+        assert!(game.pending_decisions.is_empty());
+        assert!(game.stack.is_empty());
+    }
+}
+
+#[test]
+fn blind_obedience_competes_with_a_permanents_own_entry_replacement() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_001, cards::BLIND_OBEDIENCE, PlayerId::Two));
+    let vault = card(10_000, cards::TIME_VAULT, PlayerId::One);
+    game.players[0].hand.push(vault.clone());
+    game.players[0].mana_pool.colorless = 2;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(vault.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let order = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the entering permanent's controller orders both replacements");
+    assert_eq!(order.kind, DecisionKind::Choice);
+    assert_eq!(order.options.len(), 2);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::TIME_VAULT)
+    );
+    let blind_obedience = order
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(_, definition)| definition == cards::BLIND_OBEDIENCE)
+        })
+        .expect("Blind Obedience supplies one applicable replacement")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: order.id,
+            options: vec![blind_obedience],
+        },
+    )
+    .unwrap();
+
+    let entered = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::TIME_VAULT)
+        .expect("re-evaluation applies Time Vault's remaining replacement and commits");
+    assert!(entered.tapped);
+    assert!(game.pending_decisions.is_empty());
 }
 
 #[test]
@@ -5294,6 +5616,59 @@ fn blood_moon_replaces_nonbasic_land_abilities_with_intrinsic_red_mana() {
 }
 
 #[test]
+fn blood_moon_suppresses_nonbasic_lands_own_entry_replacements() {
+    for definition in [cards::TEMPLE_GARDEN, cards::CLIFFTOP_RETREAT] {
+        let mut game = ready_game();
+        game.catalog = crate::card::catalog().unwrap();
+        game.battlefield
+            .push(creature(9_999, cards::BLOOD_MOON, PlayerId::Two));
+        let land = card(10_000, definition, PlayerId::One);
+        game.players[0].hand.push(land.clone());
+        let event_start = game.events().len();
+
+        game.apply(
+            PlayerId::One,
+            Action::PlayLand {
+                card: land.id,
+                option: PlayOptionId::DEFAULT,
+            },
+        )
+        .unwrap();
+
+        assert!(
+            game.pending_decisions.is_empty(),
+            "Blood Moon removes the printed as-enters ability before it applies"
+        );
+        assert_eq!(game.players[0].life, i16::from(rules::STARTING_LIFE));
+        assert!(
+            game.events()[event_start..]
+                .iter()
+                .all(|event| !matches!(event, GameEvent::LifeLost { .. }))
+        );
+        let entered = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .expect("the nonbasic land committed");
+        assert!(!entered.tapped);
+        assert_eq!(
+            game.effective_land_types(entered),
+            [false, false, false, true, false]
+        );
+        assert_eq!(
+            game.mana_ability_activations(entered)
+                .into_iter()
+                .map(|activation| (activation.ability, activation.color))
+                .collect::<Vec<_>>(),
+            vec![(
+                AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
+                ManaColor::Red,
+            )]
+        );
+    }
+}
+
+#[test]
 fn blood_moon_preserves_nonland_subtypes_on_a_land_creature() {
     let definition_id = CardDefinitionId(10_000);
     let mut definition = CardDefinition::new(
@@ -6089,8 +6464,8 @@ fn copy_artifact_copies_an_artifact_creature() {
         .find(|permanent| permanent.card.definition == cards::COPY_ARTIFACT)
         .unwrap();
     assert_eq!(
-        game.effective_behavior(copied),
-        Some(CardBehavior::Tetravus)
+        copied.copy_effect.as_ref().map(|copy| copy.base),
+        Some((cards::TETRAVUS, CardPartId::PRIMARY))
     );
     assert_eq!(copied.presented, CardPartId::PRIMARY);
     assert_eq!(
@@ -8096,6 +8471,75 @@ fn undying_returns_it_to_its_owner_not_whoever_killed_it() {
 }
 
 #[test]
+fn undying_return_finishes_entry_replacements_before_publishing_entry_triggers() {
+    let mut game = ready_game();
+    game.battlefield.extend([
+        creature(10_000, cards::BLIND_OBEDIENCE, PlayerId::Two),
+        creature(10_001, cards::BLIND_OBEDIENCE, PlayerId::Two),
+    ]);
+    let mut augur = creature(10_002, cards::AUGUR_OF_BOLAS, PlayerId::One);
+    // Granting undying in the fixture lets a real ETB-triggered creature
+    // exercise the graveyard-entry origin without adding a card-specific path.
+    augur.temporary_keywords.push(KeywordAbility::Undying);
+    game.battlefield.push(augur);
+    let event_start = game.events().len();
+
+    game.destroy_permanent(CardInstanceId(10_002));
+
+    let order = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the returning creature's controller orders both Blind Obedience effects");
+    assert_eq!(order.options.len(), 2);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::AUGUR_OF_BOLAS),
+        "the graveyard return remains prospective during replacement ordering"
+    );
+    assert!(game.events()[event_start..].iter().all(|event| !matches!(
+        event,
+        GameEvent::AbilityTriggered {
+            definition: cards::AUGUR_OF_BOLAS,
+            ..
+        }
+    )));
+
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: order.id,
+            options: vec![order.options[0].id],
+        },
+    )
+    .unwrap();
+
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::AUGUR_OF_BOLAS)
+        .expect("the replaced graveyard entry commits");
+    assert!(returned.tapped);
+    assert_eq!(returned.counters(CounterKind::PlusOnePlusOne), 1);
+    assert!(game.pending_decisions.is_empty());
+    assert!(game.events()[event_start..].iter().any(|event| matches!(
+        event,
+        GameEvent::AbilityTriggered {
+            definition: cards::AUGUR_OF_BOLAS,
+            ..
+        }
+    )));
+    assert_eq!(
+        game.stack
+            .iter()
+            .filter(|object| object.kind == StackObjectKind::TriggeredAbility)
+            .count(),
+        1,
+        "the ETB trigger is published once after the final entry commits"
+    );
+}
+
+#[test]
 fn a_plus_one_counter_boosts_stats_whatever_put_it_there() {
     // Strangleroot Geist is a 2/1; undying brings it back as a 3/2. Before
     // +1/+1 counters and javelin counters were separated, the stat bonus was
@@ -8114,9 +8558,15 @@ fn a_plus_one_counter_boosts_stats_whatever_put_it_there() {
 fn a_javelin_counter_is_not_a_plus_one_counter() {
     // Icatian Javelineers enters with a javelin counter and stays a 1/1.
     let mut game = ready_game();
-    game.battlefield
-        .push(creature(10_001, cards::ICATIAN_JAVELINEERS, PlayerId::One));
-    let javelineers = &game.battlefield[0];
+    let id = game
+        .put_onto_battlefield(PlayerId::One, cards::ICATIAN_JAVELINEERS)
+        .expect("Icatian Javelineers is in the catalog");
+    let javelineers = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == id)
+        .expect("the entry replacement committed");
+    assert_eq!(javelineers.counters(CounterKind::Javelin), 1);
     assert_eq!(
         game.power(javelineers),
         Some(1),
@@ -8942,34 +9392,335 @@ fn overloaded_counterflux_is_targetless_and_counters_each_opposing_spell() {
     );
 }
 
-/// Plays a shock land and answers its enters-untapped question.
-fn play_shock_land(game: &mut Game, definition: CardDefinitionId, pay: bool) {
+/// Starts a shock-land play and returns its pre-entry replacement choice.
+fn begin_shock_land_play(game: &mut Game, definition: CardDefinitionId) -> DecisionObservation {
     game.players[0]
         .hand
         .push(card(10_500, definition, PlayerId::One));
-    game.play_land(PlayerId::One, CardInstanceId(10_500), PlayOptionId::DEFAULT);
-    let decision = game.observe(PlayerId::One).decision.unwrap();
-    let option = u32::from(pay);
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: CardInstanceId(10_500),
+            option: PlayOptionId::DEFAULT,
+        },
+    )
+    .unwrap();
+    game.observe(PlayerId::One)
+        .decision
+        .expect("a payable shock land asks its controller whether to pay")
+}
+
+fn answer_shock_land_choice(game: &mut Game, decision: u32, pay: bool) {
     game.apply(
         PlayerId::One,
         Action::ChooseDecision {
-            decision: decision.id,
-            options: vec![option],
+            decision,
+            options: vec![u32::from(pay)],
         },
     )
     .unwrap();
 }
 
 #[test]
-fn a_shock_land_can_be_paid_for_or_left_tapped() {
+fn replacement_life_payments_are_preflighted_and_paid_atomically() {
+    static SPLIT_LIFE_COST: [CostDef; 2] = [CostDef::PayLife(2), CostDef::PayLife(2)];
+    let payment = PaymentDef::new(PlayerRelation::You, &SPLIT_LIFE_COST);
+    let mut game = ready_game();
+
+    game.players[0].life = 3;
+    assert!(!game.can_pay_payment(PlayerId::One, payment));
+    assert!(!game.pay_payment(PlayerId::One, payment));
+    assert_eq!(game.players[0].life, 3);
+
+    game.players[0].life = 4;
+    let event_start = game.events().len();
+    assert!(game.can_pay_payment(PlayerId::One, payment));
+    assert_eq!(Game::payment_label(payment), "Pay 4 life");
+    assert!(game.pay_payment(PlayerId::One, payment));
+    assert_eq!(game.players[0].life, 0);
+    assert_eq!(
+        game.events()[event_start..]
+            .iter()
+            .filter(|event| matches!(event, GameEvent::LifeLost { amount: 4, .. }))
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn a_shock_land_is_not_committed_until_its_replacement_choice_is_made() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::ANKH_OF_MISHRA, PlayerId::Two));
+    let event_start = game.events().len();
+
+    let decision = begin_shock_land_play(&mut game, cards::HALLOWED_FOUNTAIN);
+
+    assert_eq!(decision.kind, DecisionKind::Choice);
+    assert_eq!(decision.visibility, DecisionVisibility::Public);
+    assert_eq!((decision.minimum, decision.maximum), (1, 1));
+    assert!(!decision.cancellable);
+    assert_eq!(
+        decision
+            .options
+            .iter()
+            .map(|option| option.id)
+            .collect::<Vec<_>>(),
+        vec![0, 1],
+        "decline remains the stable first option and pay the second"
+    );
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .all(|card| card.id != CardInstanceId(10_500)),
+        "the proposed zone change has removed the card from its old zone"
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::HALLOWED_FOUNTAIN),
+        "the prospective permanent is not observable before replacements finish"
+    );
+    assert!(game.pending_triggers.is_empty());
+    assert!(game.stack.is_empty());
+    assert!(
+        game.events()[event_start..].iter().all(|event| !matches!(
+            event,
+            GameEvent::LandPlayed { .. } | GameEvent::AbilityTriggered { .. }
+        )),
+        "neither the committed land play nor entry-derived triggers exist yet"
+    );
+}
+
+#[test]
+fn shock_land_payment_or_decline_is_applied_before_ankh_observes_the_entry() {
     for (pay, tapped, life) in [(true, false, 18), (false, true, 20)] {
         let mut game = ready_game();
-        play_shock_land(&mut game, cards::HALLOWED_FOUNTAIN, pay);
+        game.battlefield
+            .push(creature(10_000, cards::ANKH_OF_MISHRA, PlayerId::Two));
+        let event_start = game.events().len();
+        let decision = begin_shock_land_play(&mut game, cards::HALLOWED_FOUNTAIN);
+        answer_shock_land_choice(&mut game, decision.id, pay);
 
-        assert_eq!(game.battlefield[0].tapped, tapped);
+        let entered = game
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::HALLOWED_FOUNTAIN)
+            .collect::<Vec<_>>();
+        assert_eq!(entered.len(), 1, "the proposed entry commits exactly once");
+        assert_eq!(entered[0].tapped, tapped);
+        assert_ne!(
+            entered[0].card.id,
+            CardInstanceId(10_500),
+            "the committed zone change creates the battlefield object"
+        );
         assert_eq!(game.players[0].life, life);
         assert!(game.pending_decisions.is_empty());
+
+        let events = &game.events()[event_start..];
+        let land_played = events
+            .iter()
+            .position(|event| {
+                matches!(
+                    event,
+                    GameEvent::LandPlayed {
+                        player: PlayerId::One,
+                        definition: cards::HALLOWED_FOUNTAIN,
+                        ..
+                    }
+                )
+            })
+            .expect("the completed event is logged once");
+        assert_eq!(
+            events
+                .iter()
+                .filter(|event| matches!(event, GameEvent::LandPlayed { .. }))
+                .count(),
+            1
+        );
+        let ankh_triggered = events
+            .iter()
+            .position(|event| {
+                matches!(
+                    event,
+                    GameEvent::AbilityTriggered {
+                        definition: cards::ANKH_OF_MISHRA,
+                        ..
+                    }
+                )
+            })
+            .expect("Ankh observes the committed battlefield entry");
+        assert!(land_played < ankh_triggered);
+        assert_eq!(game.stack.len(), 1, "the entry trigger is now on the stack");
+
+        let life_lost = events.iter().position(|event| {
+            matches!(
+                event,
+                GameEvent::LifeLost {
+                    player: PlayerId::One,
+                    amount: 2
+                }
+            )
+        });
+        if pay {
+            assert!(
+                life_lost.expect("paying logs life loss") < land_played,
+                "the replacement payment happens before the entry commits"
+            );
+        } else {
+            assert!(life_lost.is_none(), "declining does not lose life");
+        }
     }
+}
+
+#[test]
+fn replacement_effects_are_ordered_and_re_evaluated_before_entry_commits() {
+    let external_definition = CardDefinitionId(10_501);
+    let mut external = CardDefinition::new(
+        external_definition,
+        "Test entry restriction",
+        CardSet::Gatecrash,
+        false,
+        CardBehavior::Unsupported,
+    );
+    external.rules = CardRules::new_enchantment(ManaCost::new(2, 0))
+        .with_abilities(&TEST_OPPONENT_LANDS_ENTER_TAPPED_ABILITY);
+    synchronize_single_part_definition(&mut external);
+
+    let mut game = ready_game();
+    let shock = game
+        .catalog
+        .get(cards::HALLOWED_FOUNTAIN)
+        .expect("the real shock-land definition is cataloged")
+        .clone();
+    game.catalog = CardCatalog::new([external, shock]).unwrap();
+    game.battlefield
+        .push(creature(10_501, external_definition, PlayerId::Two));
+    game.players[0]
+        .hand
+        .push(card(10_500, cards::HALLOWED_FOUNTAIN, PlayerId::One));
+
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: CardInstanceId(10_500),
+            option: PlayOptionId::DEFAULT,
+        },
+    )
+    .unwrap();
+
+    let order = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the affected player orders the two applicable replacements");
+    assert_eq!(order.kind, DecisionKind::Choice);
+    assert_eq!(order.options.len(), 2);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::HALLOWED_FOUNTAIN)
+    );
+    let enter_tapped = order
+        .options
+        .iter()
+        .find(|option| option.ability_text.as_deref() == Some(TEST_OPPONENT_LAND_ENTRY_TEXT))
+        .expect("the external replacement is one of the ordered effects")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: order.id,
+            options: vec![enter_tapped],
+        },
+    )
+    .unwrap();
+
+    let payment = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("re-evaluation finds the shock land's remaining replacement");
+    assert_eq!(payment.kind, DecisionKind::Choice);
+    assert_eq!(
+        payment
+            .options
+            .iter()
+            .map(|option| option.id)
+            .collect::<Vec<_>>(),
+        vec![0, 1]
+    );
+    answer_shock_land_choice(&mut game, payment.id, true);
+
+    let entered = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::HALLOWED_FOUNTAIN)
+        .expect("the fully replaced event committed");
+    assert!(
+        entered.tapped,
+        "paying the shock-land cost does not undo another replacement's tapped modification"
+    );
+    assert_eq!(game.players[0].life, 18);
+}
+
+#[test]
+fn nested_replacement_effects_keep_their_source_controller_context() {
+    let external_definition = CardDefinitionId(10_501);
+    let mut external = CardDefinition::new(
+        external_definition,
+        "Test source-relative entry replacement",
+        CardSet::Gatecrash,
+        false,
+        CardBehavior::Unsupported,
+    );
+    external.rules = CardRules::new_enchantment(ManaCost::new(2, 0))
+        .with_abilities(&TEST_EXTERNAL_CONTEXT_ABILITY);
+    synchronize_single_part_definition(&mut external);
+
+    let mut game = ready_game();
+    let plains = game.catalog.get(cards::PLAINS).unwrap().clone();
+    let stage = game.catalog.get(cards::THESPIANS_STAGE).unwrap().clone();
+    game.catalog = CardCatalog::new([external, plains, stage]).unwrap();
+    game.battlefield.extend([
+        creature(10_501, external_definition, PlayerId::Two),
+        creature(10_502, cards::PLAINS, PlayerId::Two),
+    ]);
+    let stage = card(10_500, cards::THESPIANS_STAGE, PlayerId::One);
+    game.players[0].hand.push(stage.clone());
+
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: stage.id,
+            option: PlayOptionId::DEFAULT,
+        },
+    )
+    .unwrap();
+
+    let payment = game
+        .observe(PlayerId::Two)
+        .decision
+        .expect("the replacement source's controller is asked to pay");
+    assert_eq!(payment.player, PlayerId::Two);
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: payment.id,
+            options: vec![1],
+        },
+    )
+    .unwrap();
+
+    assert_eq!(game.players[0].life, i16::from(rules::STARTING_LIFE));
+    assert_eq!(game.players[1].life, i16::from(rules::STARTING_LIFE) - 2);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::THESPIANS_STAGE)
+            .expect("the land committed after the source-relative choice")
+            .tapped
+    );
 }
 
 #[test]
@@ -8980,7 +9731,14 @@ fn a_shock_land_asks_nothing_when_the_life_is_not_there() {
     game.players[0]
         .hand
         .push(card(10_500, cards::STEAM_VENTS, PlayerId::One));
-    game.play_land(PlayerId::One, CardInstanceId(10_500), PlayOptionId::DEFAULT);
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: CardInstanceId(10_500),
+            option: PlayOptionId::DEFAULT,
+        },
+    )
+    .unwrap();
 
     assert!(
         game.pending_decisions.is_empty(),
@@ -8988,15 +9746,46 @@ fn a_shock_land_asks_nothing_when_the_life_is_not_there() {
     );
     assert!(game.battlefield[0].tapped);
     assert_eq!(game.players[0].life, 1);
+    assert!(game.events().iter().all(|event| !matches!(
+        event,
+        GameEvent::LifeLost {
+            player: PlayerId::One,
+            ..
+        }
+    )));
 }
 
 #[test]
 fn paying_for_a_shock_land_at_exactly_two_life_loses_the_game() {
     let mut game = ready_game();
     game.players[0].life = 2;
-    play_shock_land(&mut game, cards::TEMPLE_GARDEN, true);
+    let event_start = game.events().len();
+    let decision = begin_shock_land_play(&mut game, cards::TEMPLE_GARDEN);
+    answer_shock_land_choice(&mut game, decision.id, true);
 
     assert_eq!(game.players[0].life, 0);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::TEMPLE_GARDEN)
+            .count(),
+        1,
+        "the land commits before state-based actions end the game"
+    );
+    let events = &game.events()[event_start..];
+    let life_lost = events
+        .iter()
+        .position(|event| matches!(event, GameEvent::LifeLost { amount: 2, .. }))
+        .expect("the payment is logged");
+    let land_played = events
+        .iter()
+        .position(|event| matches!(event, GameEvent::LandPlayed { .. }))
+        .expect("the land commits");
+    let game_ended = events
+        .iter()
+        .position(|event| matches!(event, GameEvent::GameEnded { .. }))
+        .expect("state-based actions end the game");
+    assert!(life_lost < land_played && land_played < game_ended);
     assert!(matches!(
         game.result,
         Some(GameResult::Winner {
@@ -10707,6 +11496,41 @@ fn flashback_exiles_a_spell_that_is_countered_or_fizzles() {
 }
 
 #[test]
+fn put_onto_battlefield_keeps_the_object_prospective_during_replacements() {
+    let mut game = ready_game();
+    let id = game
+        .put_onto_battlefield(PlayerId::One, cards::TEMPLE_GARDEN)
+        .expect("Temple Garden is in the catalog");
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the setup entry still applies the shock-land replacement");
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != id),
+        "the reserved object ID is not public before its replacement finishes"
+    );
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![0],
+        },
+    )
+    .unwrap();
+
+    let garden = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == id)
+        .expect("the reserved setup identity commits after the choice");
+    assert!(garden.tapped);
+    assert_eq!(garden.card.definition, cards::TEMPLE_GARDEN);
+}
+
+#[test]
 fn put_onto_battlefield_runs_the_entry_trigger() {
     // Thragtusk gains 5 life when it enters, so a board set up this way is a
     // real entry rather than a permanent appearing out of nowhere.
@@ -11982,6 +12806,33 @@ fn general_effect_zone_moves_consult_would_move_replacements() {
     assert!(game.battlefield.iter().any(|permanent| {
         permanent.controller == PlayerId::One && permanent.card.definition == cards::LOXODON_SMITER
     }));
+}
+
+#[test]
+fn a_smiters_replaced_discard_still_runs_battlefield_entry_replacements() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(19_062, cards::BLIND_OBEDIENCE, PlayerId::One));
+    let smiter = card(19_063, cards::LOXODON_SMITER, PlayerId::Two);
+    game.players[1].hand.push(smiter.clone());
+
+    game.discard_cards_with_cause(
+        PlayerId::Two,
+        &[smiter.id],
+        ZoneMoveCause::Effect {
+            controller: PlayerId::One,
+        },
+    );
+
+    let smiter = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::LOXODON_SMITER)
+        .expect("the replaced discard became a battlefield entry");
+    assert!(
+        smiter.tapped,
+        "Blind Obedience modifies the replacement's battlefield destination"
+    );
 }
 
 #[test]
@@ -13589,6 +14440,18 @@ fn burning_earth_burns_only_the_nonbasic_taps() {
     let foundry = game
         .put_onto_battlefield(PlayerId::Two, cards::SACRED_FOUNDRY)
         .expect("cataloged");
+    let entry = game
+        .observe(PlayerId::Two)
+        .decision
+        .expect("Sacred Foundry applies its entry replacement during setup");
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: entry.id,
+            options: vec![1],
+        },
+    )
+    .unwrap();
     let mountain = game
         .put_onto_battlefield(PlayerId::Two, cards::MOUNTAIN)
         .expect("cataloged");

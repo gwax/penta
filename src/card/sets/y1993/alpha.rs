@@ -3,8 +3,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
     CardType, CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    abilities, cards,
+    ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -1018,7 +1018,7 @@ pub(in crate::card::sets) static NEVINYRRALS_DISK: CardRecord = CardRecord::new(
     CardArt::new("12926dc8-8e6f-4a47-a12b-4d674189615a", "Mark Tedin"),
     CardSet::Alpha,
     CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[
-        AbilityDef::replacement("This artifact enters tapped.", EffectDef::EntersTapped),
+        abilities::enters_tapped("This artifact enters tapped."),
         AbilityDef::activated(
             "{1}, {T}: Destroy all artifacts, creatures, and enchantments.",
             &[
@@ -1189,10 +1189,7 @@ pub(in crate::card::sets) static TIME_VAULT: CardRecord = CardRecord::new(
     CardArt::new("902441dc-c976-4c92-b897-6376eaa0fe38", "Mark Tedin"),
     CardSet::Alpha,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
-        AbilityDef::replacement(
-            "This artifact enters tapped.",
-            EffectDef::EntersTapped,
-        ),
+        abilities::enters_tapped("This artifact enters tapped."),
         AbilityDef::static_ability(
             "This artifact doesn't untap during your untap step.",
             EffectDef::Special("Keep this artifact tapped during its controller's untap step"),
@@ -1201,8 +1198,9 @@ pub(in crate::card::sets) static TIME_VAULT: CardRecord = CardRecord::new(
             behavior: Some(CardBehavior::TimeVault),
             explanation: "The untap restriction is implemented by the shared untap procedure.",
         }),
-        AbilityDef::replacement(
+        AbilityDef::replacement_for(
             "If you would begin your turn while this artifact is tapped, you may skip that turn instead. If you do, untap this artifact.",
+            ReplacementEventDef::Special("begin your turn while this artifact is tapped"),
             EffectDef::Special("Optionally skip the turn to untap this artifact"),
         )
         .with_implementation(AbilityImplementationDef::CustomPartial {

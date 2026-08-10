@@ -735,7 +735,6 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::AddCounters { .. }
         | super::EffectDef::ChangeTextBasicLandType { .. }
         | super::EffectDef::BecomeCopyOf { .. }
-        | super::EffectDef::EntersTapped
         | super::EffectDef::CannotBeForcedToSacrifice
         | super::EffectDef::GrantFlashToNextSorcery
         | super::EffectDef::ExileLinkedToSource { .. }
@@ -743,6 +742,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::MakeUnblockableThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
         | super::EffectDef::MultiplyEventAmount(_)
+        | super::EffectDef::Replacement(_)
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Special(_) => {}
@@ -796,7 +796,6 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::AddCounters { .. }
         | super::EffectDef::ChangeTextBasicLandType { .. }
         | super::EffectDef::BecomeCopyOf { .. }
-        | super::EffectDef::EntersTapped
         | super::EffectDef::CannotBeForcedToSacrifice
         | super::EffectDef::GrantFlashToNextSorcery
         | super::EffectDef::ExileLinkedToSource { .. }
@@ -804,6 +803,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::MakeUnblockableThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
         | super::EffectDef::MultiplyEventAmount(_)
+        | super::EffectDef::Replacement(_)
         | super::EffectDef::MoveToZone { .. }
         | super::EffectDef::ChooseCreatureType { .. }
         | super::EffectDef::Special(_) => 0,
