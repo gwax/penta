@@ -728,7 +728,8 @@ mod tests {
             TriggerEventDef::DamageDealt { source, recipient } => {
                 recipient == EffectRecipientDef::Source && source == ObjectPredicateDef::Any
             }
-            TriggerEventDef::CombatDamageDealtToPlayer { source } => {
+            TriggerEventDef::CombatDamageDealtToPlayer { source }
+            | TriggerEventDef::DamageDealtToPlayer { source, .. } => {
                 shared_object_predicate(source)
             }
             TriggerEventDef::AbilityActivated(_)

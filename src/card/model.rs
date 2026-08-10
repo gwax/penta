@@ -1730,6 +1730,14 @@ pub enum TriggerEventDef {
     CombatDamageDealtToPlayer {
         source: ObjectPredicateDef,
     },
+    /// An object matching `source` dealt damage to a player by any means. The
+    /// combat variant is the narrower case; this one also sees an ability's
+    /// damage. `player` is read against the source's controller, so
+    /// "an opponent" excludes damage the source deals to its own side.
+    DamageDealtToPlayer {
+        source: ObjectPredicateDef,
+        player: PlayerRelation,
+    },
     ManaAdded(PlayerRelation),
     /// A state trigger (CR 603.8). It has no event at all: it triggers
     /// whenever its ability's condition is true, and does not trigger again

@@ -20623,3 +20623,46 @@ fn mana_drain_pays_out_at_its_controllers_next_main_phase() {
         "five for the Angel's mana value"
     );
 }
+
+#[test]
+fn hypnotic_specter_notices_damage_it_did_not_deal_in_combat() {
+    let mut game = ready_game();
+    game.step = Step::PrecombatMain;
+    game.battlefield
+        .push(creature(10_000, cards::HYPNOTIC_SPECTER, PlayerId::One));
+    game.players[1].hand.clear();
+    for index in 0..3 {
+        game.players[1]
+            .hand
+            .push(card(10_001 + index, cards::MOUNTAIN, PlayerId::Two));
+    }
+
+    // Damage from anything the Specter is the source of counts, which is what
+    // the card says and what a combat-only trigger missed.
+    game.damage_target_from(
+        Some(GameObjectId(10_000)),
+        Some(Target::Player(PlayerId::Two)),
+        1,
+    );
+    drain_pending(&mut game);
+    assert_eq!(game.players[1].hand.len(), 2, "it took a card");
+
+    // Its controller taking damage from it is not an opponent being hit.
+    game.players[0].hand.clear();
+    for index in 0..3 {
+        game.players[0]
+            .hand
+            .push(card(10_010 + index, cards::MOUNTAIN, PlayerId::One));
+    }
+    game.damage_target_from(
+        Some(GameObjectId(10_000)),
+        Some(Target::Player(PlayerId::One)),
+        1,
+    );
+    drain_pending(&mut game);
+    assert_eq!(
+        (game.players[0].hand.len(), game.players[1].hand.len()),
+        (3, 2),
+        "the card says an opponent, so hitting its own controller takes nothing"
+    );
+}

@@ -630,6 +630,11 @@ enum CommittedTriggerEvent {
         player: PlayerId,
         amount: u16,
     },
+    DamageDealtToPlayer {
+        object: TriggerEventObject,
+        player: PlayerId,
+        amount: u16,
+    },
     SpellCast {
         object: TriggerEventObject,
     },
@@ -666,6 +671,11 @@ impl CommittedTriggerEvent {
                 amount: Some(i32::from(*amount)),
             },
             Self::CombatDamageDealtToPlayer {
+                object,
+                player,
+                amount,
+            }
+            | Self::DamageDealtToPlayer {
                 object,
                 player,
                 amount,
@@ -3912,8 +3922,39 @@ impl Game {
                     ..
                 },
             ) => source == *actual_source,
-            _ => false,
+            _ => self.damage_to_player_trigger_matches(definition, event, source),
         }
+    }
+
+    /// The one trigger family that reads both what dealt the damage and who
+    /// took it, so "an opponent" excludes a source hitting its own side.
+    fn damage_to_player_trigger_matches(
+        &self,
+        definition: TriggerEventDef,
+        event: &CommittedTriggerEvent,
+        source: GameObjectId,
+    ) -> bool {
+        let (
+            TriggerEventDef::DamageDealtToPlayer {
+                source: predicate,
+                player,
+            },
+            CommittedTriggerEvent::DamageDealtToPlayer {
+                object,
+                player: damaged,
+                ..
+            },
+        ) = (definition, event)
+        else {
+            return false;
+        };
+        self.trigger_object_matches(predicate, object, source, false)
+            && self.player_relation_matches(
+                *damaged,
+                player,
+                object.controller,
+                TriggerContext::empty(),
+            )
     }
 
     /// Who controls an object, whether it is still on the battlefield or has
@@ -11256,6 +11297,7 @@ impl Game {
                 {
                     damager.dealt_damage_to_opponent_this_turn = true;
                 }
+                self.publish_damage_to_player(source, player, amount);
                 true
             }
             Some(Target::Permanent(id)) => {
@@ -15004,6 +15046,33 @@ impl Game {
                 .battlefield
                 .iter()
                 .any(|permanent| permanent.card.id == id && permanent.combat_damage_prevented))
+    }
+
+    /// Raises the event for damage a player took, whatever dealt it. Only a
+    /// battlefield source can be recognised, which is what every trigger that
+    /// reads this needs.
+    fn publish_damage_to_player(
+        &mut self,
+        source: Option<GameObjectId>,
+        player: PlayerId,
+        amount: u16,
+    ) {
+        if amount == 0 {
+            return;
+        }
+        let Some(source) = source.and_then(|source| {
+            self.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+        }) else {
+            return;
+        };
+        let event = CommittedTriggerEvent::DamageDealtToPlayer {
+            object: self.trigger_event_object(source),
+            player,
+            amount,
+        };
+        self.capture_battlefield_triggers(&event);
     }
 
     /// Combat damage from an attacker to a player, which is the one kind of

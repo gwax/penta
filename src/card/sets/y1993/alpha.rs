@@ -988,17 +988,15 @@ pub(in crate::card::sets) static HYPNOTIC_SPECTER: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::triggered(
             "Whenever this creature deals damage to an opponent, that player discards a card at random.",
-            TriggerEventDef::CombatDamageDealtToPlayer {
+            TriggerEventDef::DamageDealtToPlayer {
                 source: ObjectPredicateDef::Source,
+                player: PlayerRelation::Opponent,
             },
             EffectDef::DiscardAtRandom {
                 recipient: EffectRecipientDef::EventPlayer,
                 amount: ValueDef::Constant(1),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "Only combat damage is noticed; damage from an ability the Specter controls does not trigger it.",
-        )),
+        ),
     ]),
 );
 
