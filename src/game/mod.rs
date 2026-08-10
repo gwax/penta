@@ -7690,22 +7690,6 @@ impl Game {
     ) {
         let ability_target_slot = TargetSlotId(0);
         match behavior {
-            CardBehavior::Atog => {
-                actions.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|candidate| {
-                            candidate.controller == player && self.is_artifact_permanent(candidate)
-                        })
-                        .map(|candidate| Action::ActivateAbility {
-                            source: permanent.card.id,
-                            ability,
-                            targets: Vec::new(),
-                            cost_object: Some(candidate.card.id),
-                            x: 0,
-                        }),
-                );
-            }
             CardBehavior::GlassesOfUrza if !permanent.tapped => {
                 for target in [PlayerId::One, PlayerId::Two] {
                     actions.push(Action::ActivateAbility {
@@ -14282,19 +14266,6 @@ impl Game {
             return;
         }
         match behavior {
-            Some(CardBehavior::Atog) => {
-                if let Some(sacrificed) = cost_object {
-                    self.sacrifice_permanent(sacrificed);
-                    if let Some(atog) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == source)
-                    {
-                        atog.power_bonus += 2;
-                        atog.toughness_bonus += 2;
-                    }
-                }
-            }
             Some(CardBehavior::GlassesOfUrza) => {
                 let _ = self.tap_permanent(source);
                 if let Some(Target::Player(target)) = target {

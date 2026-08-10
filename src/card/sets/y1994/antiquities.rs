@@ -16,10 +16,20 @@ pub(in crate::card::sets) static ATOG: CardRecord = CardRecord::new(
     CardArt::new("2249fc40-4412-48fd-800a-7ea3678aee3f", "Jesper Myrfors"),
     CardSet::Antiquities,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Atog"], 1, 2).with_abilities(&[
-        AbilityDef::custom_partial(
+        AbilityDef::activated(
             "Sacrifice an artifact: This creature gets +2/+2 until end of turn.",
-            CardBehavior::Atog,
-            "The activated ability currently resolves immediately instead of using the stack.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::HasType(CardType::Artifact),
+                controller: PlayerRelation::You,
+            }],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(2),
+                    toughness: ValueDef::Constant(2),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
         ),
     ]),
 );

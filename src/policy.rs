@@ -872,10 +872,6 @@ impl HandcraftedPolicy {
         let score = match behavior {
             Some(CardBehavior::ChaosOrb) => 7_200 + target_score,
             Some(CardBehavior::DragonWhelp) => 5_200,
-            Some(CardBehavior::Atog) if self.atog_can_attack_for_lethal(observation, source) => {
-                10_000
-            }
-            Some(CardBehavior::Atog) => -100,
             Some(_) => 4_500 + target_score,
             None if declarative.is_some_and(|profile| {
                 profile.has(DeclarativeSpellProfile::REMOVES | DeclarativeSpellProfile::TAPS)
@@ -894,6 +890,13 @@ impl HandcraftedPolicy {
             ) =>
             {
                 -100
+            }
+            // Eating your own board to pump only pays when it wins.
+            None if source_definition.is_some_and(|definition| {
+                self.sacrifice_pump_wins_now(observation, source, definition, ability)
+            }) =>
+            {
+                10_000
             }
             None if declarative.is_some_and(|profile| {
                 profile.taps_source && profile.has(DeclarativeSpellProfile::APPLIES)
@@ -957,6 +960,14 @@ impl HandcraftedPolicy {
         {
             return true;
         }
+        // A pump paid for with a permanent is a wash unless it is lethal: the
+        // creature shrinks back at cleanup and the permanent is gone for good.
+        if source_definition.is_some_and(|definition| {
+            self.sacrifice_pump(definition, ability).is_some()
+                && !self.sacrifice_pump_wins_now(observation, source, definition, ability)
+        }) {
+            return true;
+        }
         // Animating a land turns a mana source into a creature that can be
         // killed, and the creature is worth nothing unless it can attack.
         // Animating one that is already a creature buys nothing at all.
@@ -1010,6 +1021,123 @@ impl HandcraftedPolicy {
                     })
                 )
             })
+    }
+
+    /// Whether a battlefield permanent satisfies a cost's predicate. Only the
+    /// shapes a sacrifice cost actually uses are recognised; anything else is
+    /// treated as no match, so the policy declines rather than guesses.
+    fn permanent_matches_predicate(
+        &self,
+        permanent: &crate::game::PermanentObservation,
+        predicate: ObjectPredicateDef,
+    ) -> bool {
+        match predicate {
+            ObjectPredicateDef::Any => true,
+            ObjectPredicateDef::HasType(expected) => self
+                .catalog
+                .get(permanent.definition)
+                .is_some_and(|card| card.rules.has_type(expected)),
+            _ => false,
+        }
+    }
+
+    /// The power an ability adds to its own source, and what its cost eats to
+    /// do it. Atog's shape: sacrifice a permanent, get bigger until end of
+    /// turn.
+    fn sacrifice_pump(
+        &self,
+        definition: CardDefinitionId,
+        origin: AbilityOrigin,
+    ) -> Option<(i16, ObjectPredicateDef)> {
+        let AbilityOrigin::Printed {
+            definition: origin_definition,
+            part,
+            ability,
+        } = origin
+        else {
+            return None;
+        };
+        if origin_definition != definition {
+            return None;
+        }
+        let ability = self
+            .catalog
+            .get(definition)
+            .and_then(|card| card.part(part))
+            .and_then(|part| part.rules.ability(ability))?;
+        let DeclarativeAbilityDef::Activated(activated) = ability.definition else {
+            return None;
+        };
+        let eaten = activated
+            .costs
+            .as_slice()
+            .iter()
+            .find_map(|cost| match cost {
+                AbilityCostDef::SacrificePermanent {
+                    object,
+                    controller: PlayerRelation::You,
+                } => Some(*object),
+                _ => None,
+            })?;
+        let Some(EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect:
+                crate::card::AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(power),
+                    ..
+                },
+            duration: crate::card::EffectDurationDef::UntilEndOfTurn,
+        }) = ability.declarative_effect()
+        else {
+            return None;
+        };
+        i16::try_from(power).ok().map(|power| (power, eaten))
+    }
+
+    /// Whether eating everything the cost can reach makes this attacker
+    /// lethal right now. Spending permanents on a pump is only worth it when
+    /// it ends the game: the creature is smaller again next turn and the
+    /// permanents are gone for good.
+    fn sacrifice_pump_wins_now(
+        &self,
+        observation: &PlayerObservation,
+        source: GameObjectId,
+        definition: CardDefinitionId,
+        origin: AbilityOrigin,
+    ) -> bool {
+        let Some((power, eaten)) = self.sacrifice_pump(definition, origin) else {
+            return false;
+        };
+        let Some(attacker) = observation
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.id == source)
+        else {
+            return false;
+        };
+        if !attacker.attacking
+            || observation
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.blocking == Some(source))
+        {
+            return false;
+        }
+        let food = observation
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == observation.viewer
+                    && permanent.id != source
+                    && self.permanent_matches_predicate(permanent, eaten)
+            })
+            .count();
+        let potential = attacker.power.unwrap_or(0).saturating_add(
+            i16::try_from(food)
+                .unwrap_or(i16::MAX)
+                .saturating_mul(power),
+        );
+        potential >= observation.life_totals[observation.viewer.opponent().index()]
     }
 
     /// Whether this permanent could still be declared as an attacker this
@@ -1220,44 +1348,6 @@ impl HandcraftedPolicy {
         }
         Self::collect_spell_effect_profile(ability.declarative_effect()?, 0, &mut profile);
         Some(profile)
-    }
-
-    fn atog_can_attack_for_lethal(
-        &self,
-        observation: &PlayerObservation,
-        source: GameObjectId,
-    ) -> bool {
-        let Some(atog) = observation
-            .battlefield
-            .iter()
-            .find(|permanent| permanent.id == source)
-        else {
-            return false;
-        };
-        if !atog.attacking
-            || observation
-                .battlefield
-                .iter()
-                .any(|permanent| permanent.blocking == Some(source))
-        {
-            return false;
-        }
-        let artifacts = observation
-            .battlefield
-            .iter()
-            .filter(|permanent| {
-                permanent.controller == observation.viewer
-                    && self
-                        .catalog
-                        .get(permanent.definition)
-                        .is_some_and(|card| card.rules.has_type(CardType::Artifact))
-            })
-            .count();
-        let potential_power = atog
-            .power
-            .unwrap_or(0)
-            .saturating_add(i16::try_from(artifacts.saturating_mul(2)).unwrap_or(i16::MAX));
-        potential_power >= observation.life_totals[observation.viewer.opponent().index()]
     }
 
     fn score_attack(&self, observation: &PlayerObservation, attacker: GameObjectId) -> i32 {

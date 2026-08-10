@@ -649,6 +649,13 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
     let atog = CardInstanceId(1);
     let vise = CardInstanceId(2);
     let mox = CardInstanceId(3);
+    // Scoring reads the real ability now, so a stand-in origin would find no
+    // sacrifice cost and no pump.
+    let atog_ability = AbilityOrigin::Printed {
+        definition: poc::cards::ATOG,
+        part: CardPartId::PRIMARY,
+        ability: AbilityId::PRIMARY,
+    };
     let mut attacking_atog = permanent(1, poc::cards::ATOG, PlayerId::One, Some(1), Some(2));
     attacking_atog.attacking = true;
     let mut observation = policy_observation(
@@ -661,14 +668,14 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
             Action::PassPriority,
             Action::ActivateAbility {
                 source: atog,
-                ability: PRIMARY_PRINTED_ABILITY,
+                ability: atog_ability,
                 targets: Vec::new(),
                 cost_object: Some(vise),
                 x: 0,
             },
             Action::ActivateAbility {
                 source: atog,
-                ability: PRIMARY_PRINTED_ABILITY,
+                ability: atog_ability,
                 targets: Vec::new(),
                 cost_object: Some(mox),
                 x: 0,
@@ -683,7 +690,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
         policy.choose_action(&observation),
         Some(Action::ActivateAbility {
             source: atog,
-            ability: PRIMARY_PRINTED_ABILITY,
+            ability: atog_ability,
             targets: Vec::new(),
             cost_object: Some(vise),
             x: 0,

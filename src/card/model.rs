@@ -3930,6 +3930,8 @@ pub enum CardBehavior {
     /// Legacy dispatch key retained for source compatibility; the card now
     /// uses a declarative blocking restriction and damage prevention.
     ArgothianPixies,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative sacrifice cost and pump.
     Atog,
     AugurOfBolas,
     Balance,
