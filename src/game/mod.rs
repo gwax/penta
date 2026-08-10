@@ -6370,6 +6370,31 @@ impl Game {
         for slot in slots {
             let candidates = self.targets_matching(slot.predicate);
             let mut choices = Vec::new();
+            if let Some(total) = slot.divided_total {
+                // Every chosen target takes at least one, so the number of
+                // targets follows from how the total is split.
+                for count in 1..=usize::from(total).min(candidates.len()) {
+                    for targets in target_combinations(&candidates, count) {
+                        for amounts in positive_compositions(total, count) {
+                            choices.push(TargetSelection::divided(
+                                slot.id,
+                                targets.clone(),
+                                amounts,
+                            ));
+                        }
+                    }
+                }
+                let mut combined = Vec::new();
+                for prefix in &selections {
+                    for choice in &choices {
+                        let mut selected = prefix.clone();
+                        selected.push(choice.clone());
+                        combined.push(selected);
+                    }
+                }
+                selections = combined;
+                continue;
+            }
             for count in slot.minimum..=slot.maximum {
                 choices.extend(
                     target_combinations(&candidates, usize::from(count))
@@ -6402,6 +6427,31 @@ impl Game {
             let candidates =
                 self.ability_targets_matching(slot.predicate, controller, source, context);
             let mut choices = Vec::new();
+            if let Some(total) = slot.divided_total {
+                // Every chosen target takes at least one, so the number of
+                // targets follows from how the total is split.
+                for count in 1..=usize::from(total).min(candidates.len()) {
+                    for targets in target_combinations(&candidates, count) {
+                        for amounts in positive_compositions(total, count) {
+                            choices.push(TargetSelection::divided(
+                                slot.id,
+                                targets.clone(),
+                                amounts,
+                            ));
+                        }
+                    }
+                }
+                let mut combined = Vec::new();
+                for prefix in &selections {
+                    for choice in &choices {
+                        let mut selected = prefix.clone();
+                        selected.push(choice.clone());
+                        combined.push(selected);
+                    }
+                }
+                selections = combined;
+                continue;
+            }
             for count in slot.minimum..=slot.maximum {
                 choices.extend(
                     target_combinations(&candidates, usize::from(count))
@@ -8318,12 +8368,32 @@ impl Game {
                 );
             }
             EffectDef::DealDamage { recipient, amount } => {
-                let amount = self
-                    .effect_value(amount, object, context)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
+                // A divided total is chosen per target when the spell is
+                // cast, so each one takes its own share rather than the same
+                // amount as everyone else.
+                let divided = matches!(amount, ValueDef::DividedAmongTargets);
+                let shared = if divided {
+                    0
+                } else {
+                    self.effect_value(amount, object, context)
+                        .max(0)
+                        .try_into()
+                        .unwrap_or(u16::MAX)
+                };
+                let slot = match recipient {
+                    EffectRecipientDef::Target(slot) => Some(slot),
+                    _ => None,
+                };
                 for target in self.effect_recipients(recipient, object, context) {
+                    let amount = if divided {
+                        slot.and_then(|slot| Self::divided_share(object, slot, target))
+                            .unwrap_or(0)
+                    } else {
+                        shared
+                    };
+                    if amount == 0 && divided {
+                        continue;
+                    }
                     self.damage_target_from(
                         object.source.or(Some(object.id)),
                         Some(target),
@@ -8752,6 +8822,9 @@ impl Game {
                 .and_then(|source| self.current_or_last_known_toughness(source))
                 .map_or(0, i32::from),
             ValueDef::TriggerEventAmount => context.amount.unwrap_or(0),
+            // Resolved per target by the divided-damage path; anything else
+            // reading it has no target in hand and so no share.
+            ValueDef::DividedAmongTargets => 0,
             ValueDef::CountersOnSource(kind) => object.source.map_or(0, |source| {
                 i32::from(self.current_or_last_known_counters(source, kind))
             }),
@@ -8784,6 +8857,24 @@ impl Game {
                 object.source.unwrap_or(object.id),
                 object.controller,
             )),
+            ValueDef::IfTargetMatches(_)
+            | ValueDef::IfMatchingObjectCount(_)
+            | ValueDef::IfCreatureDiedThisTurn(_) => {
+                self.conditional_effect_value(value, object, context)
+            }
+            ValueDef::Negate(inner) => -self.effect_value(*inner, object, context),
+        }
+    }
+
+    /// The values that pick between two branches. They live apart from the
+    /// rest so the one place that reads every value stays readable.
+    fn conditional_effect_value(
+        &self,
+        value: ValueDef,
+        object: &StackObject,
+        context: TriggerContext,
+    ) -> i32 {
+        match value {
             ValueDef::IfTargetMatches(condition) => {
                 let source = object.source.unwrap_or(object.id);
                 let matched = self
@@ -8838,7 +8929,8 @@ impl Game {
                 };
                 self.effect_value(chosen, object, context)
             }
-            ValueDef::Negate(inner) => self.effect_value(*inner, object, context).saturating_neg(),
+            // The caller only routes conditional values here.
+            _ => 0,
         }
     }
 
@@ -9117,6 +9209,24 @@ impl Game {
             ComparisonDef::AtMost => count <= amount,
             ComparisonDef::Exactly => count == amount,
         }
+    }
+
+    /// How much of a divided total one target takes, read off the selection
+    /// frozen when the object was put on the stack.
+    fn divided_share(object: &StackObject, slot: TargetSlotId, target: Target) -> Option<u16> {
+        object
+            .signature
+            .as_ref()
+            .map(CastSignature::targets)
+            .or_else(|| {
+                object
+                    .ability
+                    .as_ref()
+                    .map(|ability| ability.targets.as_slice())
+            })?
+            .iter()
+            .find(|selection| selection.slot() == slot)?
+            .amount_for(target)
     }
 
     /// The targets frozen into one slot when the object was put on the stack,
@@ -15062,6 +15172,27 @@ fn public_cards(cards: &[CardInstance]) -> Vec<PublicCard> {
         .iter()
         .map(|card| (card.id, card.definition))
         .collect()
+}
+
+/// Every way to split `total` into exactly `parts` positive whole numbers,
+/// in order. This is what "divided as you choose" enumerates.
+fn positive_compositions(total: u8, parts: usize) -> Vec<Vec<u16>> {
+    if parts == 0 {
+        return if total == 0 {
+            vec![Vec::new()]
+        } else {
+            Vec::new()
+        };
+    }
+    let mut result = Vec::new();
+    for first in 1..=total.saturating_sub(u8::try_from(parts - 1).unwrap_or(u8::MAX)) {
+        for mut rest in positive_compositions(total - first, parts - 1) {
+            let mut composition = vec![u16::from(first)];
+            composition.append(&mut rest);
+            result.push(composition);
+        }
+    }
+    result
 }
 
 fn flatten_target_selections(selections: &[TargetSelection]) -> Vec<Target> {

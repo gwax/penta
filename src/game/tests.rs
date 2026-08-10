@@ -7168,6 +7168,7 @@ fn one_ability_target_slot_resolves_for_every_selected_legal_target() {
         },
         minimum: 1,
         maximum: 2,
+        divided_total: None,
     }];
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::activated(
         "Deal 1 damage to up to two target creatures an opponent controls.",
@@ -17601,3 +17602,92 @@ static TURN_TEST_ANIMATION: crate::card::AnimationDef = crate::card::AnimationDe
         &["Weird"],
         crate::card::ColorSet::from_colors(&[crate::card::ManaColor::Red]),
     );
+
+#[test]
+fn flames_of_the_firebrand_splits_its_three_damage() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let lions = game
+        .put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.players[0].hand = vec![card(23_000, cards::FLAMES_OF_THE_FIREBRAND, PlayerId::One)];
+    game.players[0].mana_pool = ManaPool {
+        red: 1,
+        colorless: 2,
+        ..ManaPool::default()
+    };
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let casts = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { .. }))
+        .collect::<Vec<_>>();
+    // Every split is offered: all three to one target, or two and one, or one
+    // each. Piling all three onto one creature is a single target, not three.
+    let shares = |action: &Action| {
+        let Action::CastSpell { choices, .. } = action else {
+            return Vec::new();
+        };
+        choices
+            .targets()
+            .iter()
+            .flat_map(|selection| selection.amounts().to_vec())
+            .collect::<Vec<_>>()
+    };
+    assert!(
+        casts.iter().any(|action| shares(action) == vec![3]),
+        "three to a single target"
+    );
+    assert!(
+        casts.iter().any(|action| shares(action) == vec![2, 1]),
+        "two and one"
+    );
+    assert!(
+        casts
+            .iter()
+            .all(|action| shares(action).iter().sum::<u16>() == 3),
+        "every split spends exactly three"
+    );
+    assert!(
+        casts
+            .iter()
+            .all(|action| shares(action).iter().all(|share| *share > 0)),
+        "and no target is chosen for nothing"
+    );
+
+    // Two to the Lions kills them; one to the Angel does not.
+    let split = casts
+        .into_iter()
+        .find(|action| {
+            let Action::CastSpell { choices, .. } = action else {
+                return false;
+            };
+            choices.targets().iter().any(|selection| {
+                selection.amount_for(Target::Permanent(lions)) == Some(2)
+                    && selection.amount_for(Target::Permanent(angel)) == Some(1)
+            })
+        })
+        .expect("two to the Lions and one to the Angel is a legal split");
+    game.apply(PlayerId::One, split).unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == lions),
+        "the Lions took lethal"
+    );
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel)
+        .expect("the Angel survived");
+    assert_eq!(angel.damage, 1, "and took only its share");
+}

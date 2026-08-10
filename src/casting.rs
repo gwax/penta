@@ -54,12 +54,32 @@ impl CostConfiguration {
 pub struct TargetSelection {
     slot: TargetSlotId,
     targets: Vec<Target>,
+    /// How much of a divided total each target takes, parallel to `targets`.
+    /// Empty for every ordinary slot, where the effect applies whole to each
+    /// target rather than being split among them.
+    amounts: Vec<u16>,
 }
 
 impl TargetSelection {
     #[must_use]
     pub fn new(slot: TargetSlotId, targets: Vec<Target>) -> Self {
-        Self { slot, targets }
+        Self {
+            slot,
+            targets,
+            amounts: Vec::new(),
+        }
+    }
+
+    /// A slot whose effect is divided as its controller chooses. Each target
+    /// takes the amount at the same position.
+    #[must_use]
+    pub fn divided(slot: TargetSlotId, targets: Vec<Target>, amounts: Vec<u16>) -> Self {
+        debug_assert_eq!(targets.len(), amounts.len());
+        Self {
+            slot,
+            targets,
+            amounts,
+        }
     }
 
     #[must_use]
@@ -75,6 +95,21 @@ impl TargetSelection {
     #[must_use]
     pub fn targets(&self) -> &[Target] {
         &self.targets
+    }
+
+    #[must_use]
+    pub fn amounts(&self) -> &[u16] {
+        &self.amounts
+    }
+
+    /// How much this target takes of a divided total, or nothing when the
+    /// slot is not divided.
+    #[must_use]
+    pub fn amount_for(&self, target: Target) -> Option<u16> {
+        self.targets
+            .iter()
+            .position(|candidate| *candidate == target)
+            .and_then(|index| self.amounts.get(index).copied())
     }
 }
 

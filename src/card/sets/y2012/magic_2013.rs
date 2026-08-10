@@ -141,10 +141,23 @@ pub(in crate::card::sets) static FLAMES_OF_THE_FIREBRAND: CardRecord = CardRecor
     CardArt::new("aca215b1-7b98-49ce-afae-eeb61058125a", "Steve Argyle"),
     CardSet::Magic2013,
     CardRules::new_sorcery(mana_cost!("{2}{R}")).with_ability(
-        AbilityDef::not_implemented(
+        AbilityDef::spell(
             "Flames of the Firebrand deals 3 damage divided as you choose among one, two, or three targets.",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                amount: ValueDef::DividedAmongTargets,
+            },
+        )
+        .with_targets(&[AbilityTargetDef {
+            id: TargetSlotId(0),
+            label: "any target",
+            predicate: AbilityTargetPredicate::AnyTarget,
+            // One, two, or three targets is not a separate rule: three damage
+            // split with every share at least one says the same thing.
+            minimum: 1,
+            maximum: 3,
+            divided_total: Some(3),
+        }]),
     ),
 );
 
@@ -614,6 +627,7 @@ pub(in crate::card::sets) static WAR_PRIEST_OF_THUNE: CardRecord = CardRecord::n
             // trigger does nothing, so the minimum is zero rather than one.
             minimum: 0,
             maximum: 1,
+            divided_total: None,
         }]),
     ]),
 );

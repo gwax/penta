@@ -662,6 +662,10 @@ pub struct AbilityTargetDef {
     pub predicate: AbilityTargetPredicate,
     pub minimum: u8,
     pub maximum: u8,
+    /// The total this slot divides among its targets, when the card says
+    /// "divided as you choose". Every chosen target takes at least one, which
+    /// is what makes the number of targets a consequence of the division.
+    pub divided_total: Option<u8>,
 }
 
 impl AbilityTargetDef {
@@ -677,6 +681,7 @@ impl AbilityTargetDef {
             predicate,
             minimum: 1,
             maximum: 1,
+            divided_total: None,
         }
     }
 
@@ -695,6 +700,7 @@ impl AbilityTargetDef {
             predicate,
             minimum: 0,
             maximum,
+            divided_total: None,
         }
     }
 
@@ -1053,6 +1059,9 @@ pub enum ValueDef {
     /// One value when exactly that many objects match, another otherwise.
     /// This is how an intervening-if condition becomes an amount.
     IfMatchingObjectCount(&'static CountConditionDef),
+    /// How much of a divided total the target being affected takes. Only
+    /// meaningful for an effect aimed at a slot the card divides.
+    DividedAmongTargets,
 }
 
 /// An object or player affected by an effect. Targets are chosen when a spell
@@ -2535,6 +2544,10 @@ pub struct TargetSlotDef {
     pub predicate: TargetPredicate,
     pub minimum: u8,
     pub maximum: u8,
+    /// The total this slot divides among its targets, when the card says
+    /// "divided as you choose". Every chosen target takes at least one, which
+    /// is what makes the number of targets a consequence of the division.
+    pub divided_total: Option<u8>,
 }
 
 impl TargetSlotDef {
@@ -2550,6 +2563,25 @@ impl TargetSlotDef {
             predicate,
             minimum: 1,
             maximum: 1,
+            divided_total: None,
+        }
+    }
+
+    /// "N damage divided as you choose among one, two, or three targets."
+    #[must_use]
+    pub fn divided(
+        id: TargetSlotId,
+        label: impl Into<String>,
+        predicate: TargetPredicate,
+        total: u8,
+    ) -> Self {
+        Self {
+            id,
+            label: label.into(),
+            predicate,
+            minimum: 1,
+            maximum: total,
+            divided_total: Some(total),
         }
     }
 }
@@ -2618,6 +2650,7 @@ impl AbilityTargetDef {
             AbilityTargetPredicate::Object { .. } => return None,
         };
         Some(TargetSlotDef {
+            divided_total: None,
             id: self.id,
             label: self.label.into(),
             predicate,

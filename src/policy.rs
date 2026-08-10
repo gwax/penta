@@ -349,6 +349,7 @@ impl HandcraftedPolicy {
             | ValueDef::CountMatchingObjects(_)
             | ValueDef::AnyMatchingObject(_)
             | ValueDef::CountersOnSource(_)
+            | ValueDef::DividedAmongTargets
             | ValueDef::IfCreatureDiedThisTurn(_)
             | ValueDef::IfTargetMatches(_)
             | ValueDef::IfMatchingObjectCount(_)

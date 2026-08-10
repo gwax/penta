@@ -1991,6 +1991,9 @@ fn cast_signature_value(signature: &penta::CastSignature, human: PlayerId) -> Va
                     Target::Spell(id) => Some(id.0),
                     Target::Player(_) | Target::Card(_) | Target::Permanent(_) => None,
                 }).collect::<Vec<_>>(),
+                // Present only for a slot the card divides; each entry is the
+                // share of the target at the same position.
+                "amounts": selection.amounts(),
             })
         })
         .collect::<Vec<_>>();
@@ -2877,6 +2880,7 @@ mod tests {
                 "x": 6,
                 "targetSelections": [{
                     "slotId": 7,
+                    "amounts": [],
                     "targetCardIds": [8],
                     "targetPlayers": ["opponent"],
                     "targetStackIds": [9],

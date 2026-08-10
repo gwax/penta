@@ -2292,6 +2292,7 @@ mod tests {
             predicate: TargetPredicate::AnyTarget,
             minimum,
             maximum,
+            divided_total: None,
         }
     }
 
@@ -2311,6 +2312,7 @@ mod tests {
             predicate: AbilityTargetPredicate::AnyTarget,
             minimum,
             maximum,
+            divided_total: None,
         }
     }
 

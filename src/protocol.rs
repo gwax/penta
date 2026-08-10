@@ -46,7 +46,7 @@ use crate::{
 /// exposes the priority window between first-strike and regular combat damage
 /// and adds newly executable keyword and alternative-casting actions to
 /// legal-action lists.
-pub const PROTOCOL_VERSION: u32 = 8;
+pub const PROTOCOL_VERSION: u32 = 9;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -276,6 +276,9 @@ fn target_selections_json(selections: &[crate::TargetSelection]) -> Vec<Value> {
                     .copied()
                     .map(target_json)
                     .collect::<Vec<_>>(),
+                // Present only for a slot the card divides; each entry is the
+                // share of the target at the same position.
+                "amounts": selection.amounts(),
             })
         })
         .collect()
