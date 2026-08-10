@@ -1769,6 +1769,9 @@ impl Game {
         self.format
     }
 
+    /// The seed the libraries were shuffled from. It reproduces the whole
+    /// game, so it belongs to whoever owns the engine rather than to a seat.
+    /// [`Self::events_for`] keeps it out of a seat's event stream.
     #[must_use]
     pub const fn seed(&self) -> u64 {
         self.seed
@@ -2010,8 +2013,28 @@ impl Game {
     ///
     /// This is intended for replays and debugging. Give bots
     /// [`PlayerObservation`] rather than this event stream.
+    /// The raw event log, seed and all. This is not safe to hand to a seat:
+    /// see [`Self::events_for`], which is.
     pub fn events(&self) -> &[GameEvent] {
         &self.events
+    }
+
+    /// The events one seat may see.
+    ///
+    /// The raw log opens with [`GameEvent::GameStarted`], and that carries the
+    /// seed the libraries were shuffled from. Decklists are public, so a seat
+    /// holding the seed can reconstruct both libraries in order -- the
+    /// opponent's hand and every draw either player will make. It is dropped
+    /// here rather than redacted, because a client already knows a game
+    /// started; [`Self::seed`] is how a local viewer, or a finished game,
+    /// gets it deliberately.
+    #[must_use]
+    pub fn events_for(&self, _viewer: PlayerId) -> Vec<GameEvent> {
+        self.events
+            .iter()
+            .filter(|event| !matches!(event, GameEvent::GameStarted { .. }))
+            .cloned()
+            .collect()
     }
 
     #[must_use]

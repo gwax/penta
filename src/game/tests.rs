@@ -6166,6 +6166,34 @@ fn a_timetwister_that_decks_both_players_is_a_draw() {
 }
 
 #[test]
+fn a_seats_event_stream_withholds_the_seed() {
+    // Decklists are public. Hand a seat the seed and they can shuffle both
+    // libraries themselves, which is the opponent's hand and every draw
+    // either player will make. It has to stay out of anything a seat is sent.
+    let game = ready_game();
+    assert!(
+        game.events()
+            .iter()
+            .any(|event| matches!(event, GameEvent::GameStarted { .. })),
+        "the raw log records it, which is why the projection has work to do"
+    );
+    for seat in [PlayerId::One, PlayerId::Two] {
+        assert!(
+            !game
+                .events_for(seat)
+                .iter()
+                .any(|event| matches!(event, GameEvent::GameStarted { .. })),
+            "{seat:?} must not be handed the seed"
+        );
+    }
+    assert_eq!(
+        game.events_for(PlayerId::One).len(),
+        game.events().len() - 1,
+        "and nothing else is withheld yet"
+    );
+}
+
+#[test]
 fn cleanup_without_a_discard_advances_without_priority() {
     let mut game = ready_game();
     game.step = Step::End;

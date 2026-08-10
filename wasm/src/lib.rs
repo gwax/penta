@@ -1278,12 +1278,19 @@ impl WebGame {
             }),
             GameResult::Draw => json!({"outcome": "draw", "message": "Draw"}),
         });
-        let events = self
-            .game
-            .events()
-            .iter()
+        // `events_for` withholds the seed. This client owns the engine, so it
+        // may still show it; a remote one would not have it to show.
+        let seat_events = self.game.events_for(self.human);
+        let events = std::iter::once(Some(format!("Game started · seed {}", self.game.seed())))
+            .chain(
+                seat_events
+                    .iter()
+                    .map(|event| self.event_label(&observation, event)),
+            )
+            .collect::<Vec<_>>()
+            .into_iter()
             .rev()
-            .filter_map(|event| self.event_label(&observation, event))
+            .flatten()
             .take(16)
             .collect::<Vec<_>>();
         let opponent_actions = if include_opponent_actions {
@@ -1573,7 +1580,6 @@ impl WebGame {
     #[allow(clippy::too_many_lines)]
     fn event_label(&self, observation: &PlayerObservation, event: &GameEvent) -> Option<String> {
         match event {
-            GameEvent::GameStarted { seed } => Some(format!("Game started · seed {seed}")),
             GameEvent::CardDrawn { player, card } if *player == self.human => Some(format!(
                 "You drew {}",
                 self.instance_name(observation, *card)
@@ -1725,7 +1731,10 @@ impl WebGame {
                 GameResult::Winner { .. } => "Opponent won".into(),
                 GameResult::Draw => "Game ended in a draw".into(),
             }),
-            GameEvent::ManaAdded { .. }
+            // GameStarted never reaches here: `events_for` withholds it, and
+            // the seed line is added from the engine where the log is built.
+            GameEvent::GameStarted { .. }
+            | GameEvent::ManaAdded { .. }
             | GameEvent::SpellResolved { .. }
             | GameEvent::AbilityResolved { .. }
             | GameEvent::TriggeredAbilityPutOnStack { .. }
