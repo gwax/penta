@@ -8730,7 +8730,7 @@ fn doom_blade_destroys_a_nonblack_creature_but_not_a_black_one() {
     ]);
 
     let named: Vec<_> = game
-        .legal_target_lists(CardBehavior::DoomBlade, 0, PlayerId::One, None)
+        .legal_target_lists(CardBehavior::DoomBlade, PlayerId::One, None)
         .into_iter()
         .filter_map(|choice| match choice.first() {
             Some(Target::Permanent(id)) => Some(*id),
@@ -8773,7 +8773,7 @@ fn negate_and_essence_scatter_split_the_stack_by_card_kind() {
         .push(spell(10_002, cards::LIGHTNING_BOLT, PlayerId::Two, 0));
 
     let spells_hit = |game: &Game, behavior| -> Vec<StackObjectId> {
-        game.legal_target_lists(behavior, 0, PlayerId::One, None)
+        game.legal_target_lists(behavior, PlayerId::One, None)
             .into_iter()
             .filter_map(|choice| match choice.first() {
                 Some(Target::Spell(id)) => Some(*id),
@@ -8827,7 +8827,7 @@ fn dispel_counters_only_instants() {
         .push(spell(10_002, cards::ARMAGEDDON, PlayerId::Two, 0)); // sorcery
 
     let hit: Vec<_> = game
-        .legal_target_lists(CardBehavior::Dispel, 0, PlayerId::One, None)
+        .legal_target_lists(CardBehavior::Dispel, PlayerId::One, None)
         .into_iter()
         .filter_map(|choice| match choice.first() {
             Some(Target::Spell(id)) => Some(*id),
@@ -8850,7 +8850,7 @@ fn ultimate_price_spares_multicolored_creatures() {
     ]);
 
     let named: Vec<_> = game
-        .legal_target_lists(CardBehavior::UltimatePrice, 0, PlayerId::One, None)
+        .legal_target_lists(CardBehavior::UltimatePrice, PlayerId::One, None)
         .into_iter()
         .filter_map(|choice| match choice.first() {
             Some(Target::Permanent(id)) => Some(*id),
@@ -9099,7 +9099,7 @@ fn putrefy_kills_a_creature_or_an_artifact_without_regeneration() {
     ]);
 
     let named: Vec<_> = game
-        .legal_target_lists(CardBehavior::Putrefy, 0, PlayerId::One, None)
+        .legal_target_lists(CardBehavior::Putrefy, PlayerId::One, None)
         .into_iter()
         .filter_map(|choice| match choice.first() {
             Some(Target::Permanent(id)) => Some(*id),
@@ -9322,6 +9322,23 @@ fn intimidate_only_lets_artifacts_and_matching_colours_block() {
     );
 }
 
+/// Every permanent a card in hand can legally be aimed at, read off the real
+/// cast actions rather than a behavior-keyed target list.
+fn castable_targets(game: &Game, player: PlayerId, spell: GameObjectId) -> Vec<GameObjectId> {
+    game.legal_actions(player)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == spell => {
+                choices.iter_targets().find_map(|target| match target {
+                    Target::Permanent(id) => Some(*id),
+                    _ => None,
+                })
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 #[test]
 fn hexproof_stops_opponents_targeting_but_not_its_controller() {
     let mut game = ready_game();
@@ -9331,18 +9348,26 @@ fn hexproof_stops_opponents_targeting_but_not_its_controller() {
         PlayerId::Two,
     ));
 
-    let opponent_targets = game.legal_target_lists(CardBehavior::Terror, 0, PlayerId::One, None);
-    assert!(
-        opponent_targets.is_empty(),
-        "an opponent cannot target hexproof"
-    );
-
-    let own_targets = game.legal_target_lists(CardBehavior::Terror, 0, PlayerId::Two, None);
-    assert_eq!(
-        own_targets.len(),
-        1,
-        "its own controller still can, hexproof only stops opponents"
-    );
+    for player in [PlayerId::One, PlayerId::Two] {
+        let terror = card(
+            20_000 + u32::from(player == PlayerId::Two),
+            cards::TERROR,
+            player,
+        );
+        game.players[player.index()].hand.push(terror.clone());
+        game.add_unrestricted_mana(player, ManaColor::Black, 2);
+        game.priority = player;
+        let targets = castable_targets(&game, player, terror.id);
+        if player == PlayerId::One {
+            assert!(targets.is_empty(), "an opponent cannot target hexproof");
+        } else {
+            assert_eq!(
+                targets,
+                vec![GameObjectId(10_001)],
+                "its own controller still can, hexproof only stops opponents"
+            );
+        }
+    }
 }
 
 #[test]
@@ -9516,19 +9541,29 @@ fn protection_reads_the_printed_colours_not_a_list_of_card_names() {
     ));
 
     // Swords to Plowshares is white, Terror is black, Lightning Bolt is red.
-    for (behavior, blocked) in [
-        (CardBehavior::SwordsToPlowshares, true),
-        (CardBehavior::Terror, true),
-        (CardBehavior::LightningBolt, false),
-    ] {
-        let targets = game.legal_target_lists(behavior, 0, PlayerId::One, None);
-        let names_baron = targets.iter().any(|choice| {
-            matches!(choice.first(), Some(Target::Permanent(id)) if *id == CardInstanceId(10_001))
-        });
+    for color in [ManaColor::White, ManaColor::Black, ManaColor::Red] {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+    for (index, (definition, blocked)) in [
+        (cards::SWORDS_TO_PLOWSHARES, true),
+        (cards::TERROR, true),
+        (cards::LIGHTNING_BOLT, false),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let spell = card(
+            20_100 + u32::try_from(index).unwrap(),
+            definition,
+            PlayerId::One,
+        );
+        game.players[0].hand.push(spell.clone());
+        let names_baron =
+            castable_targets(&game, PlayerId::One, spell.id).contains(&GameObjectId(10_001));
         assert_eq!(
             names_baron,
             !blocked,
-            "{behavior:?} targeting Blood Baron should be {}",
+            "{definition:?} targeting Blood Baron should be {}",
             if blocked { "blocked" } else { "allowed" }
         );
     }
@@ -9544,26 +9579,27 @@ fn the_old_school_knights_keep_their_protection() {
     game.battlefield
         .push(creature(10_002, cards::BLACK_KNIGHT, PlayerId::Two));
 
-    let hit_by = |game: &Game, behavior| -> Vec<CardInstanceId> {
-        game.legal_target_lists(behavior, 0, PlayerId::One, None)
-            .into_iter()
-            .filter_map(|choice| match choice.first() {
-                Some(Target::Permanent(id)) => Some(*id),
-                _ => None,
-            })
-            .collect()
+    for color in [ManaColor::White, ManaColor::Black] {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+    let mut next_id = 20_200;
+    let mut hit_by = |game: &mut Game, definition| -> Vec<GameObjectId> {
+        let spell = card(next_id, definition, PlayerId::One);
+        next_id += 1;
+        game.players[0].hand.push(spell.clone());
+        castable_targets(game, PlayerId::One, spell.id)
     };
 
     // Terror is black and cannot touch White Knight. It could not touch Black
     // Knight either, but only because Black Knight is black, so the white
     // Swords to Plowshares is what shows protection working the other way.
-    let by_black = hit_by(&game, CardBehavior::Terror);
+    let by_black = hit_by(&mut game, cards::TERROR);
     assert!(
         !by_black.contains(&CardInstanceId(10_001)),
         "White Knight has protection from black"
     );
 
-    let by_white = hit_by(&game, CardBehavior::SwordsToPlowshares);
+    let by_white = hit_by(&mut game, cards::SWORDS_TO_PLOWSHARES);
     assert!(
         !by_white.contains(&CardInstanceId(10_002)),
         "Black Knight has protection from white"

@@ -24,6 +24,28 @@ pub(in crate::card::sets) static ATOG: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The mana value is read off the spell's own X, so what Detonate can hit
+/// depends on what was paid for it.
+static DETONATE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::ManaValueEqualTo(ValueDef::ChosenX),
+    ]),
+)];
+
+/// The damage reads the controller as the spell resolves, so it still lands
+/// even though the artifact has just been destroyed.
+static DETONATE_EFFECT: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: false,
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+        amount: ValueDef::ChosenX,
+    },
+];
+
 pub(in crate::card::sets) static DETONATE: CardRecord = CardRecord::new(
     cards::DETONATE,
     "Detonate",
@@ -33,10 +55,10 @@ pub(in crate::card::sets) static DETONATE: CardRecord = CardRecord::new(
     ),
     CardSet::Antiquities,
     CardRules::new_sorcery(mana_cost!("{X}{R}")).with_abilities(&[
-        AbilityDef::custom_partial(
+        AbilityDef::spell_with_targets(
             "Destroy target artifact with mana value X. It can't be regenerated. Detonate deals X damage to that artifact's controller.",
-            CardBehavior::Detonate,
-            "Artifact destruction and damage are implemented by the legacy resolver, but the no-regeneration clause is not enforced.",
+            &DETONATE_TARGET,
+            EffectDef::Sequence(&DETONATE_EFFECT),
         ),
     ]),
 );

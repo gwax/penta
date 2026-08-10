@@ -4771,12 +4771,7 @@ impl Game {
                 return vec![signature.targets().to_vec()];
             };
             let mut choices = self
-                .legal_target_lists(
-                    behavior,
-                    signature.x(),
-                    player,
-                    Some(signature.iter_targets().count()),
-                )
+                .legal_target_lists(behavior, player, Some(signature.iter_targets().count()))
                 .into_iter()
                 .map(|targets| {
                     if targets.is_empty() {
@@ -6417,7 +6412,7 @@ impl Game {
                                         x,
                                     )
                                 } else if Self::uses_legacy_behavior_targets(definition, option) {
-                                    self.legacy_target_selections(behavior, x, player)
+                                    self.legacy_target_selections(behavior, player)
                                 } else {
                                     self.legal_target_selections(&declared_slots, x)
                                 };
@@ -6954,10 +6949,9 @@ impl Game {
     fn legacy_target_selections(
         &self,
         behavior: CardBehavior,
-        x: u16,
         player: PlayerId,
     ) -> Vec<Vec<TargetSelection>> {
-        self.legal_target_lists(behavior, x, player, None)
+        self.legal_target_lists(behavior, player, None)
             .into_iter()
             .map(|targets| {
                 if targets.is_empty() {
@@ -7261,11 +7255,10 @@ impl Game {
     fn legal_target_lists(
         &self,
         behavior: CardBehavior,
-        x: u16,
         player: PlayerId,
         exact_count: Option<usize>,
     ) -> Vec<Vec<Target>> {
-        self.printed_target_lists(behavior, x, player, exact_count)
+        self.printed_target_lists(behavior, player, exact_count)
             .into_iter()
             .filter(|choice| {
                 choice.iter().all(|target| match target {
@@ -7291,7 +7284,6 @@ impl Game {
     fn printed_target_lists(
         &self,
         behavior: CardBehavior,
-        x: u16,
         player: PlayerId,
         exact_count: Option<usize>,
     ) -> Vec<Vec<Target>> {
@@ -7373,18 +7365,6 @@ impl Game {
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
-            CardBehavior::Terror => self
-                .battlefield
-                .iter()
-                .filter(|permanent| {
-                    self.power(permanent).is_some()
-                        && !self.is_artifact_permanent(permanent)
-                        && !self
-                            .effective_rules(permanent)
-                            .is_some_and(|rules| rules.colors()[2])
-                })
-                .map(|permanent| vec![Target::Permanent(permanent.card.id)])
-                .collect(),
             CardBehavior::Berserk => self
                 .battlefield
                 .iter()
@@ -7397,15 +7377,6 @@ impl Game {
                 vec![Target::Player(PlayerId::One)],
                 vec![Target::Player(PlayerId::Two)],
             ],
-            CardBehavior::Detonate => self
-                .battlefield
-                .iter()
-                .filter(|permanent| {
-                    self.is_artifact_permanent(permanent)
-                        && self.permanent_mana_value(permanent) == x
-                })
-                .map(|permanent| vec![Target::Permanent(permanent.card.id)])
-                .collect(),
             CardBehavior::Fork => self
                 .stack
                 .iter()
@@ -8350,7 +8321,7 @@ impl Game {
             };
             if !has_legacy_shape
                 || !self
-                    .legal_target_lists(behavior, choices.x(), player, None)
+                    .legal_target_lists(behavior, player, None)
                     .contains(&flat_targets)
             {
                 return None;
@@ -10558,7 +10529,7 @@ impl Game {
                     self.destroy_permanent(target);
                 }
             }
-            CardBehavior::Terror | CardBehavior::Putrefy => {
+            CardBehavior::Putrefy => {
                 if let Some(Target::Permanent(target)) = object.first_target() {
                     self.destroy_permanent_without_regeneration(target);
                 }
@@ -10619,14 +10590,6 @@ impl Game {
             CardBehavior::Dissipate => {
                 if let Some(Target::Spell(target)) = object.first_target() {
                     self.counter_spell_into(target, CounteredSpellZone::Exile);
-                }
-            }
-            CardBehavior::Detonate => {
-                if let Some(Target::Permanent(target)) = object.first_target()
-                    && let Some(controller) = self.permanent_controller(target)
-                {
-                    self.destroy_permanent(target);
-                    self.deal_damage(controller, object.x());
                 }
             }
             CardBehavior::Fork => {

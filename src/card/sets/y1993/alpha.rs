@@ -1179,15 +1179,29 @@ pub(in crate::card::sets) static TAIGA: CardRecord = CardRecord::new(
     CardRules::new_land(&["Forest", "Mountain"]),
 );
 
+/// Terror is itself a black spell, so protection from black keeps a creature
+/// off this list as well; that comes from the shared targeting rules rather
+/// than from anything written here.
+static TERROR_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Artifact)),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Color(ManaColor::Black)),
+    ]),
+)];
+
 pub(in crate::card::sets) static TERROR: CardRecord = CardRecord::new(
     cards::TERROR,
     "Terror",
     CardArt::new("21004958-2c7e-4a55-bc80-411c4d780106", "Ron Spencer"),
     CardSet::Alpha,
-    CardRules::new_instant(mana_cost!("{1}{B}")).with_abilities(&[AbilityDef::custom_partial(
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_abilities(&[AbilityDef::spell_with_targets(
         "Destroy target nonartifact, nonblack creature. It can't be regenerated.",
-        CardBehavior::Terror,
-        "Target selection and resolution do not account for protection from black.",
+        &TERROR_TARGET,
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: false,
+        },
     )]),
 );
 

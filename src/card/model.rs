@@ -3899,6 +3899,8 @@ pub enum CardBehavior {
     CopyArtifact,
     Crusade,
     DemonicTutor,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative predicate, destroy, and damage.
     Detonate,
     DivineOffering,
     Dispel,
@@ -3951,6 +3953,8 @@ pub enum CardBehavior {
     SedgeTroll,
     SinCollector,
     SylvanLibrary,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative predicate and a no-regeneration destroy.
     Terror,
     TimeVault,
     Timetwister,
