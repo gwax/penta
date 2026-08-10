@@ -3527,6 +3527,54 @@ fn fireball_pays_for_multiple_targets_and_divides_x_evenly() {
 }
 
 #[test]
+fn fireball_cannot_spread_further_than_the_extra_cost_allows() {
+    // Six red pays {R} plus X=4 with one extra target. A third target costs
+    // another {1}, which is one more than the pool has, so that spread is not
+    // a legal action at all rather than a cast that underpays.
+    let mut game = ready_game();
+    let fireball = card(10_000, cards::FIREBALL, PlayerId::One);
+    let first = creature(10_001, cards::SU_CHI, PlayerId::Two);
+    let second = creature(10_002, cards::JUGGERNAUT, PlayerId::Two);
+    game.players[0].hand.push(fireball.clone());
+    game.players[0].mana_pool.red = 6;
+    game.battlefield.push(first);
+    game.battlefield.push(second);
+
+    let two_targets = cast_action(
+        fireball.id,
+        vec![
+            Target::Player(PlayerId::Two),
+            Target::Permanent(GameObjectId(10_001)),
+        ],
+        Vec::new(),
+        4,
+    );
+    let three_targets = cast_action(
+        fireball.id,
+        vec![
+            Target::Player(PlayerId::Two),
+            Target::Permanent(GameObjectId(10_001)),
+            Target::Permanent(GameObjectId(10_002)),
+        ],
+        Vec::new(),
+        4,
+    );
+    let legal = game.legal_actions(PlayerId::One);
+    assert!(
+        legal.contains(&two_targets),
+        "one red, four for X, one for the extra target"
+    );
+    assert!(
+        !legal.contains(&three_targets),
+        "the second extra target would need a seventh mana"
+    );
+    assert!(
+        game.apply(PlayerId::One, three_targets).is_err(),
+        "and submitting it directly is refused too"
+    );
+}
+
+#[test]
 fn fireball_x_three_can_hit_three_targets_for_six_mana() {
     let mut game = ready_game();
     let fireball = card(10_000, cards::FIREBALL, PlayerId::One);

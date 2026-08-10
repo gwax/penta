@@ -6633,7 +6633,7 @@ impl Game {
                                     let payable_cost = reduce_generic(
                                         add_generic(
                                             cost,
-                                            fireball_extra_cost(behavior, target_count),
+                                            extra_target_cost(definition, target_count),
                                         ),
                                         self.spell_cost_reduction(definition.id, player),
                                     );
@@ -8581,7 +8581,7 @@ impl Game {
             {
                 return None;
             }
-            cost = add_generic(cost, fireball_extra_cost(behavior, flat_targets.len()));
+            cost = add_generic(cost, extra_target_cost(definition, flat_targets.len()));
         } else if !self.declared_slot_selection_is_valid(&declared_slots, choices) {
             return None;
         }
@@ -13487,14 +13487,12 @@ impl Game {
                     .find(|candidate| candidate.id == *card)
                     .and_then(|candidate| self.catalog.get(candidate.definition))?;
                 let option = definition.play_option(choices.play_option())?;
-                let behavior = Self::play_option_behavior(definition, option)
-                    .unwrap_or(CardBehavior::Unsupported);
                 let cost = self.configured_cast_mana_cost(*card, option, choices.costs())?;
                 Some((
                     reduce_generic(
                         add_generic(
                             cost,
-                            fireball_extra_cost(behavior, choices.iter_targets().count()),
+                            extra_target_cost(definition, choices.iter_targets().count()),
                         ),
                         self.spell_cost_reduction(definition.id, player),
                     ),
@@ -16963,12 +16961,16 @@ fn repeated_mode_selections(modes: &[ModeId], count: usize) -> Vec<Vec<ModeId>> 
     result
 }
 
-fn fireball_extra_cost(behavior: CardBehavior, target_count: usize) -> u16 {
-    if behavior == CardBehavior::Fireball {
-        u16::try_from(target_count.saturating_sub(1)).unwrap_or(u16::MAX)
-    } else {
-        0
+/// "This spell costs {1} more to cast for each target beyond the first." The
+/// first target is free, so a single-target cast pays nothing extra.
+fn extra_target_cost(definition: &CardDefinition, target_count: usize) -> u16 {
+    let per_target = definition.rules.additional_generic_per_extra_target();
+    if per_target == 0 {
+        return 0;
     }
+    u16::try_from(target_count.saturating_sub(1))
+        .unwrap_or(u16::MAX)
+        .saturating_mul(per_target)
 }
 
 fn pay_generic_in_order(pool: &mut ManaPool, amount: u16, order: &[ManaColor]) {

@@ -2623,12 +2623,12 @@ impl AbilityDef {
         )
     }
 
-    /// A printed clause whose entire content is a restriction on casting the
-    /// card. There is nothing to execute on resolution: the play option
-    /// carries the restriction, so the spell is never offered at a time the
-    /// clause forbids.
+    /// A printed clause that shapes how the card is cast rather than what it
+    /// does on resolution: a timing restriction, a limit on which mana may
+    /// pay for it, an extra cost per target. There is nothing to execute when
+    /// the spell resolves, because the play option has already applied it.
     #[must_use]
-    pub const fn play_restriction_note(text: &'static str, explanation: &'static str) -> Self {
+    pub const fn enforced_when_cast(text: &'static str, explanation: &'static str) -> Self {
         Self {
             text,
             definition: DeclarativeAbilityDef::Static(StaticAbilityDef::new()),
@@ -4911,6 +4911,8 @@ pub struct CardRules {
     /// "Spend only black mana on X." The X portion of the cost stops being
     /// generic and has to come from this colour.
     x_spend_restriction: Option<ManaColor>,
+    /// "This spell costs {1} more to cast for each target beyond the first."
+    additional_generic_per_extra_target: u16,
 }
 
 /// Whether any hybrid symbol in this cost can be paid with one colour.
@@ -4958,6 +4960,7 @@ impl CardRules {
             colors,
             play_restriction: PlayRestriction::Normal,
             x_spend_restriction: None,
+            additional_generic_per_extra_target: 0,
         }
     }
 
@@ -5414,6 +5417,19 @@ impl CardRules {
     #[must_use]
     pub const fn x_spend_restriction(&self) -> Option<ManaColor> {
         self.x_spend_restriction
+    }
+
+    /// "This spell costs `amount` more to cast for each target beyond the
+    /// first."
+    #[must_use]
+    pub const fn costs_more_per_extra_target(mut self, amount: u16) -> Self {
+        self.additional_generic_per_extra_target = amount;
+        self
+    }
+
+    #[must_use]
+    pub const fn additional_generic_per_extra_target(&self) -> u16 {
+        self.additional_generic_per_extra_target
     }
 
     #[must_use]

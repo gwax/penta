@@ -82,11 +82,13 @@ pub(in crate::card::sets) static FIREBALL: CardRecord = CardRecord::new(
     "Fireball",
     CardArt::new("b7623c00-144b-4a8f-9c6c-f5e9e4f65ece", "Mark Tedin"),
     CardSet::Alpha,
-    CardRules::new_sorcery(mana_cost!("{X}{R}")).with_abilities(&[
-        AbilityDef::custom_partial(
+    CardRules::new_sorcery(mana_cost!("{X}{R}"))
+    .costs_more_per_extra_target(1)
+    .with_abilities(&[
+        AbilityDef::enforced_when_cast(
             "This spell costs {1} more to cast for each target beyond the first.",
-            CardBehavior::Fireball,
-            "The multi-target additional cost needs a full correctness review.",
+            "The play option adds the generic cost before the spell is offered, \
+             so an unaffordable spread of targets is never a legal action.",
         ),
         AbilityDef::custom_partial(
             "Fireball deals X damage divided evenly, rounded down, among any number of targets.",
@@ -941,7 +943,7 @@ pub(in crate::card::sets) static DRAIN_LIFE: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{X}{1}{B}"))
     .spend_only_on_x(ManaColor::Black)
     .with_abilities(&[
-        AbilityDef::play_restriction_note(
+        AbilityDef::enforced_when_cast(
             "Spend only black mana on X.",
             "The payment layer folds X into the black requirement, so no other \
              mana can cover it.",
@@ -1341,7 +1343,7 @@ pub(in crate::card::sets) static BERSERK: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{G}"))
     .cast_only_before_combat_damage()
     .with_abilities(&[
-        AbilityDef::play_restriction_note(
+        AbilityDef::enforced_when_cast(
             "Cast this spell only before the combat damage step.",
             "The play option refuses the cast from the combat damage step onward.",
         ),
