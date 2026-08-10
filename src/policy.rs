@@ -319,6 +319,7 @@ impl HandcraftedPolicy {
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::MakeUnblockableThisTurn { .. }
+            | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)

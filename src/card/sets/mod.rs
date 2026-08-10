@@ -564,6 +564,7 @@ mod tests {
             | EffectDef::Counter { object }
             | EffectDef::ExileLinkedToSource { object }
             | EffectDef::MakeUnblockableThisTurn { object }
+            | EffectDef::GainControlThisTurn { object }
             | EffectDef::AddCounters { object, .. }
             | EffectDef::Attach { object }
             | EffectDef::ChangeTextBasicLandType { object }
@@ -738,6 +739,7 @@ mod tests {
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::MakeUnblockableThisTurn { .. }
+            | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
@@ -935,6 +937,7 @@ mod tests {
                         | EffectDef::ExileLinkedToSource { .. }
                         | EffectDef::ReturnLinkedExiles { .. }
                         | EffectDef::MakeUnblockableThisTurn { .. }
+                        | EffectDef::GainControlThisTurn { .. }
                         | EffectDef::AtNextStep { .. }
                         | EffectDef::ReduceGenericCostBy(_)
                         | EffectDef::MultiplyEventAmount(_)
@@ -1055,6 +1058,7 @@ mod tests {
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::MakeUnblockableThisTurn { .. }
+            | EffectDef::GainControlThisTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)

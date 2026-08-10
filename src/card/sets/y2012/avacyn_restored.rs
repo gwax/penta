@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType,
-    CountConditionDef, EffectDef, EffectRecipientDef, ManaColor, ManaRestrictionDef,
-    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    CountConditionDef, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
+    ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::{TargetSlotId, mana_cost};
 
@@ -197,6 +197,10 @@ pub(in crate::card::sets) static TERMINUS: CardRecord = CardRecord::new(
     ),
 );
 
+/// Haste matters here because the permanent has not been under its new
+/// controller's control since the turn began.
+static HASTE_GRANT: AbilityDef = abilities::haste();
+
 pub(in crate::card::sets) static ZEALOUS_CONSCRIPTS: CardRecord = CardRecord::new(
     cards::ZEALOUS_CONSCRIPTS,
     "Zealous Conscripts",
@@ -210,10 +214,34 @@ pub(in crate::card::sets) static ZEALOUS_CONSCRIPTS: CardRecord = CardRecord::ne
     )
     .with_abilities(&[
         abilities::haste(),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered(
             "When this creature enters, gain control of target permanent until end of turn. Untap that permanent. It gains haste until end of turn.",
-            "The enters-the-battlefield control-changing ability is not executed.",
-        ),
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            // Control first: the untap and the haste are worth having only
+            // on a permanent that is already yours to use.
+            EffectDef::Sequence(&[
+                EffectDef::GainControlThisTurn {
+                    object: EffectRecipientDef::Target(TargetSlotId(0)),
+                },
+                EffectDef::Untap {
+                    object: EffectRecipientDef::Target(TargetSlotId(0)),
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    effect: AppliedEffectDef::GrantAbility(&HASTE_GRANT),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ]),
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "permanent",
+            ObjectPredicateDef::Any,
+        )]),
     ]),
 );
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

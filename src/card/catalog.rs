@@ -740,6 +740,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::ExileLinkedToSource { .. }
         | super::EffectDef::ReturnLinkedExiles { .. }
         | super::EffectDef::MakeUnblockableThisTurn { .. }
+        | super::EffectDef::GainControlThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::Replacement(_)
@@ -801,6 +802,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::ExileLinkedToSource { .. }
         | super::EffectDef::ReturnLinkedExiles { .. }
         | super::EffectDef::MakeUnblockableThisTurn { .. }
+        | super::EffectDef::GainControlThisTurn { .. }
         | super::EffectDef::ReduceGenericCostBy(_)
         | super::EffectDef::MultiplyEventAmount(_)
         | super::EffectDef::Replacement(_)

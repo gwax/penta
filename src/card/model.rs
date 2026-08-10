@@ -1368,6 +1368,11 @@ pub enum EffectDef {
     MakeUnblockableThisTurn {
         object: EffectRecipientDef,
     },
+    /// Gain control of a permanent for the rest of the turn. Control reverts
+    /// in cleanup, so nothing needs to remember which effect took it.
+    GainControlThisTurn {
+        object: EffectRecipientDef,
+    },
     /// Queues an effect for the next time that step begins.
     AtNextStep {
         step: TurnStepDef,

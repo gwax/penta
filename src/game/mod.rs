@@ -166,6 +166,9 @@ struct Permanent {
     /// Whether nothing may block this creature for the rest of the turn.
     /// Cleared in cleanup with the other until-end-of-turn state.
     unblockable_this_turn: bool,
+    /// Who controls this permanent again once the turn ends, set while a
+    /// control-changing effect holds it. Cleanup restores it.
+    control_reverts_to: Option<PlayerId>,
     /// Whether this attacker was blocked. A blocked creature stays blocked
     /// even if every blocker leaves, so this cannot be recomputed from the
     /// blockers still on the battlefield.
@@ -239,6 +242,7 @@ impl Permanent {
             toughness_bonus: 0,
             attacking: false,
             unblockable_this_turn: false,
+            control_reverts_to: None,
             blocked: false,
             blocking: None,
             chosen_player: None,
@@ -3219,6 +3223,7 @@ impl Game {
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::MakeUnblockableThisTurn { .. }
+            | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
@@ -8131,6 +8136,36 @@ impl Game {
                     self.return_exiled_card(card, zone, grant);
                 }
             }
+            EffectDef::GainControlThisTurn { object: recipient } => {
+                let controller = object.controller;
+                for target in self.effect_recipients(recipient, object, context) {
+                    let Target::Permanent(id) = target else {
+                        continue;
+                    };
+                    let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == id)
+                    else {
+                        continue;
+                    };
+                    if permanent.controller == controller {
+                        continue;
+                    }
+                    // Only the first change records where control came from,
+                    // so passing a permanent around and back still returns it
+                    // to whoever had it before the turn started.
+                    permanent
+                        .control_reverts_to
+                        .get_or_insert(permanent.controller);
+                    permanent.controller = controller;
+                    // It has not been under its new controller's control
+                    // since their turn began, so it is summoning sick unless
+                    // something grants haste. This is why the cards that
+                    // steal a creature almost always grant it too.
+                    permanent.entered_controller_turn = self.turns_started[controller.index()];
+                }
+            }
             EffectDef::MakeUnblockableThisTurn { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context) {
                     if let Target::Permanent(id) = target
@@ -10949,6 +10984,7 @@ impl Game {
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
                 | EffectDef::MakeUnblockableThisTurn { .. }
+                | EffectDef::GainControlThisTurn { .. }
                 | EffectDef::AtNextStep { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
@@ -11047,6 +11083,7 @@ impl Game {
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
                 | EffectDef::MakeUnblockableThisTurn { .. }
+                | EffectDef::GainControlThisTurn { .. }
                 | EffectDef::AtNextStep { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
@@ -13648,6 +13685,7 @@ impl Game {
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::MakeUnblockableThisTurn { .. }
+            | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
@@ -14308,6 +14346,9 @@ impl Game {
             permanent.power_bonus = 0;
             permanent.toughness_bonus = 0;
             permanent.temporary_keywords.clear();
+            if let Some(owner) = permanent.control_reverts_to.take() {
+                permanent.controller = owner;
+            }
             permanent.unblockable_this_turn = false;
             permanent.destroy_at_end = false;
             permanent.animation = None;

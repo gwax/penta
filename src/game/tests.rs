@@ -16582,3 +16582,81 @@ fn disciple_of_bolas_pays_out_the_power_of_what_it_ate() {
         "only the chosen creature was sacrificed"
     );
 }
+
+#[test]
+fn zealous_conscripts_borrows_a_permanent_and_gives_it_back_at_cleanup() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let stolen = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.tap_permanent(stolen);
+    // It has been theirs all along, so only the granted haste lets it attack.
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == stolen)
+    {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [2, 2];
+
+    game.put_onto_battlefield(PlayerId::One, cards::ZEALOUS_CONSCRIPTS)
+        .expect("cataloged");
+    for _ in 0..12 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    drain_pending(&mut game);
+
+    let borrowed = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == stolen)
+        .expect("the permanent is still on the battlefield");
+    assert_eq!(borrowed.controller, PlayerId::One, "control changed");
+    assert!(!borrowed.tapped, "and it was untapped");
+    assert!(
+        game.permanent_has_executable_keyword(borrowed, KeywordAbility::Haste),
+        "and it can attack this turn"
+    );
+    // Gaining control restarts summoning sickness, so the granted haste is
+    // doing real work rather than restating what was already true.
+    assert_eq!(
+        borrowed.entered_controller_turn,
+        game.turns_started[PlayerId::One.index()],
+        "it counts as newly under its new controller's control"
+    );
+    let borrowed = borrowed.clone();
+    assert!(
+        game.can_attack(&borrowed),
+        "with haste it can attack the turn it changes hands"
+    );
+    let mut without_haste = borrowed;
+    without_haste.temporary_keywords.clear();
+    assert!(
+        !game.can_attack(&without_haste),
+        "and without haste it could not"
+    );
+
+    game.cleanup();
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == stolen)
+        .expect("still on the battlefield");
+    assert_eq!(
+        returned.controller,
+        PlayerId::Two,
+        "control reverts when the turn ends"
+    );
+    assert!(
+        !game.permanent_has_executable_keyword(returned, KeywordAbility::Haste),
+        "and the granted haste is gone with it"
+    );
+}
