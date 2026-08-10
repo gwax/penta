@@ -2,9 +2,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, CounterKind, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEventDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    CardType, ComparisonDef, CounterKind, EffectDef, EffectDurationDef, EffectExecutionDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, ReplacementEventDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -305,6 +305,32 @@ pub(in crate::card::sets) static CHAOS_ORB: CardRecord = CardRecord::new(
         ]),
 );
 
+/// The fourth activation is the one that kills it, and the count includes
+/// the activation now resolving.
+static DRAGON_WHELP_PUMP: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::ModifyPowerToughness {
+            power: ValueDef::Constant(1),
+            toughness: ValueDef::Constant(0),
+        },
+        duration: EffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::IfCondition {
+        condition: &TriggerConditionDef::SourceActivationsThisTurn {
+            comparison: ComparisonDef::AtLeast,
+            amount: 4,
+        },
+        then: &EffectDef::AtNextStep {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+            effect: &EffectDef::Sacrifice {
+                object: EffectRecipientDef::Source,
+            },
+        },
+    },
+];
+
 pub(in crate::card::sets) static DRAGON_WHELP: CardRecord = CardRecord::new(
     cards::DRAGON_WHELP,
     "Dragon Whelp",
@@ -316,15 +342,8 @@ pub(in crate::card::sets) static DRAGON_WHELP: CardRecord = CardRecord::new(
             AbilityDef::activated(
                 "{R}: This creature gets +1/+0 until end of turn. If this ability has been activated four or more times this turn, sacrifice this creature at the beginning of the next end step.",
                 &[AbilityCostDef::Mana(mana_cost!("{R}"))],
-                EffectDef::Special(
-                    "Pump the source and schedule its fourth-activation sacrifice",
-                ),
-            )
-            .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::DragonWhelp))
-            .with_coverage(AbilityCoverageDef::partial(
-                "The pump is implemented, but the fourth-activation delayed sacrifice still uses legacy end-step state.",
-            ))
-            .with_legacy_procedure(),
+                EffectDef::Sequence(&DRAGON_WHELP_PUMP),
+            ),
         ]),
 );
 

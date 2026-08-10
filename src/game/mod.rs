@@ -187,7 +187,10 @@ struct Permanent {
     /// The creature this permanent has become for the turn, if a manland's
     /// animation ability has resolved.
     animation: Option<&'static AnimationDef>,
-    dragon_whelp_activations: u8,
+    /// How many times each of this permanent's activated abilities has been
+    /// activated this turn, for the cards that count their own activations.
+    /// Cleared with the rest of the once-a-turn state.
+    activations_this_turn: Vec<(AbilityOrigin, u8)>,
     /// Every kind of counter this permanent carries, indexed by
     /// [`CounterKind::index`]. Only +1/+1 counters have rules meaning on their
     /// own; the rest are markers the cards that place them interpret.
@@ -268,7 +271,7 @@ impl Permanent {
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
             animation: None,
-            dragon_whelp_activations: 0,
+            activations_this_turn: Vec::new(),
             counters: [0; CounterKind::COUNT],
             attached_to: None,
             exile_instead_of_dying: false,
@@ -3314,6 +3317,7 @@ impl Game {
                 capture.source.object,
                 capture.controller,
                 capture.context,
+                Some(capture.source.ability),
             )
         {
             return;
@@ -3545,6 +3549,7 @@ impl Game {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::IfCondition { .. }
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
@@ -4896,6 +4901,20 @@ impl Game {
         targets: Vec<TargetSelection>,
         chosen_permanents: Vec<GameObjectId>,
     ) -> GameObjectId {
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == source)
+        {
+            match permanent
+                .activations_this_turn
+                .iter_mut()
+                .find(|(origin, _)| *origin == frozen.origin)
+            {
+                Some((_, count)) => *count = count.saturating_add(1),
+                None => permanent.activations_this_turn.push((frozen.origin, 1)),
+            }
+        }
         let event_chosen_permanents = chosen_permanents.clone();
         let card = self.unbacked_object(
             frozen.presentation_definition,
@@ -8808,6 +8827,7 @@ impl Game {
                 object.source.unwrap_or(object.id),
                 object.controller,
                 ability.context,
+                Some(ability.origin),
             )
         {
             return false;
@@ -9417,6 +9437,17 @@ impl Game {
                     until_turn_of: object.controller,
                     created_after_turns: self.turns_started[object.controller.index()],
                 });
+            }
+            EffectDef::IfCondition { condition, then } => {
+                if self.trigger_condition_holds(
+                    condition,
+                    object.source.unwrap_or(object.id),
+                    object.controller,
+                    context,
+                    object.ability.as_ref().map(|ability| ability.origin),
+                ) {
+                    self.resolve_effect_def(scoped.with_effect(*then), object, context);
+                }
             }
             EffectDef::AtNextStep {
                 step,
@@ -10030,12 +10061,28 @@ impl Game {
     /// Whether a trigger's intervening-if condition holds right now. Rule
     /// 603.4 asks this when the ability would trigger and again as it
     /// resolves, so both call sites read the same board.
+    /// How many times this ability has been activated from this permanent so
+    /// far this turn.
+    fn ability_activations_this_turn(&self, source: GameObjectId, ability: AbilityOrigin) -> u8 {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+            .and_then(|permanent| {
+                permanent
+                    .activations_this_turn
+                    .iter()
+                    .find(|(origin, _)| *origin == ability)
+            })
+            .map_or(0, |(_, count)| *count)
+    }
+
     fn trigger_condition_holds(
         &self,
         condition: &TriggerConditionDef,
         source: GameObjectId,
         controller: PlayerId,
         context: TriggerContext,
+        ability: Option<AbilityOrigin>,
     ) -> bool {
         let TriggerConditionDef::ObjectCount {
             query,
@@ -10075,6 +10122,16 @@ impl Game {
                     .find(|permanent| permanent.card.id == source)
                     .and_then(|permanent| permanent.loyalty)
                     .is_some_and(|loyalty| compare(&loyalty, *comparison, &i16::from(*amount))),
+                // Counting the activation now resolving is what makes
+                // "activated four or more times" true on the fourth one.
+                TriggerConditionDef::SourceActivationsThisTurn { comparison, amount } => ability
+                    .is_some_and(|origin| {
+                        compare(
+                            &self.ability_activations_this_turn(source, origin),
+                            *comparison,
+                            amount,
+                        )
+                    }),
                 TriggerConditionDef::ObjectCount { .. } => {
                     unreachable!("the object-count arm is destructured above")
                 }
@@ -12104,6 +12161,7 @@ impl Game {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::IfCondition { .. }
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
@@ -12538,93 +12596,114 @@ impl Game {
             if !self.mana_ability_is_usable(permanent, definition) {
                 return;
             }
-            match ability.effect.definition {
-                EffectDef::AddMana(effect)
-                    if definition.procedure == AbilityProcedureDef::Shared
-                        && ability.declarative_effect().is_some() =>
-                {
-                    let mut add_activation = |color| {
-                        activations.push(ManaAbilityActivation {
-                            source: permanent.card.id,
-                            ability: effective.origin,
-                            color,
-                            costs: definition.costs,
-                            effect,
-                        });
-                    };
-                    match effect.mana {
-                        ManaSelectionDef::One(color) => {
-                            add_activation(color);
-                        }
-                        ManaSelectionDef::Choice(colors) => {
-                            for color in colors {
-                                add_activation(*color);
-                            }
+            activations.extend(self.mana_activations_for(
+                permanent,
+                effective.origin,
+                definition,
+                &ability,
+            ));
+        });
+        activations
+    }
+
+    /// The concrete activations one mana ability offers, which is one per
+    /// colour it can produce.
+    fn mana_activations_for(
+        &self,
+        permanent: &Permanent,
+        origin: AbilityOrigin,
+        definition: ActivatedAbilityDef,
+        ability: &AbilityDef,
+    ) -> Vec<ManaAbilityActivation> {
+        let mut activations = Vec::new();
+        match ability.effect.definition {
+            EffectDef::AddMana(effect)
+                if definition.procedure == AbilityProcedureDef::Shared
+                    && ability.declarative_effect().is_some() =>
+            {
+                let mut add_activation = |color| {
+                    activations.push(ManaAbilityActivation {
+                        source: permanent.card.id,
+                        ability: origin,
+                        color,
+                        costs: definition.costs,
+                        effect,
+                    });
+                };
+                match effect.mana {
+                    ManaSelectionDef::One(color) => {
+                        add_activation(color);
+                    }
+                    ManaSelectionDef::Choice(colors) => {
+                        for color in colors {
+                            add_activation(*color);
                         }
                     }
                 }
-                EffectDef::Special(_)
-                    if definition.procedure == AbilityProcedureDef::Legacy
-                        && ability.custom_behavior() == Some(CardBehavior::FellwarStone) =>
-                {
-                    activations.extend(self.fellwar_stone_activations(
-                        permanent,
-                        effective.origin,
-                        definition.costs,
-                    ));
-                }
-                EffectDef::AddMana(_)
-                | EffectDef::None
-                | EffectDef::Sequence(_)
-                | EffectDef::DealDamage { .. }
-                | EffectDef::GainLife { .. }
-                | EffectDef::DrawCards { .. }
-                | EffectDef::DiscardCards { .. }
-                | EffectDef::LoseLife { .. }
-                | EffectDef::Tap { .. }
-                | EffectDef::Untap { .. }
-                | EffectDef::Attach { .. }
-                | EffectDef::CreateToken { .. }
-                | EffectDef::Destroy { .. }
-                | EffectDef::Sacrifice { .. }
-                | EffectDef::SacrificeOfChoice { .. }
-                | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-                | EffectDef::RevealAndSplitIntoPiles { .. }
-                | EffectDef::LoseTheGame { .. }
-                | EffectDef::Mill { .. }
-                | EffectDef::LookAtTopAndMayTake { .. }
-                | EffectDef::LookAtHand { .. }
-                | EffectDef::SearchLibrary { .. }
-                | EffectDef::Counter { .. }
-                | EffectDef::CounterUnlessPaid { .. }
-                | EffectDef::AddCounters { .. }
-                | EffectDef::ChangeTextBasicLandType { .. }
-                | EffectDef::BecomeCopyOf { .. }
-                | EffectDef::OptionalManaPayment { .. }
-                | EffectDef::UnlessPaid { .. }
-                | EffectDef::May(_)
-                | EffectDef::CannotBeForcedToSacrifice
-                | EffectDef::CreateEmblem { .. }
-                | EffectDef::Transform { .. }
-                | EffectDef::AdditionalCombatPhase
-                | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
-                | EffectDef::GrantFlashToNextSorcery
-                | EffectDef::ExileLinkedToSource { .. }
-                | EffectDef::ReturnLinkedExiles { .. }
-                | EffectDef::MakeUnblockableThisTurn { .. }
-                | EffectDef::GainControlThisTurn { .. }
-                | EffectDef::AtNextStep { .. }
-                | EffectDef::TriggerUntilYourNextTurn { .. }
-                | EffectDef::ReduceGenericCostBy(_)
-                | EffectDef::MultiplyEventAmount(_)
-                | EffectDef::Replacement(_)
-                | EffectDef::MoveToZone { .. }
-                | EffectDef::ChooseCardName { .. }
-                | EffectDef::ChooseCreatureType { .. }
-                | EffectDef::Apply { .. }
-                | EffectDef::Special(_) => {}
             }
-        });
+            EffectDef::Special(_)
+                if definition.procedure == AbilityProcedureDef::Legacy
+                    && ability.custom_behavior() == Some(CardBehavior::FellwarStone) =>
+            {
+                activations.extend(self.fellwar_stone_activations(
+                    permanent,
+                    origin,
+                    definition.costs,
+                ));
+            }
+            EffectDef::AddMana(_)
+            | EffectDef::None
+            | EffectDef::Sequence(_)
+            | EffectDef::DealDamage { .. }
+            | EffectDef::GainLife { .. }
+            | EffectDef::DrawCards { .. }
+            | EffectDef::DiscardCards { .. }
+            | EffectDef::LoseLife { .. }
+            | EffectDef::Tap { .. }
+            | EffectDef::Untap { .. }
+            | EffectDef::Attach { .. }
+            | EffectDef::CreateToken { .. }
+            | EffectDef::Destroy { .. }
+            | EffectDef::Sacrifice { .. }
+            | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+            | EffectDef::RevealAndSplitIntoPiles { .. }
+            | EffectDef::LoseTheGame { .. }
+            | EffectDef::Mill { .. }
+            | EffectDef::LookAtTopAndMayTake { .. }
+            | EffectDef::LookAtHand { .. }
+            | EffectDef::SearchLibrary { .. }
+            | EffectDef::Counter { .. }
+            | EffectDef::CounterUnlessPaid { .. }
+            | EffectDef::AddCounters { .. }
+            | EffectDef::ChangeTextBasicLandType { .. }
+            | EffectDef::BecomeCopyOf { .. }
+            | EffectDef::OptionalManaPayment { .. }
+            | EffectDef::UnlessPaid { .. }
+            | EffectDef::May(_)
+            | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CreateEmblem { .. }
+            | EffectDef::Transform { .. }
+            | EffectDef::AdditionalCombatPhase
+            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
+            | EffectDef::GrantFlashToNextSorcery
+            | EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::MakeUnblockableThisTurn { .. }
+            | EffectDef::GainControlThisTurn { .. }
+            | EffectDef::AtNextStep { .. }
+            | EffectDef::IfCondition { .. }
+            | EffectDef::TriggerUntilYourNextTurn { .. }
+            | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::MultiplyEventAmount(_)
+            | EffectDef::Replacement(_)
+            | EffectDef::MoveToZone { .. }
+            | EffectDef::ChooseCardName { .. }
+            | EffectDef::ChooseCreatureType { .. }
+            | EffectDef::Apply { .. }
+            | EffectDef::Special(_) => {}
+        }
+
         activations
     }
 
@@ -12754,6 +12833,7 @@ impl Game {
                 | EffectDef::MakeUnblockableThisTurn { .. }
                 | EffectDef::GainControlThisTurn { .. }
                 | EffectDef::AtNextStep { .. }
+                | EffectDef::IfCondition { .. }
                 | EffectDef::TriggerUntilYourNextTurn { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
@@ -14200,6 +14280,9 @@ impl Game {
                     creature.destroy_at_end = true;
                 }
             }
+            // Dragon Whelp itself is declarative now; this is the legacy
+            // activated dispatch path, still reached by the clauses that
+            // name this key.
             Some(CardBehavior::DragonWhelp) => {
                 let cost = ManaCost::new(0, 1);
                 self.activate_mana_for_cost(player, cost, 0);
@@ -14210,11 +14293,6 @@ impl Game {
                     .find(|permanent| permanent.card.id == source)
                 {
                     permanent.power_bonus += 1;
-                    permanent.dragon_whelp_activations =
-                        permanent.dragon_whelp_activations.saturating_add(1);
-                    if permanent.dragon_whelp_activations >= 4 {
-                        permanent.destroy_at_end = true;
-                    }
                 }
             }
             Some(CardBehavior::MishrasFactory) => {
@@ -15456,6 +15534,7 @@ impl Game {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::IfCondition { .. }
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
@@ -16163,7 +16242,7 @@ impl Game {
             permanent.unblockable_this_turn = false;
             permanent.destroy_at_end = false;
             permanent.animation = None;
-            permanent.dragon_whelp_activations = 0;
+            permanent.activations_this_turn.clear();
             permanent.regeneration_shields = 0;
             permanent.berserked = false;
             permanent.attacked_this_turn = false;

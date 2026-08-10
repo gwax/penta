@@ -631,7 +631,9 @@ mod tests {
             // Scheduling creates a fresh resolution boundary. A decision may
             // therefore be the delayed effect's root even when scheduling it
             // is itself one component of a sequence.
-            EffectDef::AtNextStep { effect, .. } => shared_stack_effect_at_position(*effect, true),
+            EffectDef::IfCondition { then: effect, .. } | EffectDef::AtNextStep { effect, .. } => {
+                shared_stack_effect_at_position(*effect, true)
+            }
             // Installing an ability is a resolution like any other; what it
             // installs has to be an ability the shared runtime can fire.
             EffectDef::TriggerUntilYourNextTurn { ability } => shared_definition_ability(ability),
@@ -738,13 +740,11 @@ mod tests {
             })
     }
 
-    fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef) -> bool {
+    /// The two static effects that are not an `Apply`: a prohibition read off
+    /// the battlefield, and a cost reduction read out of hand.
+    fn shared_static_non_apply_effect(source_zones: &[ZoneKind], effect: EffectDef) -> bool {
         match effect {
-            // A prohibition applies to the source's controller, and only
-            // while the source is on the battlefield to say so.
             EffectDef::CannotBeForcedToSacrifice => battlefield_only(source_zones),
-            // A cost reduction is read while the card is being cast from
-            // hand, and only counts what the runtime can count.
             EffectDef::ReduceGenericCostBy(value) => {
                 source_zones == [ZoneKind::Hand]
                     && matches!(
@@ -760,6 +760,15 @@ mod tests {
                         .copied()
                         .all(|effect| shared_static_effect(source_zones, effect))
             }
+            _ => false,
+        }
+    }
+
+    fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef) -> bool {
+        match effect {
+            EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::Sequence(_) => shared_static_non_apply_effect(source_zones, effect),
             EffectDef::Apply {
                 recipient,
                 effect,
@@ -804,6 +813,7 @@ mod tests {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::IfCondition { .. }
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
@@ -886,6 +896,7 @@ mod tests {
             TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
             TriggerConditionDef::ActivePlayer(_)
             | TriggerConditionDef::SourceLoyalty { .. }
+            | TriggerConditionDef::SourceActivationsThisTurn { .. }
             | TriggerConditionDef::SpellsCastLastTurn { .. } => true,
         }
     }
@@ -1029,6 +1040,7 @@ mod tests {
                         | EffectDef::MakeUnblockableThisTurn { .. }
                         | EffectDef::GainControlThisTurn { .. }
                         | EffectDef::AtNextStep { .. }
+                        | EffectDef::IfCondition { .. }
                         | EffectDef::TriggerUntilYourNextTurn { .. }
                         | EffectDef::ReduceGenericCostBy(_)
                         | EffectDef::MultiplyEventAmount(_)
@@ -1154,6 +1166,7 @@ mod tests {
                 otherwise: effect, ..
             }
             | EffectDef::May(effect)
+            | EffectDef::IfCondition { then: effect, .. }
             | EffectDef::AtNextStep { effect, .. } => {
                 assert_nested_definition_abilities(card_name, *effect);
             }

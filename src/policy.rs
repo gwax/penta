@@ -344,6 +344,7 @@ impl HandcraftedPolicy {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
+            | EffectDef::IfCondition { .. }
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::MultiplyEventAmount(_)
@@ -1150,6 +1151,7 @@ impl HandcraftedPolicy {
             }
             EffectDef::OptionalManaPayment { effect, .. }
             | EffectDef::May(effect)
+            | EffectDef::IfCondition { then: effect, .. }
             | EffectDef::AtNextStep { effect, .. } => Self::target_condition_in(*effect),
             EffectDef::AddCounters { amount, .. } | EffectDef::GainLife { amount, .. } => {
                 match amount {

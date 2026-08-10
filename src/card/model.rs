@@ -1507,6 +1507,13 @@ pub enum EffectDef {
         object: EffectRecipientDef,
     },
     /// Queues an effect for the next time that step begins.
+    /// Runs `then` only if the condition holds where this effect resolves.
+    /// A condition on a triggered ability is an intervening-if and is checked
+    /// twice; this one is part of the effect and is checked once.
+    IfCondition {
+        condition: &'static TriggerConditionDef,
+        then: &'static EffectDef,
+    },
     AtNextStep {
         step: TurnStepDef,
         player: PlayerRelation,
@@ -1859,6 +1866,12 @@ pub enum TriggerConditionDef {
     },
     /// How much loyalty the ability's own source has left.
     SourceLoyalty {
+        comparison: ComparisonDef,
+        amount: u8,
+    },
+    /// How many times this ability has been activated from its source this
+    /// turn, counting the activation now resolving.
+    SourceActivationsThisTurn {
         comparison: ComparisonDef,
         amount: u8,
     },
@@ -3868,6 +3881,8 @@ pub enum CardBehavior {
     Dissipate,
     DoomBlade,
     DrainLife,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative pump and a conditional delayed sacrifice.
     DragonWhelp,
     DustToDust,
     Duress,

@@ -19693,3 +19693,105 @@ fn glasses_of_urza_waits_on_the_stack_before_revealing_a_hand() {
         Some((PlayerId::Two, vec![(GameObjectId(10_001), cards::MOUNTAIN)])),
     );
 }
+
+#[test]
+fn dragon_whelp_only_burns_itself_out_on_the_fourth_activation() {
+    let mut game = ready_game();
+    game.step = Step::PrecombatMain;
+    game.battlefield
+        .push(creature(10_000, cards::DRAGON_WHELP, PlayerId::One));
+
+    let pump = |game: &Game| Action::ActivateAbility {
+        source: GameObjectId(10_000),
+        ability: activated_ability_for(game, GameObjectId(10_000), 0),
+        targets: Vec::new(),
+        cost_object: None,
+        x: 0,
+    };
+    for _ in 0..3 {
+        game.players[0].mana_pool.red = 1;
+        let action = pump(&game);
+        game.apply(PlayerId::One, action).unwrap();
+        drain_pending(&mut game);
+    }
+
+    let whelp = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("still here");
+    assert_eq!(game.power(whelp), Some(5), "2/3 pumped three times");
+    assert!(
+        game.delayed_triggers.is_empty(),
+        "three activations schedule nothing"
+    );
+
+    game.players[0].mana_pool.red = 1;
+    let action = pump(&game);
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+    assert_eq!(
+        game.delayed_triggers.len(),
+        1,
+        "the fourth one signs its own death warrant"
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_000)),
+        "but it is still around until the end step"
+    );
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_000)),
+        "the end step collected it"
+    );
+}
+
+#[test]
+fn dragon_whelps_activation_count_resets_with_the_turn() {
+    let mut game = ready_game();
+    game.step = Step::PrecombatMain;
+    game.battlefield
+        .push(creature(10_000, cards::DRAGON_WHELP, PlayerId::One));
+
+    for _ in 0..3 {
+        game.players[0].mana_pool.red = 1;
+        let action = Action::ActivateAbility {
+            source: GameObjectId(10_000),
+            ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+            targets: Vec::new(),
+            cost_object: None,
+            x: 0,
+        };
+        game.apply(PlayerId::One, action).unwrap();
+        drain_pending(&mut game);
+    }
+
+    // Cleanup is where the once-a-turn state goes, the same place the pump
+    // itself wears off.
+    game.finish_cleanup();
+    game.start_next_turn();
+    game.step = Step::PrecombatMain;
+    game.players[0].mana_pool.red = 1;
+    let action = Action::ActivateAbility {
+        source: GameObjectId(10_000),
+        ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+        targets: Vec::new(),
+        cost_object: None,
+        x: 0,
+    };
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        game.delayed_triggers.is_empty(),
+        "a new turn makes it the first activation again, not the fourth"
+    );
+}

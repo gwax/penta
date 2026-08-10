@@ -748,6 +748,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
             otherwise: effect, ..
         }
         | super::EffectDef::May(effect)
+        | super::EffectDef::IfCondition { then: effect, .. }
         | super::EffectDef::AtNextStep { effect, .. } => {
             collect_ability_grants(*effect, grants);
         }
@@ -831,6 +832,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
             otherwise: effect, ..
         }
         | super::EffectDef::May(effect)
+        | super::EffectDef::IfCondition { then: effect, .. }
         | super::EffectDef::AtNextStep { effect, .. }
         | super::EffectDef::SacrificeOfChoice {
             then: Some(effect), ..
@@ -1096,6 +1098,7 @@ fn validate_effect_target_references(
             otherwise: effect, ..
         }
         | EffectDef::May(effect)
+        | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. } => {
             validate_effect_target_references(*effect, target_count)
         }
