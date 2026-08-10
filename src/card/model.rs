@@ -1107,6 +1107,14 @@ pub enum EffectRecipientDef {
         object: ObjectPredicateDef,
         slot: TargetIndex,
     },
+    /// Everything a query matches among the permanents *owned* by the player
+    /// a target slot names. Ownership survives a control-changing effect, so
+    /// this is a different set from [`Self::ObjectsControlledByTarget`]
+    /// whenever anything has changed hands.
+    ObjectsOwnedByTarget {
+        object: ObjectPredicateDef,
+        slot: TargetIndex,
+    },
     /// The controller of what a target slot points at, for "its controller".
     /// Read when the effect resolves, using last-known information if that
     /// object has already left the battlefield.
@@ -3925,6 +3933,8 @@ pub enum CardBehavior {
     GlassesOfUrza,
     GoblinGrenade,
     GrislySalvage,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// sweeps by ownership declaratively.
     HurkylsRecall,
     HymnToTourach,
     HypnoticSpecter,

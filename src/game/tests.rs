@@ -8490,16 +8490,62 @@ fn dust_to_dust_exiles_two_artifacts_and_hurkyls_recall_returns_them() {
         creature(10_000, cards::SOL_RING, PlayerId::Two),
         creature(10_001, cards::BLACK_VISE, PlayerId::Two),
     ]);
-    let recall = spell_with_targets(
-        10_002,
-        cards::HURKYLS_RECALL,
+    let recall = card(10_002, cards::HURKYLS_RECALL, PlayerId::One);
+    game.players[0].hand.push(recall.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    let action = acceptance_cast_action_targeting(
+        &game,
         PlayerId::One,
-        vec![Target::Player(PlayerId::Two)],
-        0,
+        recall.id,
+        Target::Player(PlayerId::Two),
     );
-    game.resolve_spell_effect(&recall, CardBehavior::HurkylsRecall);
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
     assert_eq!(game.players[1].hand.len(), 2);
     assert!(game.battlefield.is_empty());
+}
+
+#[test]
+fn hurkyls_recall_follows_ownership_rather_than_control() {
+    let mut game = ready_game();
+    // An artifact its owner has lost control of still goes home to them.
+    let mut stolen = creature(10_000, cards::SOL_RING, PlayerId::Two);
+    stolen.controller = PlayerId::One;
+    game.battlefield.push(stolen);
+    // And one the targeted player controls but does not own stays put.
+    let mut borrowed = creature(10_001, cards::BLACK_VISE, PlayerId::One);
+    borrowed.controller = PlayerId::Two;
+    game.battlefield.push(borrowed);
+
+    let recall = card(10_002, cards::HURKYLS_RECALL, PlayerId::One);
+    game.players[0].hand.push(recall.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    let action = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        recall.id,
+        Target::Player(PlayerId::Two),
+    );
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SOL_RING],
+        "the artifact they own came back even from across the table"
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .map(|permanent| permanent.card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::BLACK_VISE],
+        "and the one they only control was left alone"
+    );
 }
 
 fn dust_to_dust_targets(game: &mut Game, mut spell: StackObject) {

@@ -3,9 +3,9 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AnimationDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt,
     CardBehavior, CardRules, CardSet, CardType, CardTypeSet, CounterKind, EffectDef,
-    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor, ManaRestrictionDef,
-    ObjectPredicateDef, PlayerRelation, ReplacementEffectDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, abilities, cards,
+    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, LibraryPlacement, ManaColor,
+    ManaRestrictionDef, ObjectPredicateDef, PlayerRelation, ReplacementEffectDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -286,12 +286,21 @@ pub(in crate::card::sets) static HURKYLS_RECALL: CardRecord = CardRecord::new(
     "Hurkyl's Recall",
     CardArt::new("f32373dd-06d8-45d1-8777-3b1411bcb30a", "NéNé Thomas"),
     CardSet::Antiquities,
-    CardRules::new_instant(mana_cost!("{1}{U}"))
-        .with_abilities(&[AbilityDef::custom_partial(
-            "Return all artifacts target player owns to their hand.",
-            CardBehavior::HurkylsRecall,
-            "The resolver currently returns artifacts the targeted player controls instead of artifacts they own.",
-        )]),
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Return all artifacts target player owns to their hand.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::ObjectsOwnedByTarget {
+                object: ObjectPredicateDef::HasType(CardType::Artifact),
+                slot: TargetIndex::PRIMARY,
+            },
+            zone: ZoneKind::Hand,
+            controller: None,
+            placement: LibraryPlacement::Top,
+        },
+    )]),
 );
 
 pub(in crate::card::sets) static SAGE_OF_LAT_NAM: CardRecord = CardRecord::new(

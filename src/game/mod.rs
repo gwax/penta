@@ -7373,10 +7373,6 @@ impl Game {
                 })
                 .map(|permanent| vec![Target::Permanent(permanent.card.id)])
                 .collect(),
-            CardBehavior::HurkylsRecall => vec![
-                vec![Target::Player(PlayerId::One)],
-                vec![Target::Player(PlayerId::Two)],
-            ],
             CardBehavior::Fork => self
                 .stack
                 .iter()
@@ -9873,6 +9869,56 @@ impl Game {
             .then_some(Target::Card(object))
     }
 
+    /// The battlefield permanents a target-relative sweep names. Control and
+    /// ownership pick out different sets the moment anything has changed
+    /// hands: a stolen artifact goes home to its owner, not to whoever is
+    /// holding it.
+    fn battlefield_sweep_for_target(
+        &self,
+        recipient: EffectRecipientDef,
+        object: &StackObject,
+        context: TriggerContext,
+        scoped: ScopedEffect,
+    ) -> Vec<Target> {
+        let (predicate, player_source, by_owner) = match recipient {
+            EffectRecipientDef::ObjectsControlledByTarget { object, slot } => {
+                (object, EffectRecipientDef::ControllerOfTarget(slot), false)
+            }
+            EffectRecipientDef::ObjectsOwnedByTarget { object, slot } => {
+                (object, EffectRecipientDef::Target(slot), true)
+            }
+            _ => return Vec::new(),
+        };
+        let Some(Target::Player(player)) = self
+            .effect_recipients(player_source, object, context, scoped)
+            .into_iter()
+            .next()
+        else {
+            return Vec::new();
+        };
+        let source = object.source.unwrap_or(object.id);
+        self.battlefield
+            .iter()
+            .filter(|permanent| {
+                player
+                    == if by_owner {
+                        permanent.card.owner
+                    } else {
+                        permanent.controller
+                    }
+            })
+            .filter(|permanent| {
+                self.trigger_object_matches(
+                    predicate,
+                    &self.trigger_event_object(permanent),
+                    source,
+                    false,
+                )
+            })
+            .map(|permanent| Target::Permanent(permanent.card.id))
+            .collect()
+    }
+
     fn effect_recipients(
         &self,
         recipient: EffectRecipientDef,
@@ -9906,41 +9952,16 @@ impl Game {
                 .collect();
         }
 
-        // "Each creature that player controls" reads the target's controller
-        // and then sweeps the battlefield, so it is neither a plain target nor
-        // a relation to the ability's own controller.
-        if let EffectRecipientDef::ObjectsControlledByTarget {
-            object: predicate,
-            slot,
-        } = recipient
-        {
-            let Some(Target::Player(owner)) = self
-                .effect_recipients(
-                    EffectRecipientDef::ControllerOfTarget(slot),
-                    object,
-                    context,
-                    scoped,
-                )
-                .into_iter()
-                .next()
-            else {
-                return Vec::new();
-            };
-            let source = object.source.unwrap_or(object.id);
-            return self
-                .battlefield
-                .iter()
-                .filter(|permanent| permanent.controller == owner)
-                .filter(|permanent| {
-                    self.trigger_object_matches(
-                        predicate,
-                        &self.trigger_event_object(permanent),
-                        source,
-                        false,
-                    )
-                })
-                .map(|permanent| Target::Permanent(permanent.card.id))
-                .collect();
+        // "Each creature that player controls" and "all artifacts target
+        // player owns" both read a player off a target slot and then sweep the
+        // battlefield, so neither is a plain target nor a relation to the
+        // ability's own controller.
+        if matches!(
+            recipient,
+            EffectRecipientDef::ObjectsControlledByTarget { .. }
+                | EffectRecipientDef::ObjectsOwnedByTarget { .. }
+        ) {
+            return self.battlefield_sweep_for_target(recipient, object, context, scoped);
         }
 
         if let EffectRecipientDef::ObjectsSharingNameWithTarget(target) = recipient {
@@ -9973,6 +9994,7 @@ impl Game {
                 EffectRecipientDef::Target(_)
                 | EffectRecipientDef::ControllerOfTarget(_)
                 | EffectRecipientDef::ObjectsControlledByTarget { .. }
+                | EffectRecipientDef::ObjectsOwnedByTarget { .. }
                 | EffectRecipientDef::MatchingObjects { .. }
                 | EffectRecipientDef::ObjectsSharingNameWithTarget(_) => {
                     unreachable!("target, matching, and shared-name recipients returned above")
@@ -10540,21 +10562,6 @@ impl Game {
                     Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
                 }) {
                     self.exile_permanent(target);
-                }
-            }
-            CardBehavior::HurkylsRecall => {
-                if let Some(Target::Player(player)) = object.first_target() {
-                    let artifacts: Vec<_> = self
-                        .battlefield
-                        .iter()
-                        .filter(|permanent| {
-                            permanent.controller == player && self.is_artifact_permanent(permanent)
-                        })
-                        .map(|permanent| permanent.card.id)
-                        .collect();
-                    for artifact in artifacts {
-                        self.return_permanent_to_hand(artifact);
-                    }
                 }
             }
             CardBehavior::DivineOffering => {
@@ -12267,6 +12274,7 @@ impl Game {
             // a static effect has no chosen target either.
             EffectRecipientDef::ControllerOfTarget(_)
             | EffectRecipientDef::ObjectsControlledByTarget { .. }
+            | EffectRecipientDef::ObjectsOwnedByTarget { .. }
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
             | EffectRecipientDef::Target(_)

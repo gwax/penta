@@ -953,7 +953,8 @@ fn validate_recipient_target_references(
         | EffectRecipientDef::ControllerOfTarget(target) => {
             validate_target_index(target, target_count)
         }
-        EffectRecipientDef::ObjectsControlledByTarget { slot, .. } => {
+        EffectRecipientDef::ObjectsControlledByTarget { slot, .. }
+        | EffectRecipientDef::ObjectsOwnedByTarget { slot, .. } => {
             validate_target_index(slot, target_count)
         }
         EffectRecipientDef::Source
