@@ -533,11 +533,7 @@ pub(in crate::card::sets) static JUGGERNAUT: CardRecord = CardRecord::new(
     CardArt::new("dcd6a291-5282-4f49-8203-d9b416083c48", "Dan Frazier"),
     CardSet::Alpha,
     CardRules::new_artifact_creature(mana_cost!("{4}"), &["Juggernaut"], 5, 3).with_abilities(&[
-        AbilityDef::custom_full(
-            "This creature attacks each combat if able.",
-            CardBehavior::Juggernaut,
-            "The attack requirement is enforced by the combat action generator.",
-        ),
+        abilities::attacks_each_combat_if_able("This creature attacks each combat if able."),
         AbilityDef::static_ability(
             "This creature can't be blocked by Walls.",
             EffectDef::Apply {

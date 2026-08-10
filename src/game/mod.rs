@@ -1518,14 +1518,20 @@ impl Game {
         }
         if self.step == Step::DeclareAttackers && !self.attackers_declared {
             if player == self.active_player {
-                let juggernaut_must_attack = self.battlefield.iter().any(|permanent| {
+                // A creature that attacks each combat if able is only
+                // required to when it actually can, so the same conditions
+                // that offer it as an attacker are what make it compulsory.
+                let a_creature_must_attack = self.battlefield.iter().any(|permanent| {
                     permanent.controller == player
                         && !permanent.tapped
                         && !permanent.attacking
                         && self.can_attack(permanent)
-                        && self.effective_behavior(permanent) == Some(CardBehavior::Juggernaut)
+                        && self.permanent_has_executable_keyword(
+                            permanent,
+                            KeywordAbility::AttacksEachCombatIfAble,
+                        )
                 });
-                if !juggernaut_must_attack {
+                if !a_creature_must_attack {
                     actions.push(Action::FinishDeclaringAttackers);
                 }
                 actions.extend(self.attacker_actions(player));

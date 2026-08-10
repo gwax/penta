@@ -16,6 +16,13 @@ pub static MISHRAS_FACTORY_ANIMATION: AnimationDef = AnimationDef::new(2, 2)
     .with_types(CardTypeSet::single(CardType::Creature).with(CardType::Artifact))
     .with_subtypes(&["Assembly-Worker"]);
 
+/// "Attacks each combat if able." Cards state this in their own words rather
+/// than as a printed keyword, so the text is supplied by the caller.
+#[must_use]
+pub const fn attacks_each_combat_if_able(text: &'static str) -> AbilityDef {
+    keyword(text, KeywordAbility::AttacksEachCombatIfAble)
+}
+
 const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
     AbilityDef::keyword(text, keyword)
 }

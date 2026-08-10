@@ -15506,3 +15506,79 @@ fn ghost_quarter_destroys_a_land_and_lets_its_owner_replace_it() {
     );
     assert!(game.players[1].library.len() == 1, "and left the library");
 }
+
+#[test]
+fn a_creature_that_attacks_each_combat_holds_the_declaration_open() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let ruric = game
+        .put_onto_battlefield(PlayerId::One, cards::RURIC_THAR_THE_UNBOWED)
+        .expect("cataloged");
+    let lions = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [2, 1];
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+
+    let actions = game.legal_actions(PlayerId::One);
+    assert!(
+        !actions.contains(&Action::FinishDeclaringAttackers),
+        "the declaration cannot be finished while Ruric Thar could still attack"
+    );
+    assert!(
+        actions.contains(&Action::DeclareAttacker { attacker: lions }),
+        "another creature may still be declared first"
+    );
+
+    // Declaring the free attacker does not satisfy the requirement.
+    game.apply(PlayerId::One, Action::DeclareAttacker { attacker: lions })
+        .unwrap();
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .contains(&Action::FinishDeclaringAttackers),
+        "only Ruric Thar attacking releases the declaration"
+    );
+
+    game.apply(PlayerId::One, Action::DeclareAttacker { attacker: ruric })
+        .unwrap();
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&Action::FinishDeclaringAttackers),
+        "once it is attacking the requirement is met"
+    );
+}
+
+#[test]
+fn an_attack_requirement_yields_when_the_creature_cannot_attack() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let ruric = game
+        .put_onto_battlefield(PlayerId::One, cards::RURIC_THAR_THE_UNBOWED)
+        .expect("cataloged");
+    // Summoning sick, so it is not able and the requirement does not apply.
+    game.turns_started = [1, 1];
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&Action::FinishDeclaringAttackers),
+        "a creature that cannot attack is not required to"
+    );
+
+    // The same creature, able but tapped by something else.
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [2, 1];
+    game.tap_permanent(ruric);
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&Action::FinishDeclaringAttackers),
+        "a tapped creature cannot attack, so it is not held against its controller"
+    );
+}

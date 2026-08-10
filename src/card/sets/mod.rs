@@ -203,7 +203,6 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::OrcishMechanics => &y1994::antiquities::ORCISH_MECHANICS.rules,
         CardBehavior::RedElementalBlast => &y1993::alpha::RED_ELEMENTAL_BLAST.rules,
         CardBehavior::WheelOfFortune => &y1993::alpha::WHEEL_OF_FORTUNE.rules,
-        CardBehavior::Juggernaut => &y1993::alpha::JUGGERNAUT.rules,
         CardBehavior::ManaVault => &y1993::alpha::MANA_VAULT.rules,
         CardBehavior::Triskelion => &y1994::antiquities::TRISKELION.rules,
         CardBehavior::FellwarStone => &y1994::the_dark::FELLWAR_STONE.rules,
@@ -396,6 +395,7 @@ mod tests {
                 | KeywordAbility::Intimidate
                 | KeywordAbility::Undying
                 | KeywordAbility::Mountainwalk
+                | KeywordAbility::AttacksEachCombatIfAble
                 | KeywordAbility::ProtectionFrom(_)
         )
     }

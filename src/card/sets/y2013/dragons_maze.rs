@@ -148,10 +148,7 @@ pub(in crate::card::sets) static RURIC_THAR_THE_UNBOWED: CardRecord = CardRecord
     .with_abilities(&[
         abilities::vigilance(),
         abilities::reach(),
-        AbilityDef::not_implemented(
-            "Ruric Thar attacks each combat if able.",
-            "The attack requirement is not enforced.",
-        ),
+        abilities::attacks_each_combat_if_able("Ruric Thar attacks each combat if able."),
         AbilityDef::triggered(
             "Whenever a player casts a noncreature spell, Ruric Thar deals 6 damage to that player.",
             TriggerEventDef::SpellCast(ObjectPredicateDef::NoncreatureSpell),

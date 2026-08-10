@@ -1787,6 +1787,10 @@ pub enum KeywordAbility {
     Hexproof,
     Intimidate,
     Undying,
+    /// "Attacks each combat if able." Not a printed keyword, but it behaves
+    /// like one: a static requirement with no parameters that several cards
+    /// state in the same words.
+    AttacksEachCombatIfAble,
     Mountainwalk,
     ProtectionFrom(ManaColor),
 }
@@ -1814,6 +1818,7 @@ impl KeywordAbility {
             Self::Intimidate => 13,
             Self::Undying => 14,
             Self::Mountainwalk => 15,
+            Self::AttacksEachCombatIfAble => 16,
             Self::ProtectionFrom(_) => return None,
         })
     }
@@ -2824,7 +2829,6 @@ pub enum CardBehavior {
     IcyManipulator,
     IcatianJavelineers,
     IronclawOrcs,
-    Juggernaut,
     KirdApe,
     LifebaneZombie,
     LibraryOfAlexandria,
