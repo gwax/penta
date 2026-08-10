@@ -11,15 +11,15 @@ use crate::action::{
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivatedAbilityDef, AddManaEffectDef, AlternativeCastAbilityDef, AlternativeCastKindDef,
-    AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardBehavior, CardCatalog, CardDefinition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    CardTypeSet, CharacteristicContext, ComparisonDef, CounterKind, DeclarativeAbilityDef,
-    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry,
-    ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
-    ObjectQueryDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
-    ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
-    applicable_part_ids,
+    AnimationDef, AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardBehavior, CardCatalog,
+    CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype,
+    CardType, CardTypeSet, CharacteristicContext, ComparisonDef, CounterKind,
+    DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef,
+    KeywordAbility, LandEntry, ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
+    ObjectPredicateDef, ObjectQueryDef, PlayActionKind, PlayOptionDef, PlayRestriction,
+    PlayerRelation, ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -174,7 +174,9 @@ struct Permanent {
     chosen_creature_type: Option<String>,
     destroy_at_end: bool,
     temporary_keywords: Vec<KeywordAbility>,
-    factory_animated: bool,
+    /// The creature this permanent has become for the turn, if a manland's
+    /// animation ability has resolved.
+    animation: Option<&'static AnimationDef>,
     dragon_whelp_activations: u8,
     /// Every kind of counter this permanent carries, indexed by
     /// [`CounterKind::index`]. Only +1/+1 counters have rules meaning on their
@@ -242,7 +244,7 @@ impl Permanent {
             chosen_creature_type: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
-            factory_animated: false,
+            animation: None,
             dragon_whelp_activations: 0,
             counters: [0; CounterKind::COUNT],
             attached_to: None,
@@ -5869,7 +5871,8 @@ impl Game {
                             self.battlefield
                                 .iter()
                                 .filter(|candidate| {
-                                    candidate.controller == player && candidate.factory_animated
+                                    candidate.controller == player
+                                        && self.is_assembly_worker(candidate)
                                 })
                                 .map(|candidate| Action::ActivateAbility {
                                     source: permanent.card.id,
@@ -5891,7 +5894,7 @@ impl Game {
                         self.battlefield
                             .iter()
                             .filter(|candidate| {
-                                candidate.controller == player && candidate.factory_animated
+                                candidate.controller == player && self.is_assembly_worker(candidate)
                             })
                             .map(|candidate| Action::ActivateAbility {
                                 source: permanent.card.id,
@@ -6269,7 +6272,7 @@ impl Game {
             chosen_creature_type: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
-            factory_animated: false,
+            animation: None,
             dragon_whelp_activations: 0,
             counters: [0; CounterKind::COUNT],
             attached_to: None,
@@ -6998,7 +7001,7 @@ impl Game {
                 chosen_creature_type: None,
                 destroy_at_end: false,
                 temporary_keywords: Vec::new(),
-                factory_animated: false,
+                animation: None,
                 dragon_whelp_activations: 0,
                 counters: {
                     let mut counters = [0; CounterKind::COUNT];
@@ -7826,6 +7829,18 @@ impl Game {
                 }
                 Target::Player(_) | Target::Spell(_) => {}
             },
+            AppliedEffectDef::Animate(animation) => {
+                if let Target::Permanent(target) = target
+                    && let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == target)
+                {
+                    // A second animation overwrites the first, which is what
+                    // the later timestamp does.
+                    permanent.animation = Some(animation);
+                }
+            }
             AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
                 let Target::Permanent(target) = target else {
                     return;
@@ -9003,8 +9018,11 @@ impl Game {
             AppliedEffectDef::AddLandTypes(types) => {
                 operations.push((source, LandTypeOperation::Add(types)));
             }
+            // Animation adds creature types, never land types, so it leaves
+            // the land-type operations alone.
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::GrantAbility(_)
             | AppliedEffectDef::Special(_) => {}
@@ -9111,7 +9129,10 @@ impl Game {
             return Cow::Borrowed(&[]);
         };
         let operations = self.land_type_operations(permanent);
-        if permanent.text_changes.is_empty() && operations.is_empty() {
+        let animation = permanent
+            .animation
+            .filter(|animation| animation.all_creature_types || !animation.subtypes.is_empty());
+        if permanent.text_changes.is_empty() && operations.is_empty() && animation.is_none() {
             return Cow::Borrowed(rules.subtypes());
         }
 
@@ -9162,7 +9183,24 @@ impl Game {
                 }
             }
         }
+        if let Some(animation) = animation {
+            if animation.all_creature_types {
+                subtypes.extend(CREATURE_TYPES.iter().copied());
+            }
+            for subtype in animation.subtypes {
+                if !subtypes.contains(subtype) {
+                    subtypes.push(subtype);
+                }
+            }
+        }
         Cow::Owned(subtypes)
+    }
+
+    /// Whether this permanent is an Assembly-Worker, which is only ever true
+    /// of an animated Mishra's Factory today.
+    fn is_assembly_worker(&self, permanent: &Permanent) -> bool {
+        self.effective_subtypes(permanent)
+            .contains(&"Assembly-Worker")
     }
 
     /// Basic land subtypes in effective type-line order, with duplicate types
@@ -9273,6 +9311,7 @@ impl Game {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::Composite(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::Special(_) => ControlFlow::Continue(()),
@@ -9438,6 +9477,7 @@ impl Game {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::GrantAbility(_)
             | AppliedEffectDef::Special(_) => {
@@ -9684,8 +9724,8 @@ impl Game {
         if let Some(copy) = &permanent.copy_effect {
             types = types.union(copy.added_types);
         }
-        if permanent.factory_animated {
-            types = types.with(CardType::Artifact).with(CardType::Creature);
+        if let Some(animation) = permanent.animation {
+            types = types.union(animation.types);
         }
         Some(types)
     }
@@ -10787,10 +10827,10 @@ impl Game {
         // abilities does not end the continuous animation effect. In
         // particular, Blood Moon changes its land subtype and abilities but
         // leaves the active artifact-creature types and 2/2 base stats intact.
-        if permanent.factory_animated {
+        if let Some(animation) = permanent.animation {
             Some(crate::CreatureStats {
-                power: 2,
-                toughness: 2,
+                power: animation.power,
+                toughness: animation.toughness,
             })
         } else {
             self.effective_rules(permanent)
@@ -11378,7 +11418,7 @@ impl Game {
                         .iter_mut()
                         .find(|permanent| permanent.card.id == source)
                     {
-                        permanent.factory_animated = true;
+                        permanent.animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
                     }
                 }
             }
@@ -12308,7 +12348,7 @@ impl Game {
             chosen_creature_type: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
-            factory_animated: false,
+            animation: None,
             dragon_whelp_activations: 0,
             counters: {
                 let mut counters = [0; CounterKind::COUNT];
@@ -13253,7 +13293,7 @@ impl Game {
             permanent.temporary_keywords.clear();
             permanent.unblockable_this_turn = false;
             permanent.destroy_at_end = false;
-            permanent.factory_animated = false;
+            permanent.animation = None;
             permanent.dragon_whelp_activations = 0;
             permanent.regeneration_shields = 0;
             permanent.berserked = false;

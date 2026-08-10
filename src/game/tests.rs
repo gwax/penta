@@ -3159,7 +3159,7 @@ fn structured_target_predicates_are_rechecked_when_the_spell_resolves() {
     let mut game = ready_game();
     game.catalog = crate::card::catalog().unwrap();
     let mut factory = creature(10_000, cards::MISHRA_S_FACTORY, PlayerId::Two);
-    factory.factory_animated = true;
+    factory.animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
     let factory_id = factory.card.id;
     game.battlefield.push(factory);
     let mut turn = spell(77, crate::card::cards::TURN_BURN, PlayerId::One, 0);
@@ -3172,7 +3172,7 @@ fn structured_target_predicates_are_rechecked_when_the_spell_resolves() {
     ));
 
     assert!(!game.spell_fizzles(&turn));
-    game.battlefield[0].factory_animated = false;
+    game.battlefield[0].animation = None;
     assert!(game.spell_fizzles(&turn));
 }
 
@@ -3327,14 +3327,20 @@ fn animated_factory_keeps_types_and_last_known_stats_under_blood_moon() {
     let mut game = ready_game();
     game.catalog = crate::card::catalog().unwrap();
     let mut factory = creature(10_000, cards::MISHRA_S_FACTORY, PlayerId::One);
-    factory.factory_animated = true;
+    factory.animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
     let blood_moon = creature(10_001, cards::BLOOD_MOON, PlayerId::Two);
     game.battlefield = vec![factory, blood_moon];
 
     let snapshot = game.battlefield_exit_snapshot(&game.battlefield[0]);
     assert_eq!(snapshot.last_known.power, Some(2));
     assert_eq!(snapshot.last_known.toughness, Some(2));
-    assert_eq!(snapshot.object.subtypes.as_ref(), &["Mountain"]);
+    // Blood Moon sets the land subtype and removes the printed abilities, but
+    // Assembly-Worker is a creature type the animation grants, so it survives
+    // alongside the Mountain that replaced the land types.
+    assert_eq!(
+        snapshot.object.subtypes.as_ref(),
+        &["Mountain", "Assembly-Worker"]
+    );
     for card_type in [CardType::Land, CardType::Creature, CardType::Artifact] {
         assert!(snapshot.object.types.contains(card_type));
     }
@@ -4095,7 +4101,7 @@ fn an_animated_untapped_mishras_factory_can_block() {
     attacker.attacking = true;
     let attacker_id = attacker.card.id;
     let mut factory = creature(10_001, cards::MISHRA_S_FACTORY, PlayerId::Two);
-    factory.factory_animated = true;
+    factory.animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
     let factory_id = factory.card.id;
     game.battlefield = vec![attacker, factory];
     game.active_player = PlayerId::One;
@@ -5982,7 +5988,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
         "the copied Factory animation coexists with Stage's retained ability",
     );
     game.apply(PlayerId::One, animate).unwrap();
-    assert!(game.battlefield[0].factory_animated);
+    assert!(game.battlefield[0].animation.is_some());
 
     let retained_copy_ability = activated_ability_for(&game, stage_id, 2);
     game.players[0].mana_pool.colorless = 2;
@@ -15345,5 +15351,73 @@ fn quicken_preserves_its_grant_for_the_selected_instant_part() {
             |action| matches!(action, Action::CastSpell { card, .. } if *card == next_sorcery.id)
         ),
         "the grant remains available for the next sorcery"
+    );
+}
+
+#[test]
+fn mutavault_becomes_a_creature_of_every_type_until_cleanup() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let vault = game
+        .put_onto_battlefield(PlayerId::One, cards::MUTAVAULT)
+        .expect("cataloged");
+    // Something to pay the activation with that is not the Mutavault itself.
+    game.put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+        .expect("cataloged");
+
+    let land = game.battlefield[0].clone();
+    assert!(
+        !game
+            .permanent_types(&land)
+            .expect("a battlefield permanent has types")
+            .contains(CardType::Creature),
+        "a Mutavault is only a land until it is animated"
+    );
+
+    let activate = game
+        .observe(PlayerId::One)
+        .legal_actions
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == vault))
+        .expect("the animation ability is offered");
+    game.apply(PlayerId::One, activate).unwrap();
+    drain_pending(&mut game);
+
+    let animated = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == vault)
+        .expect("the Mutavault is still on the battlefield")
+        .clone();
+    let types = game.permanent_types(&animated).expect("types");
+    assert!(types.contains(CardType::Creature), "it became a creature");
+    assert!(types.contains(CardType::Land), "and it is still a land");
+    assert_eq!(
+        game.base_stats(&animated),
+        Some(crate::CreatureStats {
+            power: 2,
+            toughness: 2
+        })
+    );
+    let subtypes = game.effective_subtypes(&animated);
+    for creature_type in ["Goblin", "Angel", "Assembly-Worker"] {
+        assert!(
+            subtypes.contains(&creature_type),
+            "all creature types includes {creature_type}"
+        );
+    }
+
+    game.cleanup();
+    let after = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == vault)
+        .expect("still there");
+    assert!(
+        !game
+            .permanent_types(after)
+            .expect("types")
+            .contains(CardType::Creature),
+        "the animation lasts only until end of turn"
     );
 }

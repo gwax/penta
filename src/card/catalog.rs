@@ -759,6 +759,7 @@ fn collect_applied_ability_grants(effect: super::AppliedEffectDef, grants: &mut 
         super::AppliedEffectDef::CannotBeCountered
         | super::AppliedEffectDef::CannotBeBlockedBy(_)
         | super::AppliedEffectDef::AddLandTypes(_)
+        | super::AppliedEffectDef::Animate(_)
         | super::AppliedEffectDef::ModifyPowerToughness { .. }
         | super::AppliedEffectDef::Special(_) => {}
     }
@@ -817,6 +818,7 @@ fn applied_ability_grant_sites(effect: super::AppliedEffectDef) -> usize {
         super::AppliedEffectDef::CannotBeCountered
         | super::AppliedEffectDef::CannotBeBlockedBy(_)
         | super::AppliedEffectDef::AddLandTypes(_)
+        | super::AppliedEffectDef::Animate(_)
         | super::AppliedEffectDef::ModifyPowerToughness { .. }
         | super::AppliedEffectDef::Special(_) => 0,
     }

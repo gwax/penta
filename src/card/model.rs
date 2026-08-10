@@ -1084,7 +1084,57 @@ pub enum AppliedEffectDef {
     /// Give the affected object an ordinary ability. The granted definition
     /// carries its own keyword, activation, or alternative-casting procedure.
     GrantAbility(&'static AbilityDef),
+    /// Turn the affected permanent into a creature. This is what a manland's
+    /// activated ability does, and it keeps the permanent's other types.
+    Animate(&'static AnimationDef),
     Special(&'static str),
+}
+
+/// The creature a permanent becomes while an animation effect is active. A
+/// manland stays a land, so these types and subtypes are added rather than
+/// replacing what is printed.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct AnimationDef {
+    pub power: i16,
+    pub toughness: i16,
+    /// Added on top of the printed types. `Creature` belongs here; a card
+    /// that becomes an artifact creature names both.
+    pub types: CardTypeSet,
+    pub subtypes: &'static [&'static str],
+    /// "With all creature types", which no fixed subtype list can express
+    /// because changelings must keep matching types printed later.
+    pub all_creature_types: bool,
+}
+
+impl AnimationDef {
+    #[must_use]
+    pub const fn new(power: i16, toughness: i16) -> Self {
+        Self {
+            power,
+            toughness,
+            types: CardTypeSet::single(CardType::Creature),
+            subtypes: &[],
+            all_creature_types: false,
+        }
+    }
+
+    #[must_use]
+    pub const fn with_types(mut self, types: CardTypeSet) -> Self {
+        self.types = types;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_subtypes(mut self, subtypes: &'static [&'static str]) -> Self {
+        self.subtypes = subtypes;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_all_creature_types(mut self) -> Self {
+        self.all_creature_types = true;
+        self
+    }
 }
 
 /// Declarative effect primitives interpreted by the rules engine.

@@ -867,28 +867,14 @@ impl HandcraftedPolicy {
                 7_200 + target_score
             }
             None if declarative.is_some_and(|profile| profile.cards_drawn.is_some()) => 6_500,
-            // A bonus that gives with one hand and takes with the other is
-            // only worth mana in spots a greedy policy cannot see, and
-            // exiling your own creature takes it off the board now for a
-            // return later. Both read as waste from here.
-            None if source_definition
-                .is_some_and(|definition| self.ability_is_a_wash(definition, ability)) =>
-            {
-                -100
-            }
-            None if source_definition
-                .is_some_and(|definition| self.ability_only_buys_evasion(definition, ability))
-                && !Self::source_is_attacking(observation, source) =>
-            {
-                -100
-            }
-            // The same reasoning as Mishra's Factory, one step more general:
-            // an ability that taps its source to pump spends whatever that
-            // source was going to do, so it only pays for itself on a
-            // creature already in combat -- and never for X of zero.
-            None if declarative.is_some_and(|profile| {
-                profile.taps_source && profile.has(DeclarativeSpellProfile::APPLIES)
-            }) && !Self::target_is_fighting(observation, target) =>
+            None if self.ability_spends_mana_on_nothing(
+                observation,
+                source,
+                ability,
+                source_definition,
+                declarative,
+                target,
+            ) =>
             {
                 -100
             }
@@ -903,21 +889,6 @@ impl HandcraftedPolicy {
             {
                 5_200 + target_score
             }
-            // An ability whose whole payoff is conditional on what it points
-            // at does nothing when the condition fails, and spending mana on
-            // nothing is worse than passing. This is the same lesson as a
-            // pump for X of zero.
-            None if source_definition.is_some_and(|definition| {
-                self.ability_needs_a_matching_target(definition, ability)
-            }) && !self.ability_target_matches_condition(
-                observation,
-                source_definition,
-                ability,
-                target,
-            ) =>
-            {
-                -100
-            }
             None if declarative.is_some() => 4_500 + target_score,
             None => -10_000,
         };
@@ -928,6 +899,108 @@ impl HandcraftedPolicy {
             return -1_000;
         }
         score - sacrifice_cost - discard_source_cost
+    }
+
+    /// Every reason a greedy policy should decline an activated ability
+    /// outright rather than pay for it. Each of these spends mana for a board
+    /// that is no better, which is worse than passing.
+    fn ability_spends_mana_on_nothing(
+        &self,
+        observation: &PlayerObservation,
+        source: GameObjectId,
+        ability: AbilityOrigin,
+        source_definition: Option<CardDefinitionId>,
+        declarative: Option<DeclarativeSpellProfile>,
+        target: Option<Target>,
+    ) -> bool {
+        // A bonus that gives with one hand and takes with the other is only
+        // worth mana in spots a greedy policy cannot see, and exiling your own
+        // creature takes it off the board now for a return later.
+        if source_definition.is_some_and(|definition| self.ability_is_a_wash(definition, ability)) {
+            return true;
+        }
+        if source_definition
+            .is_some_and(|definition| self.ability_only_buys_evasion(definition, ability))
+            && !Self::source_is_attacking(observation, source)
+        {
+            return true;
+        }
+        // The same reasoning as Mishra's Factory, one step more general: an
+        // ability that taps its source to pump spends whatever that source was
+        // going to do, so it only pays for itself on a creature already in
+        // combat.
+        if declarative.is_some_and(|profile| {
+            profile.taps_source && profile.has(DeclarativeSpellProfile::APPLIES)
+        }) && !Self::target_is_fighting(observation, target)
+        {
+            return true;
+        }
+        // Animating a land turns a mana source into a creature that can be
+        // killed, and the creature is worth nothing unless it can attack.
+        if source_definition
+            .is_some_and(|definition| self.ability_animates_the_source(definition, ability))
+            && !Self::can_attack_this_combat(observation, source)
+        {
+            return true;
+        }
+        // An ability whose whole payoff is conditional on what it points at
+        // does nothing when the condition fails.
+        source_definition
+            .is_some_and(|definition| self.ability_needs_a_matching_target(definition, ability))
+            && !self.ability_target_matches_condition(
+                observation,
+                source_definition,
+                ability,
+                target,
+            )
+    }
+
+    /// Whether the ability turns its own source into a creature.
+    fn ability_animates_the_source(
+        &self,
+        definition: CardDefinitionId,
+        origin: AbilityOrigin,
+    ) -> bool {
+        let AbilityOrigin::Printed {
+            definition: origin_definition,
+            part,
+            ability,
+        } = origin
+        else {
+            return false;
+        };
+        if origin_definition != definition {
+            return false;
+        }
+        self.catalog
+            .get(definition)
+            .and_then(|card| card.part(part))
+            .and_then(|part| part.rules.ability(ability))
+            .is_some_and(|ability| {
+                matches!(
+                    ability.effect,
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Source,
+                        effect: crate::card::AppliedEffectDef::Animate(_),
+                        ..
+                    }
+                )
+            })
+    }
+
+    /// Whether this permanent could still be declared as an attacker this
+    /// turn. An untapped permanent in the viewer's own pre-attack combat
+    /// steps is the window worth spending mana in.
+    fn can_attack_this_combat(observation: &PlayerObservation, source: GameObjectId) -> bool {
+        observation.active_player == observation.viewer
+            && matches!(
+                observation.step,
+                Step::BeginningOfCombat | Step::DeclareAttackers
+            )
+            && observation
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.id == source && !permanent.tapped)
     }
 
     /// Whether the ability changes nothing a greedy policy can use: a

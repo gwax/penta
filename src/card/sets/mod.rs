@@ -426,6 +426,7 @@ mod tests {
             AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::GrantAbility(_)
             | AppliedEffectDef::Special(_) => false,
         }
@@ -476,7 +477,9 @@ mod tests {
             AppliedEffectDef::Composite(effects) => {
                 !effects.is_empty() && effects.iter().copied().all(shared_resolving_applied_effect)
             }
-            AppliedEffectDef::ModifyPowerToughness { .. } => true,
+            // Animation is executed by the shared apply path, which reads
+            // the whole creature off the definition.
+            AppliedEffectDef::Animate(_) | AppliedEffectDef::ModifyPowerToughness { .. } => true,
             AppliedEffectDef::GrantAbility(ability) => {
                 ability.implementation == AbilityImplementationDef::Definition
                     && match ability.definition {
@@ -768,7 +771,9 @@ mod tests {
                 recipient == EffectRecipientDef::Source && shared_object_predicate(predicate)
             }
             AppliedEffectDef::CannotBeCountered => true,
-            AppliedEffectDef::Special(_) => false,
+            // Only a resolving animation is supported; nothing reads one off
+            // a static ability.
+            AppliedEffectDef::Animate(_) | AppliedEffectDef::Special(_) => false,
         }
     }
 
@@ -986,6 +991,7 @@ mod tests {
             AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::AddLandTypes(_)
+            | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::Special(_) => {}
         }

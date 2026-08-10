@@ -5,9 +5,16 @@
 
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityImplementationDef, AddManaEffectDef,
-    AlternativeCastKindDef, AppliedEffectDef, EffectDef, EffectDurationDef, EffectRecipientDef,
-    KeywordAbility, ManaColor, ManaCost, ZoneKind,
+    AlternativeCastKindDef, AnimationDef, AppliedEffectDef, CardType, CardTypeSet, EffectDef,
+    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ZoneKind,
 };
+
+/// Mishra's Factory's 2/2 Assembly-Worker artifact creature. The card's
+/// animation still resolves through its legacy immediate path, which reads
+/// this definition rather than restating the creature it becomes.
+pub static MISHRAS_FACTORY_ANIMATION: AnimationDef = AnimationDef::new(2, 2)
+    .with_types(CardTypeSet::single(CardType::Creature).with(CardType::Artifact))
+    .with_subtypes(&["Assembly-Worker"]);
 
 const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
     AbilityDef::keyword(text, keyword)

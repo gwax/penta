@@ -1075,3 +1075,52 @@ fn handcrafted_overload_counts_only_effective_unanswered_spells() {
     ];
     assert_eq!(policy.choose_action(&observation), Some(overload));
 }
+
+#[test]
+fn handcrafted_animates_a_manland_only_when_it_can_attack() {
+    let catalog = penta::card::catalog().unwrap();
+    let animate = Action::ActivateAbility {
+        source: CardInstanceId(1),
+        ability: AbilityOrigin::Printed {
+            definition: cards::MUTAVAULT,
+            part: CardPartId::PRIMARY,
+            // The mana ability is printed first; the animation follows it.
+            ability: AbilityId(1),
+        },
+        targets: Vec::new(),
+        sacrifice: None,
+        x: 0,
+    };
+    let vault = || permanent(1, cards::MUTAVAULT, PlayerId::One, None, None);
+
+    let mut main_phase =
+        policy_observation(vec![vault()], vec![Action::PassPriority, animate.clone()]);
+    main_phase.step = Step::PrecombatMain;
+    let mut policy = HandcraftedPolicy::new(catalog.clone());
+    assert_eq!(
+        policy.choose_action(&main_phase),
+        Some(Action::PassPriority),
+        "animating outside combat spends mana and risks the land for nothing",
+    );
+
+    let mut combat = policy_observation(vec![vault()], vec![Action::PassPriority, animate.clone()]);
+    combat.step = Step::BeginningOfCombat;
+    let mut policy = HandcraftedPolicy::new(catalog.clone());
+    assert_eq!(
+        policy.choose_action(&combat),
+        Some(animate.clone()),
+        "a land that can still attack is worth animating",
+    );
+
+    // A tapped land cannot attack, so the animation buys nothing.
+    let mut tapped_vault = vault();
+    tapped_vault.tapped = true;
+    let mut tapped = policy_observation(vec![tapped_vault], vec![Action::PassPriority, animate]);
+    tapped.step = Step::BeginningOfCombat;
+    let mut policy = HandcraftedPolicy::new(catalog);
+    assert_eq!(
+        policy.choose_action(&tapped),
+        Some(Action::PassPriority),
+        "a tapped land cannot attack, so animating it only burns mana",
+    );
+}

@@ -3,10 +3,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, ComparisonDef, CounterKind,
-    EffectDef, EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, TargetConditionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, abilities, cards,
+    AnimationDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
+    CardType, ComparisonDef, CounterKind, EffectDef, EffectDurationDef, EffectRecipientDef,
+    LandEntry, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TargetConditionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -175,6 +175,10 @@ pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The animation keeps the land types Mutavault is printed with, so the
+/// creature types are added rather than replacing anything.
+static MUTAVAULT_ANIMATION: AnimationDef = AnimationDef::new(2, 2).with_all_creature_types();
+
 pub(in crate::card::sets) static MUTAVAULT: CardRecord = CardRecord::new(
     cards::MUTAVAULT,
     "Mutavault",
@@ -184,9 +188,14 @@ pub(in crate::card::sets) static MUTAVAULT: CardRecord = CardRecord::new(
     .land_entry(LandEntry::Untapped)
     .with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
-        AbilityDef::not_implemented(
+        AbilityDef::activated(
             "{1}: This land becomes a 2/2 creature with all creature types until end of turn. It's still a land.",
-            "The animation activated ability is not executed.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Animate(&MUTAVAULT_ANIMATION),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
         ),
     ]),
 );
