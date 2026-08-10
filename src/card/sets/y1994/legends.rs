@@ -1,9 +1,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
-    EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType,
+    CounterKind, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -93,11 +94,18 @@ pub(in crate::card::sets) static SYLVAN_LIBRARY: CardRecord = CardRecord::new(
     CardArt::new("f486df00-7c4a-4ff0-bb0b-c8b5432ac742", "Harold McNeill"),
     CardSet::Legends,
     CardRules::new_enchantment(mana_cost!("{1}{G}"))
-    .with_abilities(&[AbilityDef::custom_partial(
+    .with_abilities(&[AbilityDef::triggered(
         "At the beginning of your draw step, you may draw two additional cards. If you do, choose two cards in your hand drawn this turn. For each of those cards, pay 4 life or put the card on top of your library.",
-        CardBehavior::SylvanLibrary,
-        "The draw-step trigger and its choices currently bypass the stack.",
-    )]),
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Draw,
+            player: PlayerRelation::You,
+        },
+        EffectDef::Special("Offer the extra draws, then settle each chosen card"),
+    )
+    .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::SylvanLibrary))
+    .with_coverage(AbilityCoverageDef::explained_complete(
+        "The trigger is declarative and uses the shared stack; the card-local resolver offers the draws and then the pay-or-top choice for each card drawn this turn.",
+    ))]),
 );
 
 pub(in crate::card::sets) static THUNDER_SPIRIT: CardRecord = CardRecord::new(

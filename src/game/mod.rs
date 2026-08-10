@@ -1214,6 +1214,9 @@ enum DecisionContinuation {
         permanent: GameObjectId,
         remaining: Vec<GameObjectId>,
     },
+    SylvanOffer {
+        player: PlayerId,
+    },
     SylvanSelect {
         player: PlayerId,
         candidates: Vec<GameObjectId>,
@@ -1333,6 +1336,9 @@ pub struct Game {
     /// How many cards each player has drawn this turn. Miracle asks whether a
     /// draw was the first one.
     cards_drawn_this_turn: [u16; 2],
+    /// The cards each player drew this turn, in draw order. Sylvan Library
+    /// chooses among them, and only a card still in hand can be chosen.
+    drawn_this_turn: [Vec<GameObjectId>; 2],
     /// Set while an effect makes both players draw at once, so that decking
     /// is settled after every draw rather than by whoever ran out first.
     defer_empty_library_loss: bool,
@@ -1498,6 +1504,7 @@ impl Game {
             spells_cast_this_turn: [0; 2],
             spells_cast_last_turn: [0; 2],
             cards_drawn_this_turn: [0; 2],
+            drawn_this_turn: [Vec::new(), Vec::new()],
             defer_empty_library_loss: false,
             tried_to_draw_from_empty: [false; 2],
             miracle_window: None,
@@ -6329,6 +6336,18 @@ impl Game {
                     self.queue_time_vault_decision(next, remaining);
                 }
             }
+            DecisionContinuation::SylvanOffer { player } => {
+                if !options.contains(&1) {
+                    return;
+                }
+                self.draw_cards(player, 2);
+                let candidates = self.sylvan_candidates(player);
+                // Two cards, or every card drawn this turn if fewer remain.
+                let choices = candidates.len().min(2);
+                if choices > 0 {
+                    self.queue_sylvan_select(player, candidates, choices);
+                }
+            }
             DecisionContinuation::SylvanSelect {
                 player,
                 mut candidates,
@@ -9053,7 +9072,60 @@ impl Game {
         );
     }
 
+    /// "You may draw two additional cards. If you do, choose two cards in
+    /// your hand drawn this turn..." The offer comes first because declining
+    /// it skips the rest of the ability entirely.
+    fn queue_sylvan_offer(&mut self, player: PlayerId) {
+        if self.players[player.index()].library.is_empty() {
+            return;
+        }
+        self.queue_decision(
+            player,
+            "Draw two additional cards?",
+            DecisionVisibility::Private,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            vec![
+                DecisionOption {
+                    id: 0,
+                    label: "Do not draw".into(),
+                    card: None,
+                    ability_text: None,
+                    zone: DecisionZone::None,
+                },
+                DecisionOption {
+                    id: 1,
+                    label: "Draw two additional cards".into(),
+                    card: None,
+                    ability_text: None,
+                    zone: DecisionZone::None,
+                },
+            ],
+            DecisionContinuation::SylvanOffer { player },
+        );
+    }
+
+    /// The cards this player drew this turn that are still in hand, which is
+    /// the pool Sylvan Library chooses from.
+    fn sylvan_candidates(&self, player: PlayerId) -> Vec<GameObjectId> {
+        self.drawn_this_turn[player.index()]
+            .iter()
+            .copied()
+            .filter(|drawn| {
+                self.players[player.index()]
+                    .hand
+                    .iter()
+                    .any(|card| card.id == *drawn)
+            })
+            .collect()
+    }
+
     fn resolve_custom_triggered_ability(&mut self, object: &StackObject, behavior: CardBehavior) {
+        if behavior == CardBehavior::SylvanLibrary {
+            self.queue_sylvan_offer(object.controller);
+            return;
+        }
         if matches!(
             behavior,
             CardBehavior::SinCollector | CardBehavior::LifebaneZombie
@@ -16227,26 +16299,7 @@ impl Game {
                     }
                 }
                 if !(self.turn == 1 && self.active_player == PlayerId::One) {
-                    let mut drawn = self
-                        .draw_card(self.active_player)
-                        .into_iter()
-                        .collect::<Vec<_>>();
-                    if self.battlefield.iter().any(|permanent| {
-                        permanent.controller == self.active_player
-                            && self.effective_behavior(permanent)
-                                == Some(CardBehavior::SylvanLibrary)
-                    }) && self.result.is_none()
-                    {
-                        if let Some(card) = self.draw_card(self.active_player) {
-                            drawn.push(card);
-                        }
-                        if let Some(card) = self.draw_card(self.active_player) {
-                            drawn.push(card);
-                        }
-                        if drawn.len() >= 2 && self.result.is_none() {
-                            self.queue_sylvan_select(self.active_player, drawn, 2);
-                        }
-                    }
+                    let _ = self.draw_card(self.active_player);
                 }
             }
             Step::Draw => self.step = Step::PrecombatMain,
@@ -16328,6 +16381,7 @@ impl Game {
         self.spells_cast_last_turn = self.spells_cast_this_turn;
         self.spells_cast_this_turn = [0; 2];
         self.cards_drawn_this_turn = [0; 2];
+        self.drawn_this_turn = [Vec::new(), Vec::new()];
         self.miracle_window = None;
         self.step = Step::Upkeep;
         self.players[self.active_player.index()].land_played_this_turn = false;
@@ -16504,6 +16558,7 @@ impl Game {
         });
         let drawn = &mut self.cards_drawn_this_turn[player.index()];
         *drawn = drawn.saturating_add(1);
+        self.drawn_this_turn[player.index()].push(card_id);
         if self.cards_drawn_this_turn[player.index()] == 1 && self.has_miracle(definition) {
             self.queue_miracle_reveal(player, card_id);
         }

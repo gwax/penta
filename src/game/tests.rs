@@ -247,6 +247,19 @@ fn pass_priority_pair(game: &mut Game) {
     game.apply(first.opponent(), Action::PassPriority).unwrap();
 }
 
+/// Passes priority, one player at a time, until the stack empties or a
+/// decision interrupts. Resolving a trigger that asks a question stops the
+/// round mid-way, which `pass_priority_pair` cannot express.
+fn pass_until_decision(game: &mut Game) {
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() || game.stack.is_empty() {
+            return;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority).unwrap();
+    }
+}
+
 fn choose_all_offered(game: &mut Game, player: PlayerId) {
     let decision = game
         .observe(player)
@@ -2986,7 +2999,7 @@ fn time_vault_can_untap_by_skipping_the_controllers_next_turn() {
 }
 
 #[test]
-fn sylvan_library_tracks_drawn_cards_and_resolves_each_choice() {
+fn sylvan_library_triggers_onto_the_stack_and_may_be_declined() {
     let mut game = ready_game();
     game.turn = 2;
     game.step = Step::Upkeep;
@@ -2999,14 +3012,74 @@ fn sylvan_library_tracks_drawn_cards_and_resolves_each_choice() {
     ];
 
     game.advance_step();
-    assert_eq!(game.players[0].hand.len(), 3);
+    assert_eq!(
+        game.players[0].hand.len(),
+        1,
+        "the draw step draws one; the extras wait on the ability"
+    );
+    assert_eq!(game.pending_triggers.len(), 1, "the ability triggered");
+
+    pass_priority_pair(&mut game);
+    assert_eq!(game.stack.len(), 1, "and it went on the stack");
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "so the opponent had a window before any of it happened"
+    );
+
+    pass_until_decision(&mut game);
+    let offer = game.observe(PlayerId::One).decision.unwrap();
+    assert_eq!(offer.prompt, "Draw two additional cards?");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: offer.id,
+            options: vec![0],
+        },
+    )
+    .unwrap();
+
+    assert_eq!(game.players[0].hand.len(), 1, "declining draws nothing");
+    assert_eq!(game.players[0].life, 20, "and costs nothing");
+    assert!(game.observe(PlayerId::One).decision.is_none());
+}
+
+#[test]
+fn sylvan_library_pays_life_or_puts_each_chosen_card_back() {
+    let mut game = ready_game();
+    game.turn = 2;
+    game.step = Step::Upkeep;
+    game.battlefield
+        .push(creature(10_000, cards::SYLVAN_LIBRARY, PlayerId::One));
+    game.players[0].library = vec![
+        card(10_001, cards::PLAINS, PlayerId::One),
+        card(10_002, cards::SAVANNAH_LIONS, PlayerId::One),
+        card(10_003, cards::SWORDS_TO_PLOWSHARES, PlayerId::One),
+    ];
+
+    game.advance_step();
+    pass_priority_pair(&mut game);
+    pass_until_decision(&mut game);
+    let offer = game.observe(PlayerId::One).decision.unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: offer.id,
+            options: vec![1],
+        },
+    )
+    .unwrap();
+    assert_eq!(game.players[0].hand.len(), 3, "one drawn plus two more");
+
     for mode in [1, 0] {
         let selection = game.observe(PlayerId::One).decision.unwrap();
-        let select = Action::ChooseDecision {
-            decision: selection.id,
-            options: vec![selection.options[0].id],
-        };
-        game.apply(PlayerId::One, select).unwrap();
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: selection.id,
+                options: vec![selection.options[0].id],
+            },
+        )
+        .unwrap();
         let decision = game.observe(PlayerId::One).decision.unwrap();
         game.apply(
             PlayerId::One,
@@ -3018,9 +3091,13 @@ fn sylvan_library_tracks_drawn_cards_and_resolves_each_choice() {
         .unwrap();
     }
 
-    assert_eq!(game.players[0].life, 16);
+    assert_eq!(game.players[0].life, 16, "four life for the one kept");
     assert_eq!(game.players[0].hand.len(), 2);
-    assert_eq!(game.players[0].library.len(), 1);
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "the other went back on top"
+    );
 }
 
 #[test]

@@ -137,10 +137,18 @@ test("[slow] the pass button label matches where the click actually lands", asyn
   const quietMisses = misses.filter((line) => !line.startsWith('"Go to their attack"'));
   assert.deepEqual(quietMisses, [], "a quiet opponent never invalidates a prediction");
 
+  // Rate each label against the case it can actually promise. A destination
+  // inside the opponent's turn is cut short whenever they activate something,
+  // so once there are enough quiet passes to judge by, judge by those. Labels
+  // that name a turn boundary -- "End turn", "Your turn" -- are never quiet,
+  // because handing over the turn is exactly when beats appear, and an
+  // opponent acting on their own turn does not invalidate them.
   for (const [label, row] of tally) {
-    if (guessed.has(label) || row.used < 20) continue;
-    const rate = row.hit / row.used;
-    assert.ok(rate >= 0.95, `"${label}" landed where promised ${row.hit}/${row.used} times`);
+    if (guessed.has(label)) continue;
+    const [hit, used] =
+      row.quiet >= 20 ? [row.quietHit, row.quiet] : [row.hit, row.used];
+    if (used < 20) continue;
+    assert.ok(hit / used >= 0.95, `"${label}" landed where promised ${hit}/${used} times`);
   }
   const attack = tally.get("Go to their attack");
   if (attack && attack.used >= 20) {
