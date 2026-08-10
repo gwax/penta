@@ -1987,8 +1987,8 @@ mod tests {
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 
         // Any card with a metadata-only ability clause will do here; repoint
-        // this assertion when Jace's clauses become executable.
-        let legacy = find("Jace, Architect of Thought");
+        // this assertion when Energy Flux's granted upkeep trigger runs.
+        let legacy = find("Energy Flux");
         assert_eq!(legacy["implementationStatus"], "metadataOnly");
         assert_eq!(legacy["parts"][0]["implementationStatus"], "metadataOnly");
 

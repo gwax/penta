@@ -558,6 +558,10 @@ mod tests {
             EffectDef::SplitPermanentsAndSacrificeAPile { player } => {
                 deferred_decision_allowed && shared_effect_recipient(player)
             }
+            // The reveal, the split, and the choice are all decisions the
+            // shared procedure asks for, and the library is the resolving
+            // object's controller's own.
+            EffectDef::RevealAndSplitIntoPiles { .. } => deferred_decision_allowed,
             // Looking is private and the offer is the only visible part, so
             // only the predicate and the player need checking.
             EffectDef::LookAtTopAndMayTake { player, object } => {
@@ -798,6 +802,7 @@ mod tests {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+            | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }
@@ -980,6 +985,7 @@ mod tests {
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::SacrificeOfChoice { .. }
                         | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+                        | EffectDef::RevealAndSplitIntoPiles { .. }
                         | EffectDef::Mill { .. }
                         | EffectDef::LookAtTopAndMayTake { .. }
                         | EffectDef::SearchLibrary { .. }
@@ -1143,6 +1149,7 @@ mod tests {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+            | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }

@@ -768,6 +768,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::Sacrifice { .. }
         | super::EffectDef::SacrificeOfChoice { then: None, .. }
         | super::EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+        | EffectDef::RevealAndSplitIntoPiles { .. }
         | super::EffectDef::Mill { .. }
         | super::EffectDef::LookAtTopAndMayTake { .. }
         | super::EffectDef::SearchLibrary { .. }
@@ -843,6 +844,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::Sacrifice { .. }
         | super::EffectDef::SacrificeOfChoice { then: None, .. }
         | super::EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+        | EffectDef::RevealAndSplitIntoPiles { .. }
         | super::EffectDef::Mill { .. }
         | super::EffectDef::LookAtTopAndMayTake { .. }
         | super::EffectDef::SearchLibrary { .. }
@@ -1048,7 +1050,11 @@ fn validate_effect_target_references(
         | EffectDef::ChooseCreatureType { object } => {
             validate_recipient_target_references(object, target_count)
         }
-        EffectDef::CreateToken { count, .. } | EffectDef::ReduceGenericCostBy(count) => {
+        // A reveal always comes off the resolving object's controller's own
+        // library, so its count is the only part that could name a target.
+        EffectDef::RevealAndSplitIntoPiles { count, .. }
+        | EffectDef::CreateToken { count, .. }
+        | EffectDef::ReduceGenericCostBy(count) => {
             validate_value_target_references(count, target_count)
         }
         EffectDef::SacrificeOfChoice { player, then, .. } => {

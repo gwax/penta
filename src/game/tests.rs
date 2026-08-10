@@ -19335,3 +19335,111 @@ fn vraskas_ultimate_makes_three_assassins() {
         "paying all seven left her behind"
     );
 }
+
+#[test]
+fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
+    let mut game = ready_game();
+    let mut jace = creature(10_000, cards::JACE_ARCHITECT_OF_THOUGHT, PlayerId::One);
+    jace.loyalty = Some(4);
+    game.battlefield.push(jace);
+    game.players[0].library.clear();
+    game.players[0].hand.clear();
+    stack_library(
+        &mut game,
+        &[
+            (10_001, cards::SERRA_ANGEL),
+            (10_002, cards::SAVANNAH_LIONS),
+            (10_003, cards::LIGHTNING_BOLT),
+            (10_004, cards::PLAINS),
+        ],
+    );
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: GameObjectId(10_000),
+            ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+            targets: Vec::new(),
+            cost_object: None,
+            x: 0,
+        },
+    )
+    .unwrap();
+    for _ in 0..4 {
+        if game.pending_decisions.is_empty() && game.stack.is_empty() {
+            break;
+        }
+        if game.pending_decisions.is_empty() {
+            game.apply(game.priority, Action::PassPriority).unwrap();
+            continue;
+        }
+        break;
+    }
+
+    // The opponent separates the three revealed cards: the Angel alone
+    // against the other two.
+    let split = game.observe(PlayerId::Two).decision.expect("they split");
+    assert_eq!(split.options.len(), 3, "only the top three were revealed");
+    let angel = split
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(id, _)| id == GameObjectId(10_001))
+        })
+        .expect("the angel was revealed")
+        .id;
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: split.id,
+            options: vec![angel],
+        },
+    )
+    .unwrap();
+
+    // Jace's controller takes the two-card pile.
+    let choice = game.observe(PlayerId::One).decision.expect("he chooses");
+    let bigger = choice
+        .options
+        .iter()
+        .find(|option| option.label.contains("Savannah Lions"))
+        .expect("one pile holds the other two")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: vec![bigger],
+        },
+    )
+    .unwrap();
+
+    // Changing zones makes a new object, so these are compared by what the
+    // cards are rather than by identity.
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SAVANNAH_LIONS, cards::LIGHTNING_BOLT],
+        "the chosen pile went to hand"
+    );
+    assert_eq!(
+        game.players[0]
+            .library
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SERRA_ANGEL, cards::PLAINS],
+        "the angel went under the one card that was left"
+    );
+    let jace = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_000))
+        .expect("he stayed");
+    assert_eq!(jace.loyalty, Some(2));
+}

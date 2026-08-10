@@ -1094,6 +1094,22 @@ enum DecisionContinuation {
     PileSplit {
         owner: PlayerId,
     },
+    /// An opponent separating revealed cards into two piles. The cards have
+    /// already left the library, so the continuation must place all of them.
+    RevealedPileSplit {
+        player: PlayerId,
+        revealed: Vec<CardInstance>,
+        rest: ZoneKind,
+        placement: LibraryPlacement,
+    },
+    /// The revealed piles, offered to whoever gets to keep one.
+    RevealedPileChoice {
+        player: PlayerId,
+        first: Vec<CardInstance>,
+        second: Vec<CardInstance>,
+        rest: ZoneKind,
+        placement: LibraryPlacement,
+    },
     /// The split piles, offered to whoever must give one up.
     PileChoice {
         first: Vec<GameObjectId>,
@@ -3466,6 +3482,7 @@ impl Game {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+            | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }
@@ -5085,6 +5102,87 @@ impl Game {
         );
     }
 
+    /// Reveals the top cards and hands the split to an opponent. The reveal
+    /// takes them out of the library up front, so every path from here has to
+    /// put all of them somewhere.
+    fn queue_revealed_pile_split(
+        &mut self,
+        player: PlayerId,
+        count: usize,
+        rest: ZoneKind,
+        placement: LibraryPlacement,
+    ) {
+        let revealed = self.take_top_of_library(player, count);
+        if revealed.is_empty() {
+            return;
+        }
+        let options = self.card_decision_options(&revealed, DecisionZone::Library);
+        let maximum = options.len();
+        self.queue_decision(
+            player.opponent(),
+            "Separate the revealed cards into two piles",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            0..=maximum,
+            false,
+            options,
+            DecisionContinuation::RevealedPileSplit {
+                player,
+                revealed,
+                rest,
+                placement,
+            },
+        );
+    }
+
+    /// Offers the two revealed piles to the player who gets to keep one.
+    fn queue_revealed_pile_choice(
+        &mut self,
+        player: PlayerId,
+        first: Vec<CardInstance>,
+        second: Vec<CardInstance>,
+        rest: ZoneKind,
+        placement: LibraryPlacement,
+    ) {
+        let describe = |game: &Self, pile: &[CardInstance]| {
+            if pile.is_empty() {
+                return "the empty pile".to_string();
+            }
+            pile.iter()
+                .filter_map(|card| game.catalog.get(card.definition))
+                .map(|definition| definition.name.clone())
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        let options = [&first, &second]
+            .into_iter()
+            .enumerate()
+            .map(|(index, pile)| DecisionOption {
+                id: u32::try_from(index).unwrap_or(u32::MAX),
+                label: format!("Take {}", describe(self, pile)),
+                card: None,
+                ability_text: None,
+                zone: DecisionZone::Library,
+            })
+            .collect();
+        self.queue_decision(
+            player,
+            "Choose the pile to put into your hand",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::RevealedPileChoice {
+                player,
+                first,
+                second,
+                rest,
+                placement,
+            },
+        );
+    }
+
     /// Offers the split piles to the player who must give one up.
     fn queue_pile_choice(
         &mut self,
@@ -5644,6 +5742,42 @@ impl Game {
                     .filter_map(|option| option.card.map(|(card, _)| card))
                     .collect::<Vec<_>>();
                 self.queue_pile_choice(owner, first, second);
+            }
+            DecisionContinuation::RevealedPileSplit {
+                player,
+                revealed,
+                rest,
+                placement,
+            } => {
+                let chosen = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                let (first, second): (Vec<_>, Vec<_>) = revealed
+                    .into_iter()
+                    .partition(|card| chosen.contains(&card.id));
+                self.queue_revealed_pile_choice(player, first, second, rest, placement);
+            }
+            DecisionContinuation::RevealedPileChoice {
+                player,
+                first,
+                second,
+                rest,
+                placement,
+            } => {
+                let (to_hand, to_rest) = if options.contains(&0) {
+                    (first, second)
+                } else {
+                    (second, first)
+                };
+                for card in to_hand {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    self.players[player.index()].hand.push(card);
+                }
+                self.place_revealed_remainder(player, to_rest, rest, placement);
             }
             DecisionContinuation::PileChoice { first, second } => {
                 let chosen = if options.contains(&0) { first } else { second };
@@ -9023,6 +9157,17 @@ impl Game {
                     }
                 }
             }
+            EffectDef::RevealAndSplitIntoPiles {
+                count,
+                rest,
+                placement,
+            } => {
+                let count = self.effect_value(count, object, context, scoped).max(0);
+                let Ok(count) = usize::try_from(count) else {
+                    return;
+                };
+                self.queue_revealed_pile_split(object.controller, count, rest, placement);
+            }
             EffectDef::LookAtTopAndMayTake {
                 player: recipient,
                 object: predicate,
@@ -10548,6 +10693,38 @@ impl Game {
     }
 
     /// Sends cards to their owner's graveyard in the order given.
+    /// Where the pile the controller did not take ends up. The library end
+    /// that counts as the top is the back of the vector, so bottoming inserts
+    /// at the front.
+    fn place_revealed_remainder(
+        &mut self,
+        player: PlayerId,
+        cards: Vec<CardInstance>,
+        zone: ZoneKind,
+        placement: LibraryPlacement,
+    ) {
+        match zone {
+            ZoneKind::Library => {
+                for card in cards {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    match placement {
+                        LibraryPlacement::Top => self.players[player.index()].library.push(card),
+                        LibraryPlacement::Bottom => {
+                            self.players[player.index()].library.insert(0, card);
+                        }
+                    }
+                }
+            }
+            ZoneKind::Exile => {
+                for card in cards {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    self.players[player.index()].exile.push(card);
+                }
+            }
+            _ => self.bury_cards(player, cards),
+        }
+    }
+
     fn bury_cards(&mut self, player: PlayerId, cards: Vec<CardInstance>) {
         for card in cards {
             let (card, _zone_change) = self.zone_change_card(card);
@@ -11784,6 +11961,7 @@ impl Game {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+            | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }
@@ -12266,15 +12444,11 @@ impl Game {
                     if definition.procedure == AbilityProcedureDef::Legacy
                         && ability.custom_behavior() == Some(CardBehavior::FellwarStone) =>
                 {
-                    let mut visiting = Vec::new();
-                    let colors = self.fellwar_stone_colors(permanent, &mut visiting);
-                    activations.extend(colors.into_iter().map(|color| ManaAbilityActivation {
-                        source: permanent.card.id,
-                        ability: effective.origin,
-                        color,
-                        costs: definition.costs,
-                        effect: AddManaEffectDef::one(color),
-                    }));
+                    activations.extend(self.fellwar_stone_activations(
+                        permanent,
+                        effective.origin,
+                        definition.costs,
+                    ));
                 }
                 EffectDef::AddMana(_)
                 | EffectDef::None
@@ -12284,7 +12458,6 @@ impl Game {
                 | EffectDef::DrawCards { .. }
                 | EffectDef::DiscardCards { .. }
                 | EffectDef::LoseLife { .. }
-                | EffectDef::LoseTheGame { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
                 | EffectDef::Attach { .. }
@@ -12293,6 +12466,8 @@ impl Game {
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+                | EffectDef::RevealAndSplitIntoPiles { .. }
+                | EffectDef::LoseTheGame { .. }
                 | EffectDef::Mill { .. }
                 | EffectDef::LookAtTopAndMayTake { .. }
                 | EffectDef::SearchLibrary { .. }
@@ -12325,6 +12500,28 @@ impl Game {
             }
         });
         activations
+    }
+
+    /// One activation per colour Fellwar Stone can currently produce. The
+    /// set is read off the battlefield, so it has to be recomputed rather
+    /// than frozen on the ability.
+    fn fellwar_stone_activations(
+        &self,
+        permanent: &Permanent,
+        ability: AbilityOrigin,
+        costs: crate::card::AbilityCostList,
+    ) -> Vec<ManaAbilityActivation> {
+        let mut visiting = Vec::new();
+        self.fellwar_stone_colors(permanent, &mut visiting)
+            .into_iter()
+            .map(|color| ManaAbilityActivation {
+                source: permanent.card.id,
+                ability,
+                color,
+                costs,
+                effect: AddManaEffectDef::one(color),
+            })
+            .collect()
     }
 
     fn fellwar_stone_colors(
@@ -12398,7 +12595,6 @@ impl Game {
                 | EffectDef::DrawCards { .. }
                 | EffectDef::DiscardCards { .. }
                 | EffectDef::LoseLife { .. }
-                | EffectDef::LoseTheGame { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
                 | EffectDef::Attach { .. }
@@ -12407,6 +12603,8 @@ impl Game {
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+                | EffectDef::RevealAndSplitIntoPiles { .. }
+                | EffectDef::LoseTheGame { .. }
                 | EffectDef::Mill { .. }
                 | EffectDef::LookAtTopAndMayTake { .. }
                 | EffectDef::SearchLibrary { .. }
@@ -15103,6 +15301,7 @@ impl Game {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+            | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }

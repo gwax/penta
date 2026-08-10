@@ -367,17 +367,30 @@ pub(in crate::card::sets) static JACE_ARCHITECT_OF_THOUGHT: CardRecord = CardRec
     "Jace, Architect of Thought",
     CardArt::new("d4df3a38-678e-42dc-a3fd-d1d399368f07", "Jaime Jones"),
     CardSet::ReturnToRavnica,
-    CardRules::new_planeswalker(
-        mana_cost!("{2}{U}{U}"),
-        &["Jace"],
-        4,
-    )
-    .with_supertype(CardSupertype::Legendary)
-    .with_ability(AbilityDef::not_implemented(
-        "+1: Until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn.\n−2: Reveal the top three cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other on the bottom of your library in any order.\n−8: For each player, search that player's library for a nonland card and exile it, then that player shuffles. You may cast those cards without paying their mana costs.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    CardRules::new_planeswalker(mana_cost!("{2}{U}{U}"), &["Jace"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&JACE_ARCHITECT_ABILITIES),
 );
+
+static JACE_ARCHITECT_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::not_implemented(
+        "+1: Until your next turn, whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn.",
+        "A delayed trigger that lasts until its controller's next turn has nothing to hang on once the ability has resolved.",
+    ),
+    AbilityDef::activated(
+        "−2: Reveal the top three cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other on the bottom of your library in any order.",
+        &[AbilityCostDef::Loyalty(-2)],
+        EffectDef::RevealAndSplitIntoPiles {
+            count: ValueDef::Constant(3),
+            rest: ZoneKind::Library,
+            placement: LibraryPlacement::Bottom,
+        },
+    ),
+    AbilityDef::not_implemented(
+        "−8: For each player, search that player's library for a nonland card and exile it, then that player shuffles. You may cast those cards without paying their mana costs.",
+        "Casting an exiled card without paying its mana cost is not an available alternative cost.",
+    ),
+];
 
 pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
     cards::LOXODON_SMITER,

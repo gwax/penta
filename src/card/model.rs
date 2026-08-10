@@ -1399,6 +1399,16 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// Reveal the top `count` cards of the controller's library, have an
+    /// opponent separate them into two piles, and let the controller take one
+    /// pile into hand. Whatever is left goes to `rest`, using `placement`
+    /// when that is the library. Fact or Fiction and Jace's second ability
+    /// are the same procedure with different losing zones.
+    RevealAndSplitIntoPiles {
+        count: ValueDef,
+        rest: ZoneKind,
+        placement: LibraryPlacement,
+    },
     /// Look at the top card of a library and, if it matches, offer to take
     /// it. Looking is private and changes nothing, so declining leaves the
     /// card exactly where it was.
