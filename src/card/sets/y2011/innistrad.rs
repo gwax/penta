@@ -6,9 +6,9 @@ use crate::card::{
     AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardAbilityBinding,
     CardArt, CardBehavior, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
     CardStructure, CardSupertype, CardType, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef,
-    EffectDurationDef, EffectRecipientDef, LibraryPlacement, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayOptionDef, PlayerRelation, SpellForm, TriggerConditionDef, TriggerEventDef,
-    ValueDef, ZoneKind, abilities, cards,
+    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, LibraryPlacement, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation, SpellForm,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::game::{CardAbilityResolver, CardRuntime, PileChoice, PileSplit, ResolvedAbility};
 use crate::ids::{AbilityId, CardPartId, PlayOptionId, TargetIndex, TargetSlotId};
@@ -367,6 +367,7 @@ const LILIANA_ULTIMATE_ABILITY: AbilityDef = AbilityDef::activated_with_targets(
     )],
     EffectDef::None,
 )
+.with_effect_execution(EffectExecutionDef::CardOwned)
 .with_coverage(AbilityCoverageDef::explained_complete(
     "Pile separation, pile choice, and the chosen-pile sacrifice are composed by Liliana's card-owned resolver from shared runtime primitives.",
 ));

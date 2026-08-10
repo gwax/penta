@@ -606,7 +606,6 @@ fn result_json(result: GameResult) -> Value {
                 WinReason::OpponentLostToAnEffect => "OpponentLostToAnEffect",
                 WinReason::OpponentTriedToDrawFromEmptyLibrary =>
                     "OpponentTriedToDrawFromEmptyLibrary",
-                WinReason::OpponentLostToAnEffect => "OpponentLostToAnEffect",
             },
         }),
     }
@@ -2024,12 +2023,16 @@ mod tests {
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 
         // A card whose gap is a whole clause rather than a detail reports the
-        // same way: Vraska's first ability is cataloged and does nothing, and
-        // her other two play. No card in the catalog is metadata-only through
-        // and through any more, so that status has no example left to name.
+        // same way: Jace's ultimate is cataloged and does nothing, and his
+        // other two play. Vraska used to be the example here, until attack
+        // defenders made her retaliation reachable and she went complete. No
+        // card in the catalog is metadata-only through and through any more,
+        // so that status has no example left to name.
+        let jace = find("Jace, Architect of Thought");
+        assert_eq!(jace["implementationStatus"], "partial");
+        assert_eq!(jace["parts"][0]["implementationStatus"], "partial");
         let vraska = find("Vraska the Unseen");
-        assert_eq!(vraska["implementationStatus"], "partial");
-        assert_eq!(vraska["parts"][0]["implementationStatus"], "partial");
+        assert_eq!(vraska["implementationStatus"], "complete");
         assert!(
             cards
                 .iter()

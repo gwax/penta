@@ -241,6 +241,39 @@ fn spell_with_targets(
     object
 }
 
+/// Takes the split an unassigned attacker would have made anyway: lethal to
+/// each blocker in order, the rest over the top. A lone blocker used to get
+/// this for free; trample now makes it a real choice, so a test that only
+/// cares about the damage totals asks for the obvious one.
+fn take_default_combat_assignment(game: &mut Game) {
+    while let Some(action) = game
+        .legal_actions(game.priority)
+        .into_iter()
+        .find(|action| matches!(action, Action::AssignCombatDamage { .. }))
+    {
+        let Action::AssignCombatDamage { attacker, .. } = &action else {
+            unreachable!("filtered to assignments");
+        };
+        let blockers: Vec<_> = game
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.blocking == Some(*attacker))
+            .map(|permanent| permanent.card.id)
+            .collect();
+        let split = game.default_damage_split(*attacker, &blockers);
+        let wanted = Action::AssignCombatDamage {
+            attacker: *attacker,
+            assignments: split
+                .into_iter()
+                .map(|(recipient, amount)| CombatDamageAssignment { recipient, amount })
+                .collect(),
+        };
+        let player = game.priority;
+        game.apply(player, wanted)
+            .expect("the default split is legal");
+    }
+}
+
 fn pass_priority_pair(game: &mut Game) {
     let first = game.priority;
     game.apply(first, Action::PassPriority).unwrap();
@@ -6431,6 +6464,7 @@ fn double_striker_can_trample_after_killing_its_only_blocker() {
     let life_before = game.players[1].life;
 
     game.advance_step();
+    take_default_combat_assignment(&mut game);
     assert_eq!(
         game.players[1].life,
         life_before - 4,
@@ -6438,6 +6472,7 @@ fn double_striker_can_trample_after_killing_its_only_blocker() {
     );
 
     pass_priority_pair(&mut game);
+    take_default_combat_assignment(&mut game);
     assert_eq!(
         game.players[1].life,
         life_before - 10,
@@ -6636,9 +6671,12 @@ fn a_first_striker_that_gains_double_strike_hits_in_the_regular_wave() {
 }
 
 #[test]
-fn a_single_blocker_needs_no_damage_assignment() {
+fn a_single_blocker_without_trample_needs_no_damage_assignment() {
+    // Nothing to decide: the blocker takes all of it either way. A trampler
+    // in the same spot does get asked, because how much spills past is a real
+    // choice -- see a_lone_blocker_still_asks_a_trampler_how_much_spills.
     let mut game = ready_game();
-    let mut attacker = creature(10_000, cards::BALL_LIGHTNING, PlayerId::One);
+    let mut attacker = creature(10_000, cards::SU_CHI, PlayerId::One);
     attacker.attacking = true;
     let mut blocker = creature(10_001, cards::ATOG, PlayerId::Two);
     blocker.blocking = Some(attacker.card.id);
@@ -6652,7 +6690,7 @@ fn a_single_blocker_needs_no_damage_assignment() {
             .legal_actions(PlayerId::One)
             .iter()
             .any(|action| matches!(action, Action::AssignCombatDamage { .. })),
-        "one blocker leaves nothing worth deciding",
+        "one blocker and no trample leaves nothing worth deciding",
     );
     assert!(
         game.battlefield
@@ -6661,9 +6699,41 @@ fn a_single_blocker_needs_no_damage_assignment() {
         "the blocker still takes lethal damage",
     );
     assert_eq!(
+        game.players[1].life, life_before,
+        "and without trample none of it reaches the player",
+    );
+}
+
+#[test]
+fn a_lone_blocker_still_asks_a_trampler_how_much_spills() {
+    // 510.1c lets the attacker assign more than lethal to the blocker, so a
+    // 6/1 trampler over a 1/2 has a real decision even though only one
+    // creature is in the way.
+    let mut game = ready_game();
+    let mut attacker = creature(10_000, cards::BALL_LIGHTNING, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    let mut blocker = creature(10_001, cards::ATOG, PlayerId::Two);
+    blocker.blocking = Some(attacker_id);
+    game.battlefield = vec![attacker, blocker];
+    let life_before = game.players[1].life;
+    game.begin_combat_damage_assignment();
+
+    let offered: Vec<_> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::AssignCombatDamage { .. }))
+        .collect();
+    assert!(
+        offered.len() > 1,
+        "how much spills past the blocker is the attacker's call",
+    );
+
+    take_default_combat_assignment(&mut game);
+    assert_eq!(
         game.players[1].life,
         life_before - 4,
-        "a 6/1 trampler over a 1/2 blocker spills the remaining 4",
+        "the default split still gives the blocker lethal and tramples the rest",
     );
 }
 
@@ -13847,6 +13917,7 @@ fn bloodrush_uses_real_mana_sources_and_tramples_over_a_blocker() {
     );
     pass_priority_pair(&mut game);
     pass_priority_pair(&mut game);
+    take_default_combat_assignment(&mut game);
 
     assert_eq!(
         game.players[1].life, 15,
@@ -20203,14 +20274,14 @@ fn vraska_destroys_a_nonland_permanent_and_ultimates_into_three_assassins() {
 
     let destroy = Action::ActivateAbility {
         source: GameObjectId(10_000),
-        ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+        ability: activated_ability_for(&game, GameObjectId(10_000), 1),
         targets: activated_targets(Target::Permanent(GameObjectId(10_001))),
         cost_object: None,
         x: 0,
     };
     let at_the_land = Action::ActivateAbility {
         source: GameObjectId(10_000),
-        ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+        ability: activated_ability_for(&game, GameObjectId(10_000), 1),
         targets: activated_targets(Target::Permanent(GameObjectId(10_002))),
         cost_object: None,
         x: 0,
@@ -20251,7 +20322,7 @@ fn vraskas_ultimate_makes_three_assassins() {
         PlayerId::One,
         Action::ActivateAbility {
             source: GameObjectId(10_000),
-            ability: activated_ability_for(&game, GameObjectId(10_000), 1),
+            ability: activated_ability_for(&game, GameObjectId(10_000), 2),
             targets: Vec::new(),
             cost_object: None,
             x: 0,

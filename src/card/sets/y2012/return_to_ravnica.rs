@@ -728,10 +728,29 @@ pub(in crate::card::sets) static VRASKA_THE_UNSEEN: CardRecord = CardRecord::new
         .with_abilities(&VRASKA_ABILITIES),
 );
 
+/// The delayed trigger Vraska's +1 hangs on herself. It reads damage arriving
+/// at the planeswalker, which only became reachable once a creature could
+/// attack one.
+static VRASKA_RETALIATION: AbilityDef = AbilityDef::triggered(
+    "Whenever a creature deals combat damage to Vraska, destroy that creature.",
+    TriggerEventDef::CombatDamageDealtToSource {
+        source: ObjectPredicateDef::HasType(CardType::Creature),
+    },
+    EffectDef::Destroy {
+        object: EffectRecipientDef::TriggeringObject,
+        can_regenerate: true,
+    },
+);
+
 static VRASKA_ABILITIES: [AbilityDef; 3] = [
-    AbilityDef::not_implemented(
+    AbilityDef::activated(
         "+1: Until your next turn, whenever a creature deals combat damage to Vraska, destroy that creature.",
-        "A creature can only ever attack a player, so nothing can deal combat damage to a planeswalker for this to notice.",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::GrantAbility(&VRASKA_RETALIATION),
+            duration: EffectDurationDef::UntilYourNextTurn,
+        },
     ),
     AbilityDef::activated_with_targets(
         "−3: Destroy target nonland permanent.",

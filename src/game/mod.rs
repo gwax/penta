@@ -2188,7 +2188,7 @@ impl Game {
                 x,
             } => self.activate_ability(player, source, ability, targets, cost_object, x),
             Action::DeclareAttacker { attacker, defender } => {
-                self.declare_attacker(attacker, defender)
+                self.declare_attacker(attacker, defender);
             }
             Action::FinishDeclaringAttackers => self.finish_declaring_attackers(),
             Action::DeclareBlocker { blocker, attacker } => {
@@ -2414,6 +2414,36 @@ impl Game {
     }
 
     #[must_use]
+    /// The command-zone emblems as a client sees them: who owns each one, what
+    /// to call it, and the text of every clause it grants.
+    fn observed_emblems(&self) -> Vec<EmblemObservation> {
+        self.emblems
+            .iter()
+            .map(|emblem| EmblemObservation {
+                id: emblem.card.id,
+                controller: emblem.controller,
+                name: self.catalog.get(emblem.card.definition).map_or_else(
+                    || "Unknown emblem".to_owned(),
+                    |definition| definition.name.clone(),
+                ),
+                source_ability: emblem.emblem_source.unwrap_or(AbilityOrigin::Printed {
+                    definition: emblem.card.definition,
+                    part: emblem.presented,
+                    ability: AbilityId::PRIMARY,
+                }),
+                ability_texts: self
+                    .catalog
+                    .get(emblem.card.definition)
+                    .and_then(|definition| definition.part(emblem.presented))
+                    .into_iter()
+                    .flat_map(|part| part.rules.ability_clauses().iter())
+                    .map(|ability| ability.text.to_owned())
+                    .collect(),
+            })
+            .collect()
+    }
+
+    #[must_use]
     pub fn observe(&self, viewer: PlayerId) -> PlayerObservation {
         let player = &self.players[viewer.index()];
         let opponent = &self.players[viewer.opponent().index()];
@@ -2473,31 +2503,7 @@ impl Game {
                         == permanent.entered_controller_turn,
                 })
                 .collect(),
-            emblems: self
-                .emblems
-                .iter()
-                .map(|emblem| EmblemObservation {
-                    id: emblem.card.id,
-                    controller: emblem.controller,
-                    name: self.catalog.get(emblem.card.definition).map_or_else(
-                        || "Unknown emblem".to_owned(),
-                        |definition| definition.name.clone(),
-                    ),
-                    source_ability: emblem.emblem_source.unwrap_or(AbilityOrigin::Printed {
-                        definition: emblem.card.definition,
-                        part: emblem.presented,
-                        ability: AbilityId::PRIMARY,
-                    }),
-                    ability_texts: self
-                        .catalog
-                        .get(emblem.card.definition)
-                        .and_then(|definition| definition.part(emblem.presented))
-                        .into_iter()
-                        .flat_map(|part| part.rules.ability_clauses().iter())
-                        .map(|ability| ability.text.to_owned())
-                        .collect(),
-                })
-                .collect(),
+            emblems: self.observed_emblems(),
             stack: self
                 .stack
                 .iter()
@@ -3950,7 +3956,6 @@ impl Game {
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
-            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -4128,6 +4133,31 @@ impl Game {
         }
     }
 
+    /// Combat damage arriving at the ability's own source. A planeswalker is
+    /// dealt combat damage as a permanent, so this is the only shape that can
+    /// see it; the player-facing variants read a life total instead.
+    fn combat_damage_to_source_matches(
+        &self,
+        definition: TriggerEventDef,
+        event: &CommittedTriggerEvent,
+        source: GameObjectId,
+    ) -> bool {
+        let (
+            TriggerEventDef::CombatDamageDealtToSource { source: predicate },
+            CommittedTriggerEvent::DamageDealt {
+                source: dealer,
+                recipient,
+                combat: true,
+                ..
+            },
+        ) = (definition, event)
+        else {
+            return false;
+        };
+        *recipient == Target::Permanent(source)
+            && self.trigger_object_matches(predicate, dealer, source, false)
+    }
+
     fn trigger_event_matches(
         &self,
         definition: TriggerEventDef,
@@ -4163,6 +4193,10 @@ impl Game {
                 TriggerEventDef::CombatDamageDealtToPlayer { source: predicate },
                 CommittedTriggerEvent::CombatDamageDealtToPlayer { object, .. },
             ) => self.trigger_object_matches(predicate, object, source, false),
+            (
+                trigger @ TriggerEventDef::CombatDamageDealtToSource { .. },
+                damage @ CommittedTriggerEvent::DamageDealt { .. },
+            ) => self.combat_damage_to_source_matches(trigger, damage, source),
             (TriggerEventDef::Attacks(predicate), CommittedTriggerEvent::Attacks { object }) => {
                 self.trigger_object_matches(predicate, object, source, false)
             }
@@ -9966,16 +10000,6 @@ impl Game {
                     }
                 }
             }
-            EffectDef::LoseTheGame { player: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.finish(GameResult::Winner {
-                            winner: player.opponent(),
-                            reason: WinReason::OpponentLostToAnEffect,
-                        });
-                    }
-                }
-            }
             EffectDef::Tap { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Permanent(permanent) = target {
@@ -10728,6 +10752,96 @@ impl Game {
         ));
     }
 
+    /// Where a granted ability lands: a card in another zone keeps a
+    /// temporary grant, a permanent takes a keyword into one of the keyword
+    /// lists or a full ability into its own grant list.
+    fn apply_granted_ability(
+        &mut self,
+        target: Target,
+        ability: &'static AbilityDef,
+        duration: EffectDurationDef,
+        object: &StackObject,
+    ) {
+        match target {
+            Target::Card(target) => {
+                let grant = TemporaryAbilityGrant {
+                    object: target,
+                    ability,
+                };
+                if self.card_in_nonbattlefield_zone(target).is_some()
+                    && !self.temporary_ability_grants.contains(&grant)
+                {
+                    self.temporary_ability_grants.push(grant);
+                }
+            }
+            Target::Permanent(target) => {
+                // A keyword grant lands in one of the keyword lists,
+                // whose durations the cleanup and upkeep steps read. Any
+                // other ability is a real grant carrying its own
+                // provenance, and only the two long durations take one.
+                let until_upkeep_of = (duration == EffectDurationDef::UntilYourNextUpkeep)
+                    .then_some(object.controller);
+                if let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
+                    && let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == target)
+                {
+                    if let Some(player) = until_upkeep_of {
+                        if !permanent
+                            .keywords_until_upkeep_of
+                            .contains(&(player, keyword))
+                        {
+                            permanent.keywords_until_upkeep_of.push((player, keyword));
+                        }
+                    } else if !permanent.temporary_keywords.contains(&keyword) {
+                        permanent.temporary_keywords.push(keyword);
+                    }
+                } else if matches!(
+                    duration,
+                    EffectDurationDef::UntilYourNextTurn | EffectDurationDef::Permanent
+                ) {
+                    let source = object.source.unwrap_or(object.id);
+                    let origin = object.ability_origin().unwrap_or(AbilityOrigin::Printed {
+                        definition: object.presentation_definition(),
+                        part: CardPartId::PRIMARY,
+                        ability: AbilityId::PRIMARY,
+                    });
+                    let (source_definition, source_part, source_ability) =
+                        Self::ability_origin_components(origin, object.presentation_definition());
+                    let expires_at_turn =
+                        (duration == EffectDurationDef::UntilYourNextTurn).then(|| {
+                            (
+                                object.controller,
+                                self.turns_started[object.controller.index()].saturating_add(1),
+                            )
+                        });
+                    if let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == target)
+                    {
+                        let grant =
+                            GrantId::from_index(permanent.temporary_granted_abilities.len())
+                                .expect("one permanent has at most 256 temporary grants");
+                        permanent
+                            .temporary_granted_abilities
+                            .push(TemporaryGrantedAbility {
+                                ability,
+                                source,
+                                source_definition,
+                                source_part,
+                                source_ability,
+                                grant,
+                                expires_at_turn,
+                            });
+                    }
+                }
+            }
+            Target::Player(_) | Target::Spell(_) => {}
+        }
+    }
+
     fn apply_applied_effect_component(
         &mut self,
         target: Target,
@@ -10745,87 +10859,9 @@ impl Game {
                     );
                 }
             }
-            AppliedEffectDef::GrantAbility(ability) => match target {
-                Target::Card(target) => {
-                    let grant = TemporaryAbilityGrant {
-                        object: target,
-                        ability,
-                    };
-                    if self.card_in_nonbattlefield_zone(target).is_some()
-                        && !self.temporary_ability_grants.contains(&grant)
-                    {
-                        self.temporary_ability_grants.push(grant);
-                    }
-                }
-                Target::Permanent(target) => {
-                    // A keyword grant lands in one of the keyword lists,
-                    // whose durations the cleanup and upkeep steps read. Any
-                    // other ability is a real grant carrying its own
-                    // provenance, and only the two long durations take one.
-                    let until_upkeep_of = (duration == EffectDurationDef::UntilYourNextUpkeep)
-                        .then_some(object.controller);
-                    if let DeclarativeAbilityDef::Keyword(keyword) = ability.definition
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|permanent| permanent.card.id == target)
-                    {
-                        if let Some(player) = until_upkeep_of {
-                            if !permanent
-                                .keywords_until_upkeep_of
-                                .contains(&(player, keyword))
-                            {
-                                permanent.keywords_until_upkeep_of.push((player, keyword));
-                            }
-                        } else if !permanent.temporary_keywords.contains(&keyword) {
-                            permanent.temporary_keywords.push(keyword);
-                        }
-                    } else if matches!(
-                        duration,
-                        EffectDurationDef::UntilYourNextTurn | EffectDurationDef::Permanent
-                    ) {
-                        let source = object.source.unwrap_or(object.id);
-                        let origin = object.ability_origin().unwrap_or(AbilityOrigin::Printed {
-                            definition: object.presentation_definition(),
-                            part: CardPartId::PRIMARY,
-                            ability: AbilityId::PRIMARY,
-                        });
-                        let (source_definition, source_part, source_ability) =
-                            Self::ability_origin_components(
-                                origin,
-                                object.presentation_definition(),
-                            );
-                        let expires_at_turn = (duration == EffectDurationDef::UntilYourNextTurn)
-                            .then(|| {
-                                (
-                                    object.controller,
-                                    self.turns_started[object.controller.index()].saturating_add(1),
-                                )
-                            });
-                        if let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|permanent| permanent.card.id == target)
-                        {
-                            let grant =
-                                GrantId::from_index(permanent.temporary_granted_abilities.len())
-                                    .expect("one permanent has at most 256 temporary grants");
-                            permanent
-                                .temporary_granted_abilities
-                                .push(TemporaryGrantedAbility {
-                                    ability,
-                                    source,
-                                    source_definition,
-                                    source_part,
-                                    source_ability,
-                                    grant,
-                                    expires_at_turn,
-                                });
-                        }
-                    }
-                }
-                Target::Player(_) | Target::Spell(_) => {}
-            },
+            AppliedEffectDef::GrantAbility(ability) => {
+                self.apply_granted_ability(target, ability, duration, object);
+            }
             AppliedEffectDef::Animate(animation) => {
                 if let Target::Permanent(target) = target
                     && let Some(permanent) = self
@@ -13182,7 +13218,6 @@ impl Game {
             | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::CreateEmblem { .. }
-            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -13942,7 +13977,6 @@ impl Game {
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::CreateEmblem { .. }
-                | EffectDef::LoseTheGame { .. }
                 | EffectDef::Transform { .. }
                 | EffectDef::AdditionalCombatPhase
                 | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -15890,16 +15924,11 @@ impl Game {
             .filter(|attacker| {
                 attacker.attacking && self.deals_damage_in_current_combat_step(attacker)
             })
-            // A single blocker leaves nothing worth deciding: it takes lethal
-            // and, with trample, the rest spills over. Only a real split
-            // between several blockers is worth asking about.
-            .filter(|attacker| {
-                self.battlefield
-                    .iter()
-                    .filter(|blocker| blocker.blocking == Some(attacker.card.id))
-                    .count()
-                    > 1
-            })
+            // Ask exactly when there is a real choice. One blocker and no
+            // trample leaves a single legal distribution and no question; one
+            // blocker plus trample is a genuine decision about how much to
+            // spill past it.
+            .filter(|attacker| self.combat_assignment_actions(attacker.card.id).len() > 1)
             .map(|attacker| attacker.card.id)
             .collect();
         if self.pending_combat_attackers.is_empty() {
@@ -15947,6 +15976,19 @@ impl Game {
                             Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
                         })
                 };
+                // 510.1c: damage is assigned in an order, and a blocker only
+                // gets any once every blocker ahead of it has lethal. Whatever
+                // order the player picks, that leaves at most one blocker
+                // holding a non-lethal share.
+                if blockers()
+                    .filter(|(id, amount)| {
+                        *amount > 0 && *amount < self.lethal_damage_from(*id, attacker_id)
+                    })
+                    .count()
+                    > 1
+                {
+                    return false;
+                }
                 // 510.1d: trample only spills once every blocker has lethal.
                 let defender_damage = defender_index
                     .and_then(|index| amounts.get(index))
@@ -16119,7 +16161,10 @@ impl Game {
         match defender {
             Target::Player(player) => self.deal_combat_damage_to_player(attacker, player, amount),
             Target::Permanent(_) | Target::Card(_) | Target::Spell(_) => {
-                self.damage_target_from(Some(attacker), Some(defender), amount);
+                // Flagged as combat damage so a trigger that listens for it
+                // arriving here, as Vraska's does, can tell it apart from an
+                // ability's damage.
+                self.damage_target_from_kind(Some(attacker), Some(defender), amount, true);
             }
         }
     }
@@ -16837,7 +16882,6 @@ impl Game {
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
-            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }

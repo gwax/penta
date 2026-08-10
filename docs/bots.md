@@ -5,7 +5,7 @@ ships Eternal Central Old School 93/94 and the final pre-Theros ISD–RTR
 Standard format. This guide is for writing a program that plays it: from
 Python, C, C++, or Rust, against the included bots or against itself.
 
-This guide describes the current development wire contract, **protocol 14**.
+This guide describes the current development wire contract, **protocol 15**.
 Query `protocol_version()` and `engine_version()` through the selected binding
 and reject or migrate versions your client does not understand; pin both
 alongside trained weights. Old School remains the default for compatibility;
@@ -254,7 +254,8 @@ simulating in their own process, where there is nobody to hide from.
 | `hand` | your cards: `{objectId, instance, definition, name}`; `instance` is a compatibility alias for `objectId` |
 | `opponentHandSize` | their current hidden hand as a count; learned snapshots are reported separately in `lastSeenHand` |
 | `lastSeenHand` | null or the most recently revealed hand snapshot as `{seat, cards}`; it records known information and can outlive later hand changes |
-| `battlefield` | every permanent, including its current-zone object ID, canonical definition, and presented card-part ID |
+| `battlefield` | every permanent, including its current-zone object ID, canonical definition, and presented card-part ID; a planeswalker also reports `loyalty` and `loyaltyAbilityUsedThisTurn` |
+| `emblems` | command-zone emblems, each with its controller, name, granting ability, and clause texts |
 | `stack` | pending spells, activated abilities, and triggered abilities, bottom to top; entries expose the source object ID, creating definition and ability origin/text, controller, counterability, targets, chosen permanents, X, and a locked cast signature when applicable |
 | `graveyards`, `exiles` | public zones, both players |
 | `decision` | a pending choice (see below), or null |
@@ -343,6 +344,12 @@ Three things worth knowing:
 - **Costs and targets are enumerated.** A Lightning Bolt with three legal
   targets appears as three `CastSpell` entries. Your bot chooses among
   ready-made legal plays; it never constructs one.
+
+Every `DeclareAttacker` names a `defender`: `{"type": "player", "seat": "p2"}`
+or `{"type": "planeswalker", "objectId": 42}`. The engine offers one action per
+legal defender, so a creature that could attack either a player or a
+planeswalker appears more than once. Combat damage follows the defender, and a
+planeswalker takes it as loyalty counters.
 
 Attacker and blocker declaration is incremental: choose one
 `DeclareAttacker` or `DeclareBlocker`, re-observe, and eventually choose the

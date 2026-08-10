@@ -967,6 +967,9 @@ impl WebGame {
                     "label": self.action_label(&observation, action),
                     "kind": action_kind(action),
                     "cardId": action_card(action).map(|id| id.0),
+                    "targetSelections": action_target_selections(action, self.human),
+                    "attackDefender": action_attack_defender(action)
+                        .map(|defender| attack_defender_value(defender, self.human)),
                     "targetCardId": action_target_card(action).map(|id| id.0),
                     "targetPlayer": action_target_player(action, self.human),
                     "targetStackId": action_target_stack(action),
@@ -1096,7 +1099,9 @@ impl WebGame {
                     "loyalty": permanent.loyalty,
                     "loyaltyAbilityUsedThisTurn": permanent.loyalty_ability_used_this_turn,
                     "attacking": permanent.attacking,
-                    "attackDefender": permanent.attack_defender.map(attack_defender_value),
+                    "attackDefender": permanent
+                        .attack_defender
+                        .map(|defender| attack_defender_value(defender, self.human)),
                     "blockedThisCombat": permanent.blocked_this_combat,
                     "blocking": permanent.blocking.map(|id| id.0),
                     "flying": permanent.flying,
@@ -1997,6 +2002,41 @@ fn mana_cost_label(cost: penta::ManaCost) -> String {
     label
 }
 
+/// The per-slot target choices of a cast action, hoisted beside the flattened
+/// target metadata so the browser can tell which slot each target belongs to
+/// without unpacking the whole signature.
+fn action_target_selections(action: &Action, human: PlayerId) -> Value {
+    match action {
+        Action::CastSpell { choices, .. } => target_selections_value(choices.targets(), human),
+        _ => Value::Array(Vec::new()),
+    }
+}
+
+fn target_selections_value(selections: &[penta::TargetSelection], human: PlayerId) -> Value {
+    Value::Array(
+        selections
+            .iter()
+            .map(|selection| {
+                json!({
+                    "slotId": selection.slot().0,
+                    "targetCardIds": selection.targets().iter().filter_map(|target| match target {
+                        Target::Card(id) | Target::Permanent(id) => Some(id.0),
+                        Target::Player(_) | Target::Spell(_) => None,
+                    }).collect::<Vec<_>>(),
+                    "targetPlayers": selection.targets().iter().filter_map(|target| match target {
+                        Target::Player(player) => Some(if *player == human {
+                            "human"
+                        } else {
+                            "opponent"
+                        }),
+                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                    }).collect::<Vec<_>>(),
+                })
+            })
+            .collect(),
+    )
+}
+
 fn cast_signature_value(signature: &penta::CastSignature, human: PlayerId) -> Value {
     let form = match signature.form() {
         penta::SpellForm::Part(part) => json!({
@@ -2615,11 +2655,20 @@ fn ability_origin_value(origin: AbilityOrigin) -> Value {
     }
 }
 
-fn attack_defender_value(defender: penta::AttackDefender) -> Value {
+/// Who a declaration is attacking. The browser draws the arrow from this
+/// rather than from target metadata, because a defender is not a target.
+fn action_attack_defender(action: &Action) -> Option<penta::AttackDefender> {
+    match action {
+        Action::DeclareAttacker { defender, .. } => Some(*defender),
+        _ => None,
+    }
+}
+
+fn attack_defender_value(defender: penta::AttackDefender, human: PlayerId) -> Value {
     match defender {
         penta::AttackDefender::Player(player) => json!({
             "kind": "player",
-            "player": if player == PlayerId::One { "human" } else { "opponent" },
+            "player": if player == human { "human" } else { "opponent" },
         }),
         penta::AttackDefender::Planeswalker(card) => {
             json!({ "kind": "planeswalker", "cardId": card.0 })
@@ -3485,8 +3534,8 @@ mod tests {
         assert_eq!(
             prospective["decision"]["options"],
             json!([
-                { "id": 0, "triggerId": null, "label": "Do not pay", "cardId": null, "cardName": null, "abilityText": null, "zone": "None" },
-                { "id": 1, "triggerId": null, "label": "Pay 2 life", "cardId": null, "cardName": null, "abilityText": null, "zone": "None" },
+                { "id": 0, "triggerId": null, "label": "Do not pay", "cardId": null, "cardName": null, "members": [], "abilityText": null, "zone": "None" },
+                { "id": 1, "triggerId": null, "label": "Pay 2 life", "cardId": null, "cardName": null, "members": [], "abilityText": null, "zone": "None" },
             ])
         );
         assert!(

@@ -13,8 +13,8 @@ use crate::game::{
     PlayerObservation, StackObjectKind, StackObservation, Step,
 };
 use crate::{
-    AbilityOrigin, Action, ActionError, CardDefinitionId, CastChoices, GameObjectId, PlayerId,
-    Target,
+    AbilityOrigin, Action, ActionError, AttackDefender, CardDefinitionId, CastChoices,
+    GameObjectId, PlayerId, Target,
 };
 
 /// Chooses one of the actions in a player's current observation.
@@ -350,7 +350,6 @@ impl HandcraftedPolicy {
             | EffectDef::UnlessPaid { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
-            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -861,6 +860,216 @@ impl HandcraftedPolicy {
             .unwrap_or(0)
     }
 
+    /// The loyalty a printed activated ability charges, when `ability` really
+    /// is a clause on `definition`. Reading it off the catalog keeps the
+    /// policy from guessing at a planeswalker's cost.
+    fn loyalty_cost_of(
+        &self,
+        source_definition: Option<CardDefinitionId>,
+        ability: AbilityOrigin,
+    ) -> Option<i8> {
+        source_definition.and_then(|definition| {
+            let AbilityOrigin::Printed {
+                definition: origin_definition,
+                part,
+                ability,
+            } = ability
+            else {
+                return None;
+            };
+            let actual = (origin_definition == definition)
+                .then(|| {
+                    self.catalog
+                        .get(definition)?
+                        .part(part)?
+                        .rules
+                        .ability(ability)
+                })
+                .flatten()?;
+            match actual.definition {
+                DeclarativeAbilityDef::Activated(definition) => {
+                    definition.costs.iter().find_map(|cost| match *cost {
+                        AbilityCostDef::Loyalty(change) => Some(change),
+                        _ => None,
+                    })
+                }
+                _ => None,
+            }
+        })
+    }
+
+    /// A loyalty ability's own score, before the costs every ability pays.
+    /// Fighting off an attacker beats pointing damage somewhere, which beats
+    /// the card's own hint, which beats a plain continuous effect.
+    fn score_loyalty_ability(
+        observation: &PlayerObservation,
+        targets: &[crate::TargetSelection],
+        declarative: Option<DeclarativeSpellProfile>,
+        card_owned_hint_score: i32,
+        target_score: i32,
+        cost: i8,
+    ) -> i32 {
+        let fight_score = targets
+            .iter()
+            .flat_map(crate::TargetSelection::targets)
+            .filter_map(|target| match target {
+                Target::Permanent(id) => observation
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.id == *id),
+                Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+            })
+            .collect::<Vec<_>>();
+        let loyalty_score = if fight_score.len() == 2
+            && fight_score[0].controller == observation.viewer
+            && fight_score[1].controller == observation.viewer.opponent()
+            && fight_score[0].power.unwrap_or(0)
+                >= fight_score[1].toughness.unwrap_or(0)
+                    - i16::try_from(fight_score[1].damage).unwrap_or(i16::MAX)
+            && fight_score[1].power.unwrap_or(0)
+                < fight_score[0].toughness.unwrap_or(0)
+                    - i16::try_from(fight_score[0].damage).unwrap_or(i16::MAX)
+        {
+            8_000
+        } else if declarative.is_some_and(|profile| profile.damage.is_some()) {
+            7_200 + target_score
+        } else if card_owned_hint_score != 0 {
+            6_800 + card_owned_hint_score
+        } else if declarative.is_some_and(|profile| profile.has(DeclarativeSpellProfile::APPLIES)) {
+            5_200 + target_score
+        } else {
+            4_500 + target_score
+        };
+        loyalty_score + i32::from(cost) * 100
+    }
+
+    /// What a card's own policy hint is worth here. Liliana's ultimate is the
+    /// only one so far: splitting an opponent's board is good, splitting your
+    /// own is not.
+    /// What one decision option is worth. A pile option stands for the cards
+    /// it groups, so its value is theirs together; an ordinary option is worth
+    /// its own card.
+    fn option_value(&self, option: &DecisionOption) -> i32 {
+        if option.members.is_empty() {
+            return option
+                .card
+                .map_or(0, |(_, definition)| self.card_value(definition));
+        }
+        option
+            .members
+            .iter()
+            .map(|(_, definition)| self.card_value(*definition))
+            .sum()
+    }
+
+    /// Splits the options into two piles of as near equal value as it can,
+    /// both nonempty, and returns the ids of the first. Liliana's ultimate
+    /// hands the choice of pile to the opponent, so the safe split is the even
+    /// one. Exhaustive while the set is small enough to enumerate, and a
+    /// largest-first greedy fill beyond that; both are deterministic.
+    fn balanced_partition(
+        &self,
+        options: &[&DecisionOption],
+        minimum: usize,
+        maximum: usize,
+    ) -> Vec<u32> {
+        if options.len() < 2 {
+            return Vec::new();
+        }
+        // A pile of everything is not a split, and neither is a pile of
+        // nothing, so the size stays inside the decision's own bounds and
+        // short of the whole set.
+        let lowest = minimum.max(1);
+        let highest = maximum.min(options.len() - 1);
+        if lowest > highest {
+            return Vec::new();
+        }
+        let values: Vec<i32> = options
+            .iter()
+            .map(|option| self.option_value(option))
+            .collect();
+        let total: i32 = values.iter().sum();
+        if options.len() <= 16 {
+            let mut best: Option<(i32, Vec<u32>)> = None;
+            for mask in 1u32..(1 << options.len()) - 1 {
+                let size = mask.count_ones() as usize;
+                if size < lowest || size > highest {
+                    continue;
+                }
+                let mut sum = 0;
+                let mut chosen = Vec::new();
+                for (index, option) in options.iter().enumerate() {
+                    if mask & (1 << index) != 0 {
+                        sum += values[index];
+                        chosen.push(option.id);
+                    }
+                }
+                let gap = (total - 2 * sum).abs();
+                // Ties break on the smaller pile and then on its ids, so the
+                // same board always produces the same split.
+                let key = (gap, chosen.len(), chosen.clone());
+                if best.as_ref().is_none_or(|(best_gap, best_ids)| {
+                    key < (*best_gap, best_ids.len(), best_ids.clone())
+                }) {
+                    best = Some((gap, chosen));
+                }
+            }
+            return best.map(|(_, chosen)| chosen).unwrap_or_default();
+        }
+        let mut order: Vec<usize> = (0..options.len()).collect();
+        order.sort_by_key(|index| (-values[*index], options[*index].id));
+        let mut first = Vec::new();
+        let mut first_sum = 0;
+        let mut second_sum = 0;
+        for index in order {
+            if first_sum <= second_sum && first.len() < highest {
+                first_sum += values[index];
+                first.push(options[index].id);
+            } else {
+                second_sum += values[index];
+            }
+        }
+        first.sort_unstable();
+        first
+    }
+
+    fn card_owned_hint_score(
+        &self,
+        observation: &PlayerObservation,
+        ability: AbilityOrigin,
+        targets: &[crate::TargetSelection],
+    ) -> i32 {
+        self.card_owned_policy_hint(ability)
+            .map_or(0, |hint| match hint {
+                crate::card::AbilityPolicyHint::TargetPlayerSacrificesOneOfTwoPermanentPiles {
+                    target,
+                } => targets
+                    .iter()
+                    .find(|selection| selection.slot() == target)
+                    .into_iter()
+                    .flat_map(crate::TargetSelection::targets)
+                    .filter_map(|target| match target {
+                        Target::Player(player) => Some(player),
+                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                    })
+                    .map(|player| {
+                        let value = observation
+                            .battlefield
+                            .iter()
+                            .filter(|permanent| permanent.controller == *player)
+                            .map(|permanent| self.card_value(permanent.definition))
+                            .sum::<i32>()
+                            / 2;
+                        if *player == observation.viewer {
+                            -value
+                        } else {
+                            500 + value
+                        }
+                    })
+                    .sum(),
+            })
+    }
+
     fn score_ability(
         &self,
         observation: &PlayerObservation,
@@ -891,101 +1100,18 @@ impl HandcraftedPolicy {
             .and_then(|card| Self::permanent_definition(observation, card))
             .map_or(0, |definition| self.card_value(definition));
         let discard_source_cost = self.discard_source_cost(source_definition, ability);
-        let card_owned_hint_score =
-            self.card_owned_policy_hint(ability)
-                .map_or(0, |hint| {
-                    match hint {
-                crate::card::AbilityPolicyHint::TargetPlayerSacrificesOneOfTwoPermanentPiles {
-                    target,
-                } => targets
-                    .iter()
-                    .find(|selection| selection.slot() == target)
-                    .into_iter()
-                    .flat_map(|selection| selection.targets())
-                    .filter_map(|target| match target {
-                        Target::Player(player) => Some(player),
-                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
-                    })
-                    .map(|player| {
-                        let value = observation
-                            .battlefield
-                            .iter()
-                            .filter(|permanent| permanent.controller == *player)
-                            .map(|permanent| self.card_value(permanent.definition))
-                            .sum::<i32>()
-                            / 2;
-                        if *player == observation.viewer {
-                            -value
-                        } else {
-                            500 + value
-                        }
-                    })
-                    .sum(),
-            }
-                });
-        let loyalty_cost = source_definition.and_then(|definition| {
-            let AbilityOrigin::Printed {
-                definition: origin_definition,
-                part,
-                ability,
-            } = ability
-            else {
-                return None;
-            };
-            let actual = (origin_definition == definition)
-                .then(|| {
-                    self.catalog
-                        .get(definition)?
-                        .part(part)?
-                        .rules
-                        .ability(ability)
-                })
-                .flatten()?;
-            match actual.definition {
-                DeclarativeAbilityDef::Activated(definition) => {
-                    definition.costs.iter().find_map(|cost| match *cost {
-                        AbilityCostDef::Loyalty(change) => Some(change),
-                        _ => None,
-                    })
-                }
-                _ => None,
-            }
-        });
+        let card_owned_hint_score = self.card_owned_hint_score(observation, ability, targets);
+        let loyalty_cost = self.loyalty_cost_of(source_definition, ability);
         if let Some(cost) = loyalty_cost {
-            let fight_score = targets
-                .iter()
-                .flat_map(crate::TargetSelection::targets)
-                .filter_map(|target| match target {
-                    Target::Permanent(id) => observation
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.id == *id),
-                    Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
-                })
-                .collect::<Vec<_>>();
-            let loyalty_score = if fight_score.len() == 2
-                && fight_score[0].controller == observation.viewer
-                && fight_score[1].controller == observation.viewer.opponent()
-                && fight_score[0].power.unwrap_or(0)
-                    >= fight_score[1].toughness.unwrap_or(0)
-                        - i16::try_from(fight_score[1].damage).unwrap_or(i16::MAX)
-                && fight_score[1].power.unwrap_or(0)
-                    < fight_score[0].toughness.unwrap_or(0)
-                        - i16::try_from(fight_score[0].damage).unwrap_or(i16::MAX)
-            {
-                8_000
-            } else if declarative.is_some_and(|profile| profile.damage.is_some()) {
-                7_200 + target_score
-            } else if card_owned_hint_score != 0 {
-                6_800 + card_owned_hint_score
-            } else if declarative
-                .is_some_and(|profile| profile.has(DeclarativeSpellProfile::APPLIES))
-            {
-                5_200 + target_score
-            } else {
-                4_500 + target_score
-            };
-            return loyalty_score + i32::from(cost) * 100 - sacrifice_cost - discard_source_cost;
+            return Self::score_loyalty_ability(
+                observation,
+                targets,
+                declarative,
+                card_owned_hint_score,
+                target_score,
+                cost,
+            ) - sacrifice_cost
+                - discard_source_cost;
         }
         let score = match behavior {
             Some(CardBehavior::ChaosOrb) => 7_200 + target_score,
@@ -1489,6 +1615,35 @@ impl HandcraftedPolicy {
         Some(profile)
     }
 
+    /// Which defender to point an attacker at. Damage that would finish the
+    /// opponent goes at the opponent; short of that a planeswalker is the
+    /// better target, because loyalty does not come back the way life can be
+    /// gained and a resolved ultimate usually ends the game anyway.
+    fn defender_preference(
+        observation: &PlayerObservation,
+        attacker: GameObjectId,
+        defender: AttackDefender,
+    ) -> i32 {
+        let committed: i16 = observation
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == observation.viewer
+                    && (permanent.attacking || permanent.id == attacker)
+            })
+            .filter_map(|permanent| permanent.power)
+            .map(|power| power.max(0))
+            .sum();
+        let opponent_life = observation.life_totals[observation.viewer.opponent().index()];
+        let lethal = committed >= opponent_life;
+        match defender {
+            AttackDefender::Player(_) if lethal => 400,
+            AttackDefender::Player(_) => 0,
+            AttackDefender::Planeswalker(_) if lethal => 0,
+            AttackDefender::Planeswalker(_) => 200,
+        }
+    }
+
     fn score_attack(&self, observation: &PlayerObservation, attacker: GameObjectId) -> i32 {
         let Some(attacker) = observation
             .battlefield
@@ -1741,13 +1896,14 @@ impl HandcraftedPolicy {
                     .map(|decision| decision.preference)
                 {
                     Some(crate::DecisionPreference::HigherCardValue) => 8_000 + selected_value,
-                    Some(crate::DecisionPreference::BalancedPartition) => 8_000,
+
                     Some(crate::DecisionPreference::LowerCardValue) => 8_000 - selected_value,
                     Some(crate::DecisionPreference::PreferOption(preferred)) => {
                         8_000 + i32::from(options.contains(&preferred))
                     }
                     Some(
-                        crate::DecisionPreference::LinkedExileTargets
+                        crate::DecisionPreference::BalancedPartition
+                        | crate::DecisionPreference::LinkedExileTargets
                         | crate::DecisionPreference::Neutral,
                     )
                     | None => 8_000,
@@ -1768,7 +1924,10 @@ impl HandcraftedPolicy {
                 cost_object,
                 x,
             } => self.score_ability(observation, *source, *ability, targets, *cost_object, *x),
-            Action::DeclareAttacker { attacker, .. } => self.score_attack(observation, *attacker),
+            Action::DeclareAttacker { attacker, defender } => {
+                self.score_attack(observation, *attacker)
+                    + Self::defender_preference(observation, *attacker, *defender)
+            }
             Action::DeclareBlocker { blocker, attacker } => {
                 Self::score_block(observation, *blocker, *attacker)
             }
@@ -1833,9 +1992,7 @@ impl HandcraftedPolicy {
         }
         let mut options = decision.options.iter().collect::<Vec<_>>();
         options.sort_by_key(|option| {
-            let value = option
-                .card
-                .map_or(0, |(_, definition)| self.card_value(definition));
+            let value = self.option_value(option);
             match decision.preference {
                 DecisionPreference::HigherCardValue => -value,
                 DecisionPreference::LowerCardValue => value,
@@ -1846,6 +2003,12 @@ impl HandcraftedPolicy {
                 DecisionPreference::BalancedPartition | DecisionPreference::Neutral => 0,
             }
         });
+        if decision.preference == DecisionPreference::BalancedPartition {
+            return Some(Action::ChooseDecision {
+                decision: decision.id,
+                options: self.balanced_partition(&options, decision.minimum, decision.maximum),
+            });
+        }
         // How many to take, once they are in preference order. Taking the
         // minimum is right when a decision costs you something — discards and
         // sacrifices give up as little as the effect demands. `HigherCardValue`

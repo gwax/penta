@@ -148,10 +148,25 @@ fn handcrafted_balanced_partition_is_deterministic_nonempty_and_near_balanced() 
     let Some(Action::ChooseDecision { options, .. }) = first else {
         panic!("the partition has a policy choice");
     };
+    // Mountain 80, Lightning Bolt 55, Goblin Balloon Brigade 65, Black Vise
+    // 55. Bolt and the Vise are worth the same, so more than one split is
+    // equally even; what matters is that the pile is a real one and as close
+    // to half as the values allow.
+    let value = |id: u32| match id {
+        0 => 80,
+        // Lightning Bolt and Black Vise are worth the same, which is what
+        // makes more than one split equally even here.
+        1 | 3 => 55,
+        2 => 65,
+        other => panic!("unexpected option {other}"),
+    };
+    assert!(!options.is_empty(), "the pile has to be a real one");
+    assert!(options.len() < 4, "and so does the pile left behind");
+    let taken: i32 = options.iter().copied().map(value).sum();
     assert_eq!(
-        options,
-        vec![0, 3],
-        "the 80+55 and 75+65 piles are both nonempty and differ by only five policy-value points",
+        (255 - 2 * taken).abs(),
+        15,
+        "no split of 80/55/65/55 comes closer to even than fifteen points",
     );
 
     for (minimum, maximum, expected_count) in [(0, 1, 1), (3, 4, 3)] {

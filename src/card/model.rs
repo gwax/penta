@@ -1756,6 +1756,13 @@ pub enum TriggerEventDef {
     CombatDamageDealtToPlayer {
         source: ObjectPredicateDef,
     },
+    /// A permanent matching `source` dealt combat damage to this ability's own
+    /// source. The player-facing variants cannot express this: a planeswalker
+    /// is dealt combat damage as a permanent, and Vraska's retaliation is
+    /// about damage arriving at her rather than at anyone's life total.
+    CombatDamageDealtToSource {
+        source: ObjectPredicateDef,
+    },
     /// An object matching `source` dealt damage to a player by any means. The
     /// combat variant is the narrower case; this one also sees an ability's
     /// damage. `player` is read against the source's controller, so
@@ -2326,6 +2333,11 @@ pub enum DeclarativeAbilityDef {
 pub enum EffectExecutionDef {
     Declarative,
     Custom(CardBehavior),
+    /// A resolver the card itself supplies, reached through the set module's
+    /// ability bindings rather than a shared dispatch key. The clause says so
+    /// here so that a reader, the coverage view, and the shared-runtime
+    /// boundary all learn how it executes from the clause itself.
+    CardOwned,
 }
 
 /// The structured effect and the resolver responsible for executing it.
@@ -2358,7 +2370,7 @@ impl AbilityEffectDef {
     pub const fn declarative_definition(self) -> Option<EffectDef> {
         match self.execution {
             EffectExecutionDef::Declarative => Some(self.definition),
-            EffectExecutionDef::Custom(_) => None,
+            EffectExecutionDef::Custom(_) | EffectExecutionDef::CardOwned => None,
         }
     }
 
@@ -2366,7 +2378,7 @@ impl AbilityEffectDef {
     pub const fn custom_behavior(self) -> Option<CardBehavior> {
         match self.execution {
             EffectExecutionDef::Custom(behavior) => Some(behavior),
-            EffectExecutionDef::Declarative => None,
+            EffectExecutionDef::Declarative | EffectExecutionDef::CardOwned => None,
         }
     }
 }

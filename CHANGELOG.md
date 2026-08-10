@@ -12,13 +12,27 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
-## Unreleased — protocol 14
+## Unreleased — protocol 15
 
-The current development checkout reports engine 0.6.0 and protocol 14. Pin
+The current development checkout reports engine 0.6.0 and protocol 15. Pin
 both; the engine version alone does not distinguish it from earlier 0.6.0
 snapshots.
 
 ### Changed
+
+- `DeclareAttacker` now carries a `defender`, naming the player or the
+  planeswalker the creature is attacking. A bot that emitted the action
+  without one must add it; every legal action the engine offers already
+  does. Combat damage follows the defender, so an attacker can now reduce a
+  planeswalker's loyalty. This change introduced protocol 15.
+- Every battlefield permanent that is a planeswalker reports `loyalty` and
+  `loyaltyAbilityUsedThisTurn`, and observations gained an `emblems` array
+  for the command zone. Decision options gained a `members` array, which is
+  empty except for the grouped piles a partition decision offers.
+- An attacker with trample and exactly one blocker is now asked how to
+  divide its damage, where before the engine assigned lethal to the blocker
+  and spilled the rest automatically. Both remain legal (CR 510.1c); the
+  choice is simply offered rather than made for the player.
 
 - Every catalog `manaCost` object now reports its nonzero two-color hybrid
   symbols as `"hybrid": [{"symbol": "R/W", "count": 3}]`. This replaces the

@@ -507,15 +507,22 @@ mod tests {
         effect: AppliedEffectDef,
         duration: EffectDurationDef,
     ) -> bool {
-        // A grant that outlives cleanup is only carried for keywords; every
-        // other applied effect ends with the turn.
+        // A grant that outlives cleanup is carried two ways: a keyword rides
+        // in the keyword lists, and any other ability becomes a temporary
+        // grant with its own expiry. Every other applied effect ends with the
+        // turn.
+        let grant_outliving_cleanup = matches!(effect, AppliedEffectDef::GrantAbility(_));
         let duration_is_supported = duration == EffectDurationDef::UntilEndOfTurn
             || duration == EffectDurationDef::UntilYourNextUpkeep
                 && matches!(
                     effect,
                     AppliedEffectDef::GrantAbility(ability)
                         if matches!(ability.definition, DeclarativeAbilityDef::Keyword(_))
-                );
+                )
+            || matches!(
+                duration,
+                EffectDurationDef::UntilYourNextTurn | EffectDurationDef::Permanent
+            ) && grant_outliving_cleanup;
         if !duration_is_supported || !shared_effect_recipient(recipient) {
             return false;
         }
@@ -537,6 +544,16 @@ mod tests {
                         DeclarativeAbilityDef::AlternativeCast(definition) => {
                             definition.kind == AlternativeCastKindDef::Flashback
                                 && ability.declarative_effect() == Some(EffectDef::None)
+                        }
+                        // A granted trigger is a real ability on the host: it
+                        // listens and resolves through the shared stack like
+                        // any printed one.
+                        DeclarativeAbilityDef::Triggered(definition) => {
+                            shared_trigger_event(definition.event)
+                                && definition.targets.is_empty()
+                                && ability
+                                    .declarative_effect()
+                                    .is_some_and(shared_stack_effect)
                         }
                         _ => false,
                     }
@@ -759,6 +776,7 @@ mod tests {
                 recipient == EffectRecipientDef::Source && source == ObjectPredicateDef::Any
             }
             TriggerEventDef::CombatDamageDealtToPlayer { source }
+            | TriggerEventDef::CombatDamageDealtToSource { source }
             | TriggerEventDef::DamageDealtToPlayer { source, .. } => {
                 shared_object_predicate(source)
             }
@@ -925,7 +943,6 @@ mod tests {
             | EffectDef::CopyPermanentAsItEnters { .. }
             | EffectDef::ChooseCreatureType { .. }
             | EffectDef::CreateEmblem { .. }
-            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -1118,7 +1135,6 @@ mod tests {
                         | EffectDef::UnlessPaid { .. }
                         | EffectDef::CannotBeForcedToSacrifice
                         | EffectDef::CreateEmblem { .. }
-                        | EffectDef::LoseTheGame { .. }
                         | EffectDef::Transform { .. }
                         | EffectDef::AdditionalCombatPhase
                         | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -1307,7 +1323,6 @@ mod tests {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
-            | EffectDef::LoseTheGame { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -2028,6 +2043,50 @@ mod tests {
             ),
             false,
         ));
+    }
+
+    /// A clause that declares card-owned execution has to have a binding, and
+    /// a binding has to be declared on its clause. Either half alone lets the
+    /// two drift: an undeclared binding makes the clause read as a no-op, and
+    /// an unbacked declaration is an ability that silently does nothing.
+    #[test]
+    fn card_owned_clauses_and_their_bindings_agree() {
+        let mut declared = Vec::new();
+        let mut bound = Vec::new();
+        for record in SET_MODULES
+            .iter()
+            .flat_map(|module| module.cards.iter().copied())
+        {
+            let definition = record.definition();
+            for part in &definition.parts {
+                for attached in part.rules.indexed_abilities() {
+                    if attached.definition.effect.execution == EffectExecutionDef::CardOwned {
+                        declared.push((definition.name.clone(), part.id, attached.id));
+                    }
+                }
+            }
+            for binding in record.ability_bindings {
+                bound.push((definition.name.clone(), binding.part, binding.ability));
+                assert_eq!(
+                    binding.expected.effect.execution,
+                    EffectExecutionDef::CardOwned,
+                    "{} {:?} ability {:?} has a card-owned binding but its clause does not say so",
+                    definition.name,
+                    binding.part,
+                    binding.ability,
+                );
+            }
+        }
+        declared.sort();
+        bound.sort();
+        assert_eq!(
+            declared, bound,
+            "every card-owned clause needs a binding and every binding needs its clause to declare it"
+        );
+        assert!(
+            !declared.is_empty(),
+            "the scan found no card-owned clauses, so it is measuring the wrong thing"
+        );
     }
 
     #[test]
