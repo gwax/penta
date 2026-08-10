@@ -4183,9 +4183,12 @@ impl Game {
                 CommittedTriggerEvent::Transformed { object },
             ) => object.id == source,
             (
-                trigger @ (TriggerEventDef::DamageDealt { .. }),
-                damage @ CommittedTriggerEvent::DamageDealt { .. },
-            ) => self.damage_to_player_trigger_matches(trigger, damage, source),
+                TriggerEventDef::DamageDealt {
+                    source: _,
+                    recipient: EffectRecipientDef::Source,
+                },
+                CommittedTriggerEvent::DamageDealt { recipient, .. },
+            ) => *recipient == Target::Permanent(source),
             (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },
