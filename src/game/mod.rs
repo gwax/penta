@@ -3675,6 +3675,21 @@ impl Game {
                 );
                 targets
             }
+            AbilityTargetPredicate::PlayerOrPlaneswalker => {
+                let mut targets =
+                    vec![Target::Player(PlayerId::One), Target::Player(PlayerId::Two)];
+                targets.extend(
+                    self.battlefield
+                        .iter()
+                        .filter(|permanent| {
+                            self.permanent_types(permanent)
+                                .is_some_and(|types| types.contains(CardType::Planeswalker))
+                                && self.permanent_can_be_targeted_by(permanent, controller, source)
+                        })
+                        .map(|permanent| Target::Permanent(permanent.card.id)),
+                );
+                targets
+            }
             AbilityTargetPredicate::Player(relation) => [PlayerId::One, PlayerId::Two]
                 .into_iter()
                 .filter(|player| {
@@ -9136,6 +9151,42 @@ impl Game {
                 .collect();
         }
 
+        // "Each creature that player controls" reads the target's controller
+        // and then sweeps the battlefield, so it is neither a plain target nor
+        // a relation to the ability's own controller.
+        if let EffectRecipientDef::ObjectsControlledByTarget {
+            object: predicate,
+            slot,
+        } = recipient
+        {
+            let Some(Target::Player(owner)) = self
+                .effect_recipients(
+                    EffectRecipientDef::ControllerOfTarget(slot),
+                    object,
+                    context,
+                )
+                .into_iter()
+                .next()
+            else {
+                return Vec::new();
+            };
+            let source = object.source.unwrap_or(object.id);
+            return self
+                .battlefield
+                .iter()
+                .filter(|permanent| permanent.controller == owner)
+                .filter(|permanent| {
+                    self.trigger_object_matches(
+                        predicate,
+                        &self.trigger_event_object(permanent),
+                        source,
+                        false,
+                    )
+                })
+                .map(|permanent| Target::Permanent(permanent.card.id))
+                .collect();
+        }
+
         if let EffectRecipientDef::ObjectsSharingNameWithTarget(slot) = recipient {
             return self.objects_sharing_name_with_target(slot, object, context);
         }
@@ -9165,6 +9216,7 @@ impl Game {
                 EffectRecipientDef::EventPlayer => context.event_player.map(Target::Player),
                 EffectRecipientDef::Target(_)
                 | EffectRecipientDef::ControllerOfTarget(_)
+                | EffectRecipientDef::ObjectsControlledByTarget { .. }
                 | EffectRecipientDef::MatchingObjects { .. }
                 | EffectRecipientDef::ObjectsSharingNameWithTarget(_) => {
                     unreachable!("target, matching, and shared-name recipients returned above")
@@ -9460,7 +9512,9 @@ impl Game {
 
     fn ability_target_uses_custom_predicate(predicate: AbilityTargetPredicate) -> bool {
         match predicate {
-            AbilityTargetPredicate::AnyTarget | AbilityTargetPredicate::Player(_) => false,
+            AbilityTargetPredicate::AnyTarget
+            | AbilityTargetPredicate::PlayerOrPlaneswalker
+            | AbilityTargetPredicate::Player(_) => false,
             AbilityTargetPredicate::Object { object, .. } => {
                 Self::object_predicate_uses_custom_predicate(object)
             }
@@ -11216,7 +11270,9 @@ impl Game {
                         // makes an existing attachment illegal.
                         && !self.is_protected_from_colors(host, aura_colors)
             }
-            AbilityTargetPredicate::AnyTarget | AbilityTargetPredicate::Player(_) => false,
+            AbilityTargetPredicate::AnyTarget
+            | AbilityTargetPredicate::PlayerOrPlaneswalker
+            | AbilityTargetPredicate::Player(_) => false,
         })
     }
 
@@ -11318,6 +11374,7 @@ impl Game {
             // None of these name a permanent a static effect could apply to;
             // a static effect has no chosen target either.
             EffectRecipientDef::ControllerOfTarget(_)
+            | EffectRecipientDef::ObjectsControlledByTarget { .. }
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
             | EffectRecipientDef::Target(_)

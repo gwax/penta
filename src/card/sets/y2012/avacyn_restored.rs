@@ -15,12 +15,30 @@ pub(in crate::card::sets) static BONFIRE_OF_THE_DAMNED: CardRecord = CardRecord:
     "Bonfire of the Damned",
     CardArt::new("e60610fe-891d-46de-b556-d03b637dccec", "James Paick"),
     CardSet::AvacynRestored,
-    CardRules::new_sorcery(mana_cost!("{X}{X}{R}")).with_ability(
-        AbilityDef::not_implemented(
-            "Bonfire of the Damned deals X damage to target player or planeswalker and each creature that player or that planeswalker's controller controls.\nMiracle {X}{R} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)",
-            "Printed rules are cataloged but are not executed by the engine.",
-        ),
-    ),
+    CardRules::new_sorcery(mana_cost!("{X}{X}{R}")).with_abilities(&[
+        AbilityDef::spell(
+            "Bonfire of the Damned deals X damage to target player or planeswalker and each creature that player or that planeswalker's controller controls.",
+            EffectDef::Sequence(&[
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                    amount: ValueDef::ChosenX,
+                },
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::ObjectsControlledByTarget {
+                        object: ObjectPredicateDef::HasType(CardType::Creature),
+                        slot: TargetSlotId(0),
+                    },
+                    amount: ValueDef::ChosenX,
+                },
+            ]),
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one(
+            TargetSlotId(0),
+            "player or planeswalker",
+            AbilityTargetPredicate::PlayerOrPlaneswalker,
+        )]),
+        abilities::miracle(mana_cost!("{X}{R}")),
+    ]),
 );
 
 static CAVERN_COLORED_MANA_RESTRICTIONS: [ManaRestrictionDef; 1] =

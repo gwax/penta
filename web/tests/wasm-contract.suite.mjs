@@ -50,7 +50,7 @@ test("card coverage comes from ability definitions rather than play gates", asyn
     "its creature body and printed mana ability are fully modeled despite the legacy play gate",
   );
   assert.ok(bonfire);
-  assert.equal(bonfire.implementationStatus, "metadataOnly");
+  assert.equal(bonfire.implementationStatus, "complete");
   assert.ok(
     opening.human.hand.every((card) => card.metadataOnly === undefined),
     "the browser bridge no longer projects the internal gate as coverage",

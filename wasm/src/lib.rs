@@ -2998,7 +2998,7 @@ mod tests {
         );
         assert_eq!(
             find("Bonfire of the Damned")["implementationStatus"],
-            "metadataOnly"
+            "complete"
         );
         assert!(
             hand.iter().all(|card| card.get("metadataOnly").is_none()),

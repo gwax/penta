@@ -17762,3 +17762,135 @@ fn moorland_haunt_pays_with_a_creature_card_from_its_own_graveyard() {
         "and a Spirit arrived"
     );
 }
+
+#[test]
+fn bonfire_burns_a_player_and_everything_they_control() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    // Your own creature is not theirs, so it is untouched.
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.players[0].hand = vec![card(25_000, cards::BONFIRE_OF_THE_DAMNED, PlayerId::One)];
+    game.players[0].mana_pool = ManaPool {
+        red: 1,
+        colorless: 6,
+        ..ManaPool::default()
+    };
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    // A creature is not a legal target; a player is.
+    let casts = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { .. }))
+        .collect::<Vec<_>>();
+    assert!(
+        !casts.iter().any(|action| {
+            let Action::CastSpell { choices, .. } = action else {
+                return false;
+            };
+            choices
+                .iter_targets()
+                .any(|target| *target == Target::Permanent(mine))
+        }),
+        "a creature is not a player or a planeswalker"
+    );
+
+    let three_at_them = casts
+        .into_iter()
+        .find(|action| {
+            let Action::CastSpell { choices, .. } = action else {
+                return false;
+            };
+            choices.x() == 3
+                && choices
+                    .iter_targets()
+                    .any(|target| *target == Target::Player(PlayerId::Two))
+        })
+        .expect("three damage at the opponent is castable");
+    game.apply(PlayerId::One, three_at_them).unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, 17, "the player took three");
+    assert!(
+        !game.battlefield.iter().any(|permanent| {
+            permanent.controller == PlayerId::Two
+                && permanent.card.definition == cards::SAVANNAH_LIONS
+        }),
+        "their 2/1 died"
+    );
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SERRA_ANGEL)
+        .expect("their 4/4 survived three damage");
+    assert_eq!(angel.damage, 3, "but it took the same three");
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == mine),
+        "your own creature was never in range"
+    );
+}
+
+#[test]
+fn bonfire_cast_for_its_miracle_cost_still_chooses_x() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    // Two Mountains pay {X}{R} with X of one; the printed {X}{X}{R} could not.
+    for _ in 0..2 {
+        game.put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+            .expect("cataloged");
+    }
+    game.players[0].hand.clear();
+    game.players[0].library = vec![card(26_000, cards::BONFIRE_OF_THE_DAMNED, PlayerId::One)];
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.cards_drawn_this_turn = [0; 2];
+
+    game.draw_card(PlayerId::One);
+    let reveal = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("drawing it offers the miracle reveal");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: reveal.id,
+            options: vec![1],
+        },
+    )
+    .unwrap();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { choices, .. }
+                if choices.x() == 1
+                    && choices.iter_targets().any(|target| *target == Target::Player(PlayerId::Two)))
+        })
+        .expect("the miracle cost is payable with X of one");
+    game.apply(PlayerId::One, cast).unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, 19, "one damage reached the player");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS),
+        "and the same one killed their 2/1"
+    );
+}

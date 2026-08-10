@@ -642,6 +642,9 @@ pub enum ObjectPredicateDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AbilityTargetPredicate {
     AnyTarget,
+    /// "Target player or planeswalker", which is every damage target except
+    /// the creatures.
+    PlayerOrPlaneswalker,
     Player(PlayerRelation),
     Object {
         object: ObjectPredicateDef,
@@ -1086,6 +1089,12 @@ pub enum EffectRecipientDef {
     /// The triggering object's controller when this effect resolves, using
     /// last-known information if that object is no longer live.
     ControllerOfTriggeringObject,
+    /// Everything a query matches among the permanents controlled by whoever
+    /// controls a target slot, for "each creature that player controls".
+    ObjectsControlledByTarget {
+        object: ObjectPredicateDef,
+        slot: TargetSlotId,
+    },
     /// The controller of what a target slot points at, for "its controller".
     /// Read when the effect resolves, using last-known information if that
     /// object has already left the battlefield.
@@ -2632,7 +2641,12 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
 impl AbilityTargetDef {
     pub(super) fn presentation(self) -> Option<TargetSlotDef> {
         let predicate = match self.predicate {
-            AbilityTargetPredicate::AnyTarget => TargetPredicate::AnyTarget,
+            // A client has no slot kind narrower than every damage target,
+            // which is closer for a player-or-planeswalker slot than offering
+            // only players would be.
+            AbilityTargetPredicate::AnyTarget | AbilityTargetPredicate::PlayerOrPlaneswalker => {
+                TargetPredicate::AnyTarget
+            }
             AbilityTargetPredicate::Player(_) => TargetPredicate::Player,
             AbilityTargetPredicate::Object { object, zones, .. } if zones == [ZoneKind::Stack] => {
                 if object_predicate_implies(object, ObjectPredicateDef::NoncreatureSpell) {

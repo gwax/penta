@@ -365,6 +365,11 @@ mod tests {
                     })
                     && shared_object_predicate(object)
             }
+            // The sweep is over the battlefield, so only the predicate
+            // needs checking.
+            EffectRecipientDef::ObjectsControlledByTarget { object, .. } => {
+                shared_object_predicate(object)
+            }
             EffectRecipientDef::ObjectsSharingNameWithTarget(_)
             | EffectRecipientDef::Source
             | EffectRecipientDef::AttachedPermanent
@@ -729,6 +734,7 @@ mod tests {
                     | EffectRecipientDef::Opponent
                     | EffectRecipientDef::Target(_)
                     | EffectRecipientDef::ControllerOfTarget(_)
+                    | EffectRecipientDef::ObjectsControlledByTarget { .. }
                     | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
                     | EffectRecipientDef::TriggeringObject
                     | EffectRecipientDef::ControllerOfTriggeringObject
