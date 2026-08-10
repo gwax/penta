@@ -15582,3 +15582,68 @@ fn an_attack_requirement_yields_when_the_creature_cannot_attack() {
         "a tapped creature cannot attack, so it is not held against its controller"
     );
 }
+
+static MUTAVAULT_TEST_ANIMATION: crate::card::AnimationDef =
+    crate::card::AnimationDef::new(2, 2).with_all_creature_types();
+
+#[test]
+fn a_state_trigger_fires_when_its_condition_becomes_true_and_only_once() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let goblins = game
+        .put_onto_battlefield(PlayerId::One, cards::GOBLINS_OF_THE_FLARG)
+        .expect("cataloged");
+    game.check_state_based_actions();
+    assert!(
+        game.pending_triggers.is_empty(),
+        "no Dwarf, so the condition is false and nothing triggers"
+    );
+
+    // No Dwarf is printed in the catalog yet, but an animated Mutavault is a
+    // creature with every creature type, so it is one.
+    let vault = game
+        .put_onto_battlefield(PlayerId::One, cards::MUTAVAULT)
+        .expect("cataloged");
+    game.check_state_based_actions();
+    assert!(
+        game.pending_triggers.is_empty(),
+        "an unanimated Mutavault is only a land"
+    );
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == vault)
+    {
+        permanent.animation = Some(&MUTAVAULT_TEST_ANIMATION);
+    }
+    game.check_state_based_actions();
+    assert_eq!(
+        game.pending_triggers.len(),
+        1,
+        "controlling a Dwarf makes the condition true"
+    );
+
+    // CR 603.8: it does not trigger again while it is already waiting.
+    game.check_state_based_actions();
+    assert_eq!(
+        game.pending_triggers.len(),
+        1,
+        "a state trigger already waiting does not stack up"
+    );
+
+    drain_pending(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == goblins),
+        "the Goblins sacrificed themselves"
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GOBLINS_OF_THE_FLARG),
+        "and went to the graveyard"
+    );
+}

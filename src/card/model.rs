@@ -1361,6 +1361,10 @@ pub enum TriggerEventDef {
         recipient: EffectRecipientDef,
     },
     ManaAdded(PlayerRelation),
+    /// A state trigger (CR 603.8). It has no event at all: it triggers
+    /// whenever its ability's condition is true, and does not trigger again
+    /// while it is already waiting or on the stack.
+    StateCondition,
     /// A player gained life. The amount is available as
     /// [`ValueDef::TriggerEventAmount`].
     LifeGained(PlayerRelation),

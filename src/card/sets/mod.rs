@@ -626,6 +626,7 @@ mod tests {
             | TriggerEventDef::SpellCast(object) => shared_object_predicate(object),
             TriggerEventDef::StepBegins { .. }
             | TriggerEventDef::LifeGained(_)
+            | TriggerEventDef::StateCondition
             | TriggerEventDef::DamagedCreatureDied => true,
             // Only "whenever this creature is dealt damage" is committed; a
             // wider recipient has no event behind it yet.
@@ -893,8 +894,13 @@ mod tests {
                     && shared_stack_effect(ability.effect)
             }
             DeclarativeAbilityDef::Triggered(definition) => {
+                // A state trigger is nothing but its condition: without one it
+                // would trigger on every state-based check forever.
+                let condition_is_required = definition.event != TriggerEventDef::StateCondition
+                    || definition.condition.is_some();
                 battlefield_only(definition.source_zones)
                     && shared_trigger_event(definition.event)
+                    && condition_is_required
                     && definition
                         .condition
                         .is_none_or(|condition| shared_trigger_condition(*condition))

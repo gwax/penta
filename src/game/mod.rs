@@ -12938,7 +12938,40 @@ impl Game {
                 break;
             }
         }
+        self.capture_state_triggers();
         self.check_life_totals();
+    }
+
+    /// CR 603.8: a state trigger triggers whenever its condition is true, and
+    /// does not trigger again while it is already waiting or on the stack.
+    /// State-based actions are checked whenever anything could have changed,
+    /// which is exactly when such a condition could have become true.
+    fn capture_state_triggers(&mut self) {
+        let listeners = self
+            .battlefield_trigger_listeners()
+            .into_iter()
+            .filter(|listener| {
+                listener.uses_stack && listener.event == TriggerEventDef::StateCondition
+            })
+            .filter(|listener| {
+                let source = listener.capture.source;
+                let waiting = self
+                    .pending_triggers
+                    .iter()
+                    .any(|pending| pending.source == source);
+                let on_stack = self.stack.iter().any(|object| {
+                    object.source == Some(source.object)
+                        && object
+                            .ability
+                            .as_ref()
+                            .is_some_and(|ability| ability.origin == source.ability)
+                });
+                !waiting && !on_stack
+            })
+            .collect::<Vec<_>>();
+        for listener in listeners {
+            self.capture_trigger(&listener.capture);
+        }
     }
 
     /// The legend rule as a state-based action: a player controlling two or

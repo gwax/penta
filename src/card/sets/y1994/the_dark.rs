@@ -1,9 +1,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, EffectDef, EffectDurationDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ZoneKind,
-    abilities, cards,
+    AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, ComparisonDef, EffectDef,
+    EffectDurationDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -83,6 +83,19 @@ pub(in crate::card::sets) static GOBLIN_DIGGING_TEAM: CardRecord = CardRecord::n
     ]),
 );
 
+/// Any Dwarf you control at all, which is why this is a count of at least one
+/// rather than an exact number.
+static GOBLINS_OF_THE_FLARG_DWARF_CONDITION: TriggerConditionDef =
+    TriggerConditionDef::ObjectCount {
+        query: ObjectQueryDef {
+            object: ObjectPredicateDef::Subtype("Dwarf"),
+            zones: &[ZoneKind::Battlefield],
+            controller: PlayerRelation::You,
+        },
+        comparison: ComparisonDef::AtLeast,
+        amount: 1,
+    };
+
 pub(in crate::card::sets) static GOBLINS_OF_THE_FLARG: CardRecord = CardRecord::new(
     cards::GOBLINS_OF_THE_FLARG,
     "Goblins of the Flarg",
@@ -93,9 +106,13 @@ pub(in crate::card::sets) static GOBLINS_OF_THE_FLARG: CardRecord = CardRecord::
             abilities::mountainwalk().with_text(
                 "Mountainwalk (This creature can't be blocked as long as defending player controls a Mountain.)",
             ),
-            AbilityDef::not_implemented(
+            AbilityDef::triggered_if(
                 "When you control a Dwarf, sacrifice this creature.",
-                "The state-triggered sacrifice condition is not implemented.",
+                TriggerEventDef::StateCondition,
+                &GOBLINS_OF_THE_FLARG_DWARF_CONDITION,
+                EffectDef::Sacrifice {
+                    object: EffectRecipientDef::Source,
+                },
             ),
         ]),
 );
