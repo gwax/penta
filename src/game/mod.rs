@@ -339,6 +339,9 @@ enum RetiredObject {
     Stack(Box<StackObject>),
 }
 
+/// Fork repaints its copy, so the copy is red and nothing else.
+const FORK_COPY_COLOR: ColorSet = ColorSet::from_colors(&[ManaColor::Red]);
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct StackObject {
     id: GameObjectId,
@@ -363,6 +366,10 @@ struct StackObject {
     /// They transfer to a resolving permanent but are not copied by spell-copy
     /// effects.
     text_changes: Vec<BasicLandTypeChange>,
+    /// Colours the copy effect that made this object imposed on it, for
+    /// "except that the copy is red". Nothing else changes an object's
+    /// colour on the stack.
+    colors: Option<ColorSet>,
     /// Flashback replaces every destination this physical card would use when
     /// leaving the stack. This is frozen at cast time because the permission
     /// lived on the previous graveyard object.
@@ -4429,6 +4436,7 @@ impl Game {
             chosen_permanents: Vec::new(),
             applied_effects: Vec::new(),
             text_changes: Vec::new(),
+            colors: None,
             cast_via_flashback: false,
             is_copy: false,
         });
@@ -4700,7 +4708,7 @@ impl Game {
             .as_ref()
             .is_some_and(|signature| signature.targets().is_empty())
         {
-            self.push_copy(spell, player, Vec::new());
+            self.push_copy_with_colors(spell, player, Vec::new(), Some(FORK_COPY_COLOR));
             return;
         }
         let original_targets = spell.targets();
@@ -4923,12 +4931,22 @@ impl Game {
         );
     }
 
-    fn push_copy(
+    /// Fork's copy is red whatever it copies, which is what protection from
+    /// red sees.
+    fn push_copy(&mut self, spell: StackObject, player: PlayerId, targets: Vec<TargetSelection>) {
+        self.push_copy_with_colors(spell, player, targets, None);
+    }
+
+    /// A copy effect may repaint what it copies, as Fork does. The override
+    /// replaces the printed colours outright rather than adding to them.
+    fn push_copy_with_colors(
         &mut self,
         mut spell: StackObject,
         player: PlayerId,
         targets: Vec<TargetSelection>,
+        colors: Option<ColorSet>,
     ) {
+        spell.colors = colors;
         let definition = spell.card.definition;
         let card = self.unbacked_object(definition, player, CharacteristicSource::Copy(definition));
         spell.id = card.id;
@@ -5007,6 +5025,7 @@ impl Game {
             chosen_permanents,
             applied_effects: Vec::new(),
             text_changes: Vec::new(),
+            colors: None,
             cast_via_flashback: false,
             is_copy: false,
         });
@@ -5843,7 +5862,12 @@ impl Game {
                 if let Some(option) = options.first().copied()
                     && let Some(targets) = target_lists.get(usize::try_from(option).unwrap_or(0))
                 {
-                    self.push_copy(spell, player, targets.clone());
+                    self.push_copy_with_colors(
+                        spell,
+                        player,
+                        targets.clone(),
+                        Some(FORK_COPY_COLOR),
+                    );
                 }
             }
             DecisionContinuation::ManaVault { player, permanent } => {
@@ -8499,6 +8523,7 @@ impl Game {
             chosen_permanents: Vec::new(),
             applied_effects: Vec::new(),
             text_changes: Vec::new(),
+            colors: None,
             cast_via_flashback,
             is_copy: false,
         };
@@ -12474,9 +12499,13 @@ impl Game {
                 .map_or([false; 5], CardRules::colors);
         }
         if let Some(stack) = self.stack.iter().find(|stack| stack.id == object) {
-            return self
-                .stack_trigger_event_object(stack)
-                .map_or([false; 5], |event| event.colors);
+            return stack.colors.map_or_else(
+                || {
+                    self.stack_trigger_event_object(stack)
+                        .map_or([false; 5], |event| event.colors)
+                },
+                ColorSet::to_flags,
+            );
         }
         if let Some(retired) = self.retired_objects.get(&object) {
             return match retired {

@@ -220,6 +220,7 @@ fn spell(id: u32, definition: CardDefinitionId, controller: PlayerId, x: u16) ->
         chosen_permanents: Vec::new(),
         applied_effects: Vec::new(),
         text_changes: Vec::new(),
+        colors: None,
         cast_via_flashback: false,
         is_copy: false,
     }
@@ -1464,6 +1465,7 @@ fn selected_modal_effects_resolve_distinct_and_deferred_flattened_targets() {
             chosen_permanents: Vec::new(),
             applied_effects: Vec::new(),
             text_changes: Vec::new(),
+            colors: None,
             cast_via_flashback: false,
             is_copy: false,
         }
@@ -8397,6 +8399,7 @@ fn resolving_ability_masks_an_illegal_target_in_each_frozen_slot() {
         chosen_permanents: Vec::new(),
         applied_effects: Vec::new(),
         text_changes: Vec::new(),
+        colors: None,
         cast_via_flashback: false,
         is_copy: false,
     });
@@ -20264,5 +20267,83 @@ fn black_vise_squeezes_only_the_player_it_chose() {
     assert_eq!(
         game.players[1].life, 20,
         "and the one aimed at player two waited for theirs"
+    );
+}
+
+#[test]
+fn a_forked_copy_is_red_whatever_it_copies() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One));
+
+    // A black Terror on the stack, aimed at something it can legally hit.
+    let terror = card(10_001, cards::TERROR, PlayerId::Two);
+    game.players[1].hand.push(terror.clone());
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Black, 2);
+    game.priority = PlayerId::Two;
+    let cast = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::Two,
+        terror.id,
+        Target::Permanent(GameObjectId(10_000)),
+    );
+    game.apply(PlayerId::Two, cast).unwrap();
+    let original = game.stack.last().expect("Terror is on the stack").id;
+    assert_eq!(
+        game.object_colors(original),
+        [false, false, true, false, false],
+        "Terror itself is black"
+    );
+
+    let fork = card(10_002, cards::FORK, PlayerId::One);
+    game.players[0].hand.push(fork.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    game.priority = PlayerId::One;
+    let cast_fork =
+        acceptance_cast_action_targeting(&game, PlayerId::One, fork.id, Target::Spell(original));
+    game.apply(PlayerId::One, cast_fork).unwrap();
+    // Resolve the Fork itself, which puts the copy on the stack.
+    for _ in 0..8 {
+        if game
+            .stack
+            .iter()
+            .any(|object| object.id != original && object.card.definition == cards::TERROR)
+        {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: decision
+                        .options
+                        .iter()
+                        .map(|option| option.id)
+                        .take(decision.minimum.max(1))
+                        .collect(),
+                },
+            )
+            .unwrap();
+            continue;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let copy = game
+        .stack
+        .iter()
+        .find(|object| object.id != original && object.card.definition == cards::TERROR)
+        .expect("the copy is on the stack");
+    assert_eq!(
+        game.object_colors(copy.id),
+        [false, false, false, true, false],
+        "the copy is red, not the black of what it copied"
     );
 }

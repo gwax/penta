@@ -105,7 +105,7 @@ pub(in crate::card::sets) static FORK: CardRecord = CardRecord::new(
         AbilityDef::custom_partial(
             "Copy target instant or sorcery spell, except that the copy is red. You may choose new targets for the copy.",
             CardBehavior::Fork,
-            "The copy does not become red as required by Fork's copy effect.",
+            "Choosing new targets for the copy is offered as a single ordered decision rather than slot by slot.",
         ),
     ]),
 );
