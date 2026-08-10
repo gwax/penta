@@ -623,6 +623,12 @@ pub enum ObjectPredicateDef {
     /// Power at least this much, for "power N or greater". Reads current
     /// power on the battlefield, so a pumped creature qualifies.
     PowerAtLeast(i16),
+    /// Power exactly this much. Like [`Self::PowerAtLeast`] this reads
+    /// current power, so "target 1/1 creature" stops being one the moment
+    /// anything pumps it.
+    PowerExactly(i16),
+    /// Toughness exactly this much, read the same way.
+    ToughnessExactly(i16),
     /// Controlled by a player in this relation to the ability's controller,
     /// for "a creature you control" and "whenever you cast".
     ControlledBy(PlayerRelation),
@@ -2861,6 +2867,8 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::PowerExactly(_)
+        | ObjectPredicateDef::ToughnessExactly(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -2887,6 +2895,8 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::PowerExactly(_)
+        | ObjectPredicateDef::ToughnessExactly(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -2916,6 +2926,8 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::PowerExactly(_)
+        | ObjectPredicateDef::ToughnessExactly(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -2950,6 +2962,8 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::PowerExactly(_)
+        | ObjectPredicateDef::ToughnessExactly(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -2963,12 +2977,16 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
 
 fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
     match predicate {
-        ObjectPredicateDef::PowerAtLeast(power) => Some(power),
+        // An exact power is also a minimum, which is all this reports.
+        ObjectPredicateDef::PowerAtLeast(power) | ObjectPredicateDef::PowerExactly(power) => {
+            Some(power)
+        }
         ObjectPredicateDef::All(predicates) => predicates
             .iter()
             .copied()
             .find_map(predicate_power_at_least),
-        ObjectPredicateDef::Any
+        ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::HasType(_)
@@ -3009,6 +3027,8 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::PowerExactly(_)
+        | ObjectPredicateDef::ToughnessExactly(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -3039,6 +3059,8 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::PowerExactly(_)
+        | ObjectPredicateDef::ToughnessExactly(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -3071,6 +3093,8 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::PowerExactly(_)
+        | ObjectPredicateDef::ToughnessExactly(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)

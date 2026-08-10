@@ -538,6 +538,8 @@ struct TriggerEventObject {
     /// Current power where one exists: a battlefield creature reports what it
     /// is now, not what it was printed as.
     power: Option<i16>,
+    /// Current toughness, read the same way and with the same caveat.
+    toughness: Option<i16>,
     supertypes: [bool; CardSupertype::COUNT],
     /// Whether this object is in combat. Cheap to carry and it cannot feed
     /// back into a characteristic, unlike a keyword or a static bonus.
@@ -3835,6 +3837,8 @@ impl Game {
             ObjectPredicateDef::PowerAtLeast(minimum) => {
                 object.power.is_some_and(|power| power >= minimum)
             }
+            ObjectPredicateDef::PowerExactly(exact) => object.power == Some(exact),
+            ObjectPredicateDef::ToughnessExactly(exact) => object.toughness == Some(exact),
             ObjectPredicateDef::Supertype(supertype) => object.supertypes[supertype.index()],
             ObjectPredicateDef::AttackingOrBlocking => object.attacking_or_blocking,
             ObjectPredicateDef::SharesNameWithSource => {
@@ -7158,6 +7162,7 @@ impl Game {
         let mut subtypes = Vec::new();
         let mut mana_value = 0;
         let mut power = None;
+        let mut toughness = None;
         let mut supertypes = [false; CardSupertype::COUNT];
         let mut keywords = 0;
         for part in parts {
@@ -7182,6 +7187,7 @@ impl Game {
             mana_value += part.rules.mana_cost().map_or(0, ManaCost::mana_value);
             if let Some(stats) = part.rules.creature_stats() {
                 power = Some(stats.power);
+                toughness = Some(stats.toughness);
             }
             for supertype in CardSupertype::ALL {
                 supertypes[supertype.index()] |= part.rules.has_supertype(supertype);
@@ -7198,6 +7204,7 @@ impl Game {
             keywords,
             mana_value,
             power,
+            toughness,
             supertypes,
             attacking: false,
         })
@@ -7651,27 +7658,6 @@ impl Game {
                 actions.extend(
                     self.battlefield
                         .iter()
-                        .map(|candidate| Action::ActivateAbility {
-                            source: permanent.card.id,
-                            ability,
-                            targets: vec![TargetSelection::single(
-                                ability_target_slot,
-                                Target::Permanent(candidate.card.id),
-                            )],
-                            cost_object: None,
-                            x: 0,
-                        }),
-                );
-            }
-            CardBehavior::Pendelhaven
-                if !permanent.tapped && self.can_use_tap_ability(permanent) =>
-            {
-                actions.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|candidate| {
-                            self.power(candidate) == Some(1) && self.toughness(candidate) == Some(1)
-                        })
                         .map(|candidate| Action::ActivateAbility {
                             source: permanent.card.id,
                             ability,
@@ -10357,6 +10343,8 @@ impl Game {
             | ObjectPredicateDef::ManaValueEqualTo(_)
             | ObjectPredicateDef::ManaValueAtMostValue(_)
             | ObjectPredicateDef::PowerAtLeast(_)
+            | ObjectPredicateDef::PowerExactly(_)
+            | ObjectPredicateDef::ToughnessExactly(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
             | ObjectPredicateDef::SharesNameWithSource
@@ -10392,17 +10380,6 @@ impl Game {
             CardBehavior::IcyManipulator => {
                 if let Some(Target::Permanent(target)) = self.first_legal_ability_target(object) {
                     let _ = self.tap_permanent(target);
-                }
-            }
-            CardBehavior::Pendelhaven => {
-                if let Some(Target::Permanent(target)) = self.first_legal_ability_target(object)
-                    && let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                {
-                    permanent.power_bonus += 1;
-                    permanent.toughness_bonus += 2;
                 }
             }
             CardBehavior::SedgeTroll => {
@@ -11399,6 +11376,7 @@ impl Game {
             subtypes: self.effective_subtypes(permanent),
             mana_value: self.permanent_mana_value(permanent),
             power: self.power_ignoring_static_effects(permanent),
+            toughness: self.toughness_ignoring_static_effects(permanent),
             keywords: Self::keyword_mask_ignoring_static_effects(permanent, rules),
             supertypes: {
                 let mut supertypes = [false; CardSupertype::COUNT];
@@ -11430,6 +11408,7 @@ impl Game {
             subtypes: self.effective_subtypes_with_prospective(permanent, prospective),
             mana_value: self.permanent_mana_value(permanent),
             power: self.power_ignoring_static_effects(permanent),
+            toughness: self.toughness_ignoring_static_effects(permanent),
             keywords: Self::keyword_mask_ignoring_static_effects(permanent, rules),
             supertypes: {
                 let mut supertypes = [false; CardSupertype::COUNT];
@@ -13735,9 +13714,17 @@ impl Game {
         })
     }
 
+    fn toughness_ignoring_static_effects(&self, permanent: &Permanent) -> Option<i16> {
+        self.toughness_parts(permanent, 0)
+    }
+
     fn toughness(&self, permanent: &Permanent) -> Option<i16> {
+        let (_, static_toughness) = self.static_power_toughness_bonus(permanent);
+        self.toughness_parts(permanent, static_toughness)
+    }
+
+    fn toughness_parts(&self, permanent: &Permanent, static_toughness: i16) -> Option<i16> {
         self.base_stats(permanent).map(|stats| {
-            let (_, static_toughness) = self.static_power_toughness_bonus(permanent);
             let conditional_bonus = match self.effective_behavior(permanent) {
                 Some(CardBehavior::KirdApe)
                     if self.controls_land_type(permanent.controller, BasicLandType::Forest) =>
@@ -14149,16 +14136,10 @@ impl Game {
                         Some((target, public_cards(&self.players[target.index()].hand)));
                 }
             }
-            Some(CardBehavior::IcyManipulator | CardBehavior::Pendelhaven) => {
-                let cost = if behavior == Some(CardBehavior::IcyManipulator) {
-                    ManaCost::new(1, 0)
-                } else {
-                    ManaCost::new(0, 0)
-                };
-                if cost.generic > 0 {
-                    self.activate_mana_for_cost(player, cost, 0);
-                    let _ = self.pay_player_cost(player, cost, 0);
-                }
+            Some(CardBehavior::IcyManipulator) => {
+                let cost = ManaCost::new(1, 0);
+                self.activate_mana_for_cost(player, cost, 0);
+                let _ = self.pay_player_cost(player, cost, 0);
                 let card = self
                     .tap_permanent(source)
                     .expect("legal tap ability has a source");

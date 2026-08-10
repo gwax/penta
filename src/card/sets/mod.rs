@@ -337,6 +337,8 @@ mod tests {
             | ObjectPredicateDef::ManaValueEqualTo(_)
             | ObjectPredicateDef::ManaValueAtMostValue(_)
             | ObjectPredicateDef::PowerAtLeast(_)
+            | ObjectPredicateDef::PowerExactly(_)
+            | ObjectPredicateDef::ToughnessExactly(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
             | ObjectPredicateDef::SharesNameWithSource
@@ -1680,7 +1682,6 @@ mod tests {
             &y1993::alpha::STONE_GIANT,
             &y1993::alpha::CHAOS_ORB,
             &y1994::antiquities::MISHRA_S_FACTORY,
-            &y1994::legends::PENDELHAVEN,
             &y1994::the_dark::MAZE_OF_ITH,
         ];
         let complete = [
@@ -1689,6 +1690,7 @@ mod tests {
             &y1994::antiquities::STRIP_MINE,
             &y1994::antiquities::TRISKELION,
             &y1994::fallen_empires::ICATIAN_JAVELINEERS,
+            &y1994::legends::PENDELHAVEN,
             &y1994::legends::RELIC_BARRIER,
         ];
 

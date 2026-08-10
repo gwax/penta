@@ -19559,3 +19559,96 @@ fn jaces_first_ability_taxes_attackers_until_his_controller_comes_back_around() 
         "his next turn began, so the ability stopped listening"
     );
 }
+
+#[test]
+fn pendelhaven_only_pumps_something_that_is_still_a_one_one_when_it_resolves() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::PENDELHAVEN, PlayerId::One));
+    // A 1/1 and a 2/1: only the first is a legal target.
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+    game.battlefield[1].power_bonus = -1;
+    game.battlefield
+        .push(creature(10_002, cards::SAVANNAH_LIONS, PlayerId::One));
+
+    let pump = Action::ActivateAbility {
+        source: GameObjectId(10_000),
+        ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+        targets: activated_targets(Target::Permanent(GameObjectId(10_001))),
+        cost_object: None,
+        x: 0,
+    };
+    let at_the_two_one = Action::ActivateAbility {
+        source: GameObjectId(10_000),
+        ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+        targets: activated_targets(Target::Permanent(GameObjectId(10_002))),
+        cost_object: None,
+        x: 0,
+    };
+    let actions = game.legal_actions(PlayerId::One);
+    assert!(actions.contains(&pump), "the 1/1 is a legal target");
+    assert!(
+        !actions.contains(&at_the_two_one),
+        "a 2/1 is not a 1/1 creature"
+    );
+
+    game.apply(PlayerId::One, pump).unwrap();
+    // The ability is on the stack. Growing the target before it resolves
+    // makes the target illegal, and the whole ability does nothing.
+    assert_eq!(game.stack.len(), 1, "it waits on the stack");
+    game.battlefield[1].power_bonus += 1;
+    drain_pending(&mut game);
+
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still there");
+    assert_eq!(
+        (game.power(lions), game.toughness(lions)),
+        (Some(2), Some(1)),
+        "it stopped being a 1/1 in response, so it got nothing"
+    );
+}
+
+#[test]
+fn pendelhaven_pumps_a_one_one_that_stays_one() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::PENDELHAVEN, PlayerId::One));
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+    game.battlefield[1].power_bonus = -1;
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: GameObjectId(10_000),
+            ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+            targets: activated_targets(Target::Permanent(GameObjectId(10_001))),
+            cost_object: None,
+            x: 0,
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still there");
+    assert_eq!(
+        (game.power(lions), game.toughness(lions)),
+        (Some(2), Some(3))
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == GameObjectId(10_000))
+            .expect("still there")
+            .tapped,
+        "and the land paid for it"
+    );
+}

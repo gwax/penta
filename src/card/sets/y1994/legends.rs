@@ -1,8 +1,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, EffectDef,
-    EffectExecutionDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ValueDef, ZoneKind,
+    EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ValueDef, ZoneKind,
     abilities, cards,
 };
 use crate::ids::TargetIndex;
@@ -119,29 +119,45 @@ pub(in crate::card::sets) static MOAT: CardRecord = CardRecord::new(
     )]),
 );
 
+/// "Target 1/1 creature" is read as the creature is now, so a creature that
+/// has already been pumped is not one, and one that stops being 1/1 before
+/// the ability resolves loses the ability with it.
+static PENDELHAVEN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::PowerExactly(1),
+            ObjectPredicateDef::ToughnessExactly(1),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
 pub(in crate::card::sets) static PENDELHAVEN: CardRecord = CardRecord::new(
     cards::PENDELHAVEN,
     "Pendelhaven",
     CardArt::new("79427109-c1f3-476d-a029-0049217237b5", "Bryon Wackwitz"),
     CardSet::Legends,
     CardRules::new_land(&[])
-    .with_supertype(CardSupertype::Legendary)
-    .with_abilities(&[
-        abilities::tap_for(ManaColor::Green),
-        AbilityDef::activated_with_targets("{T}: Target 1/1 creature gets +1/+2 until end of turn.", &[AbilityCostDef::TapSource], &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::Special("creature with power 1 and toughness 1"),
-                zones: &[ZoneKind::Battlefield],
-                controller: None,
-                owner: None,
-            },
-        )], EffectDef::Special("Give the target 1/1 creature +1/+2 until end of turn"))
-        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::Pendelhaven))
-        .with_coverage(AbilityCoverageDef::partial(
-            "The 1/1 target restriction is checked on activation but is not rechecked when the ability resolves.",
-        ))
-        .with_legacy_procedure(),
-    ]),
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::tap_for(ManaColor::Green),
+            AbilityDef::activated_with_targets(
+                "{T}: Target 1/1 creature gets +1/+2 until end of turn.",
+                &[AbilityCostDef::TapSource],
+                &PENDELHAVEN_TARGET,
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(1),
+                        toughness: ValueDef::Constant(2),
+                    },
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
 );
 
 pub(in crate::card::sets) static RELIC_BARRIER: CardRecord = CardRecord::new(
