@@ -1068,7 +1068,6 @@ impl BalancePhase {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum ZoneMoveCause {
     Rules,
-    Cost,
     Effect { controller: PlayerId },
 }
 
@@ -1132,10 +1131,8 @@ enum DecisionContinuation {
         player: PlayerId,
         permanent: GameObjectId,
     },
-    RecallCost {
+    RecallDiscard {
         player: PlayerId,
-        card: GameObjectId,
-        choices: CastChoices,
     },
     RecallReturn {
         player: PlayerId,
@@ -1943,7 +1940,7 @@ impl Game {
                 card,
                 choices,
                 sacrifices,
-            } => self.cast_spell(player, card, choices, &sacrifices),
+            } => self.cast_spell(player, card, &choices, &sacrifices),
             Action::ActivateAbility {
                 source,
                 ability,
@@ -6250,11 +6247,7 @@ impl Game {
                 // top of the deck is whatever it already was.
                 self.rng.shuffle(&mut self.players[player.index()].library);
             }
-            DecisionContinuation::RecallCost {
-                player,
-                card,
-                choices,
-            } => {
+            DecisionContinuation::RecallDiscard { player } => {
                 let discarded = pending
                     .observation
                     .options
@@ -6262,8 +6255,16 @@ impl Game {
                     .filter(|option| options.contains(&option.id))
                     .filter_map(|option| option.card.map(|(card, _)| card))
                     .collect::<Vec<_>>();
-                self.discard_cards_with_cause(player, &discarded, ZoneMoveCause::Cost);
-                self.finish_cast_spell(player, card, &choices, &[]);
+                let count = discarded.len();
+                self.discard_cards_with_cause(
+                    player,
+                    &discarded,
+                    ZoneMoveCause::Effect { controller: player },
+                );
+                // "for each card discarded this way" -- and those cards are in
+                // the graveyard now, so Recall can hand any of them straight
+                // back.
+                self.queue_recall_return(player, count);
             }
             DecisionContinuation::RecallReturn { player } => {
                 for option in &pending.observation.options {
@@ -6597,14 +6598,6 @@ impl Game {
                                 0
                             };
                             for x in 0..=max_x {
-                                if behavior == CardBehavior::Recall
-                                    && usize::from(x)
-                                        > state.hand.len().saturating_sub(usize::from(
-                                            source_zone == CastSourceZone::Hand,
-                                        ))
-                                {
-                                    continue;
-                                }
                                 let target_choices = if alternative_kind
                                     == Some(AlternativeCastKindDef::Overload)
                                 {
@@ -8619,43 +8612,6 @@ impl Game {
     }
 
     fn cast_spell(
-        &mut self,
-        player: PlayerId,
-        card_id: GameObjectId,
-        choices: CastChoices,
-        sacrifices: &[GameObjectId],
-    ) {
-        let (_, _, behavior, _) = self
-            .validated_cast_signature(player, card_id, &choices)
-            .expect("legal cast action has valid structured choices");
-        if behavior == CardBehavior::Recall && choices.x() > 0 {
-            let eligible = self.players[player.index()]
-                .hand
-                .iter()
-                .filter(|card| card.id != card_id)
-                .cloned()
-                .collect::<Vec<_>>();
-            let options = self.card_decision_options(&eligible, DecisionZone::Hand);
-            self.queue_decision(
-                player,
-                format!("Discard {} card(s) to cast Recall", choices.x()),
-                DecisionVisibility::Private,
-                DecisionPreference::LowerCardValue,
-                usize::from(choices.x())..=usize::from(choices.x()),
-                true,
-                options,
-                DecisionContinuation::RecallCost {
-                    player,
-                    card: card_id,
-                    choices,
-                },
-            );
-            return;
-        }
-        self.finish_cast_spell(player, card_id, &choices, sacrifices);
-    }
-
-    fn finish_cast_spell(
         &mut self,
         player: PlayerId,
         card_id: GameObjectId,
@@ -11029,26 +10985,52 @@ impl Game {
             }
             CardBehavior::Balance => self.resolve_balance(object.controller),
             CardBehavior::Recall => {
+                let player = object.controller;
+                // Discarding is part of the resolution, not a cost, so a
+                // countered Recall costs nothing and the opponent never sees
+                // the discard before deciding whether to counter.
+                let count = usize::from(object.x()).min(self.players[player.index()].hand.len());
+                if count == 0 {
+                    return;
+                }
                 let options = self.card_decision_options(
-                    &self.players[object.controller.index()].graveyard,
-                    DecisionZone::Graveyard,
+                    &self.players[player.index()].hand.clone(),
+                    DecisionZone::Hand,
                 );
-                let count = usize::from(object.x()).min(options.len());
                 self.queue_decision(
-                    object.controller,
-                    format!("Return {count} card(s) from your graveyard"),
+                    player,
+                    format!("Discard {count} card(s)"),
                     DecisionVisibility::Private,
-                    DecisionPreference::HigherCardValue,
+                    DecisionPreference::LowerCardValue,
                     count..=count,
                     false,
                     options,
-                    DecisionContinuation::RecallReturn {
-                        player: object.controller,
-                    },
+                    DecisionContinuation::RecallDiscard { player },
                 );
             }
             _ => {}
         }
+    }
+
+    fn queue_recall_return(&mut self, player: PlayerId, count: usize) {
+        let options = self.card_decision_options(
+            &self.players[player.index()].graveyard,
+            DecisionZone::Graveyard,
+        );
+        let count = count.min(options.len());
+        if count == 0 {
+            return;
+        }
+        self.queue_decision(
+            player,
+            format!("Return {count} card(s) from your graveyard"),
+            DecisionVisibility::Private,
+            DecisionPreference::HigherCardValue,
+            count..=count,
+            false,
+            options,
+            DecisionContinuation::RecallReturn { player },
+        );
     }
 
     /// Lifts the top `count` cards off a library, fewer if it is short, in

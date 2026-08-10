@@ -247,6 +247,23 @@ fn pass_priority_pair(game: &mut Game) {
     game.apply(first.opponent(), Action::PassPriority).unwrap();
 }
 
+fn choose_all_offered(game: &mut Game, player: PlayerId) {
+    let decision = game
+        .observe(player)
+        .decision
+        .expect("a decision is waiting");
+    let action = Action::ChooseDecision {
+        decision: decision.id,
+        options: decision
+            .options
+            .iter()
+            .take(decision.minimum)
+            .map(|option| option.id)
+            .collect(),
+    };
+    game.apply(player, action).unwrap();
+}
+
 fn choose_decision_by_label(game: &mut Game, player: PlayerId, label: &str) {
     let decision = game
         .observe(player)
@@ -2429,7 +2446,7 @@ fn armageddon_destroys_every_land_but_not_creatures() {
 }
 
 #[test]
-fn recall_uses_cancellable_cost_and_return_decisions() {
+fn recall_discards_and_returns_as_it_resolves() {
     let mut game = ready_game();
     game.players[0].hand.extend([
         card(10_000, cards::RECALL, PlayerId::One),
@@ -2445,25 +2462,33 @@ fn recall_uses_cancellable_cost_and_return_decisions() {
     game.cast_spell(
         PlayerId::One,
         CardInstanceId(10_000),
-        cast_choices(Vec::new(), 2),
+        &cast_choices(Vec::new(), 2),
         &[],
     );
-    let cost_decision = game.observe(PlayerId::One).decision.unwrap();
-    assert!(cost_decision.cancellable);
-    assert_eq!(cost_decision.minimum, 2);
-    let cost_action = Action::ChooseDecision {
-        decision: cost_decision.id,
-        options: cost_decision
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "nothing is discarded to cast it, so there is no cost decision"
+    );
+    assert_eq!(game.players[0].graveyard.len(), 0);
+
+    pass_priority_pair(&mut game);
+    let discard = game.observe(PlayerId::One).decision.unwrap();
+    assert!(
+        !discard.cancellable,
+        "a resolving spell cannot be taken back"
+    );
+    assert_eq!(discard.minimum, 2);
+    let discard_action = Action::ChooseDecision {
+        decision: discard.id,
+        options: discard
             .options
             .iter()
-            .take(cost_decision.minimum)
+            .take(discard.minimum)
             .map(|option| option.id)
             .collect(),
     };
-    game.apply(PlayerId::One, cost_action).unwrap();
-    assert_eq!(game.players[0].graveyard.len(), 2);
+    game.apply(PlayerId::One, discard_action).unwrap();
 
-    pass_priority_pair(&mut game);
     let return_decision = game.observe(PlayerId::One).decision.unwrap();
     assert!(!return_decision.cancellable);
     assert_eq!(return_decision.minimum, 2);
@@ -2480,6 +2505,99 @@ fn recall_uses_cancellable_cost_and_return_decisions() {
 
     assert_eq!(game.players[0].hand.len(), 2);
     assert_eq!(game.players[0].exile[0].definition, cards::RECALL);
+}
+
+#[test]
+fn recall_x_may_exceed_the_hand_and_discards_what_it_can() {
+    // X is chosen when Recall is cast and the discard happens on resolution,
+    // so nothing caps X at the hand size. A short hand just discards, and
+    // returns, fewer.
+    let mut game = ready_game();
+    game.players[0].hand.extend([
+        card(10_000, cards::RECALL, PlayerId::One),
+        card(10_001, cards::LIGHTNING_BOLT, PlayerId::One),
+    ]);
+    game.players[0]
+        .graveyard
+        .push(card(10_002, cards::BALANCE, PlayerId::One));
+    game.players[0].mana_pool = ManaPool {
+        blue: 1,
+        colorless: 6,
+        ..ManaPool::default()
+    };
+
+    assert!(
+        game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == CardInstanceId(10_000) && choices.x() == 3)
+        }),
+        "three is affordable even though only one other card is in hand"
+    );
+
+    game.cast_spell(
+        PlayerId::One,
+        CardInstanceId(10_000),
+        &cast_choices(Vec::new(), 3),
+        &[],
+    );
+    pass_priority_pair(&mut game);
+    let discard = game.observe(PlayerId::One).decision.unwrap();
+    assert_eq!(discard.minimum, 1, "only one card is there to discard");
+    choose_all_offered(&mut game, PlayerId::One);
+
+    let returns = game.observe(PlayerId::One).decision.unwrap();
+    assert_eq!(returns.minimum, 1, "and so only one comes back");
+    choose_all_offered(&mut game, PlayerId::One);
+    assert_eq!(game.players[0].hand.len(), 1);
+}
+
+#[test]
+fn a_countered_recall_costs_no_cards() {
+    // The discard used to be an additional cost, so countering Recall was a
+    // two-for-one that also stripped the caster's hand.
+    let mut game = ready_game();
+    game.players[0].hand.extend([
+        card(10_000, cards::RECALL, PlayerId::One),
+        card(10_001, cards::LIGHTNING_BOLT, PlayerId::One),
+        card(10_002, cards::BALANCE, PlayerId::One),
+    ]);
+    game.players[1]
+        .hand
+        .push(card(10_003, cards::COUNTERSPELL, PlayerId::Two));
+    game.players[0].mana_pool = ManaPool {
+        blue: 1,
+        colorless: 4,
+        ..ManaPool::default()
+    };
+    game.players[1].mana_pool = ManaPool {
+        blue: 2,
+        ..ManaPool::default()
+    };
+
+    game.cast_spell(
+        PlayerId::One,
+        CardInstanceId(10_000),
+        &cast_choices(Vec::new(), 2),
+        &[],
+    );
+    acceptance_attempt_counterspell(&mut game, CardInstanceId(10_003));
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        2,
+        "Bolt and Balance are still in hand"
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::RECALL],
+        "only the countered Recall is there; nothing was discarded, and the \
+         exile happens on resolution, which never came"
+    );
 }
 
 #[test]
@@ -12903,7 +13021,7 @@ fn snapcaster_flashback_does_not_bypass_a_from_hand_only_fuse_option() {
 }
 
 #[test]
-fn snapcaster_granted_recall_can_discard_every_card_in_hand_for_x() {
+fn snapcaster_granted_recall_offers_x_under_the_flashback_cost() {
     let mut game = ready_game();
     let recall = card(20_000, cards::RECALL, PlayerId::One);
     let recall_id = recall.id;
@@ -13925,7 +14043,6 @@ fn loxodon_smiter_zone_move_replacement_checks_the_cause_controller() {
             },
             false,
         ),
-        (ZoneMoveCause::Cost, false),
         (ZoneMoveCause::Rules, false),
     ] {
         let mut game = ready_game();

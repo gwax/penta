@@ -371,14 +371,16 @@ test("[slow] your own spell resolving is not a beat you have to sit through", as
           actions.find((action) => action.kind === "pass") ??
           actions[0];
         if (!next) break;
-        const cast = /^Cast ([^→(]+)/.exec(next.label)?.[1]?.trim();
+        const cast = /^Cast /.test(next.label) ? next.cardId : null;
         try { game.act(next.index); } catch { break; }
 
         const beats = JSON.parse(game.state_json()).opponentActions ?? [];
-        if (cast) {
+        // Match on the object, not the name: both seats play Counterspell,
+        // and theirs resolving is a beat you very much do need to see.
+        if (cast !== null && cast !== undefined) {
           casts += 1;
           assert.ok(
-            !beats.some((beat) => beat.label === `${cast} resolves`),
+            !beats.some((beat) => beat.cardId === cast && / resolves$/.test(beat.label)),
             `"${next.label}" replays its own resolution: ${beats.map((b) => b.label).join(", ")}`,
           );
         }

@@ -80,10 +80,10 @@ pub(in crate::card::sets) static RECALL: CardRecord = CardRecord::new(
     CardArt::new("33296718-0625-4422-a65c-b21cf99c52ec", "Brian Snõddy"),
     CardSet::Legends,
     CardRules::new_sorcery(mana_cost!("{X}{X}{U}"))
-    .with_abilities(&[AbilityDef::custom_partial(
+    .with_abilities(&[AbilityDef::custom_full(
         "Discard X cards, then return a card from your graveyard to your hand for each card discarded this way. Exile Recall.",
         CardBehavior::Recall,
-        "The engine incorrectly requires and discards X cards as an additional casting cost instead of discarding during resolution.",
+        "The card-local resolver discards on resolution and then returns that many cards, so a countered Recall costs nothing and the discarded cards are themselves returnable.",
     )]),
 );
 
