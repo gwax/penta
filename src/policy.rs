@@ -309,6 +309,7 @@ impl HandcraftedPolicy {
             | EffectDef::LoseLife { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SearchLibrary { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }

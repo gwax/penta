@@ -1048,6 +1048,10 @@ pub enum EffectRecipientDef {
     /// The triggering object's controller when this effect resolves, using
     /// last-known information if that object is no longer live.
     ControllerOfTriggeringObject,
+    /// The controller of what a target slot points at, for "its controller".
+    /// Read when the effect resolves, using last-known information if that
+    /// object has already left the battlefield.
+    ControllerOfTarget(TargetSlotId),
     /// The player named directly by the event, such as the player whose
     /// upkeep began or who cast the triggering spell.
     EventPlayer,
@@ -1196,6 +1200,14 @@ pub enum EffectDef {
     SacrificeOfChoice {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
+    },
+    /// Search a library for one matching card and put it somewhere, then
+    /// shuffle. Searching a hidden zone never obliges the searcher to find,
+    /// so a printed "may" adds nothing on top of this.
+    SearchLibrary {
+        player: EffectRecipientDef,
+        object: ObjectPredicateDef,
+        destination: ZoneKind,
     },
     Counter {
         object: EffectRecipientDef,

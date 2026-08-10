@@ -371,6 +371,7 @@ mod tests {
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
             | EffectRecipientDef::Target(_)
+            | EffectRecipientDef::ControllerOfTarget(_)
             | EffectRecipientDef::TriggeringObject
             | EffectRecipientDef::ControllerOfTriggeringObject
             | EffectRecipientDef::EventPlayer => true,
@@ -527,6 +528,18 @@ mod tests {
             // battlefield, so only the predicate needs checking.
             EffectDef::SacrificeOfChoice { player, object } => {
                 shared_effect_recipient(player) && shared_object_predicate(object)
+            }
+            // The searcher is a player and the choices come out of their own
+            // library, so only the predicate and the destination need
+            // checking.
+            EffectDef::SearchLibrary {
+                player,
+                object,
+                destination,
+            } => {
+                shared_effect_recipient(player)
+                    && shared_object_predicate(object)
+                    && matches!(destination, ZoneKind::Battlefield | ZoneKind::Hand)
             }
             // Only the two destinations the return path knows.
             EffectDef::ReturnLinkedExiles { zone, .. } => {
@@ -687,6 +700,7 @@ mod tests {
                     EffectRecipientDef::Controller
                     | EffectRecipientDef::Opponent
                     | EffectRecipientDef::Target(_)
+                    | EffectRecipientDef::ControllerOfTarget(_)
                     | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
                     | EffectRecipientDef::TriggeringObject
                     | EffectRecipientDef::ControllerOfTriggeringObject
@@ -729,6 +743,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
@@ -843,6 +858,7 @@ mod tests {
                         | EffectDef::Destroy { .. }
                         | EffectDef::Sacrifice { .. }
                         | EffectDef::SacrificeOfChoice { .. }
+                        | EffectDef::SearchLibrary { .. }
                         | EffectDef::Counter { .. }
                         | EffectDef::CounterUnlessPaid { .. }
                         | EffectDef::AddCounters { .. }
@@ -953,6 +969,7 @@ mod tests {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }

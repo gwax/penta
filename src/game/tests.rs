@@ -15421,3 +15421,88 @@ fn mutavault_becomes_a_creature_of_every_type_until_cleanup() {
         "the animation lasts only until end of turn"
     );
 }
+
+#[test]
+fn ghost_quarter_destroys_a_land_and_lets_its_owner_replace_it() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let quarter = game
+        .put_onto_battlefield(PlayerId::One, cards::GHOST_QUARTER)
+        .expect("cataloged");
+    let victim = game
+        .put_onto_battlefield(PlayerId::Two, cards::TROPICAL_ISLAND)
+        .expect("cataloged");
+    // A basic to find and a nonbasic that the search may not take.
+    game.players[1].library = vec![
+        card(10_050, cards::SAVANNAH_LIONS, PlayerId::Two),
+        card(10_051, cards::FOREST, PlayerId::Two),
+    ];
+
+    let activate = game
+        .observe(PlayerId::One)
+        .legal_actions
+        .into_iter()
+        .find(|action| match action {
+            // The Quarter is a legal target for itself at announcement, so
+            // pick the one aimed at the opponent's land.
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == quarter
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Permanent(victim)))
+            }
+            _ => false,
+        })
+        .expect("the sacrifice ability is offered");
+    game.apply(PlayerId::One, activate).unwrap();
+    while !game.stack.is_empty() && game.pending_decisions.is_empty() {
+        let player = game.priority;
+        game.apply(player, Action::PassPriority).unwrap();
+    }
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == victim),
+        "the targeted land was destroyed"
+    );
+
+    // The search belongs to the land's controller, not the Quarter's.
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the destroyed land's controller searches");
+    assert_eq!(decision.player, PlayerId::Two);
+    let offered = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card)
+        .map(|(_, definition)| definition)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        offered,
+        vec![cards::FOREST],
+        "only a basic land card is a legal find"
+    );
+
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decision.options[0].id],
+        },
+    )
+    .unwrap();
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::FOREST
+                && permanent.controller == PlayerId::Two),
+        "the basic land arrived under its owner's control"
+    );
+    assert!(game.players[1].library.len() == 1, "and left the library");
+}

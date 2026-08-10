@@ -192,10 +192,33 @@ pub(in crate::card::sets) static GHOST_QUARTER: CardRecord = CardRecord::new(
     .land_entry(LandEntry::Untapped)
     .with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
-        AbilityDef::not_implemented(
+        AbilityDef::activated(
             "{T}, Sacrifice this land: Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle.",
-            "The land-destruction activated ability and optional search are not executed.",
-        ),
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            EffectDef::Sequence(&[
+                EffectDef::Destroy {
+                    object: EffectRecipientDef::Target(TargetSlotId(0)),
+                    can_regenerate: true,
+                },
+                // The printed "may" adds nothing: a search of a hidden zone
+                // never obliges the searcher to find, so declining is already
+                // one of the choices. The controller is read after the
+                // destruction from last-known information.
+                EffectDef::SearchLibrary {
+                    player: EffectRecipientDef::ControllerOfTarget(TargetSlotId(0)),
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                    ]),
+                    destination: ZoneKind::Battlefield,
+                },
+            ]),
+        )
+        .with_targets(&[AbilityTargetDef::exactly_one_permanent(
+            TargetSlotId(0),
+            "land",
+            ObjectPredicateDef::HasType(CardType::Land),
+        )]),
     ]),
 );
 

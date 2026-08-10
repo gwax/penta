@@ -871,6 +871,9 @@ enum CounteredSpellZone {
 #[derive(Clone, Debug)]
 enum DecisionContinuation {
     Tutor,
+    LibrarySearch {
+        destination: ZoneKind,
+    },
     BasicLandTypeTextChange {
         target: Target,
     },
@@ -2473,6 +2476,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
@@ -3879,6 +3883,51 @@ impl Game {
     /// Asks `player` which matching permanent they control to sacrifice. With
     /// nothing matching there is no choice and no sacrifice; with exactly one
     /// there is nothing to ask.
+    /// Offers a library search over the cards a predicate admits. The shuffle
+    /// happens either way, because a search that finds nothing still searched
+    /// and skipping it would hand the searcher their library order for free.
+    fn queue_library_search(
+        &mut self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+        destination: ZoneKind,
+        source: GameObjectId,
+    ) {
+        let options = self.players[player.index()]
+            .library
+            .iter()
+            .filter(|card| self.card_object_matches(predicate, card, ZoneKind::Library, source))
+            .enumerate()
+            .map(|(index, card)| DecisionOption {
+                id: u32::try_from(index).unwrap_or(u32::MAX),
+                label: self
+                    .catalog
+                    .get(card.definition)
+                    .map_or_else(|| "Unknown card".into(), |card| card.name.clone()),
+                card: Some((card.id, card.definition)),
+                ability_text: None,
+                zone: DecisionZone::Library,
+            })
+            .collect();
+        self.queue_decision(
+            player,
+            match destination {
+                ZoneKind::Battlefield => {
+                    "Choose a card to put onto the battlefield, or fail to find"
+                }
+                _ => "Choose a card to put into your hand, or fail to find",
+            },
+            DecisionVisibility::Private,
+            DecisionPreference::HigherCardValue,
+            // CR 701.19c: searching a hidden zone never obliges the searcher
+            // to find, so the minimum is zero even with a full library.
+            0..=1,
+            false,
+            options,
+            DecisionContinuation::LibrarySearch { destination },
+        );
+    }
+
     fn queue_chosen_sacrifice(
         &mut self,
         player: PlayerId,
@@ -4298,6 +4347,25 @@ impl Game {
                     return;
                 };
                 self.discard_cards_with_cause(victim, &[card], cause);
+            }
+            DecisionContinuation::LibrarySearch { destination } => {
+                let found = pending
+                    .observation
+                    .options
+                    .iter()
+                    .find(|option| options.contains(&option.id))
+                    .and_then(|option| option.card);
+                if let Some((card, _)) = found
+                    && let Some(card) = remove_card(&mut self.players[player.index()].library, card)
+                {
+                    if destination == ZoneKind::Battlefield {
+                        self.put_card_onto_battlefield_from(card, ZoneKind::Library, player);
+                    } else {
+                        let (card, _zone_change) = self.zone_change_card(card);
+                        self.players[player.index()].hand.push(card);
+                    }
+                }
+                self.rng.shuffle(&mut self.players[player.index()].library);
             }
             DecisionContinuation::Tutor => {
                 let found = pending
@@ -7444,6 +7512,18 @@ impl Game {
                     }
                 }
             }
+            EffectDef::SearchLibrary {
+                player: recipient,
+                object: predicate,
+                destination,
+            } => {
+                let source = object.source.unwrap_or(object.id);
+                for target in self.effect_recipients(recipient, object, context) {
+                    if let Target::Player(player) = target {
+                        self.queue_library_search(player, predicate, destination, source);
+                    }
+                }
+            }
             EffectDef::GrantFlashToNextSorcery => {
                 let grants = &mut self.sorcery_flash_grants[object.controller.index()];
                 *grants = grants.saturating_add(1);
@@ -7894,22 +7974,26 @@ impl Game {
         context: TriggerContext,
     ) -> Vec<Target> {
         if let EffectRecipientDef::Target(slot) = recipient {
-            let selections = object
-                .signature
-                .as_ref()
-                .map(CastSignature::targets)
-                .or_else(|| {
-                    object
-                        .ability
-                        .as_ref()
-                        .map(|ability| ability.targets.as_slice())
-                });
-            return selections
-                .and_then(|selections| selections.iter().find(|selection| selection.slot() == slot))
-                .into_iter()
-                .flat_map(TargetSelection::targets)
-                .copied()
+            return Self::chosen_targets(object, slot)
                 .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
+                .collect();
+        }
+
+        // "Its controller" is read after the rest of the effect has already
+        // run, by which point the target is often gone -- Ghost Quarter
+        // destroys the land before its owner searches. So this reads the
+        // chosen target without the legality filter and falls back to
+        // last-known information.
+        if let EffectRecipientDef::ControllerOfTarget(slot) = recipient {
+            return Self::chosen_targets(object, slot)
+                .find_map(|target| match target {
+                    Target::Permanent(id) | Target::Card(id) | Target::Spell(id) => {
+                        self.current_or_last_known_controller(id)
+                    }
+                    Target::Player(player) => Some(player),
+                })
+                .map(Target::Player)
+                .into_iter()
                 .collect();
         }
 
@@ -7941,6 +8025,7 @@ impl Game {
                     .map(Target::Player),
                 EffectRecipientDef::EventPlayer => context.event_player.map(Target::Player),
                 EffectRecipientDef::Target(_)
+                | EffectRecipientDef::ControllerOfTarget(_)
                 | EffectRecipientDef::MatchingObjects { .. }
                 | EffectRecipientDef::ObjectsSharingNameWithTarget(_) => {
                     unreachable!("target, matching, and shared-name recipients returned above")
@@ -7991,6 +8076,25 @@ impl Game {
             ComparisonDef::AtMost => count <= amount,
             ComparisonDef::Exactly => count == amount,
         }
+    }
+
+    /// The targets frozen into one slot when the object was put on the stack,
+    /// before any legality check.
+    fn chosen_targets(object: &StackObject, slot: TargetSlotId) -> impl Iterator<Item = Target> {
+        object
+            .signature
+            .as_ref()
+            .map(CastSignature::targets)
+            .or_else(|| {
+                object
+                    .ability
+                    .as_ref()
+                    .map(|ability| ability.targets.as_slice())
+            })
+            .and_then(|selections| selections.iter().find(|selection| selection.slot() == slot))
+            .into_iter()
+            .flat_map(TargetSelection::targets)
+            .copied()
     }
 
     /// Every object a zone-scoped query matches. A trigger's intervening-if
@@ -9679,7 +9783,8 @@ impl Game {
             }
             // None of these name a permanent a static effect could apply to;
             // a static effect has no chosen target either.
-            EffectRecipientDef::Controller
+            EffectRecipientDef::ControllerOfTarget(_)
+            | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
             | EffectRecipientDef::Target(_)
             | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
@@ -9835,23 +9940,7 @@ impl Game {
             let DeclarativeAbilityDef::ActivatedMana(definition) = ability.definition else {
                 return;
             };
-            let taps_source = definition.costs.contains(&AbilityCostDef::TapSource);
-            let sacrifices_source = definition.costs.contains(&AbilityCostDef::SacrificeSource);
-            if !definition.source_zones.contains(&ZoneKind::Battlefield)
-                || !(taps_source || sacrifices_source)
-                || (taps_source && (permanent.tapped || !self.can_use_tap_ability(permanent)))
-                || definition.costs.iter().any(|cost| {
-                    !matches!(
-                        cost,
-                        AbilityCostDef::TapSource
-                            | AbilityCostDef::SacrificeSource
-                            | AbilityCostDef::PayLife(_)
-                    )
-                })
-                || definition.costs.iter().any(|cost| {
-                    matches!(cost, AbilityCostDef::PayLife(amount) if self.players[permanent.controller.index()].life < i16::try_from(*amount).unwrap_or(i16::MAX))
-                })
-            {
+            if !self.mana_ability_cost_is_payable(permanent, definition) {
                 return;
             }
             match ability.effect {
@@ -9903,6 +9992,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
+                | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::CounterUnlessPaid { .. }
                 | EffectDef::AddCounters { .. }
@@ -9915,8 +10005,8 @@ impl Game {
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
-            | EffectDef::MakeUnblockableThisTurn { .. }
-            | EffectDef::AtNextStep { .. }
+                | EffectDef::MakeUnblockableThisTurn { .. }
+                | EffectDef::AtNextStep { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::MultiplyEventAmount(_)
                 | EffectDef::MoveToZone { .. }
@@ -9926,6 +10016,32 @@ impl Game {
             }
         });
         activations
+    }
+
+    /// Whether a mana ability's own costs can be paid right now. Only the
+    /// self-contained costs count: anything the payment planner would have to
+    /// reason about is not a mana ability the enumerator can offer for free.
+    fn mana_ability_cost_is_payable(
+        &self,
+        permanent: &Permanent,
+        definition: ActivatedAbilityDef,
+    ) -> bool {
+        let taps_source = definition.costs.contains(&AbilityCostDef::TapSource);
+        let sacrifices_source = definition.costs.contains(&AbilityCostDef::SacrificeSource);
+        if !definition.source_zones.contains(&ZoneKind::Battlefield)
+            || !(taps_source || sacrifices_source)
+            || (taps_source && (permanent.tapped || !self.can_use_tap_ability(permanent)))
+        {
+            return false;
+        }
+        definition.costs.iter().all(|cost| match cost {
+            AbilityCostDef::TapSource | AbilityCostDef::SacrificeSource => true,
+            AbilityCostDef::PayLife(amount) => {
+                self.players[permanent.controller.index()].life
+                    >= i16::try_from(*amount).unwrap_or(i16::MAX)
+            }
+            _ => false,
+        })
     }
 
     fn fellwar_stone_colors(
@@ -10000,6 +10116,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
+                | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::CounterUnlessPaid { .. }
                 | EffectDef::AddCounters { .. }
@@ -12655,6 +12772,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
