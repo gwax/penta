@@ -280,7 +280,7 @@ mod tests {
         EffectDurationDef, EffectRecipientDef, ImplementationStatus, KeywordAbility, ManaColor,
         ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
         PlayActionKind, PlayRestriction, PlayerRelation, ReplacementEventDef, SpellForm,
-        TargetPredicate, TriggerEventDef, ZoneKind, ZoneMoveCauseDef, cards,
+        TargetPredicate, TriggerConditionDef, TriggerEventDef, ZoneKind, ZoneMoveCauseDef, cards,
     };
     use crate::{
         AbilityId, CardDefinitionId, CardPartId, CardSet, Format, ManaCost, ModeId, PlayOptionId,
@@ -752,6 +752,12 @@ mod tests {
         }
     }
 
+    fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
+        match condition {
+            TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
+        }
+    }
+
     fn battlefield_only(zones: &[ZoneKind]) -> bool {
         zones == [ZoneKind::Battlefield]
     }
@@ -847,6 +853,9 @@ mod tests {
             DeclarativeAbilityDef::Triggered(definition) => {
                 battlefield_only(definition.source_zones)
                     && shared_trigger_event(definition.event)
+                    && definition
+                        .condition
+                        .is_none_or(|condition| shared_trigger_condition(*condition))
                     && shared_stack_effect(ability.effect)
             }
             DeclarativeAbilityDef::Static(definition) => {

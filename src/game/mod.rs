@@ -13,12 +13,13 @@ use crate::card::{
     ActivatedAbilityDef, AddManaEffectDef, AlternativeCastAbilityDef, AlternativeCastKindDef,
     AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardBehavior, CardCatalog, CardDefinition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    CardTypeSet, CharacteristicContext, CounterKind, DeclarativeAbilityDef, DoubleFacedKind,
-    EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry, ManaCost,
-    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
-    PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation, ReplacementEventDef, SpellForm,
-    TargetPredicate, TargetSlotDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, abilities, applicable_part_ids,
+    CardTypeSet, CharacteristicContext, ComparisonDef, CounterKind, DeclarativeAbilityDef,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility, LandEntry,
+    ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
+    ObjectQueryDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation,
+    ReplacementEventDef, SpellForm, TargetPredicate, TargetSlotDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
+    applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -354,6 +355,8 @@ struct StackAbilityPayload {
     targets: Vec<TargetSelection>,
     context: TriggerContext,
     resolver: StackAbilityResolver,
+    /// The intervening-if condition, re-read as this ability resolves.
+    condition: Option<&'static TriggerConditionDef>,
     /// Selected declarative mode effects frozen in canonical printed order.
     /// Repeated modes remain repeated procedures.
     mode_effects: Vec<EffectDef>,
@@ -604,6 +607,7 @@ struct PendingTrigger {
     effect: EffectDef,
     resolver: StackAbilityResolver,
     context: TriggerContext,
+    condition: Option<&'static TriggerConditionDef>,
 }
 
 /// The immutable declaration captured when one event matches one source
@@ -620,6 +624,9 @@ struct TriggerCapture {
     effect: EffectDef,
     resolver: StackAbilityResolver,
     context: TriggerContext,
+    /// The intervening-if condition this trigger reads, checked both when the
+    /// ability would go on the stack and again when it resolves.
+    condition: Option<&'static TriggerConditionDef>,
 }
 
 /// One battlefield trigger listener frozen at the start of an atomic event.
@@ -2260,7 +2267,20 @@ impl Game {
         }
     }
 
-    fn capture_trigger(&mut self, capture: TriggerCapture) {
+    fn capture_trigger(&mut self, capture: &TriggerCapture) {
+        // Rule 603.4: an intervening-if condition is checked as the ability
+        // would trigger. Failing it means the ability never triggers at all,
+        // so nothing reaches the stack and nothing is reported.
+        if let Some(condition) = capture.condition
+            && !self.trigger_condition_holds(
+                condition,
+                capture.source.object,
+                capture.controller,
+                capture.context,
+            )
+        {
+            return;
+        }
         let id = self.next_trigger_id;
         self.next_trigger_id = self.next_trigger_id.saturating_add(1);
         self.pending_triggers.push(PendingTrigger {
@@ -2275,6 +2295,7 @@ impl Game {
             effect: capture.effect,
             resolver: capture.resolver,
             context: capture.context,
+            condition: capture.condition,
         });
         self.events.push(GameEvent::AbilityTriggered {
             player: capture.controller,
@@ -2351,6 +2372,7 @@ impl Game {
                         effect: ability.effect,
                         resolver: Self::ability_resolver(&ability),
                         context: TriggerContext::empty(),
+                        condition: definition.condition,
                     },
                 });
             });
@@ -2396,7 +2418,7 @@ impl Game {
             })
             .collect::<Vec<_>>();
         for listener in stack_triggers {
-            self.capture_trigger(TriggerCapture {
+            self.capture_trigger(&TriggerCapture {
                 context: event.context(),
                 ..listener.capture
             });
@@ -2514,7 +2536,7 @@ impl Game {
             })
             .collect::<Vec<_>>();
         for (ability, text, targets, effect, resolver) in triggers {
-            self.capture_trigger(TriggerCapture {
+            self.capture_trigger(&TriggerCapture {
                 source: AbilitySourceRef {
                     object: source.card.id,
                     ability,
@@ -2530,6 +2552,9 @@ impl Game {
                 effect,
                 resolver,
                 context: event.context(),
+                // A legacy custom trigger states its own condition inside its
+                // behavior rather than declaring one here.
+                condition: None,
             });
         }
     }
@@ -3187,6 +3212,7 @@ impl Game {
                 targets: trigger.targets,
                 context: trigger.context,
                 resolver: trigger.resolver,
+                condition: trigger.condition,
                 mode_effects: Vec::new(),
                 x: 0,
             }),
@@ -3711,6 +3737,8 @@ impl Game {
                 targets,
                 context: TriggerContext::empty(),
                 resolver: frozen.resolver,
+                // Only a triggered ability carries an intervening-if.
+                condition: None,
                 mode_effects: Vec::new(),
                 x: frozen.x,
             }),
@@ -4908,6 +4936,7 @@ impl Game {
                 targets: signature.targets().to_vec(),
                 context: TriggerContext::empty(),
                 resolver: StackAbilityResolver::Declarative(ability.effect),
+                condition: None,
                 mode_effects: Vec::new(),
                 x: signature.x(),
             });
@@ -4936,6 +4965,7 @@ impl Game {
             target_defs,
             targets: signature.targets().to_vec(),
             context: TriggerContext::empty(),
+            condition: None,
             resolver: followup.map_or_else(
                 || Self::ability_resolver(&ability),
                 |behavior| StackAbilityResolver::DeclarativeWithCustomFollowup {
@@ -7098,6 +7128,20 @@ impl Game {
         if self.stack_ability_fizzles(object) {
             return false;
         }
+        // Rule 603.4's second look. A condition that has stopped holding
+        // since the ability triggered makes it do nothing at all, which is
+        // reported the same way an ability with no legal target is.
+        if let Some(ability) = object.ability.as_ref()
+            && let Some(condition) = ability.condition
+            && !self.trigger_condition_holds(
+                condition,
+                object.source.unwrap_or(object.id),
+                object.controller,
+                ability.context,
+            )
+        {
+            return false;
+        }
         let (resolver, context, mode_effects) = object
             .ability
             .as_ref()
@@ -7871,7 +7915,62 @@ impl Game {
             .collect();
         };
 
-        let source = object.source.unwrap_or(object.id);
+        self.matching_objects(
+            predicate,
+            zones,
+            controller,
+            object.source.unwrap_or(object.id),
+            object.controller,
+            context,
+        )
+    }
+
+    /// Whether a trigger's intervening-if condition holds right now. Rule
+    /// 603.4 asks this when the ability would trigger and again as it
+    /// resolves, so both call sites read the same board.
+    fn trigger_condition_holds(
+        &self,
+        condition: &TriggerConditionDef,
+        source: GameObjectId,
+        controller: PlayerId,
+        context: TriggerContext,
+    ) -> bool {
+        let TriggerConditionDef::ObjectCount {
+            query,
+            comparison,
+            amount,
+        } = condition;
+        let count = self
+            .matching_objects(
+                query.object,
+                query.zones,
+                query.controller,
+                source,
+                controller,
+                context,
+            )
+            .len();
+        let amount = usize::from(*amount);
+        match comparison {
+            ComparisonDef::AtLeast => count >= amount,
+            ComparisonDef::AtMost => count <= amount,
+            ComparisonDef::Exactly => count == amount,
+        }
+    }
+
+    /// Every object a zone-scoped query matches. A trigger's intervening-if
+    /// condition is read before any stack object exists, so this takes the
+    /// ability's source and controller directly rather than a resolving
+    /// object.
+    fn matching_objects(
+        &self,
+        predicate: ObjectPredicateDef,
+        zones: &'static [ZoneKind],
+        controller: PlayerRelation,
+        source: GameObjectId,
+        ability_controller: PlayerId,
+        context: TriggerContext,
+    ) -> Vec<Target> {
         let mut recipients = Vec::new();
         if zones.contains(&ZoneKind::Battlefield) {
             recipients.extend(self.battlefield.iter().filter_map(|permanent| {
@@ -7879,7 +7978,7 @@ impl Game {
                 (self.player_relation_matches(
                     permanent.controller,
                     controller,
-                    object.controller,
+                    ability_controller,
                     context,
                 ) && self.trigger_object_matches(predicate, &characteristics, source, false))
                 .then_some(Target::Permanent(permanent.card.id))
@@ -7892,7 +7991,7 @@ impl Game {
                     && self.player_relation_matches(
                         candidate.controller,
                         controller,
-                        object.controller,
+                        ability_controller,
                         context,
                     )
                     && self.trigger_object_matches(predicate, &characteristics, source, true))
@@ -7912,7 +8011,7 @@ impl Game {
                 continue;
             }
             recipients.extend(self.cards_in_zone(zone).filter_map(|card| {
-                (self.player_relation_matches(card.owner, controller, object.controller, context)
+                (self.player_relation_matches(card.owner, controller, ability_controller, context)
                     && self.card_object_matches(predicate, card, zone, source))
                 .then_some(Target::Card(card.id))
             }));

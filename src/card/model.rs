@@ -1442,11 +1442,35 @@ impl ActivatedAbilityDef {
     }
 }
 
+/// How a counted amount is compared against a printed number.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ComparisonDef {
+    AtLeast,
+    AtMost,
+    Exactly,
+}
+
+/// An intervening-if condition, the "if ..." clause a trigger reads before it
+/// does anything. Rule 603.4 checks such a condition twice: once when the
+/// ability would go on the stack, and again as it resolves.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum TriggerConditionDef {
+    /// How many objects the query matches, against a printed number.
+    ObjectCount {
+        query: ObjectQueryDef,
+        comparison: ComparisonDef,
+        amount: u8,
+    },
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TriggeredAbilityDef {
     pub source_zones: &'static [ZoneKind],
     pub event: TriggerEventDef,
     pub targets: &'static [AbilityTargetDef],
+    /// Held by reference so that this definition stays small enough to pass
+    /// around by value alongside a captured trigger.
+    pub condition: Option<&'static TriggerConditionDef>,
 }
 
 impl TriggeredAbilityDef {
@@ -1456,7 +1480,14 @@ impl TriggeredAbilityDef {
             source_zones: &[ZoneKind::Battlefield],
             event,
             targets: &[],
+            condition: None,
         }
+    }
+
+    #[must_use]
+    pub const fn with_condition(mut self, condition: &'static TriggerConditionDef) -> Self {
+        self.condition = Some(condition);
+        self
     }
 
     #[must_use]
@@ -1922,6 +1953,24 @@ impl AbilityDef {
         Self::defined(
             text,
             DeclarativeAbilityDef::Triggered(TriggeredAbilityDef::new(event)),
+            effect,
+        )
+    }
+
+    /// A trigger with an intervening-if condition, for "at the beginning of
+    /// your upkeep, if ...".
+    #[must_use]
+    pub const fn triggered_if(
+        text: &'static str,
+        event: TriggerEventDef,
+        condition: &'static TriggerConditionDef,
+        effect: EffectDef,
+    ) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::Triggered(
+                TriggeredAbilityDef::new(event).with_condition(condition),
+            ),
             effect,
         )
     }

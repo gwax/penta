@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
-    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
-    EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, PlayerRelation,
-    TargetConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, ComparisonDef, CounterKind,
+    EffectDef, EffectRecipientDef, LandEntry, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, TargetConditionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetSlotId;
 use crate::mana_cost;
@@ -389,12 +390,33 @@ pub(in crate::card::sets) static SHADOWBORN_DEMON: CardRecord = CardRecord::new(
                 ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Demon")),
             ]),
         )]),
-        AbilityDef::not_implemented(
+        AbilityDef::triggered_if(
             "At the beginning of your upkeep, if there are fewer than six creature cards in your graveyard, sacrifice a creature.",
-            "The conditional upkeep sacrifice trigger is not executed.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &SHADOWBORN_DEMON_UPKEEP_CONDITION,
+            EffectDef::SacrificeOfChoice {
+                player: EffectRecipientDef::Controller,
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+            },
         ),
     ]),
 );
+
+/// Fewer than six is at most five. The count is of creature cards in your
+/// own graveyard, which the Demon feeds on and which is why it stops eating
+/// your board once the graveyard is full enough.
+static SHADOWBORN_DEMON_UPKEEP_CONDITION: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Graveyard],
+        controller: PlayerRelation::You,
+    },
+    comparison: ComparisonDef::AtMost,
+    amount: 5,
+};
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARCHANGEL_OF_THUNE,

@@ -1535,7 +1535,7 @@ fn targeted_trigger_chooses_public_targets_while_being_put_on_stack() {
         creature(10_000, cards::ANKH_OF_MISHRA, PlayerId::One),
         creature(10_001, cards::SU_CHI, PlayerId::Two),
     ]);
-    game.capture_trigger(TriggerCapture {
+    game.capture_trigger(&TriggerCapture {
         source: AbilitySourceRef {
             object: CardInstanceId(10_000),
             ability: primary_ability(cards::ANKH_OF_MISHRA),
@@ -1559,6 +1559,7 @@ fn targeted_trigger_chooses_public_targets_while_being_put_on_stack() {
             event_player: None,
             amount: None,
         },
+        condition: None,
     });
     game.finish_rules_procedure();
 
@@ -1651,7 +1652,7 @@ fn su_chi_mana_and_source_power_use_ordinary_stack_and_lki() {
     let mut source = creature(10_010, cards::SAVANNAH_LIONS, PlayerId::One);
     source.power_bonus = 3;
     game.battlefield.push(source);
-    game.capture_trigger(TriggerCapture {
+    game.capture_trigger(&TriggerCapture {
         source: AbilitySourceRef {
             object: CardInstanceId(10_010),
             ability: primary_ability(cards::SAVANNAH_LIONS),
@@ -1675,6 +1676,7 @@ fn su_chi_mana_and_source_power_use_ordinary_stack_and_lki() {
             event_player: Some(PlayerId::One),
             amount: None,
         },
+        condition: None,
     });
     game.destroy_permanent(CardInstanceId(10_010));
     game.finish_rules_procedure();
@@ -6969,6 +6971,7 @@ fn resolving_ability_masks_an_illegal_target_in_each_frozen_slot() {
                 amount: None,
             },
             resolver: StackAbilityResolver::Declarative(EffectDef::Sequence(&EFFECTS)),
+            condition: None,
             mode_effects: Vec::new(),
             x: 0,
         }),
@@ -14853,5 +14856,107 @@ fn restoration_angel_blinks_a_creature_within_one_resolution() {
             .iter()
             .any(|permanent| permanent.card.id == serra),
         "the untargetable Angel stayed put"
+    );
+}
+
+/// Answers every waiting decision by taking what is offered and otherwise
+/// passing, until the stack and the trigger queue are empty.
+fn drain_pending(game: &mut Game) {
+    for _ in 0..16 {
+        if game.stack.is_empty()
+            && game.pending_triggers.is_empty()
+            && game.pending_decisions.is_empty()
+        {
+            return;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .map(|option| option.id)
+                .take(decision.minimum.max(1))
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .unwrap();
+            continue;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            return;
+        }
+    }
+}
+
+/// Rule 603.4 checks an intervening-if twice. Shadowborn Demon is the pair of
+/// checks in one card: a full graveyard means it never triggers, and a
+/// graveyard filled after it triggers means the ability resolves for nothing.
+#[test]
+fn an_intervening_if_is_checked_when_it_triggers_and_again_when_it_resolves() {
+    let graveyard = |game: &mut Game, creatures: usize| {
+        game.players[0].graveyard = (0..creatures)
+            .map(|index| {
+                card(
+                    11_000 + u32::try_from(index).expect("small index"),
+                    cards::SAVANNAH_LIONS,
+                    PlayerId::One,
+                )
+            })
+            .collect();
+    };
+    let upkeep_with = |creatures: usize| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.battlefield
+            .push(creature(10_000, cards::SHADOWBORN_DEMON, PlayerId::One));
+        game.battlefield
+            .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+        graveyard(&mut game, creatures);
+        game.turn = 2;
+        game.step = Step::Upkeep;
+        game.handle_upkeep_triggers();
+        game
+    };
+
+    // Five is fewer than six, so the Demon is hungry.
+    let mut hungry = upkeep_with(5);
+    assert!(
+        !hungry.pending_triggers.is_empty() || !hungry.stack.is_empty(),
+        "the condition held, so the ability triggered"
+    );
+
+    // Six is not fewer than six, so it never triggers at all.
+    let fed = upkeep_with(6);
+    assert!(
+        fed.pending_triggers.is_empty() && fed.stack.is_empty(),
+        "the condition failed, so nothing triggered"
+    );
+
+    // Filling the graveyard after the trigger makes it resolve for nothing.
+    let mut interrupted = upkeep_with(5);
+    graveyard(&mut interrupted, 6);
+    drain_pending(&mut interrupted);
+    assert_eq!(
+        interrupted.battlefield.len(),
+        2,
+        "the second check failed, so nothing was sacrificed"
+    );
+
+    // Left alone, the Demon eats. Which creature it takes is its controller's
+    // choice, and the Demon itself is a legal one.
+    drain_pending(&mut hungry);
+    assert_eq!(
+        hungry.battlefield.len(),
+        1,
+        "both checks held, so a creature was sacrificed"
     );
 }

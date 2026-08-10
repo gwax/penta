@@ -28,16 +28,16 @@ pub use model::{
     AlternativeCastManaCostDef, AlternativeCostDef, AppliedEffectDef, AttachedAbilityDef,
     BasicLandType, CardAbilityList, CardArt, CardBehavior, CardComposition, CardDefinition,
     CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardRules, CardSet, CardStructure,
-    CardSupertype, CardType, CardTypeSet, ColorSet, ConditionalValueDef, CountConditionDef,
-    CounterKind, CreatureStats, DeclarativeAbilityDef, DoubleFacedKind, EffectDef,
-    EffectDurationDef, EffectRecipientDef, ImplementationStatus, KeywordAbility, LandEntry,
-    ManaColor, ManaCost, ManaCostParseError, ManaCostParseErrorKind, ManaRestrictionDef,
+    CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef, ConditionalValueDef,
+    CountConditionDef, CounterKind, CreatureStats, DeclarativeAbilityDef, DoubleFacedKind,
+    EffectDef, EffectDurationDef, EffectRecipientDef, ImplementationStatus, KeywordAbility,
+    LandEntry, ManaColor, ManaCost, ManaCostParseError, ManaCostParseErrorKind, ManaRestrictionDef,
     ManaSelectionDef, ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef, MeldResultDef,
     ModalSpellDef, ModeDef, ModeSetDef, ObjectPredicateDef, ObjectQueryDef, PlayActionKind,
     PlayOptionDef, PlayRestriction, PlayerRelation, PrintedManaCost, ReplacementAbilityDef,
     ReplacementEventDef, SpecialActionDef, SpellAbilityDef, SpellForm, StaticAbilityDef,
-    TargetConditionDef, TargetPredicate, TargetSlotDef, TriggerEventDef, TriggeredAbilityDef,
-    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    TargetConditionDef, TargetPredicate, TargetSlotDef, TriggerConditionDef, TriggerEventDef,
+    TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every
