@@ -3,14 +3,68 @@
 Two numbers matter to a bot, and they move independently:
 
 - **Protocol version** (`penta.protocol_version()`, `penta_protocol_version()`)
-  covers the JSON shapes and the action space they describe. It bumps when a
-  bot written against the old number could misread the new output.
+  covers consumer-facing shapes and the action space they describe. It bumps
+  when a client written against the old number could misread the new output.
 - **Engine version** (`penta.engine_version()`, the crate version) covers
   rules behavior. It bumps for anything that changes what a policy sees,
   including rules fixes that leave the shapes alone.
 
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
+
+## Unreleased — protocol 14
+
+The current development checkout reports engine 0.6.0 and protocol 14. Pin
+both; the engine version alone does not distinguish it from earlier 0.6.0
+snapshots.
+
+### Changed
+
+- Every catalog `manaCost` object now reports its nonzero two-color hybrid
+  symbols as `"hybrid": [{"symbol": "R/W", "count": 3}]`. This replaces the
+  protocol-7 `whiteRedHybrid` integer and applies consistently to cards, card
+  parts, play options, alternative costs, and additional costs. Clients should
+  render each reported symbol `count` times and must not assume a fixed set of
+  hybrid pairs. This change introduced protocol 8.
+- Every serialized `targetSelections` entry now has an `amounts` array. It is
+  empty for ordinary targets and parallel to `targets` for a divided effect,
+  where each value is the share assigned to the target in the same position.
+  This applies to cast choices, activated abilities, and stack signatures.
+  Clients that compare or featurize actions must include the array because
+  legal actions can otherwise differ only by their division. This change
+  introduced protocol 9.
+- `ActivateAbility.costObject` replaces the nullable `sacrifice` field. The
+  value still identifies an object selected while paying a cost, but now also
+  covers non-sacrifice costs such as exiling a graveyard card. Clients that
+  compare actions must include it because otherwise identical activations can
+  differ only by the payment object. This change introduced protocol 10.
+- Instantiated spell and ability target slots now use consecutive zero-based
+  positional IDs. A cast flattens base-option targets followed by each
+  selected mode occurrence, giving repeated modes distinct target ranges.
+  Clients must use the concrete action's `choices.targetSelections` or the
+  stack signature rather than assuming a mode-local catalog slot ID remains
+  its runtime ID.
+  This change introduced protocol 11.
+- A completed observation's `result.reason` can now be
+  `OpponentLostToAnEffect` when an effect makes a player lose without changing
+  their life total or making them draw from an empty library. Clients that
+  treat result reasons as a closed enum must accept the new value. This change
+  introduced protocol 12.
+- `PermanentObservation` now carries a permanent's effective card types, and
+  the browser derives its kind and type line from those current types rather
+  than from printed rules. Animated lands therefore remain lands while also
+  presenting as creatures. The canonical bot JSON did not add a `types` field.
+  This change introduced protocol 13.
+- `GameEvent::ErhnamForestwalkGranted` has been removed now that Erhnam Djinn's
+  ability uses the ordinary stack and keyword machinery. Rust event-log
+  consumers must stop matching that bespoke variant and use ordinary ability
+  events or current state. Bot JSON shapes are otherwise unchanged from
+  protocol 13. Catalog play options can also report the new
+  `beforeCombatDamage` restriction used by Berserk. These changes belong to
+  the protocol-14 development boundary.
+
+A client migrating from the protocol-7 compatibility boundary should review
+all seven changes above and apply those affecting the surfaces it consumes.
 
 ## 0.6.0 — protocol 7
 
@@ -154,4 +208,4 @@ always yields a card will now see games where it does not.
 
 First release of the bot-facing surfaces: the `penta::protocol` module and
 its canonical JSON, the Python bindings, the C ABI, self-play through an
-external opponent, and [BOTS.md](BOTS.md).
+external opponent, and the [bot guide](docs/bots.md).
