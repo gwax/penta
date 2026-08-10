@@ -2,8 +2,8 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CounterKind,
-    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ReplacementEffectDef, ValueDef,
-    abilities, cards,
+    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, PlayerRelation,
+    ReplacementEffectDef, ValueDef, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -27,10 +27,15 @@ pub(in crate::card::sets) static HYMN_TO_TOURACH: CardRecord = CardRecord::new(
     "Hymn to Tourach",
     CardArt::new("eb9273ea-9a41-42e3-8c9c-0d50b127a818", "Susan Van Camp"),
     CardSet::FallenEmpires,
-    CardRules::new_sorcery(mana_cost!("{B}{B}")).with_abilities(&[AbilityDef::custom_partial(
+    CardRules::new_sorcery(mana_cost!("{B}{B}")).with_abilities(&[AbilityDef::spell_with_targets(
         "Target player discards two cards at random.",
-        CardBehavior::HymnToTourach,
-        "The spell always affects the opponent instead of selecting its target player.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::DiscardAtRandom {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(2),
+        },
     )]),
 );
 

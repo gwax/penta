@@ -3534,6 +3534,7 @@ impl Game {
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
+            | EffectDef::DiscardAtRandom { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
@@ -9072,6 +9073,21 @@ impl Game {
                     }
                 }
             }
+            EffectDef::DiscardAtRandom { recipient, amount } => {
+                let amount = self
+                    .effect_value(amount, object, context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                let cause = ZoneMoveCause::Effect {
+                    controller: object.controller,
+                };
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.discard_random(player, amount, cause);
+                    }
+                }
+            }
             EffectDef::LoseLife { recipient, amount } => {
                 let amount = self
                     .effect_value(amount, object, context, scoped)
@@ -12060,6 +12076,7 @@ impl Game {
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
+            | EffectDef::DiscardAtRandom { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
@@ -12589,6 +12606,7 @@ impl Game {
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
+            | EffectDef::DiscardAtRandom { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
@@ -12731,6 +12749,7 @@ impl Game {
                 | EffectDef::GainLife { .. }
                 | EffectDef::DrawCards { .. }
                 | EffectDef::DiscardCards { .. }
+                | EffectDef::DiscardAtRandom { .. }
                 | EffectDef::LoseLife { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
@@ -15432,6 +15451,7 @@ impl Game {
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
+            | EffectDef::DiscardAtRandom { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }

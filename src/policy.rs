@@ -282,7 +282,7 @@ impl HandcraftedPolicy {
             }
             // Looting is card selection, not card advantage, so the discard
             // cancels out the draw the policy would otherwise reward.
-            EffectDef::DiscardCards { amount, .. } => {
+            EffectDef::DiscardCards { amount, .. } | EffectDef::DiscardAtRandom { amount, .. } => {
                 if let Some(drawn) = profile.cards_drawn {
                     profile.cards_drawn =
                         Some(drawn.saturating_sub(Self::policy_value(amount, x).unwrap_or(0)));

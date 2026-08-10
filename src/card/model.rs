@@ -1345,6 +1345,12 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// The recipients discard at random rather than choosing. Nobody is asked
+    /// anything, so unlike [`Self::DiscardCards`] this needs no decision.
+    DiscardAtRandom {
+        recipient: EffectRecipientDef,
+        amount: ValueDef,
+    },
     LoseLife {
         recipient: EffectRecipientDef,
         amount: ValueDef,

@@ -4483,6 +4483,7 @@ fn hypnotic_specter_discards_after_dealing_combat_damage() {
         .push(card(10_001, cards::MOUNTAIN, PlayerId::Two));
 
     game.deal_combat_damage();
+    drain_pending(&mut game);
 
     assert_eq!(game.players[1].life, 18);
     assert!(game.players[1].hand.is_empty());
@@ -13775,7 +13776,12 @@ fn opponent_spells_and_abilities_put_a_discarded_smiter_onto_the_battlefield() {
     game.players[0].hand.push(hymn.clone());
     game.players[1].hand.push(smiter);
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 2);
-    let action = acceptance_cast_action_for_card(&game, PlayerId::One, hymn.id);
+    let action = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        hymn.id,
+        Target::Player(PlayerId::Two),
+    );
     game.apply(PlayerId::One, action).unwrap();
     pass_priority_pair(&mut game);
     assert!(game.battlefield.iter().any(|permanent| {
@@ -13791,6 +13797,7 @@ fn opponent_spells_and_abilities_put_a_discarded_smiter_onto_the_battlefield() {
         .hand
         .push(card(19_073, cards::LOXODON_SMITER, PlayerId::Two));
     game.deal_combat_damage();
+    drain_pending(&mut game);
     assert!(game.battlefield.iter().any(|permanent| {
         permanent.controller == PlayerId::Two && permanent.card.definition == cards::LOXODON_SMITER
     }));
@@ -19939,5 +19946,58 @@ fn maze_of_ith_stops_the_damage_without_calling_off_the_attack() {
             .damage,
         0,
         "and the blocker dealt nothing back"
+    );
+}
+
+#[test]
+fn a_random_discard_spell_hits_the_player_it_targets() {
+    let mut game = ready_game();
+    let hymn = card(10_000, cards::HYMN_TO_TOURACH, PlayerId::One);
+    game.players[0].hand.clear();
+    game.players[0].hand.push(hymn.clone());
+    for id in [10_001, 10_002, 10_003] {
+        game.players[0]
+            .hand
+            .push(card(id, cards::MOUNTAIN, PlayerId::One));
+    }
+    game.players[1].hand.clear();
+    for id in [10_010, 10_011, 10_012] {
+        game.players[1]
+            .hand
+            .push(card(id, cards::MOUNTAIN, PlayerId::Two));
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 2);
+
+    // Both players are legal targets, which is the whole point: the old
+    // resolver always took from the opponent.
+    let at_self = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        hymn.id,
+        Target::Player(PlayerId::One),
+    );
+    assert!(
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == hymn.id
+                && choices.iter_targets().copied().eq(std::iter::once(
+                    Target::Player(PlayerId::Two)
+                )))
+        ),
+        "the opponent is offered too"
+    );
+
+    game.apply(PlayerId::One, at_self).unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        1,
+        "the caster discarded two of their own three lands"
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        3,
+        "and the opponent, who was not targeted, kept everything"
     );
 }

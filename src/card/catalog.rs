@@ -763,6 +763,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::GainLife { .. }
         | super::EffectDef::DrawCards { .. }
         | super::EffectDef::DiscardCards { .. }
+        | EffectDef::DiscardAtRandom { .. }
         | super::EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
         | super::EffectDef::Tap { .. }
@@ -846,6 +847,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::GainLife { .. }
         | super::EffectDef::DrawCards { .. }
         | super::EffectDef::DiscardCards { .. }
+        | EffectDef::DiscardAtRandom { .. }
         | super::EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
         | super::EffectDef::Tap { .. }
@@ -1043,6 +1045,7 @@ fn validate_effect_target_references(
         | EffectDef::GainLife { recipient, amount }
         | EffectDef::DrawCards { recipient, amount }
         | EffectDef::DiscardCards { recipient, amount }
+        | EffectDef::DiscardAtRandom { recipient, amount }
         | EffectDef::LoseLife { recipient, amount } => {
             validate_recipient_target_references(recipient, target_count)?;
             validate_value_target_references(amount, target_count)

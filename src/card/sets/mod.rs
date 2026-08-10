@@ -539,6 +539,25 @@ mod tests {
         }
     }
 
+    /// The chooser is a player and the choices are their own battlefield, so
+    /// only the predicate needs checking. The follow-up runs inside the
+    /// sacrifice's continuation, where a further deferred decision has
+    /// nowhere to resume.
+    fn shared_sacrifice_of_choice(effect: EffectDef) -> bool {
+        let EffectDef::SacrificeOfChoice {
+            player,
+            object,
+            then,
+            ..
+        } = effect
+        else {
+            return false;
+        };
+        shared_effect_recipient(player)
+            && shared_object_predicate(object)
+            && then.is_none_or(|effect| shared_stack_effect_at_position(*effect, false))
+    }
+
     fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed: bool) -> bool {
         match effect {
             EffectDef::Sequence(effects) => {
@@ -553,31 +572,18 @@ mod tests {
             | EffectDef::GainLife { recipient, .. }
             | EffectDef::DrawCards { recipient, .. }
             | EffectDef::DiscardCards { recipient, .. }
-            | EffectDef::LoseLife { recipient, .. } => shared_effect_recipient(recipient),
-            // The chooser is a player, and the choices are their own
-            // battlefield, so only the predicate needs checking.
-            EffectDef::SacrificeOfChoice {
-                player,
-                object,
-                then,
-                ..
-            } => {
-                shared_effect_recipient(player)
-                    && shared_object_predicate(object)
-                    // The follow-up runs inside the sacrifice's continuation,
-                    // where a further deferred decision has nowhere to resume.
-                    && then.is_none_or(|effect| shared_stack_effect_at_position(*effect, false))
+            | EffectDef::DiscardAtRandom { recipient, .. }
+            | EffectDef::LoseLife { recipient, .. }
+            | EffectDef::Mill {
+                player: recipient, ..
             }
+            | EffectDef::CannotCastNoncreatureSpellsThisTurn { player: recipient }
+            | EffectDef::LoseTheGame { player: recipient }
+            | EffectDef::LookAtHand { player: recipient } => shared_effect_recipient(recipient),
+            EffectDef::SacrificeOfChoice { .. } => shared_sacrifice_of_choice(effect),
             // The searcher is a player and the choices come out of their own
             // library, so only the predicate and the destination need
             // checking.
-            // Each of these reads a player and nothing else: the mill count
-            // is an ordinary value, the lock lasts until the turn ends, and
-            // losing the game takes no argument at all.
-            EffectDef::LookAtHand { player }
-            | EffectDef::Mill { player, .. }
-            | EffectDef::CannotCastNoncreatureSpellsThisTurn { player }
-            | EffectDef::LoseTheGame { player } => shared_effect_recipient(player),
             EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::LookAtTopAndMayTake { .. } => {
@@ -823,6 +829,7 @@ mod tests {
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
+            | EffectDef::DiscardAtRandom { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
@@ -1010,6 +1017,7 @@ mod tests {
                         | EffectDef::GainLife { .. }
                         | EffectDef::DrawCards { .. }
                         | EffectDef::DiscardCards { .. }
+                        | EffectDef::DiscardAtRandom { .. }
                         | EffectDef::LoseLife { .. }
                         | EffectDef::LoseTheGame { .. }
                         | EffectDef::Tap { .. }
@@ -1190,6 +1198,7 @@ mod tests {
             | EffectDef::GainLife { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::DiscardCards { .. }
+            | EffectDef::DiscardAtRandom { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
