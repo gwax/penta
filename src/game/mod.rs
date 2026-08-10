@@ -1019,6 +1019,9 @@ enum DecisionContinuation {
     Tutor,
     LibrarySearch {
         destination: ZoneKind,
+        /// A search shuffles whether or not it found anything. Looking at the
+        /// top card does not: the rest of the library was never disturbed.
+        shuffle: bool,
     },
     BasicLandTypeTextChange {
         target: Target,
@@ -1203,6 +1206,10 @@ pub struct Game {
     /// Whether each player has been stopped from casting noncreature spells
     /// for the rest of the turn.
     noncreature_casts_locked: [bool; 2],
+    /// Emblems, which are objects with abilities and no zone. They are kept
+    /// beside the battlefield rather than on it: only the static-effect walk
+    /// reads them, and nothing can target, tap, or destroy one.
+    emblems: Vec<Permanent>,
     /// How many spells each player has cast this turn, and how many they cast
     /// during the turn before. The werewolves ask about the turn that just
     /// ended, which is only knowable if it was counted while it happened.
@@ -1365,6 +1372,7 @@ impl Game {
             sorcery_flash_grants: [0; 2],
             additional_combat_phases: 0,
             noncreature_casts_locked: [false; 2],
+            emblems: Vec::new(),
             spells_cast_this_turn: [0; 2],
             spells_cast_last_turn: [0; 2],
             cards_drawn_this_turn: [0; 2],
@@ -3426,6 +3434,7 @@ impl Game {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -3435,6 +3444,7 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -3685,6 +3695,7 @@ impl Game {
     fn controller_of_object(&self, object: GameObjectId) -> Option<PlayerId> {
         self.battlefield
             .iter()
+            .chain(self.emblems.iter())
             .find(|permanent| permanent.card.id == object)
             .map(|permanent| permanent.controller)
             .or_else(|| match self.retired_objects.get(&object) {
@@ -4891,6 +4902,37 @@ impl Game {
     /// Asks `player` which matching permanent they control to sacrifice. With
     /// nothing matching there is no choice and no sacrifice; with exactly one
     /// there is nothing to ask.
+    /// Offers the top card of a library to its owner when it matches. Only a
+    /// matching card is ever shown, because the decision is the only thing
+    /// the other player can see and a non-matching card must stay secret.
+    fn queue_top_card_offer(
+        &mut self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+    ) {
+        let Some(top) = self.players[player.index()].library.last() else {
+            return;
+        };
+        if !self.card_object_matches(predicate, top, ZoneKind::Library, source) {
+            return;
+        }
+        let options = self.card_decision_options(std::slice::from_ref(top), DecisionZone::Library);
+        self.queue_decision(
+            player,
+            "Reveal the top card and put it into your hand?",
+            DecisionVisibility::Private,
+            DecisionPreference::HigherCardValue,
+            0..=1,
+            false,
+            options,
+            DecisionContinuation::LibrarySearch {
+                destination: ZoneKind::Hand,
+                shuffle: false,
+            },
+        );
+    }
+
     /// Offers a library search over the cards a predicate admits. The shuffle
     /// happens either way, because a search that finds nothing still searched
     /// and skipping it would hand the searcher their library order for free.
@@ -4932,7 +4974,10 @@ impl Game {
             0..=1,
             false,
             options,
-            DecisionContinuation::LibrarySearch { destination },
+            DecisionContinuation::LibrarySearch {
+                destination,
+                shuffle: true,
+            },
         );
     }
 
@@ -5609,7 +5654,10 @@ impl Game {
                 };
                 self.discard_cards_with_cause(victim, &[card], cause);
             }
-            DecisionContinuation::LibrarySearch { destination } => {
+            DecisionContinuation::LibrarySearch {
+                destination,
+                shuffle,
+            } => {
                 let found = pending
                     .observation
                     .options
@@ -5626,7 +5674,9 @@ impl Game {
                         self.players[player.index()].hand.push(card);
                     }
                 }
-                self.rng.shuffle(&mut self.players[player.index()].library);
+                if shuffle {
+                    self.rng.shuffle(&mut self.players[player.index()].library);
+                }
             }
             DecisionContinuation::Tutor => {
                 let found = pending
@@ -8778,6 +8828,17 @@ impl Game {
                     }
                 }
             }
+            EffectDef::LookAtTopAndMayTake {
+                player: recipient,
+                object: predicate,
+            } => {
+                let source = object.source.unwrap_or(object.id);
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.queue_top_card_offer(player, predicate, source);
+                    }
+                }
+            }
             EffectDef::SearchLibrary {
                 player: recipient,
                 object: predicate,
@@ -8789,6 +8850,17 @@ impl Game {
                         self.queue_library_search(player, predicate, destination, source);
                     }
                 }
+            }
+            EffectDef::CreateEmblem { emblem } => {
+                let controller = object.controller;
+                let card =
+                    self.unbacked_object(emblem, controller, CharacteristicSource::Ability(emblem));
+                self.emblems.push(Permanent::entering(
+                    card,
+                    CardPartId::PRIMARY,
+                    controller,
+                    self.turns_started[controller.index()],
+                ));
             }
             EffectDef::Transform { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
@@ -11262,7 +11334,9 @@ impl Game {
         mut visitor: impl FnMut(StaticAppliedEffect) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         let mut blood_moon_active = None;
-        for source in &self.battlefield {
+        // Emblems sit outside every zone but their abilities apply, so they
+        // are walked alongside the battlefield and nowhere else.
+        for source in self.battlefield.iter().chain(self.emblems.iter()) {
             let Some(rules) = self.effective_rules(source) else {
                 continue;
             };
@@ -11511,7 +11585,9 @@ impl Game {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }
+            | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -11987,6 +12063,7 @@ impl Game {
                 | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
                 | EffectDef::Mill { .. }
+                | EffectDef::LookAtTopAndMayTake { .. }
                 | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::CounterUnlessPaid { .. }
@@ -11996,6 +12073,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::CreateEmblem { .. }
                 | EffectDef::Transform { .. }
                 | EffectDef::AdditionalCombatPhase
                 | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -12098,6 +12176,7 @@ impl Game {
                 | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
                 | EffectDef::Mill { .. }
+                | EffectDef::LookAtTopAndMayTake { .. }
                 | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::CounterUnlessPaid { .. }
@@ -12107,6 +12186,7 @@ impl Game {
                 | EffectDef::OptionalManaPayment { .. }
                 | EffectDef::May(_)
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::CreateEmblem { .. }
                 | EffectDef::Transform { .. }
                 | EffectDef::AdditionalCombatPhase
                 | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -14759,6 +14839,7 @@ impl Game {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -14768,6 +14849,7 @@ impl Game {
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::May(_)
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }

@@ -1021,11 +1021,12 @@ fn metadata_only_noncreature_spells_are_hidden_but_baseline_cards_remain_playabl
 
     // Izzet Charm is only partial, and the play gate follows the modes that
     // do work: its loot mode needs no target and is castable on an empty board.
-    // Doom Blade, Domri Rade, and Turn // Burn stay hidden as metadata only.
+    // Doom Blade and Turn // Burn stay hidden as metadata only.
     assert_eq!(
         cast_cards,
         vec![
             CardInstanceId(10_001),
+            CardInstanceId(10_002),
             CardInstanceId(10_003),
             CardInstanceId(10_005)
         ]
@@ -18939,4 +18940,105 @@ fn huntmaster_turns_on_a_quiet_turn_and_back_on_a_busy_one() {
             .count(),
         2
     );
+}
+
+#[test]
+fn domri_fights_and_hands_out_an_emblem() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let domri = game
+        .put_onto_battlefield(PlayerId::One, cards::DOMRI_RADE)
+        .expect("cataloged");
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    // A 4/4 fighting a 2/1: the Lions die and the Angel takes two.
+    let fight = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, .. }
+                if *source == domri
+                    && matches!(ability, AbilityOrigin::Printed { ability, .. } if *ability == AbilityId(1)))
+        })
+        .expect("the fight is offered");
+    game.apply(PlayerId::One, fight).unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == theirs),
+        "the smaller creature died"
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == mine)
+            .expect("the bigger one lived")
+            .damage,
+        2,
+        "and took the power of what it fought"
+    );
+
+    // The emblem grants its keywords without being a permanent.
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == domri)
+    {
+        permanent.loyalty = Some(7);
+        permanent.activated_loyalty_this_turn = false;
+    }
+    let ultimate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, .. }
+                if *source == domri
+                    && matches!(ability, AbilityOrigin::Printed { ability, .. } if *ability == AbilityId(2)))
+        })
+        .expect("the emblem ability is offered at seven loyalty");
+    game.apply(PlayerId::One, ultimate).unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::DOMRI_RADE_EMBLEM),
+        "an emblem is not a permanent"
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == domri),
+        "and paying the last loyalty left Domri behind"
+    );
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == mine)
+        .expect("still there")
+        .clone();
+    for keyword in [
+        KeywordAbility::DoubleStrike,
+        KeywordAbility::Trample,
+        KeywordAbility::Hexproof,
+        KeywordAbility::Haste,
+    ] {
+        assert!(
+            game.permanent_has_executable_keyword(&angel, keyword),
+            "the emblem granted {keyword:?}"
+        );
+    }
 }

@@ -219,17 +219,60 @@ pub(in crate::card::sets) static DOMRI_RADE: CardRecord = CardRecord::new(
     "Domri Rade",
     CardArt::new("21b48170-99dd-440f-9954-fc229d6094d3", "Tyler Jacobson"),
     CardSet::Gatecrash,
-    CardRules::new_planeswalker(
-        mana_cost!("{1}{R}{G}"),
-        &["Domri"],
-        3,
-    )
-    .with_supertype(CardSupertype::Legendary)
-    .with_ability(AbilityDef::not_implemented(
-        "+1: Look at the top card of your library. If it's a creature card, you may reveal it and put it into your hand.\n−2: Target creature you control fights another target creature.\n−7: You get an emblem with \"Creatures you control have double strike, trample, hexproof, and haste.\"",
-        "Printed rules are cataloged but are not executed by the engine.",
-    )),
+    CardRules::new_planeswalker(mana_cost!("{1}{R}{G}"), &["Domri"], 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&DOMRI_ABILITIES),
 );
+
+/// A fight is each creature dealing damage equal to its power to the other,
+/// which two damage effects reading each other's power already say.
+static DOMRI_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated(
+        "+1: Look at the top card of your library. If it's a creature card, you may reveal it and put it into your hand.",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::LookAtTopAndMayTake {
+            player: EffectRecipientDef::Controller,
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "−2: Target creature you control fights another target creature.",
+        &[AbilityCostDef::Loyalty(-2)],
+        &DOMRI_FIGHT_TARGETS,
+        EffectDef::Sequence(&[
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex(1)),
+                amount: ValueDef::TargetPower(TargetIndex::PRIMARY),
+            },
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::TargetPower(TargetIndex(1)),
+            },
+        ]),
+    ),
+    AbilityDef::activated(
+        "−7: You get an emblem with \"Creatures you control have double strike, trample, hexproof, and haste.\"",
+        &[AbilityCostDef::Loyalty(-7)],
+        EffectDef::CreateEmblem {
+            emblem: cards::DOMRI_RADE_EMBLEM,
+        },
+    ),
+];
+
+static DOMRI_FIGHT_TARGETS: [AbilityTargetDef; 2] = [
+    AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    }),
+    AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    }),
+];
 
 pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::new(
     cards::GHOR_CLAN_RAMPAGER,

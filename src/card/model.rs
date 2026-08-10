@@ -437,10 +437,14 @@ pub enum CardType {
     Land,
     Planeswalker,
     Sorcery,
+    /// Not a card type Magic prints. An emblem is an object with abilities
+    /// and no other characteristics, and every part in this model carries at
+    /// least one type, so emblems carry this one.
+    Emblem,
 }
 
 impl CardType {
-    pub const COUNT: usize = 7;
+    pub const COUNT: usize = 8;
     pub const ALL: [Self; Self::COUNT] = [
         Self::Artifact,
         Self::Creature,
@@ -449,6 +453,7 @@ impl CardType {
         Self::Land,
         Self::Planeswalker,
         Self::Sorcery,
+        Self::Emblem,
     ];
 
     /// Conventional type-line order for the combinations the catalog can
@@ -461,6 +466,7 @@ impl CardType {
         Self::Planeswalker,
         Self::Instant,
         Self::Sorcery,
+        Self::Emblem,
     ];
 
     #[must_use]
@@ -473,6 +479,7 @@ impl CardType {
             Self::Land => 4,
             Self::Planeswalker => 5,
             Self::Sorcery => 6,
+            Self::Emblem => 7,
         }
     }
 
@@ -486,6 +493,7 @@ impl CardType {
             Self::Land => "Land",
             Self::Planeswalker => "Planeswalker",
             Self::Sorcery => "Sorcery",
+            Self::Emblem => "Emblem",
         }
     }
 }
@@ -1382,6 +1390,13 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// Look at the top card of a library and, if it matches, offer to take
+    /// it. Looking is private and changes nothing, so declining leaves the
+    /// card exactly where it was.
+    LookAtTopAndMayTake {
+        player: EffectRecipientDef,
+        object: ObjectPredicateDef,
+    },
     /// Search a library for one matching card and put it somewhere, then
     /// shuffle. Searching a hidden zone never obliges the searcher to find,
     /// so a printed "may" adds nothing on top of this.
@@ -1468,6 +1483,11 @@ pub enum EffectDef {
     ReduceGenericCostBy(ValueDef),
     /// Adds a combat phase after the one now ending.
     AdditionalCombatPhase,
+    /// Gives its controller an emblem, an object that sits outside every
+    /// zone and does nothing but carry its abilities.
+    CreateEmblem {
+        emblem: CardDefinitionId,
+    },
     /// Turns a double-faced permanent over to its other face.
     Transform {
         object: EffectRecipientDef,
@@ -3042,6 +3062,7 @@ const fn card_type_name(card_type: CardType) -> &'static str {
         CardType::Land => "land",
         CardType::Planeswalker => "planeswalker",
         CardType::Sorcery => "sorcery",
+        CardType::Emblem => "emblem",
     }
 }
 
@@ -4661,6 +4682,14 @@ impl CardRules {
         rules.subtypes = subtypes;
         rules.creature_stats = Some(CreatureStats { power, toughness });
         rules
+    }
+
+    /// An emblem has abilities and nothing else: no types, no cost, and no
+    /// body. It is never in a zone a card can be in, so it needs none of the
+    /// characteristics the rest of the model is built around.
+    #[must_use]
+    pub const fn new_emblem() -> Self {
+        Self::base(CardTypeSet::single(CardType::Emblem), PrintedManaCost::None)
     }
 
     #[must_use]

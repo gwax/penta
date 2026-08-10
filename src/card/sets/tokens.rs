@@ -111,6 +111,40 @@ pub(in crate::card::sets) static WOLF_TOKEN_1_1_BLACK: CardRecord = CardRecord::
         .with_abilities(&[abilities::deathtouch()]),
 );
 
+/// Domri's emblem. An emblem is an object with abilities and no other
+/// characteristics, so it is cataloged like a token and lives in its own
+/// list rather than on the battlefield.
+pub(in crate::card::sets) static DOMRI_RADE_EMBLEM: CardRecord = CardRecord::new(
+    cards::DOMRI_RADE_EMBLEM,
+    "Domri Rade emblem",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_emblem().with_ability(AbilityDef::static_ability(
+        "Creatures you control have double strike, trample, hexproof, and haste.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::You,
+            },
+            effect: AppliedEffectDef::Composite(&DOMRI_EMBLEM_KEYWORDS),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )),
+);
+
+static DOMRI_EMBLEM_KEYWORDS: [AppliedEffectDef; 4] = [
+    AppliedEffectDef::GrantAbility(&DOMRI_DOUBLE_STRIKE),
+    AppliedEffectDef::GrantAbility(&DOMRI_TRAMPLE),
+    AppliedEffectDef::GrantAbility(&DOMRI_HEXPROOF),
+    AppliedEffectDef::GrantAbility(&DOMRI_HASTE),
+];
+
+static DOMRI_DOUBLE_STRIKE: AbilityDef = abilities::double_strike();
+static DOMRI_TRAMPLE: AbilityDef = abilities::trample();
+static DOMRI_HEXPROOF: AbilityDef = abilities::hexproof();
+static DOMRI_HASTE: AbilityDef = abilities::haste();
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BEAST_TOKEN_3_3_GREEN,
     &KNIGHT_TOKEN_2_2_WHITE,
@@ -120,6 +154,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPIRIT_TOKEN_1_1_WHITE,
     &WOLF_TOKEN_2_2_GREEN,
     &WOLF_TOKEN_1_1_BLACK,
+    &DOMRI_RADE_EMBLEM,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

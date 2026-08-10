@@ -1986,8 +1986,8 @@ mod tests {
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 
         // Any card with a metadata-only ability clause will do here; repoint
-        // this assertion when Domri's clause becomes executable.
-        let legacy = find("Domri Rade");
+        // this assertion when Vraska's clause becomes executable.
+        let legacy = find("Vraska the Unseen");
         assert_eq!(legacy["implementationStatus"], "metadataOnly");
         assert_eq!(legacy["parts"][0]["implementationStatus"], "metadataOnly");
 

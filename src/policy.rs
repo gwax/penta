@@ -322,12 +322,14 @@ impl HandcraftedPolicy {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::OptionalManaPayment { .. }
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }

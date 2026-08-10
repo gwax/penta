@@ -768,6 +768,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::SacrificeOfChoice { then: None, .. }
         | super::EffectDef::SplitPermanentsAndSacrificeAPile { .. }
         | super::EffectDef::Mill { .. }
+        | super::EffectDef::LookAtTopAndMayTake { .. }
         | super::EffectDef::SearchLibrary { .. }
         | super::EffectDef::Counter { .. }
         | super::EffectDef::CounterUnlessPaid { .. }
@@ -775,6 +776,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | super::EffectDef::ChangeTextBasicLandType { .. }
         | super::EffectDef::BecomeCopyOf { .. }
         | super::EffectDef::CannotBeForcedToSacrifice
+        | super::EffectDef::CreateEmblem { .. }
         | super::EffectDef::Transform { .. }
         | super::EffectDef::AdditionalCombatPhase
         | super::EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -839,6 +841,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::SacrificeOfChoice { then: None, .. }
         | super::EffectDef::SplitPermanentsAndSacrificeAPile { .. }
         | super::EffectDef::Mill { .. }
+        | super::EffectDef::LookAtTopAndMayTake { .. }
         | super::EffectDef::SearchLibrary { .. }
         | super::EffectDef::Counter { .. }
         | super::EffectDef::CounterUnlessPaid { .. }
@@ -846,6 +849,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | super::EffectDef::ChangeTextBasicLandType { .. }
         | super::EffectDef::BecomeCopyOf { .. }
         | super::EffectDef::CannotBeForcedToSacrifice
+        | super::EffectDef::CreateEmblem { .. }
         | super::EffectDef::Transform { .. }
         | super::EffectDef::AdditionalCombatPhase
         | super::EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -1050,7 +1054,8 @@ fn validate_effect_target_references(
         }
         EffectDef::SplitPermanentsAndSacrificeAPile { player }
         | EffectDef::CannotCastNoncreatureSpellsThisTurn { player }
-        | EffectDef::SearchLibrary { player, .. } => {
+        | EffectDef::SearchLibrary { player, .. }
+        | EffectDef::LookAtTopAndMayTake { player, .. } => {
             validate_recipient_target_references(player, target_count)
         }
         EffectDef::Mill { player, amount } => {
@@ -1076,6 +1081,7 @@ fn validate_effect_target_references(
         }
         EffectDef::None
         | EffectDef::AddMana(_)
+        | EffectDef::CreateEmblem { .. }
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice

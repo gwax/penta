@@ -156,7 +156,7 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let mut definitions = Vec::with_capacity(257);
+    let mut definitions = Vec::with_capacity(258);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }
@@ -556,6 +556,13 @@ mod tests {
             EffectDef::SplitPermanentsAndSacrificeAPile { player } => {
                 deferred_decision_allowed && shared_effect_recipient(player)
             }
+            // Looking is private and the offer is the only visible part, so
+            // only the predicate and the player need checking.
+            EffectDef::LookAtTopAndMayTake { player, object } => {
+                deferred_decision_allowed
+                    && shared_effect_recipient(player)
+                    && shared_object_predicate(object)
+            }
             EffectDef::SearchLibrary {
                 player,
                 object,
@@ -593,6 +600,7 @@ mod tests {
             // resolving object's controller, and the flash grant is about its
             // controller's next spell.
             EffectDef::CreateToken { .. }
+            | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::GrantFlashToNextSorcery => true,
@@ -785,6 +793,7 @@ mod tests {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -797,6 +806,7 @@ mod tests {
             | EffectDef::MoveToZone { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChooseCreatureType { .. }
+            | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -964,6 +974,7 @@ mod tests {
                         | EffectDef::SacrificeOfChoice { .. }
                         | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
                         | EffectDef::Mill { .. }
+                        | EffectDef::LookAtTopAndMayTake { .. }
                         | EffectDef::SearchLibrary { .. }
                         | EffectDef::Counter { .. }
                         | EffectDef::CounterUnlessPaid { .. }
@@ -972,6 +983,7 @@ mod tests {
                         | EffectDef::BecomeCopyOf { .. }
                         | EffectDef::OptionalManaPayment { .. }
                         | EffectDef::CannotBeForcedToSacrifice
+                        | EffectDef::CreateEmblem { .. }
                         | EffectDef::Transform { .. }
                         | EffectDef::AdditionalCombatPhase
                         | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -1124,6 +1136,7 @@ mod tests {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -1131,6 +1144,7 @@ mod tests {
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::AdditionalCombatPhase
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
@@ -1234,13 +1248,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 257);
+        assert_eq!(records.len(), 258);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=257).collect::<Vec<_>>()
+            (1..=258).collect::<Vec<_>>()
         );
         // Names identify the cards a decklist can name. Tokens are not among
         // them, and Magic prints several that share a name.
@@ -1261,7 +1275,7 @@ mod tests {
     #[test]
     fn built_in_catalog_indexes_definitions_and_printings_separately() {
         let catalog = crate::card::catalog().unwrap();
-        let printing_count = (1..=257)
+        let printing_count = (1..=258)
             .filter(|id| {
                 *id != cards::BEAST_TOKEN_3_3_GREEN.0
                     && *id != cards::KNIGHT_TOKEN_2_2_WHITE.0
@@ -1271,6 +1285,7 @@ mod tests {
                     && *id != cards::SPIRIT_TOKEN_1_1_WHITE.0
                     && *id != cards::WOLF_TOKEN_2_2_GREEN.0
                     && *id != cards::WOLF_TOKEN_1_1_BLACK.0
+                    && *id != cards::DOMRI_RADE_EMBLEM.0
             })
             .map(|id| catalog.printings_for(CardDefinitionId(id)).len())
             .sum::<usize>();
@@ -1296,7 +1311,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 257);
+        assert_eq!(records.len(), 258);
 
         for record in records {
             let definition = record.definition();
