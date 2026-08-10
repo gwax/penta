@@ -326,6 +326,7 @@ impl HandcraftedPolicy {
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
+            | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }

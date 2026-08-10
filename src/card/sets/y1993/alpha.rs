@@ -110,13 +110,10 @@ pub(in crate::card::sets) static GLASSES_OF_URZA: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Player(PlayerRelation::Any),
             )],
-            EffectDef::Special("Look at the target player's hand"),
-        )
-        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::GlassesOfUrza))
-        .with_coverage(AbilityCoverageDef::partial(
-            "The activated ability currently resolves immediately instead of using the stack.",
-        ))
-        .with_legacy_procedure(),
+            EffectDef::LookAtHand {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
     ]),
 );
 

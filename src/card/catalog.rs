@@ -775,6 +775,7 @@ fn collect_ability_grants(effect: super::EffectDef, grants: &mut Vec<&AbilityDef
         | EffectDef::RevealAndSplitIntoPiles { .. }
         | super::EffectDef::Mill { .. }
         | super::EffectDef::LookAtTopAndMayTake { .. }
+        | EffectDef::LookAtHand { .. }
         | super::EffectDef::SearchLibrary { .. }
         | super::EffectDef::Counter { .. }
         | super::EffectDef::CounterUnlessPaid { .. }
@@ -855,6 +856,7 @@ fn ability_grant_sites(effect: super::EffectDef) -> usize {
         | EffectDef::RevealAndSplitIntoPiles { .. }
         | super::EffectDef::Mill { .. }
         | super::EffectDef::LookAtTopAndMayTake { .. }
+        | EffectDef::LookAtHand { .. }
         | super::EffectDef::SearchLibrary { .. }
         | super::EffectDef::Counter { .. }
         | super::EffectDef::CounterUnlessPaid { .. }
@@ -1075,6 +1077,7 @@ fn validate_effect_target_references(
         EffectDef::SplitPermanentsAndSacrificeAPile { player }
         | EffectDef::CannotCastNoncreatureSpellsThisTurn { player }
         | EffectDef::SearchLibrary { player, .. }
+        | EffectDef::LookAtHand { player }
         | EffectDef::LookAtTopAndMayTake { player, .. } => {
             validate_recipient_target_references(player, target_count)
         }

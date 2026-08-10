@@ -3524,6 +3524,7 @@ impl Game {
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
+            | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -9249,6 +9250,14 @@ impl Game {
                 };
                 self.queue_revealed_pile_split(object.controller, count, rest, placement);
             }
+            EffectDef::LookAtHand { player: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(seen) = target {
+                        self.last_seen_hands[object.controller.index()] =
+                            Some((seen, public_cards(&self.players[seen.index()].hand)));
+                    }
+                }
+            }
             EffectDef::LookAtTopAndMayTake {
                 player: recipient,
                 object: predicate,
@@ -12075,6 +12084,7 @@ impl Game {
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
+            | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
@@ -12583,6 +12593,7 @@ impl Game {
                 | EffectDef::LoseTheGame { .. }
                 | EffectDef::Mill { .. }
                 | EffectDef::LookAtTopAndMayTake { .. }
+                | EffectDef::LookAtHand { .. }
                 | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::CounterUnlessPaid { .. }
@@ -12722,6 +12733,7 @@ impl Game {
                 | EffectDef::LoseTheGame { .. }
                 | EffectDef::Mill { .. }
                 | EffectDef::LookAtTopAndMayTake { .. }
+                | EffectDef::LookAtHand { .. }
                 | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::CounterUnlessPaid { .. }
@@ -15423,6 +15435,7 @@ impl Game {
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
+            | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }

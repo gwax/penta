@@ -517,6 +517,27 @@ mod tests {
     /// suspending its caller. It is therefore safe at the root of a resolving
     /// effect (and may wrap a whole sequence), but not as one component of a
     /// sequence whose remaining components would otherwise resolve first.
+    /// The effects whose whole procedure is a decision the shared runtime
+    /// asks for. Their callers have already established that a deferred
+    /// decision is allowed where they sit; this checks only their arguments.
+    fn shared_decision_effect(effect: EffectDef) -> bool {
+        match effect {
+            // Both halves of the split are asked for, so only the player
+            // needs checking.
+            EffectDef::SplitPermanentsAndSacrificeAPile { player } => {
+                shared_effect_recipient(player)
+            }
+            // The reveal, the split, and the choice are all asked for, and
+            // the library is the resolving object's controller's own.
+            EffectDef::RevealAndSplitIntoPiles { .. } => true,
+            // Looking is private and the offer is the only visible part.
+            EffectDef::LookAtTopAndMayTake { player, object } => {
+                shared_effect_recipient(player) && shared_object_predicate(object)
+            }
+            _ => false,
+        }
+    }
+
     fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed: bool) -> bool {
         match effect {
             EffectDef::Sequence(effects) => {
@@ -552,24 +573,14 @@ mod tests {
             // Each of these reads a player and nothing else: the mill count
             // is an ordinary value, the lock lasts until the turn ends, and
             // losing the game takes no argument at all.
-            EffectDef::Mill { player, .. }
+            EffectDef::LookAtHand { player }
+            | EffectDef::Mill { player, .. }
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { player }
             | EffectDef::LoseTheGame { player } => shared_effect_recipient(player),
-            // Both halves of the split are decisions the shared procedure
-            // asks for, so only the player needs checking.
-            EffectDef::SplitPermanentsAndSacrificeAPile { player } => {
-                deferred_decision_allowed && shared_effect_recipient(player)
-            }
-            // The reveal, the split, and the choice are all decisions the
-            // shared procedure asks for, and the library is the resolving
-            // object's controller's own.
-            EffectDef::RevealAndSplitIntoPiles { .. } => deferred_decision_allowed,
-            // Looking is private and the offer is the only visible part, so
-            // only the predicate and the player need checking.
-            EffectDef::LookAtTopAndMayTake { player, object } => {
-                deferred_decision_allowed
-                    && shared_effect_recipient(player)
-                    && shared_object_predicate(object)
+            EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+            | EffectDef::RevealAndSplitIntoPiles { .. }
+            | EffectDef::LookAtTopAndMayTake { .. } => {
+                deferred_decision_allowed && shared_decision_effect(effect)
             }
             EffectDef::SearchLibrary {
                 player,
@@ -813,6 +824,7 @@ mod tests {
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
+            | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -997,6 +1009,7 @@ mod tests {
                         | EffectDef::RevealAndSplitIntoPiles { .. }
                         | EffectDef::Mill { .. }
                         | EffectDef::LookAtTopAndMayTake { .. }
+                        | EffectDef::LookAtHand { .. }
                         | EffectDef::SearchLibrary { .. }
                         | EffectDef::Counter { .. }
                         | EffectDef::CounterUnlessPaid { .. }
@@ -1173,6 +1186,7 @@ mod tests {
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
+            | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
             | EffectDef::CounterUnlessPaid { .. }
@@ -1678,13 +1692,13 @@ mod tests {
     #[test]
     fn migrated_activated_cards_preserve_their_derived_implementation_status() {
         let partial = [
-            &y1993::alpha::GLASSES_OF_URZA,
             &y1993::alpha::STONE_GIANT,
             &y1993::alpha::CHAOS_ORB,
             &y1994::antiquities::MISHRA_S_FACTORY,
             &y1994::the_dark::MAZE_OF_ITH,
         ];
         let complete = [
+            &y1993::alpha::GLASSES_OF_URZA,
             &y1993::alpha::ICY_MANIPULATOR,
             &y1994::antiquities::ORCISH_MECHANICS,
             &y1994::antiquities::STRIP_MINE,

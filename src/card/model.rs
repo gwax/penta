@@ -1415,6 +1415,11 @@ pub enum EffectDef {
         rest: ZoneKind,
         placement: LibraryPlacement,
     },
+    /// One player looks at another's hand. Nothing changes zones and no
+    /// decision follows; the looking player simply knows.
+    LookAtHand {
+        player: EffectRecipientDef,
+    },
     /// Look at the top card of a library and, if it matches, offer to take
     /// it. Looking is private and changes nothing, so declining leaves the
     /// card exactly where it was.
@@ -3872,6 +3877,8 @@ pub enum CardBehavior {
     Fireball,
     Fork,
     GiantGrowth,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative look-at-hand ability.
     GlassesOfUrza,
     GoblinGrenade,
     GrislySalvage,

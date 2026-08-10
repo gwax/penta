@@ -19652,3 +19652,44 @@ fn pendelhaven_pumps_a_one_one_that_stays_one() {
         "and the land paid for it"
     );
 }
+
+#[test]
+fn glasses_of_urza_waits_on_the_stack_before_revealing_a_hand() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::GLASSES_OF_URZA, PlayerId::One));
+    game.players[1].hand.clear();
+    game.players[1]
+        .hand
+        .push(card(10_001, cards::MOUNTAIN, PlayerId::Two));
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: GameObjectId(10_000),
+            ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+            targets: activated_targets(Target::Player(PlayerId::Two)),
+            cost_object: None,
+            x: 0,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        game.stack.len(),
+        1,
+        "it goes on the stack like anything else"
+    );
+    assert_eq!(
+        game.last_seen_hands[PlayerId::One.index()],
+        None,
+        "and nothing is seen until it resolves"
+    );
+    assert!(game.battlefield[0].tapped, "the cost was paid up front");
+
+    drain_pending(&mut game);
+    assert_eq!(
+        game.last_seen_hands[PlayerId::One.index()],
+        Some((PlayerId::Two, vec![(GameObjectId(10_001), cards::MOUNTAIN)])),
+    );
+}
