@@ -217,6 +217,39 @@ pub(in crate::card::sets) static SMOKE: CardRecord = CardRecord::new(
     )]),
 );
 
+/// The Giant throws a creature small enough to lift, and it does not survive
+/// the landing. "Toughness less than this creature's power" is read against
+/// the Giant as it is now, so pumping it widens the choice.
+static STONE_GIANT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ToughnessLessThan(ValueDef::SourcePower),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+static STONE_GIANT_THROW: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::GrantAbility(&STONE_GIANT_FLYING),
+        duration: EffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::AtNextStep {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+        effect: &EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+        },
+    },
+];
+
+static STONE_GIANT_FLYING: AbilityDef = abilities::flying();
+
 pub(in crate::card::sets) static STONE_GIANT: CardRecord = CardRecord::new(
     cards::STONE_GIANT,
     "Stone Giant",
@@ -224,23 +257,12 @@ pub(in crate::card::sets) static STONE_GIANT: CardRecord = CardRecord::new(
     CardSet::Alpha,
     CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Giant"], 3, 4)
         .with_abilities(&[
-            AbilityDef::activated_with_targets("{T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.", &[AbilityCostDef::TapSource], &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Special(
-                        "creature with toughness less than the source's power",
-                    ),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: Some(PlayerRelation::You),
-                    owner: None,
-                },
-            )], EffectDef::Special(
-                    "Grant the target creature flying and create the delayed destruction trigger",
-                ))
-            .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::StoneGiant))
-            .with_coverage(AbilityCoverageDef::partial(
-                "The entire activation currently resolves immediately, and its delayed end-step destruction uses legacy state instead of a triggered ability on the stack.",
-            ))
-            .with_legacy_procedure(),
+            AbilityDef::activated_with_targets(
+                "{T}: Target creature you control with toughness less than this creature's power gains flying until end of turn. Destroy that creature at the beginning of the next end step.",
+                &[AbilityCostDef::TapSource],
+                &STONE_GIANT_TARGET,
+                EffectDef::Sequence(&STONE_GIANT_THROW),
+            ),
         ]),
 );
 

@@ -1601,6 +1601,17 @@ impl Game {
                     Some(RetiredObject::Stack(object)) => Some(i32::from(object.x())),
                     Some(RetiredObject::Card(_) | RetiredObject::Permanent { .. }) | None => None,
                 }),
+            // Read live, so pumping the source widens what its ability can
+            // reach. This is safe here because a target predicate is not
+            // consulted while static effects are being applied; a static
+            // ability whose own recipient predicate read this would not
+            // terminate.
+            ValueDef::SourcePower => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+                .and_then(|permanent| self.power(permanent))
+                .map(i32::from),
             _ => None,
         }
     }
@@ -3845,6 +3856,10 @@ impl Game {
             }
             ObjectPredicateDef::PowerExactly(exact) => object.power == Some(exact),
             ObjectPredicateDef::ToughnessExactly(exact) => object.toughness == Some(exact),
+            ObjectPredicateDef::ToughnessLessThan(value) => self
+                .value_from_source(value, source)
+                .zip(object.toughness)
+                .is_some_and(|(limit, toughness)| i32::from(toughness) < limit),
             ObjectPredicateDef::Supertype(supertype) => object.supertypes[supertype.index()],
             ObjectPredicateDef::AttackingOrBlocking => object.attacking_or_blocking,
             ObjectPredicateDef::SharesNameWithSource => {
@@ -7701,29 +7716,6 @@ impl Game {
                     x: 0,
                 });
             }
-            CardBehavior::StoneGiant
-                if !permanent.tapped && self.can_use_tap_ability(permanent) =>
-            {
-                let power = self.power(permanent).unwrap_or(0);
-                actions.extend(
-                    self.battlefield
-                        .iter()
-                        .filter(|candidate| {
-                            candidate.controller == player
-                                && self.toughness(candidate).is_some_and(|value| value < power)
-                        })
-                        .map(|candidate| Action::ActivateAbility {
-                            source: permanent.card.id,
-                            ability,
-                            targets: vec![TargetSelection::single(
-                                ability_target_slot,
-                                Target::Permanent(candidate.card.id),
-                            )],
-                            cost_object: None,
-                            x: 0,
-                        }),
-                );
-            }
             CardBehavior::DragonWhelp if self.can_pay_cost(player, ManaCost::new(0, 1), 0) => {
                 actions.push(Action::ActivateAbility {
                     source: permanent.card.id,
@@ -10411,6 +10403,7 @@ impl Game {
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::PowerExactly(_)
             | ObjectPredicateDef::ToughnessExactly(_)
+            | ObjectPredicateDef::ToughnessLessThan(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
             | ObjectPredicateDef::SharesNameWithSource
@@ -14262,23 +14255,6 @@ impl Game {
                     Vec::new(),
                     Vec::new(),
                 );
-            }
-            Some(CardBehavior::StoneGiant) => {
-                let _ = self.tap_permanent(source);
-                if let Some(Target::Permanent(target)) = target
-                    && let Some(creature) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                {
-                    if !creature
-                        .temporary_keywords
-                        .contains(&KeywordAbility::Flying)
-                    {
-                        creature.temporary_keywords.push(KeywordAbility::Flying);
-                    }
-                    creature.destroy_at_end = true;
-                }
             }
             // Dragon Whelp itself is declarative now; this is the legacy
             // activated dispatch path, still reached by the clauses that

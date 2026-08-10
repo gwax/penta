@@ -339,6 +339,7 @@ mod tests {
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::PowerExactly(_)
             | ObjectPredicateDef::ToughnessExactly(_)
+            | ObjectPredicateDef::ToughnessLessThan(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
             | ObjectPredicateDef::SharesNameWithSource
@@ -1705,7 +1706,6 @@ mod tests {
     #[test]
     fn migrated_activated_cards_preserve_their_derived_implementation_status() {
         let partial = [
-            &y1993::alpha::STONE_GIANT,
             &y1993::alpha::CHAOS_ORB,
             &y1994::antiquities::MISHRA_S_FACTORY,
             &y1994::the_dark::MAZE_OF_ITH,
@@ -1713,6 +1713,7 @@ mod tests {
         let complete = [
             &y1993::alpha::GLASSES_OF_URZA,
             &y1993::alpha::ICY_MANIPULATOR,
+            &y1993::alpha::STONE_GIANT,
             &y1994::antiquities::ORCISH_MECHANICS,
             &y1994::antiquities::STRIP_MINE,
             &y1994::antiquities::TRISKELION,

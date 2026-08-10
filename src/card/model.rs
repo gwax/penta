@@ -629,6 +629,9 @@ pub enum ObjectPredicateDef {
     PowerExactly(i16),
     /// Toughness exactly this much, read the same way.
     ToughnessExactly(i16),
+    /// Toughness strictly below a value computed from the ability's own
+    /// source, for "toughness less than this creature's power".
+    ToughnessLessThan(ValueDef),
     /// Controlled by a player in this relation to the ability's controller,
     /// for "a creature you control" and "whenever you cast".
     ControlledBy(PlayerRelation),
@@ -2887,6 +2890,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
         | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -2915,6 +2919,7 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
         | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -2946,6 +2951,7 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
         | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -2982,6 +2988,7 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
         | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -3004,6 +3011,7 @@ fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
             .copied()
             .find_map(predicate_power_at_least),
         ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Attacking
@@ -3047,6 +3055,7 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
         | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -3079,6 +3088,7 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
         | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -3113,6 +3123,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
         | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -3932,6 +3943,8 @@ pub enum CardBehavior {
     RedElementalBlast,
     Smoke,
     SphinxsRevelation,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative grant and a delayed destruction.
     StoneGiant,
     /// Legacy dispatch key retained for source compatibility; the card now
     /// uses a declarative creature-sweeper definition.

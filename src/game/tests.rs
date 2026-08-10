@@ -19795,3 +19795,73 @@ fn dragon_whelps_activation_count_resets_with_the_turn() {
         "a new turn makes it the first activation again, not the fourth"
     );
 }
+
+#[test]
+fn stone_giant_throws_only_what_it_can_lift_and_the_landing_kills_it() {
+    let mut game = ready_game();
+    game.step = Step::PrecombatMain;
+    // The Giant is a 3/4, so it can lift toughness 1 and 2 but not 4.
+    game.battlefield
+        .push(creature(10_000, cards::STONE_GIANT, PlayerId::One));
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+    game.battlefield
+        .push(creature(10_002, cards::SERRA_ANGEL, PlayerId::One));
+    game.battlefield
+        .push(creature(10_003, cards::SAVANNAH_LIONS, PlayerId::Two));
+    // A creature's tap ability needs it to have been around a turn.
+    game.turns_started[PlayerId::One.index()] = 1;
+
+    let throw = |target| Action::ActivateAbility {
+        source: GameObjectId(10_000),
+        ability: activated_ability_for(&game, GameObjectId(10_000), 0),
+        targets: activated_targets(Target::Permanent(target)),
+        cost_object: None,
+        x: 0,
+    };
+    let actions = game.legal_actions(PlayerId::One);
+    assert!(
+        actions.contains(&throw(GameObjectId(10_001))),
+        "a 2/1 is light enough"
+    );
+    assert!(
+        !actions.contains(&throw(GameObjectId(10_002))),
+        "a 4/4 is not: its toughness is not less than the Giant's power"
+    );
+    assert!(
+        !actions.contains(&throw(GameObjectId(10_003))),
+        "and it only throws creatures you control"
+    );
+
+    game.apply(PlayerId::One, throw(GameObjectId(10_001)))
+        .unwrap();
+    assert_eq!(game.stack.len(), 1, "it uses the stack now");
+    drain_pending(&mut game);
+
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("airborne, not gone");
+    assert!(
+        game.permanent_has_executable_keyword(lions, KeywordAbility::Flying),
+        "it is in the air"
+    );
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_001)),
+        "and the end step is where it lands"
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_002)),
+        "nothing else was touched"
+    );
+}
