@@ -1242,7 +1242,7 @@ pub(in crate::card::sets) static TIME_VAULT: CardRecord = CardRecord::new(
         )
         .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::TimeVault))
         .with_coverage(AbilityCoverageDef::partial(
-            "The hard-coded turn-skip shortcut needs review against replacement-effect timing.",
+            "The wrong turn is skipped. The replacement should apply to the turn that is beginning, but the offer is made during the untap step, after that turn has already started, and accepting banks a skip that is spent on the controller's next turn instead. So the controller keeps the turn the artifact should have cost them.",
         )),
         AbilityDef::activated(
             "{T}: Take an extra turn after this one.",

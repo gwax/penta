@@ -3060,7 +3060,14 @@ fn blind_obedience_competes_with_a_permanents_own_entry_replacement() {
 }
 
 #[test]
-fn time_vault_can_untap_by_skipping_the_controllers_next_turn() {
+fn time_vault_currently_untaps_by_banking_a_skip_for_a_later_turn() {
+    // This pins what the engine does, which is not what the card says. The
+    // replacement is worded against the turn that is beginning: skipping it
+    // is the cost of untapping. Here the offer arrives during the untap step,
+    // so that turn is already under way and is played out in full, and the
+    // skip is spent on the controller's next turn instead. Fixing it means
+    // moving the choice ahead of untap and ending the turn on acceptance,
+    // which is turn-flow work rather than a card-local change.
     let mut game = ready_game();
     let mut vault = creature(10_000, cards::TIME_VAULT, PlayerId::Two);
     vault.tapped = true;
