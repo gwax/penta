@@ -342,6 +342,7 @@ mod tests {
             | ObjectPredicateDef::ToughnessLessThan(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
+            | ObjectPredicateDef::DebutSet(_)
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::HasKeyword(_)

@@ -3975,6 +3975,11 @@ impl Game {
                 .zip(object.toughness)
                 .is_some_and(|(limit, toughness)| i32::from(toughness) < limit),
             ObjectPredicateDef::Supertype(supertype) => object.supertypes[supertype.index()],
+            // Read from the definition rather than the object: what matters
+            // is where the card was first printed, not what it has become.
+            ObjectPredicateDef::DebutSet(set) => self
+                .object_debut_set(object.id)
+                .is_some_and(|debut| debut == set),
             ObjectPredicateDef::AttackingOrBlocking => object.attacking_or_blocking,
             ObjectPredicateDef::SharesNameWithSource => {
                 let name = self.object_card_name(object.id);
@@ -10596,6 +10601,7 @@ impl Game {
             | ObjectPredicateDef::ToughnessLessThan(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::Supertype(_)
+            | ObjectPredicateDef::DebutSet(_)
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::Attacking
@@ -12644,6 +12650,27 @@ impl Game {
         !(self.is_protected_from_colors(permanent, self.object_colors(source))
             || permanent.controller != controller
                 && self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof))
+    }
+
+    /// The expansion a game object's card was first printed in. A token has
+    /// no printing, so it belongs to no expansion.
+    fn object_debut_set(&self, object: GameObjectId) -> Option<CardSet> {
+        let definition = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+            .map(|permanent| permanent.card.definition)
+            .or_else(|| {
+                self.stack
+                    .iter()
+                    .find(|stack| stack.id == object)
+                    .map(|stack| stack.card.definition)
+            })
+            .or_else(|| {
+                self.card_in_nonbattlefield_zone(object)
+                    .map(|(_, card)| card.definition)
+            })?;
+        self.catalog.get(definition).map(|card| card.debut_set)
     }
 
     fn object_colors(&self, object: GameObjectId) -> [bool; 5] {
@@ -16265,23 +16292,6 @@ impl Game {
             player,
         });
         self.fire_delayed_triggers(TurnStepDef::Upkeep);
-        if self.count_behavior(CardBehavior::CityInABottle) > 0 {
-            let doomed: Vec<_> = self
-                .battlefield
-                .iter()
-                .filter(|permanent| {
-                    self.behavior(permanent.card.definition) != Some(CardBehavior::CityInABottle)
-                        && self
-                            .catalog
-                            .get(permanent.card.definition)
-                            .is_some_and(|card| card.debut_set == CardSet::ArabianNights)
-                })
-                .map(|permanent| permanent.card.id)
-                .collect();
-            for permanent in doomed {
-                self.destroy_permanent(permanent);
-            }
-        }
         let tapped_vaults: Vec<_> = self
             .battlefield
             .iter()

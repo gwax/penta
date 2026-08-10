@@ -947,45 +947,40 @@ fn changing_a_permanents_presented_face_keeps_its_object_identity() {
 
 #[test]
 fn city_in_a_bottle_uses_canonical_origin_even_when_a_reprint_exists() {
-    let city = CardDefinition::new(
-        CardDefinitionId(10_000),
-        "City in a Bottle",
-        CardSet::ArabianNights,
-        false,
-        CardBehavior::CityInABottle,
-    );
-    let kird_ape = CardDefinition::new(
-        CardDefinitionId(10_001),
-        "Kird Ape",
-        CardSet::ArabianNights,
-        false,
-        CardBehavior::KirdApe,
-    );
     let mut game = ready_game();
+    // Kird Ape debuted in Arabian Nights; a later printing does not move it.
     game.catalog = CardCatalog::with_additional_printings(
-        [city, kird_ape],
-        [CardPrinting::new(
-            CardDefinitionId(10_001),
-            CardSet::Magic2014,
-        )],
+        game.catalog.definitions().into_iter().cloned(),
+        [CardPrinting::new(cards::KIRD_APE, CardSet::Magic2014)],
     )
     .unwrap();
     game.battlefield
-        .push(creature(10_000, CardDefinitionId(10_000), PlayerId::One));
+        .push(creature(10_000, cards::CITY_IN_A_BOTTLE, PlayerId::One));
     game.battlefield
-        .push(creature(10_001, CardDefinitionId(10_001), PlayerId::Two));
+        .push(creature(10_001, cards::KIRD_APE, PlayerId::Two));
+    // A card from another expansion is untouched, and so is the Bottle.
+    game.battlefield
+        .push(creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two));
 
-    game.handle_upkeep_triggers();
+    game.check_state_based_actions();
+    drain_pending(&mut game);
 
-    assert_eq!(game.battlefield.len(), 1);
     assert_eq!(
-        game.battlefield[0].card.definition,
-        CardDefinitionId(10_000)
+        game.battlefield
+            .iter()
+            .map(|permanent| permanent.card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::CITY_IN_A_BOTTLE, cards::SAVANNAH_LIONS],
+        "only the Arabian Nights card went, and the Bottle spared itself"
     );
-    assert_eq!(game.players[1].graveyard.len(), 1);
     assert_eq!(
-        game.players[1].graveyard[0].definition,
-        CardDefinitionId(10_001)
+        game.players[1]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::KIRD_APE],
+        "its controller sacrificed it, so it went to their graveyard"
     );
 }
 

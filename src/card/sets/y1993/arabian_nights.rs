@@ -2,9 +2,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    abilities, cards,
+    ComparisonDef, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -138,16 +138,44 @@ pub(in crate::card::sets) static SERENDIB_EFREET: CardRecord = CardRecord::new(
     ]),
 );
 
+/// "Nontoken" needs no clause of its own: a token was printed in no
+/// expansion, so it never has a name originally printed in this one.
+static BOTTLED: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::DebutSet(CardSet::ArabianNights),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
+static BOTTLED_PERMANENTS_EXIST: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef {
+        object: BOTTLED,
+        zones: &[ZoneKind::Battlefield],
+        controller: PlayerRelation::Any,
+    },
+    comparison: ComparisonDef::AtLeast,
+    amount: 1,
+};
+
 pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new(
     cards::CITY_IN_A_BOTTLE,
     "City in a Bottle",
     CardArt::new("9598b346-a47d-4c4c-9571-156824e86b9c", "Drew Tucker"),
     CardSet::ArabianNights,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
-        AbilityDef::custom_partial(
-            "Whenever one or more other nontoken permanents with a name originally printed in the Arabian Nights expansion are on the battlefield, their controllers sacrifice them.\nPlayers can't cast spells or play lands with a name originally printed in the Arabian Nights expansion.",
-            CardBehavior::CityInABottle,
-            "The state trigger currently destroys affected permanents instead of making their controllers sacrifice them, and the casting and land-play prohibition is not implemented.",
+        AbilityDef::triggered_if(
+            "Whenever one or more other nontoken permanents with a name originally printed in the Arabian Nights expansion are on the battlefield, their controllers sacrifice them.",
+            TriggerEventDef::StateCondition,
+            &BOTTLED_PERMANENTS_EXIST,
+            EffectDef::Sacrifice {
+                object: EffectRecipientDef::MatchingObjects {
+                    object: BOTTLED,
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+            },
+        ),
+        AbilityDef::not_implemented(
+            "Players can't cast spells or play lands with a name originally printed in the Arabian Nights expansion.",
+            "Nothing yet stops a card being cast or played because of where it was printed.",
         ),
     ]),
 );

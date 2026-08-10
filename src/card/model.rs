@@ -640,6 +640,10 @@ pub enum ObjectPredicateDef {
     ControlledBy(PlayerRelation),
     /// Carries this supertype. Negate it for "nonbasic".
     Supertype(CardSupertype),
+    /// "With a name originally printed in the <set> expansion", which reads
+    /// the card's debut set rather than the printing in front of you. Tokens
+    /// were printed in no expansion, so they never match.
+    DebutSet(CardSet),
     /// Has the same printed name as the ability's source. Negate it for
     /// "not named <this card>".
     SharesNameWithSource,
@@ -2968,6 +2972,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
@@ -2997,6 +3002,7 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
@@ -3029,6 +3035,7 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
@@ -3066,6 +3073,7 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
@@ -3100,6 +3108,7 @@ fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
@@ -3133,6 +3142,7 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
@@ -3165,6 +3175,7 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
@@ -3201,6 +3212,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
@@ -3967,6 +3979,8 @@ pub enum CardBehavior {
     ChainLightning,
     Channel,
     ChaosOrb,
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative state trigger.
     CityInABottle,
     CopyArtifact,
     Crusade,
