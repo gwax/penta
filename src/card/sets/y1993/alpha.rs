@@ -598,11 +598,10 @@ pub(in crate::card::sets) static MANA_VAULT: CardRecord = CardRecord::new(
             },
             EffectDef::Special("Choose whether to pay 4 to untap this permanent"),
         )
-        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::ManaVault))
-        .with_coverage(AbilityCoverageDef::partial(
-            "The upkeep choice is implemented, but the trigger currently resolves outside the stack.",
-        ))
-        .with_legacy_procedure(),
+        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::ManaVaultUntap))
+        .with_coverage(AbilityCoverageDef::explained_complete(
+            "The trigger uses the shared stack; the card-local resolver offers the payment as it resolves.",
+        )),
         AbilityDef::triggered(
             "At the beginning of your draw step, if this artifact is tapped, it deals 1 damage to you.",
             TriggerEventDef::StepBegins {
@@ -611,11 +610,10 @@ pub(in crate::card::sets) static MANA_VAULT: CardRecord = CardRecord::new(
             },
             EffectDef::Special("If this permanent is tapped, deal 1 damage to its controller"),
         )
-        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::ManaVault))
-        .with_coverage(AbilityCoverageDef::partial(
-            "The draw-step damage is implemented, but the trigger currently resolves outside the stack.",
-        ))
-        .with_legacy_procedure(),
+        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::ManaVaultDamage))
+        .with_coverage(AbilityCoverageDef::explained_complete(
+            "The trigger uses the shared stack; the card-local resolver re-reads whether the artifact is still tapped as it resolves.",
+        )),
         AbilityDef::activated_mana(
             "{T}: Add {C}{C}{C}.",
             &[AbilityCostDef::TapSource],

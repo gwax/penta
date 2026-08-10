@@ -9122,6 +9122,31 @@ impl Game {
     }
 
     fn resolve_custom_triggered_ability(&mut self, object: &StackObject, behavior: CardBehavior) {
+        if behavior == CardBehavior::ManaVaultUntap {
+            let source = object.source.expect("a triggered ability has a source");
+            if self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == source && permanent.tapped)
+            {
+                self.queue_mana_vault_decision(object.controller, source);
+            }
+            return;
+        }
+        if behavior == CardBehavior::ManaVaultDamage {
+            let source = object.source.expect("a triggered ability has a source");
+            // "If this artifact is tapped" is re-read here, so paying to untap
+            // in upkeep is what saves the point of damage.
+            if self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == source && permanent.tapped)
+            {
+                self.deal_damage(object.controller, 1);
+                self.check_life_totals();
+            }
+            return;
+        }
         if behavior == CardBehavior::SylvanLibrary {
             self.queue_sylvan_offer(object.controller);
             return;
@@ -16341,25 +16366,6 @@ impl Game {
         match self.step {
             Step::Upkeep => {
                 self.step = Step::Draw;
-                let vault_damage = u16::try_from(
-                    self.battlefield
-                        .iter()
-                        .filter(|permanent| {
-                            permanent.controller == self.active_player
-                                && permanent.tapped
-                                && self.effective_behavior(permanent)
-                                    == Some(CardBehavior::ManaVault)
-                        })
-                        .count(),
-                )
-                .unwrap_or(u16::MAX);
-                if vault_damage > 0 {
-                    self.deal_damage(self.active_player, vault_damage);
-                    self.check_life_totals();
-                    if self.result.is_some() {
-                        return;
-                    }
-                }
                 if !(self.turn == 1 && self.active_player == PlayerId::One) {
                     let _ = self.draw_card(self.active_player);
                 }
@@ -16514,19 +16520,6 @@ impl Game {
             player,
         });
         self.fire_delayed_triggers(TurnStepDef::Upkeep);
-        let tapped_vaults: Vec<_> = self
-            .battlefield
-            .iter()
-            .filter(|permanent| {
-                permanent.controller == player
-                    && permanent.tapped
-                    && self.effective_behavior(permanent) == Some(CardBehavior::ManaVault)
-            })
-            .map(|permanent| permanent.card.id)
-            .collect();
-        for permanent in tapped_vaults {
-            self.queue_mana_vault_decision(player, permanent);
-        }
         self.check_life_totals();
     }
 

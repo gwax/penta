@@ -260,6 +260,31 @@ fn pass_until_decision(game: &mut Game) {
     }
 }
 
+/// Runs the game forward -- passing priority, answering any decision that is
+/// not the one being waited for -- until `prompt` is asked. Triggers that go
+/// on the stack can put an ordering choice in front of the interesting one.
+fn advance_to_prompt(game: &mut Game, player: PlayerId, prompt: &str) -> DecisionObservation {
+    for _ in 0..24 {
+        if let Some(decision) = game.observe(player).decision {
+            if decision.prompt == prompt {
+                return decision;
+            }
+            choose_all_offered(game, player);
+            continue;
+        }
+        if let Some(other) = game
+            .decision_player()
+            .filter(|other| *other != player && game.observe(*other).decision.is_some())
+        {
+            choose_all_offered(game, other);
+            continue;
+        }
+        let holder = game.priority;
+        game.apply(holder, Action::PassPriority).unwrap();
+    }
+    panic!("{prompt} was never asked");
+}
+
 fn choose_all_offered(game: &mut Game, player: PlayerId) {
     let decision = game
         .observe(player)
@@ -3113,6 +3138,13 @@ fn mana_vault_stays_tapped_and_can_be_paid_to_untap_at_upkeep() {
     game.step = Step::Upkeep;
 
     game.handle_upkeep_triggers();
+    assert_eq!(
+        game.pending_triggers.len(),
+        1,
+        "the upkeep ability triggered"
+    );
+    pass_priority_pair(&mut game);
+    pass_until_decision(&mut game);
     let decision = game.observe(PlayerId::One).decision.unwrap();
     assert_eq!(decision.prompt, "Mana Vault would remain tapped");
     game.apply(
@@ -3136,6 +3168,8 @@ fn mana_vault_stays_tapped_and_can_be_paid_to_untap_at_upkeep() {
 
 #[test]
 fn multiple_mana_vault_upkeep_choices_do_not_reuse_stale_mana() {
+    // Two vaults trigger separately and resolve one at a time. Four Mountains
+    // pay for the first; the second must not be offered mana that is gone.
     let mut game = ready_game();
     for id in 10_000..10_002 {
         let mut vault = creature(id, cards::MANA_VAULT, PlayerId::One);
@@ -3149,7 +3183,9 @@ fn multiple_mana_vault_upkeep_choices_do_not_reuse_stale_mana() {
     game.step = Step::Upkeep;
 
     game.handle_upkeep_triggers();
-    let first = game.observe(PlayerId::One).decision.unwrap();
+    assert_eq!(game.pending_triggers.len(), 2, "one ability per vault");
+    let first = advance_to_prompt(&mut game, PlayerId::One, "Mana Vault would remain tapped");
+    assert_eq!(first.options.len(), 2, "four Mountains cover the first");
     game.apply(
         PlayerId::One,
         Action::ChooseDecision {
@@ -3159,16 +3195,21 @@ fn multiple_mana_vault_upkeep_choices_do_not_reuse_stale_mana() {
     )
     .unwrap();
 
-    let second = game.observe(PlayerId::One).decision.unwrap();
-    assert_eq!(second.prompt, "Mana Vault would remain tapped");
+    let second = advance_to_prompt(&mut game, PlayerId::One, "Mana Vault would remain tapped");
+    assert_eq!(
+        second.options.len(),
+        1,
+        "and paying again is not on offer, because the mana is spent"
+    );
     game.apply(
         PlayerId::One,
         Action::ChooseDecision {
             decision: second.id,
-            options: vec![1],
+            options: vec![0],
         },
     )
     .unwrap();
+    drain_pending(&mut game);
 
     let vaults: Vec<_> = game
         .battlefield
@@ -3188,9 +3229,52 @@ fn tapped_mana_vault_deals_one_at_the_draw_step() {
     game.step = Step::Upkeep;
 
     game.advance_step();
-
-    assert_eq!(game.players[0].life, 19);
     assert_eq!(game.step, Step::Draw);
+    assert_eq!(
+        game.players[0].life, 20,
+        "the damage waits on the ability rather than landing with the step"
+    );
+
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+    assert_eq!(game.players[0].life, 19);
+}
+
+#[test]
+fn untapping_a_mana_vault_in_upkeep_saves_the_draw_step_damage() {
+    // "If this artifact is tapped" is checked as the draw-step ability
+    // resolves, not when it triggers, so paying {4} in upkeep is what makes
+    // the difference.
+    let mut game = ready_game();
+    let mut vault = creature(10_000, cards::MANA_VAULT, PlayerId::One);
+    vault.tapped = true;
+    game.battlefield.push(vault);
+    for id in 10_001..10_005 {
+        game.battlefield
+            .push(creature(id, cards::MOUNTAIN, PlayerId::One));
+    }
+    game.step = Step::Upkeep;
+
+    game.handle_upkeep_triggers();
+    pass_priority_pair(&mut game);
+    pass_until_decision(&mut game);
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![1],
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    game.advance_step();
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(game.step, Step::Draw);
+    assert_eq!(game.players[0].life, 20, "untapped, so nothing to pay for");
 }
 
 #[test]

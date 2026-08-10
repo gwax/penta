@@ -4089,6 +4089,11 @@ pub enum CardBehavior {
     /// counters declaratively and schedules its own mana.
     ManaDrain,
     ManaVault,
+    /// Mana Vault's upkeep trigger, keyed apart from the untap restriction so
+    /// the two clauses resolve as the separate abilities they are.
+    ManaVaultUntap,
+    /// Mana Vault's draw-step damage trigger.
+    ManaVaultDamage,
     /// Legacy dispatch key retained for source compatibility; the card now
     /// uses declarative untap and combat-damage prevention.
     MazeOfIth,

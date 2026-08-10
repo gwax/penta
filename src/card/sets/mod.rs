@@ -202,7 +202,9 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::MishrasFactory => &y1994::antiquities::MISHRA_S_FACTORY.rules,
         CardBehavior::RedElementalBlast => &y1993::alpha::RED_ELEMENTAL_BLAST.rules,
         CardBehavior::WheelOfFortune => &y1993::alpha::WHEEL_OF_FORTUNE.rules,
-        CardBehavior::ManaVault => &y1993::alpha::MANA_VAULT.rules,
+        CardBehavior::ManaVault | CardBehavior::ManaVaultUntap | CardBehavior::ManaVaultDamage => {
+            &y1993::alpha::MANA_VAULT.rules
+        }
         CardBehavior::FellwarStone => &y1994::the_dark::FELLWAR_STONE.rules,
         CardBehavior::SwordsToPlowshares => &y1993::alpha::SWORDS_TO_PLOWSHARES.rules,
         CardBehavior::TimeWalk => &y1993::alpha::TIME_WALK.rules,
