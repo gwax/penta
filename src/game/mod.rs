@@ -9662,13 +9662,20 @@ impl Game {
         }
     }
 
-    /// Lifts the top `count` cards off a library, fewer if it is short.
+    /// Lifts the top `count` cards off a library, fewer if it is short, in
+    /// top-first order. A library keeps its top at the end, which is the end
+    /// a draw takes from, so taking from the front would have handed back the
+    /// bottom of the deck instead.
+    ///
     /// Revealing them is informational only; nothing yet keys off having seen
     /// a card, so the mechanical effect is where they end up.
     fn take_top_of_library(&mut self, player: PlayerId, count: usize) -> Vec<CardInstance> {
         let library = &mut self.players[player.index()].library;
         let taken = count.min(library.len());
-        library.drain(..taken).collect()
+        let remaining = library.len() - taken;
+        let mut cards = library.split_off(remaining);
+        cards.reverse();
+        cards
     }
 
     /// Sends cards to their owner's graveyard in the order given.

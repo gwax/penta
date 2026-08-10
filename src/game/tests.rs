@@ -8050,13 +8050,16 @@ fn duress_takes_a_noncreature_nonland_card_of_the_casters_choosing() {
 fn mulch_keeps_the_lands_and_bins_the_rest() {
     let mut game = ready_game();
     game.players[0].library.clear();
-    game.players[0].library.extend([
-        card(10_001, cards::MOUNTAIN, PlayerId::One),
-        card(10_002, cards::LIGHTNING_BOLT, PlayerId::One),
-        card(10_003, cards::MOUNTAIN, PlayerId::One),
-        card(10_004, cards::SAVANNAH_LIONS, PlayerId::One),
-        card(10_005, cards::BLACK_LOTUS, PlayerId::One), // fifth card is untouched
-    ]);
+    stack_library(
+        &mut game,
+        &[
+            (10_001, cards::MOUNTAIN),
+            (10_002, cards::LIGHTNING_BOLT),
+            (10_003, cards::MOUNTAIN),
+            (10_004, cards::SAVANNAH_LIONS),
+            (10_005, cards::BLACK_LOTUS), // fifth card is untouched
+        ],
+    );
     let before_hand = game.players[0].hand.len();
 
     let cast = spell(10_000, cards::MULCH, PlayerId::One, 0);
@@ -9796,11 +9799,14 @@ fn paying_for_a_shock_land_at_exactly_two_life_loses_the_game() {
 }
 
 /// Puts `library` on top of player one's library, top card first.
+/// Stacks a library top card first. The top of a library is the end of the
+/// vector, which is the end a draw takes from, so the first entry listed here
+/// is the last one pushed.
 fn stack_library(game: &mut Game, library: &[(u32, CardDefinitionId)]) {
     for (instance, definition) in library.iter().rev() {
         game.players[0]
             .library
-            .insert(0, card(*instance, *definition, PlayerId::One));
+            .push(card(*instance, *definition, PlayerId::One));
     }
 }
 
@@ -17233,4 +17239,42 @@ fn an_attack_trigger_for_the_first_time_each_turn_does_not_loop() {
         game.additional_combat_phases, 1,
         "attacking again the same turn granted nothing further"
     );
+}
+
+/// The top of a library is one place, and everything that reads it has to
+/// agree. Drawing took from the end while the shared "top of library" helper
+/// took from the front, so effects that looked at the top were quietly
+/// reading the bottom of the deck.
+#[test]
+fn the_top_of_a_library_is_the_same_card_however_it_is_reached() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (19_000, cards::SAVANNAH_LIONS),
+            (19_001, cards::LIGHTNING_BOLT),
+            (19_002, cards::SERRA_ANGEL),
+        ],
+    );
+
+    let taken = game.take_top_of_library(PlayerId::One, 2);
+    assert_eq!(
+        taken.iter().map(|card| card.definition).collect::<Vec<_>>(),
+        vec![cards::SAVANNAH_LIONS, cards::LIGHTNING_BOLT],
+        "the top cards come back top first"
+    );
+
+    // What is left is what a draw sees next.
+    let drawn = game.draw_card(PlayerId::One).expect("a card to draw");
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .find(|card| card.id == drawn)
+            .map(|card| card.definition),
+        Some(cards::SERRA_ANGEL),
+        "and the draw continues from where they were lifted"
+    );
+    assert!(game.players[0].library.is_empty());
 }
