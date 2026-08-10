@@ -12798,14 +12798,44 @@ impl Game {
     ) -> bool {
         !(self.is_protected_from_colors(permanent, self.object_colors(source))
             || permanent.controller != controller
-                && self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof))
+                && self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof)
+            || self.cannot_be_enchanted(permanent) && self.source_attaches_itself(source))
     }
 
-    /// The expansion a game object's card was first printed in. A token has
-    /// no printing, so it belongs to no expansion.
-    fn object_debut_set(&self, object: GameObjectId) -> Option<CardSet> {
-        let definition = self
-            .battlefield
+    /// Whether the object doing the targeting is an Aura spell: one whose
+    /// spell clause attaches the permanent the spell becomes. "Can't be
+    /// enchanted" is a targeting restriction for those and nothing else, so a
+    /// Shock aimed at the same permanent is unaffected.
+    fn source_attaches_itself(&self, source: GameObjectId) -> bool {
+        let Some(definition) = self
+            .object_definition(source)
+            .and_then(|definition| self.catalog.get(definition))
+        else {
+            return false;
+        };
+        definition.parts.iter().any(|part| {
+            part.rules.ability_clauses().iter().any(|ability| {
+                ability.is_executable()
+                    && matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
+                    && ability
+                        .declarative_effect()
+                        .is_some_and(Self::effect_attaches)
+            })
+        })
+    }
+
+    fn effect_attaches(effect: EffectDef) -> bool {
+        match effect {
+            EffectDef::Attach { .. } => true,
+            EffectDef::Sequence(effects) => effects.iter().copied().any(Self::effect_attaches),
+            EffectDef::May(inner) => Self::effect_attaches(*inner),
+            _ => false,
+        }
+    }
+
+    /// The card definition behind a game object, wherever it currently is.
+    fn object_definition(&self, object: GameObjectId) -> Option<CardDefinitionId> {
+        self.battlefield
             .iter()
             .find(|permanent| permanent.card.id == object)
             .map(|permanent| permanent.card.definition)
@@ -12818,7 +12848,13 @@ impl Game {
             .or_else(|| {
                 self.card_in_nonbattlefield_zone(object)
                     .map(|(_, card)| card.definition)
-            })?;
+            })
+    }
+
+    /// The expansion a game object's card was first printed in. A token has
+    /// no printing, so it belongs to no expansion.
+    fn object_debut_set(&self, object: GameObjectId) -> Option<CardSet> {
+        let definition = self.object_definition(object)?;
         self.catalog.get(definition).map(|card| card.debut_set)
     }
 

@@ -19960,6 +19960,66 @@ fn tetravus_trades_counters_for_tetravites_that_remember_which_one_made_them() {
 }
 
 #[test]
+fn an_aura_cannot_target_a_tetravite() {
+    // "This token can't be enchanted" is a targeting restriction, not
+    // something the Aura discovers after it has already arrived and attached.
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::TETRAVITE_TOKEN, PlayerId::One));
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+    let aura = card(10_002, cards::VOLCANIC_STRENGTH, PlayerId::One);
+    game.players[0].hand.push(aura.clone());
+    let bolt = card(10_003, cards::LIGHTNING_BOLT, PlayerId::One);
+    game.players[0].hand.push(bolt.clone());
+    game.players[0].mana_pool = ManaPool {
+        red: 3,
+        colorless: 3,
+        ..ManaPool::default()
+    };
+
+    let targets_of = |game: &Game, spell: GameObjectId| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::CastSpell { card, choices, .. } if card == spell => {
+                    choices.iter_targets().copied().next()
+                }
+                _ => None,
+            })
+            .collect::<std::collections::HashSet<_>>()
+    };
+
+    let aura_targets = targets_of(&game, aura.id);
+    assert!(
+        !aura_targets.contains(&Target::Permanent(GameObjectId(10_000))),
+        "the Tetravite is not a legal Aura target"
+    );
+    assert!(
+        aura_targets.contains(&Target::Permanent(GameObjectId(10_001))),
+        "but an ordinary creature still is"
+    );
+    assert!(
+        targets_of(&game, bolt.id).contains(&Target::Permanent(GameObjectId(10_000))),
+        "and the restriction is about Auras, not targeting in general"
+    );
+
+    assert!(
+        game.apply(
+            PlayerId::One,
+            cast_action(
+                aura.id,
+                vec![Target::Permanent(GameObjectId(10_000))],
+                Vec::new(),
+                0,
+            ),
+        )
+        .is_err(),
+        "submitting it directly is refused too"
+    );
+}
+
+#[test]
 fn tetravus_takes_back_only_the_tetravites_it_made() {
     let mut game = ready_game();
     game.turn = 2;

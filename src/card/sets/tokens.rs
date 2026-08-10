@@ -129,8 +129,8 @@ pub(in crate::card::sets) static TETRAVITE_TOKEN: CardRecord = CardRecord::new(
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             )
-            .with_coverage(AbilityCoverageDef::partial(
-                "An Aura may still be cast at this token; it enters attached and is then put into its owner's graveyard, rather than the target being illegal to choose.",
+            .with_coverage(AbilityCoverageDef::explained_complete(
+                "The shared targetability check refuses the token to an Aura spell, and an Aura that arrives some other way still falls off.",
             )),
         ]),
 );
