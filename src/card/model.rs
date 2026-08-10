@@ -258,6 +258,10 @@ pub enum PlayActionKind {
 pub enum PlayRestriction {
     Normal,
     FromHandOnly,
+    /// "Cast this spell only before the combat damage step." Legal until the
+    /// damage is about to be dealt, which is what makes Berserk a decision the
+    /// defender can play around rather than a guaranteed blowout.
+    BeforeCombatDamage,
 }
 
 /// A catalog-level description of what can occupy one target slot.
@@ -2619,6 +2623,20 @@ impl AbilityDef {
         )
     }
 
+    /// A printed clause whose entire content is a restriction on casting the
+    /// card. There is nothing to execute on resolution: the play option
+    /// carries the restriction, so the spell is never offered at a time the
+    /// clause forbids.
+    #[must_use]
+    pub const fn play_restriction_note(text: &'static str, explanation: &'static str) -> Self {
+        Self {
+            text,
+            definition: DeclarativeAbilityDef::Static(StaticAbilityDef::new()),
+            effect: AbilityEffectDef::declarative(EffectDef::None),
+            coverage: AbilityCoverageDef::explained_complete(explanation),
+        }
+    }
+
     #[must_use]
     pub const fn keyword(text: &'static str, ability: KeywordAbility) -> Self {
         Self::defined(
@@ -3800,6 +3818,9 @@ impl CardComposition {
             )
             .with_alternative_cast_costs(&rules)
         };
+        if rules.play_restriction() != PlayRestriction::Normal {
+            option.restriction = rules.play_restriction();
+        }
         if let Some(modes) = rules.presentation_spell_modes() {
             option = option.with_modes(modes);
         }
@@ -4003,6 +4024,8 @@ pub enum CardBehavior {
     Balance,
     /// Legacy dispatch key retained for source compatibility; the card now
     /// pumps declaratively and schedules its own delayed destruction.
+    /// Legacy dispatch key retained for source compatibility; the card now
+    /// uses a declarative spell clause and a play-time cast restriction.
     Berserk,
     /// Legacy dispatch key retained for source compatibility; the card now
     /// records its chosen opponent and triggers on the shared stack.
@@ -4881,6 +4904,9 @@ pub struct CardRules {
     /// those intrinsic to basic land types, are derived by the game engine.
     abilities: CardAbilityList,
     colors: ColorSet,
+    /// A timing or zone restriction the card prints on its own casting, which
+    /// the derived play option carries into the runtime.
+    play_restriction: PlayRestriction,
 }
 
 /// Whether any hybrid symbol in this cost can be paid with one colour.
@@ -4926,6 +4952,7 @@ impl CardRules {
             creature_stats: None,
             abilities: CardAbilityList::None,
             colors,
+            play_restriction: PlayRestriction::Normal,
         }
     }
 
@@ -5358,6 +5385,18 @@ impl CardRules {
     pub const fn printed_colors(mut self, colors: &'static [ManaColor]) -> Self {
         self.colors = ColorSet::from_colors(colors);
         self
+    }
+
+    /// "Cast this spell only before the combat damage step."
+    #[must_use]
+    pub const fn cast_only_before_combat_damage(mut self) -> Self {
+        self.play_restriction = PlayRestriction::BeforeCombatDamage;
+        self
+    }
+
+    #[must_use]
+    pub const fn play_restriction(&self) -> PlayRestriction {
+        self.play_restriction
     }
 
     #[must_use]

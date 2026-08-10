@@ -1338,11 +1338,11 @@ pub(in crate::card::sets) static BERSERK: CardRecord = CardRecord::new(
     CardArt::new("e173c8ce-2352-405e-ad00-e3bb94ced1ad", "Dan Frazier"),
     CardSet::Alpha,
     CardRules::new_instant(mana_cost!("{G}"))
+    .cast_only_before_combat_damage()
     .with_abilities(&[
-        AbilityDef::custom_partial(
+        AbilityDef::play_restriction_note(
             "Cast this spell only before the combat damage step.",
-            CardBehavior::Berserk,
-            "The casting restriction is not enforced.",
+            "The play option refuses the cast from the combat damage step onward.",
         ),
         AbilityDef::spell_with_targets(
             "Target creature gains trample and gets +X/+0 until end of turn, where X is its power. At the beginning of the next end step, destroy that creature if it attacked this turn.",

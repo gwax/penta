@@ -937,6 +937,7 @@ fn play_option_json(option: &PlayOptionDef) -> Value {
         "restriction": match option.restriction {
             PlayRestriction::Normal => "normal",
             PlayRestriction::FromHandOnly => "fromHandOnly",
+            PlayRestriction::BeforeCombatDamage => "beforeCombatDamage",
         },
         "modes": option.modes.as_ref().map(|modes| json!({
             "minimum": modes.minimum,

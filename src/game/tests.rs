@@ -20784,6 +20784,44 @@ fn berserk_doubles_any_creature_and_only_kills_one_that_attacked() {
 }
 
 #[test]
+fn berserk_cannot_be_cast_once_combat_damage_arrives() {
+    // The restriction is the whole reason Berserk is a decision the defender
+    // can play around: it has to be committed before damage, not held back
+    // until the attack has already connected.
+    let mut game = ready_game();
+    game.attackers_declared = true;
+    game.blockers_declared = true;
+    let mut lions = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    lions.attacking = true;
+    lions.attacked_this_turn = true;
+    game.battlefield.push(lions);
+    let berserk = card(10_001, cards::BERSERK, PlayerId::One);
+    game.players[0].hand.push(berserk.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if card == berserk.id))
+    };
+
+    game.step = Step::DeclareBlockers;
+    assert!(
+        offered(&game),
+        "blockers are declared and damage is still ahead"
+    );
+
+    game.step = Step::CombatDamage;
+    assert!(
+        !offered(&game),
+        "the combat damage step is too late to pump the attacker"
+    );
+
+    game.step = Step::PostcombatMain;
+    assert!(!offered(&game), "and so is the rest of the turn");
+}
+
+#[test]
 fn berserk_spares_a_creature_that_never_attacked() {
     let mut game = ready_game();
     game.battlefield

@@ -6510,6 +6510,9 @@ impl Game {
                 {
                     continue;
                 }
+                if !self.play_timing_allows(option.restriction) {
+                    continue;
+                }
                 // A declarative card intentionally has no custom behavior.
                 // `Unsupported` is only a local neutral value for the legacy
                 // helpers below; it is not stored as part of that card's rules.
@@ -7452,6 +7455,24 @@ impl Game {
             attacking: false,
             attacked_this_turn: false,
         })
+    }
+
+    /// Whether the step this spell would be cast in satisfies its own timing
+    /// restriction. "Before the combat damage step" means combat damage has
+    /// not started; once it has, the window is gone for the rest of the turn
+    /// even in a later step.
+    fn play_timing_allows(&self, restriction: PlayRestriction) -> bool {
+        match restriction {
+            PlayRestriction::Normal | PlayRestriction::FromHandOnly => true,
+            PlayRestriction::BeforeCombatDamage => !matches!(
+                self.step,
+                Step::CombatDamage
+                    | Step::EndOfCombat
+                    | Step::PostcombatMain
+                    | Step::End
+                    | Step::Cleanup
+            ),
+        }
     }
 
     /// Every legal target list, with hexproof and protection applied once at
@@ -8489,6 +8510,9 @@ impl Game {
         if source_zone == CastSourceZone::Graveyard
             && option.restriction == PlayRestriction::FromHandOnly
         {
+            return None;
+        }
+        if !self.play_timing_allows(option.restriction) {
             return None;
         }
         let behavior =
