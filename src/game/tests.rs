@@ -4577,6 +4577,44 @@ fn first_strike_kills_a_normal_blocker_before_it_can_hit_back() {
 }
 
 #[test]
+fn delayed_combat_damage_effect_queued_between_strike_waves_fires_once() {
+    const LOSE_ONE: EffectDef = EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    };
+
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_000, cards::BLACK_KNIGHT, PlayerId::One);
+    attacker.attacking = true;
+    game.battlefield.push(attacker);
+    game.advance_step();
+    assert!(
+        game.regular_combat_damage_pending(),
+        "the first-strike wave leaves an inter-wave priority window",
+    );
+
+    let life_before = game.players[0].life;
+    game.delayed_triggers.push(DelayedTrigger {
+        object: Box::new(spell(10_001, cards::LIGHTNING_BOLT, PlayerId::One, 0)),
+        context: TriggerContext::empty(),
+        step: TurnStepDef::CombatDamage,
+        player: PlayerRelation::Any,
+        effect: &LOSE_ONE,
+    });
+
+    pass_priority_pair(&mut game);
+
+    assert_eq!(game.step, Step::CombatDamage);
+    assert!(
+        !game.regular_combat_damage_pending(),
+        "the regular combat-damage step has begun",
+    );
+    assert_eq!(game.players[0].life, life_before - 1);
+    assert!(game.delayed_triggers.is_empty());
+}
+
+#[test]
 fn first_strike_blocker_kills_a_normal_attacker_before_it_deals_damage() {
     let mut game = ready_game();
     game.step = Step::DeclareBlockers;
@@ -5140,6 +5178,82 @@ fn printed_and_intrinsic_mana_abilities_coexist() {
                 ManaColor::Green,
             ),
         ]
+    );
+}
+
+#[test]
+fn direct_and_composite_land_type_effects_grant_intrinsic_mana_in_order() {
+    static DIRECT_TYPES: [BasicLandType; 1] = [BasicLandType::Mountain];
+    static FIRST_COMPOSITE_TYPES: [BasicLandType; 1] = [BasicLandType::Forest];
+    static SECOND_COMPOSITE_TYPES: [BasicLandType; 1] = [BasicLandType::Island];
+    static COMPONENTS: [AppliedEffectDef; 2] = [
+        AppliedEffectDef::AddLandTypes(&FIRST_COMPOSITE_TYPES),
+        AppliedEffectDef::AddLandTypes(&SECOND_COMPOSITE_TYPES),
+    ];
+    static EFFECTS: [EffectDef; 2] = [
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::AddLandTypes(&DIRECT_TYPES),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::Composite(&COMPONENTS),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    ];
+    static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+        "Enchanted land is a Mountain, Forest, and Island in addition to its other types.",
+        EffectDef::Sequence(&EFFECTS),
+    )];
+
+    let definition_id = CardDefinitionId(10_081);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Composite land-type test Aura",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_enchantment(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    let land_id = CardInstanceId(10_000);
+    let mut aura = creature(10_001, definition_id, PlayerId::One);
+    aura.attached_to = Some(land_id);
+    game.battlefield.extend([
+        creature(land_id.0, cards::THESPIANS_STAGE, PlayerId::One),
+        aura,
+    ]);
+
+    assert_eq!(
+        game.effective_subtypes(&game.battlefield[0]).as_ref(),
+        &["Mountain", "Forest", "Island"],
+    );
+    assert_eq!(
+        game.mana_ability_activations(&game.battlefield[0])
+            .into_iter()
+            .filter_map(|activation| match activation.ability {
+                AbilityOrigin::IntrinsicBasicLand(land_type) => {
+                    Some((land_type, activation.color))
+                }
+                AbilityOrigin::Printed { .. } | AbilityOrigin::Granted { .. } => None,
+            })
+            .collect::<Vec<_>>(),
+        vec![
+            (BasicLandType::Mountain, ManaColor::Red),
+            (BasicLandType::Forest, ManaColor::Green),
+            (BasicLandType::Island, ManaColor::Blue),
+        ],
     );
 }
 
@@ -14958,5 +15072,278 @@ fn an_intervening_if_is_checked_when_it_triggers_and_again_when_it_resolves() {
         hungry.battlefield.len(),
         1,
         "both checks held, so a creature was sacrificed"
+    );
+}
+
+#[test]
+fn delayed_trigger_partition_preserves_order_and_waiting_capacity() {
+    const LOSE_ONE: EffectDef = EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    };
+    const LOSE_TWO: EffectDef = EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    };
+    const LOSE_THREE: EffectDef = EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    };
+    const LOSE_FOUR: EffectDef = EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(4),
+    };
+    let delayed = |id: u32, step: TurnStepDef, effect: &'static EffectDef| DelayedTrigger {
+        object: Box::new(spell(id, cards::LIGHTNING_BOLT, PlayerId::One, 0)),
+        context: TriggerContext::empty(),
+        step,
+        player: PlayerRelation::Any,
+        effect,
+    };
+
+    let mut game = ready_game();
+    game.delayed_triggers = Vec::with_capacity(8);
+    game.delayed_triggers.extend([
+        delayed(10_000, TurnStepDef::End, &LOSE_ONE),
+        delayed(10_001, TurnStepDef::Draw, &LOSE_THREE),
+        delayed(10_002, TurnStepDef::End, &LOSE_TWO),
+        delayed(10_003, TurnStepDef::Draw, &LOSE_FOUR),
+    ]);
+    let waiting_capacity = game.delayed_triggers.capacity();
+    let event_start = game.events.len();
+
+    game.fire_delayed_triggers(TurnStepDef::End);
+
+    let lost = game.events[event_start..]
+        .iter()
+        .filter_map(|event| match event {
+            GameEvent::LifeLost {
+                player: PlayerId::One,
+                amount,
+            } => Some(*amount),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(lost, vec![1, 2], "due effects keep their queued order");
+    assert_eq!(
+        game.delayed_triggers
+            .iter()
+            .map(|delayed| delayed.object.id.0)
+            .collect::<Vec<_>>(),
+        vec![10_001, 10_003],
+        "waiting effects keep their queued order"
+    );
+    assert_eq!(
+        game.delayed_triggers.capacity(),
+        waiting_capacity,
+        "partitioning reuses the waiting queue allocation"
+    );
+}
+
+#[test]
+fn delayed_effect_preserves_its_trigger_context() {
+    static TAP_TRIGGERING_OBJECT: EffectDef = EffectDef::Tap {
+        object: EffectRecipientDef::TriggeringObject,
+    };
+    static LOSE_TRIGGER_AMOUNT: EffectDef = EffectDef::LoseLife {
+        recipient: EffectRecipientDef::EventPlayer,
+        amount: ValueDef::TriggerEventAmount,
+    };
+    static DELAYED_EFFECTS: [EffectDef; 2] = [TAP_TRIGGERING_OBJECT, LOSE_TRIGGER_AMOUNT];
+    static DELAYED: EffectDef = EffectDef::AtNextStep {
+        step: TurnStepDef::End,
+        player: PlayerRelation::EventPlayer,
+        effect: &EffectDef::Sequence(&DELAYED_EFFECTS),
+    };
+
+    let mut game = ready_game();
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+    let triggering = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let triggering_id = triggering.card.id;
+    game.battlefield.push(triggering);
+    let source = spell(10_001, cards::LIGHTNING_BOLT, PlayerId::One, 0);
+    let context = TriggerContext {
+        object: Some(triggering_id),
+        object_controller: Some(PlayerId::Two),
+        event_player: Some(PlayerId::Two),
+        amount: Some(3),
+    };
+    let life_before = game.players[PlayerId::Two.index()].life;
+
+    game.resolve_effect_def(DELAYED, &source, context);
+
+    assert_eq!(game.delayed_triggers.len(), 1);
+    assert!(!game.battlefield[0].tapped);
+    assert_eq!(game.players[PlayerId::Two.index()].life, life_before);
+
+    game.fire_delayed_triggers(TurnStepDef::End);
+
+    assert!(game.delayed_triggers.is_empty());
+    assert!(game.battlefield[0].tapped);
+    assert_eq!(game.players[PlayerId::Two.index()].life, life_before - 3);
+}
+
+#[test]
+fn delayed_effect_enqueued_during_firing_waits_for_the_next_matching_step() {
+    const LOSE_ONE: EffectDef = EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    };
+    const ENQUEUE_LOSS: EffectDef = EffectDef::AtNextStep {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+        effect: &LOSE_ONE,
+    };
+    let mut game = ready_game();
+    game.delayed_triggers = Vec::with_capacity(4);
+    game.delayed_triggers.push(DelayedTrigger {
+        object: Box::new(spell(10_000, cards::LIGHTNING_BOLT, PlayerId::One, 0)),
+        context: TriggerContext::empty(),
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+        effect: &ENQUEUE_LOSS,
+    });
+    let waiting_capacity = game.delayed_triggers.capacity();
+    let life_before = game.players[0].life;
+
+    game.fire_delayed_triggers(TurnStepDef::End);
+
+    assert_eq!(game.players[0].life, life_before);
+    assert_eq!(game.delayed_triggers.len(), 1);
+    assert_eq!(*game.delayed_triggers[0].effect, LOSE_ONE);
+    assert_eq!(game.delayed_triggers.capacity(), waiting_capacity);
+
+    game.fire_delayed_triggers(TurnStepDef::End);
+
+    assert_eq!(game.players[0].life, life_before - 1);
+    assert!(game.delayed_triggers.is_empty());
+    assert_eq!(game.delayed_triggers.capacity(), waiting_capacity);
+}
+
+#[test]
+fn stacked_quickens_are_all_spent_by_the_same_next_sorcery() {
+    let mut game = ready_game();
+    let quickens = [
+        card(10_000, cards::QUICKEN, PlayerId::One),
+        card(10_001, cards::QUICKEN, PlayerId::One),
+    ];
+    let sorceries = [
+        card(10_002, cards::MIND_TWIST, PlayerId::One),
+        card(10_003, cards::MIND_TWIST, PlayerId::One),
+    ];
+    game.players[0].hand.extend(quickens.iter().cloned());
+    game.players[0].hand.extend(sorceries.iter().cloned());
+    game.players[0].mana_pool.blue = 2;
+    game.players[0].mana_pool.black = 4;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+    game.step = Step::PrecombatMain;
+
+    for quicken in &quickens {
+        game.apply(
+            PlayerId::One,
+            cast_action(quicken.id, Vec::new(), Vec::new(), 0),
+        )
+        .unwrap();
+        pass_priority_pair(&mut game);
+        game.priority = PlayerId::One;
+    }
+    assert_eq!(game.sorcery_flash_grants[0], 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == sorceries[0].id))
+        .expect("both Quicken grants cover the same next sorcery");
+    game.apply(PlayerId::One, cast).unwrap();
+    game.priority = PlayerId::One;
+
+    assert_eq!(game.sorcery_flash_grants[0], 0);
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::CastSpell { card, .. } if *card == sorceries[1].id)
+        ),
+        "the second sorcery needs a new timing permission"
+    );
+}
+
+#[test]
+fn quicken_consumes_its_grant_for_the_selected_sorcery_part() {
+    let definition_id = CardDefinitionId(10_068);
+    let instant = CardRules::new_instant(ManaCost::default());
+    let sorcery = CardRules::new_sorcery(ManaCost::default());
+    let (mut game, _, _) = game_with_test_fused_split(definition_id, &instant, &sorcery);
+    let split = card(10_000, definition_id, PlayerId::One);
+    let next_sorcery = card(10_001, cards::MIND_TWIST, PlayerId::One);
+    game.players[0]
+        .hand
+        .extend([split.clone(), next_sorcery.clone()]);
+    game.players[0].mana_pool.black = 1;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.sorcery_flash_grants[0] = 1;
+
+    let cast_second_part = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::CastSpell { card, choices, .. }
+                    if *card == split.id && choices.play_option() == PlayOptionId(1)
+            )
+        })
+        .expect("Quicken makes the selected sorcery part castable now");
+    game.apply(PlayerId::One, cast_second_part).unwrap();
+    game.priority = PlayerId::One;
+
+    assert_eq!(game.sorcery_flash_grants[0], 0);
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::CastSpell { card, .. } if *card == next_sorcery.id)
+        ),
+        "consumption follows the selected part rather than the primary instant characteristics"
+    );
+}
+
+#[test]
+fn quicken_preserves_its_grant_for_the_selected_instant_part() {
+    let definition_id = CardDefinitionId(10_069);
+    let sorcery = CardRules::new_sorcery(ManaCost::default());
+    let instant = CardRules::new_instant(ManaCost::default());
+    let (mut game, _, _) = game_with_test_fused_split(definition_id, &sorcery, &instant);
+    let split = card(10_000, definition_id, PlayerId::One);
+    let next_sorcery = card(10_001, cards::MIND_TWIST, PlayerId::One);
+    game.players[0]
+        .hand
+        .extend([split.clone(), next_sorcery.clone()]);
+    game.players[0].mana_pool.black = 1;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.sorcery_flash_grants[0] = 1;
+
+    let cast_second_part = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::CastSpell { card, choices, .. }
+                    if *card == split.id && choices.play_option() == PlayOptionId(1)
+            )
+        })
+        .expect("the selected instant part is castable without using Quicken");
+    game.apply(PlayerId::One, cast_second_part).unwrap();
+    game.priority = PlayerId::One;
+
+    assert_eq!(game.sorcery_flash_grants[0], 1);
+    assert!(
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::CastSpell { card, .. } if *card == next_sorcery.id)
+        ),
+        "the grant remains available for the next sorcery"
     );
 }

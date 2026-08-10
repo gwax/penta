@@ -286,6 +286,8 @@ struct DelayedTrigger {
     /// The object that queued this, kept whole so the effect resolves with
     /// the same source and controller it would have had at the time.
     object: Box<StackObject>,
+    /// Trigger-event information captured when the effect was scheduled.
+    context: TriggerContext,
     step: TurnStepDef,
     player: PlayerRelation,
     effect: &'static EffectDef,
@@ -3073,6 +3075,20 @@ impl Game {
             .catalog
             .get(trigger.definition)
             .map_or("Triggered ability", |card| card.name.as_str());
+        let target_effect = match trigger.effect {
+            EffectDef::May(effect) => *effect,
+            effect => effect,
+        };
+        let preference = if matches!(
+            target_effect,
+            EffectDef::ExileLinkedToSource {
+                object: EffectRecipientDef::Target(slot),
+            } if slot == target.id
+        ) {
+            DecisionPreference::LinkedExileTargets
+        } else {
+            DecisionPreference::Neutral
+        };
         let id = self.next_decision_id;
         self.next_decision_id = self.next_decision_id.saturating_add(1);
         self.pending_decisions.insert(
@@ -3085,7 +3101,7 @@ impl Game {
                     order_semantics: None,
                     prompt: format!("{source_name}: choose {}", target.label),
                     visibility: DecisionVisibility::Public,
-                    preference: DecisionPreference::Neutral,
+                    preference,
                     minimum: usize::from(target.minimum),
                     maximum: usize::from(target.maximum).min(options.len()),
                     cancellable: false,
@@ -3343,7 +3359,7 @@ impl Game {
             player,
             object.ability_text().unwrap_or("Use this optional effect?"),
             DecisionVisibility::Public,
-            DecisionPreference::Neutral,
+            DecisionPreference::PreferOption(1),
             1..=1,
             false,
             vec![
@@ -6778,15 +6794,18 @@ impl Game {
             }
         }
         .expect("legal cast action references a card in its validated source zone");
-        // The grant is spent by the next sorcery whatever its timing, so it
-        // is consumed here rather than only when it was needed.
-        if self
+        // Every outstanding grant applies to the same next sorcery, whatever
+        // its timing, so consume them together based on the form actually cast.
+        let cast_is_sorcery = self
             .catalog
             .get(card.definition)
-            .is_some_and(|definition| definition.rules.has_type(CardType::Sorcery))
-        {
-            let grants = &mut self.sorcery_flash_grants[player.index()];
-            *grants = grants.saturating_sub(1);
+            .and_then(|definition| {
+                let option = definition.play_option(signature.play_option())?;
+                Self::play_option_types(definition, option)
+            })
+            .is_some_and(|types| types.contains(CardType::Sorcery));
+        if cast_is_sorcery {
+            self.sorcery_flash_grants[player.index()] = 0;
         }
         // A spell is first proposed on the stack, then mana abilities may be
         // activated and costs are paid. The operation cannot fail after the
@@ -7475,6 +7494,7 @@ impl Game {
             } => {
                 self.delayed_triggers.push(DelayedTrigger {
                     object: Box::new(object.clone()),
+                    context,
                     step,
                     player,
                     effect,
@@ -8958,14 +8978,36 @@ impl Game {
             }
             EffectDef::Apply {
                 recipient: EffectRecipientDef::AttachedPermanent,
-                effect: AppliedEffectDef::AddLandTypes(types),
+                effect,
                 duration:
                     EffectDurationDef::WhileSourceRemainsInZone
                     | EffectDurationDef::UntilSourceLeavesZone,
             } if source.attached_to == Some(affected.card.id) => {
-                operations.push((source.card.id, LandTypeOperation::Add(types)));
+                Self::collect_applied_land_type_operations(effect, source.card.id, operations);
             }
             _ => {}
+        }
+    }
+
+    fn collect_applied_land_type_operations(
+        effect: AppliedEffectDef,
+        source: GameObjectId,
+        operations: &mut Vec<(GameObjectId, LandTypeOperation)>,
+    ) {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                for effect in effects {
+                    Self::collect_applied_land_type_operations(*effect, source, operations);
+                }
+            }
+            AppliedEffectDef::AddLandTypes(types) => {
+                operations.push((source, LandTypeOperation::Add(types)));
+            }
+            AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::ModifyPowerToughness { .. }
+            | AppliedEffectDef::GrantAbility(_)
+            | AppliedEffectDef::Special(_) => {}
         }
     }
 
@@ -12430,25 +12472,25 @@ impl Game {
     /// apart, and keeps the queue from needing a listener of its own.
     fn fire_delayed_triggers(&mut self, step: TurnStepDef) {
         let active = self.active_player;
+        let mut waiting = std::mem::take(&mut self.delayed_triggers);
         let mut due = Vec::new();
-        let mut waiting = Vec::new();
-        for delayed in std::mem::take(&mut self.delayed_triggers) {
-            let is_due = delayed.step == step
+        for delayed in waiting.extract_if(.., |delayed| {
+            delayed.step == step
                 && self.player_relation_matches(
                     active,
                     delayed.player,
                     delayed.object.controller,
-                    TriggerContext::empty(),
-                );
-            if is_due {
-                due.push(delayed);
-            } else {
-                waiting.push(delayed);
-            }
+                    delayed.context,
+                )
+        }) {
+            due.push(delayed);
         }
+        // Restore the waiting allocation before resolving. A due effect may
+        // enqueue another delayed effect, which belongs after every entry
+        // that was already waiting and must not fire in this batch.
         self.delayed_triggers = waiting;
         for delayed in due {
-            self.resolve_effect_def(*delayed.effect, &delayed.object, TriggerContext::empty());
+            self.resolve_effect_def(*delayed.effect, &delayed.object, delayed.context);
         }
     }
 
