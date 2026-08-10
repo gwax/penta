@@ -18,9 +18,9 @@ use crate::card::{
     DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair, KeywordAbility,
     LibraryPlacement, ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
     ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction,
-    PlayerRelation, ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate,
-    TargetSlotDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, abilities, applicable_part_ids,
+    PlayerRelation, QuantifierDef, ReplacementEffectDef, ReplacementEventDef, SpellForm,
+    TargetPredicate, TargetSlotDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::{Deck, DeckError, ValidatedDeck};
@@ -1160,6 +1160,11 @@ pub struct Game {
     /// Whether each player has been stopped from casting noncreature spells
     /// for the rest of the turn.
     noncreature_casts_locked: [bool; 2],
+    /// How many spells each player has cast this turn, and how many they cast
+    /// during the turn before. The werewolves ask about the turn that just
+    /// ended, which is only knowable if it was counted while it happened.
+    spells_cast_this_turn: [u16; 2],
+    spells_cast_last_turn: [u16; 2],
     /// How many cards each player has drawn this turn. Miracle asks whether a
     /// draw was the first one.
     cards_drawn_this_turn: [u16; 2],
@@ -1317,6 +1322,8 @@ impl Game {
             sorcery_flash_grants: [0; 2],
             additional_combat_phases: 0,
             noncreature_casts_locked: [false; 2],
+            spells_cast_this_turn: [0; 2],
+            spells_cast_last_turn: [0; 2],
             cards_drawn_this_turn: [0; 2],
             miracle_window: None,
             delayed_triggers: Vec::new(),
@@ -3691,9 +3698,15 @@ impl Game {
                 );
                 targets
             }
-            AbilityTargetPredicate::PlayerOrPlaneswalker => {
-                let mut targets =
-                    vec![Target::Player(PlayerId::One), Target::Player(PlayerId::Two)];
+            AbilityTargetPredicate::ControlledByTargetOf { .. } => Vec::new(),
+            AbilityTargetPredicate::PlayerOrPlaneswalker(relation) => {
+                let mut targets = [PlayerId::One, PlayerId::Two]
+                    .into_iter()
+                    .filter(|player| {
+                        self.player_relation_matches(*player, relation, controller, context)
+                    })
+                    .map(Target::Player)
+                    .collect::<Vec<_>>();
                 targets.extend(
                     self.battlefield
                         .iter()
@@ -6498,6 +6511,52 @@ impl Game {
     ) -> Vec<Vec<TargetSelection>> {
         let mut selections = vec![Vec::new()];
         for slot in slots {
+            // A slot that reads an earlier slot's choice has to be enumerated
+            // once per prefix, because its candidates are different for each.
+            if let AbilityTargetPredicate::ControlledByTargetOf {
+                object,
+                slot: other,
+            } = slot.predicate
+            {
+                let mut combined = Vec::new();
+                for prefix in &selections {
+                    let candidates = prefix
+                        .iter()
+                        .find(|selection: &&TargetSelection| selection.slot() == other)
+                        .and_then(|selection| selection.targets().first().copied())
+                        .and_then(|target| match target {
+                            Target::Player(player) => Some(player),
+                            Target::Permanent(id) | Target::Card(id) | Target::Spell(id) => {
+                                self.current_or_last_known_controller(id)
+                            }
+                        })
+                        .map_or_else(Vec::new, |owner| {
+                            self.battlefield
+                                .iter()
+                                .filter(|permanent| permanent.controller == owner)
+                                .filter(|permanent| {
+                                    self.trigger_object_matches(
+                                        object,
+                                        &self.trigger_event_object(permanent),
+                                        source,
+                                        false,
+                                    ) && self
+                                        .permanent_can_be_targeted_by(permanent, controller, source)
+                                })
+                                .map(|permanent| Target::Permanent(permanent.card.id))
+                                .collect::<Vec<_>>()
+                        });
+                    for count in slot.minimum..=slot.maximum {
+                        for targets in target_combinations(&candidates, usize::from(count)) {
+                            let mut selected = prefix.clone();
+                            selected.push(TargetSelection::new(slot.id, targets));
+                            combined.push(selected);
+                        }
+                    }
+                }
+                selections = combined;
+                continue;
+            }
             let candidates =
                 self.ability_targets_matching(slot.predicate, controller, source, context);
             let mut choices = Vec::new();
@@ -8068,6 +8127,8 @@ impl Game {
             .expect("a cast spell has locked characteristics");
         self.stack.push(stack_object);
         self.consecutive_passes = 0;
+        self.spells_cast_this_turn[player.index()] =
+            self.spells_cast_this_turn[player.index()].saturating_add(1);
         self.events.push(GameEvent::SpellCast {
             player,
             card: stack_id,
@@ -9346,6 +9407,28 @@ impl Game {
                 TriggerConditionDef::ActivePlayer(relation) => {
                     self.player_relation_matches(self.active_player, *relation, controller, context)
                 }
+                TriggerConditionDef::SpellsCastLastTurn {
+                    quantifier,
+                    player: relation,
+                    comparison,
+                    amount,
+                } => {
+                    let mut matching =
+                        [PlayerId::One, PlayerId::Two].into_iter().filter(|player| {
+                            self.player_relation_matches(*player, *relation, controller, context)
+                        });
+                    let satisfies = |player: PlayerId| {
+                        compare(
+                            &self.spells_cast_last_turn[player.index()],
+                            *comparison,
+                            &u16::from(*amount),
+                        )
+                    };
+                    match quantifier {
+                        QuantifierDef::Every => matching.all(satisfies),
+                        QuantifierDef::Any => matching.any(satisfies),
+                    }
+                }
                 TriggerConditionDef::SourceLoyalty { comparison, amount } => self
                     .battlefield
                     .iter()
@@ -9601,7 +9684,8 @@ impl Game {
     fn ability_target_uses_custom_predicate(predicate: AbilityTargetPredicate) -> bool {
         match predicate {
             AbilityTargetPredicate::AnyTarget
-            | AbilityTargetPredicate::PlayerOrPlaneswalker
+            | AbilityTargetPredicate::PlayerOrPlaneswalker(_)
+            | AbilityTargetPredicate::ControlledByTargetOf { .. }
             | AbilityTargetPredicate::Player(_) => false,
             AbilityTargetPredicate::Object { object, .. } => {
                 Self::object_predicate_uses_custom_predicate(object)
@@ -11359,7 +11443,8 @@ impl Game {
                         && !self.is_protected_from_colors(host, aura_colors)
             }
             AbilityTargetPredicate::AnyTarget
-            | AbilityTargetPredicate::PlayerOrPlaneswalker
+            | AbilityTargetPredicate::PlayerOrPlaneswalker(_)
+            | AbilityTargetPredicate::ControlledByTargetOf { .. }
             | AbilityTargetPredicate::Player(_) => false,
         })
     }
@@ -14995,6 +15080,8 @@ impl Game {
         self.sorcery_flash_grants = [0; 2];
         self.additional_combat_phases = 0;
         self.noncreature_casts_locked = [false; 2];
+        self.spells_cast_last_turn = self.spells_cast_this_turn;
+        self.spells_cast_this_turn = [0; 2];
         self.cards_drawn_this_turn = [0; 2];
         self.miracle_window = None;
         self.step = Step::Upkeep;

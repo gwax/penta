@@ -35,7 +35,7 @@ pub(in crate::card::sets) static BONFIRE_OF_THE_DAMNED: CardRecord = CardRecord:
         .with_targets(&[AbilityTargetDef::exactly_one(
             TargetSlotId(0),
             "player or planeswalker",
-            AbilityTargetPredicate::PlayerOrPlaneswalker,
+            AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
         )]),
         abilities::miracle(mana_cost!("{X}{R}")),
     ]),

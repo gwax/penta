@@ -1978,9 +1978,9 @@ mod tests {
         assert!(pilgrim["parts"][0].get("effectStatus").is_none());
 
         // Any card with a mix of executable and pending clauses will do here.
-        // Huntmaster's back face has trample, but transforming needs
-        // machinery the engine lacks; repoint this if that lands.
-        let partial = find("Huntmaster of the Fells");
+        // Tetravus flies, but its counter-for-token exchange needs machinery
+        // the engine lacks; repoint this if that lands.
+        let partial = find("Tetravus");
         assert_eq!(partial["implementationStatus"], "partial");
         assert_eq!(partial["parts"][0]["implementationStatus"], "partial");
 

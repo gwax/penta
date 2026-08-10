@@ -36,10 +36,10 @@ pub use model::{
     ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef,
     MeldResultDef, ModalSpellDef, ModeDef, ModeSetDef, ObjectPredicateDef, ObjectQueryDef,
     PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation, PrintedManaCost,
-    ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, SpecialActionDef,
-    SpellAbilityDef, SpellForm, StaticAbilityDef, TargetConditionDef, TargetPredicate,
-    TargetSlotDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnStepDef,
-    ValueDef, ZoneKind, ZoneMoveCauseDef,
+    QuantifierDef, ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef,
+    SpecialActionDef, SpellAbilityDef, SpellForm, StaticAbilityDef, TargetConditionDef,
+    TargetPredicate, TargetSlotDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef,
+    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

@@ -643,8 +643,14 @@ pub enum ObjectPredicateDef {
 pub enum AbilityTargetPredicate {
     AnyTarget,
     /// "Target player or planeswalker", which is every damage target except
-    /// the creatures.
-    PlayerOrPlaneswalker,
+    /// the creatures, narrowed to players in this relation.
+    PlayerOrPlaneswalker(PlayerRelation),
+    /// A permanent controlled by whoever controls an earlier slot's target,
+    /// for "that player or that planeswalker's controller controls".
+    ControlledByTargetOf {
+        object: ObjectPredicateDef,
+        slot: TargetSlotId,
+    },
     Player(PlayerRelation),
     Object {
         object: ObjectPredicateDef,
@@ -1744,6 +1750,13 @@ impl ActivatedAbilityDef {
     }
 }
 
+/// Whether a condition has to hold for every matching player or just one.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum QuantifierDef {
+    Every,
+    Any,
+}
+
 /// How a counted amount is compared against a printed number.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ComparisonDef {
@@ -1765,6 +1778,18 @@ pub enum TriggerConditionDef {
     },
     /// Whose turn it is, relative to the ability's controller.
     ActivePlayer(PlayerRelation),
+    /// How many spells a matching player cast during the turn before this
+    /// one. "No spells were cast last turn" is every player at zero, and "a
+    /// player cast two or more" is any player at two.
+    SpellsCastLastTurn {
+        /// Whether every matching player has to satisfy the comparison or
+        /// only one. "No spells were cast last turn" is every player at zero;
+        /// "a player cast two or more" is one player at two.
+        quantifier: QuantifierDef,
+        player: PlayerRelation,
+        comparison: ComparisonDef,
+        amount: u8,
+    },
     /// How much loyalty the ability's own source has left.
     SourceLoyalty {
         comparison: ComparisonDef,
@@ -2673,9 +2698,12 @@ impl AbilityTargetDef {
             // A client has no slot kind narrower than every damage target,
             // which is closer for a player-or-planeswalker slot than offering
             // only players would be.
-            AbilityTargetPredicate::AnyTarget | AbilityTargetPredicate::PlayerOrPlaneswalker => {
+            AbilityTargetPredicate::AnyTarget | AbilityTargetPredicate::PlayerOrPlaneswalker(_) => {
                 TargetPredicate::AnyTarget
             }
+            // A client has no slot kind for "controlled by another slot's
+            // target" either, and every candidate is a permanent.
+            AbilityTargetPredicate::ControlledByTargetOf { .. } => TargetPredicate::Permanent,
             AbilityTargetPredicate::Player(_) => TargetPredicate::Player,
             AbilityTargetPredicate::Object { object, zones, .. } if zones == [ZoneKind::Stack] => {
                 if object_predicate_implies(object, ObjectPredicateDef::NoncreatureSpell) {

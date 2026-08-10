@@ -844,9 +844,9 @@ mod tests {
     fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         match condition {
             TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
-            TriggerConditionDef::ActivePlayer(_) | TriggerConditionDef::SourceLoyalty { .. } => {
-                true
-            }
+            TriggerConditionDef::ActivePlayer(_)
+            | TriggerConditionDef::SourceLoyalty { .. }
+            | TriggerConditionDef::SpellsCastLastTurn { .. } => true,
         }
     }
 

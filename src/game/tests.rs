@@ -18029,3 +18029,90 @@ fn garruk_turns_over_when_his_own_ability_wounds_him() {
         "and the object is the same permanent, now showing its other face"
     );
 }
+
+#[test]
+fn huntmaster_turns_on_a_quiet_turn_and_back_on_a_busy_one() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let huntmaster = game
+        .put_onto_battlefield(PlayerId::One, cards::HUNTMASTER_OF_THE_FELLS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let front = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == huntmaster)
+        .expect("it is there")
+        .presented;
+
+    // Entering already made a Wolf and gained two life.
+    assert_eq!(game.players[0].life, 22);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::WOLF_TOKEN_2_2_GREEN)
+            .count(),
+        1
+    );
+
+    // A turn with a spell cast keeps it human.
+    game.spells_cast_last_turn = [1, 0];
+    game.turn = 2;
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+    drain_pending(&mut game);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == huntmaster)
+            .expect("it is there")
+            .presented,
+        front,
+        "somebody cast something, so it stays human"
+    );
+
+    // A quiet turn turns it over, and transforming makes another Wolf.
+    game.spells_cast_last_turn = [0, 0];
+    game.handle_upkeep_triggers();
+    drain_pending(&mut game);
+    let back = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == huntmaster)
+        .expect("it is there")
+        .presented;
+    assert_ne!(back, front, "a quiet turn turned it over");
+    // Turning into the wolf is not turning into the Huntmaster, so no Wolf
+    // and no life. The other face bites the opponent instead.
+    assert_eq!(game.players[0].life, 22);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::WOLF_TOKEN_2_2_GREEN)
+            .count(),
+        1
+    );
+    assert_eq!(game.players[1].life, 18, "the wolf bit somebody");
+
+    // One player casting twice turns it back, and coming home makes a Wolf.
+    game.spells_cast_last_turn = [0, 2];
+    game.handle_upkeep_triggers();
+    drain_pending(&mut game);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == huntmaster)
+            .expect("it is there")
+            .presented,
+        front,
+        "two spells from one player turned it back"
+    );
+    assert_eq!(game.players[0].life, 24);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::WOLF_TOKEN_2_2_GREEN)
+            .count(),
+        2
+    );
+}

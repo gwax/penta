@@ -4,9 +4,10 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityImplementationDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
-    CardStructure, CardType, ConditionalValueDef, DoubleFacedKind, EffectDef, EffectDurationDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    CardStructure, CardType, ComparisonDef, ConditionalValueDef, DoubleFacedKind, EffectDef,
+    EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayOptionDef,
+    PlayerRelation, QuantifierDef, SpellForm, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetSlotId};
 use crate::mana_cost;
@@ -41,23 +42,114 @@ pub(in crate::card::sets) static HELLRIDER: CardRecord = CardRecord::new(
 );
 
 const fn huntmaster_front_rules() -> CardRules {
-    CardRules::new_creature(
-        mana_cost!("{2}{R}{G}"),
-        &["Human", "Werewolf"],
-        2,
-        2,
-    )
-    .with_ability(AbilityDef::not_implemented(
-        "Whenever this creature enters or transforms into Huntmaster of the Fells, create a 2/2 green Wolf creature token and you gain 2 life.\nAt the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
-        "Printed rules are cataloged but are not executed by the engine.",
-    ))
+    CardRules::new_creature(mana_cost!("{2}{R}{G}"), &["Human", "Werewolf"], 2, 2)
+        .with_abilities(&HUNTMASTER_FRONT_ABILITIES)
 }
 
-static HUNTMASTER_BACK_ABILITIES: [AbilityDef; 2] = [
+/// Entering and transforming into this face do the same thing, so the printed
+/// sentence is two triggers watching two different events.
+static HUNTMASTER_FRONT_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::triggered(
+        "Whenever this creature enters, create a 2/2 green Wolf creature token and you gain 2 life.",
+        TriggerEventDef::ZoneChanged {
+            object: ObjectPredicateDef::Source,
+            from: None,
+            to: Some(ZoneKind::Battlefield),
+        },
+        HUNTMASTER_WOLF_AND_LIFE,
+    ),
+    AbilityDef::triggered(
+        "Whenever this creature transforms into Huntmaster of the Fells, create a 2/2 green Wolf creature token and you gain 2 life.",
+        TriggerEventDef::TransformsIntoThisFace,
+        HUNTMASTER_WOLF_AND_LIFE,
+    ),
+    AbilityDef::triggered_if(
+        "At the beginning of each upkeep, if no spells were cast last turn, transform this creature.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::Any,
+        },
+        &NO_SPELLS_LAST_TURN,
+        EffectDef::Transform {
+            object: EffectRecipientDef::Source,
+        },
+    ),
+];
+
+static HUNTMASTER_WOLF_AND_LIFE: EffectDef = EffectDef::Sequence(&[
+    EffectDef::CreateToken {
+        token: cards::WOLF_TOKEN_2_2_GREEN,
+        count: ValueDef::Constant(1),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+]);
+
+/// Nobody cast anything, so every player has to be at zero.
+static NO_SPELLS_LAST_TURN: TriggerConditionDef = TriggerConditionDef::SpellsCastLastTurn {
+    quantifier: QuantifierDef::Every,
+    player: PlayerRelation::Any,
+    comparison: ComparisonDef::AtMost,
+    amount: 0,
+};
+
+/// One player is enough, which is why this side turns back sooner than the
+/// other side turns over.
+static TWO_SPELLS_LAST_TURN: TriggerConditionDef = TriggerConditionDef::SpellsCastLastTurn {
+    quantifier: QuantifierDef::Any,
+    player: PlayerRelation::Any,
+    comparison: ComparisonDef::AtLeast,
+    amount: 2,
+};
+
+static HUNTMASTER_BACK_ABILITIES: [AbilityDef; 3] = [
     abilities::trample(),
-    AbilityDef::not_implemented(
-        "Whenever this creature transforms into Ravager of the Fells, it deals 2 damage to target opponent or planeswalker and 2 damage to up to one target creature that player or that planeswalker's controller controls.\nAt the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
-        "The transform trigger, damage trigger, and transformation procedure are not executed.",
+    AbilityDef::triggered(
+        "Whenever this creature transforms into Ravager of the Fells, it deals 2 damage to target opponent or planeswalker and 2 damage to up to one target creature that player or that planeswalker's controller controls.",
+        TriggerEventDef::TransformsIntoThisFace,
+        EffectDef::Sequence(&[
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetSlotId(0)),
+                amount: ValueDef::Constant(2),
+            },
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetSlotId(1)),
+                amount: ValueDef::Constant(2),
+            },
+        ]),
+    )
+    .with_targets(&RAVAGER_TARGETS),
+    AbilityDef::triggered_if(
+        "At the beginning of each upkeep, if a player cast two or more spells last turn, transform this creature.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::Any,
+        },
+        &TWO_SPELLS_LAST_TURN,
+        EffectDef::Transform {
+            object: EffectRecipientDef::Source,
+        },
+    ),
+];
+
+/// The second slot reads the first: the creature has to belong to whoever the
+/// damage was aimed at.
+static RAVAGER_TARGETS: [AbilityTargetDef; 2] = [
+    AbilityTargetDef::exactly_one(
+        TargetSlotId(0),
+        "opponent or planeswalker",
+        AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Opponent),
+    ),
+    AbilityTargetDef::up_to(
+        TargetSlotId(1),
+        "creature that player controls",
+        AbilityTargetPredicate::ControlledByTargetOf {
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            slot: TargetSlotId(0),
+        },
+        1,
     ),
 ];
 
