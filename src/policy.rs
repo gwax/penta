@@ -546,9 +546,7 @@ impl HandcraftedPolicy {
             Some(
                 CardBehavior::SwordsToPlowshares
                     | CardBehavior::DivineOffering
-                    | CardBehavior::Terror
                     | CardBehavior::DustToDust
-                    | CardBehavior::Detonate
             )
         )
     }
@@ -631,7 +629,7 @@ impl HandcraftedPolicy {
             return value;
         }
         match self.behavior(definition) {
-            Some(CardBehavior::LightningBolt | CardBehavior::GoblinGrenade) => 75,
+            Some(CardBehavior::GoblinGrenade) => 75,
             Some(behavior) if behavior.types().is_creature() => 65,
             Some(_) => 55,
             None => self.catalog.get(definition).map_or(0, |card| {
@@ -698,7 +696,7 @@ impl HandcraftedPolicy {
             .map(|card| card.rules.types());
         let x = choices.x();
         let damage = match behavior {
-            Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => Some(3),
+            Some(CardBehavior::ChainLightning) => Some(3),
             Some(CardBehavior::PillarOfFlame) => Some(2),
             Some(CardBehavior::GoblinGrenade) => Some(5),
             Some(CardBehavior::Fireball) => Some(
@@ -751,10 +749,10 @@ impl HandcraftedPolicy {
             Some(CardBehavior::SwordsToPlowshares) => 8_400,
             Some(CardBehavior::TimeWalk) => 8_300,
             Some(CardBehavior::GoblinGrenade) => 8_500,
-            Some(CardBehavior::LightningBolt | CardBehavior::ChainLightning) => 8_000,
+            Some(CardBehavior::ChainLightning) => 8_000,
             Some(CardBehavior::PillarOfFlame) => 7_800,
             Some(CardBehavior::Fireball) => 7_900 + i32::from(x) * 20,
-            Some(CardBehavior::Detonate | CardBehavior::ChaosOrb) => 7_400,
+            Some(CardBehavior::ChaosOrb) => 7_400,
             Some(CardBehavior::Fork) => 7_300,
             Some(CardBehavior::WheelOfFortune) => 6_600,
             Some(behavior) if behavior.types().is_permanent() => 6_800,
@@ -889,7 +887,6 @@ impl HandcraftedPolicy {
         let discard_source_cost = self.discard_source_cost(source_definition, ability);
         let score = match behavior {
             Some(CardBehavior::ChaosOrb) => 7_200 + target_score,
-            Some(CardBehavior::DragonWhelp) => 5_200,
             Some(_) => 4_500 + target_score,
             None if declarative.is_some_and(|profile| {
                 profile.has(DeclarativeSpellProfile::REMOVES | DeclarativeSpellProfile::TAPS)
@@ -1542,7 +1539,6 @@ impl HandcraftedPolicy {
 
     fn score_land(&self, observation: &PlayerObservation, card: GameObjectId) -> i32 {
         let definition = Self::hand_definition(observation, card);
-        let behavior = definition.and_then(|id| self.behavior(id));
         // The legend rule bins a duplicate on arrival. Replacing a tapped copy
         // with a fresh one is fine; duplicating an untapped one wastes both
         // the card and the land drop.
@@ -1572,10 +1568,7 @@ impl HandcraftedPolicy {
         if basic_land_type_count == 1 {
             return 9_300;
         }
-        match behavior {
-            Some(CardBehavior::MishrasFactory) => 9_200,
-            Some(_) | None => 9_000,
-        }
+        9_000
     }
 
     fn score_untap(&self, observation: &PlayerObservation, permanents: &[GameObjectId]) -> i32 {
