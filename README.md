@@ -302,7 +302,12 @@ Performance measurement is deliberately outside the normal edit-test loop.
 Most changes do not need a benchmark, and a qualitative expected-impact note
 is often enough. Contributors and agents should use judgment and measure when
 the result is likely to inform a design or review decision, preferably once at
-a coherent checkpoint rather than repeatedly during implementation.
+a coherent checkpoint rather than repeatedly during implementation. For
+routine work, if that comparison rules out a scale-changing regression, report
+the result and stop. Do not keep rerunning benchmarks or start profiling merely
+to recover another roughly 10% or other modest movement. Iterative performance
+work belongs in an explicit optimization task, a concrete user-visible need,
+or an investigation of an apparent multiplier-sized regression.
 
 For a selected advisory branch comparison, ensure a baseline exists for the
 exact commit currently named by the local `main` ref, then benchmark its saved

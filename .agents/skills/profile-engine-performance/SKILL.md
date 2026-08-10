@@ -23,6 +23,14 @@ optimization, or a meaningful correctness-versus-throughput tradeoff. Use
 agent judgment, and prefer one comparison at a coherent checkpoint over
 repeated measurements while the implementation is still moving.
 
+For routine work, stop after that comparison rules out a scale-changing
+regression. Do not rerun benchmarks, capture profiles, or alter an otherwise
+sound design merely to recover another roughly 10% or other modest movement.
+Iterate only when performance is explicitly the task, a concrete user-visible
+requirement exists, or the first result reveals a multiplier-sized regression
+likely to change the decision. A benchmark result does not by itself expand the
+task into optimization work.
+
 Do not benchmark solely to populate a pull-request section or handoff. "No
 expected impact" and "Not measured" are valid conclusions. Baseline and
 comparison commands are opt-in development tools, not validation targets.
@@ -106,7 +114,10 @@ capture.
 ## Capture and inspect CPU samples
 
 Use the optimized symbol-rich build for CPU attribution. Do not overwrite the
-baseline:
+baseline. Do not capture samples merely because a benchmark was run or to
+explain a modest delta that does not warrant action; report that context and
+stop. Capture only when further investigation is in scope and attribution is
+likely to guide it:
 
 ```sh
 make profile-engine PROFILE_GAMES=20000 PROFILE_SEED=1 \

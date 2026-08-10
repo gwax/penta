@@ -97,6 +97,14 @@ a suspected regression, an explicit optimization, or a meaningful
 correctness-versus-throughput tradeoff. Prefer one comparison at a coherent
 checkpoint over repeated measurements during implementation.
 
+For routine work, once that comparison rules out a scale-changing regression,
+record the result and move on. Do not rerun benchmarks, collect profiles, or
+change an otherwise sound design merely to recover another roughly 10% or
+other modest movement. Iterative measurement and optimization are appropriate
+when performance is explicitly the task, a concrete user-visible requirement
+exists, or initial evidence reveals a multiplier-sized regression likely to
+change the decision.
+
 In pull requests and handoffs, include performance context when it is useful;
 a short expected-impact note is enough. Improvement, regression, no expected
 impact, and not measured are all valid, and agents should not benchmark merely
