@@ -7528,8 +7528,9 @@ impl Game {
                 .collect(),
             CardBehavior::Fireball => {
                 let targets = self.damage_targets();
+                // "Any number of targets" starts at none (CR 601.2c).
                 let counts: Vec<_> =
-                    exact_count.map_or_else(|| (1..=targets.len()).collect(), |count| vec![count]);
+                    exact_count.map_or_else(|| (0..=targets.len()).collect(), |count| vec![count]);
                 counts
                     .into_iter()
                     .flat_map(|count| target_combinations(&targets, count))

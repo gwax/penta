@@ -3645,6 +3645,69 @@ fn fireball_pays_for_multiple_targets_and_divides_x_evenly() {
 }
 
 #[test]
+fn fireball_may_be_cast_with_no_targets_at_all() {
+    // "Any number of targets" includes none. It is a bad play, but it is a
+    // legal one, and a spell that insists on a target is a different card.
+    let mut game = ready_game();
+    let fireball = card(10_000, cards::FIREBALL, PlayerId::One);
+    game.players[0].hand.push(fireball.clone());
+    game.players[0].mana_pool.red = 6;
+
+    let action = cast_action(fireball.id, Vec::new(), Vec::new(), 5);
+    assert!(game.legal_actions(PlayerId::One).contains(&action));
+
+    game.apply(PlayerId::One, action).unwrap();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[1].life, 20,
+        "nothing to divide the damage among"
+    );
+    assert_eq!(game.players[0].life, 20);
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::FIREBALL),
+        "and it still resolved rather than fizzling"
+    );
+}
+
+#[test]
+fn fireball_keeps_dividing_by_the_targets_it_was_cast_with() {
+    // A target that vanishes does not make the survivor's share larger: the
+    // division is fixed by how many targets Fireball was aimed at.
+    let mut game = ready_game();
+    let fireball = card(10_000, cards::FIREBALL, PlayerId::One);
+    game.players[0].hand.push(fireball.clone());
+    game.players[0].mana_pool.red = 7;
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two));
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            fireball.id,
+            vec![
+                Target::Player(PlayerId::Two),
+                Target::Permanent(GameObjectId(10_001)),
+            ],
+            Vec::new(),
+            5,
+        ),
+    )
+    .unwrap();
+    game.battlefield
+        .retain(|permanent| permanent.card.id != GameObjectId(10_001));
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[1].life, 18,
+        "two each, and the fifth point is lost to the rounding"
+    );
+}
+
+#[test]
 fn fireball_cannot_spread_further_than_the_extra_cost_allows() {
     // Six red pays {R} plus X=4 with one extra target. A third target costs
     // another {1}, which is one more than the pool has, so that spread is not

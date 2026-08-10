@@ -90,10 +90,10 @@ pub(in crate::card::sets) static FIREBALL: CardRecord = CardRecord::new(
             "The play option adds the generic cost before the spell is offered, \
              so an unaffordable spread of targets is never a legal action.",
         ),
-        AbilityDef::custom_partial(
+        AbilityDef::custom_full(
             "Fireball deals X damage divided evenly, rounded down, among any number of targets.",
             CardBehavior::Fireball,
-            "The target-selection and damage-division procedure needs a full correctness review.",
+            "The card-local selector offers every combination of damage targets, including none, and the resolver divides X by the count it was cast with rather than by the targets that survive.",
         ),
     ]),
 );
