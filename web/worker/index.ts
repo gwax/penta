@@ -60,8 +60,14 @@ interface AssetBinding {
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
 }
 
+interface DurableObjectNamespace {
+  idFromName(name: string): unknown;
+  get(id: unknown): { fetch(request: Request): Promise<Response> };
+}
+
 interface Env {
   ASSETS: AssetBinding;
+  GAME_ROOMS: DurableObjectNamespace;
   // Reserved for a future Sites database binding; this project currently has none.
   DB: unknown;
   IMAGES: {
@@ -93,6 +99,15 @@ const worker = {
       return selfCheck();
     }
 
+    // /_game/<id>/<start|observe|act|record>. The id names the Durable
+    // Object, so every request for one game reaches the same instance and the
+    // engine has a single writer.
+    const room = url.pathname.match(/^\/_game\/([^/]+)\/[^/]+$/);
+    if (room) {
+      const stub = env.GAME_ROOMS.get(env.GAME_ROOMS.idFromName(room[1]));
+      return stub.fetch(request);
+    }
+
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(request, {
@@ -107,5 +122,7 @@ const worker = {
     return handler.fetch(request, env, ctx);
   },
 };
+
+export { GameRoom } from "./game-room";
 
 export default worker;

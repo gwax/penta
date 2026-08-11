@@ -5,11 +5,16 @@ import { getWorktreeDevPort } from "./worktree-port.js";
 // macOS Seatbelt blocks FSEvents, so sandboxed previews need polling for HMR.
 const isSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
-// The game runs entirely in the browser, so the Worker serves the app and its
-// assets and needs no storage bindings.
+// The Worker serves the app, and hosts games the engine runs server-side.
+// One Durable Object per game keeps the engine authoritative and gives each
+// game a single writer, so two actions cannot race.
 const workerConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
+  durable_objects: {
+    bindings: [{ name: "GAME_ROOMS", class_name: "GameRoom" }],
+  },
+  migrations: [{ tag: "v1", new_sqlite_classes: ["GameRoom"] }],
 };
 
 export default defineConfig(async () => {
