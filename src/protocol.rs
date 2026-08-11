@@ -49,7 +49,9 @@ use crate::{
 /// slots positionally, including flattened target ranges for selected modes.
 /// Version 15 adds planeswalker combat: attack defenders, damage to
 /// planeswalkers, and the loyalty state a client needs to render them.
-pub const PROTOCOL_VERSION: u32 = 15;
+/// Version 16 completes Boros Charm, adding its target-free Indestructible mode
+/// and planeswalker targets for its damage mode to supported-format actions.
+pub const PROTOCOL_VERSION: u32 = 16;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
@@ -873,6 +875,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::TheDark => "the-dark",
         CardSet::FallenEmpires => "fallen-empires",
         CardSet::Promo1994 => "promo-1994",
+        CardSet::Darksteel => "darksteel",
         CardSet::PlanarChaos => "planar-chaos",
         CardSet::FutureSight => "future-sight",
         CardSet::Innistrad => "innistrad",
@@ -2049,6 +2052,9 @@ mod tests {
         let blood_moon = find("Blood Moon");
         assert_eq!(blood_moon["implementationStatus"], "complete");
         assert_eq!(blood_moon["parts"][0]["implementationStatus"], "complete");
+        let boros_charm = find("Boros Charm");
+        assert_eq!(boros_charm["implementationStatus"], "complete");
+        assert_eq!(boros_charm["parts"][0]["implementationStatus"], "complete");
 
         assert!(cards.iter().all(|card| {
             card["playOptions"].as_array().is_some_and(|options| {
@@ -2060,11 +2066,11 @@ mod tests {
     }
 
     #[test]
-    fn migrated_spells_enrich_protocol_15_catalog_targets_compatibly() {
+    fn migrated_spells_do_not_require_an_additional_protocol_bump() {
         let catalog = poc::catalog().expect("catalog builds");
         let value = catalog_json_for_format(&catalog, Format::IsdRtrStandard);
-        assert_eq!(PROTOCOL_VERSION, 15);
-        assert_eq!(value["protocolVersion"], 15);
+        assert_eq!(PROTOCOL_VERSION, 16, "Boros Charm owns this branch's bump");
+        assert_eq!(value["protocolVersion"], PROTOCOL_VERSION);
 
         let cards = value["cards"].as_array().expect("cards array");
         let expected = [
@@ -2551,6 +2557,8 @@ mod tests {
         assert_eq!(find("Lightning Bolt")["legal"], false);
         assert_eq!(find("Thespian's Stage")["debutSet"], "gatecrash");
         assert_eq!(find("Thespian's Stage")["legal"], true);
+        assert_eq!(find("Darksteel Ingot")["debutSet"], "darksteel");
+        assert_eq!(find("Darksteel Ingot")["legal"], false);
         assert_eq!(find("Dryad Arbor")["debutSet"], "future-sight");
         assert_eq!(find("Dryad Arbor")["legal"], false);
         assert_eq!(find("Nylea's Presence")["debutSet"], "theros");

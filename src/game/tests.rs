@@ -10130,6 +10130,94 @@ fn regeneration_shields_stop_destroy_but_not_wrath() {
 }
 
 #[test]
+fn shatter_does_not_destroy_darksteel_ingot() {
+    let mut game = ready_game();
+    let ingot = creature(10_000, cards::DARKSTEEL_INGOT, PlayerId::Two);
+    let ingot_id = ingot.card.id;
+    let shatter = card(10_001, cards::SHATTER, PlayerId::One);
+    game.battlefield.push(ingot);
+    game.players[0].hand.push(shatter.clone());
+    game.players[0].mana_pool.colorless = 1;
+    game.players[0].mana_pool.red = 1;
+
+    let cast = cast_action(shatter.id, vec![Target::Permanent(ingot_id)], Vec::new(), 0);
+    assert!(
+        game.legal_actions(PlayerId::One).contains(&cast),
+        "indestructible does not make the artifact an illegal target",
+    );
+    game.apply(PlayerId::One, cast).unwrap();
+    pass_priority_pair(&mut game);
+
+    let ingot = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == ingot_id)
+        .expect("Darksteel Ingot survives Shatter");
+    assert!(game.permanent_has_executable_keyword(ingot, KeywordAbility::Indestructible));
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SHATTER),
+        "Shatter resolved and went to its owner's graveyard",
+    );
+}
+
+#[test]
+fn indestructible_stops_destruction_and_lethal_damage_but_not_other_death() {
+    let mut game = ready_game();
+    let mut lions = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    let lions_id = lions.card.id;
+    lions
+        .temporary_keywords
+        .push(KeywordAbility::Indestructible);
+    game.battlefield.push(lions);
+
+    game.destroy_permanent_without_regeneration(lions_id);
+    assert_eq!(
+        game.battlefield.len(),
+        1,
+        "no-regeneration destroy still fails"
+    );
+
+    game.battlefield[0].damage = 1;
+    game.check_state_based_actions();
+    assert_eq!(
+        game.battlefield.len(),
+        1,
+        "lethal damage does not destroy it"
+    );
+
+    game.battlefield[0].toughness_bonus = -1;
+    game.check_state_based_actions();
+    assert!(
+        game.battlefield.is_empty(),
+        "zero toughness puts it into the graveyard without destroying it",
+    );
+
+    let mut angel = creature(10_001, cards::SERRA_ANGEL, PlayerId::One);
+    angel
+        .temporary_keywords
+        .push(KeywordAbility::Indestructible);
+    angel.damage = 1;
+    angel.deathtouch_damage = true;
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    game.check_state_based_actions();
+    assert_eq!(
+        game.battlefield.len(),
+        1,
+        "deathtouch damage does not destroy it"
+    );
+
+    game.sacrifice_permanent(angel_id);
+    assert!(
+        game.battlefield.is_empty(),
+        "indestructible can be sacrificed"
+    );
+}
+
+#[test]
 fn moat_prevents_nonfliers_and_argothian_pixies_dodge_artifact_blockers() {
     let mut game = ready_game();
     game.step = Step::DeclareAttackers;
@@ -16257,6 +16345,124 @@ fn boros_charm_burns_a_player_for_four() {
     assert_eq!(
         game.players[0].life, 20,
         "it is a targeted burn, not a sweep"
+    );
+}
+
+#[test]
+fn boros_charm_burns_a_planeswalker_for_four() {
+    let mut game = ready_game();
+    let mut domri = creature(10_000, cards::DOMRI_RADE, PlayerId::Two);
+    domri.set_counters(CounterKind::Loyalty, 3);
+    let domri_id = domri.card.id;
+    game.battlefield.push(domri);
+    let lions = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let lions_id = lions.card.id;
+    game.battlefield.push(lions);
+    let charm = card(10_002, cards::BOROS_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.white = 1;
+
+    let cast = cast_mode(charm.id, ModeId(0), vec![Target::Permanent(domri_id)]);
+    assert!(
+        game.legal_actions(PlayerId::One).contains(&cast),
+        "the printed player-or-planeswalker target includes Domri",
+    );
+    assert!(
+        !game.legal_actions(PlayerId::One).contains(&cast_mode(
+            charm.id,
+            ModeId(0),
+            vec![Target::Permanent(lions_id)],
+        )),
+        "the broader catalog projection does not make a creature a legal target",
+    );
+    game.apply(PlayerId::One, cast).unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != domri_id),
+        "four damage removes a planeswalker with three loyalty",
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::DOMRI_RADE),
+    );
+    assert_eq!(game.players[1].life, 20, "the planeswalker took the damage");
+}
+
+#[test]
+fn boros_charm_protects_only_your_current_permanents_until_cleanup() {
+    let mut game = ready_game();
+    let own_creature = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    let own_creature_id = own_creature.card.id;
+    let own_artifact = creature(10_001, cards::SOL_RING, PlayerId::One);
+    let own_artifact_id = own_artifact.card.id;
+    let opposing_creature = creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let opposing_creature_id = opposing_creature.card.id;
+    game.battlefield
+        .extend([own_creature, own_artifact, opposing_creature]);
+    let charm = card(10_003, cards::BOROS_CHARM, PlayerId::One);
+    game.players[0].hand.push(charm.clone());
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.white = 1;
+
+    let cast = cast_mode(charm.id, ModeId(1), Vec::new());
+    assert!(
+        game.legal_actions(PlayerId::One).contains(&cast),
+        "the target-free Indestructible mode is executable",
+    );
+    game.apply(PlayerId::One, cast).unwrap();
+    pass_priority_pair(&mut game);
+
+    let has_indestructible = |game: &Game, id| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .is_some_and(|permanent| {
+                game.permanent_has_executable_keyword(permanent, KeywordAbility::Indestructible)
+            })
+    };
+    assert!(has_indestructible(&game, own_creature_id));
+    assert!(
+        has_indestructible(&game, own_artifact_id),
+        "the mode protects every permanent type, not only creatures",
+    );
+    assert!(!has_indestructible(&game, opposing_creature_id));
+
+    let later_artifact = creature(10_004, cards::FELLWAR_STONE, PlayerId::One);
+    let later_artifact_id = later_artifact.card.id;
+    game.battlefield.push(later_artifact);
+    assert!(
+        !has_indestructible(&game, later_artifact_id),
+        "the resolving spell snapshots the permanents it grants to",
+    );
+
+    game.destroy_permanent_without_regeneration(own_creature_id);
+    game.destroy_permanent_without_regeneration(own_artifact_id);
+    game.destroy_permanent_without_regeneration(opposing_creature_id);
+    assert!(has_indestructible(&game, own_creature_id));
+    assert!(has_indestructible(&game, own_artifact_id));
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != opposing_creature_id),
+        "the opposing permanent was never protected",
+    );
+
+    game.finish_cleanup();
+    assert!(!has_indestructible(&game, own_creature_id));
+    assert!(!has_indestructible(&game, own_artifact_id));
+    game.destroy_permanent_without_regeneration(own_creature_id);
+    game.destroy_permanent_without_regeneration(own_artifact_id);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| { ![own_creature_id, own_artifact_id].contains(&permanent.card.id) }),
+        "the grant expires during cleanup",
     );
 }
 

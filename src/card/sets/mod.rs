@@ -8,6 +8,7 @@
 mod tokens;
 mod y1993;
 mod y1994;
+mod y2004;
 mod y2007;
 mod y2011;
 mod y2012;
@@ -106,6 +107,11 @@ const SET_MODULES: &[SetModule] = &[
         y1994::promo_1994::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Darksteel,
+        y2004::darksteel::CARDS,
+        y2004::darksteel::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::PlanarChaos,
         y2007::planar_chaos::CARDS,
         y2007::planar_chaos::ADDITIONAL_PRINTINGS,
@@ -168,7 +174,7 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let mut definitions = Vec::with_capacity(262);
+    let mut definitions = Vec::with_capacity(263);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }
@@ -307,7 +313,7 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
 mod tests {
     use std::collections::HashSet;
 
-    use super::{CardRecord, SET_MODULES, y1993, y1994, y2011, y2012, y2013};
+    use super::{CardRecord, SET_MODULES, y1993, y1994, y2004, y2011, y2012, y2013};
     use crate::card::{
         AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityProcedureDef, AddManaEffectDef,
         AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardPrinting, CardPrintingId,
@@ -445,6 +451,7 @@ mod tests {
                 | KeywordAbility::Hexproof
                 | KeywordAbility::Intimidate
                 | KeywordAbility::Undying
+                | KeywordAbility::Indestructible
                 | KeywordAbility::Mountainwalk
                 | KeywordAbility::Forestwalk
                 | KeywordAbility::AttacksEachCombatIfAble
@@ -1435,6 +1442,7 @@ mod tests {
             "every format-supported set must be cataloged",
         );
         for testbed_set in [
+            CardSet::Darksteel,
             CardSet::PlanarChaos,
             CardSet::FutureSight,
             CardSet::Theros,
@@ -1444,14 +1452,14 @@ mod tests {
             assert!(!Format::OldSchool9394.allows_set(testbed_set));
             assert!(!Format::IsdRtrStandard.allows_set(testbed_set));
         }
-        assert_eq!(registered_sets.len(), 24);
+        assert_eq!(registered_sets.len(), 25);
         assert_eq!(
             registered_sets
                 .iter()
                 .copied()
                 .collect::<HashSet<_>>()
                 .len(),
-            24
+            25
         );
 
         for module in SET_MODULES {
@@ -1471,13 +1479,13 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 262);
+        assert_eq!(records.len(), 263);
 
         let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(
             ids.iter().map(|id| id.0).collect::<Vec<_>>(),
-            (1..=262).collect::<Vec<_>>()
+            (1..=263).collect::<Vec<_>>()
         );
         // Names identify the cards a decklist can name. Tokens are not among
         // them, and Magic prints several that share a name.
@@ -1498,7 +1506,7 @@ mod tests {
     #[test]
     fn built_in_catalog_indexes_definitions_and_printings_separately() {
         let catalog = crate::card::catalog().unwrap();
-        let printing_count = (1..=262)
+        let printing_count = (1..=263)
             .filter(|id| {
                 *id != cards::BEAST_TOKEN_3_3_GREEN.0
                     && *id != cards::KNIGHT_TOKEN_2_2_WHITE.0
@@ -1515,7 +1523,7 @@ mod tests {
             .map(|id| catalog.printings_for(CardDefinitionId(id)).len())
             .sum::<usize>();
 
-        assert_eq!(printing_count, 631);
+        assert_eq!(printing_count, 632);
         for variant in 0..3 {
             assert!(
                 catalog
@@ -1536,7 +1544,7 @@ mod tests {
             .iter()
             .flat_map(|module| module.cards.iter().copied())
             .collect::<Vec<_>>();
-        assert_eq!(records.len(), 262);
+        assert_eq!(records.len(), 263);
 
         for record in records {
             let definition = record.definition();
@@ -1859,10 +1867,11 @@ mod tests {
             &y1993::alpha::BIRDS_OF_PARADISE,
             &y1993::alpha::LLANOWAR_ELVES,
             &y1994::the_dark::FELLWAR_STONE,
+            &y2004::darksteel::DARKSTEEL_INGOT,
             &y2011::innistrad::AVACYNS_PILGRIM,
             &y2013::magic_2014::ELVISH_MYSTIC,
         ];
-        assert_eq!(records.len(), 13);
+        assert_eq!(records.len(), 14);
         for record in records {
             assert!(
                 record.rules.ability_clauses().iter().any(|ability| {

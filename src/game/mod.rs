@@ -1686,7 +1686,7 @@ impl CardRuntime<'_> {
             .copied()
             .filter(|id| self.game.permanent_controller(*id) == Some(player))
             .collect::<Vec<_>>();
-        self.game.destroy_permanents(&controlled, false);
+        self.game.move_permanents_to_graveyard(&controlled);
     }
 }
 
@@ -6303,7 +6303,7 @@ impl Game {
         if !optional && candidates.len() <= 1 {
             let sacrificed = candidates.first().map(|only| only.id);
             if let Some(sacrificed) = sacrificed {
-                self.destroy_permanents(&[sacrificed], false);
+                self.move_permanents_to_graveyard(&[sacrificed]);
             }
             if let Some(followup) = followup {
                 self.resolve_sacrifice_followup(&followup, sacrificed);
@@ -6868,7 +6868,7 @@ impl Game {
             }
             DecisionContinuation::PileChoice { first, second } => {
                 let chosen = if options.contains(&0) { first } else { second };
-                self.destroy_permanents(&chosen, false);
+                self.move_permanents_to_graveyard(&chosen);
             }
             DecisionContinuation::DestroyOfChoice { can_regenerate } => {
                 let doomed = pending
@@ -6950,7 +6950,7 @@ impl Game {
                     .filter_map(|option| option.card.map(|(card, _)| card))
                     .collect::<Vec<_>>();
                 let chosen = sacrificed.first().copied();
-                self.destroy_permanents(&sacrificed, false);
+                self.move_permanents_to_graveyard(&sacrificed);
                 // "If a player does" -- declining an optional sacrifice earns
                 // nothing, while a compulsory one pays out even for nothing.
                 if let Some(followup) = followup
@@ -7067,7 +7067,7 @@ impl Game {
                         BalanceAction::Discard => discards.push(card),
                     }
                 }
-                self.destroy_permanents(&sacrifices, false);
+                self.move_permanents_to_graveyard(&sacrifices);
                 self.discard_cards_with_cause(task.player, &discards, task.cause);
                 if !remaining.is_empty() {
                     let next = remaining.remove(0);
@@ -10193,7 +10193,7 @@ impl Game {
                             })
                     })
                     .collect::<Vec<_>>();
-                self.destroy_permanents(&permanents, false);
+                self.move_permanents_to_graveyard(&permanents);
             }
             EffectDef::DestroyOfChoice {
                 player: recipient,
@@ -10849,7 +10849,7 @@ impl Game {
             match zone {
                 ZoneKind::Exile => self.exile_permanent(id),
                 ZoneKind::Hand => self.return_permanent_to_hand(id),
-                ZoneKind::Graveyard => self.destroy_permanent_without_regeneration(id),
+                ZoneKind::Graveyard => self.move_permanents_to_graveyard(&[id]),
                 ZoneKind::Library => self.return_permanent_to_library(id, placement),
                 ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {}
             }
@@ -15553,6 +15553,10 @@ impl Game {
         self.permanent_has_executable_keyword(permanent, KeywordAbility::Undying)
     }
 
+    fn has_indestructible(&self, permanent: &Permanent) -> bool {
+        self.permanent_has_executable_keyword(permanent, KeywordAbility::Indestructible)
+    }
+
     fn has_hexproof(&self, permanent: &Permanent) -> bool {
         self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof)
     }
@@ -16816,12 +16820,13 @@ impl Game {
         self.destroy_permanents(&[id], true);
     }
 
+    #[cfg(test)]
     fn destroy_permanent_without_regeneration(&mut self, id: GameObjectId) {
         self.destroy_permanents(&[id], false);
     }
 
     fn sacrifice_permanent(&mut self, id: GameObjectId) {
-        self.destroy_permanent_without_regeneration(id);
+        self.move_permanents_to_graveyard(&[id]);
     }
 
     fn destroy_permanents(&mut self, ids: &[GameObjectId], can_regenerate: bool) {
@@ -16839,6 +16844,9 @@ impl Game {
             else {
                 continue;
             };
+            if self.has_indestructible(permanent) {
+                continue;
+            }
             if can_regenerate && permanent.regeneration_shields > 0 {
                 self.regenerate_permanent(id);
             } else {
@@ -17442,10 +17450,14 @@ impl Game {
                 let zero_toughness = toughness <= 0;
                 let lethal_damage = i32::from(permanent.damage) >= i32::from(toughness)
                     || (permanent.damage > 0 && permanent.deathtouch_damage);
-                if !zero_toughness && !lethal_damage {
+                if zero_toughness {
+                    die.push(permanent.card.id);
                     continue;
                 }
-                if !zero_toughness && permanent.regeneration_shields > 0 {
+                if !lethal_damage || self.has_indestructible(permanent) {
+                    continue;
+                }
+                if permanent.regeneration_shields > 0 {
                     regenerate.push(permanent.card.id);
                 } else {
                     die.push(permanent.card.id);
@@ -17537,7 +17549,7 @@ impl Game {
             let Some(extra) = extra else {
                 return;
             };
-            self.destroy_permanent_without_regeneration(extra);
+            self.move_permanents_to_graveyard(&[extra]);
         }
     }
 

@@ -12,14 +12,23 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
-## Unreleased — protocol 15
+## Unreleased — protocol 16
 
-The current development checkout reports engine 0.6.0 and protocol 15. Pin
+The current development checkout reports engine 0.6.0 and protocol 16. Pin
 both; the engine version alone does not distinguish it from earlier 0.6.0
 snapshots.
 
 ### Changed
 
+- Indestructible now stops destroy effects, including those that disallow
+  regeneration, and destruction from lethal or deathtouch damage. Sacrifice,
+  zero toughness, the legend rule, and other non-destroy graveyard moves remain
+  unaffected. Boros Charm now executes all three printed modes: its untargeted
+  mode grants Indestructible to each permanent its caster controls as it
+  resolves, and its damage mode can target either a player or a planeswalker.
+  Those newly offered supported-format actions introduce protocol 16. The
+  unfiltered catalog also adds the off-format Darksteel Ingot test definition
+  (`263`, debut set `darksteel`) as a compatible append-only entry.
 - `DeclareAttacker` now carries a `defender`, naming the player or the
   planeswalker the creature is attacking. A bot that emitted the action
   without one must add it; every legal action the engine offers already
@@ -103,7 +112,7 @@ snapshots.
   the protocol-14 development boundary.
 
 A client migrating from the protocol-7 compatibility boundary should review
-all seven changes above and apply those affecting the surfaces it consumes.
+all nine changes above and apply those affecting the surfaces it consumes.
 
 ## 0.6.0 — protocol 7
 
