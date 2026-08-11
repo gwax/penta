@@ -52,7 +52,7 @@ endef
 	lint lint-rust lint-web lint-infra lint-infra-available lint-python-binding \
 	test test-rust test-rust-full test-rust-slow \
 	test-engine test-engine-unit test-engine-integration test-policy test-wasm-rust \
-	test-profile-attribution test-rust-budget \
+	test-profile-attribution test-rust-budget test-source-file-sizes \
 	build-profile-engine benchmark-engine benchmark-engine-baseline benchmark-engine-compare \
 	profile-engine profile-engine-all profile-engine-open \
 	build-wasm build-web \
@@ -129,6 +129,9 @@ test-rust-slow: ## Run only ignored Rust simulation sweeps.
 
 test-rust-full: ## Run every normal and slow Rust test in one pass.
 	cargo test --locked --profile quick-test --workspace --all-targets -- --include-ignored
+
+test-source-file-sizes: ## Enforce the repository-wide Rust source-file size limit.
+	cargo test --locked --profile quick-test --test source_file_sizes
 
 # Seconds the Rust suite may spend *running*. Compilation is excluded: it is
 # bounded by the job timeout and says nothing about whether a test got slow.
@@ -235,16 +238,16 @@ check-web: lint-web typecheck-web test-web-full ## Run the complete web gate.
 
 check: check-rust check-web lint-infra-available test-profile-attribution ## Run the complete engine, web, and tooling gate.
 
-check-bindings-c: ## Build and smoke-test only the C ABI.
+check-bindings-c: test-source-file-sizes ## Build and smoke-test only the C ABI.
 	./scripts/check-bindings.sh c
 
-check-bindings-python: ## Build and smoke-test only the Python module.
+check-bindings-python: test-source-file-sizes ## Build and smoke-test only the Python module.
 	./scripts/check-bindings.sh python
 
-check-bindings: fmt-python-binding lint-python-binding ## Strictly validate both bot bindings.
+check-bindings: fmt-python-binding lint-python-binding test-source-file-sizes ## Strictly validate both bot bindings.
 	./scripts/check-bindings.sh all
 
-check-bindings-available: ## Smoke-test bindings available on this machine.
+check-bindings-available: test-source-file-sizes ## Smoke-test bindings available on this machine.
 	./scripts/check-bindings.sh available
 
 ci: check check-bindings ## Run every repository gate.

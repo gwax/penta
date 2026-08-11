@@ -71,6 +71,19 @@ All Cargo validation uses committed lockfiles. Clippy runs pedantic with
 `-D warnings`, so the pinned toolchain makes lint changes deliberate rather
 than dependent on a contributor's local compiler.
 
+Rust source files are limited to 1,000 physical lines so modules retain clear
+conceptual boundaries and remain practical to review and merge. The sole
+semantic exception is a direct card-set file matching
+`src/card/sets/y<four ASCII digits>/*.rs`; those files intentionally organize
+the card corpus by set. There is no file-specific allowlist. The guard
+discovers every Cargo root in the repository, including the standalone
+`bindings/penta-py` crate, and scans its `src`, `tests`, `examples`, `benches`,
+and `build.rs` sources. Run it directly with:
+
+```sh
+make test-source-file-sizes
+```
+
 Detailed path-specific validation and UI verification requirements live in
 the canonical repository instructions in `AGENTS.md`.
 
