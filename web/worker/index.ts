@@ -68,6 +68,13 @@ interface DurableObjectNamespace {
 interface Env {
   ASSETS: AssetBinding;
   GAME_ROOMS: DurableObjectNamespace;
+  /**
+   * Set to `enabled` to serve the server-side game routes. They are off by
+   * default and should stay off in anything public: there is no auth and no
+   * rate limit, so a caller can open Durable Objects without bound and make
+   * the Worker play whole games on demand.
+   */
+  HOSTED_GAMES?: string;
   // Reserved for a future Sites database binding; this project currently has none.
   DB: unknown;
   IMAGES: {
@@ -94,15 +101,17 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
+    const hostedGames = env.HOSTED_GAMES === "enabled";
+
     // Proof that the engine runs server-side, not a product endpoint.
     if (url.pathname === "/_engine/self-check") {
-      return selfCheck();
+      return hostedGames ? selfCheck() : new Response("not found", { status: 404 });
     }
 
     // /_game/<id>/<start|observe|act|record>. The id names the Durable
     // Object, so every request for one game reaches the same instance and the
     // engine has a single writer.
-    const room = url.pathname.match(/^\/_game\/([^/]+)\/[^/]+$/);
+    const room = hostedGames ? url.pathname.match(/^\/_game\/([^/]+)\/[^/]+$/) : null;
     if (room) {
       const stub = env.GAME_ROOMS.get(env.GAME_ROOMS.idFromName(room[1]));
       return stub.fetch(request);

@@ -14,6 +14,9 @@ const workerConfig = {
   durable_objects: {
     bindings: [{ name: "GAME_ROOMS", class_name: "GameRoom" }],
   },
+  // Local development serves the hosted-game routes; a deploy has to opt in.
+  // They have no auth and no rate limit yet.
+  vars: { HOSTED_GAMES: "enabled" },
   migrations: [{ tag: "v1", new_sqlite_classes: ["GameRoom"] }],
 };
 
