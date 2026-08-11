@@ -1,0 +1,847 @@
+use super::*;
+
+#[test]
+fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
+    let (mut game, grantor, receiver, definition_a, definition_b) = copied_grant_source_game();
+    let first_origin = sole_granted_origin(&game, receiver);
+    assert_eq!(first_origin, copied_grant_origin(grantor, definition_a));
+    assert_eq!(
+        game.ability_for_origin(receiver, first_origin)
+            .map(|ability| ability.text),
+        Some("Gain 1 life."),
+    );
+    let stale_action = Action::ActivateAbility {
+        source: receiver,
+        ability: first_origin,
+        targets: Vec::new(),
+        cost_object: None,
+        x: 0,
+    };
+    assert!(game.legal_actions(PlayerId::One).contains(&stale_action));
+
+    game.battlefield[0].copy_effect = Some(copied_characteristics(definition_b));
+    let second_origin = sole_granted_origin(&game, receiver);
+    assert_eq!(second_origin, copied_grant_origin(grantor, definition_b));
+    assert_ne!(first_origin, second_origin);
+    assert_eq!(game.ability_for_origin(receiver, first_origin), None);
+    assert_eq!(
+        game.ability_for_origin(receiver, second_origin)
+            .map(|ability| ability.text),
+        Some("Lose 1 life."),
+    );
+    let current_actions = game.legal_actions(PlayerId::One);
+    assert!(
+        !current_actions.contains(&stale_action),
+        "a stale action must not alias a same-position grant from different copied rules",
+    );
+    assert!(current_actions.contains(&Action::ActivateAbility {
+        source: receiver,
+        ability: second_origin,
+        targets: Vec::new(),
+        cost_object: None,
+        x: 0,
+    }));
+}
+
+static MULTI_SLOT_ACTIVATION_TARGETS: [AbilityTargetDef; 2] = [
+    AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(PlayerRelation::Opponent)),
+    AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    }),
+];
+static MULTI_SLOT_ACTIVATION_EFFECTS: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex(1)),
+        amount: ValueDef::Constant(1),
+    },
+];
+static MULTI_SLOT_ACTIVATION_ABILITIES: [AbilityDef; 1] = [AbilityDef::activated_with_targets(
+    "Sacrifice this artifact: It deals 1 damage to target opponent and 1 damage to target creature that player controls.",
+    &[AbilityCostDef::SacrificeSource],
+    &MULTI_SLOT_ACTIVATION_TARGETS,
+    EffectDef::Sequence(&MULTI_SLOT_ACTIVATION_EFFECTS),
+)];
+
+#[test]
+fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source() {
+    let definition_id = CardDefinitionId(10_063);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Multi-slot activation test card",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0))
+        .with_abilities(&MULTI_SLOT_ACTIVATION_ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    let source = CardInstanceId(10_000);
+    let creature_target = CardInstanceId(10_001);
+    game.battlefield.extend([
+        creature(source.0, definition_id, PlayerId::One),
+        creature(creature_target.0, cards::SERRA_ANGEL, PlayerId::Two),
+    ]);
+    let targets = vec![
+        TargetSelection::single(TargetSlotId(0), Target::Player(PlayerId::Two)),
+        TargetSelection::single(TargetSlotId(1), Target::Permanent(creature_target)),
+    ];
+    let activation = Action::ActivateAbility {
+        source,
+        ability: primary_ability(definition_id),
+        targets: targets.clone(),
+        cost_object: None,
+        x: 0,
+    };
+
+    let invalid_slots = Action::ActivateAbility {
+        source,
+        ability: primary_ability(definition_id),
+        targets: vec![
+            TargetSelection::single(TargetSlotId(1), Target::Player(PlayerId::Two)),
+            TargetSelection::single(TargetSlotId(0), Target::Permanent(creature_target)),
+        ],
+        cost_object: None,
+        x: 0,
+    };
+    assert!(game.apply(PlayerId::One, invalid_slots).is_err());
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == source),
+        "slot validation must happen before sacrificing the source",
+    );
+    assert!(game.stack.is_empty());
+
+    assert!(
+        game.legal_actions(PlayerId::One).contains(&activation),
+        "declarative action generation must retain abilities with multiple target slots",
+    );
+    game.apply(PlayerId::One, activation).unwrap();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != source),
+        "the source was sacrificed as an activation cost",
+    );
+    let payload = game.stack[0]
+        .ability
+        .as_ref()
+        .expect("the activated ability has a frozen payload");
+    assert_eq!(payload.target_defs, &MULTI_SLOT_ACTIVATION_TARGETS);
+    assert_eq!(payload.targets, targets);
+
+    pass_priority_pair(&mut game);
+    assert_eq!(game.players[1].life, 19);
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == creature_target)
+            .is_some_and(|permanent| permanent.damage == 1),
+    );
+}
+
+#[test]
+fn one_ability_target_slot_resolves_for_every_selected_legal_target() {
+    static TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
+        predicate: AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            zones: &[ZoneKind::Battlefield],
+            controller: Some(PlayerRelation::Opponent),
+            owner: None,
+        },
+        minimum: 1,
+        maximum: 2,
+        divided_total: None,
+    }];
+    static ABILITIES: [AbilityDef; 1] = [AbilityDef::activated_with_targets(
+        "Deal 1 damage to up to two target creatures an opponent controls.",
+        &[],
+        &TARGETS,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(1),
+        },
+    )];
+
+    let definition_id = CardDefinitionId(10_064);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Multi-target slot test card",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    let source = CardInstanceId(10_000);
+    let first_target = CardInstanceId(10_001);
+    let second_target = CardInstanceId(10_002);
+    game.battlefield.extend([
+        creature(source.0, definition_id, PlayerId::One),
+        creature(first_target.0, cards::SERRA_ANGEL, PlayerId::Two),
+        creature(second_target.0, cards::SERRA_ANGEL, PlayerId::Two),
+    ]);
+    let action = Action::ActivateAbility {
+        source,
+        ability: primary_ability(definition_id),
+        targets: vec![TargetSelection::new(
+            TargetSlotId(0),
+            vec![
+                Target::Permanent(first_target),
+                Target::Permanent(second_target),
+            ],
+        )],
+        cost_object: None,
+        x: 0,
+    };
+
+    assert!(game.legal_actions(PlayerId::One).contains(&action));
+    game.apply(PlayerId::One, action).unwrap();
+    pass_priority_pair(&mut game);
+
+    for target in [first_target, second_target] {
+        assert!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == target)
+                .is_some_and(|permanent| permanent.damage == 1),
+            "every legal target selected in the slot receives the effect",
+        );
+    }
+}
+
+#[test]
+fn granted_ability_keeps_its_frozen_resolver_when_the_source_changes() {
+    static TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Any,
+            zones: &[ZoneKind::Battlefield],
+            controller: None,
+            owner: None,
+        },
+    )];
+    static GRANTED_ABILITY: AbilityDef = AbilityDef::activated_with_targets(
+        "{T}: Tap target permanent.",
+        &[AbilityCostDef::TapSource],
+        &TARGETS,
+        EffectDef::Tap {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )
+    .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::IcyManipulator))
+    .with_coverage(AbilityCoverageDef::explained_complete(
+        "The test intentionally grants a custom resolver.",
+    ));
+    static SOURCE_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+        "This permanent has the test ability.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )];
+    let definition_id = CardDefinitionId(10_061);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Granted resolver test card",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules =
+        CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&SOURCE_ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    game.battlefield.extend([
+        creature(10_000, definition_id, PlayerId::One),
+        creature(10_001, cards::MOUNTAIN, PlayerId::Two),
+    ]);
+    let source = CardInstanceId(10_000);
+    let target = CardInstanceId(10_001);
+    let source_card = game.battlefield[0].card.clone();
+    let origin = AbilityOrigin::Granted {
+        source,
+        source_definition: definition_id,
+        source_part: CardPartId::PRIMARY,
+        source_ability: AbilityId::PRIMARY,
+        grant: GrantId::PRIMARY,
+    };
+    let frozen = game.freeze_activated_ability(&game.battlefield[0], origin);
+
+    game.push_activated_ability(
+        source,
+        &source_card,
+        PlayerId::One,
+        frozen,
+        activated_targets(Target::Permanent(target)),
+        Vec::new(),
+    );
+    assert_eq!(game.stack[0].ability_origin(), Some(origin));
+    assert!(matches!(
+        game.stack[0]
+            .ability
+            .as_ref()
+            .map(|ability| ability.resolver),
+        Some(StackAbilityResolver::Custom(CardBehavior::IcyManipulator))
+    ));
+
+    // This models a continuous/copy effect changing the effective rules of a
+    // source after activation. The origin remains provenance, while the stack
+    // object's executable payload must remain the Icy Manipulator procedure.
+    game.battlefield[0].copy_effect = Some(copied_characteristics(cards::JAYEMDAE_TOME));
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == target)
+            .is_some_and(|permanent| permanent.tapped),
+        "resolution must not rediscover a different handler from the changed source",
+    );
+}
+
+#[test]
+fn declarative_clause_uses_its_own_resolver_on_a_card_with_custom_behavior() {
+    static TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::AnyTarget,
+    )];
+    static ABILITIES: [AbilityDef; 2] = [
+        AbilityDef::activated_with_targets(
+            "Deal 1 damage to any target.",
+            &[],
+            &TARGETS,
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::custom_full(
+            "A separate custom clause.",
+            CardBehavior::IcyManipulator,
+            "The test keeps one explicitly custom clause beside the declarative clause.",
+        ),
+    ];
+    let definition_id = CardDefinitionId(10_060);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Mixed resolver test card",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_artifact(ManaCost::new(0, 0)).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    game.catalog = CardCatalog::new([definition]).unwrap();
+    game.battlefield
+        .push(creature(10_060, definition_id, PlayerId::One));
+    let source = CardInstanceId(10_060);
+    let source_card = game.battlefield[0].card.clone();
+    let origin = primary_ability(definition_id);
+    let frozen = game.freeze_activated_ability(&game.battlefield[0], origin);
+
+    game.push_activated_ability(
+        source,
+        &source_card,
+        PlayerId::One,
+        frozen,
+        activated_targets(Target::Player(PlayerId::Two)),
+        Vec::new(),
+    );
+    assert!(matches!(
+        game.stack[0]
+            .ability
+            .as_ref()
+            .map(|ability| ability.resolver),
+        Some(StackAbilityResolver::Declarative(ScopedEffect {
+            effect: EffectDef::DealDamage { .. },
+            ..
+        }))
+    ));
+
+    pass_priority_pair(&mut game);
+    assert_eq!(
+        game.players[1].life, 19,
+        "the selected definition must not dispatch through Icy's unrelated hook",
+    );
+}
+
+#[test]
+fn legacy_activated_clauses_dispatch_from_their_own_effect_execution() {
+    static PLAYER_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Player(PlayerRelation::Any),
+    )];
+    static GLASSES_COSTS: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+    static DRAGON_COSTS: [AbilityCostDef; 1] = [AbilityCostDef::Mana(ManaCost::new(0, 1))];
+    static ABILITIES: [AbilityDef; 2] = [
+        AbilityDef::activated_with_targets(
+            "{T}: Look at target player's hand.",
+            &GLASSES_COSTS,
+            &PLAYER_TARGETS,
+            EffectDef::Special("Look at the target player's hand"),
+        )
+        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::GlassesOfUrza))
+        .with_coverage(AbilityCoverageDef::explained_complete(
+            "The test uses the legacy hand-viewing resolver.",
+        ))
+        .with_legacy_procedure(),
+        AbilityDef::activated(
+            "{R}: This creature gets +1/+0 until end of turn.",
+            &DRAGON_COSTS,
+            EffectDef::Special("Give the source +1/+0 until end of turn"),
+        )
+        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::DragonWhelp))
+        .with_coverage(AbilityCoverageDef::explained_complete(
+            "The test uses the legacy Dragon Whelp pump resolver.",
+        ))
+        .with_legacy_procedure(),
+    ];
+    let definition_id = CardDefinitionId(10_096);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Multiple legacy activation test",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules =
+        CardRules::new_creature(ManaCost::default(), &[], 1, 1).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    let source = CardInstanceId(10_000);
+    game.battlefield
+        .push(creature(source.0, definition_id, PlayerId::One));
+    game.players[PlayerId::One.index()].mana_pool.red = 1;
+    game.players[PlayerId::Two.index()]
+        .hand
+        .push(card(10_001, cards::MOUNTAIN, PlayerId::Two));
+    let glasses_origin = activated_ability_for(&game, source, 0);
+    let dragon_origin = activated_ability_for(&game, source, 1);
+    let glasses = Action::ActivateAbility {
+        source,
+        ability: glasses_origin,
+        targets: activated_targets(Target::Player(PlayerId::Two)),
+        cost_object: None,
+        x: 0,
+    };
+    let dragon = Action::ActivateAbility {
+        source,
+        ability: dragon_origin,
+        targets: Vec::new(),
+        cost_object: None,
+        x: 0,
+    };
+    let actions = game.legal_actions(PlayerId::One);
+    assert!(actions.contains(&glasses));
+    assert!(actions.contains(&dragon));
+    assert_ne!(glasses_origin, dragon_origin);
+
+    game.apply(PlayerId::One, dragon).unwrap();
+    assert_eq!(game.battlefield[0].power_bonus, 1);
+    assert!(!game.battlefield[0].tapped);
+
+    game.apply(PlayerId::One, glasses).unwrap();
+    assert!(game.battlefield[0].tapped);
+    assert_eq!(
+        game.last_seen_hands[PlayerId::One.index()],
+        Some((
+            PlayerId::Two,
+            vec![(CardInstanceId(10_001), cards::MOUNTAIN)],
+        )),
+    );
+}
+
+#[test]
+fn a_legacy_activation_after_a_shared_clause_keeps_its_own_origin() {
+    static DRAGON_COSTS: [AbilityCostDef; 1] = [AbilityCostDef::Mana(ManaCost::new(0, 1))];
+    static ABILITIES: [AbilityDef; 2] = [
+        AbilityDef::activated(
+            "You gain 1 life.",
+            &[],
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated(
+            "{R}: This creature gets +1/+0 until end of turn.",
+            &DRAGON_COSTS,
+            EffectDef::Special("Give the source +1/+0 until end of turn"),
+        )
+        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::DragonWhelp))
+        .with_coverage(AbilityCoverageDef::explained_complete(
+            "The test uses the legacy Dragon Whelp pump resolver.",
+        ))
+        .with_legacy_procedure(),
+    ];
+    let definition_id = CardDefinitionId(10_097);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Mixed shared and legacy activation test",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules =
+        CardRules::new_creature(ManaCost::default(), &[], 1, 1).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    let source = CardInstanceId(10_000);
+    game.battlefield
+        .push(creature(source.0, definition_id, PlayerId::One));
+    game.players[PlayerId::One.index()].mana_pool.red = 1;
+    let legacy_origin = activated_ability_for(&game, source, 1);
+    let action = Action::ActivateAbility {
+        source,
+        ability: legacy_origin,
+        targets: Vec::new(),
+        cost_object: None,
+        x: 0,
+    };
+
+    assert!(game.legal_actions(PlayerId::One).contains(&action));
+    game.apply(PlayerId::One, action).unwrap();
+    assert_eq!(game.battlefield[0].power_bonus, 1);
+    assert_eq!(game.players[PlayerId::One.index()].life, 20);
+    assert!(game.stack.is_empty());
+}
+
+#[test]
+fn fellwar_mana_and_nested_color_queries_use_their_typed_legacy_clauses() {
+    static COSTS: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+    static ABILITIES: [AbilityDef; 2] = [
+        AbilityDef::custom_full(
+            "An unrelated custom clause.",
+            CardBehavior::LightningBolt,
+            "The test puts a different custom execution first.",
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add one mana of any color that a land an opponent controls could produce.",
+            &COSTS,
+            EffectDef::Special("Add a color an opponent's land could produce"),
+        )
+        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::FellwarStone))
+        .with_coverage(AbilityCoverageDef::explained_complete(
+            "The test uses the legacy Fellwar Stone color resolver.",
+        ))
+        .with_legacy_procedure(),
+    ];
+    let definition_id = CardDefinitionId(10_098);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Typed Fellwar mana test",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_artifact(ManaCost::default()).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut definition);
+    let proxy_definition_id = CardDefinitionId(10_099);
+    let mut proxy_definition = CardDefinition::new(
+        proxy_definition_id,
+        "Typed Fellwar land proxy test",
+        CardSet::Magic2014,
+        false,
+        CardBehavior::Unsupported,
+    );
+    proxy_definition.rules = CardRules::new_land(&[]).with_abilities(&ABILITIES);
+    synchronize_single_part_definition(&mut proxy_definition);
+
+    let mut game = ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    definitions.push(proxy_definition);
+    game.catalog = CardCatalog::new(definitions).unwrap();
+    let source = CardInstanceId(10_000);
+    game.battlefield.extend([
+        creature(source.0, definition_id, PlayerId::One),
+        creature(10_001, proxy_definition_id, PlayerId::Two),
+        creature(10_002, cards::ISLAND, PlayerId::One),
+    ]);
+    let action = Action::ActivateManaAbility {
+        source,
+        ability: mana_ability_for(&game, source, ManaColor::Blue),
+        color: ManaColor::Blue,
+    };
+
+    assert!(game.legal_actions(PlayerId::One).contains(&action));
+    game.apply(PlayerId::One, action).unwrap();
+    assert!(game.battlefield[0].tapped);
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.blue, 1);
+}
+
+#[test]
+fn resolving_ability_masks_an_illegal_target_in_each_frozen_slot() {
+    static TARGETS: [AbilityTargetDef; 2] = [
+        AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            zones: &[ZoneKind::Battlefield],
+            controller: Some(PlayerRelation::You),
+            owner: None,
+        }),
+        AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            zones: &[ZoneKind::Battlefield],
+            controller: Some(PlayerRelation::You),
+            owner: None,
+        }),
+    ];
+    static EFFECTS: [EffectDef; 2] = [
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(1),
+        },
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex(1)),
+            amount: ValueDef::Constant(1),
+        },
+    ];
+
+    let mut game = ready_game();
+    let source = CardInstanceId(10_000);
+    let first = CardInstanceId(10_001);
+    let second = CardInstanceId(10_002);
+    game.battlefield.extend([
+        creature(source.0, cards::ANKH_OF_MISHRA, PlayerId::One),
+        creature(first.0, cards::SERRA_ANGEL, PlayerId::One),
+        creature(second.0, cards::SERRA_ANGEL, PlayerId::One),
+    ]);
+    game.stack.push(StackObject {
+        id: StackObjectId(20_000),
+        kind: StackObjectKind::TriggeredAbility,
+        card: card(20_000, cards::ANKH_OF_MISHRA, PlayerId::One),
+        source: Some(source),
+        ability: Some(StackAbilityPayload {
+            origin: primary_ability(cards::ANKH_OF_MISHRA),
+            definition: None,
+            presentation_definition: cards::ANKH_OF_MISHRA,
+            text: Some("Test two-slot trigger"),
+            target_defs: TARGETS.to_vec(),
+            targets: vec![
+                TargetSelection::single(TargetSlotId(0), Target::Permanent(first)),
+                TargetSelection::single(TargetSlotId(1), Target::Permanent(second)),
+            ],
+            context: TriggerContext {
+                object: None,
+                object_controller: None,
+                event_player: None,
+                amount: None,
+            },
+            resolver: StackAbilityResolver::Declarative(ScopedEffect::primary(
+                EffectDef::Sequence(&EFFECTS),
+            )),
+            condition: None,
+            mode_effects: Vec::new(),
+            x: 0,
+        }),
+        controller: PlayerId::One,
+        signature: None,
+        chosen_permanents: Vec::new(),
+        applied_effects: Vec::new(),
+        text_changes: Vec::new(),
+        colors: None,
+        cast_via_flashback: false,
+        is_copy: false,
+    });
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == first)
+        .unwrap()
+        .controller = PlayerId::Two;
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == first)
+            .unwrap()
+            .damage,
+        0,
+        "an illegal target in one slot is ignored",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == second)
+            .unwrap()
+            .damage,
+        1,
+        "the legal target in the other slot still receives its effect",
+    );
+}
+
+#[test]
+fn copy_artifact_copies_declarative_mana_abilities_without_a_behavior_hook() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SOL_RING, PlayerId::Two));
+    let copy = card(10_001, cards::COPY_ARTIFACT, PlayerId::One);
+    game.players[0].hand.push(copy.clone());
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+    resolve_copy_artifact(&mut game, copy.id, CardInstanceId(10_000));
+
+    let copied_id = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::COPY_ARTIFACT)
+        .expect("Copy Artifact resolved")
+        .card
+        .id;
+    let ability = mana_ability_for(&game, copied_id, ManaColor::Colorless);
+    assert_eq!(ability, primary_ability(cards::SOL_RING));
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: copied_id,
+            ability,
+            color: ManaColor::Colorless,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(game.players[0].mana_pool.colorless, 2);
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == copied_id)
+            .is_some_and(|permanent| permanent.tapped)
+    );
+}
+
+#[test]
+fn dust_to_dust_exiles_two_artifacts_and_hurkyls_recall_returns_them() {
+    let mut game = ready_game();
+    game.battlefield.extend([
+        creature(10_000, cards::SOL_RING, PlayerId::Two),
+        creature(10_001, cards::BLACK_VISE, PlayerId::Two),
+    ]);
+    let dust = spell(10_002, cards::DUST_TO_DUST, PlayerId::One, 0);
+    dust_to_dust_targets(&mut game, dust);
+    assert_eq!(game.players[0].exile.len(), 0);
+    assert_eq!(game.players[1].exile.len(), 2);
+
+    let mut game = ready_game();
+    game.battlefield.extend([
+        creature(10_000, cards::SOL_RING, PlayerId::Two),
+        creature(10_001, cards::BLACK_VISE, PlayerId::Two),
+    ]);
+    let recall = card(10_002, cards::HURKYLS_RECALL, PlayerId::One);
+    game.players[0].hand.push(recall.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    let action = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        recall.id,
+        Target::Player(PlayerId::Two),
+    );
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+    assert_eq!(game.players[1].hand.len(), 2);
+    assert!(game.battlefield.is_empty());
+}
+
+#[test]
+fn hurkyls_recall_follows_ownership_rather_than_control() {
+    let mut game = ready_game();
+    // An artifact its owner has lost control of still goes home to them.
+    let mut stolen = creature(10_000, cards::SOL_RING, PlayerId::Two);
+    stolen.controller = PlayerId::One;
+    game.battlefield.push(stolen);
+    // And one the targeted player controls but does not own stays put.
+    let mut borrowed = creature(10_001, cards::BLACK_VISE, PlayerId::One);
+    borrowed.controller = PlayerId::Two;
+    game.battlefield.push(borrowed);
+
+    let recall = card(10_002, cards::HURKYLS_RECALL, PlayerId::One);
+    game.players[0].hand.push(recall.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    let action = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        recall.id,
+        Target::Player(PlayerId::Two),
+    );
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SOL_RING],
+        "the artifact they own came back even from across the table"
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .map(|permanent| permanent.card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::BLACK_VISE],
+        "and the one they only control was left alone"
+    );
+}
