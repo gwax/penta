@@ -1,24 +1,26 @@
 /**
- * One game, owned by one Durable Object.
+ * One hosted game, owned by one Durable Object.
  *
- * The engine is authoritative here and nowhere else. A seat sends an action
- * index and gets back its own redacted view; it never sees the other hand,
- * the library order, or the seed, because it is never sent them.
+ * The engine is authoritative here, and so is the presentation layer.
+ * `WebGame` -- the same Rust the browser runs for a local game -- lives in
+ * this object, and the browser receives the `state_json()` it already knows
+ * how to render. Nothing is ported to TypeScript and there is no second copy
+ * of the beats, the undo, or the pass label to keep in step.
  *
- * Nothing stores engine state. A game at rest is the format, the decks, the
- * seed and the action indices taken, which is a few hundred bytes, and the
- * engine is deterministic enough to rebuild from it -- see
- * `the_same_seed_produces_the_same_bytes` in the protocol tests. That buys
- * persistence, replays and spectating from one artifact, and it means no
- * stored state has to be migrated when the engine changes.
+ * There is deliberately no client-side copy of the game. A `Game` holds the
+ * opponent's hand and the library order, so a client holding one would be
+ * holding the answers. `state_json()` is a seat's view and is the only thing
+ * that leaves.
  *
- * It does mean a recorded action can stop being legal when the engine
- * changes, so the versions are stored alongside and checked before a rebuild.
- * A mismatch refuses loudly rather than silently producing a different game.
+ * Nothing stores engine state. A game at rest is its configuration plus the
+ * commands issued against it, and it is rebuilt by replaying them, which the
+ * engine's determinism makes exact. Phase stops and auto-pass are in that log
+ * as well as the plays: they change where the engine stops, so a replay that
+ * dropped them would land somewhere else.
  */
 
 type EngineModule = typeof import("../app/wasm/penta_wasm.js");
-type HostedGame = InstanceType<EngineModule["HostedGame"]>;
+type WebGame = InstanceType<EngineModule["WebGame"]>;
 
 let engineReady: Promise<EngineModule> | null = null;
 function engine(): Promise<EngineModule> {
@@ -33,14 +35,29 @@ function engine(): Promise<EngineModule> {
   return engineReady;
 }
 
-/** What is written down. Everything else is rebuilt from it. */
+interface GameConfig {
+  humanDeck: string;
+  botDeck: string;
+  botPolicy: string;
+  humanFirst: boolean;
+  seed: number;
+  format?: string;
+}
+
+/** Everything a seat can do, in a form that can be written down and redone. */
+type Command =
+  | { t: "act"; index: number }
+  | { t: "choose"; decision: number; options: number[] }
+  | { t: "attackAll" }
+  | { t: "cancelAttackers" }
+  | { t: "blocks"; assignments: string }
+  | { t: "undoMana" }
+  | { t: "phaseStop"; phase: string; enabled: boolean }
+  | { t: "autopass"; enabled: boolean };
+
 interface StoredGame {
-  format: string;
-  p1Deck: string;
-  p2Deck: string;
-  /** Text, not a number: a JS number cannot hold the u64 range exactly. */
-  seed: string;
-  actions: number[];
+  config: GameConfig;
+  commands: Command[];
   engineVersion: string;
   protocolVersion: number;
 }
@@ -56,15 +73,43 @@ interface DurableState {
 
 /** Either the live game, a reason it cannot be rebuilt, or neither. */
 interface LoadOutcome {
-  game?: HostedGame;
+  game?: WebGame;
   refused?: string;
 }
 
-const STORED = "game";
+const STORED = "hosted-game";
+
+function apply(game: WebGame, command: Command): void {
+  switch (command.t) {
+    case "act":
+      game.act(command.index);
+      return;
+    case "choose":
+      game.choose_decision(command.decision, JSON.stringify(command.options));
+      return;
+    case "attackAll":
+      game.attack_all();
+      return;
+    case "cancelAttackers":
+      game.cancel_attackers();
+      return;
+    case "blocks":
+      game.finalize_blocks(command.assignments);
+      return;
+    case "undoMana":
+      game.undo_mana();
+      return;
+    case "phaseStop":
+      game.set_phase_stop(command.phase, command.enabled);
+      return;
+    case "autopass":
+      game.set_autopass(command.enabled);
+  }
+}
 
 export class GameRoom {
   readonly #state: DurableState;
-  #game: HostedGame | null = null;
+  #game: WebGame | null = null;
   #stored: StoredGame | null = null;
 
   constructor(state: DurableState) {
@@ -73,78 +118,81 @@ export class GameRoom {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    const action = url.pathname.split("/").pop();
+    const route = url.pathname.split("/").pop();
     try {
-      if (action === "start") {
-        return await this.#start(await request.json());
+      if (route === "start") {
+        return await this.#start((await request.json()) as GameConfig);
       }
       const game = await this.#load();
-      if (!game) {
-        return Response.json({ error: "no game here yet" }, { status: 404 });
+      if (!game) return Response.json({ error: "no game here yet" }, { status: 404 });
+      if (route === "state") return this.#snapshot(game);
+      if (route === "command") {
+        return await this.#command(game, (await request.json()) as Command);
       }
-      if (action === "observe") {
-        return this.#observe(url.searchParams.get("seat") ?? "");
-      }
-      if (action === "act") {
-        return await this.#act(await request.json());
-      }
-      if (action === "record") {
-        return Response.json(this.#stored);
-      }
-      return Response.json({ error: `unknown action ${action}` }, { status: 404 });
+      if (route === "record") return Response.json(this.#stored);
+      return Response.json({ error: `unknown route ${route}` }, { status: 404 });
     } catch (cause) {
       return Response.json({ error: String(cause) }, { status: 400 });
     }
   }
 
-  async #start(body: unknown): Promise<Response> {
-    const { format, p1Deck, p2Deck, seed } = body as Omit<
-      StoredGame,
-      "actions" | "engineVersion" | "protocolVersion"
-    >;
-    const { HostedGame } = await engine();
-    // Constructing before storing means an unknown deck or format is rejected
-    // rather than written down as an unopenable room.
-    const game = new HostedGame(format, p1Deck, p2Deck, seed);
+  #snapshot(game: WebGame): Response {
+    // The same JSON a local game hands the React app, so the browser cannot
+    // tell which side of the wire the engine is on.
+    return new Response(game.state_json(), {
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  async #start(config: GameConfig): Promise<Response> {
+    const { WebGame, HostedGame } = await engine();
+    // Built before it is stored, so a bad deck is rejected rather than
+    // written down as a room that can never open.
+    const game = new WebGame(
+      config.humanDeck,
+      config.botDeck,
+      config.botPolicy,
+      config.humanFirst,
+      config.seed,
+      config.format,
+    );
     const stored: StoredGame = {
-      format,
-      p1Deck,
-      p2Deck,
-      seed,
-      actions: [],
+      config,
+      commands: [],
       engineVersion: HostedGame.engineVersion(),
       protocolVersion: HostedGame.protocolVersion(),
     };
     await this.#state.storage.put(STORED, stored);
     this.#game = game;
     this.#stored = stored;
-    return Response.json({ started: true, seat: game.decisionSeat() });
+    return this.#snapshot(game);
   }
 
-  /**
-   * The live game, rebuilt from the record if this object was evicted since
-   * the last request. `blockConcurrencyWhile` keeps two requests from both
-   * deciding to rebuild.
-   */
-  async #load(): Promise<HostedGame | null> {
+  async #load(): Promise<WebGame | null> {
     if (this.#game) return this.#game;
-    // Throwing inside `blockConcurrencyWhile` resets the Durable Object, so
-    // the caller never sees the reason -- it arrives as an opaque 500. A
-    // refusal is reported as a value instead and turned into a response
-    // outside.
+    // A throw inside `blockConcurrencyWhile` resets the object and the caller
+    // only sees an opaque 500, so a refusal comes back as a value.
     const outcome: LoadOutcome = await this.#state.blockConcurrencyWhile(async () => {
       if (this.#game) return { game: this.#game };
       const stored = await this.#state.storage.get<StoredGame>(STORED);
       if (!stored) return {};
-      const { HostedGame } = await engine();
+      const { WebGame, HostedGame } = await engine();
+      const game = new WebGame(
+        stored.config.humanDeck,
+        stored.config.botDeck,
+        stored.config.botPolicy,
+        stored.config.humanFirst,
+        stored.config.seed,
+        stored.config.format,
+      );
       const engineVersion = HostedGame.engineVersion();
       const protocolVersion = HostedGame.protocolVersion();
       if (
-        stored.engineVersion !== engineVersion ||
-        stored.protocolVersion !== protocolVersion
+        stored.protocolVersion !== protocolVersion ||
+        stored.engineVersion !== engineVersion
       ) {
-        // Replaying across an engine change can produce a different game, or
-        // an action that is no longer legal. Neither is worth guessing at.
+        // Replaying across an engine change can land somewhere else, or on a
+        // command that is no longer legal. Neither is worth guessing at.
         return {
           refused:
             `game was recorded on engine ${stored.engineVersion} protocol ` +
@@ -152,52 +200,31 @@ export class GameRoom {
             `protocol ${protocolVersion}`,
         };
       }
-      this.#game = HostedGame.replay(
-        stored.format,
-        stored.p1Deck,
-        stored.p2Deck,
-        stored.seed,
-        new Uint32Array(stored.actions),
-      );
+      for (const [position, command] of stored.commands.entries()) {
+        try {
+          apply(game, command);
+        } catch (cause) {
+          return {
+            refused:
+              `command ${position} of ${stored.commands.length} ` +
+              `(${command.t}) no longer applies: ${String(cause)}`,
+          };
+        }
+      }
+      this.#game = game;
       this.#stored = stored;
-      return { game: this.#game };
+      return { game };
     });
     if (outcome.refused) throw new Error(outcome.refused);
     return outcome.game ?? null;
   }
 
-  #observe(seat: string): Response {
-    const game = this.#game;
-    if (!game) return Response.json({ error: "no game" }, { status: 404 });
-    // `observeJson` is the redaction boundary. Everything a seat learns comes
-    // through it, so there is one thing to audit rather than a policy spread
-    // across handlers.
-    return new Response(game.observeJson(seat), {
-      headers: { "content-type": "application/json" },
-    });
-  }
-
-  async #act(body: unknown): Promise<Response> {
-    const game = this.#game;
+  async #command(game: WebGame, command: Command): Promise<Response> {
     const stored = this.#stored;
-    if (!game || !stored) return Response.json({ error: "no game" }, { status: 404 });
-    const { seat, index } = body as { seat: string; index: number };
-    // A seat may only act when the engine is waiting on it. Without this a
-    // client could play the other side's turn.
-    const waiting = game.decisionSeat();
-    if (waiting !== seat) {
-      return Response.json(
-        { error: `not ${seat}'s decision; waiting on ${waiting ?? "nobody"}` },
-        { status: 409 },
-      );
-    }
-    game.act(index);
-    stored.actions.push(index);
+    if (!stored) return Response.json({ error: "no game" }, { status: 404 });
+    apply(game, command);
+    stored.commands.push(command);
     await this.#state.storage.put(STORED, stored);
-    return Response.json({
-      seat: game.decisionSeat(),
-      result: game.resultJson() ? JSON.parse(game.resultJson()!) : null,
-      actions: stored.actions.length,
-    });
+    return this.#snapshot(game);
   }
 }
