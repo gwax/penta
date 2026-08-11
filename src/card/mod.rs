@@ -20,6 +20,7 @@ mod sets;
 
 pub(crate) use record::{AbilityPolicyHint, CardAbilityBinding};
 
+pub use behavior::CardBehavior;
 pub use catalog::{CardCatalog, CatalogError, GrantedAbilityValidationError};
 pub use characteristics::{CharacteristicContext, CharacteristicError, applicable_part_ids};
 pub use creature_types::CREATURE_TYPES;
@@ -29,9 +30,9 @@ pub use model::{
     ActivatedAbilityDef, AddManaEffectDef, AdditionalCostDef, AlternateSpellKind,
     AlternativeCastAbilityDef, AlternativeCastKindDef, AlternativeCastManaCostDef,
     AlternativeCostDef, AnimationDef, AppliedEffectDef, AttachedAbilityDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardAbilityList, CardArt, CardBehavior, CardComposition,
-    CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardRules, CardSet,
-    CardStructure, CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef, ConditionDef,
+    BattlefieldEntryModificationDef, CardAbilityList, CardArt, CardComposition, CardDefinition,
+    CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardRules, CardSet, CardStructure,
+    CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef, ConditionDef,
     ConditionalValueDef, CostDef, CountConditionDef, CounterKind, CreatureStats,
     DeclarativeAbilityDef, DividedTotal, DoubleFacedKind, EffectDef, EffectDurationDef,
     EffectExecutionDef, EffectRecipientDef, HybridPair, ImplementationStatus, KeywordAbility,
