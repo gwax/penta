@@ -211,3 +211,80 @@ fn an_external_game_never_prints_the_seed() {
         "a built-in game still shows its courtesy line"
     );
 }
+
+mod replay_journal {
+    use super::*;
+
+    /// Plays a stretch of real game through the public surface, then rebuilds
+    /// from the journal and expects the same board to the byte. This is the
+    /// property a bug report's attachment depends on.
+    #[test]
+    fn a_journal_replays_to_an_identical_snapshot() {
+        let mut game = WebGame::new("Sligh", "Goblins", "Handcrafted", true, 4_242, None)
+            .expect("game starts");
+        let mut acted = 0;
+        for _ in 0..400 {
+            let state: serde_json::Value =
+                serde_json::from_str(&game.state_json()).expect("snapshot is JSON");
+            if state["result"].is_object() {
+                break;
+            }
+            if let Some(decision) = state["decision"].as_object() {
+                let id = u32::try_from(decision["id"].as_u64().expect("id")).expect("fits");
+                let minimum = decision["minimum"].as_u64().unwrap_or(0).max(1);
+                let options: Vec<u64> = decision["options"]
+                    .as_array()
+                    .expect("options")
+                    .iter()
+                    .take(usize::try_from(minimum).expect("fits"))
+                    .map(|option| option["id"].as_u64().expect("option id"))
+                    .collect();
+                game.choose_decision(id, &serde_json::to_string(&options).expect("encodes"))
+                    .expect("decision applies");
+            } else {
+                let actions = state["actions"].as_array().expect("actions");
+                if actions.is_empty() {
+                    break;
+                }
+                let index = actions
+                    .iter()
+                    .position(|action| {
+                        action["label"].as_str().is_some_and(|label| {
+                            label.starts_with("Keep") || label.starts_with("Play ")
+                        })
+                    })
+                    .or_else(|| actions.iter().position(|action| action["kind"] == "pass"))
+                    .unwrap_or(0);
+                game.act(index).expect("action applies");
+            }
+            acted += 1;
+            if acted >= 25 {
+                break;
+            }
+        }
+        // A phase-stop toggle steers the autopass path, so it has to replay too.
+        game.set_phase_stop("Combat", true).expect("stop applies");
+
+        let rebuilt = WebGame::from_replay_json(&game.replay_json()).expect("journal replays");
+        assert!(acted > 5, "the drive did real work: {acted} commands");
+        assert_eq!(
+            rebuilt.state_json(),
+            game.state_json(),
+            "the journal rebuilds the same board"
+        );
+        assert_eq!(rebuilt.replay_json(), game.replay_json());
+    }
+
+    #[test]
+    fn a_replay_from_another_engine_version_is_refused() {
+        let game =
+            WebGame::new("Sligh", "Goblins", "Handcrafted", true, 7, None).expect("game starts");
+        let mut replay: serde_json::Value =
+            serde_json::from_str(&game.replay_json()).expect("replay is JSON");
+        replay["protocolVersion"] = serde_json::json!(1);
+        assert!(
+            WebGame::from_replay_json(&replay.to_string()).is_err(),
+            "a protocol mismatch is refused rather than replayed into"
+        );
+    }
+}

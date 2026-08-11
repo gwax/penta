@@ -5,7 +5,9 @@ edition = "2024"
 publish = false
 
 [lib]
-crate-type = ["cdylib"]
+# rlib alongside cdylib so native tools -- the bug-replay example -- can
+# link the same facade the browser runs.
+crate-type = ["cdylib", "rlib"]
 
 [features]
 # Exposes state-setting entry points for local development and testing. Never

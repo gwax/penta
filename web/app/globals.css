@@ -2403,6 +2403,30 @@ button {
   text-align: left;
 }
 
+.bug-report {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.bug-report textarea {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid #54231f;
+  color: #cfc4b2;
+  background: rgb(0 0 0 / 25%);
+  font-family: inherit;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.bug-report small {
+  color: #a79b8a;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .fan-content-notice {
   margin: 10px 0 2px;
   color: #6f685e;

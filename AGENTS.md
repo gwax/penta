@@ -70,6 +70,14 @@ examples against every affected binding rather than deferring documentation to
 a follow-up. Keep the root `BOTS.md` compatibility symlink pointed at
 `docs/bots.md`.
 
+## Bug reports
+
+Players file bugs from the game menu with the game's replay attached. To
+work through them, follow [the bug-report workflow](docs/bug-reports.md):
+list the open reports from the dev server's `/_bugs/list`, reproduce each
+natively with the `replay_bug` example, fix, and resolve with a note naming
+the commit.
+
 ## Validation
 
 Use the root `Makefile` as the canonical entry point; `make help` lists the

@@ -60,6 +60,13 @@ impl BotPolicy {
 #[wasm_bindgen]
 pub struct WebGame {
     session: LocalSession,
+    /// How this game was dealt, kept verbatim so the journal below can be
+    /// replayed by anyone -- a game room, a bug report, a native harness.
+    replay_config: Value,
+    /// Every command applied through the public surface, in order. With the
+    /// config this is the whole game; the two together are what a bug report
+    /// attaches.
+    journal: Vec<Value>,
     catalog: CardCatalog,
     human: PlayerId,
     bot: BotPolicy,
@@ -98,6 +105,16 @@ impl WebGame {
             format.as_deref().unwrap_or(Format::OldSchool9394.slug()),
         )
         .map_err(js_error)?;
+        // The names as asked for, before resolution: a replay hands these
+        // same strings back to this same constructor.
+        let replay_config = json!({
+            "format": format.slug(),
+            "humanDeck": human_deck,
+            "botDeck": bot_deck,
+            "botPolicy": bot_policy.to_ascii_lowercase(),
+            "humanFirst": human_first,
+            "seed": seed,
+        });
         let catalog = card::catalog().map_err(js_error)?;
         let human_deck = deck_by_name(format, human_deck)?;
         let bot_deck = deck_by_name(format, bot_deck)?;
@@ -120,6 +137,8 @@ impl WebGame {
         };
         let mut web_game = Self {
             session: LocalSession::new(game),
+            replay_config,
+            journal: Vec::new(),
             catalog,
             human,
             bot,
@@ -153,7 +172,12 @@ impl WebGame {
             .get(action_index)
             .cloned()
             .ok_or_else(|| JsValue::from_str("unknown legal action"))?;
-        self.apply_human_action(action)
+        self.apply_human_action(action)?;
+        // Only a command that took effect belongs in the journal: a replay
+        // reapplies these, and a rejected one would halt it.
+        self.journal
+            .push(json!({ "t": "act", "index": action_index }));
+        Ok(())
     }
 
     /// Submits the selected option IDs for the current generic decision.
@@ -170,7 +194,13 @@ impl WebGame {
             return Err(JsValue::from_str("the game is not waiting for the human"));
         }
         let options: Vec<u32> = serde_json::from_str(options_json).map_err(js_error)?;
-        self.apply_human_action(Action::ChooseDecision { decision, options })
+        self.apply_human_action(Action::ChooseDecision {
+            decision,
+            options: options.clone(),
+        })?;
+        self.journal
+            .push(json!({ "t": "choose", "decision": decision, "options": options }));
+        Ok(())
     }
 
     fn apply_human_action(&mut self, action: Action) -> Result<(), JsValue> {
@@ -261,6 +291,7 @@ impl WebGame {
         self.forget_attack_undo_unless_still_declaring();
         self.advance_until_human_choice()?;
         self.forget_attack_undo_unless_still_declaring();
+        self.journal.push(json!({ "t": "attackAll" }));
         Ok(())
     }
 
@@ -278,6 +309,7 @@ impl WebGame {
         self.mana_undo_history.clear();
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
+        self.journal.push(json!({ "t": "cancelAttackers" }));
         Ok(())
     }
 
@@ -343,7 +375,10 @@ impl WebGame {
         self.session
             .apply(self.human, Action::FinishDeclaringBlockers)
             .map_err(js_error)?;
-        self.advance_until_human_choice()
+        self.advance_until_human_choice()?;
+        self.journal
+            .push(json!({ "t": "blocks", "assignments": assignments_json }));
+        Ok(())
     }
 
     /// Rewinds the most recent manual mana ability while it is still safe to do so.
@@ -359,6 +394,7 @@ impl WebGame {
         self.session.restore(previous);
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
+        self.journal.push(json!({ "t": "undoMana" }));
         Ok(())
     }
 
@@ -382,6 +418,8 @@ impl WebGame {
         }
         self.opponent_actions.clear();
         self.pending_opponent_mana.clear();
+        self.journal
+            .push(json!({ "t": "phaseStop", "phase": phase, "enabled": enabled }));
         Ok(())
     }
 
@@ -398,6 +436,8 @@ impl WebGame {
         if enabled {
             self.advance_until_human_choice()?;
         }
+        self.journal
+            .push(json!({ "t": "autopass", "enabled": enabled }));
         Ok(())
     }
 
@@ -472,7 +512,104 @@ impl WebGame {
             .cloned()
             .ok_or_else(|| js_error("action index out of range"))?;
         self.apply_advancing_action(opponent, &observation, action)?;
-        self.advance_until_human_choice()
+        self.advance_until_human_choice()?;
+        self.journal.push(json!({ "t": "botAct", "index": index }));
+        Ok(())
+    }
+
+    /// The whole game as a portable record: how it was dealt, and every
+    /// command applied since, in order. Deterministic replay is what makes
+    /// this a bug report's attachment -- the same JSON rebuilds the same
+    /// board in a game room, a browser, or a native harness.
+    #[wasm_bindgen(js_name = replayJson)]
+    #[must_use]
+    pub fn replay_json(&self) -> String {
+        json!({
+            "config": self.replay_config,
+            "commands": self.journal,
+            "engineVersion": env!("CARGO_PKG_VERSION"),
+            "protocolVersion": penta::protocol::PROTOCOL_VERSION,
+        })
+        .to_string()
+    }
+
+    /// Rebuilds a game from [`Self::replay_json`] output, refusing an engine
+    /// or protocol mismatch by name rather than replaying into a quietly
+    /// different game.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error for malformed JSON, a version mismatch, or
+    /// a command that no longer applies at its position.
+    #[wasm_bindgen(js_name = fromReplayJson)]
+    pub fn from_replay_json(replay: &str) -> Result<WebGame, JsValue> {
+        let replay: Value = serde_json::from_str(replay).map_err(js_error)?;
+        let engine = replay["engineVersion"].as_str().unwrap_or_default();
+        let protocol = replay["protocolVersion"].as_u64().unwrap_or_default();
+        if engine != env!("CARGO_PKG_VERSION")
+            || protocol != u64::from(penta::protocol::PROTOCOL_VERSION)
+        {
+            return Err(js_error(format!(
+                "replay is from engine {engine} protocol {protocol}, this is {} protocol {}",
+                env!("CARGO_PKG_VERSION"),
+                penta::protocol::PROTOCOL_VERSION,
+            )));
+        }
+        let config = &replay["config"];
+        let text = |key: &str| config[key].as_str().unwrap_or_default().to_owned();
+        let mut game = Self::new(
+            &text("humanDeck"),
+            &text("botDeck"),
+            &text("botPolicy"),
+            config["humanFirst"].as_bool().unwrap_or(true),
+            u32::try_from(config["seed"].as_u64().unwrap_or_default())
+                .map_err(|_| js_error("seed does not fit"))?,
+            Some(text("format")),
+        )?;
+        let commands = replay["commands"].as_array().cloned().unwrap_or_default();
+        let total = commands.len();
+        for (position, command) in commands.into_iter().enumerate() {
+            game.apply_replay_command(&command).map_err(|error| {
+                js_error(format!(
+                    "command {position} of {total} ({}) no longer applies: {}",
+                    command["t"].as_str().unwrap_or("?"),
+                    error.as_string().unwrap_or_default(),
+                ))
+            })?;
+        }
+        Ok(game)
+    }
+
+    /// One journaled command, reapplied. The journal records only commands
+    /// that took effect, so an error here means the replay does not match
+    /// this engine.
+    fn apply_replay_command(&mut self, command: &Value) -> Result<(), JsValue> {
+        let index_of = |value: &Value| {
+            usize::try_from(value.as_u64().unwrap_or(u64::MAX))
+                .map_err(|_| js_error("index does not fit"))
+        };
+        match command["t"].as_str().unwrap_or_default() {
+            "act" => self.act(index_of(&command["index"])?),
+            "choose" => self.choose_decision(
+                u32::try_from(command["decision"].as_u64().unwrap_or_default())
+                    .map_err(|_| js_error("decision does not fit"))?,
+                &command["options"].to_string(),
+            ),
+            "attackAll" => self.attack_all(),
+            "cancelAttackers" => self.cancel_attackers(),
+            "blocks" => self.finalize_blocks(command["assignments"].as_str().unwrap_or("[]")),
+            "undoMana" => self.undo_mana(),
+            "phaseStop" => self.set_phase_stop(
+                command["phase"].as_str().unwrap_or_default(),
+                command["enabled"].as_bool().unwrap_or_default(),
+            ),
+            "autopass" => self.set_autopass(command["enabled"].as_bool().unwrap_or_default()),
+            "botAct" => self.opponent_act(
+                u32::try_from(command["index"].as_u64().unwrap_or_default())
+                    .map_err(|_| js_error("index does not fit"))?,
+            ),
+            other => Err(js_error(format!("unknown journal command {other:?}"))),
+        }
     }
 
     /// Returns the human-visible game state as JSON.
@@ -563,7 +700,10 @@ fn js_error(error: impl std::fmt::Display) -> JsValue {
     // error path can at least run there; the message only exists in a browser.
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let _ = &error;
+        // The message cannot ride in a native JsValue, and a silent NULL made
+        // the replay harness useless for diagnosis. Stderr is the next best
+        // carrier; intentional-error tests just say what they meant to.
+        eprintln!("engine error: {error}");
         JsValue::NULL
     }
 }

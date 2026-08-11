@@ -68,6 +68,7 @@ interface DurableObjectNamespace {
 interface Env {
   ASSETS: AssetBinding;
   GAME_ROOMS: DurableObjectNamespace;
+  BUGS: DurableObjectNamespace;
   /**
    * Set to `enabled` to serve the server-side game routes. They are off by
    * default and should stay off in anything public: there is no auth and no
@@ -117,6 +118,12 @@ const worker = {
       return stub.fetch(request);
     }
 
+    // The bug ledger: one object for the whole deployment.
+    if (hostedGames && url.pathname.startsWith("/_bugs/")) {
+      const stub = env.BUGS.get(env.BUGS.idFromName("bugs"));
+      return stub.fetch(request);
+    }
+
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(request, {
@@ -133,5 +140,6 @@ const worker = {
 };
 
 export { GameRoom } from "./game-room";
+export { BugTracker } from "./bug-tracker";
 
 export default worker;

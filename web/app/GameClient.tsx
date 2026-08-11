@@ -333,6 +333,9 @@ export function GameClient({
 
   const presentedRaw = useRef<string | null>(null);
   const hostedRoom = useRef<string | null>(null);
+  const [bugFormOpen, setBugFormOpen] = useState(false);
+  const [bugText, setBugText] = useState("");
+  const [bugStatus, setBugStatus] = useState<string | null>(null);
   const refresh = useCallback(() => {
     if (!game.current) return;
     // Presenting is not idempotent -- beats replay -- so a snapshot is
@@ -378,6 +381,42 @@ export function GameClient({
     if (!engineReady || !game.current) return;
     publishDevHandle(() => game.current, refresh);
   }, [engineReady, refresh]);
+
+  const reportBug = useCallback(async () => {
+    const description = bugText.trim();
+    if (!description) return;
+    setBugStatus("sending…");
+    try {
+      let replay: unknown = null;
+      const live = game.current as { replayJson?: () => string } | null;
+      if (live && typeof live.replayJson === "function") {
+        replay = JSON.parse(live.replayJson());
+      } else if (hostedRoom.current) {
+        const record = await fetch(`/_game/${hostedRoom.current}/record`);
+        if (record.ok) replay = await record.json();
+      }
+      const response = await fetch("/_bugs/report", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          description,
+          replay,
+          context: {
+            url: window.location.href,
+            hostedRoom: hostedRoom.current,
+          },
+        }),
+      });
+      const body = (await response.json()) as { id?: string; error?: string };
+      if (!response.ok || !body.id) {
+        throw new Error(body.error ?? "bug reporting is not available here");
+      }
+      setBugStatus(`reported as ${body.id} — thank you`);
+      setBugText("");
+    } catch (cause) {
+      setBugStatus(String(cause));
+    }
+  }, [bugText]);
 
   const newGame = useCallback(
     (
@@ -2310,6 +2349,23 @@ export function GameClient({
                 <small>Seed {seed}</small>
               </p>
               <button onClick={openSetup}>New game</button>
+              <button onClick={() => setBugFormOpen((open) => !open)}>
+                Report a bug
+              </button>
+              {bugFormOpen && (
+                <div className="bug-report">
+                  <textarea
+                    value={bugText}
+                    onChange={(event) => setBugText(event.target.value)}
+                    placeholder="What went wrong? The game's replay is attached automatically."
+                    rows={4}
+                  />
+                  <button onClick={() => void reportBug()} disabled={!bugText.trim()}>
+                    Send report
+                  </button>
+                  {bugStatus && <small>{bugStatus}</small>}
+                </div>
+              )}
               {dangerActions.map((action) => (
                 <button key={action.index} onClick={() => act(action)} disabled={watchingOpponent}>
                   {action.label}

@@ -12,12 +12,18 @@ const workerConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
   durable_objects: {
-    bindings: [{ name: "GAME_ROOMS", class_name: "GameRoom" }],
+    bindings: [
+      { name: "GAME_ROOMS", class_name: "GameRoom" },
+      { name: "BUGS", class_name: "BugTracker" },
+    ],
   },
   // Local development serves the hosted-game routes; a deploy has to opt in.
   // They have no auth and no rate limit yet.
   vars: { HOSTED_GAMES: "enabled" },
-  migrations: [{ tag: "v1", new_sqlite_classes: ["GameRoom"] }],
+  migrations: [
+    { tag: "v1", new_sqlite_classes: ["GameRoom"] },
+    { tag: "v2", new_sqlite_classes: ["BugTracker"] },
+  ],
 };
 
 export default defineConfig(async () => {
