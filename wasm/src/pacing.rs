@@ -18,87 +18,106 @@ impl WebGame {
                 };
                 action
             } else {
-                self.bot
-                    .choose_action(&observation)
-                    .ok_or_else(|| JsValue::from_str("bot returned no action"))?
+                let Some(action) = self.bot.choose_action(&observation) else {
+                    // An external opponent has no policy here. The engine
+                    // waits, and the host feeds the seat's next action in
+                    // through `opponent_act`.
+                    return Ok(());
+                };
+                action
             };
-            let mut pending_animation = None;
-            if player != self.human {
-                if let Action::ActivateManaAbility { source, .. } = &action {
-                    self.pending_opponent_mana
-                        .push(self.instance_name(&observation, *source));
-                } else if should_animate_action(&action) {
-                    let mana_sources = if matches!(
-                        action,
-                        Action::CastSpell { .. } | Action::ActivateAbility { .. }
-                    ) {
-                        std::mem::take(&mut self.pending_opponent_mana)
-                    } else {
-                        Vec::new()
-                    };
-                    let label = self.opponent_action_label(&observation, &action);
-                    let kind = animated_action_kind(&action);
-                    let card_id = action_card(&action);
-                    let card = card_id.map(|id| self.instance_name(&observation, id));
-                    pending_animation = Some(json!({
-                        "label": label,
-                        "kind": kind,
-                        "card": card,
-                        "cardId": card_id.map(|id| id.0),
-                        "manaSources": mana_sources,
-                    }));
-                } else {
-                    self.pending_opponent_mana.clear();
-                }
-            }
-            // Who owns each object on the stack, read before it leaves: a
-            // resolution event names the card but the object is gone by then.
-            let stack_owners: Vec<(CardInstanceId, PlayerId)> = observation
-                .stack
-                .iter()
-                .map(|object| (object.id, object.controller))
-                .collect();
-            let event_start = self.session.event_cursor();
-            self.session.apply(player, action).map_err(js_error)?;
-            if pending_animation.is_none() {
-                self.record_resolutions(event_start, &stack_owners);
-            }
-            self.record_combat_damage(event_start);
-            self.record_draw_step(event_start);
-            if let Some(mut animation) = pending_animation.take() {
-                let caused = self.session.events_for_since(self.human, event_start);
-                let mana_sources = caused
-                    .iter()
-                    .filter_map(|event| match event {
-                        GameEvent::ManaAdded {
-                            player: producer,
-                            source,
-                        } if *producer == player => Some(*source),
-                        _ => None,
-                    })
-                    .map(|source| json!(self.instance_name(&observation, source)))
-                    .collect::<Vec<_>>();
-                if let Some(existing) = animation["manaSources"].as_array_mut() {
-                    existing.extend(mana_sources);
-                }
-                animation["state"] = self.snapshot_value(false);
-                self.opponent_actions.push(animation);
-            }
-            // Last, so the beat that ended the turn is still watched before the
-            // next turn is announced.
-            self.record_turn_change(event_start);
-            // Your click is not finished until your own spell has left the
-            // stack: the yields that resolve it are automatic and produce no
-            // beat, so they belong to what you did rather than to the replay.
-            // The moment anything worth watching happens, this stops moving
-            // and the replay starts from there.
-            if player == self.human && self.opponent_actions.is_empty() {
-                self.human_action_state = Some(self.snapshot_value(false));
-            }
+            self.apply_advancing_action(player, &observation, action)?;
         }
         Err(JsValue::from_str(
             "game exceeded its automatic action limit",
         ))
+    }
+
+    /// Applies one action for either seat with the full presentation
+    /// bookkeeping: opponent beats, mana grouping, resolution and combat
+    /// records, the turn banner, and the board your own click left behind.
+    /// The advance loop and an externally driven opponent both come through
+    /// here, so a remote bot's play is watched exactly like a local one's.
+    pub(super) fn apply_advancing_action(
+        &mut self,
+        player: PlayerId,
+        observation: &super::PlayerObservation,
+        action: Action,
+    ) -> Result<(), JsValue> {
+        let mut pending_animation = None;
+        if player != self.human {
+            if let Action::ActivateManaAbility { source, .. } = &action {
+                self.pending_opponent_mana
+                    .push(self.instance_name(observation, *source));
+            } else if should_animate_action(&action) {
+                let mana_sources = if matches!(
+                    action,
+                    Action::CastSpell { .. } | Action::ActivateAbility { .. }
+                ) {
+                    std::mem::take(&mut self.pending_opponent_mana)
+                } else {
+                    Vec::new()
+                };
+                let label = self.opponent_action_label(observation, &action);
+                let kind = animated_action_kind(&action);
+                let card_id = action_card(&action);
+                let card = card_id.map(|id| self.instance_name(observation, id));
+                pending_animation = Some(json!({
+                    "label": label,
+                    "kind": kind,
+                    "card": card,
+                    "cardId": card_id.map(|id| id.0),
+                    "manaSources": mana_sources,
+                }));
+            } else {
+                self.pending_opponent_mana.clear();
+            }
+        }
+        // Who owns each object on the stack, read before it leaves: a
+        // resolution event names the card but the object is gone by then.
+        let stack_owners: Vec<(CardInstanceId, PlayerId)> = observation
+            .stack
+            .iter()
+            .map(|object| (object.id, object.controller))
+            .collect();
+        let event_start = self.session.event_cursor();
+        self.session.apply(player, action).map_err(js_error)?;
+        if pending_animation.is_none() {
+            self.record_resolutions(event_start, &stack_owners);
+        }
+        self.record_combat_damage(event_start);
+        self.record_draw_step(event_start);
+        if let Some(mut animation) = pending_animation.take() {
+            let caused = self.session.events_for_since(self.human, event_start);
+            let mana_sources = caused
+                .iter()
+                .filter_map(|event| match event {
+                    GameEvent::ManaAdded {
+                        player: producer,
+                        source,
+                    } if *producer == player => Some(*source),
+                    _ => None,
+                })
+                .map(|source| json!(self.instance_name(observation, source)))
+                .collect::<Vec<_>>();
+            if let Some(existing) = animation["manaSources"].as_array_mut() {
+                existing.extend(mana_sources);
+            }
+            animation["state"] = self.snapshot_value(false);
+            self.opponent_actions.push(animation);
+        }
+        // Last, so the beat that ended the turn is still watched before the
+        // next turn is announced.
+        self.record_turn_change(event_start);
+        // Your click is not finished until your own spell has left the
+        // stack: the yields that resolve it are automatic and produce no
+        // beat, so they belong to what you did rather than to the replay.
+        // The moment anything worth watching happens, this stops moving
+        // and the replay starts from there.
+        if player == self.human && self.opponent_actions.is_empty() {
+            self.human_action_state = Some(self.snapshot_value(false));
+        }
+        Ok(())
     }
 
     /// Gives anything that resolved off the stack its own beat.

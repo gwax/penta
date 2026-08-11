@@ -332,7 +332,13 @@ impl WebGame {
         // `events_for` withholds the seed. This client owns the engine, so it
         // may still show it; a remote one would not have it to show.
         let seat_events = self.session.events_for(self.human);
-        let events = std::iter::once(Some(format!("Game started · seed {}", self.session.seed())))
+        // Against a built-in policy the seed is a courtesy: the human owns
+        // the whole game, locally or via their own room. Against an external
+        // driver it is the opponent's hand and library order, so it is not
+        // printed at all.
+        let seed_line = (!self.opponent_is_externally_driven())
+            .then(|| format!("Game started · seed {}", self.session.seed()));
+        let events = std::iter::once(seed_line)
             .chain(
                 seat_events
                     .iter()

@@ -8,9 +8,9 @@ import {
   createEngineGame,
   publishDevHandle,
   initializeEngine,
-  readEngineState,
   type EngineGame,
 } from "./engine-client";
+import { RemoteEngineGame } from "./remote-engine";
 import type {
   Action,
   Card,
@@ -331,9 +331,18 @@ export function GameClient({
     }
   }, [applyState]);
 
+  const presentedRaw = useRef<string | null>(null);
+  const hostedRoom = useRef<string | null>(null);
   const refresh = useCallback(() => {
     if (!game.current) return;
-    const snapshot = readEngineState(game.current);
+    // Presenting is not idempotent -- beats replay -- so a snapshot is
+    // presented at most once. A hosted game's commands change nothing
+    // synchronously, which makes the reflex refresh after each one a no-op
+    // until the room pushes.
+    const raw = game.current.state_json();
+    if (raw === presentedRaw.current) return;
+    presentedRaw.current = raw;
+    const snapshot = JSON.parse(raw) as GameState;
     presentSnapshot(snapshot);
     // A rejected action leaves a banner behind; the next accepted one retires
     // it, so a transient failure cannot cover the table for the rest of the game.
@@ -357,6 +366,11 @@ export function GameClient({
     pendingActionRef.current = null;
   }, [presentSnapshot]);
 
+  const refreshRef = useRef(refresh);
+  useEffect(() => {
+    refreshRef.current = refresh;
+  }, [refresh]);
+
   // A console handle for reaching a board state directly. The entry point it
   // needs exists only in a dev WASM build, so this does nothing in a deployed
   // client.
@@ -379,6 +393,18 @@ export function GameClient({
       if (!wasmReady.current) return false;
       const dealtHumanDeck = resolveDeck(nextFormat, nextHumanDeck);
       const dealtBotDeck = resolveDeck(nextFormat, nextBotDeck);
+      if (hostedRoom.current) {
+        // A hosted deal is a new room. Routing it through the address bar
+        // reuses the join path instead of duplicating it here.
+        const matchUrl = new URL(window.location.href);
+        matchUrl.searchParams.set("format", nextFormat);
+        matchUrl.searchParams.set("deck", dealtHumanDeck);
+        matchUrl.searchParams.set("seed", String(nextSeed));
+        matchUrl.searchParams.set("first", String(nextHumanFirst));
+        matchUrl.searchParams.set("hosted", "new");
+        window.location.assign(matchUrl);
+        return true;
+      }
       try {
         // Build before replacing the live game. A bad format/deck pairing can
         // then leave the current board intact and the setup dialog open.
@@ -424,7 +450,13 @@ export function GameClient({
     let alive = true;
     const load = async () => {
       try {
-        await initializeEngine();
+        const hosted =
+          typeof window === "undefined"
+            ? null
+            : new URL(window.location.href).searchParams.get("hosted");
+        if (!hosted) {
+          await initializeEngine();
+        }
         if (!alive) return;
         const startingSeed = initialSeed();
         const startingFormat = initialFormat();
@@ -445,16 +477,50 @@ export function GameClient({
         setDraftHumanFirst(startingHumanFirst);
         wasmReady.current = true;
         setEngineReady(true);
-        game.current = createEngineGame({
-          format: startingFormat,
-          humanDeck: startingHumanDeck,
-          botDeck: startingBotDeck,
-          policy: "Handcrafted",
-          humanFirst: startingHumanFirst,
-          seed: startingSeed,
-        });
-        const snapshot = readEngineState(game.current);
-        presentSnapshot(snapshot);
+        const hostedAgain =
+          typeof window === "undefined"
+            ? null
+            : new URL(window.location.href).searchParams.get("hosted");
+        if (hostedAgain) {
+          // The engine and its presentation run in the game room; this tab
+          // holds a socket and the room's latest snapshot, nothing more.
+          const url = new URL(window.location.href);
+          const roomId =
+            hostedAgain === "new" ? crypto.randomUUID().slice(0, 8) : hostedAgain;
+          hostedRoom.current = roomId;
+          game.current = await RemoteEngineGame.connect({
+            gameId: roomId,
+            format: startingFormat,
+            humanDeck: startingHumanDeck,
+            botDeck: startingBotDeck,
+            botPolicy: url.searchParams.get("hostedBot") ?? "Handcrafted",
+            humanFirst: startingHumanFirst,
+            seed: startingSeed,
+            onUpdate: () => refreshRef.current(),
+            onError: (message) => setError(message),
+          });
+          if (!alive) {
+            game.current.free();
+            game.current = null;
+            return;
+          }
+          // The address now names the room, so a reload rejoins it. The
+          // setup dialog stays shut: the room is already dealt, and its
+          // Deal button means "a fresh room", not "finish this form".
+          url.searchParams.set("hosted", roomId);
+          window.history.replaceState(null, "", url);
+          setSetupOpen(false);
+        } else {
+          game.current = createEngineGame({
+            format: startingFormat,
+            humanDeck: startingHumanDeck,
+            botDeck: startingBotDeck,
+            policy: "Handcrafted",
+            humanFirst: startingHumanFirst,
+            seed: startingSeed,
+          });
+        }
+        refresh();
       } catch (cause) {
         if (alive) setError(`Could not start the Rust engine: ${String(cause)}`);
       } finally {
@@ -466,7 +532,7 @@ export function GameClient({
       alive = false;
       game.current?.free();
     };
-  }, [presentSnapshot]);
+  }, [presentSnapshot, refresh]);
 
   useEffect(() => {
     if (currentStep === null) return;

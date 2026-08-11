@@ -6,7 +6,23 @@ import wasmUrl from "./wasm/penta_wasm_bg.wasm?url";
 import type { GameState } from "./game-types";
 import type { FormatId } from "./game-config";
 
-export type EngineGame = RustWebGame;
+/**
+ * What the React app needs from an engine, local or hosted: the command
+ * methods it fires and the one snapshot read. The wasm `WebGame` satisfies
+ * this structurally; `RemoteEngineGame` satisfies it over a WebSocket.
+ */
+export interface EngineGame {
+  act(index: number): void;
+  choose_decision(decision: number, optionsJson: string): void;
+  attack_all(): void;
+  cancel_attackers(): void;
+  finalize_blocks(assignmentsJson: string): void;
+  undo_mana(): void;
+  set_phase_stop(phase: string, enabled: boolean): void;
+  set_autopass(enabled: boolean): void;
+  state_json(): string;
+  free(): void;
+}
 
 export type EngineConfig = {
   format: FormatId;

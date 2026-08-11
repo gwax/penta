@@ -40,6 +40,9 @@ const BOT_ACTION_LIMIT: usize = 50_000;
 enum BotPolicy {
     Random(RandomPolicy),
     Handcrafted(HandcraftedPolicy),
+    /// No policy at all: the opponent seat is driven from outside, one
+    /// protocol action index at a time, the way a bot on a socket plays.
+    External,
 }
 
 impl BotPolicy {
@@ -47,6 +50,7 @@ impl BotPolicy {
         match self {
             Self::Random(policy) => policy.choose_action(observation),
             Self::Handcrafted(policy) => policy.choose_action(observation),
+            Self::External => None,
         }
     }
 }
@@ -111,6 +115,7 @@ impl WebGame {
         let bot = match bot_policy.to_ascii_lowercase().as_str() {
             "random" => BotPolicy::Random(RandomPolicy::new(u64::from(seed) ^ 0x00b0_7b07)),
             "handcrafted" => BotPolicy::Handcrafted(HandcraftedPolicy::new(catalog.clone())),
+            "external" => BotPolicy::External,
             _ => return Err(JsValue::from_str("unknown bot policy")),
         };
         let mut web_game = Self {
@@ -396,6 +401,80 @@ impl WebGame {
         Ok(())
     }
 
+    /// Whether the opponent seat is driven from outside rather than by a
+    /// built-in policy. The snapshot uses this to keep the seed out of a
+    /// game whose opponent is real.
+    pub(crate) fn opponent_is_externally_driven(&self) -> bool {
+        matches!(self.bot, BotPolicy::External)
+    }
+
+    /// Whether the engine is waiting on the externally driven opponent seat.
+    /// Always false for a built-in policy, which never leaves the engine
+    /// waiting between calls.
+    #[wasm_bindgen(js_name = opponentIsDeciding)]
+    #[must_use]
+    pub fn opponent_is_deciding(&self) -> bool {
+        matches!(self.bot, BotPolicy::External)
+            && self.session.decision_seat() == Some(self.human.opponent())
+    }
+
+    /// The opponent seat's redacted view, in the same protocol JSON a bot on
+    /// a socket already reads. Only an external opponent has a driver to
+    /// show it to.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error unless the opponent is externally driven.
+    #[wasm_bindgen(js_name = opponentObserveJson)]
+    pub fn opponent_observe_json(&self) -> Result<String, JsValue> {
+        if !matches!(self.bot, BotPolicy::External) {
+            return Err(js_error(
+                "the opponent is played by a built-in policy, not a driver",
+            ));
+        }
+        let observation = self.session.observe(self.human.opponent());
+        let actions = penta::protocol::protocol_actions(&observation);
+        Ok(penta::protocol::observation_json_for_format(
+            &self.catalog,
+            self.session.format(),
+            &observation,
+            self.session.in_pregame(),
+            &actions,
+        )
+        .to_string())
+    }
+
+    /// Applies the external opponent's chosen action by its index in the
+    /// protocol action list, with the same presentation bookkeeping a
+    /// built-in opponent gets, then advances until the human holds a real
+    /// choice again. Beats accumulate across a run of these, so the human
+    /// watches a remote opponent's turn exactly as they would a local one's.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error unless the opponent is externally driven
+    /// and currently holds the decision, or when the index is out of range.
+    #[wasm_bindgen(js_name = opponentAct)]
+    pub fn opponent_act(&mut self, index: u32) -> Result<(), JsValue> {
+        if !matches!(self.bot, BotPolicy::External) {
+            return Err(js_error(
+                "the opponent is played by a built-in policy, not a driver",
+            ));
+        }
+        let opponent = self.human.opponent();
+        if self.session.decision_seat() != Some(opponent) {
+            return Err(js_error("the opponent does not hold the decision"));
+        }
+        let observation = self.session.observe(opponent);
+        let actions = penta::protocol::protocol_actions(&observation);
+        let action = actions
+            .get(index as usize)
+            .cloned()
+            .ok_or_else(|| js_error("action index out of range"))?;
+        self.apply_advancing_action(opponent, &observation, action)?;
+        self.advance_until_human_choice()
+    }
+
     /// Returns the human-visible game state as JSON.
     #[must_use]
     pub fn state_json(&self) -> String {
@@ -475,7 +554,18 @@ fn readable_debug(value: impl std::fmt::Debug) -> String {
 }
 
 fn js_error(error: impl std::fmt::Display) -> JsValue {
-    JsValue::from_str(&error.to_string())
+    #[cfg(target_arch = "wasm32")]
+    {
+        JsValue::from_str(&error.to_string())
+    }
+    // `JsValue::from_str` calls into the wasm-bindgen host and panics on a
+    // native target, which native tests are. NULL is a plain constant, so an
+    // error path can at least run there; the message only exists in a browser.
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = &error;
+        JsValue::NULL
+    }
 }
 
 #[cfg(test)]

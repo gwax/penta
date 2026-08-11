@@ -1,22 +1,27 @@
 /**
  * One hosted game, owned by one Durable Object.
  *
- * The engine is authoritative here, and so is the presentation layer.
- * `WebGame` -- the same Rust the browser runs for a local game -- lives in
- * this object, and the browser receives the `state_json()` it already knows
- * how to render. Nothing is ported to TypeScript and there is no second copy
- * of the beats, the undo, or the pass label to keep in step.
+ * The engine and the presentation layer live here: `WebGame` -- the same
+ * Rust the browser runs for a local game -- produces the `state_json()` the
+ * React app already renders, so the client cannot tell which side of the
+ * wire the engine is on. A `Game` holds the opponent's hand and the library
+ * order, which is why no game object ever leaves this room; seats get views.
  *
- * There is deliberately no client-side copy of the game. A `Game` holds the
- * opponent's hand and the library order, so a client holding one would be
- * holding the answers. `state_json()` is a seat's view and is the only thing
- * that leaves.
+ * Two kinds of socket connect. A `human` socket sends the same commands the
+ * local UI issues and receives state pushes. A `bot` socket is prompted with
+ * the opponent seat's protocol observation whenever that seat holds the
+ * decision, and answers with an action index -- the contract remote bots
+ * already speak over the bindings.
  *
- * Nothing stores engine state. A game at rest is its configuration plus the
- * commands issued against it, and it is rebuilt by replaying them, which the
- * engine's determinism makes exact. Phase stops and auto-pass are in that log
- * as well as the plays: they change where the engine stops, so a replay that
- * dropped them would land somewhere else.
+ * Beats are delivered exactly once. The wasm accumulates the opponent's
+ * beats until the next human command clears them, so a room that pushed
+ * state twice in one window would replay the same beats twice. The room
+ * remembers how many it has delivered and sends only the tail; the counter
+ * resets when a human command resets the queue.
+ *
+ * Nothing stores engine state. A game at rest is its configuration plus
+ * every command applied -- human and bot alike -- and is rebuilt by replay,
+ * refused loudly across an engine version change.
  */
 
 type EngineModule = typeof import("../app/wasm/penta_wasm.js");
@@ -44,7 +49,7 @@ interface GameConfig {
   format?: string;
 }
 
-/** Everything a seat can do, in a form that can be written down and redone. */
+/** Everything either seat can do, in a form that can be written down. */
 type Command =
   | { t: "act"; index: number }
   | { t: "choose"; decision: number; options: number[] }
@@ -53,7 +58,11 @@ type Command =
   | { t: "blocks"; assignments: string }
   | { t: "undoMana" }
   | { t: "phaseStop"; phase: string; enabled: boolean }
-  | { t: "autopass"; enabled: boolean };
+  | { t: "autopass"; enabled: boolean }
+  | { t: "botAct"; index: number };
+
+/** The bot seat's one verb; everything else belongs to the human. */
+const BOT_COMMANDS = new Set(["botAct"]);
 
 interface StoredGame {
   config: GameConfig;
@@ -70,6 +79,16 @@ interface DurableState {
   storage: DurableStorage;
   blockConcurrencyWhile<T>(callback: () => Promise<T>): Promise<T>;
 }
+
+/** The worker runtime's socket pair; typed by hand like the rest of Env. */
+interface RoomSocket {
+  accept(): void;
+  send(message: string): void;
+  close(code?: number, reason?: string): void;
+  addEventListener(type: "message", handler: (event: { data: unknown }) => void): void;
+  addEventListener(type: "close", handler: () => void): void;
+}
+declare const WebSocketPair: new () => { 0: RoomSocket; 1: RoomSocket };
 
 /** Either the live game, a reason it cannot be rebuilt, or neither. */
 interface LoadOutcome {
@@ -104,6 +123,9 @@ function apply(game: WebGame, command: Command): void {
       return;
     case "autopass":
       game.set_autopass(command.enabled);
+      return;
+    case "botAct":
+      game.opponentAct(command.index);
   }
 }
 
@@ -111,6 +133,12 @@ export class GameRoom {
   readonly #state: DurableState;
   #game: WebGame | null = null;
   #stored: StoredGame | null = null;
+  /** Sockets watching the human seat; all of them get state pushes. */
+  readonly #humans = new Set<RoomSocket>();
+  /** The external driver for the opponent seat, one at a time. */
+  #bot: RoomSocket | null = null;
+  /** How many of the wasm's accumulated beats have already been sent. */
+  #deliveredBeats = 0;
 
   constructor(state: DurableState) {
     this.#state = state;
@@ -125,20 +153,40 @@ export class GameRoom {
       }
       const game = await this.#load();
       if (!game) return Response.json({ error: "no game here yet" }, { status: 404 });
+      if (route === "ws") {
+        return this.#connect(game, url.searchParams.get("role") ?? "human");
+      }
       if (route === "state") return this.#snapshot(game);
       if (route === "command") {
-        return await this.#command(game, (await request.json()) as Command);
+        const command = (await request.json()) as Command;
+        await this.#apply(game, command);
+        return this.#snapshot(game);
       }
-      if (route === "record") return Response.json(this.#stored);
+      if (route === "record") {
+        const stored = this.#stored;
+        if (!stored) return Response.json({ error: "no game" }, { status: 404 });
+        if (stored.config.botPolicy.toLowerCase() !== "external") {
+          return Response.json(stored);
+        }
+        // An external game's seed is both hands; the record hides it until
+        // the game is decided, after which it is the replay's provenance.
+        const finished = Boolean(
+          (JSON.parse(game.state_json()) as { result?: unknown }).result,
+        );
+        return Response.json(
+          finished
+            ? stored
+            : { ...stored, config: { ...stored.config, seed: null } },
+        );
+      }
       return Response.json({ error: `unknown route ${route}` }, { status: 404 });
     } catch (cause) {
       return Response.json({ error: String(cause) }, { status: 400 });
     }
   }
 
+  /** The full current snapshot, for polling callers; beats are not consumed. */
   #snapshot(game: WebGame): Response {
-    // The same JSON a local game hands the React app, so the browser cannot
-    // tell which side of the wire the engine is on.
     return new Response(game.state_json(), {
       headers: { "content-type": "application/json" },
     });
@@ -146,6 +194,11 @@ export class GameRoom {
 
   async #start(config: GameConfig): Promise<Response> {
     const { WebGame, HostedGame } = await engine();
+    if (config.botPolicy.toLowerCase() === "external") {
+      // Against a real opponent the seed is the deal itself: whoever picks it
+      // can precompute both hands. The room rolls its own and never sends it.
+      config = { ...config, seed: crypto.getRandomValues(new Uint32Array(1))[0] };
+    }
     // Built before it is stored, so a bad deck is rejected rather than
     // written down as a room that can never open.
     const game = new WebGame(
@@ -165,6 +218,8 @@ export class GameRoom {
     await this.#state.storage.put(STORED, stored);
     this.#game = game;
     this.#stored = stored;
+    this.#deliveredBeats = 0;
+    this.#dispatch(game);
     return this.#snapshot(game);
   }
 
@@ -177,6 +232,19 @@ export class GameRoom {
       const stored = await this.#state.storage.get<StoredGame>(STORED);
       if (!stored) return {};
       const { WebGame, HostedGame } = await engine();
+      const engineVersion = HostedGame.engineVersion();
+      const protocolVersion = HostedGame.protocolVersion();
+      if (
+        stored.protocolVersion !== protocolVersion ||
+        stored.engineVersion !== engineVersion
+      ) {
+        return {
+          refused:
+            `game was recorded on engine ${stored.engineVersion} protocol ` +
+            `${stored.protocolVersion}, this is ${engineVersion} ` +
+            `protocol ${protocolVersion}`,
+        };
+      }
       const game = new WebGame(
         stored.config.humanDeck,
         stored.config.botDeck,
@@ -185,21 +253,6 @@ export class GameRoom {
         stored.config.seed,
         stored.config.format,
       );
-      const engineVersion = HostedGame.engineVersion();
-      const protocolVersion = HostedGame.protocolVersion();
-      if (
-        stored.protocolVersion !== protocolVersion ||
-        stored.engineVersion !== engineVersion
-      ) {
-        // Replaying across an engine change can land somewhere else, or on a
-        // command that is no longer legal. Neither is worth guessing at.
-        return {
-          refused:
-            `game was recorded on engine ${stored.engineVersion} protocol ` +
-            `${stored.protocolVersion}, this is ${engineVersion} ` +
-            `protocol ${protocolVersion}`,
-        };
-      }
       for (const [position, command] of stored.commands.entries()) {
         try {
           apply(game, command);
@@ -213,18 +266,123 @@ export class GameRoom {
       }
       this.#game = game;
       this.#stored = stored;
+      // A rebuilt room delivers the live queue afresh to whoever connects.
+      this.#deliveredBeats = 0;
       return { game };
     });
     if (outcome.refused) throw new Error(outcome.refused);
     return outcome.game ?? null;
   }
 
-  async #command(game: WebGame, command: Command): Promise<Response> {
+  async #apply(game: WebGame, command: Command): Promise<void> {
     const stored = this.#stored;
-    if (!stored) return Response.json({ error: "no game" }, { status: 404 });
+    if (!stored) throw new Error("no game");
     apply(game, command);
+    if (!BOT_COMMANDS.has(command.t)) {
+      // A human command resets the wasm's beat queue, so delivery starts over.
+      this.#deliveredBeats = 0;
+    }
     stored.commands.push(command);
     await this.#state.storage.put(STORED, stored);
-    return this.#snapshot(game);
+    this.#dispatch(game);
+  }
+
+  #connect(game: WebGame, role: string): Response {
+    if (role !== "human" && role !== "bot") {
+      return Response.json({ error: `unknown role ${role}` }, { status: 400 });
+    }
+    const pair = new WebSocketPair();
+    const server = pair[1];
+    server.accept();
+    if (role === "bot") {
+      this.#bot?.close(1000, "replaced by a newer driver");
+      this.#bot = server;
+      server.addEventListener("message", (event) => {
+        void this.#onBotMessage(game, event.data);
+      });
+      server.addEventListener("close", () => {
+        if (this.#bot === server) this.#bot = null;
+      });
+      if (game.opponentIsDeciding()) this.#promptBot(game);
+    } else {
+      this.#humans.add(server);
+      server.addEventListener("message", (event) => {
+        void this.#onHumanMessage(game, event.data);
+      });
+      server.addEventListener("close", () => {
+        this.#humans.delete(server);
+      });
+      server.send(this.#deliverable(game));
+    }
+    return new Response(null, { status: 101, webSocket: pair[0] } as ResponseInit);
+  }
+
+  async #onHumanMessage(game: WebGame, data: unknown): Promise<void> {
+    let command: Command;
+    try {
+      command = JSON.parse(String(data)) as Command;
+      if (BOT_COMMANDS.has(command.t)) throw new Error("that verb belongs to the bot socket");
+    } catch (cause) {
+      this.#toHumans(JSON.stringify({ t: "error", message: String(cause) }));
+      return;
+    }
+    try {
+      await this.#apply(game, command);
+    } catch (cause) {
+      this.#toHumans(JSON.stringify({ t: "error", message: String(cause) }));
+      // The command did not take; the board they see is still right.
+    }
+  }
+
+  async #onBotMessage(game: WebGame, data: unknown): Promise<void> {
+    try {
+      const message = JSON.parse(String(data)) as { t: string; index: number };
+      if (message.t !== "act") throw new Error("the bot socket speaks only act");
+      await this.#apply(game, { t: "botAct", index: message.index });
+    } catch (cause) {
+      this.#bot?.send(JSON.stringify({ t: "error", message: String(cause) }));
+    }
+  }
+
+  /**
+   * After any change: either the opponent seat holds the decision and its
+   * driver is prompted, or the human's view is current and gets pushed.
+   */
+  #dispatch(game: WebGame): void {
+    if (game.opponentIsDeciding()) {
+      this.#promptBot(game);
+      return;
+    }
+    this.#toHumans(this.#deliverable(game));
+    const result = (JSON.parse(game.state_json()) as { result?: unknown }).result;
+    if (result && this.#bot) {
+      this.#bot.send(JSON.stringify({ t: "result", result }));
+    }
+  }
+
+  #promptBot(game: WebGame): void {
+    this.#bot?.send(
+      JSON.stringify({
+        t: "observe",
+        observation: JSON.parse(game.opponentObserveJson()),
+      }),
+    );
+  }
+
+  /** The state message with only the beats nobody has been sent yet. */
+  #deliverable(game: WebGame): string {
+    const state = JSON.parse(game.state_json()) as {
+      opponentActions?: unknown[];
+    };
+    const beats = state.opponentActions ?? [];
+    state.opponentActions = beats.slice(this.#deliveredBeats);
+    this.#deliveredBeats = beats.length;
+    return JSON.stringify({ t: "state", state });
+  }
+
+  #toHumans(payload: string): void {
+    for (const socket of this.#humans) {
+      socket.send(payload);
+    }
   }
 }

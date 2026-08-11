@@ -497,6 +497,37 @@ Protocols 8 through 16 introduced nine compatibility changes:
   field was added; clients must still consume the complete indexed action list
   rather than assuming which modal casts exist.
 
+## Hosted games over WebSocket
+
+A deployment that enables its server-side game routes hosts one game per
+room at `/_game/<room-id>/…`. The human plays through the ordinary web UI
+(`/?hosted=<room-id>`); a bot drives the opponent seat by connecting to
+`/_game/<room-id>/ws?role=bot` after the room is started with
+`botPolicy: "External"`.
+
+The bot's contract is the one this guide already describes, moved onto a
+socket. Whenever the opponent seat holds the decision the room sends
+
+```json
+{ "t": "observe", "observation": { …the observation described above… } }
+```
+
+and the bot answers with an index into that observation's `legalActions`:
+
+```json
+{ "t": "act", "index": 3 }
+```
+
+A new observation follows if the seat still holds the decision; `{"t":
+"result", …}` arrives when the game ends, and `{"t": "error", …}` reports a
+rejected action, after which the previous observation still stands. The
+room never sends the seed of an external game, and it rolls that seed
+itself, ignoring the starter's suggestion — whoever picks the seed can
+precompute both hands.
+
+These routes are development-flagged (`HOSTED_GAMES`), unauthenticated, and
+carry no move clock yet; treat them as a local or trusted-network surface.
+
 ## Determinism and versioning
 
 The same engine and protocol versions, format, ordered decks, seed, opponent
