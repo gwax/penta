@@ -121,6 +121,11 @@ pub const fn undying() -> AbilityDef {
 }
 
 #[must_use]
+pub const fn indestructible() -> AbilityDef {
+    keyword("Indestructible", KeywordAbility::Indestructible)
+}
+
+#[must_use]
 pub const fn mountainwalk() -> AbilityDef {
     keyword("Mountainwalk", KeywordAbility::Mountainwalk)
 }

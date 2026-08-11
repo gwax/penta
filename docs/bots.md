@@ -388,6 +388,9 @@ distinct legal action; cancelling is not the same as choosing zero options.
 and `format` as observations, plus `formatName` and the canonical `cards`
 array. The array is ordered by `definition` and is not filtered: it contains
 tokens and definitions outside the selected format as well as playable cards.
+That includes off-format rules test cases such as Darksteel Ingot (definition
+`263`, debut set `darksteel`), whose indestructible ability is executable even
+though the card is not legal in either shipped format.
 `allowed` means the definition belongs to the format's card pool; `legal` is
 `allowed && !banned`, so a restricted card is still legal. Definitions include
 their structure, parts, play options, legality, printings, and clause-derived

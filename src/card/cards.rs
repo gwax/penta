@@ -272,3 +272,4 @@ pub const TETRAVITE_TOKEN: CardDefinitionId = CardDefinitionId(259);
 pub const ASSASSIN_TOKEN_1_1_BLACK: CardDefinitionId = CardDefinitionId(260);
 pub const URBORG_TOMB_OF_YAWGMOTH: CardDefinitionId = CardDefinitionId(261);
 pub const YAVIMAYA_CRADLE_OF_GROWTH: CardDefinitionId = CardDefinitionId(262);
+pub const DARKSTEEL_INGOT: CardDefinitionId = CardDefinitionId(263);

@@ -20,6 +20,12 @@ snapshots.
 
 ### Changed
 
+- Indestructible now stops destroy effects, including those that disallow
+  regeneration, and destruction from lethal or deathtouch damage. Sacrifice,
+  zero toughness, the legend rule, and other non-destroy graveyard moves remain
+  unaffected. The unfiltered catalog adds the off-format Darksteel Ingot test
+  definition (`263`, debut set `darksteel`); this additive entry does not bump
+  protocol 15.
 - `DeclareAttacker` now carries a `defender`, naming the player or the
   planeswalker the creature is attacking. A bot that emitted the action
   without one must add it; every legal action the engine offers already

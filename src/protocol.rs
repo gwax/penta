@@ -873,6 +873,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::TheDark => "the-dark",
         CardSet::FallenEmpires => "fallen-empires",
         CardSet::Promo1994 => "promo-1994",
+        CardSet::Darksteel => "darksteel",
         CardSet::PlanarChaos => "planar-chaos",
         CardSet::FutureSight => "future-sight",
         CardSet::Innistrad => "innistrad",
@@ -2551,6 +2552,8 @@ mod tests {
         assert_eq!(find("Lightning Bolt")["legal"], false);
         assert_eq!(find("Thespian's Stage")["debutSet"], "gatecrash");
         assert_eq!(find("Thespian's Stage")["legal"], true);
+        assert_eq!(find("Darksteel Ingot")["debutSet"], "darksteel");
+        assert_eq!(find("Darksteel Ingot")["legal"], false);
         assert_eq!(find("Dryad Arbor")["debutSet"], "future-sight");
         assert_eq!(find("Dryad Arbor")["legal"], false);
         assert_eq!(find("Nylea's Presence")["debutSet"], "theros");

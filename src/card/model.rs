@@ -23,6 +23,7 @@ pub enum CardSet {
     TheDark,
     FallenEmpires,
     Promo1994,
+    Darksteel,
     PlanarChaos,
     FutureSight,
     Innistrad,
@@ -2291,6 +2292,7 @@ pub enum KeywordAbility {
     Hexproof,
     Intimidate,
     Undying,
+    Indestructible,
     /// "Attacks each combat if able." Not a printed keyword, but it behaves
     /// like one: a static requirement with no parameters that several cards
     /// state in the same words.
@@ -2325,6 +2327,7 @@ impl KeywordAbility {
             Self::Mountainwalk => 15,
             Self::AttacksEachCombatIfAble => 16,
             Self::Forestwalk => 17,
+            Self::Indestructible => 18,
             Self::ProtectionFrom(_) => return None,
         })
     }

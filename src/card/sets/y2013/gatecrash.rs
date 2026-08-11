@@ -165,7 +165,7 @@ pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     amount: ValueDef::Constant(4),
                 }),
-            // Indestructible is not modeled.
+            // The keyword is modeled, but this all-permanents grant remains staged.
             AbilityDef::unimplemented_spell(
                 "Permanents you control gain indestructible until end of turn",
                 "Printed mode is cataloged but is not executed by the engine.",
