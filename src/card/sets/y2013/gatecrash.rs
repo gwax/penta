@@ -160,15 +160,22 @@ pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
         "Choose one —\n• Boros Charm deals 4 damage to target player or planeswalker.\n• Permanents you control gain indestructible until end of turn.\n• Target creature gains double strike until end of turn.",
         &[
             AbilityDef::spell_with_targets("Boros Charm deals 4 damage to target player or planeswalker", &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::Player(PlayerRelation::Any),
+                AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
             )], EffectDef::DealDamage {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     amount: ValueDef::Constant(4),
                 }),
-            // The keyword is modeled, but this all-permanents grant remains staged.
-            AbilityDef::unimplemented_spell(
+            AbilityDef::spell(
                 "Permanents you control gain indestructible until end of turn",
-                "Printed mode is cataloged but is not executed by the engine.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::MatchingObjects {
+                        object: ObjectPredicateDef::Any,
+                        zones: &[ZoneKind::Battlefield],
+                        controller: PlayerRelation::You,
+                    },
+                    effect: AppliedEffectDef::GrantAbility(&abilities::indestructible()),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
             ),
             AbilityDef::spell_with_targets("Target creature gains double strike until end of turn", &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),

@@ -5,7 +5,7 @@ ships Eternal Central Old School 93/94 and the final pre-Theros ISD–RTR
 Standard format. This guide is for writing a program that plays it: from
 Python, C, C++, or Rust, against the included bots or against itself.
 
-This guide describes the current development wire contract, **protocol 15**.
+This guide describes the current development wire contract, **protocol 16**.
 Query `protocol_version()` and `engine_version()` through the selected binding
 and reject or migrate versions your client does not understand; pin both
 alongside trained weights. Old School remains the default for compatibility;
@@ -412,6 +412,13 @@ base targets and each selected mode occurrence into new consecutive runtime
 slot IDs. A card with no printed mana cost has `"manaCost": null`; a printed
 `{0}` has a mana-cost object whose `generic` field is zero.
 
+Protocol 16 makes every Boros Charm mode executable. Mode 0 legal actions
+target a player or planeswalker, mode 1 has no targets and grants the caster's
+current permanents Indestructible until cleanup, and mode 2 targets a creature.
+The catalog's simplified projection presents the first mode as `AnyTarget`, but
+its concrete legal actions never offer creatures; those actions are the
+authority for the semantic restriction.
+
 A play option's `restriction` is `normal`, `fromHandOnly`, or
 `beforeCombatDamage`. Read the tag rather than assuming every otherwise valid
 option is available from any zone or at every casting window.
@@ -456,7 +463,7 @@ play options, alternative costs, and additional costs.
 
 ### Migrating from protocol 7
 
-Protocols 8 through 14 introduced seven compatibility changes:
+Protocols 8 through 16 introduced nine compatibility changes:
 
 - Protocol 8 replaced `manaCost.whiteRedHybrid` with the sparse `hybrid`
   array described above.
@@ -481,6 +488,14 @@ Protocols 8 through 14 introduced seven compatibility changes:
   event-log consumers must stop matching that variant; bot JSON shapes are
   otherwise unchanged from protocol 13. Protocol 14 also added
   `beforeCombatDamage` to the catalog play-option `restriction` vocabulary.
+- Protocol 15 added a `defender` to every `DeclareAttacker` action, loyalty
+  state to planeswalker permanents, command-zone emblems to observations, and
+  grouped `members` to decision options.
+- Protocol 16 completes Boros Charm. Supported-format legal actions can now
+  contain its target-free Mode 1 and planeswalker-targeted Mode 0 casts, and
+  its catalog coverage advances from `partial` to `complete`. No action JSON
+  field was added; clients must still consume the complete indexed action list
+  rather than assuming which modal casts exist.
 
 ## Determinism and versioning
 

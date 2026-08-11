@@ -16820,6 +16820,7 @@ impl Game {
         self.destroy_permanents(&[id], true);
     }
 
+    #[cfg(test)]
     fn destroy_permanent_without_regeneration(&mut self, id: GameObjectId) {
         self.destroy_permanents(&[id], false);
     }
