@@ -26,9 +26,16 @@ fn repo_root() -> PathBuf {
 /// on the arm it feeds.
 const RETIRED: [&str; 0] = [];
 
-/// Files that dispatch on behavior to decide something, as opposed to the card
+/// Trees that dispatch on behavior to decide something, as opposed to the card
 /// definitions that supply it and the tables that map it back to rules.
-const READERS: [&str; 2] = ["src/policy.rs", "wasm/src/lib.rs"];
+///
+/// Directories, not files: naming `src/policy.rs` was enough until the policy
+/// was split into modules, at which point the guard was reading a 64-line
+/// facade and quietly checking nothing.
+const READER_TREES: [&str; 2] = ["src/policy", "wasm/src"];
+
+/// Single files worth reading alongside those trees.
+const READER_FILES: [&str; 1] = ["src/policy.rs"];
 
 fn behaviors_in(source: &str) -> BTreeSet<String> {
     let mut found = BTreeSet::new();
@@ -80,16 +87,37 @@ fn every_behavior_a_reader_dispatches_on_is_still_reported_by_a_card() {
         "the scan found almost no behaviors, so it is measuring the wrong thing"
     );
 
+    let mut reader_files = Vec::new();
+    for tree in READER_TREES {
+        rust_files_under(&root.join(tree), &mut reader_files);
+    }
+    for file in READER_FILES {
+        let path = root.join(file);
+        if path.exists() {
+            reader_files.push(path);
+        }
+    }
+
     let retired: BTreeSet<String> = RETIRED.iter().map(|name| (*name).to_string()).collect();
     let mut dead = Vec::new();
-    for reader in READERS {
-        let source = fs::read_to_string(root.join(reader)).expect("a reader file is readable");
+    let mut seen_any = false;
+    for reader in &reader_files {
+        let source = fs::read_to_string(reader).expect("a reader file is readable");
+        let relative = reader.strip_prefix(&root).unwrap_or(reader).display();
         for behavior in behaviors_in(&source) {
+            seen_any = true;
             if !reported.contains(&behavior) && !retired.contains(&behavior) {
-                dead.push(format!("{reader}: CardBehavior::{behavior}"));
+                dead.push(format!("{relative}: CardBehavior::{behavior}"));
             }
         }
     }
+    // Without this the guard passes loudest when it has stopped working: move
+    // the dispatch somewhere unscanned and every arm looks fine.
+    assert!(
+        seen_any,
+        "no reader mentions CardBehavior at all, so this is scanning the wrong \
+         place. Point READER_TREES at wherever the dispatch went."
+    );
 
     assert!(
         dead.is_empty(),

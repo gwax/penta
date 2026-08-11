@@ -11,8 +11,46 @@
 use std::fs;
 use std::path::PathBuf;
 
-/// Files that stand in for a seat: they hold a view, not the engine.
-const SEAT_SIDE: [&str; 1] = ["wasm/src/lib.rs"];
+/// Everything under here stands in for a seat: it holds a view, not the
+/// engine. Scanning the tree rather than naming one file matters -- `WebGame`'s
+/// body is spread over several modules, and a guard pointed at `lib.rs` alone
+/// would read a facade and check nothing.
+const SEAT_TREE: &str = "wasm/src";
+
+/// The two that legitimately hold the engine, and say so in their own docs.
+const ENGINE_OWNERS: [&str; 2] = ["session.rs", "hosted.rs"];
+
+fn seat_side_files(root: &std::path::Path) -> Vec<PathBuf> {
+    let mut found = Vec::new();
+    collect_rust_files(&root.join(SEAT_TREE), &mut found);
+    found.retain(|path| {
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
+        !ENGINE_OWNERS.contains(&name) && !path.components().any(|part| part.as_os_str() == "tests")
+    });
+    assert!(
+        found.len() > 2,
+        "expected several seat-side modules under {SEAT_TREE}, found {}",
+        found.len()
+    );
+    found
+}
+
+fn collect_rust_files(directory: &std::path::Path, into: &mut Vec<PathBuf>) {
+    let Ok(entries) = fs::read_dir(directory) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_rust_files(&path, into);
+        } else if path.extension().is_some_and(|extension| extension == "rs") {
+            into.push(path);
+        }
+    }
+}
 
 /// Everything the seat-facing client does to the engine goes through the
 /// session, so the day a remote one appears there is a list of methods to
@@ -22,16 +60,21 @@ const SEAT_SIDE: [&str; 1] = ["wasm/src/lib.rs"];
 #[test]
 fn a_seat_holds_a_session_rather_than_the_engine() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let source = fs::read_to_string(root.join("wasm/src/lib.rs")).expect("readable");
-    let seat_side = source
-        .split_once("mod tests {")
-        .map_or(source.as_str(), |(before, _)| before);
-    let offenders: Vec<_> = seat_side
-        .lines()
-        .enumerate()
-        .filter(|(_, line)| line.contains("self.game"))
-        .map(|(number, line)| format!("wasm/src/lib.rs:{}: {}", number + 1, line.trim()))
-        .collect();
+    let mut offenders = Vec::new();
+    for path in seat_side_files(&root) {
+        let source = fs::read_to_string(&path).expect("readable");
+        let seat_side = source
+            .split_once("mod tests {")
+            .map_or(source.as_str(), |(before, _)| before);
+        let relative = path.strip_prefix(&root).unwrap_or(&path).display();
+        offenders.extend(
+            seat_side
+                .lines()
+                .enumerate()
+                .filter(|(_, line)| line.contains("self.game"))
+                .map(|(number, line)| format!("{relative}:{}: {}", number + 1, line.trim())),
+        );
+    }
     assert!(
         offenders.is_empty(),
         "these reach past the session to the engine. Add the method to \
@@ -45,8 +88,9 @@ fn a_seat_holds_a_session_rather_than_the_engine() {
 fn a_seat_never_reads_the_raw_event_log() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut offenders = Vec::new();
-    for relative in SEAT_SIDE {
-        let source = fs::read_to_string(root.join(relative)).expect("a seat file is readable");
+    for path in seat_side_files(&root) {
+        let source = fs::read_to_string(&path).expect("a seat file is readable");
+        let relative = path.strip_prefix(&root).unwrap_or(&path).display();
         for (number, line) in source.lines().enumerate() {
             if line.contains(".events()") {
                 offenders.push(format!("{relative}:{}: {}", number + 1, line.trim()));
