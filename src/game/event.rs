@@ -46,6 +46,9 @@ pub enum WinReason {
     /// An effect said the opponent loses the game, with no life total or
     /// empty library involved.
     OpponentLostToAnEffect,
+    /// The opponent did not act inside the time their host allowed. Distinct
+    /// from conceding: nobody chose this, it was imposed by a clock.
+    OpponentRanOutOfTime,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

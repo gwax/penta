@@ -239,3 +239,25 @@ fn decision_json_exposes_trigger_procedure_and_resolution_order_semantics() {
             .is_none()
     );
 }
+
+/// The wire name for a loss on time. A bot switching on `result.reason` is
+/// entitled to tell "my opponent gave up" from "I was too slow", so the
+/// string is part of the contract rather than an implementation detail.
+#[test]
+fn a_loss_on_time_is_named_on_the_wire_and_is_not_a_concession() {
+    let catalog = poc::catalog().expect("catalog builds");
+    let deck = poc::goblins();
+    let mut game = Game::new(catalog.clone(), [deck.clone(), deck], 3).expect("game starts");
+    game.lose_on_time(PlayerId::Two);
+
+    let observation = game.observe(PlayerId::One);
+    let json = observation_json_for_format(
+        &catalog,
+        Format::OldSchool9394,
+        &observation,
+        game.in_pregame(),
+        &protocol_actions(&observation),
+    );
+    assert_eq!(json["result"]["winner"], "p1");
+    assert_eq!(json["result"]["reason"], "OpponentRanOutOfTime");
+}

@@ -354,6 +354,22 @@ impl Game {
         }
     }
 
+    /// Ends the game because `player` ran out of time.
+    ///
+    /// This is not an action, because losing on time is not something a
+    /// player does -- it is imposed by whatever is holding the clock, and it
+    /// does not require that player to hold priority. Hosts with no clock
+    /// never call it.
+    pub fn lose_on_time(&mut self, player: PlayerId) {
+        if self.result.is_some() {
+            return;
+        }
+        self.finish(GameResult::Winner {
+            winner: player.opponent(),
+            reason: WinReason::OpponentRanOutOfTime,
+        });
+    }
+
     /// Validates an action against the current state without mutating the game.
     ///
     /// Unlike [`legal_actions`], this also validates the option IDs supplied to

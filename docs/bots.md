@@ -5,7 +5,7 @@ ships Eternal Central Old School 93/94 and the final pre-Theros ISD–RTR
 Standard format. This guide is for writing a program that plays it: from
 Python, C, C++, or Rust, against the included bots or against itself.
 
-This guide describes the current development wire contract, **protocol 17**.
+This guide describes the current development wire contract, **protocol 18**.
 Query `protocol_version()` and `engine_version()` through the selected binding
 and reject or migrate versions your client does not understand; pin both
 alongside trained weights. Old School remains the default for compatibility;
@@ -259,7 +259,7 @@ simulating in their own process, where there is nobody to hide from.
 | `stack` | pending spells, activated abilities, and triggered abilities, bottom to top; entries expose the source object ID, creating definition and ability origin/text, controller, counterability, targets, chosen permanents, X, and a locked cast signature when applicable |
 | `graveyards`, `exiles` | public zones, both players |
 | `decision` | a pending choice (see below), or null |
-| `result` | null while running, else `{winner, reason}`; `reason` is `OpponentConceded`, `OpponentLostAllLife`, `OpponentTriedToDrawFromEmptyLibrary`, or `OpponentLostToAnEffect` |
+| `result` | null while running, else `{winner, reason}`; `reason` is `OpponentConceded`, `OpponentLostAllLife`, `OpponentTriedToDrawFromEmptyLibrary`, `OpponentLostToAnEffect`, or `OpponentRanOutOfTime` |
 | `legalActions` | what you can do, each with an `index` |
 
 An attempted draw from an empty library does not end resolution immediately.
@@ -475,6 +475,16 @@ protocol 7's one-off numeric `whiteRedHybrid` field with this general array.
 The shape is used everywhere the catalog reports a cost, including parts,
 play options, alternative costs, and additional costs.
 
+### Migrating from protocol 17
+
+`result.reason` gained `OpponentRanOutOfTime`, for a seat that lost to a
+host's clock rather than to a concession anyone chose. A client that switches
+exhaustively on the reason must handle it; one that treats an unrecognised
+reason as "the game ended" already works.
+
+Nothing else moved. Only hosted rooms impose a clock, so a bot playing
+in-process through the bindings will never see this reason.
+
 ### Migrating from protocol 7
 
 Protocols 8 through 17 introduced ten compatibility changes:
@@ -572,8 +582,10 @@ module. `examples/python/hosted_bot.py` is this with argument parsing and a
 A room runs a move clock. Whoever must act has **60 seconds** if they are a
 bot and five minutes if they are a person; every applied command starts the
 budget again, so it is a clock per move, not per game. Run out and that seat
-concedes -- the result, the events, and the replay all read exactly like a
-resignation, because that is what the engine is told.
+loses, with `result.reason` reporting `OpponentRanOutOfTime`. It is
+deliberately not a concession: nobody chose it, and a bot learning from its
+own results should be able to tell "my opponent gave up" from "I was too
+slow".
 
 Stop heartbeating with a game in progress and you lose that game too, without
 waiting for the clock. The registry notices within about two presence windows

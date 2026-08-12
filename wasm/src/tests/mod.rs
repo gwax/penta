@@ -289,10 +289,10 @@ mod replay_journal {
     }
 }
 
-/// Losing on time. A room enforces its clock by conceding for the seat that
-/// stopped answering, so the engine treats a timeout exactly as a resignation
-/// and a replay of the game still reaches the same result.
-mod forfeit {
+/// Losing on time. A room enforces its clock this way, and the result says
+/// what actually happened rather than blaming the player for a concession
+/// they never made.
+mod lose_on_time {
     use super::*;
 
     fn parsed(json: &str) -> serde_json::Value {
@@ -300,7 +300,7 @@ mod forfeit {
     }
 
     #[test]
-    fn forfeiting_the_bot_seat_hands_the_game_to_the_human() {
+    fn a_bot_that_runs_out_of_time_hands_the_game_to_the_human() {
         let mut game =
             WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
         assert!(
@@ -308,13 +308,13 @@ mod forfeit {
             "game is live"
         );
 
-        game.forfeit("bot").expect("the bot loses on time");
+        game.lose_on_time("bot").expect("the bot loses on time");
 
         let result = parsed(&game.state_json());
         assert_eq!(result["result"]["outcome"], "win", "{result}");
         assert!(
-            game.forfeit("bot").is_err(),
-            "a finished game cannot be forfeited again"
+            game.lose_on_time("bot").is_err(),
+            "a finished game cannot run out of time again"
         );
     }
 
@@ -329,26 +329,42 @@ mod forfeit {
             !game.opponent_is_deciding(),
             "the human is the one on the clock here"
         );
-        game.forfeit("bot").expect("forfeit does not need the turn");
+        game.lose_on_time("bot")
+            .expect("the clock does not need the turn");
         assert_eq!(parsed(&game.state_json())["result"]["outcome"], "win");
     }
 
     #[test]
-    fn forfeiting_the_human_seat_loses_the_game() {
+    fn a_human_who_runs_out_of_time_loses_the_game() {
         let mut game =
             WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
-        game.forfeit("human").expect("the human loses on time");
+        game.lose_on_time("human").expect("the human loses on time");
         assert_eq!(parsed(&game.state_json())["result"]["outcome"], "loss");
+    }
+
+    /// The wart this replaced: a player who walked away was told they
+    /// conceded, which is a thing they never did.
+    #[test]
+    fn the_result_says_time_rather_than_concession() {
+        let mut game =
+            WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
+        game.lose_on_time("human").expect("the human loses on time");
+        let message = parsed(&game.state_json())["result"]["message"]
+            .as_str()
+            .expect("a finished game explains itself")
+            .to_string();
+        assert!(message.contains("ran out of time"), "{message}");
+        assert!(!message.contains("conceded"), "{message}");
     }
 
     #[test]
     fn an_unknown_seat_is_refused() {
         let mut game =
             WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
-        assert!(game.forfeit("nobody").is_err());
+        assert!(game.lose_on_time("nobody").is_err());
         assert!(
             parsed(&game.state_json())["result"].is_null(),
-            "a refused forfeit leaves the game alone"
+            "a refused timeout leaves the game alone"
         );
     }
 
@@ -365,13 +381,13 @@ mod forfeit {
                 .expect("keep is offered"),
         )
         .expect("keep applies");
-        game.forfeit("bot").expect("the bot loses on time");
+        game.lose_on_time("bot").expect("the bot loses on time");
 
         let rebuilt = WebGame::from_replay_json(&game.replay_json()).expect("replay rebuilds");
         assert_eq!(
             rebuilt.state_json(),
             game.state_json(),
-            "the journal carries the forfeit"
+            "the journal carries the timeout"
         );
     }
 }

@@ -230,5 +230,7 @@ pub(super) fn win_reason_text(reason: penta::WinReason, human_lost: bool) -> &'s
         }
         (penta::WinReason::OpponentLostToAnEffect, false) => "opponent lost to an effect",
         (penta::WinReason::OpponentLostToAnEffect, true) => "you lost to an effect",
+        (penta::WinReason::OpponentRanOutOfTime, false) => "opponent ran out of time",
+        (penta::WinReason::OpponentRanOutOfTime, true) => "you ran out of time",
     }
 }

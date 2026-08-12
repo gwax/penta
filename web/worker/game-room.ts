@@ -64,7 +64,7 @@ type Command =
   | { t: "phaseStop"; phase: string; enabled: boolean }
   | { t: "autopass"; enabled: boolean }
   | { t: "botAct"; index: number }
-  | { t: "forfeit"; seat: "human" | "bot"; reason: string };
+  | { t: "loseOnTime"; seat: "human" | "bot"; reason: string };
 
 /** The bot seat's one verb; everything else belongs to the human. */
 const BOT_COMMANDS = new Set(["botAct"]);
@@ -144,8 +144,8 @@ function apply(game: WebGame, command: Command): void {
     case "botAct":
       game.opponentAct(command.index);
       return;
-    case "forfeit":
-      game.forfeit(command.seat);
+    case "loseOnTime":
+      game.loseOnTime(command.seat);
   }
 }
 
@@ -180,18 +180,18 @@ export class GameRoom {
       }
       if (route === "state") return this.#snapshot(game);
       if (route === "opponent") return this.#opponentView(game);
-      if (route === "forfeit") {
+      if (route === "lose-on-time") {
         const body = (await request.json().catch(() => ({}))) as {
           seat?: "human" | "bot";
           reason?: string;
         };
         if (body.seat !== "human" && body.seat !== "bot") {
-          return Response.json({ error: "forfeit needs a seat" }, { status: 400 });
+          return Response.json({ error: "a timeout needs a seat" }, { status: 400 });
         }
         await this.#apply(game, {
-          t: "forfeit",
+          t: "loseOnTime",
           seat: body.seat,
-          reason: body.reason ?? "forfeited",
+          reason: body.reason ?? "ran out of time",
         });
         return this.#snapshot(game);
       }
@@ -453,9 +453,10 @@ export class GameRoom {
   }
 
   /**
-   * The clock ran out. Losing on time is losing, so the seat that stopped
-   * answering concedes -- recorded as an ordinary command, which keeps the
-   * room's replay complete and tells the other player what happened.
+   * The clock ran out, so the seat that stopped answering loses -- recorded
+   * as an ordinary command, which keeps the room's replay complete, and
+   * reported as a timeout rather than a concession, because the player did
+   * not choose it.
    */
   async alarm(): Promise<void> {
     const game = await this.#load();
@@ -475,7 +476,7 @@ export class GameRoom {
       return;
     }
     await this.#apply(game, {
-      t: "forfeit",
+      t: "loseOnTime",
       seat: clock.seat,
       reason: "ran out of time",
     });

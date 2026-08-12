@@ -211,7 +211,7 @@ export class BotRegistry {
         continue;
       }
       for (const invite of invites) {
-        await this.#forfeit(invite.room, `${bot.name} stopped answering`);
+        await this.#loseOnTime(invite.room, `${bot.name} stopped answering`);
       }
       bot.invites = [];
       await this.#state.storage.put(PREFIX + bot.id, bot);
@@ -220,11 +220,11 @@ export class BotRegistry {
   }
 
   /** Tells a room its bot is gone. A room that has already finished says so. */
-  async #forfeit(room: string, reason: string): Promise<void> {
+  async #loseOnTime(room: string, reason: string): Promise<void> {
     try {
       const stub = this.#env.GAME_ROOMS.get(this.#env.GAME_ROOMS.idFromName(room));
       await stub.fetch(
-        new Request(`https://room/_game/${room}/forfeit`, {
+        new Request(`https://room/_game/${room}/lose-on-time`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ seat: "bot", reason }),

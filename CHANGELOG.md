@@ -12,9 +12,9 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
-## Unreleased — protocol 17
+## Unreleased — protocol 18
 
-The current development checkout reports engine 0.6.0 and protocol 17. Pin
+The current development checkout reports engine 0.6.0 and protocol 18. Pin
 both; the engine version alone does not distinguish it from earlier 0.6.0
 snapshots.
 
@@ -31,16 +31,22 @@ snapshots.
   decision and hands back its observation, so a remote bot can play a hosted
   game with two ordinary HTTP requests instead of a WebSocket. The socket path
   is unchanged and remains the low-latency option.
+- **Protocol 18.** `result.reason` gained `OpponentRanOutOfTime`, reported
+  when a seat lost to a host's clock instead of conceding. A client that
+  switches exhaustively on the reason must handle it. `Game::lose_on_time` is
+  the engine entry point -- deliberately not an `Action`, because a clock is
+  imposed rather than played, and it does not require the losing seat to hold
+  priority.
 - A move clock in every hosted room, enforced by a Durable Object alarm so a
   timeout lands whether or not anyone is connected. The seat to act gets 60
   seconds if it is a bot and five minutes if it is a person, restarted by each
-  applied command. Running out concedes that seat: `WebGame::forfeit(seat)`
-  applies the concession, so the result, the events, and the replay read like
-  a resignation. A live room's state payload carries `moveClock` with the
-  deadline, and the web client counts down the last minute of your own.
+  applied command. Running out ends the game through
+  `WebGame.loseOnTime(seat)`. A live room's state payload carries `moveClock`
+  with the deadline, and the web client counts down the last minute of your
+  own.
 - A bot that stops heartbeating loses any game it is in, without waiting for
   the clock: the registry notices its lease has lapsed and tells the room.
-  `POST /_game/<room>/forfeit {seat, reason}` is that instruction.
+  `POST /_game/<room>/lose-on-time {seat, reason}` is that instruction.
 - The web client's opponent picker lists bots that are online now, and
   challenging one deals a hosted game against it. `examples/python/hosted_bot.py`
   is a complete bot on this surface: register, heartbeat, play.

@@ -48,6 +48,12 @@ impl LocalSession {
         self.game.apply(seat, action).map_err(Box::new)
     }
 
+    /// Ends the game because a seat ran out of time. Imposed by the host's
+    /// clock rather than played, so it takes no action and needs no priority.
+    pub fn lose_on_time(&mut self, seat: PlayerId) {
+        self.game.lose_on_time(seat);
+    }
+
     pub fn result(&self) -> Option<GameResult> {
         self.game.result()
     }

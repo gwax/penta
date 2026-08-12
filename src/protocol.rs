@@ -69,7 +69,7 @@ use observation_json::{card_part_name, decision_json, stack_object_json};
 /// and planeswalker targets for its damage mode to supported-format actions.
 /// Version 17 makes Mana Vault's optional upkeep payment available even while
 /// it is untapped, adding that decision to supported-format legal actions.
-pub const PROTOCOL_VERSION: u32 = 17;
+pub const PROTOCOL_VERSION: u32 = 18;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold
