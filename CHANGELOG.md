@@ -31,6 +31,16 @@ snapshots.
   decision and hands back its observation, so a remote bot can play a hosted
   game with two ordinary HTTP requests instead of a WebSocket. The socket path
   is unchanged and remains the low-latency option.
+- A move clock in every hosted room, enforced by a Durable Object alarm so a
+  timeout lands whether or not anyone is connected. The seat to act gets 60
+  seconds if it is a bot and five minutes if it is a person, restarted by each
+  applied command. Running out concedes that seat: `WebGame::forfeit(seat)`
+  applies the concession, so the result, the events, and the replay read like
+  a resignation. A live room's state payload carries `moveClock` with the
+  deadline, and the web client counts down the last minute of your own.
+- A bot that stops heartbeating loses any game it is in, without waiting for
+  the clock: the registry notices its lease has lapsed and tells the room.
+  `POST /_game/<room>/forfeit {seat, reason}` is that instruction.
 - The web client's opponent picker lists bots that are online now, and
   challenging one deals a hosted game against it. `examples/python/hosted_bot.py`
   is a complete bot on this surface: register, heartbeat, play.

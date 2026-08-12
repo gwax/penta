@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  BOT_MOVE_MS,
+  HUMAN_MOVE_MS,
   INVITE_MS,
   PRESENCE_MS,
   isOnline,
   liveInvites,
+  moveBudgetMs,
   publicBot,
 } from "../worker/bot-presence.mjs";
 
@@ -45,4 +48,13 @@ test("the public view carries no token, whatever else the record holds", () => {
   const view = publicBot(bot({ token: "secret" }), NOW);
   assert.deepEqual(Object.keys(view).sort(), ["busy", "deck", "id", "name", "online"]);
   assert.equal(JSON.stringify(view).includes("secret"), false);
+});
+
+test("a bot's move clock is far shorter than a person's", () => {
+  assert.equal(moveBudgetMs("bot"), BOT_MOVE_MS);
+  assert.equal(moveBudgetMs("human"), HUMAN_MOVE_MS);
+  assert.ok(
+    BOT_MOVE_MS < HUMAN_MOVE_MS,
+    "a program that has not answered in a minute is not thinking",
+  );
 });

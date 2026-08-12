@@ -567,6 +567,27 @@ That is the whole integration -- no WebSocket, no engine build, no penta
 module. `examples/python/hosted_bot.py` is this with argument parsing and a
 `choose` you can replace.
 
+### Losing on time
+
+A room runs a move clock. Whoever must act has **60 seconds** if they are a
+bot and five minutes if they are a person; every applied command starts the
+budget again, so it is a clock per move, not per game. Run out and that seat
+concedes -- the result, the events, and the replay all read exactly like a
+resignation, because that is what the engine is told.
+
+Stop heartbeating with a game in progress and you lose that game too, without
+waiting for the clock. The registry notices within about two presence windows
+and tells the room. This is the faster answer for a bot that is gone; the move
+clock is the backstop for one that is still running but stuck.
+
+Two consequences worth designing for:
+
+- Answer promptly even when the answer is `PassPriority`. The clock does not
+  care that a decision was uninteresting.
+- Report finished rooms in `done`. A game that ended while you were not
+  looking -- because you lost on time -- still counts against your one game at
+  a time until you say so or the invitation expires.
+
 ### What being online means
 
 | Call | Meaning |
@@ -614,6 +635,10 @@ and the bot answers with an index into that observation's `legalActions`:
 { "t": "act", "index": 3 }
 ```
 
+A hosted room's state payload carries `moveClock` -- `{seat, deadline}`, with
+the deadline in epoch milliseconds -- whenever a game is live, so a client can
+show what remains.
+
 A new observation follows if the seat still holds the decision; `{"t":
 "result", …}` arrives when the game ends, and `{"t": "error", …}` reports a
 rejected action, after which the previous observation still stands. The
@@ -622,9 +647,8 @@ itself, ignoring the starter's suggestion — whoever picks the seed can
 precompute both hands.
 
 These routes, and the registry above, are development-flagged
-(`HOSTED_GAMES`), unauthenticated apart from the heartbeat token, and carry
-no move clock yet: a bot that stops answering mid-game holds its room open.
-Treat them as a local or trusted-network surface.
+(`HOSTED_GAMES`) and unauthenticated apart from the heartbeat token. Treat
+them as a local or trusted-network surface.
 
 ## Determinism and versioning
 

@@ -517,6 +517,40 @@ impl WebGame {
         Ok(())
     }
 
+    /// Ends the game by conceding for one seat, `"human"` or `"bot"`, which
+    /// is how a room enforces a clock. Losing on time is losing: the engine
+    /// already knows what conceding means, so the result, the events, and
+    /// the replay all read the same as a resignation.
+    ///
+    /// Unlike the ordinary verbs this does not require that seat to hold the
+    /// decision. A player who has stopped answering is exactly the player who
+    /// is not going to take their turn.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JavaScript error for an unknown seat, when the game is
+    /// already over, or when the engine rejects the concession.
+    pub fn forfeit(&mut self, seat: &str) -> Result<(), JsValue> {
+        let player = match seat {
+            "human" => self.human,
+            "bot" | "opponent" => self.human.opponent(),
+            other => return Err(js_error(format!("unknown seat {other:?}"))),
+        };
+        if self.session.result().is_some() {
+            return Err(js_error("the game is already over"));
+        }
+        self.mana_undo_history.clear();
+        self.attack_undo = None;
+        self.session
+            .apply(player, Action::Concede)
+            .map_err(js_error)?;
+        // The concession is the whole remaining story, so the human sees it
+        // as a beat rather than as a board that silently stopped.
+        self.human_action_state = None;
+        self.journal.push(json!({ "t": "forfeit", "seat": seat }));
+        Ok(())
+    }
+
     /// The whole game as a portable record: how it was dealt, and every
     /// command applied since, in order. Deterministic replay is what makes
     /// this a bug report's attachment -- the same JSON rebuilds the same
@@ -608,6 +642,7 @@ impl WebGame {
                 u32::try_from(command["index"].as_u64().unwrap_or_default())
                     .map_err(|_| js_error("index does not fit"))?,
             ),
+            "forfeit" => self.forfeit(command["seat"].as_str().unwrap_or_default()),
             other => Err(js_error(format!("unknown journal command {other:?}"))),
         }
     }

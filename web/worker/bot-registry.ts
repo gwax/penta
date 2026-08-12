@@ -15,16 +15,25 @@
  * itself for the next challenger.
  */
 
-import { isOnline, liveInvites, publicBot } from "./bot-presence.mjs";
+import { PRESENCE_MS, isOnline, liveInvites, publicBot } from "./bot-presence.mjs";
 
 interface DurableStorage {
   get<T>(key: string): Promise<T | undefined>;
   put<T>(key: string, value: T): Promise<void>;
   delete(key: string): Promise<boolean>;
   list<T>(options: { prefix: string }): Promise<Map<string, T>>;
+  setAlarm(time: number): Promise<void>;
 }
 interface DurableState {
   storage: DurableStorage;
+}
+
+/** Only the game rooms, so a dropped bot can be made to lose its game. */
+interface RegistryEnv {
+  GAME_ROOMS: {
+    idFromName(name: string): unknown;
+    get(id: unknown): { fetch(request: Request): Promise<Response> };
+  };
 }
 
 /** A game a bot has been asked to play, and has not finished or dropped. */
@@ -70,9 +79,11 @@ function identifier(): string {
 
 export class BotRegistry {
   readonly #state: DurableState;
+  readonly #env: RegistryEnv;
 
-  constructor(state: DurableState) {
+  constructor(state: DurableState, env: RegistryEnv) {
     this.#state = state;
+    this.#env = env;
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -167,7 +178,61 @@ export class BotRegistry {
     }
     bot.invites.push({ room, reason: body.reason ?? "challenge", at: now });
     await this.#state.storage.put(PREFIX + id, bot);
+    // Someone is now waiting on this bot, so start watching whether it is
+    // still here. Nothing else in the registry runs on its own.
+    await this.#state.storage.setAlarm(now + PRESENCE_MS);
     return Response.json({ room, deck: bot.deck });
+  }
+
+  /**
+   * Checks every bot that owes somebody a game. A bot that has stopped
+   * heartbeating has abandoned its opponent, so its room is told to end the
+   * game against it -- a human should not sit waiting out a move clock for a
+   * process that is gone.
+   *
+   * The move clock in the room is the backstop for a bot that is still alive
+   * but wedged; this is the faster, more specific answer for one that is not.
+   */
+  async alarm(): Promise<void> {
+    const stored = await this.#state.storage.list<RegisteredBot>({ prefix: PREFIX });
+    const now = Date.now();
+    let watching = false;
+    for (const bot of stored.values()) {
+      const invites = liveInvites(bot.invites, now);
+      if (invites.length === 0) {
+        if (invites.length !== bot.invites.length) {
+          bot.invites = invites;
+          await this.#state.storage.put(PREFIX + bot.id, bot);
+        }
+        continue;
+      }
+      if (isOnline(bot.lastSeen, now)) {
+        watching = true;
+        continue;
+      }
+      for (const invite of invites) {
+        await this.#forfeit(invite.room, `${bot.name} stopped answering`);
+      }
+      bot.invites = [];
+      await this.#state.storage.put(PREFIX + bot.id, bot);
+    }
+    if (watching) await this.#state.storage.setAlarm(now + PRESENCE_MS);
+  }
+
+  /** Tells a room its bot is gone. A room that has already finished says so. */
+  async #forfeit(room: string, reason: string): Promise<void> {
+    try {
+      const stub = this.#env.GAME_ROOMS.get(this.#env.GAME_ROOMS.idFromName(room));
+      await stub.fetch(
+        new Request(`https://room/_game/${room}/forfeit`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ seat: "bot", reason }),
+        }),
+      );
+    } catch {
+      // The room may be finished or gone; the invite is dropped either way.
+    }
   }
 
   async #list(): Promise<Response> {

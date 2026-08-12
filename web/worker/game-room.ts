@@ -63,7 +63,8 @@ type Command =
   | { t: "undoMana" }
   | { t: "phaseStop"; phase: string; enabled: boolean }
   | { t: "autopass"; enabled: boolean }
-  | { t: "botAct"; index: number };
+  | { t: "botAct"; index: number }
+  | { t: "forfeit"; seat: "human" | "bot"; reason: string };
 
 /** The bot seat's one verb; everything else belongs to the human. */
 const BOT_COMMANDS = new Set(["botAct"]);
@@ -78,6 +79,9 @@ interface StoredGame {
 interface DurableStorage {
   get<T>(key: string): Promise<T | undefined>;
   put<T>(key: string, value: T): Promise<void>;
+  delete(key: string): Promise<boolean>;
+  setAlarm(time: number): Promise<void>;
+  deleteAlarm(): Promise<void>;
 }
 interface DurableState {
   storage: DurableStorage;
@@ -100,7 +104,16 @@ interface LoadOutcome {
   refused?: string;
 }
 
+import { moveBudgetMs } from "./bot-presence.mjs";
+
 const STORED = "hosted-game";
+const CLOCK = "move-clock";
+
+/** Who the room is waiting on, and when their patience runs out. */
+interface MoveClock {
+  seat: "human" | "bot";
+  deadline: number;
+}
 
 function apply(game: WebGame, command: Command): void {
   switch (command.t) {
@@ -130,6 +143,9 @@ function apply(game: WebGame, command: Command): void {
       return;
     case "botAct":
       game.opponentAct(command.index);
+      return;
+    case "forfeit":
+      game.forfeit(command.seat);
   }
 }
 
@@ -143,6 +159,8 @@ export class GameRoom {
   #bot: RoomSocket | null = null;
   /** How many of the wasm's accumulated beats have already been sent. */
   #deliveredBeats = 0;
+  /** Who the room is waiting on, mirrored from storage. */
+  #clock: MoveClock | null = null;
 
   constructor(state: DurableState) {
     this.#state = state;
@@ -162,6 +180,21 @@ export class GameRoom {
       }
       if (route === "state") return this.#snapshot(game);
       if (route === "opponent") return this.#opponentView(game);
+      if (route === "forfeit") {
+        const body = (await request.json().catch(() => ({}))) as {
+          seat?: "human" | "bot";
+          reason?: string;
+        };
+        if (body.seat !== "human" && body.seat !== "bot") {
+          return Response.json({ error: "forfeit needs a seat" }, { status: 400 });
+        }
+        await this.#apply(game, {
+          t: "forfeit",
+          seat: body.seat,
+          reason: body.reason ?? "forfeited",
+        });
+        return this.#snapshot(game);
+      }
       if (route === "command") {
         const command = (await request.json()) as Command;
         await this.#apply(game, command);
@@ -210,9 +243,19 @@ export class GameRoom {
 
   /** The full current snapshot, for polling callers; beats are not consumed. */
   #snapshot(game: WebGame): Response {
-    return new Response(game.state_json(), {
-      headers: { "content-type": "application/json" },
-    });
+    return Response.json(this.#withClock(game, JSON.parse(game.state_json())));
+  }
+
+  /**
+   * Adds the clock to a state payload. A deadline a player cannot see is a
+   * trap, so the room reports it and lets the client show what it likes.
+   */
+  #withClock(game: WebGame, state: Record<string, unknown>): Record<string, unknown> {
+    const clock = this.#clock;
+    if (!clock || (JSON.parse(game.state_json()) as { result?: unknown }).result) {
+      return state;
+    }
+    return { ...state, moveClock: { seat: clock.seat, deadline: clock.deadline } };
   }
 
   async #start(config: GameConfig): Promise<Response> {
@@ -242,7 +285,7 @@ export class GameRoom {
     this.#game = game;
     this.#stored = stored;
     this.#deliveredBeats = 0;
-    this.#dispatch(game);
+    await this.#dispatch(game);
     return this.#snapshot(game);
   }
 
@@ -307,7 +350,7 @@ export class GameRoom {
     }
     stored.commands.push(command);
     await this.#state.storage.put(STORED, stored);
-    this.#dispatch(game);
+    await this.#dispatch(game);
   }
 
   #connect(game: WebGame, role: string): Response {
@@ -371,9 +414,13 @@ export class GameRoom {
    * After any change: either the opponent seat holds the decision and its
    * driver is prompted, or the human's view is current and gets pushed.
    */
-  #dispatch(game: WebGame): void {
+  async #dispatch(game: WebGame): Promise<void> {
+    await this.#armClock(game);
     if (game.opponentIsDeciding()) {
       this.#promptBot(game);
+      // Humans are not pushed here. Their snapshot would describe their own
+      // seat as holding a decision it does not hold, and an actionable panel
+      // that rejects every click is worse than a still one.
       return;
     }
     this.#toHumans(this.#deliverable(game));
@@ -381,6 +428,57 @@ export class GameRoom {
     if (result && this.#bot) {
       this.#bot.send(JSON.stringify({ t: "result", result }));
     }
+  }
+
+  /**
+   * Restarts the clock for whoever must move next. Every applied command
+   * resets it, so the budget is per move rather than per game, and an alarm
+   * is what enforces it: nobody has to be connected for a timeout to land.
+   */
+  async #armClock(game: WebGame): Promise<void> {
+    const finished = Boolean(
+      (JSON.parse(game.state_json()) as { result?: unknown }).result,
+    );
+    if (finished) {
+      this.#clock = null;
+      await this.#state.storage.delete(CLOCK);
+      await this.#state.storage.deleteAlarm();
+      return;
+    }
+    const seat: MoveClock["seat"] = game.opponentIsDeciding() ? "bot" : "human";
+    const clock: MoveClock = { seat, deadline: Date.now() + moveBudgetMs(seat) };
+    this.#clock = clock;
+    await this.#state.storage.put(CLOCK, clock);
+    await this.#state.storage.setAlarm(clock.deadline);
+  }
+
+  /**
+   * The clock ran out. Losing on time is losing, so the seat that stopped
+   * answering concedes -- recorded as an ordinary command, which keeps the
+   * room's replay complete and tells the other player what happened.
+   */
+  async alarm(): Promise<void> {
+    const game = await this.#load();
+    if (!game) return;
+    const clock = this.#clock ?? (await this.#state.storage.get<MoveClock>(CLOCK));
+    if (!clock) return;
+    const remaining = clock.deadline - Date.now();
+    if (remaining > 0) {
+      // Something rearmed the clock while this alarm was in flight.
+      await this.#state.storage.setAlarm(clock.deadline);
+      return;
+    }
+    const seat: MoveClock["seat"] = game.opponentIsDeciding() ? "bot" : "human";
+    if (seat !== clock.seat) {
+      // They moved after all; the next dispatch owns the clock now.
+      await this.#armClock(game);
+      return;
+    }
+    await this.#apply(game, {
+      t: "forfeit",
+      seat: clock.seat,
+      reason: "ran out of time",
+    });
   }
 
   #promptBot(game: WebGame): void {
@@ -400,7 +498,7 @@ export class GameRoom {
     const beats = state.opponentActions ?? [];
     state.opponentActions = beats.slice(this.#deliveredBeats);
     this.#deliveredBeats = beats.length;
-    return JSON.stringify({ t: "state", state });
+    return JSON.stringify({ t: "state", state: this.#withClock(game, state) });
   }
 
   #toHumans(payload: string): void {

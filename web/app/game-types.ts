@@ -193,8 +193,20 @@ export type DecisionState = {
   options: DecisionOption[];
 };
 
+/**
+ * A hosted room's move clock. Absent for a local game, which has no clock:
+ * nobody else is waiting on you.
+ */
+export type MoveClock = {
+  seat: "human" | "bot";
+  /** Epoch milliseconds, from the server's clock. */
+  deadline: number;
+};
+
 export type GameState = {
   format: FormatId;
+  /** Only in a hosted game, and only while it is live. */
+  moveClock?: MoveClock;
   turn: number;
   gameTurn: number;
   step: string;

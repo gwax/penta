@@ -2244,6 +2244,19 @@ button {
   font-weight: 500;
 }
 
+/* Only appears in the last minute of a hosted room's move clock, so it is
+   allowed to be loud: by then it is the most important thing in the panel. */
+.move-clock {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--red);
+  font-family: Georgia, serif;
+  font-size: 12px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
 .decision-heading button {
   padding: 0;
   color: #b7ac98;

@@ -16,6 +16,7 @@ import type {
   Card,
   DecisionState,
   GameState,
+  MoveClock,
   OpponentAction,
   Owner,
   PlayerState,
@@ -114,6 +115,27 @@ const isTriggerPlacementDecision = (
 ): decision is DecisionState & { kind: "TriggerPlacement" } =>
   decision?.kind === "TriggerPlacement";
 
+/**
+ * How long a hosted room will wait before the seat on the clock loses. Shown
+ * only near the end: a clock that ticks the whole game is noise, and a clock
+ * that appears without warning is a trap.
+ */
+const CLOCK_WARNING_MS = 60_000;
+
+/**
+ * The countdown to show, or null when there is nothing worth saying.
+ *
+ * @param deadline epoch milliseconds from the room, or undefined locally
+ */
+function clockWarningText(clock: MoveClock | undefined, now: number) {
+  // Only your own clock. The room does not push while the opponent holds the
+  // decision, so a countdown on their seat would be a number that stopped.
+  if (!clock || clock.seat !== "human") return null;
+  const remaining = clock.deadline - now;
+  if (remaining > CLOCK_WARNING_MS) return null;
+  return `${Math.max(0, Math.ceil(remaining / 1000))}s to move`;
+}
+
 /** A bot in the registry that is online and can be challenged right now. */
 type LiveBot = {
   id: string;
@@ -207,6 +229,8 @@ export function GameClient({
    * cached: one that died a minute ago should not still be offered.
    */
   const [liveBots, setLiveBots] = useState<LiveBot[]>([]);
+  /** Re-read once a second so a countdown actually counts. */
+  const [clockNow, setClockNow] = useState(() => Date.now());
   const [seed, setSeed] = useState(9394);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [graveyardOpen, setGraveyardOpen] = useState(false);
@@ -247,6 +271,7 @@ export function GameClient({
   const currentOpponentAction = currentStep?.kind === "action" ? currentStep.action : null;
   const turnBanner = currentStep?.kind === "banner" ? currentStep.banner : null;
   const watchingOpponent = currentStep !== null;
+  const clockWarning = clockWarningText(state?.moveClock, clockNow);
   // Drawing for the turn is something the game does, not something the
   // opponent chose, so it stays out of the "N actions" count.
   const actionStepsRemaining = presentationQueue.filter(
@@ -529,6 +554,15 @@ export function GameClient({
     },
     [botDeckChoice, format, humanDeckChoice, humanFirst, policy, refresh],
   );
+
+  // A hosted room's clock only needs ticking while it is close to expiring,
+  // and only in a hosted game. A local game has no deadline and no interval.
+  const clockDeadline = state?.moveClock?.deadline ?? null;
+  useEffect(() => {
+    if (clockDeadline === null) return;
+    const tick = window.setInterval(() => setClockNow(Date.now()), 1000);
+    return () => window.clearInterval(tick);
+  }, [clockDeadline]);
 
   // The setup dialog is already open on a first visit, so the list of live
   // bots has to be fetched on mount, not only when the dialog is reopened.
@@ -2064,6 +2098,7 @@ export function GameClient({
             <div className="decision-heading">
               <div>
                 <span>{watchingOpponent ? "OPPONENT ACTING" : "YOUR DECISION"}</span>
+                {clockWarning && <em className="move-clock">{clockWarning}</em>}
                 <strong>
                   {watchingOpponent
                     ? actionStepsRemaining > 0

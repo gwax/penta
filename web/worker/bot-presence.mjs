@@ -17,6 +17,25 @@ export const PRESENCE_MS = 45_000;
 export const INVITE_MS = 10 * 60_000;
 
 /**
+ * How long a seat has to make one move before it loses on time.
+ *
+ * A person deserves room to think; a program that has not answered in a
+ * minute is not thinking. The clock exists so that neither a wedged bot nor
+ * an abandoned tab can hold a room open forever.
+ */
+export const HUMAN_MOVE_MS = 5 * 60_000;
+export const BOT_MOVE_MS = 60_000;
+
+/**
+ * The clock budget for whichever seat must act.
+ *
+ * @param {"human" | "bot"} seat
+ */
+export function moveBudgetMs(seat) {
+  return seat === "bot" ? BOT_MOVE_MS : HUMAN_MOVE_MS;
+}
+
+/**
  * @typedef {{ room: string, reason: "challenge" | "event", at: number }} Invite
  * @typedef {{ id: string, name: string, deck: string, lastSeen: number,
  *             invites: Invite[] }} BotRecord
