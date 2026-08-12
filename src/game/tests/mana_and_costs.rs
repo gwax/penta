@@ -867,3 +867,36 @@ fn icatian_javelineers_counter_cost_preserves_white_source_targeting() {
     pass_priority_pair(&mut game);
     assert_eq!(game.players[PlayerId::Two.index()].life, 19);
 }
+
+#[test]
+fn an_unplannable_payment_reports_what_the_planner_saw() {
+    let mut game = ready_game();
+    let mut mountain = creature(10_000, cards::MOUNTAIN, PlayerId::One);
+    mountain.tapped = true;
+    let mox = creature(10_001, cards::MOX_RUBY, PlayerId::One);
+    game.battlefield.extend([mountain, mox]);
+
+    let cost = ManaCost {
+        generic: 5,
+        ..ManaCost::default()
+    };
+    let report = game.unplannable_payment(PlayerId::One, cost, 0, None, &ManaPaymentPurpose::Other);
+
+    assert!(
+        report.starts_with("a legal payment has a complete mana activation plan"),
+        "the invariant still names itself first: {report}"
+    );
+    assert!(report.contains("cost {5} with x 0"), "{report}");
+    assert!(
+        report.contains("affordable per the gate: false"),
+        "the report says whether the gate and the plan actually disagree: {report}"
+    );
+    assert!(
+        report.contains("Mox Ruby produces [Red]"),
+        "an untapped source is listed with what it makes: {report}"
+    );
+    assert!(
+        !report.contains("Mountain"),
+        "a tapped land offers no activation, so it is not a candidate: {report}"
+    );
+}

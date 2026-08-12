@@ -566,9 +566,12 @@ impl Game {
         avoid: Option<GameObjectId>,
         purpose: &ManaPaymentPurpose,
     ) {
-        let plan = self
-            .plan_mana_activations_for(player, cost, x, avoid, purpose)
-            .expect("a legal payment has a complete mana activation plan");
+        let Some(plan) = self.plan_mana_activations_for(player, cost, x, avoid, purpose) else {
+            panic!(
+                "{}",
+                self.unplannable_payment(player, cost, x, avoid, purpose)
+            );
+        };
         for activation in plan {
             self.activate_mana_source(
                 player,
@@ -577,6 +580,60 @@ impl Game {
                 activation.color,
             );
         }
+    }
+
+    /// Describes a payment that passed its affordability gate and then found
+    /// no plan. The invariant still fails hard, because a half-paid cost is
+    /// not a state the engine can continue from -- but the report carries
+    /// what the planner saw, so an occurrence that is hard to reproduce is
+    /// still worth something to whoever reads the crash.
+    #[cold]
+    pub(super) fn unplannable_payment(
+        &self,
+        player: PlayerId,
+        cost: ManaCost,
+        x: u16,
+        avoid: Option<GameObjectId>,
+        purpose: &ManaPaymentPurpose,
+    ) -> String {
+        use std::fmt::Write as _;
+
+        let mut report = String::from("a legal payment has a complete mana activation plan");
+        let _ = write!(
+            report,
+            "\n  cost {cost} with x {x} for {player:?}, purpose {purpose:?}, avoiding {avoid:?}\
+             \n  affordable per the gate: {}\
+             \n  pool {:?}, eligible for this purpose {:?}, channel {}",
+            self.can_pay_cost_for(player, cost, x, purpose),
+            self.players[player.index()].mana_pool,
+            self.eligible_mana_pool(player, purpose),
+            self.channel_mana_available(player),
+        );
+        for permanent in self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == player)
+        {
+            let activations = self.mana_ability_activations(permanent);
+            if activations.is_empty() {
+                continue;
+            }
+            let name = self
+                .catalog
+                .get(permanent.card.definition)
+                .map_or("?", |definition| definition.name.as_str());
+            let colors: Vec<ManaColor> = activations
+                .iter()
+                .map(|activation| activation.color)
+                .collect();
+            let _ = write!(
+                report,
+                "\n  source {:?} {name}{} produces {colors:?}",
+                permanent.card.id,
+                if permanent.tapped { " (tapped)" } else { "" },
+            );
+        }
+        report
     }
 }
 
