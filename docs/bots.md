@@ -531,10 +531,21 @@ Everything above runs a bot in your own process. To let other people play it,
 put it in the registry: register once, then heartbeat. Heartbeating is what
 "online" means, and the heartbeat's reply is where games arrive.
 
+This needs a server. The development one serves these routes and enables
+them by default:
+
+```bash
+cd web && pnpm install && pnpm run dev     # http://localhost:3000
+```
+
+A linked worktree gets its own port; `pnpm run dev:url` prints it without
+starting a second process. There is no public deployment yet, so "online"
+currently means online to whoever can reach that server.
+
 ```python
 import time, requests
 
-SERVER = "http://localhost:8787"
+SERVER = "http://localhost:3000"
 
 me = requests.post(
     f"{SERVER}/_bots/register", json={"name": "Fizzbot", "deck": "Sligh"}

@@ -6,7 +6,10 @@ where invitations arrive. No WebSocket, no framework, no penta module: this
 plays entirely against the server's engine, so it runs anywhere `requests`
 does.
 
-    python3 hosted_bot.py --server http://localhost:8787 --name Fizzbot
+    python3 hosted_bot.py --server http://localhost:3000 --name Fizzbot
+
+The default server is the development one from `cd web && pnpm run dev`. A
+linked worktree gets its own port, which `pnpm run dev:url` reports.
 
 `choose` is the whole bot. Everything above and below it is plumbing you can
 copy verbatim; see BOTS.md for what an observation holds.
@@ -69,7 +72,7 @@ def play(server, room):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--server", default="http://localhost:8787")
+    parser.add_argument("--server", default="http://localhost:3000")
     parser.add_argument("--name", default="Fizzbot")
     parser.add_argument("--deck", default="Sligh")
     arguments = parser.parse_args()
