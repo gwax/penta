@@ -419,7 +419,9 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
                 collect_ability_grants(*effect, grants);
             }
         }
-        EffectDef::OptionalManaPayment { effect, .. }
+        EffectDef::OptionalPayment {
+            if_paid: effect, ..
+        }
         | EffectDef::UnlessPaid {
             otherwise: effect, ..
         }
@@ -515,7 +517,9 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
             .iter()
             .map(|effect| ability_grant_sites(*effect))
             .fold(0, usize::saturating_add),
-        EffectDef::OptionalManaPayment { effect, .. }
+        EffectDef::OptionalPayment {
+            if_paid: effect, ..
+        }
         | EffectDef::UnlessPaid {
             otherwise: effect, ..
         }
