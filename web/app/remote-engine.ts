@@ -35,6 +35,9 @@ type RoomMessage =
 export class RemoteEngineGame {
   #socket: WebSocket;
   #state: string;
+  #humanToken = "";
+  /** Handed to a bot when challenging it; it authorises the opponent seat. */
+  botToken = "";
   #config: RemoteConfig;
 
   private constructor(socket: WebSocket, state: string, config: RemoteConfig) {
@@ -77,13 +80,21 @@ export class RemoteEngineGame {
         seed: config.seed,
       }),
     });
-    const state = await response.text();
+    const body = await response.text();
     if (!response.ok) {
-      throw new Error(`the room refused to start: ${state}`);
+      throw new Error(`the room refused to start: ${body}`);
     }
+    // The one time the room sends its tokens. The human's stays in this tab
+    // and authorises this seat; the bot's is what a challenge hands on.
+    const opened = JSON.parse(body) as {
+      state: unknown;
+      humanToken: string;
+      botToken: string;
+    };
+    const state = JSON.stringify(opened.state);
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(
-      `${protocol}//${window.location.host}${base}/ws?role=human`,
+      `${protocol}//${window.location.host}${base}/ws?role=human&token=${encodeURIComponent(opened.humanToken)}`,
     );
     await new Promise<void>((resolve, reject) => {
       socket.addEventListener("open", () => resolve(), { once: true });
@@ -91,7 +102,10 @@ export class RemoteEngineGame {
         once: true,
       });
     });
-    return new RemoteEngineGame(socket, state, config);
+    const game = new RemoteEngineGame(socket, state, config);
+    game.#humanToken = opened.humanToken;
+    game.botToken = opened.botToken;
+    return game;
   }
 
   #send(command: object): void {
@@ -136,6 +150,11 @@ export class RemoteEngineGame {
 
   state_json(): string {
     return this.#state;
+  }
+
+  /** Headers that prove this tab holds the human seat. */
+  humanHeaders(): Record<string, string> {
+    return { "x-penta-token": this.#humanToken };
   }
 
   free(): void {

@@ -20,6 +20,18 @@ snapshots.
 
 ### Added
 
+- Hosted rooms are no longer open to whoever knows their id. Starting a room
+  mints a token per seat and returns both; every route then requires the
+  token for the seat it speaks for, so a room id names a room without
+  authorising anything. `POST /_bots/<id>/challenge` must present the room's
+  bot-seat token, which the registry verifies with the room itself -- without
+  that, anyone could park every listed bot in rooms of their own. Invitations
+  carry the token on to the bot. `lose-on-time` is no longer routable from
+  outside at all: only a room's own alarm and the registry reach it.
+- Limits for a public deployment: ten creations a minute per address across
+  starting a room, registering, and challenging; registrations deleted after
+  a day unused; finished rooms released an hour after they end; at most 200
+  registered bots; bot names cut to 40 characters.
 - A bot registry, so a bot can be online and other people can play it. `POST
   /_bots/register` returns an id and token; `POST /_bots/<id>/heartbeat`
   renews presence and returns the games the bot has been invited to; `GET

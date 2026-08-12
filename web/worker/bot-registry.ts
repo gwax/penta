@@ -15,7 +15,14 @@
  * itself for the next challenger.
  */
 
-import { PRESENCE_MS, isOnline, liveInvites, publicBot } from "./bot-presence.mjs";
+import {
+  MAX_BOTS,
+  PRESENCE_MS,
+  isOnline,
+  liveInvites,
+  publicBot,
+  worthKeeping,
+} from "./bot-presence.mjs";
 
 interface DurableStorage {
   get<T>(key: string): Promise<T | undefined>;
@@ -42,6 +49,13 @@ interface Invite {
   /** Who asked: a human clicking, or a scheduler pairing a round. */
   reason: "challenge" | "event";
   at: number;
+  /**
+   * The room's bot-seat token, handed on to the bot. Presenting it is how a
+   * challenger proves it started the room it is pointing this bot at --
+   * without which anyone could park every listed bot in a room of their own
+   * and keep them all busy.
+   */
+  token: string;
 }
 
 interface RegisteredBot {
@@ -67,8 +81,10 @@ interface PublicBot {
 }
 
 const PREFIX = "bot:";
+/** A display field, not an identifier; long names are simply cut. */
+const MAX_NAME = 40;
 
-function token(): string {
+function mintToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(24));
   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
@@ -109,7 +125,11 @@ export class BotRegistry {
       if (second === "challenge" && request.method === "POST") {
         return await this.#challenge(
           first,
-          (await request.json()) as { room?: string; reason?: Invite["reason"] },
+          (await request.json()) as {
+            room?: string;
+            reason?: Invite["reason"];
+            token?: string;
+          },
         );
       }
       return Response.json({ error: `unknown route ${url.pathname}` }, { status: 404 });
@@ -119,11 +139,20 @@ export class BotRegistry {
   }
 
   async #register(body: Partial<RegisteredBot>): Promise<Response> {
-    const name = (body.name ?? "").trim();
+    const name = (body.name ?? "").trim().slice(0, MAX_NAME);
     if (!name) return Response.json({ error: "a bot needs a name" }, { status: 400 });
+    // Sweeping first means the cap counts bots anyone could actually play,
+    // not every name ever registered.
+    const remaining = await this.#evictStale();
+    if (remaining >= MAX_BOTS) {
+      return Response.json(
+        { error: "the registry is full; try again later" },
+        { status: 503 },
+      );
+    }
     const bot: RegisteredBot = {
       id: identifier(),
-      token: token(),
+      token: mintToken(),
       name,
       deck: (body.deck ?? "").trim() || "Sligh",
       registeredAt: new Date().toISOString(),
@@ -162,12 +191,28 @@ export class BotRegistry {
   /** Asks an online, idle bot to play a room that has already been started. */
   async #challenge(
     id: string,
-    body: { room?: string; reason?: Invite["reason"] },
+    body: { room?: string; reason?: Invite["reason"]; token?: string },
   ): Promise<Response> {
     const room = (body.room ?? "").trim();
     if (!room) return Response.json({ error: "a challenge needs a room" }, { status: 400 });
+    const token = (body.token ?? "").trim();
+    if (!token) {
+      return Response.json(
+        { error: "a challenge needs the room's bot token" },
+        { status: 400 },
+      );
+    }
     const bot = await this.#state.storage.get<RegisteredBot>(PREFIX + id);
     if (!bot) return Response.json({ error: `no bot ${id}` }, { status: 404 });
+    // The room is the only thing that knows its own token, so ask it. A
+    // challenger who cannot produce it did not start the room, and pointing
+    // bots at rooms you do not own is how you would keep every bot busy.
+    if (!(await this.#roomAccepts(room, token))) {
+      return Response.json(
+        { error: "that is not this room's bot token" },
+        { status: 403 },
+      );
+    }
     const now = Date.now();
     bot.invites = liveInvites(bot.invites, now);
     if (!isOnline(bot.lastSeen, now)) {
@@ -176,7 +221,7 @@ export class BotRegistry {
     if (bot.invites.length > 0) {
       return Response.json({ error: `${bot.name} is already playing` }, { status: 409 });
     }
-    bot.invites.push({ room, reason: body.reason ?? "challenge", at: now });
+    bot.invites.push({ room, reason: body.reason ?? "challenge", at: now, token });
     await this.#state.storage.put(PREFIX + id, bot);
     // Someone is now waiting on this bot, so start watching whether it is
     // still here. Nothing else in the registry runs on its own.
@@ -216,7 +261,27 @@ export class BotRegistry {
       bot.invites = [];
       await this.#state.storage.put(PREFIX + bot.id, bot);
     }
+    await this.#evictStale();
     if (watching) await this.#state.storage.setAlarm(now + PRESENCE_MS);
+  }
+
+  /** Whether `room` agrees that `token` is its bot seat's. */
+  async #roomAccepts(room: string, token: string): Promise<boolean> {
+    try {
+      const stub = this.#env.GAME_ROOMS.get(this.#env.GAME_ROOMS.idFromName(room));
+      const reply = await stub.fetch(
+        new Request(`https://room/_game/${room}/verify-bot-token`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ token }),
+        }),
+      );
+      if (!reply.ok) return false;
+      const { ok } = (await reply.json()) as { ok?: boolean };
+      return ok === true;
+    } catch {
+      return false;
+    }
   }
 
   /** Tells a room its bot is gone. A room that has already finished says so. */
@@ -233,6 +298,25 @@ export class BotRegistry {
     } catch {
       // The room may be finished or gone; the invite is dropped either way.
     }
+  }
+
+  /**
+   * Deletes registrations nobody has used inside the retention window,
+   * returning how many are left. A registration is a name and a token; there
+   * is no reason to keep one for a bot that stopped coming back.
+   */
+  async #evictStale(): Promise<number> {
+    const stored = await this.#state.storage.list<RegisteredBot>({ prefix: PREFIX });
+    const now = Date.now();
+    let kept = 0;
+    for (const bot of stored.values()) {
+      if (worthKeeping(bot, now)) {
+        kept += 1;
+        continue;
+      }
+      await this.#state.storage.delete(PREFIX + bot.id);
+    }
+    return kept;
   }
 
   async #list(): Promise<Response> {

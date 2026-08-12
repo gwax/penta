@@ -36,10 +36,40 @@ export function moveBudgetMs(seat) {
 }
 
 /**
- * @typedef {{ room: string, reason: "challenge" | "event", at: number }} Invite
- * @typedef {{ id: string, name: string, deck: string, lastSeen: number,
- *             invites: Invite[] }} BotRecord
+ * A registration nobody has used for this long is deleted. Presence is a
+ * lease; a registration is a name and a token, and keeping dead ones forever
+ * makes every listing slower and the storage larger for no one's benefit.
  */
+export const REGISTRATION_MS = 24 * 60 * 60_000;
+
+/** How many bots may be registered at once on one deployment. */
+export const MAX_BOTS = 200;
+
+/** How long a finished room is kept before its storage is released. */
+export const FINISHED_ROOM_MS = 60 * 60_000;
+
+/**
+ * Presence reads only when an invitation was issued. What else one carries --
+ * a room, a reason, a token -- is the registry's business, so these rules
+ * stay generic over it rather than duplicating the record.
+ *
+ * @typedef {{ at: number }} Dated
+ * @typedef {{ id: string, name: string, deck: string, lastSeen: number,
+ *             invites: Dated[] }} BotRecord
+ */
+
+/**
+ * Whether a registration is worth keeping: it has been used inside the
+ * retention window, or it is holding a game right now.
+ *
+ * @param {BotRecord} bot
+ * @param {number} now
+ */
+export function worthKeeping(bot, now) {
+  return (
+    now - bot.lastSeen < REGISTRATION_MS || liveInvites(bot.invites, now).length > 0
+  );
+}
 
 /**
  * Whether a bot's heartbeat is still current.
@@ -54,8 +84,10 @@ export function isOnline(lastSeen, now) {
 /**
  * The invitations still worth honouring, oldest first.
  *
- * @param {Invite[]} invites
+ * @template {Dated} T
+ * @param {T[]} invites
  * @param {number} now
+ * @returns {T[]}
  */
 export function liveInvites(invites, now) {
   return invites.filter((invite) => now - invite.at < INVITE_MS);

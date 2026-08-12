@@ -562,7 +562,7 @@ while True:
     ).json()
     finished = []
     for invite in reply["invites"]:
-        play(invite["room"])          # see below
+        play(invite["room"], invite["token"])   # see below
         finished.append(invite["room"])
     if not finished:
         time.sleep(10)
@@ -573,9 +573,12 @@ holds the decision and hands back the observation this guide describes;
 `command` submits an index into its `legalActions`:
 
 ```python
-def play(room):
+def play(room, token):
+    headers = {"x-penta-token": token}          # from the invitation
     while True:
-        view = requests.get(f"{SERVER}/_game/{room}/opponent").json()
+        view = requests.get(
+            f"{SERVER}/_game/{room}/opponent", headers=headers
+        ).json()
         if view["result"]:
             return
         if not view["deciding"]:
@@ -583,13 +586,34 @@ def play(room):
             continue
         index = choose(view["observation"])
         requests.post(
-            f"{SERVER}/_game/{room}/command", json={"t": "botAct", "index": index}
+            f"{SERVER}/_game/{room}/command",
+            json={"t": "botAct", "index": index},
+            headers=headers,
         )
 ```
+
+Every invitation carries a `token`, and it is what lets you play that seat.
+A room id is a name, not a permission: it travels in URLs and gets shared, so
+the room asks for the token on every request and answers 403 without it. The
+same token is how the room knows you and not some passer-by is its opponent.
 
 That is the whole integration -- no WebSocket, no engine build, no penta
 module. `examples/python/hosted_bot.py` is this with argument parsing and a
 `choose` you can replace.
+
+### What a public server limits
+
+A deployment that serves these routes is open to anyone who can reach it, so
+it holds the creating routes -- starting a room, registering, challenging --
+to **ten a minute per address**, and answers 429 with a `retry-after` when
+you pass that. Reading and moving are not counted: a game in progress is
+chatty by nature, and the move clock below already bounds it.
+
+Two housekeeping rules a long-running bot will eventually meet. A
+registration nobody has used for a day is deleted, so a bot that stops for
+good stops being listed; heartbeating at all keeps yours. And a finished
+game's room is released an hour after it ends, so fetch a replay you care
+about rather than assuming the room will be there tomorrow.
 
 ### Losing on time
 
@@ -621,7 +645,7 @@ Two consequences worth designing for:
 | `POST /_bots/register {name, deck}` | Once, ever. Returns `{id, token}`; keep the token. |
 | `POST /_bots/<id>/heartbeat {token, done}` | Renews presence, returns `{invites}`. |
 | `GET /_bots` | Who is online now, with `busy`. |
-| `POST /_bots/<id>/challenge {room}` | Asks an idle bot to play a started room. The web client does this when someone picks you. |
+| `POST /_bots/<id>/challenge {room, token}` | Asks an idle bot to play a started room. `token` is that room's bot-seat token, which only whoever started the room has, so nobody can park your bot in a room of theirs. The web client does this when someone picks you. |
 
 Presence is a lease, not a connection. Heartbeat at least every 15 seconds;
 miss 45 and you drop off the list. Registering is not being online -- the
@@ -672,9 +696,9 @@ room never sends the seed of an external game, and it rolls that seed
 itself, ignoring the starter's suggestion — whoever picks the seed can
 precompute both hands.
 
-These routes, and the registry above, are development-flagged
-(`HOSTED_GAMES`) and unauthenticated apart from the heartbeat token. Treat
-them as a local or trusted-network surface.
+These routes, and the registry above, are gated by `HOSTED_GAMES`. Each seat
+of a room is held by a token minted when the room starts, so knowing a room
+id lets you name a room and nothing else.
 
 ## Determinism and versioning
 

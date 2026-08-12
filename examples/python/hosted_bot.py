@@ -45,11 +45,18 @@ def choose(observation):
     return 0
 
 
-def play(server, room):
-    """Drive the opponent seat of one room until the game ends."""
+def play(server, room, token):
+    """Drive the opponent seat of one room until the game ends.
+
+    The token came with the invitation and is what authorises this seat; the
+    room id alone is just a name, and the room will refuse without it.
+    """
     print(f"playing {room}")
+    headers = {"x-penta-token": token}
     while True:
-        view = requests.get(f"{server}/_game/{room}/opponent", timeout=30).json()
+        view = requests.get(
+            f"{server}/_game/{room}/opponent", headers=headers, timeout=30
+        ).json()
         if view.get("result"):
             print(f"  finished: {view['result']}")
             return
@@ -61,6 +68,7 @@ def play(server, room):
         reply = requests.post(
             f"{server}/_game/{room}/command",
             json={"t": "botAct", "index": index},
+            headers=headers,
             timeout=30,
         )
         if reply.status_code != 200:
@@ -89,15 +97,27 @@ def main():
 
     finished = []
     while True:
-        reply = requests.post(
-            f"{server}/_bots/{identifier}/heartbeat",
-            json={"token": token, "done": finished},
-            timeout=30,
-        ).json()
+        # A server restart, a proxy hiccup, or a redeploy all show up here as
+        # one bad reply. Missing a heartbeat costs at most a spell out of the
+        # list; crashing costs the whole bot, so the loop rides it out.
+        try:
+            reply = requests.post(
+                f"{server}/_bots/{identifier}/heartbeat",
+                json={"token": token, "done": finished},
+                timeout=30,
+            ).json()
+        except (requests.RequestException, ValueError) as problem:
+            print(f"heartbeat failed ({problem}); retrying")
+            time.sleep(HEARTBEAT_SECONDS)
+            continue
         finished = []
         for invite in reply.get("invites", []):
-            play(server, invite["room"])
-            # Reporting it finished is what frees the bot for the next game.
+            try:
+                play(server, invite["room"], invite["token"])
+            except (requests.RequestException, ValueError) as problem:
+                print(f"lost the game in {invite['room']} ({problem})")
+            # Reporting it finished is what frees the bot for the next game,
+            # whether it ended in a result or in a dropped connection.
             finished.append(invite["room"])
         if not finished:
             time.sleep(HEARTBEAT_SECONDS)

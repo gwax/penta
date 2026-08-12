@@ -19,8 +19,16 @@ const workerConfig = {
     ],
   },
   // Local development serves the hosted-game routes; a deploy has to opt in.
-  // They have no auth and no rate limit yet.
   vars: { HOSTED_GAMES: "enabled" },
+  // Ten creations a minute per address: a person deals a few games an hour,
+  // and a bot registers once. Reads and moves are not counted here.
+  ratelimits: [
+    {
+      name: "CREATE_LIMIT",
+      namespace_id: "1001",
+      simple: { limit: 10, period: 60 as const },
+    },
+  ],
   migrations: [
     { tag: "v1", new_sqlite_classes: ["GameRoom"] },
     { tag: "v2", new_sqlite_classes: ["BugTracker"] },

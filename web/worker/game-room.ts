@@ -74,6 +74,14 @@ interface StoredGame {
   commands: Command[];
   engineVersion: string;
   protocolVersion: number;
+  /**
+   * Who may act as each seat. A room id is short and shared in a URL, so it
+   * identifies a room without authorising anything; these do the authorising.
+   * The human's is minted for whoever started the room, and the bot's is
+   * handed to a bot through the invitation that names this room.
+   */
+  humanToken: string;
+  botToken: string;
 }
 
 interface DurableStorage {
@@ -104,9 +112,37 @@ interface LoadOutcome {
   refused?: string;
 }
 
-import { moveBudgetMs } from "./bot-presence.mjs";
+import { FINISHED_ROOM_MS, moveBudgetMs } from "./bot-presence.mjs";
 
 const STORED = "hosted-game";
+
+/** The header a seat presents its token in. */
+const TOKEN_HEADER = "x-penta-token";
+
+/**
+ * One refusal for every seat mismatch, so none of them leak which seat was
+ * wrong. A fresh response each call: a `Response` body is consumed on use, so
+ * a shared instance would work once and then fail.
+ */
+function forbidden(): Response {
+  return Response.json({ error: "that seat is not yours" }, { status: 403 });
+}
+
+/** Names the bearer of a seat. Long enough not to be guessed. */
+function mintToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+/** Constant-time-ish comparison; these are short and compared rarely. */
+function tokenMatches(expected: string | undefined, given: string | null): boolean {
+  if (!expected || !given || expected.length !== given.length) return false;
+  let difference = 0;
+  for (let index = 0; index < expected.length; index += 1) {
+    difference |= expected.charCodeAt(index) ^ given.charCodeAt(index);
+  }
+  return difference === 0;
+}
 const CLOCK = "move-clock";
 
 /** Who the room is waiting on, and when their patience runs out. */
@@ -169,18 +205,41 @@ export class GameRoom {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const route = url.pathname.split("/").pop();
+    // A socket cannot set headers, so it carries its token in the query.
+    const presented =
+      request.headers.get(TOKEN_HEADER) ?? url.searchParams.get("token");
     try {
       if (route === "start") {
-        return await this.#start((await request.json()) as GameConfig);
+        return await this.#start((await request.json()) as GameConfig, presented);
       }
       const game = await this.#load();
       if (!game) return Response.json({ error: "no game here yet" }, { status: 404 });
+      const seat = this.#seatFor(presented);
       if (route === "ws") {
-        return this.#connect(game, url.searchParams.get("role") ?? "human");
+        const role = url.searchParams.get("role") ?? "human";
+        if (seat !== role) return forbidden();
+        return this.#connect(game, role);
       }
-      if (route === "state") return this.#snapshot(game);
-      if (route === "opponent") return this.#opponentView(game);
+      // The human's snapshot holds their hand, and the record holds the whole
+      // game; neither belongs to whoever guessed the room id.
+      if (route === "state") {
+        return seat === "human" ? this.#snapshot(game) : forbidden();
+      }
+      if (route === "opponent") {
+        return seat === "bot" ? this.#opponentView(game) : forbidden();
+      }
+      if (route === "verify-bot-token") {
+        // Object-to-object only, like `lose-on-time`. The registry asks this
+        // before it will point a bot at a room, so that a challenger has to
+        // have started the room rather than merely named it.
+        const body = (await request.json().catch(() => ({}))) as { token?: string };
+        return Response.json({
+          ok: tokenMatches(this.#stored?.botToken, body.token ?? null),
+        });
+      }
       if (route === "lose-on-time") {
+        // Reachable only object-to-object: the public router refuses this
+        // path, so a caller here is this room's alarm or the registry.
         const body = (await request.json().catch(() => ({}))) as {
           seat?: "human" | "bot";
           reason?: string;
@@ -197,10 +256,15 @@ export class GameRoom {
       }
       if (route === "command") {
         const command = (await request.json()) as Command;
+        const speaker = BOT_COMMANDS.has(command.t) ? "bot" : "human";
+        if (seat !== speaker) return forbidden();
         await this.#apply(game, command);
-        return this.#snapshot(game);
+        return seat === "bot"
+          ? Response.json({ ok: true })
+          : this.#snapshot(game);
       }
       if (route === "record") {
+        if (seat !== "human") return forbidden();
         const stored = this.#stored;
         if (!stored) return Response.json({ error: "no game" }, { status: 404 });
         if (stored.config.botPolicy.toLowerCase() !== "external") {
@@ -241,6 +305,15 @@ export class GameRoom {
     });
   }
 
+  /** Which seat a presented token speaks for, if any. */
+  #seatFor(presented: string | null): "human" | "bot" | null {
+    const stored = this.#stored;
+    if (!stored) return null;
+    if (tokenMatches(stored.humanToken, presented)) return "human";
+    if (tokenMatches(stored.botToken, presented)) return "bot";
+    return null;
+  }
+
   /** The full current snapshot, for polling callers; beats are not consumed. */
   #snapshot(game: WebGame): Response {
     return Response.json(this.#withClock(game, JSON.parse(game.state_json())));
@@ -258,7 +331,14 @@ export class GameRoom {
     return { ...state, moveClock: { seat: clock.seat, deadline: clock.deadline } };
   }
 
-  async #start(config: GameConfig): Promise<Response> {
+  async #start(config: GameConfig, presented: string | null): Promise<Response> {
+    // Restarting a room throws away whatever is in it, so only the seat that
+    // started it may. A fresh room has nobody to ask.
+    const existing =
+      this.#stored ?? (await this.#state.storage.get<StoredGame>(STORED));
+    if (existing && !tokenMatches(existing.humanToken, presented)) {
+      return forbidden();
+    }
     const { WebGame, HostedGame } = await engine();
     if (config.botPolicy.toLowerCase() === "external") {
       // Against a real opponent the seed is the deal itself: whoever picks it
@@ -280,13 +360,23 @@ export class GameRoom {
       commands: [],
       engineVersion: HostedGame.engineVersion(),
       protocolVersion: HostedGame.protocolVersion(),
+      // A restart re-mints, so a token handed out for the previous game does
+      // not carry into this one.
+      humanToken: mintToken(),
+      botToken: mintToken(),
     };
     await this.#state.storage.put(STORED, stored);
     this.#game = game;
     this.#stored = stored;
     this.#deliveredBeats = 0;
     await this.#dispatch(game);
-    return this.#snapshot(game);
+    // The only time either token is ever sent. The starter keeps the human's
+    // and hands the bot's to whichever bot it invites.
+    return Response.json({
+      state: JSON.parse(game.state_json()),
+      humanToken: stored.humanToken,
+      botToken: stored.botToken,
+    });
   }
 
   async #load(): Promise<WebGame | null> {
@@ -442,7 +532,10 @@ export class GameRoom {
     if (finished) {
       this.#clock = null;
       await this.#state.storage.delete(CLOCK);
-      await this.#state.storage.deleteAlarm();
+      // A decided game is worth keeping for a while -- the players may still
+      // be looking at it, and a bug report may still want its replay -- but
+      // not forever. The alarm comes back to release it.
+      await this.#state.storage.setAlarm(Date.now() + FINISHED_ROOM_MS);
       return;
     }
     const seat: MoveClock["seat"] = game.opponentIsDeciding() ? "bot" : "human";
@@ -461,6 +554,14 @@ export class GameRoom {
   async alarm(): Promise<void> {
     const game = await this.#load();
     if (!game) return;
+    if ((JSON.parse(game.state_json()) as { result?: unknown }).result) {
+      // The retention alarm: the game ended, its keeping time is up.
+      await this.#state.storage.delete(STORED);
+      await this.#state.storage.delete(CLOCK);
+      this.#game = null;
+      this.#stored = null;
+      return;
+    }
     const clock = this.#clock ?? (await this.#state.storage.get<MoveClock>(CLOCK));
     if (!clock) return;
     const remaining = clock.deadline - Date.now();

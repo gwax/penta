@@ -452,7 +452,10 @@ export function GameClient({
       if (live && typeof live.replayJson === "function") {
         replay = JSON.parse(live.replayJson());
       } else if (hostedRoom.current) {
-        const record = await fetch(`/_game/${hostedRoom.current}/record`);
+        const remote = game.current as RemoteEngineGame | null;
+        const record = await fetch(`/_game/${hostedRoom.current}/record`, {
+          headers: remote?.humanHeaders?.() ?? {},
+        });
         if (record.ok) replay = await record.json();
       }
       const response = await fetch("/_bugs/report", {
@@ -647,7 +650,12 @@ export function GameClient({
             const invited = await fetch(`/_bots/${challenged}/challenge`, {
               method: "POST",
               headers: { "content-type": "application/json" },
-              body: JSON.stringify({ room: roomId, reason: "challenge" }),
+              body: JSON.stringify({
+                room: roomId,
+                reason: "challenge",
+                // Proof this tab started the room, and the bot's way in.
+                token: (game.current as RemoteEngineGame).botToken,
+              }),
             });
             if (!invited.ok) {
               const { error: reason } = (await invited
