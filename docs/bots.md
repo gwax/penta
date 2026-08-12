@@ -539,8 +539,11 @@ cd web && pnpm install && pnpm run dev     # http://localhost:3000
 ```
 
 A linked worktree gets its own port; `pnpm run dev:url` prints it without
-starting a second process. There is no public deployment yet, so "online"
-currently means online to whoever can reach that server.
+starting a second process.
+
+The public client at <https://penta.lacker.workers.dev> does not serve these
+routes -- they are gated behind `HOSTED_GAMES`, which it does not set -- so
+"online" today means online to whoever can reach a server you run.
 
 ```python
 import time, requests

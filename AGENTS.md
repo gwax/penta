@@ -35,6 +35,17 @@ work exposes a missing field, relationship, index, or query pattern, update the
 refresh builder, both skills, and the documented schema together, then rebuild
 and validate the cache. Avoid expanding them for isolated one-off questions.
 
+## Deployment
+
+The web client is deployed to <https://penta.lacker.workers.dev>. It serves
+the browser app only: hosted games, the bot registry, and the engine
+self-check are gated behind `HOSTED_GAMES`, which that deployment does not
+set. Do not claim either way from memory -- one request settles it:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://penta.lacker.workers.dev/_bots
+```
+
 ## Design doctrine
 
 Prefer the [design doctrine](docs/design-doctrine.md) and

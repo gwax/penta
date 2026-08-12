@@ -44,6 +44,16 @@ Linked worktrees receive stable independent development ports. The server
 prints the active URL, and `pnpm run dev:url` reports it without starting a new
 process.
 
+### Deployment
+
+The client is deployed to <https://penta.lacker.workers.dev>, which plays
+games locally in the browser. The server-side routes -- hosted games
+(`/_game/…`), the bot registry (`/_bots`), and `/_engine/self-check` -- are
+gated behind the `HOSTED_GAMES` variable, which that deployment does not set,
+so they answer 404 there. They are unauthenticated and create Durable Objects
+on demand, so enabling them in public is a deliberate decision rather than a
+default.
+
 ## Write a bot
 
 Bots choose an index from the engine's hidden-information-safe legal-action
