@@ -78,12 +78,17 @@ interface Env {
   /** Guards the routes that create things: rooms, registrations, invitations. */
   CREATE_LIMIT?: RateLimiter;
   /**
-   * Set to `enabled` to serve the server-side game routes. They are off by
-   * default and should stay off in anything public: there is no auth and no
-   * rate limit, so a caller can open Durable Objects without bound and make
-   * the Worker play whole games on demand.
+   * Set to `enabled` to serve the server-side game routes: hosted games and
+   * the bot registry. Each seat of a room is held by a token, and the routes
+   * that create things are rate limited, so this is safe to serve publicly.
    */
   HOSTED_GAMES?: string;
+  /**
+   * Set to `enabled` to serve `/_engine/self-check`, which plays a full game
+   * inside the Worker. Useful when bringing up a deployment, unmetered, and
+   * of no use to a player -- so it is separate and stays off.
+   */
+  ENGINE_SELF_CHECK?: string;
   // Reserved for a future Sites database binding; this project currently has none.
   DB: unknown;
   IMAGES: {
@@ -148,9 +153,13 @@ const worker = {
       }
     }
 
-    // Proof that the engine runs server-side, not a product endpoint.
+    // Proof that the engine runs server-side, not a product endpoint: it
+    // plays a whole game per request. Its own flag, so serving games in
+    // public does not also hand out a CPU-heavy endpoint nobody needs.
     if (url.pathname === "/_engine/self-check") {
-      return hostedGames ? selfCheck() : new Response("not found", { status: 404 });
+      return env.ENGINE_SELF_CHECK === "enabled"
+        ? selfCheck()
+        : new Response("not found", { status: 404 });
     }
 
     // /_game/<id>/<route>. The id names the Durable Object, so every request

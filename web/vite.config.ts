@@ -18,7 +18,10 @@ const workerConfig = {
       { name: "BOTS", class_name: "BotRegistry" },
     ],
   },
-  // Local development serves the hosted-game routes; a deploy has to opt in.
+  // Hosted games and the bot registry are served everywhere, including the
+  // public deployment: seats are held by tokens and the creating routes are
+  // rate limited. The engine self-check is not -- it plays a whole game per
+  // request -- so it stays off unless a deployment sets it.
   vars: { HOSTED_GAMES: "enabled" },
   // Ten creations a minute per address: a person deals a few games an hour,
   // and a bot registers once. Reads and moves are not counted here.
