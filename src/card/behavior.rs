@@ -28,7 +28,6 @@ pub enum CardBehavior {
     Moat,
     Mulch,
     Negate,
-    NevinyrralsDisk,
     PillarOfFlame,
     Recall,
     SedgeTroll,
