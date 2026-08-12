@@ -495,6 +495,7 @@ fn collect_applied_ability_grants(effect: AppliedEffectDef, grants: &mut Vec<&Ab
         }
         AppliedEffectDef::GrantAbility(ability) => grants.push(ability),
         AppliedEffectDef::CannotBeCountered
+        | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
@@ -586,6 +587,7 @@ fn applied_ability_grant_sites(effect: AppliedEffectDef) -> usize {
             .fold(0, usize::saturating_add),
         AppliedEffectDef::GrantAbility(_) => 1,
         AppliedEffectDef::CannotBeCountered
+        | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
