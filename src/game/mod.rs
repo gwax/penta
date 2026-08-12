@@ -8304,8 +8304,7 @@ impl Game {
     ) -> Vec<Vec<Target>> {
         match behavior {
             CardBehavior::Duress => vec![vec![Target::Player(player.opponent())]],
-            CardBehavior::LightningBolt
-            | CardBehavior::ChainLightning
+            CardBehavior::ChainLightning
             | CardBehavior::PillarOfFlame
             | CardBehavior::GoblinGrenade => self
                 .damage_targets()
@@ -8571,52 +8570,9 @@ impl Game {
     ) {
         let ability_target_slot = TargetSlotId(0);
         match behavior {
-            CardBehavior::GlassesOfUrza if !permanent.tapped => {
-                for target in [PlayerId::One, PlayerId::Two] {
-                    actions.push(Action::ActivateAbility {
-                        source: permanent.card.id,
-                        ability,
-                        targets: vec![TargetSelection::single(
-                            ability_target_slot,
-                            Target::Player(target),
-                        )],
-                        cost_object: None,
-                        x: 0,
-                    });
-                }
-            }
-            CardBehavior::IcyManipulator
-                if !permanent.tapped
-                    && self.can_use_tap_ability(permanent)
-                    && self.can_pay_cost(player, ManaCost::new(1, 0), 0) =>
-            {
-                actions.extend(
-                    self.battlefield
-                        .iter()
-                        .map(|candidate| Action::ActivateAbility {
-                            source: permanent.card.id,
-                            ability,
-                            targets: vec![TargetSelection::single(
-                                ability_target_slot,
-                                Target::Permanent(candidate.card.id),
-                            )],
-                            cost_object: None,
-                            x: 0,
-                        }),
-                );
-            }
             CardBehavior::SedgeTroll
                 if self.can_pay_cost(player, ManaCost::colored(0, 0, 0, 1, 0, 0), 0) =>
             {
-                actions.push(Action::ActivateAbility {
-                    source: permanent.card.id,
-                    ability,
-                    targets: Vec::new(),
-                    cost_object: None,
-                    x: 0,
-                });
-            }
-            CardBehavior::DragonWhelp if self.can_pay_cost(player, ManaCost::new(0, 1), 0) => {
                 actions.push(Action::ActivateAbility {
                     source: permanent.card.id,
                     ability,
@@ -11684,11 +11640,6 @@ impl Game {
                 }
                 self.destroy_permanent(object.source.expect("ability has a source"));
             }
-            CardBehavior::IcyManipulator => {
-                if let Some(Target::Permanent(target)) = self.first_legal_ability_target(object) {
-                    let _ = self.tap_permanent(target);
-                }
-            }
             CardBehavior::SedgeTroll => {
                 if let Some(permanent) = self
                     .battlefield
@@ -11729,9 +11680,6 @@ impl Game {
                 let player = object.controller;
                 self.gain_life(player, object.x());
                 self.draw_cards(player, object.x());
-            }
-            CardBehavior::LightningBolt => {
-                self.damage_target(object.first_target(), 3);
             }
             CardBehavior::PillarOfFlame => {
                 self.damage_target(object.first_target(), 2);
@@ -11911,22 +11859,6 @@ impl Game {
                     false,
                     options,
                     DecisionContinuation::GrislySalvage { player, revealed },
-                );
-            }
-            CardBehavior::HymnToTourach => self.discard_random(
-                object.controller.opponent(),
-                2,
-                ZoneMoveCause::Effect {
-                    controller: object.controller,
-                },
-            ),
-            CardBehavior::MindTwist => {
-                self.discard_random(
-                    object.controller.opponent(),
-                    object.x(),
-                    ZoneMoveCause::Effect {
-                        controller: object.controller,
-                    },
                 );
             }
             CardBehavior::Balance => self.resolve_balance(object.controller),
@@ -14915,9 +14847,7 @@ impl Game {
 
         let behavior = self.effective_behavior(permanent)?;
         let cost = match behavior {
-            CardBehavior::ChaosOrb
-            | CardBehavior::NevinyrralsDisk
-            | CardBehavior::IcyManipulator => ManaCost::new(1, 0),
+            CardBehavior::ChaosOrb | CardBehavior::NevinyrralsDisk => ManaCost::new(1, 0),
             CardBehavior::SedgeTroll => ManaCost::colored(0, 0, 0, 1, 0, 0),
             _ => return None,
         };
@@ -15908,29 +15838,6 @@ impl Game {
             return;
         }
         match behavior {
-            Some(CardBehavior::GlassesOfUrza) => {
-                let _ = self.tap_permanent(source);
-                if let Some(Target::Player(target)) = target {
-                    self.last_seen_hands[player.index()] =
-                        Some((target, public_cards(&self.players[target.index()].hand)));
-                }
-            }
-            Some(CardBehavior::IcyManipulator) => {
-                let cost = ManaCost::new(1, 0);
-                self.activate_mana_for_cost(player, cost, 0);
-                let _ = self.pay_player_cost(player, cost, 0);
-                let card = self
-                    .tap_permanent(source)
-                    .expect("legal tap ability has a source");
-                self.push_activated_ability(
-                    source,
-                    &card,
-                    player,
-                    frozen_ability,
-                    frozen_targets,
-                    Vec::new(),
-                );
-            }
             Some(CardBehavior::SedgeTroll) => {
                 let cost = ManaCost::colored(0, 0, 0, 1, 0, 0);
                 self.activate_mana_for_cost(player, cost, 0);
@@ -15949,21 +15856,6 @@ impl Game {
                     Vec::new(),
                     Vec::new(),
                 );
-            }
-            // Dragon Whelp itself is declarative now; this is the legacy
-            // activated dispatch path, still reached by the clauses that
-            // name this key.
-            Some(CardBehavior::DragonWhelp) => {
-                let cost = ManaCost::new(0, 1);
-                self.activate_mana_for_cost(player, cost, 0);
-                let _ = self.pay_player_cost(player, cost, 0);
-                if let Some(permanent) = self
-                    .battlefield
-                    .iter_mut()
-                    .find(|permanent| permanent.card.id == source)
-                {
-                    permanent.power_bonus += 1;
-                }
             }
             Some(CardBehavior::ChaosOrb) => {
                 let cost = ManaCost::new(1, 0);

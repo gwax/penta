@@ -9,9 +9,10 @@
 //! the mana that animates it -- and the only thing that caught it was a slow
 //! browser test several commits later.
 //!
-//! So: a behavior named outside the card definitions has to still be named by a
-//! card, or be listed here as deliberately retired. Migrating a card will fail
-//! this test until someone looks at what else was reading that key.
+//! So: every behavior has to still be named by a card or be one of the narrow
+//! constructor compatibility keys, and a behavior reader has to satisfy the
+//! same rule. Migrating a card will fail these tests until someone removes the
+//! retired key and looks at what else was reading it.
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -21,14 +22,13 @@ fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-/// Keys no card reports any more, each checked once for readers that had to be
-/// rewritten. Add a name here only after confirming that nothing still depends
-/// on the arm it feeds.
-const RETIRED: [&str; 0] = [];
+/// Rules-only keys retained while `CardDefinition::new` still accepts a
+/// behavior instead of `CardRules` directly.
+const COMPATIBILITY_KEYS: [&str; 3] = ["Mountain", "Plains", "Unsupported"];
 
 /// Files that dispatch on behavior to decide something, as opposed to the card
 /// definitions that supply it and the tables that map it back to rules.
-const READERS: [&str; 2] = ["src/policy.rs", "wasm/src/lib.rs"];
+const READERS: [&str; 3] = ["src/game/mod.rs", "src/policy.rs", "wasm/src/lib.rs"];
 
 fn behaviors_in(source: &str) -> BTreeSet<String> {
     let mut found = BTreeSet::new();
@@ -46,6 +46,24 @@ fn behaviors_in(source: &str) -> BTreeSet<String> {
     found
 }
 
+fn card_behavior_variants(source: &str) -> BTreeSet<String> {
+    let (_, after_declaration) = source
+        .split_once("pub enum CardBehavior {")
+        .expect("CardBehavior has a declaration");
+    let (body, _) = after_declaration
+        .split_once("\n}")
+        .expect("CardBehavior has a closing brace");
+    body.lines()
+        .filter_map(|line| {
+            let candidate = line.trim().strip_suffix(',')?;
+            candidate
+                .chars()
+                .all(|character| character.is_alphanumeric() || character == '_')
+                .then(|| candidate.to_string())
+        })
+        .collect()
+}
+
 fn rust_files_under(directory: &Path, into: &mut Vec<PathBuf>) {
     let Ok(entries) = fs::read_dir(directory) else {
         return;
@@ -60,12 +78,9 @@ fn rust_files_under(directory: &Path, into: &mut Vec<PathBuf>) {
     }
 }
 
-#[test]
-fn every_behavior_a_reader_dispatches_on_is_still_reported_by_a_card() {
-    let root = repo_root();
-
-    // `sets/mod.rs` maps every behavior back to its rules, including retired
-    // keys, so it cannot be the evidence that a card still reports one.
+fn reported_behaviors(root: &Path) -> BTreeSet<String> {
+    // `sets/mod.rs` maps every behavior back to its rules, including
+    // compatibility keys, so it cannot be evidence that a card reports one.
     let mut definition_files = Vec::new();
     rust_files_under(&root.join("src/card/sets"), &mut definition_files);
     definition_files.retain(|path| !path.ends_with("sets/mod.rs"));
@@ -79,13 +94,47 @@ fn every_behavior_a_reader_dispatches_on_is_still_reported_by_a_card() {
         reported.len() > 20,
         "the scan found almost no behaviors, so it is measuring the wrong thing"
     );
+    reported
+}
 
-    let retired: BTreeSet<String> = RETIRED.iter().map(|name| (*name).to_string()).collect();
+#[test]
+fn every_behavior_is_reported_by_a_card_or_is_a_compatibility_key() {
+    let root = repo_root();
+    let reported = reported_behaviors(&root);
+    let compatibility: BTreeSet<String> = COMPATIBILITY_KEYS
+        .iter()
+        .map(|name| (*name).to_string())
+        .collect();
+    let source =
+        fs::read_to_string(root.join("src/card/model.rs")).expect("the card model is readable");
+    let dead = card_behavior_variants(&source)
+        .difference(&reported)
+        .filter(|behavior| !compatibility.contains(*behavior))
+        .cloned()
+        .collect::<Vec<_>>();
+
+    assert!(
+        dead.is_empty(),
+        "these CardBehavior variants are not reported by a card and are not \
+         constructor compatibility keys; remove them and their rules-index \
+         arms:\n  {}",
+        dead.join("\n  ")
+    );
+}
+
+#[test]
+fn every_behavior_a_reader_dispatches_on_is_still_reported_by_a_card() {
+    let root = repo_root();
+    let reported = reported_behaviors(&root);
+    let compatibility: BTreeSet<String> = COMPATIBILITY_KEYS
+        .iter()
+        .map(|name| (*name).to_string())
+        .collect();
     let mut dead = Vec::new();
     for reader in READERS {
         let source = fs::read_to_string(root.join(reader)).expect("a reader file is readable");
         for behavior in behaviors_in(&source) {
-            if !reported.contains(&behavior) && !retired.contains(&behavior) {
+            if !reported.contains(&behavior) && !compatibility.contains(&behavior) {
                 dead.push(format!("{reader}: CardBehavior::{behavior}"));
             }
         }
@@ -94,8 +143,8 @@ fn every_behavior_a_reader_dispatches_on_is_still_reported_by_a_card() {
     assert!(
         dead.is_empty(),
         "these arms can never match, because no card reports the behavior any \
-         more. Rewrite each one to read the card's abilities instead, then add \
-         the name to RETIRED:\n  {}",
+         more. Rewrite each one to read the card's abilities instead, then \
+         remove the retired enum value:\n  {}",
         dead.join("\n  ")
     );
 }
