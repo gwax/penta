@@ -114,6 +114,35 @@ const isTriggerPlacementDecision = (
 ): decision is DecisionState & { kind: "TriggerPlacement" } =>
   decision?.kind === "TriggerPlacement";
 
+/** A bot in the registry that is online and can be challenged right now. */
+type LiveBot = {
+  id: string;
+  name: string;
+  deck: string;
+  online: boolean;
+  busy: boolean;
+};
+
+/**
+ * Bots online right now, idle ones only. Presence is a heartbeat lease, so
+ * this is fetched fresh rather than cached: one that died a minute ago should
+ * not still be offered. A deployment without the registry answers with
+ * something that is not a bot list, and the picker simply offers nothing.
+ */
+async function fetchLiveBots(): Promise<LiveBot[]> {
+  try {
+    const reply = await fetch("/_bots");
+    if (!reply.ok) return [];
+    const { bots } = (await reply.json()) as { bots?: LiveBot[] };
+    return (bots ?? []).filter((bot) => !bot.busy);
+  } catch {
+    return [];
+  }
+}
+
+/** Opponent-style values that name a live bot rather than a built-in policy. */
+const LIVE_BOT_PREFIX = "bot:";
+
 type CardPresentationRect = {
   rect: DOMRect;
   owner: Owner;
@@ -172,6 +201,12 @@ export function GameClient({
     | { kind: "banner"; banner: TurnBanner; state: GameState };
   const [setupOpen, setSetupOpen] = useState(true);
   const [setupDismissible, setSetupDismissible] = useState(false);
+  /**
+   * Bots that are online right now. A bot is online because it is
+   * heartbeating, so this list is refetched when the dialog opens rather than
+   * cached: one that died a minute ago should not still be offered.
+   */
+  const [liveBots, setLiveBots] = useState<LiveBot[]>([]);
   const [seed, setSeed] = useState(9394);
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
   const [graveyardOpen, setGraveyardOpen] = useState(false);
@@ -432,7 +467,12 @@ export function GameClient({
       if (!wasmReady.current) return false;
       const dealtHumanDeck = resolveDeck(nextFormat, nextHumanDeck);
       const dealtBotDeck = resolveDeck(nextFormat, nextBotDeck);
-      if (hostedRoom.current) {
+      // A live opponent has to be a hosted game: the engine belongs on the
+      // server when neither side of it is this browser.
+      const challengedBot = nextPolicy.startsWith(LIVE_BOT_PREFIX)
+        ? nextPolicy.slice(LIVE_BOT_PREFIX.length)
+        : null;
+      if (hostedRoom.current || challengedBot) {
         // A hosted deal is a new room. Routing it through the address bar
         // reuses the join path instead of duplicating it here.
         const matchUrl = new URL(window.location.href);
@@ -441,6 +481,11 @@ export function GameClient({
         matchUrl.searchParams.set("seed", String(nextSeed));
         matchUrl.searchParams.set("first", String(nextHumanFirst));
         matchUrl.searchParams.set("hosted", "new");
+        if (challengedBot) {
+          matchUrl.searchParams.set("hostedBot", "External");
+          matchUrl.searchParams.set("challenge", challengedBot);
+          matchUrl.searchParams.set("botDeck", dealtBotDeck);
+        }
         window.location.assign(matchUrl);
         return true;
       }
@@ -485,6 +530,18 @@ export function GameClient({
     [botDeckChoice, format, humanDeckChoice, humanFirst, policy, refresh],
   );
 
+  // The setup dialog is already open on a first visit, so the list of live
+  // bots has to be fetched on mount, not only when the dialog is reopened.
+  useEffect(() => {
+    let alive = true;
+    void fetchLiveBots().then((bots) => {
+      if (alive) setLiveBots(bots);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   useEffect(() => {
     let alive = true;
     const load = async () => {
@@ -527,11 +584,17 @@ export function GameClient({
           const roomId =
             hostedAgain === "new" ? crypto.randomUUID().slice(0, 8) : hostedAgain;
           hostedRoom.current = roomId;
+          const challenged = url.searchParams.get("challenge");
+          // A challenged bot plays the deck it registered with, which the
+          // picker put on the URL alongside it.
+          const hostedBotDeck = challenged
+            ? (url.searchParams.get("botDeck") ?? startingBotDeck)
+            : startingBotDeck;
           game.current = await RemoteEngineGame.connect({
             gameId: roomId,
             format: startingFormat,
             humanDeck: startingHumanDeck,
-            botDeck: startingBotDeck,
+            botDeck: hostedBotDeck,
             botPolicy: url.searchParams.get("hostedBot") ?? "Handcrafted",
             humanFirst: startingHumanFirst,
             seed: startingSeed,
@@ -542,6 +605,22 @@ export function GameClient({
             game.current.free();
             game.current = null;
             return;
+          }
+          if (challenged) {
+            setBotDeck(hostedBotDeck);
+            // The room exists now, so the bot has somewhere to go. It picks
+            // this up on its next heartbeat.
+            const invited = await fetch(`/_bots/${challenged}/challenge`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ room: roomId, reason: "challenge" }),
+            });
+            if (!invited.ok) {
+              const { error: reason } = (await invited
+                .json()
+                .catch(() => ({ error: invited.statusText }))) as { error?: string };
+              setError(`the bot could not be challenged: ${reason ?? "unknown"}`);
+            }
           }
           // The address now names the room, so a reload rejoins it. The
           // setup dialog stays shut: the room is already dealt, and its
@@ -1429,7 +1508,12 @@ export function GameClient({
     }
   };
 
+  const refreshLiveBots = () => {
+    void fetchLiveBots().then((bots) => setLiveBots(bots));
+  };
+
   const openSetup = () => {
+    refreshLiveBots();
     setDraftFormat(format);
     setDraftHumanDeck(humanDeckChoice);
     setDraftBotDeck(botDeckChoice);
@@ -1566,16 +1650,29 @@ export function GameClient({
                   <span>Opponent style</span>
                   <select
                     value={draftPolicy}
-                    onChange={(event) => setDraftPolicy(event.target.value)}
+                    onChange={(event) => {
+                      const chosen = event.target.value;
+                      setDraftPolicy(chosen);
+                      // A live bot brings its own registered deck.
+                      const bot = liveBots.find(
+                        (candidate) => LIVE_BOT_PREFIX + candidate.id === chosen,
+                      );
+                      if (bot) setDraftBotDeck(bot.deck);
+                    }}
                   >
                     <option>Handcrafted</option>
                     <option>Random</option>
+                    {liveBots.length > 0 && (
+                      <optgroup label="Online now">
+                        {liveBots.map((bot) => (
+                          <option key={bot.id} value={LIVE_BOT_PREFIX + bot.id}>
+                            {bot.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
-                  <small>
-                    {draftPolicy === "Handcrafted"
-                      ? "Purposeful, card-aware play."
-                      : "Chooses randomly from legal actions."}
-                  </small>
+                  <small>{policyNote(draftPolicy, liveBots)}</small>
                 </label>
               </div>
             </div>
@@ -2420,6 +2517,16 @@ export function GameClient({
   );
 }
 
+
+/** What the opponent-style choice means, built-in policy or live bot. */
+function policyNote(policy: string, bots: LiveBot[]) {
+  if (policy === "Handcrafted") return "Purposeful, card-aware play.";
+  if (policy === "Random") return "Chooses randomly from legal actions.";
+  const bot = bots.find((candidate) => LIVE_BOT_PREFIX + candidate.id === policy);
+  return bot
+    ? `A bot someone else is running, online now, playing ${bot.deck}. The game runs on the server so both of you see the same board.`
+    : "That bot is no longer online.";
+}
 
 function displayActionLabel(action: Action, state: GameState) {
   if (action.label !== "Pass priority") return action.label;

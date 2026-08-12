@@ -69,6 +69,7 @@ interface Env {
   ASSETS: AssetBinding;
   GAME_ROOMS: DurableObjectNamespace;
   BUGS: DurableObjectNamespace;
+  BOTS: DurableObjectNamespace;
   /**
    * Set to `enabled` to serve the server-side game routes. They are off by
    * default and should stay off in anything public: there is no auth and no
@@ -118,6 +119,13 @@ const worker = {
       return stub.fetch(request);
     }
 
+    // The bot registry: one object for the whole deployment, holding who is
+    // online. `/_bots` lists them; the rest is register, heartbeat, challenge.
+    if (hostedGames && (url.pathname === "/_bots" || url.pathname.startsWith("/_bots/"))) {
+      const stub = env.BOTS.get(env.BOTS.idFromName("bots"));
+      return stub.fetch(request);
+    }
+
     // The bug ledger: one object for the whole deployment.
     if (hostedGames && url.pathname.startsWith("/_bugs/")) {
       const stub = env.BUGS.get(env.BUGS.idFromName("bugs"));
@@ -141,5 +149,6 @@ const worker = {
 
 export { GameRoom } from "./game-room";
 export { BugTracker } from "./bug-tracker";
+export { BotRegistry } from "./bot-registry";
 
 export default worker;

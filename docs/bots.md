@@ -515,7 +515,85 @@ Protocols 8 through 17 introduced ten compatibility changes:
   optional-payment prompt and option labels; consume the indexed actions and
   option IDs rather than matching those presentation strings.
 
+## Putting your bot online
+
+Everything above runs a bot in your own process. To let other people play it,
+put it in the registry: register once, then heartbeat. Heartbeating is what
+"online" means, and the heartbeat's reply is where games arrive.
+
+```python
+import time, requests
+
+SERVER = "http://localhost:8787"
+
+me = requests.post(
+    f"{SERVER}/_bots/register", json={"name": "Fizzbot", "deck": "Sligh"}
+).json()
+
+finished = []
+while True:
+    reply = requests.post(
+        f"{SERVER}/_bots/{me['id']}/heartbeat",
+        json={"token": me["token"], "done": finished},
+    ).json()
+    finished = []
+    for invite in reply["invites"]:
+        play(invite["room"])          # see below
+        finished.append(invite["room"])
+    if not finished:
+        time.sleep(10)
+```
+
+A game is two ordinary requests in a loop. `opponent` says whether your seat
+holds the decision and hands back the observation this guide describes;
+`command` submits an index into its `legalActions`:
+
+```python
+def play(room):
+    while True:
+        view = requests.get(f"{SERVER}/_game/{room}/opponent").json()
+        if view["result"]:
+            return
+        if not view["deciding"]:
+            time.sleep(0.25)
+            continue
+        index = choose(view["observation"])
+        requests.post(
+            f"{SERVER}/_game/{room}/command", json={"t": "botAct", "index": index}
+        )
+```
+
+That is the whole integration -- no WebSocket, no engine build, no penta
+module. `examples/python/hosted_bot.py` is this with argument parsing and a
+`choose` you can replace.
+
+### What being online means
+
+| Call | Meaning |
+| --- | --- |
+| `POST /_bots/register {name, deck}` | Once, ever. Returns `{id, token}`; keep the token. |
+| `POST /_bots/<id>/heartbeat {token, done}` | Renews presence, returns `{invites}`. |
+| `GET /_bots` | Who is online now, with `busy`. |
+| `POST /_bots/<id>/challenge {room}` | Asks an idle bot to play a started room. The web client does this when someone picks you. |
+
+Presence is a lease, not a connection. Heartbeat at least every 15 seconds;
+miss 45 and you drop off the list. Registering is not being online -- the
+first heartbeat is -- and stopping is just not heartbeating, which is also
+how you deploy a new version: stop, and your games in flight still finish,
+because they run on their own requests.
+
+A bot plays one game at a time. Report a finished room in `done` to free
+yourself for the next challenger; an invitation you never pick up expires
+after ten minutes, so a bot that dies mid-game unsticks itself.
+
+The deck you register is what you play when a scheduler pairs you, and what
+the web client offers as your side of the matchup.
+
 ## Hosted games over WebSocket
+
+Polling as above is the simplest way in. A bot that wants to answer the
+instant it is asked can hold a socket instead: same contract, pushed rather
+than pulled.
 
 A deployment that enables its server-side game routes hosts one game per
 room at `/_game/<room-id>/…`. The human plays through the ordinary web UI
@@ -543,8 +621,10 @@ room never sends the seed of an external game, and it rolls that seed
 itself, ignoring the starter's suggestion — whoever picks the seed can
 precompute both hands.
 
-These routes are development-flagged (`HOSTED_GAMES`), unauthenticated, and
-carry no move clock yet; treat them as a local or trusted-network surface.
+These routes, and the registry above, are development-flagged
+(`HOSTED_GAMES`), unauthenticated apart from the heartbeat token, and carry
+no move clock yet: a bot that stops answering mid-game holds its room open.
+Treat them as a local or trusted-network surface.
 
 ## Determinism and versioning
 

@@ -1,0 +1,186 @@
+/**
+ * The bot registry: one Durable Object holding every bot that has ever
+ * registered, and which of them are online right now.
+ *
+ * Presence is a lease, not a connection. A bot says it is online by
+ * heartbeating, and stops being online by not heartbeating -- a crashed bot
+ * disappears on its own instead of lingering as something a human can click
+ * and wait on forever. The heartbeat's reply carries the bot's invitations,
+ * so a whole bot is a loop over one HTTP call: heartbeat, and if a room came
+ * back, go play it. No socket required anywhere in the flow.
+ *
+ * A registered bot is playable by anyone -- humans through the web client,
+ * and eventually a tournament scheduler -- and plays one game at a time. An
+ * invitation it never picks up expires, so a bot that dies mid-game frees
+ * itself for the next challenger.
+ */
+
+import { isOnline, liveInvites, publicBot } from "./bot-presence.mjs";
+
+interface DurableStorage {
+  get<T>(key: string): Promise<T | undefined>;
+  put<T>(key: string, value: T): Promise<void>;
+  delete(key: string): Promise<boolean>;
+  list<T>(options: { prefix: string }): Promise<Map<string, T>>;
+}
+interface DurableState {
+  storage: DurableStorage;
+}
+
+/** A game a bot has been asked to play, and has not finished or dropped. */
+interface Invite {
+  room: string;
+  /** Who asked: a human clicking, or a scheduler pairing a round. */
+  reason: "challenge" | "event";
+  at: number;
+}
+
+interface RegisteredBot {
+  id: string;
+  /** Held by the bot; proves a heartbeat is really from it. */
+  token: string;
+  name: string;
+  /** What it plays when a challenger does not choose for it. */
+  deck: string;
+  registeredAt: string;
+  /** When it last heartbeated. Presence is this, and nothing else. */
+  lastSeen: number;
+  invites: Invite[];
+}
+
+/** What a bot looks like from outside: no token, presence resolved. */
+interface PublicBot {
+  id: string;
+  name: string;
+  deck: string;
+  online: boolean;
+  busy: boolean;
+}
+
+const PREFIX = "bot:";
+
+function token(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function identifier(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export class BotRegistry {
+  readonly #state: DurableState;
+
+  constructor(state: DurableState) {
+    this.#state = state;
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const parts = url.pathname.split("/").filter(Boolean);
+    // Shapes: /_bots, /_bots/register, /_bots/<id>/heartbeat,
+    // /_bots/<id>/challenge.
+    const [, first, second] = parts;
+    try {
+      if (!first) return await this.#list();
+      if (first === "register" && request.method === "POST") {
+        return await this.#register((await request.json()) as Partial<RegisteredBot>);
+      }
+      if (second === "heartbeat" && request.method === "POST") {
+        return await this.#heartbeat(
+          first,
+          (await request.json().catch(() => ({}))) as {
+            token?: string;
+            done?: string[];
+          },
+        );
+      }
+      if (second === "challenge" && request.method === "POST") {
+        return await this.#challenge(
+          first,
+          (await request.json()) as { room?: string; reason?: Invite["reason"] },
+        );
+      }
+      return Response.json({ error: `unknown route ${url.pathname}` }, { status: 404 });
+    } catch (cause) {
+      return Response.json({ error: String(cause) }, { status: 400 });
+    }
+  }
+
+  async #register(body: Partial<RegisteredBot>): Promise<Response> {
+    const name = (body.name ?? "").trim();
+    if (!name) return Response.json({ error: "a bot needs a name" }, { status: 400 });
+    const bot: RegisteredBot = {
+      id: identifier(),
+      token: token(),
+      name,
+      deck: (body.deck ?? "").trim() || "Sligh",
+      registeredAt: new Date().toISOString(),
+      // Registering is not being online: the first heartbeat is.
+      lastSeen: 0,
+      invites: [],
+    };
+    await this.#state.storage.put(PREFIX + bot.id, bot);
+    return Response.json({ id: bot.id, token: bot.token, deck: bot.deck });
+  }
+
+  /**
+   * Renews presence and hands back the bot's outstanding invitations. A bot
+   * reports the rooms it has finished with `done`, which is also how it frees
+   * itself for the next challenger.
+   */
+  async #heartbeat(
+    id: string,
+    body: { token?: string; done?: string[] },
+  ): Promise<Response> {
+    const bot = await this.#state.storage.get<RegisteredBot>(PREFIX + id);
+    if (!bot) return Response.json({ error: `no bot ${id}` }, { status: 404 });
+    if (body.token !== bot.token) {
+      return Response.json({ error: "wrong token" }, { status: 403 });
+    }
+    const now = Date.now();
+    const done = new Set(body.done ?? []);
+    bot.lastSeen = now;
+    bot.invites = liveInvites(bot.invites, now).filter(
+      (invite) => !done.has(invite.room),
+    );
+    await this.#state.storage.put(PREFIX + id, bot);
+    return Response.json({ invites: bot.invites, deck: bot.deck });
+  }
+
+  /** Asks an online, idle bot to play a room that has already been started. */
+  async #challenge(
+    id: string,
+    body: { room?: string; reason?: Invite["reason"] },
+  ): Promise<Response> {
+    const room = (body.room ?? "").trim();
+    if (!room) return Response.json({ error: "a challenge needs a room" }, { status: 400 });
+    const bot = await this.#state.storage.get<RegisteredBot>(PREFIX + id);
+    if (!bot) return Response.json({ error: `no bot ${id}` }, { status: 404 });
+    const now = Date.now();
+    bot.invites = liveInvites(bot.invites, now);
+    if (!isOnline(bot.lastSeen, now)) {
+      return Response.json({ error: `${bot.name} is offline` }, { status: 409 });
+    }
+    if (bot.invites.length > 0) {
+      return Response.json({ error: `${bot.name} is already playing` }, { status: 409 });
+    }
+    bot.invites.push({ room, reason: body.reason ?? "challenge", at: now });
+    await this.#state.storage.put(PREFIX + id, bot);
+    return Response.json({ room, deck: bot.deck });
+  }
+
+  async #list(): Promise<Response> {
+    const stored = await this.#state.storage.list<RegisteredBot>({ prefix: PREFIX });
+    const now = Date.now();
+    const bots: PublicBot[] = [];
+    for (const bot of stored.values()) {
+      // An offline bot is not worth listing: nobody can play it, and its
+      // registration is a private detail of whoever runs it.
+      if (!isOnline(bot.lastSeen, now)) continue;
+      bots.push(publicBot(bot, now));
+    }
+    bots.sort((left, right) => left.name.localeCompare(right.name));
+    return Response.json({ bots });
+  }
+}

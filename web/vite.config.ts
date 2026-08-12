@@ -15,6 +15,7 @@ const workerConfig = {
     bindings: [
       { name: "GAME_ROOMS", class_name: "GameRoom" },
       { name: "BUGS", class_name: "BugTracker" },
+      { name: "BOTS", class_name: "BotRegistry" },
     ],
   },
   // Local development serves the hosted-game routes; a deploy has to opt in.
@@ -23,6 +24,7 @@ const workerConfig = {
   migrations: [
     { tag: "v1", new_sqlite_classes: ["GameRoom"] },
     { tag: "v2", new_sqlite_classes: ["BugTracker"] },
+    { tag: "v3", new_sqlite_classes: ["BotRegistry"] },
   ],
 };
 

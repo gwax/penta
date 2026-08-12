@@ -13,6 +13,10 @@
  * decision, and answers with an action index -- the contract remote bots
  * already speak over the bindings.
  *
+ * A bot that would rather not hold a socket open can poll instead: `opponent`
+ * reports whether the external seat holds the decision and hands back the
+ * same observation, and `command` accepts its `botAct`.
+ *
  * Beats are delivered exactly once. The wasm accumulates the opponent's
  * beats until the next human command clears them, so a room that pushed
  * state twice in one window would replay the same beats twice. The room
@@ -157,6 +161,7 @@ export class GameRoom {
         return this.#connect(game, url.searchParams.get("role") ?? "human");
       }
       if (route === "state") return this.#snapshot(game);
+      if (route === "opponent") return this.#opponentView(game);
       if (route === "command") {
         const command = (await request.json()) as Command;
         await this.#apply(game, command);
@@ -183,6 +188,24 @@ export class GameRoom {
     } catch (cause) {
       return Response.json({ error: String(cause) }, { status: 400 });
     }
+  }
+
+  /**
+   * The external seat's view, for a bot that polls instead of holding a
+   * socket. Same observation the bot socket is prompted with; the bot plays
+   * it by posting `botAct` to `command`, so a whole remote bot needs only
+   * these two ordinary requests.
+   */
+  #opponentView(game: WebGame): Response {
+    const result = (JSON.parse(game.state_json()) as { result?: unknown }).result;
+    if (!game.opponentIsDeciding()) {
+      return Response.json({ deciding: false, result: result ?? null });
+    }
+    return Response.json({
+      deciding: true,
+      result: result ?? null,
+      observation: JSON.parse(game.opponentObserveJson()),
+    });
   }
 
   /** The full current snapshot, for polling callers; beats are not consumed. */

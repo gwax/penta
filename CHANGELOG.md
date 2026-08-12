@@ -18,6 +18,27 @@ The current development checkout reports engine 0.6.0 and protocol 17. Pin
 both; the engine version alone does not distinguish it from earlier 0.6.0
 snapshots.
 
+### Added
+
+- A bot registry, so a bot can be online and other people can play it. `POST
+  /_bots/register` returns an id and token; `POST /_bots/<id>/heartbeat`
+  renews presence and returns the games the bot has been invited to; `GET
+  /_bots` lists who is online. Presence is a lease -- heartbeat at least every
+  15 seconds, miss 45 and you drop off -- so a crashed bot leaves the list on
+  its own. A bot plays one game at a time and frees itself by reporting a
+  finished room in `done`.
+- `GET /_game/<room>/opponent` reports whether the external seat holds the
+  decision and hands back its observation, so a remote bot can play a hosted
+  game with two ordinary HTTP requests instead of a WebSocket. The socket path
+  is unchanged and remains the low-latency option.
+- The web client's opponent picker lists bots that are online now, and
+  challenging one deals a hosted game against it. `examples/python/hosted_bot.py`
+  is a complete bot on this surface: register, heartbeat, play.
+
+These are additive routes on the development-flagged (`HOSTED_GAMES`) server
+surface; no observation, action, or decision shape changed, so the protocol
+version is unmoved.
+
 ### Changed
 
 - `ComparisonDef` now names the five ordering relations directly: `Less`,
