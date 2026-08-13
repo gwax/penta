@@ -553,7 +553,7 @@ mod tests {
             .iter()
             .filter(|name| catalog.find_by_name(name).is_some())
             .count();
-        assert_eq!(cataloged, 20);
+        assert_eq!(cataloged, 27);
 
         for name in unique_cards {
             assert!(

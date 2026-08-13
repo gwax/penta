@@ -8,6 +8,10 @@
 mod tokens;
 mod y1993;
 mod y1994;
+mod y1995;
+mod y1997;
+mod y2000;
+mod y2002;
 mod y2004;
 mod y2007;
 mod y2011;
@@ -107,6 +111,26 @@ const SET_MODULES: &[SetModule] = &[
         y1994::promo_1994::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::IceAge,
+        y1995::ice_age::CARDS,
+        y1995::ice_age::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Tempest,
+        y1997::tempest::CARDS,
+        y1997::tempest::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Nemesis,
+        y2000::nemesis::CARDS,
+        y2000::nemesis::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Onslaught,
+        y2002::onslaught::CARDS,
+        y2002::onslaught::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Darksteel,
         y2004::darksteel::CARDS,
         y2004::darksteel::ADDITIONAL_PRINTINGS,
@@ -174,7 +198,7 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let mut definitions = Vec::with_capacity(263);
+    let mut definitions = Vec::with_capacity(270);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }

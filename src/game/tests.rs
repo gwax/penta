@@ -380,6 +380,7 @@ mod old_school_interactions;
 mod old_school_permanents;
 mod old_school_spells;
 mod old_school_upkeep;
+mod premodern_cards;
 mod removal_and_keywords;
 mod replacements_and_presentation;
 mod search_and_reveal;

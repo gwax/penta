@@ -12,10 +12,10 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 20 cards already present in Penta's catalog
-- 125 cards still need catalog records
-- all 145 cards still need a Premodern interaction audit, even when an older
-  format already exercises the card
+- 27 cards present in Penta's catalog
+- 118 cards still need catalog records
+- 7 cards have completed their Premodern interaction audit; the other 138
+  still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
 Sondike's GAT, Bryan Gulotta's Replenish, Drew Glauberg's Stasis, Chris Danis's
@@ -30,14 +30,14 @@ Marvin's Angry Hermit.
   implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
-- Add accurate characteristics and Oracle clauses for the 125 uncataloged
+- Add accurate characteristics and Oracle clauses for the 118 uncataloged
   cards. Unsupported clauses must be metadata-only rather than executable
   no-ops.
 - Implement reusable mechanics before card-local behavior: cycling and
   landcycling, flashback, threshold, fading, echo, alternative costs, split
   cards, graveyard replacement/reanimation, named-card choices, tutors,
   continuous type/PT changes, and triggered mana/untap restrictions.
-- Audit the 20 existing definitions against their Premodern Oracle text and
+- Audit the existing definitions against their Premodern Oracle text and
   interactions.
 - Promote each staged deck into the runtime registry only when every main-deck
   card is playable and the sideboard has honest catalog coverage.
@@ -46,7 +46,8 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (20; behavior depth still requires an audit):
+Already cataloged (27; the seven marked below were audited in the first
+implementation tranche, while the older definitions still require an audit):
 
 - `Armageddon`
 - `Black Vise`
@@ -57,19 +58,26 @@ Already cataloged (20; behavior depth still requires an audit):
 - `Duress`
 - `Earthquake`
 - `Forest`
+- `Hydroblast` — complete
+- `Incinerate` — damage complete; no-regeneration rider is partial
+- `Jackal Pup` — complete
 - `Island`
 - `Lightning Bolt`
 - `Mishra's Factory`
+- `Mogg Fanatic` — complete
 - `Mountain`
+- `Naturalize` — complete
 - `Plains`
+- `Pyroblast` — complete
 - `Ray of Revelation`
 - `Red Elemental Blast`
+- `Seal of Fire` — complete
 - `Swamp`
 - `Swords to Plowshares`
 - `Syncopate`
 - `Wrath of God`
 
-Not yet cataloged (125):
+Not yet cataloged (118):
 
 - [ ] `Abeyance`
 - [ ] `Adarkar Wastes`
@@ -127,11 +135,8 @@ Not yet cataloged (125):
 - [ ] `Haunting Echoes`
 - [ ] `Hermit Druid`
 - [ ] `Humility`
-- [ ] `Hydroblast`
 - [ ] `Impulse`
-- [ ] `Incinerate`
 - [ ] `Intuition`
-- [ ] `Jackal Pup`
 - [ ] `Karplusan Forest`
 - [ ] `Kor Haven`
 - [ ] `Krosan Reclamation`
@@ -140,11 +145,9 @@ Not yet cataloged (125):
 - [ ] `Mana Leak`
 - [ ] `Mana Short`
 - [ ] `Meddling Mage`
-- [ ] `Mogg Fanatic`
 - [ ] `Mogg Salvage`
 - [ ] `Monk Realist`
 - [ ] `Mox Diamond`
-- [ ] `Naturalize`
 - [ ] `Opalescence`
 - [ ] `Opt`
 - [ ] `Overload`
@@ -157,7 +160,6 @@ Not yet cataloged (125):
 - [ ] `Presence of the Master`
 - [ ] `Prohibit`
 - [ ] `Psychatog`
-- [ ] `Pyroblast`
 - [ ] `Pyrokinesis`
 - [ ] `Quirion Dryad`
 - [ ] `Reanimate`
@@ -166,7 +168,6 @@ Not yet cataloged (125):
 - [ ] `Rishadan Port`
 - [ ] `Root Maze`
 - [ ] `Seal of Cleansing`
-- [ ] `Seal of Fire`
 - [ ] `Secluded Steppe`
 - [ ] `Shallow Grave`
 - [ ] `Siege-Gang Commander`
