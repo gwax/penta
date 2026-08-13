@@ -319,7 +319,11 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
 /// the battlefield, and a cost reduction read out of hand.
 pub(super) fn shared_static_non_apply_effect(source_zones: &[ZoneKind], effect: EffectDef) -> bool {
     match effect {
-        EffectDef::CannotBeForcedToSacrifice => battlefield_only(source_zones),
+        // Both are read off the battlefield and neither carries anything
+        // further to check: one names a land type, the other nothing at all.
+        EffectDef::CannotBeForcedToSacrifice | EffectDef::LandwalkCanBeBlocked(_) => {
+            battlefield_only(source_zones)
+        }
         // The prohibition is read off the battlefield while play options
         // are offered, and only against a card's printed shape.
         EffectDef::PlayersCantPlay(predicate) => {
@@ -350,6 +354,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)
+        | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::Sequence(_) => shared_static_non_apply_effect(source_zones, effect),
         EffectDef::Apply {
             recipient,
@@ -646,6 +651,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::TriggerUntilYourNextTurn { .. }
                     | EffectDef::ReduceGenericCostBy(_)
                     | EffectDef::PlayersCantPlay(_)
+                    | EffectDef::LandwalkCanBeBlocked(_)
                     | EffectDef::MultiplyEventAmount(_)
                     | EffectDef::Replacement(_)
                     | EffectDef::MoveToZone { .. }

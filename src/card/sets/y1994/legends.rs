@@ -188,7 +188,16 @@ pub(in crate::card::sets) static GREAT_DEFENDER: CardRecord = CardRecord::new(
 );
 
 // LEG 17 — Great Wall
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with plainswalk can be blocked as though they didn't have plainswalk”.
+pub(in crate::card::sets) static GREAT_WALL: CardRecord = CardRecord::new(
+    cards::GREAT_WALL,
+    "Great Wall",
+    CardArt::new("cd860a1d-aa17-4579-b9b1-d101d2416387", "Sandra Everingham"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{2}{W}")).with_abilities(&[AbilityDef::static_ability(
+        "Creatures with plainswalk can be blocked as though they didn't have plainswalk.",
+        EffectDef::LandwalkCanBeBlocked(BasicLandType::Plains),
+    )]),
+);
 
 // LEG 18 — Greater Realm of Preservation
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}{W}: The next time a black or red source of your choice would deal damage to you this turn, prevent that damage”.
@@ -746,7 +755,19 @@ pub(in crate::card::sets) static SEGOVIAN_LEVIATHAN: CardRecord = CardRecord::ne
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “{2}{U}{U}, {T}: Return target permanent that isn't enchanted to its owner's hand”.
 
 // LEG 82 — Undertow
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with islandwalk can be blocked as though they didn't have islandwalk”.
+pub(in crate::card::sets) static UNDERTOW: CardRecord = CardRecord::new(
+    cards::UNDERTOW,
+    "Undertow",
+    CardArt::new(
+        "cf05e5c9-b7e4-4bd8-ab73-b54565710527",
+        "Randy Asplund-Faith",
+    ),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{2}{U}")).with_abilities(&[AbilityDef::static_ability(
+        "Creatures with islandwalk can be blocked as though they didn't have islandwalk.",
+        EffectDef::LandwalkCanBeBlocked(BasicLandType::Island),
+    )]),
+);
 
 // LEG 83 — Venarian Gold
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Enchanted creature doesn't untap during its controller's untap step if it has a sleep counter on it”.
@@ -1019,7 +1040,16 @@ pub(in crate::card::sets) static NETHER_VOID: CardRecord = CardRecord::new(
 // Audit: blocked — Needs player poison counters and the poison-based state check, including this card's counter placement.
 
 // LEG 115 — Quagmire
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with swampwalk can be blocked as though they didn't have swampwalk”.
+pub(in crate::card::sets) static QUAGMIRE: CardRecord = CardRecord::new(
+    cards::QUAGMIRE,
+    "Quagmire",
+    CardArt::new("94e2aa9e-af6a-41c6-99a8-ca9335730ddb", "Dan Frazier"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{2}{B}")).with_abilities(&[AbilityDef::static_ability(
+        "Creatures with swampwalk can be blocked as though they didn't have swampwalk.",
+        EffectDef::LandwalkCanBeBlocked(BasicLandType::Swamp),
+    )]),
+);
 
 // LEG 116 — Shimian Night Stalker
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{B}, {T}: All damage that would be dealt to you this turn by target attacking creature is dealt to this creature instead”.
@@ -1183,7 +1213,16 @@ pub(in crate::card::sets) static CHAIN_LIGHTNING: CardRecord = CardRecord::new(
 );
 
 // LEG 138 — Crevasse
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with mountainwalk can be blocked as though they didn't have mountainwalk”.
+pub(in crate::card::sets) static CREVASSE: CardRecord = CardRecord::new(
+    cards::CREVASSE,
+    "Crevasse",
+    CardArt::new("a432d6ae-a17f-484b-ad55-4b4b6674ba8d", "Rob Alexander"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{2}{R}")).with_abilities(&[AbilityDef::static_ability(
+        "Creatures with mountainwalk can be blocked as though they didn't have mountainwalk.",
+        EffectDef::LandwalkCanBeBlocked(BasicLandType::Mountain),
+    )]),
+);
 
 // LEG 139 — Crimson Kobolds
 pub(in crate::card::sets) static CRIMSON_KOBOLDS: CardRecord = CardRecord::new(
@@ -1690,7 +1729,16 @@ pub(in crate::card::sets) static CRAW_GIANT: CardRecord = CardRecord::new(
 );
 
 // LEG 181 — Deadfall
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with forestwalk can be blocked as though they didn't have forestwalk”.
+pub(in crate::card::sets) static DEADFALL: CardRecord = CardRecord::new(
+    cards::DEADFALL,
+    "Deadfall",
+    CardArt::new("0d78f0fc-3ab2-46ee-b5a9-55ae97d08c1a", "NéNé Thomas"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{2}{G}")).with_abilities(&[AbilityDef::static_ability(
+        "Creatures with forestwalk can be blocked as though they didn't have forestwalk.",
+        EffectDef::LandwalkCanBeBlocked(BasicLandType::Forest),
+    )]),
+);
 
 // LEG 182 — Durkwood Boars
 pub(in crate::card::sets) static DURKWOOD_BOARS: CardRecord = CardRecord::new(
@@ -2157,7 +2205,21 @@ pub(in crate::card::sets) static BORIS_DEVILBOON: CardRecord = CardRecord::new(
 // Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
 
 // LEG 227 — Gosta Dirk
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with islandwalk can be blocked as though they didn't have islandwalk”.
+pub(in crate::card::sets) static GOSTA_DIRK: CardRecord = CardRecord::new(
+    cards::GOSTA_DIRK,
+    "Gosta Dirk",
+    CardArt::new("92ef316b-dd22-40d1-82e8-8890976684c0", "Richard Thomas"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{W}{W}{U}{U}"), &["Human", "Warrior"], 4, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::first_strike(),
+            AbilityDef::static_ability(
+                "Creatures with islandwalk can be blocked as though they didn't have islandwalk.",
+                EffectDef::LandwalkCanBeBlocked(BasicLandType::Island),
+            ),
+        ]),
+);
 
 // LEG 228 — Gwendlyn Di Corci
 // Audit: blocked — Needs seeded random selection with replay-visible provenance for “{T}: Target player discards a card at random. Activate only during your turn”.
@@ -2303,7 +2365,25 @@ const NICOL_BOLAS_ENTIRE_HAND: ValueDef = ValueDef::Constant(i32::MAX);
 // Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “First strike; legendary landwalk”.
 
 // LEG 243 — Lord Magnus
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with forestwalk can be blocked as though they didn't have forestwalk”.
+pub(in crate::card::sets) static LORD_MAGNUS: CardRecord = CardRecord::new(
+    cards::LORD_MAGNUS,
+    "Lord Magnus",
+    CardArt::new("2a02aabb-c464-4672-b37b-d5d713ef8939", "Mark Tedin"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{G}{W}{W}"), &["Human", "Druid"], 4, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::first_strike(),
+            AbilityDef::static_ability(
+                "Creatures with plainswalk can be blocked as though they didn't have plainswalk.",
+                EffectDef::LandwalkCanBeBlocked(BasicLandType::Plains),
+            ),
+            AbilityDef::static_ability(
+                "Creatures with forestwalk can be blocked as though they didn't have forestwalk.",
+                EffectDef::LandwalkCanBeBlocked(BasicLandType::Forest),
+            ),
+        ]),
+);
 
 // LEG 244 — Marhault Elsdragon
 pub(in crate::card::sets) static MARHAULT_ELSDRAGON: CardRecord = CardRecord::new(
@@ -2613,7 +2693,21 @@ pub(in crate::card::sets) static TUKNIR_DEATHLOCK: CardRecord = CardRecord::new(
 );
 
 // LEG 268 — Ur-Drago
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with swampwalk can be blocked as though they didn't have swampwalk”.
+pub(in crate::card::sets) static UR_DRAGO: CardRecord = CardRecord::new(
+    cards::UR_DRAGO,
+    "Ur-Drago",
+    CardArt::new("81a40f34-fc26-4d05-9c52-6ffbf1766a3b", "Christopher Rush"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{U}{U}{B}{B}"), &["Elemental"], 4, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::first_strike(),
+            AbilityDef::static_ability(
+                "Creatures with swampwalk can be blocked as though they didn't have swampwalk.",
+                EffectDef::LandwalkCanBeBlocked(BasicLandType::Swamp),
+            ),
+        ]),
+);
 
 // LEG 269 — Vaevictis Asmadi
 pub(in crate::card::sets) static VAEVICTIS_ASMADI: CardRecord = CardRecord::new(
@@ -2991,6 +3085,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DIVINE_OFFERING,
     &DIVINE_TRANSFORMATION,
     &GREAT_DEFENDER,
+    &GREAT_WALL,
     &KEEPERS_OF_THE_FAITH,
     &KISMET,
     &LIFEBLOOD,
@@ -3015,6 +3110,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RECALL,
     &REMOVE_SOUL,
     &SEGOVIAN_LEVIATHAN,
+    &UNDERTOW,
     &ZEPHYR_FALCON,
     &CARRION_ANTS,
     &CYCLOPEAN_MUMMY,
@@ -3025,11 +3121,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HELL_SWARM,
     &LOST_SOUL,
     &NETHER_VOID,
+    &QUAGMIRE,
     &THE_ABYSS,
     &WALKING_DEAD,
     &ACTIVE_VOLCANO,
     &AERATHI_BERSERKER,
     &CHAIN_LIGHTNING,
+    &CREVASSE,
     &CRIMSON_KOBOLDS,
     &CRIMSON_MANTICORE,
     &CROOKSHANK_KOBOLDS,
@@ -3053,6 +3151,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CAT_WARRIORS,
     &CONCORDANT_CROSSROADS,
     &CRAW_GIANT,
+    &DEADFALL,
     &DURKWOOD_BOARS,
     &ELVEN_RIDERS,
     &EMERALD_DRAGONFLY,
@@ -3071,6 +3170,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AXELROD_GUNNARSON,
     &BARKTOOTH_WARBEARD,
     &BORIS_DEVILBOON,
+    &GOSTA_DIRK,
     &HUNDING_GJORNERSEN,
     &JACQUES_LE_VERT,
     &JASMINE_BOREAL,
@@ -3079,6 +3179,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KASIMIR_THE_LONE_WOLF,
     &LADY_CALERIA,
     &LADY_ORCA,
+    &LORD_MAGNUS,
     &MARHAULT_ELSDRAGON,
     &NICOL_BOLAS,
     &PALLADIA_MORS,
@@ -3094,6 +3195,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TOR_WAUKI,
     &TORSTEN_VON_URSUS,
     &TUKNIR_DEATHLOCK,
+    &UR_DRAGO,
     &VAEVICTIS_ASMADI,
     &XIRA_ARIEN,
     &ARENA_OF_THE_ANCIENTS,

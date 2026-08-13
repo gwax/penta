@@ -782,6 +782,11 @@ pub enum EffectDef {
     /// prohibition read while play options are being offered, so a card it
     /// matches is never a legal action rather than a spell that fizzles.
     PlayersCantPlay(&'static ObjectPredicateDef),
+    /// A static effect that turns off one landwalk for blocking purposes:
+    /// creatures with it can be blocked as though they did not have it. The
+    /// keyword is untouched -- anything else reading it still sees it -- so
+    /// this is a blocking rule rather than an ability-removing one.
+    LandwalkCanBeBlocked(BasicLandType),
     /// Adds a combat phase after the one now ending.
     AdditionalCombatPhase,
     /// Gives each affected player an extra turn after the current one. Extra

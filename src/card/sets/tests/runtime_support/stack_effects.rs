@@ -262,6 +262,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)
+        | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::MultiplyEventAmount(_)
         | EffectDef::Replacement(_)
         | EffectDef::ChooseCardName { .. }

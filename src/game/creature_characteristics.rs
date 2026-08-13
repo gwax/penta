@@ -1,7 +1,7 @@
 use super::{
     AppliedEffectDef, BasicLandType, CardBehavior, CardRules, ControlFlow, CounterKind,
-    DeclarativeAbilityDef, Game, GameObjectId, KeywordAbility, ObjectQueryDef, Permanent, PlayerId,
-    RetiredObject, TriggerContext, ValueDef,
+    DeclarativeAbilityDef, EffectDef, Game, GameObjectId, KeywordAbility, ObjectQueryDef,
+    Permanent, PlayerId, RetiredObject, TriggerContext, ValueDef,
 };
 
 impl Game {
@@ -215,7 +215,21 @@ impl Game {
         BasicLandType::ALL.iter().any(|land_type| {
             self.permanent_has_executable_keyword(permanent, KeywordAbility::Landwalk(*land_type))
                 && self.controls_land_type(defender, *land_type)
+                && !self.landwalk_can_be_blocked(*land_type)
         })
+    }
+
+    /// Whether something on the battlefield says creatures with this landwalk
+    /// can be blocked anyway. The keyword itself is untouched, so anything
+    /// else that reads it still sees it; only blocking ignores it.
+    fn landwalk_can_be_blocked(&self, land_type: BasicLandType) -> bool {
+        self.battlefield
+            .iter()
+            .filter_map(|permanent| self.effective_rules(permanent))
+            .flat_map(CardRules::ability_clauses)
+            .filter(|ability| ability.is_executable())
+            .filter_map(|ability| ability.declarative_effect())
+            .any(|effect| effect == EffectDef::LandwalkCanBeBlocked(land_type))
     }
 
     pub(super) fn permanent_has_executable_keyword(

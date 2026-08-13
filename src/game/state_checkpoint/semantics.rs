@@ -416,6 +416,9 @@ pub(super) fn child_abilities(ability: &AbilityDef) -> Vec<&AbilityDef> {
     children
 }
 
+// Long because the effect vocabulary is wide, not because the function
+// does several things: every arm is one variant walked the same way.
+#[allow(clippy::too_many_lines)]
 fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static AbilityDef>) {
     match effect {
         EffectDef::Sequence(effects) => {
@@ -509,6 +512,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::GainControlThisTurn { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)
+        | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::MultiplyEventAmount(_)
         | EffectDef::MoveToZone { .. }
         | EffectDef::ChooseCardName { .. }

@@ -171,6 +171,62 @@ fn an_aura_grants_landwalk_to_the_creature_it_enchants() {
     );
 }
 
+/// The Legends cycle turns one landwalk off for blocking. The keyword itself
+/// is untouched, so this is a blocking rule rather than ability removal.
+#[test]
+fn a_negating_enchantment_lets_that_one_walk_be_blocked() {
+    let (mut game, attacker) = walk_game(cards::BOG_WRAITH, cards::SWAMP);
+    assert!(!can_be_blocked(&game, attacker), "swampwalk applies");
+
+    // Crevasse names mountainwalk, so a swampwalker is unaffected.
+    game.battlefield
+        .push(creature(10_010, cards::CREVASSE, PlayerId::Two));
+    assert!(
+        !can_be_blocked(&game, attacker),
+        "a different walk is not the one turned off"
+    );
+
+    game.battlefield
+        .push(creature(10_011, cards::QUAGMIRE, PlayerId::Two));
+    assert!(
+        can_be_blocked(&game, attacker),
+        "Quagmire names swampwalk, so it can be blocked anyway"
+    );
+}
+
+/// It works from either side of the table, and from a creature as well as an
+/// enchantment: Ur-Drago carries the same clause Quagmire does.
+#[test]
+fn the_negation_is_read_from_any_permanent_on_the_battlefield() {
+    let (mut game, attacker) = walk_game(cards::BOG_WRAITH, cards::SWAMP);
+    game.battlefield
+        .push(creature(10_010, cards::UR_DRAGO, PlayerId::One));
+    assert!(
+        can_be_blocked(&game, attacker),
+        "the attacking player's own Ur-Drago still turns swampwalk off"
+    );
+}
+
+/// The keyword survives; only blocking ignores it.
+#[test]
+fn negating_a_walk_does_not_remove_the_keyword() {
+    let (mut game, _) = walk_game(cards::BOG_WRAITH, cards::SWAMP);
+    game.battlefield
+        .push(creature(10_010, cards::QUAGMIRE, PlayerId::Two));
+    let wraith = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::BOG_WRAITH)
+        .expect("the Wraith is on the battlefield");
+    assert!(
+        game.permanent_has_executable_keyword(
+            wraith,
+            KeywordAbility::Landwalk(BasicLandType::Swamp)
+        ),
+        "the creature still has swampwalk for everything that reads it"
+    );
+}
+
 #[test]
 fn every_newly_unblocked_walker_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -183,6 +239,14 @@ fn every_newly_unblocked_walker_reports_complete_coverage() {
         cards::MARSH_GOBLINS,
         cards::LORD_OF_ATLANTIS,
         cards::FISHLIVER_OIL,
+        cards::GREAT_WALL,
+        cards::UNDERTOW,
+        cards::QUAGMIRE,
+        cards::CREVASSE,
+        cards::DEADFALL,
+        cards::GOSTA_DIRK,
+        cards::LORD_MAGNUS,
+        cards::UR_DRAGO,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

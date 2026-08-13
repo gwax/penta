@@ -56,7 +56,11 @@ distinguishes snapshots of the covered source and build inputs.
   Marsh Goblins, Lord of Atlantis, and Fishliver Oil. The last two grant the
   walk rather than printing it, from a lord clause and from an Aura. The Aura
   spell clause and its enchant targets moved from the Alpha module into
-  `card::abilities`, where every set can reach them. Checkpoint keyword tags keep their printed names and gain
+  `card::abilities`, where every set can reach them.
+  `EffectDef::LandwalkCanBeBlocked` turns one walk off for blocking without
+  removing the keyword, which is the Legends answer cycle: Great Wall,
+  Undertow, Quagmire, Crevasse, Deadfall, Gosta Dirk, Lord Magnus, and
+  Ur-Drago. Checkpoint keyword tags keep their printed names and gain
   `plainswalk`, `islandwalk`, and `swampwalk` additively.
 
 - **Regeneration is a declarative effect.** Arming a regeneration shield is now

@@ -270,6 +270,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::GainControlThisTurn { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)
+        | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::MultiplyEventAmount(_)
         | EffectDef::MoveToZone { .. }
         | EffectDef::ChooseCardName { .. }

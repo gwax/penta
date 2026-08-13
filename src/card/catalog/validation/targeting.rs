@@ -291,6 +291,7 @@ fn validate_effect_references(
         // target slot.
         // A prohibition names a card shape, never a target.
         EffectDef::PlayersCantPlay(_)
+        | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::ChoosePlayer { .. }
         | EffectDef::CopyPermanentAsItEnters { .. }
         | EffectDef::TriggerUntilYourNextTurn { .. }

@@ -4,10 +4,12 @@ use crate::CardDefinitionId;
 
 mod isd_rtr;
 mod landwalk;
+mod landwalk_blocking;
 mod rampage;
 mod regeneration;
 pub use isd_rtr::*;
 pub use landwalk::*;
+pub use landwalk_blocking::*;
 pub use rampage::*;
 pub use regeneration::*;
 

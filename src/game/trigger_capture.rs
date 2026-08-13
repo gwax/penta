@@ -286,6 +286,7 @@ impl Game {
             | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::PlayersCantPlay(_)
+            | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
