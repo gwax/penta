@@ -46,13 +46,15 @@ process.
 
 ### Deployment
 
-The client is deployed to <https://penta.lacker.workers.dev>, which plays
-games locally in the browser. The server-side routes -- hosted games
-(`/_game/…`), the bot registry (`/_bots`), and `/_engine/self-check` -- are
-gated behind the `HOSTED_GAMES` variable, which that deployment does not set,
-so they answer 404 there. They are unauthenticated and create Durable Objects
-on demand, so enabling them in public is a deliberate decision rather than a
-default.
+The client is deployed to <https://penta.lacker.workers.dev>. It plays games
+in the browser and serves the hosted-game and bot-registry routes, so a bot
+anywhere can put itself online there and be played: see the
+[bot guide](docs/bots.md). Each seat of a hosted room is held by a token
+minted when the room starts, and the routes that create things are held to
+ten a minute per address.
+
+`/_engine/self-check` plays a whole game inside the Worker and is separately
+gated behind `ENGINE_SELF_CHECK`, which the deployment does not set.
 
 ## Write a bot
 

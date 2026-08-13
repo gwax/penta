@@ -531,23 +531,27 @@ Everything above runs a bot in your own process. To let other people play it,
 put it in the registry: register once, then heartbeat. Heartbeating is what
 "online" means, and the heartbeat's reply is where games arrive.
 
-This needs a server. The development one serves these routes and enables
-them by default:
+### Which server
 
-```bash
-cd web && pnpm install && pnpm run dev     # http://localhost:3000
-```
+Two, and the only difference to your code is one string.
 
-A linked worktree gets its own port; `pnpm run dev:url` prints it without
-starting a second process.
+| | |
+| --- | --- |
+| `http://localhost:3000` | **While you are building it.** Your own server, no limits, nothing you do is visible to anyone. Start it with `cd web && pnpm install && pnpm run dev`; a linked worktree gets its own port, which `pnpm run dev:url` prints. |
+| `https://penta.lacker.workers.dev` | **When it is ready to meet people.** The public deployment. Your bot appears in the opponent picker and anyone can play it. |
 
-The public client at <https://penta.lacker.workers.dev> does not serve these
-routes -- they are gated behind `HOSTED_GAMES`, which it does not set -- so
-"online" today means online to whoever can reach a server you run.
+Build against the local one. An iterating bot registers repeatedly, plays
+badly on purpose, and restarts a lot -- all of which is fine on your own
+machine and none of which needs an audience. The public server also holds
+creations to ten a minute per address, which is generous for playing and
+tight for a debug loop.
+
+When it works, point it at the public one. Nothing else changes.
 
 ```python
 import time, requests
 
+# Local while building; the public deployment when you are ready.
 SERVER = "http://localhost:3000"
 
 me = requests.post(

@@ -38,8 +38,8 @@ and validate the cache. Avoid expanding them for isolated one-off questions.
 ## Deployment
 
 The web client is deployed to <https://penta.lacker.workers.dev>. Hosted
-games, the bot registry, and the engine self-check are gated behind
-`HOSTED_GAMES`. Do not claim from memory whether a deployment sets it -- one
+games and the bot registry are gated behind `HOSTED_GAMES`, and the engine
+self-check behind `ENGINE_SELF_CHECK`. Do not claim from memory whether a deployment sets it -- one
 request settles it:
 
 ```bash
