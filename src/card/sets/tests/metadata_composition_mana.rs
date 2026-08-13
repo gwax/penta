@@ -182,7 +182,7 @@ fn every_builtin_mana_land_has_a_printed_or_intrinsic_source() {
         .flat_map(|module| module.cards.iter().copied())
         .filter(|record| record.rules.has_type(crate::card::CardType::Land))
         .collect::<Vec<_>>();
-    assert_eq!(lands.len(), 49);
+    assert_eq!(lands.len(), 55);
 
     let lands_without_mana = lands
         .iter()
@@ -211,7 +211,10 @@ fn every_builtin_mana_land_has_a_printed_or_intrinsic_source() {
         })
         .map(|record| record.name)
         .collect::<Vec<_>>();
-    assert_eq!(lands_without_mana, ["Maze of Ith"]);
+    assert_eq!(
+        lands_without_mana,
+        ["Maze of Ith", "Flooded Strand", "Wooded Foothills"]
+    );
 }
 
 #[test]

@@ -11,6 +11,7 @@ mod y1994;
 mod y1995;
 mod y1997;
 mod y1998;
+mod y1999;
 mod y2000;
 mod y2001;
 mod y2002;
@@ -138,6 +139,11 @@ const SET_MODULES: &[SetModule] = &[
         y1998::urzas_saga::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::MercadianMasques,
+        y1999::mercadian_masques::CARDS,
+        y1999::mercadian_masques::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Nemesis,
         y2000::nemesis::CARDS,
         y2000::nemesis::ADDITIONAL_PRINTINGS,
@@ -225,7 +231,7 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let mut definitions = Vec::with_capacity(278);
+    let mut definitions = Vec::with_capacity(284);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }

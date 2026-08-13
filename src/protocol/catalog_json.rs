@@ -55,6 +55,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::Stronghold => "stronghold",
         CardSet::PortalSecondAge => "portal-second-age",
         CardSet::UrzasSaga => "urzas-saga",
+        CardSet::MercadianMasques => "mercadian-masques",
         CardSet::Nemesis => "nemesis",
         CardSet::Invasion => "invasion",
         CardSet::Apocalypse => "apocalypse",

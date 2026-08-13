@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    TriggerEventDef, ValueDef, cards,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, TriggerEventDef, ValueDef, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -63,7 +63,29 @@ pub(in crate::card::sets) static LOTUS_PETAL: CardRecord = CardRecord::new(
     )),
 );
 
+// TMP 330 — Wasteland
+pub(in crate::card::sets) static WASTELAND: CardRecord = CardRecord::new(
+    cards::WASTELAND,
+    "Wasteland",
+    CardArt::new("99ff731b-8399-40c8-b539-ba6ba5783771", "Una Fricker"),
+    CardSet::Tempest,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice this land: Destroy target nonbasic land.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Basic)),
+                ]),
+            )],
+            EffectDef::destroy_target(TargetIndex::PRIMARY, true),
+        ),
+    ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&JACKAL_PUP, &MOGG_FANATIC, &LOTUS_PETAL];
+    &[&JACKAL_PUP, &MOGG_FANATIC, &LOTUS_PETAL, &WASTELAND];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

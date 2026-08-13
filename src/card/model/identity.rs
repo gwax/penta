@@ -21,6 +21,7 @@ pub enum CardSet {
     Stronghold,
     PortalSecondAge,
     UrzasSaga,
+    MercadianMasques,
     Nemesis,
     Invasion,
     Apocalypse,

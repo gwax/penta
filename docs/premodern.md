@@ -12,9 +12,9 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 35 cards present in Penta's catalog
-- 110 cards still need catalog records
-- 15 cards have completed their Premodern interaction audit; the other 130
+- 41 cards present in Penta's catalog
+- 104 cards still need catalog records
+- 21 cards have completed their Premodern interaction audit; the other 124
   still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -30,7 +30,7 @@ Marvin's Angry Hermit.
   implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
-- Add accurate characteristics and Oracle clauses for the 110 uncataloged
+- Add accurate characteristics and Oracle clauses for the 104 uncataloged
   cards. Unsupported clauses must be metadata-only rather than executable
   no-ops.
 - Implement reusable mechanics before card-local behavior: cycling and
@@ -46,19 +46,23 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (35; the fifteen marked below were audited in the first two
-implementation tranches, while the older definitions still require an audit):
+Already cataloged (41; the twenty-one marked below were audited in the first
+three implementation tranches, while the older definitions still require an
+audit):
 
 - `Annul` — complete
 - `Armageddon`
 - `Black Vise`
 - `Blue Elemental Blast`
 - `City of Brass`
+- `Coastal Tower` — complete
 - `Counterspell`
 - `Disenchant`
 - `Duress`
+- `Dust Bowl` — complete
 - `Earthquake`
 - `Fact or Fiction` — complete
+- `Flooded Strand` — complete
 - `Forest`
 - `Hydroblast` — complete
 - `Incinerate` — damage complete; no-regeneration rider is partial
@@ -76,6 +80,7 @@ implementation tranches, while the older definitions still require an audit):
 - `Pyroblast` — complete
 - `Ray of Revelation`
 - `Red Elemental Blast`
+- `Rishadan Port` — complete
 - `Seal of Cleansing` — complete
 - `Seal of Fire` — complete
 - `Swamp`
@@ -83,9 +88,11 @@ implementation tranches, while the older definitions still require an audit):
 - `Syncopate`
 - `Vindicate` — complete
 - `Volcanic Hammer` — complete
+- `Wasteland` — complete
+- `Wooded Foothills` — complete
 - `Wrath of God`
 
-Not yet cataloged (110):
+Not yet cataloged (104):
 
 - [ ] `Abeyance`
 - [ ] `Adarkar Wastes`
@@ -103,7 +110,6 @@ Not yet cataloged (110):
 - [ ] `Chill`
 - [ ] `Circle of Protection: Red`
 - [ ] `Claws of Gix`
-- [ ] `Coastal Tower`
 - [ ] `Cursed Scroll`
 - [ ] `Cursed Totem`
 - [ ] `Daze`
@@ -111,7 +117,6 @@ Not yet cataloged (110):
 - [ ] `Decree of Silence`
 - [ ] `Defense Grid`
 - [ ] `Dragon Breath`
-- [ ] `Dust Bowl`
 - [ ] `Engineered Plague`
 - [ ] `Enlightened Tutor`
 - [ ] `Eternal Dragon`
@@ -119,7 +124,6 @@ Not yet cataloged (110):
 - [ ] `Fire // Ice`
 - [ ] `Fireblast`
 - [ ] `Flash of Insight`
-- [ ] `Flooded Strand`
 - [ ] `Forsaken City`
 - [ ] `Frantic Search`
 - [ ] `Gempalm Incinerator`
@@ -168,7 +172,6 @@ Not yet cataloged (110):
 - [ ] `Reanimate`
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`
-- [ ] `Rishadan Port`
 - [ ] `Root Maze`
 - [ ] `Secluded Steppe`
 - [ ] `Shallow Grave`
@@ -193,8 +196,6 @@ Not yet cataloged (110):
 - [ ] `Upheaval`
 - [ ] `Vision Charm`
 - [ ] `Warmth`
-- [ ] `Wasteland`
-- [ ] `Wooded Foothills`
 - [ ] `Worldly Tutor`
 - [ ] `Yavimaya Coast`
 
