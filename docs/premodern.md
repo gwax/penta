@@ -12,9 +12,9 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 47 cards present in Penta's catalog
-- 98 cards still need catalog records
-- 27 cards have completed their Premodern interaction audit; the other 118
+- 50 cards present in Penta's catalog
+- 95 cards still need catalog records
+- 30 cards have completed their Premodern interaction audit; the other 115
   still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -30,7 +30,7 @@ Marvin's Angry Hermit.
   implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
-- Add accurate characteristics and Oracle clauses for the 98 uncataloged
+- Add accurate characteristics and Oracle clauses for the 95 uncataloged
   cards. Unsupported clauses must be metadata-only rather than executable
   no-ops.
 - Implement reusable mechanics before card-local behavior: cycling and
@@ -46,8 +46,8 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (47; the twenty-seven marked below were audited in the first
-four implementation tranches, while the older definitions still require an
+Already cataloged (50; the thirty marked below were audited in the first five
+implementation tranches, while the older definitions still require an
 audit):
 
 - `Annul` — complete
@@ -65,6 +65,7 @@ audit):
 - `Fact or Fiction` — complete
 - `Flooded Strand` — complete
 - `Forest`
+- `Goblin Sharpshooter` — complete
 - `Hydroblast` — complete
 - `Incinerate` — damage complete; no-regeneration rider is partial
 - `Island`
@@ -80,6 +81,7 @@ audit):
 - `Phyrexian Arena` — complete
 - `Plains`
 - `Pyroblast` — complete
+- `Quirion Dryad` — complete
 - `Ray of Revelation`
 - `Red Elemental Blast`
 - `Rishadan Port` — complete
@@ -89,6 +91,7 @@ audit):
 - `Swamp`
 - `Swords to Plowshares`
 - `Syncopate`
+- `Sylvan Safekeeper` — complete
 - `Tranquil Domain` — complete
 - `Upheaval` — complete
 - `Vindicate` — complete
@@ -98,7 +101,7 @@ audit):
 - `Wooded Foothills` — complete
 - `Wrath of God`
 
-Not yet cataloged (98):
+Not yet cataloged (95):
 
 - [ ] `Abeyance`
 - [ ] `Adarkar Wastes`
@@ -141,7 +144,6 @@ Not yet cataloged (98):
 - [ ] `Goblin Piledriver`
 - [ ] `Goblin Pyromancer`
 - [ ] `Goblin Ringleader`
-- [ ] `Goblin Sharpshooter`
 - [ ] `Goblin Tinkerer`
 - [ ] `Goblin Vandal`
 - [ ] `Goblin Warchief`
@@ -172,7 +174,6 @@ Not yet cataloged (98):
 - [ ] `Prohibit`
 - [ ] `Psychatog`
 - [ ] `Pyrokinesis`
-- [ ] `Quirion Dryad`
 - [ ] `Reanimate`
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`
@@ -187,7 +188,6 @@ Not yet cataloged (98):
 - [ ] `Stasis`
 - [ ] `Stifle`
 - [ ] `Sutured Ghoul`
-- [ ] `Sylvan Safekeeper`
 - [ ] `Teferi's Response`
 - [ ] `Thawing Glaciers`
 - [ ] `Thwart`

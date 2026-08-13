@@ -111,6 +111,11 @@ pub const fn hexproof() -> AbilityDef {
 }
 
 #[must_use]
+pub const fn shroud() -> AbilityDef {
+    keyword("Shroud", KeywordAbility::Shroud)
+}
+
+#[must_use]
 pub const fn intimidate() -> AbilityDef {
     keyword("Intimidate", KeywordAbility::Intimidate)
 }

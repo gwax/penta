@@ -300,3 +300,6 @@ pub const ROOT_MAZE: CardDefinitionId = CardDefinitionId(287);
 pub const CLAWS_OF_GIX: CardDefinitionId = CardDefinitionId(288);
 pub const PHYREXIAN_ARENA: CardDefinitionId = CardDefinitionId(289);
 pub const UPHEAVAL: CardDefinitionId = CardDefinitionId(290);
+pub const QUIRION_DRYAD: CardDefinitionId = CardDefinitionId(291);
+pub const GOBLIN_SHARPSHOOTER: CardDefinitionId = CardDefinitionId(292);
+pub const SYLVAN_SAFEKEEPER: CardDefinitionId = CardDefinitionId(293);

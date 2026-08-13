@@ -160,6 +160,11 @@ const SET_MODULES: &[SetModule] = &[
         y2000::invasion::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Planeshift,
+        y2001::planeshift::CARDS,
+        y2001::planeshift::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Apocalypse,
         y2001::apocalypse::CARDS,
         y2001::apocalypse::ADDITIONAL_PRINTINGS,
@@ -168,6 +173,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::Odyssey,
         y2001::odyssey::CARDS,
         y2001::odyssey::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Judgment,
+        y2002::judgment::CARDS,
+        y2002::judgment::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::Onslaught,
@@ -242,7 +252,7 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let mut definitions = Vec::with_capacity(290);
+    let mut definitions = Vec::with_capacity(293);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }

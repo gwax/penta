@@ -2,10 +2,51 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, BasicLandType, CardArt, CardRules, CardSet,
-    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ZoneKind, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef, EffectDurationDef,
+    EffectRecipientDef, ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, cards,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
+
+// ONS 207 — Goblin Sharpshooter
+pub(in crate::card::sets) static GOBLIN_SHARPSHOOTER: CardRecord = CardRecord::new(
+    cards::GOBLIN_SHARPSHOOTER,
+    "Goblin Sharpshooter",
+    CardArt::new("7e689df7-b85d-4346-bee8-5e978b5cbbbc", "Greg Staples"),
+    CardSet::Onslaught,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin"], 1, 1).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature doesn't untap during your untap step.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever a creature dies, untap this creature.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                from: Some(ZoneKind::Battlefield),
+                to: Some(ZoneKind::Graveyard),
+            },
+            EffectDef::Untap {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{T}: This creature deals 1 damage to any target.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
 
 // ONS 275 — Naturalize
 pub(in crate::card::sets) static NATURALIZE: CardRecord = CardRecord::new(
@@ -63,7 +104,11 @@ const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) ->
     ))
 }
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&NATURALIZE, &FLOODED_STRAND, &WOODED_FOOTHILLS];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &GOBLIN_SHARPSHOOTER,
+    &NATURALIZE,
+    &FLOODED_STRAND,
+    &WOODED_FOOTHILLS,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

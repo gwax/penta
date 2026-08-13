@@ -1,6 +1,150 @@
 use super::*;
 
 #[test]
+fn quirion_dryad_grows_when_its_controller_casts_a_nongreen_spell() {
+    let mut game = ready_game();
+    let dryad = creature(10_000, cards::QUIRION_DRYAD, PlayerId::One);
+    let dryad_id = dryad.card.id;
+    game.battlefield.push(dryad);
+    let incinerate = card(10_001, cards::INCINERATE, PlayerId::One);
+    game.players[PlayerId::One.index()]
+        .hand
+        .push(incinerate.clone());
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    game.players[PlayerId::One.index()].mana_pool.red = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            incinerate.id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    let dryad = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == dryad_id)
+        .expect("Quirion Dryad remains on the battlefield");
+    assert_eq!(dryad.counters(CounterKind::PlusOnePlusOne), 1);
+}
+
+#[test]
+fn goblin_sharpshooter_pings_a_creature_then_untaps_when_it_dies() {
+    let mut game = ready_game();
+    let sharpshooter = creature(10_000, cards::GOBLIN_SHARPSHOOTER, PlayerId::One);
+    let sharpshooter_id = sharpshooter.card.id;
+    let victim = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let victim_id = victim.card.id;
+    game.battlefield.extend([sharpshooter, victim]);
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: sharpshooter_id,
+            ability: activated_ability_for(&game, sharpshooter_id, 0),
+            targets: activated_targets(Target::Permanent(victim_id)),
+            cost_object: None,
+            x: 0,
+        },
+    )
+    .unwrap();
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == sharpshooter_id)
+            .expect("Sharpshooter remains")
+            .tapped,
+        "tapping the Sharpshooter is part of the activation cost"
+    );
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != victim_id),
+        "the one-toughness creature died"
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == sharpshooter_id)
+            .expect("Sharpshooter remains")
+            .tapped,
+        "the death trigger untapped the Sharpshooter"
+    );
+}
+
+#[test]
+fn goblin_sharpshooter_stays_tapped_during_its_controllers_untap_step() {
+    let mut game = ready_game();
+    let mut sharpshooter = creature(10_000, cards::GOBLIN_SHARPSHOOTER, PlayerId::One);
+    sharpshooter.tapped = true;
+    game.battlefield.push(sharpshooter);
+    game.active_player = PlayerId::Two;
+
+    game.start_next_turn();
+
+    assert_eq!(game.active_player, PlayerId::One);
+    assert!(game.battlefield[0].tapped);
+}
+
+#[test]
+fn sylvan_safekeeper_sacrifices_a_land_and_grants_true_shroud() {
+    let mut game = ready_game();
+    let safekeeper = creature(10_000, cards::SYLVAN_SAFEKEEPER, PlayerId::One);
+    let safekeeper_id = safekeeper.card.id;
+    let protected = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One);
+    let protected_id = protected.card.id;
+    let land = creature(10_002, cards::FOREST, PlayerId::One);
+    let land_id = land.card.id;
+    game.battlefield.extend([safekeeper, protected, land]);
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: safekeeper_id,
+            ability: activated_ability_for(&game, safekeeper_id, 0),
+            targets: activated_targets(Target::Permanent(protected_id)),
+            cost_object: Some(land_id),
+            x: 0,
+        },
+    )
+    .unwrap();
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != land_id),
+        "the land is sacrificed as a cost"
+    );
+    drain_pending(&mut game);
+
+    let protected = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == protected_id)
+        .expect("the protected creature remains");
+    assert!(game.permanent_has_executable_keyword(protected, KeywordAbility::Shroud));
+
+    let bolt = card(10_003, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    assert!(
+        !game.permanent_can_be_targeted_by(protected, PlayerId::Two, bolt_id),
+        "shroud prevents opponents from targeting the creature"
+    );
+    assert!(
+        !game.permanent_can_be_targeted_by(protected, PlayerId::One, bolt_id),
+        "unlike hexproof, shroud also prevents its controller from targeting it"
+    );
+}
+
+#[test]
 fn claws_of_gix_sacrifices_the_chosen_permanent_before_gaining_life() {
     let mut game = ready_game();
     let claws = creature(10_000, cards::CLAWS_OF_GIX, PlayerId::One);

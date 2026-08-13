@@ -660,6 +660,7 @@ impl Game {
         source: GameObjectId,
     ) -> bool {
         !(self.is_protected_from_colors(permanent, self.object_colors(source))
+            || self.permanent_has_executable_keyword(permanent, KeywordAbility::Shroud)
             || permanent.controller != controller
                 && self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof)
             || self.cannot_be_enchanted(permanent) && self.source_attaches_itself(source))

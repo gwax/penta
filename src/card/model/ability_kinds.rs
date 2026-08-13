@@ -486,6 +486,7 @@ pub enum KeywordAbility {
     Reach,
     Flash,
     Hexproof,
+    Shroud,
     Intimidate,
     Undying,
     Indestructible,
@@ -524,6 +525,7 @@ impl KeywordAbility {
             Self::AttacksEachCombatIfAble => 16,
             Self::Forestwalk => 17,
             Self::Indestructible => 18,
+            Self::Shroud => 19,
             Self::ProtectionFrom(_) => return None,
         })
     }
