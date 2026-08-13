@@ -15,7 +15,7 @@ impl Game {
     pub(super) fn has_nonmana_activated_ability(&self, permanent: &Permanent) -> bool {
         let mut abilities = self.collect_base_effective_abilities(permanent, None);
         for operation in Self::resolved_ability_layer_operations(permanent) {
-            Self::apply_ability_layer_operation(&mut abilities, operation);
+            Self::apply_ability_layer_operation(&mut abilities, &operation);
         }
         abilities.into_iter().any(|effective| {
             effective.ability.is_executable()
@@ -48,7 +48,7 @@ impl Game {
     ) -> Vec<EffectiveAbility> {
         let mut abilities = self.collect_base_effective_abilities(permanent, prospective);
         for operation in self.collect_ability_layer_operations(permanent, prospective) {
-            Self::apply_ability_layer_operation(&mut abilities, operation);
+            Self::apply_ability_layer_operation(&mut abilities, &operation);
         }
         abilities
     }
@@ -203,14 +203,11 @@ impl Game {
 
     fn apply_ability_layer_operation(
         abilities: &mut Vec<EffectiveAbility>,
-        operation: AbilityLayerOperation,
+        operation: &AbilityLayerOperation,
     ) {
         match operation.kind {
             AbilityLayerOperationKind::Add { origin, ability } => {
-                abilities.push(EffectiveAbility {
-                    origin,
-                    ability: *ability,
-                });
+                abilities.push(EffectiveAbility { origin, ability });
             }
             AbilityLayerOperationKind::Remove(predicate) => {
                 abilities.retain(|ability| !Self::ability_predicate_matches(predicate, ability));
@@ -233,7 +230,7 @@ impl Game {
                         .grant
                         .expect("a granted ability has a structural grant identity"),
                 },
-                ability,
+                ability: *ability,
             },
             AppliedEffectDef::RemoveAbilities(predicate) => {
                 AbilityLayerOperationKind::Remove(predicate)
@@ -337,7 +334,7 @@ impl Game {
     ) -> u32 {
         let mut abilities = self.collect_base_effective_abilities(permanent, prospective);
         for operation in Self::resolved_ability_layer_operations(permanent) {
-            Self::apply_ability_layer_operation(&mut abilities, operation);
+            Self::apply_ability_layer_operation(&mut abilities, &operation);
         }
         let mut mask = 0;
         let mut set = |keyword: KeywordAbility| {
@@ -358,7 +355,7 @@ impl Game {
     pub(super) fn effective_behavior(&self, permanent: &Permanent) -> Option<CardBehavior> {
         let mut abilities = self.collect_base_effective_abilities(permanent, None);
         for operation in Self::resolved_ability_layer_operations(permanent) {
-            Self::apply_ability_layer_operation(&mut abilities, operation);
+            Self::apply_ability_layer_operation(&mut abilities, &operation);
         }
         abilities
             .into_iter()

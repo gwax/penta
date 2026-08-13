@@ -73,8 +73,10 @@ use observation_json::{card_part_name, decision_json, stack_object_json};
 /// adds the hidden-safe `checkpoint` object and observation reconstruction
 /// entry points used for local determinizations. Version 20 makes Chaos Orb's
 /// Old School activation untargeted and moves its nontoken-permanent choice
-/// into resolution.
-pub const PROTOCOL_VERSION: u32 = 20;
+/// into resolution. Version 21 makes that checkpoint a complete typed
+/// decision-boundary snapshot, including deferred execution, dynamic object
+/// state, restricted mana, and retired-object last-known information.
+pub const PROTOCOL_VERSION: u32 = 21;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold

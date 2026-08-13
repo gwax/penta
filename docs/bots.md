@@ -5,7 +5,7 @@ ships Eternal Central Old School 93/94 and the final pre-Theros ISD–RTR
 Standard format. This guide is for writing a program that plays it: from
 Python, C, C++, or Rust, against the included bots or against itself.
 
-This guide describes the current development wire contract, **protocol 20**.
+This guide describes the current development wire contract, **protocol 21**.
 Query `protocol_version()` and `engine_version()` through the selected binding
 and reject or migrate versions your client does not understand; pin both
 alongside trained weights. Old School remains the default for compatibility;
@@ -205,7 +205,7 @@ A clone forks the *true* state, hidden zones included. That is right for
 self-play but wrong for a search bot in a hosted match: its rollouts must use
 worlds consistent with its observation, not cards only the host knows.
 
-Protocol 19 observations are current-state checkpoints. Supply a hypothesis
+Protocol 21 observations are current-state checkpoints. Supply a hypothesis
 for the zones the observation intentionally redacts, then construct a live
 local game:
 
@@ -244,38 +244,41 @@ hidden hypothesis rather than the observation: even an object ID with no card
 name can reveal which opposing card was drawn or retained. Omit them when the
 hypothesized world has no such state.
 
-Construction fails closed when versions differ, a hypothesized zone has the
-wrong size, a card definition is unknown, the checkpoint contains a transient
-rules payload which lacks a stable semantic locator, or reconstruction would
-produce a different legal-action list. It never quietly creates an
-approximate game. Internally, the engine creates one typed `GameSnapshot` and
-serializes it at the protocol boundary; reconstruction deserializes that same
-schema before building a `Game`. The `checkpoint` field name remains part of
-the protocol-20 wire format, but it is no longer assembled or parsed through
-ad hoc JSON field lookups. Catalog-owned executable data is represented by
-stable semantic locators, while hidden-zone identities are supplied by the
-separate hypothesis above.
+If a suspended multi-player discard has already recorded opposing choices,
+provide those as hand indexes too:
 
-The currently accepted snapshots cover pregame and
-quiescent turn/combat decisions, ordinary battlefield state, and ordinary
-spells, activated abilities, and triggered abilities on the stack. Stack
-ability payloads identify their printed or nested/granted catalog definition,
-retain target-slot groupings and divided amounts, and carry the triggering
-event context. A stack object whose source, triggering object, target, or
-chosen cost object already requires retired-object last-known information
-still rejects explicitly. Dynamic copied or temporarily granted
-characteristics, deferred triggers, restricted mana, retired-object LKI, and
-stack-object runtime overrides also still require semantic checkpoint
-encodings before they can be imported. Command-zone emblems already
-reconstruct from their catalog definition and creating ability provenance.
-Data-only decisions whose referenced objects keep their public IDs can already
-resume: miracle reveal, public pile
-split/choice, target text-change, ordinary sacrifice/destruction choice, Time
-Vault, Sylvan Library, and Tetravus choices. A sacrifice choice is included
-when it has no deferred follow-up. Decisions holding a resolving
-stack object, a prospective replacement event, a card-owned callback, or
-host-hidden zone object IDs reject until those payloads have their own exact
-encodings and hidden-ID reconciliation.
+```python
+hidden["decision"] = {
+    "discardChoices": {
+        "p2": [1, 3],
+    },
+}
+```
+
+The constructor asks for this only when the current continuation actually
+contains such a hidden choice, and validates the number and range of indexes.
+
+Construction fails closed when versions differ, a hypothesized zone has the
+wrong size, a card definition is unknown, executable state lacks a stable
+catalog locator, or the rebuilt legal actions or public observation differ.
+It never quietly creates an approximate game. Internally, the engine creates
+one typed `GameSnapshot` and serializes it at the protocol boundary;
+reconstruction deserializes that same schema before building a `Game`.
+Catalog-owned executable data is represented by semantic locators, while
+hidden-zone identities are supplied only by the separate hypothesis above.
+
+The protocol-21 snapshot covers every ordinary action boundary emitted by the
+hosted formats: pregame and turn/combat progression; complete permanent,
+emblem, stack, and combat state; restricted/source-specific mana; copied and
+temporarily modified characteristics; retired-object last-known information;
+pending battlefield-entry replacement programs; delayed, floating, and
+pending triggers; and every pending decision continuation. Stack payloads
+retain target-slot groupings, divided amounts, modes, X, trigger context,
+flashback/copy state, text and color changes, and mana-carried effects.
+Card-owned pile callbacks use stable registry keys rather than serialized
+function pointers. Public object IDs remain unchanged, including those needed
+by suspended continuations, while hypothesized private cards are rebound to
+fresh local IDs.
 
 `set_hand` and `set_library` remain useful when exploring alternate hidden
 zones in a game already running locally. `hand(seat)` and `library(seat)` read
@@ -299,7 +302,7 @@ match API; a remote bot receives only redacted observations.
 | `opponentHandSize` | their current hidden hand as a count; learned snapshots are reported separately in `lastSeenHand` |
 | `lastSeenHand` | null or the most recently revealed hand snapshot as `{seat, cards}`; it records known information and can outlive later hand changes |
 | `battlefield` | every permanent, including its current-zone object ID, canonical definition, and presented card-part ID; a planeswalker also reports `loyalty` and `loyaltyAbilityUsedThisTurn` |
-| `checkpoint` | hidden-safe rules bookkeeping for reconstructing the current state: turn/combat counters, once-per-turn flags, raw permanent state, and stable import guards; it never contains host RNG state or hidden-zone cards |
+| `checkpoint` | the hidden-safe typed rules snapshot used by `Game.from_observation`, including deferred execution, dynamic objects, exact mana units, and reachable LKI; it never contains host RNG state or hidden-zone card identities |
 | `emblems` | command-zone emblems, each with its controller, name, granting ability, and clause texts |
 | `stack` | pending spells, activated abilities, and triggered abilities, bottom to top; entries expose the source object ID, creating definition and ability origin/text, controller, counterability, targets, chosen permanents, X, and a locked cast signature when applicable |
 | `graveyards`, `exiles` | public zones, both players |
@@ -566,6 +569,19 @@ protocol 7's one-off numeric `whiteRedHybrid` field with this general array.
 The shape is used everywhere the catalog reports a cost, including parts,
 play options, alternative costs, and additional costs.
 
+### Migrating from protocol 20
+
+Protocol 21 expands the hidden-safe `checkpoint` into the complete typed
+decision-boundary snapshot described above. Closed decoders must accept its
+new nested fields. Code that only reads documented observation fields and
+selects an index from `legalActions` needs no action-space change, but should
+still reject protocol versions it has not explicitly accepted.
+
+`Game.from_observation` can now resume ordinary hosted observations that carry
+deferred triggers, pending replacement events or decisions, restricted mana,
+dynamic object state, or retired-object LKI. It also validates the complete
+engine-owned public observation after reconstruction, not only legal actions.
+
 ### Migrating from protocol 19
 
 Chaos Orb's Old School activation no longer selects a permanent in its
@@ -598,7 +614,7 @@ in-process through the bindings will never see this reason.
 ### Migrating from protocol 7
 
 Protocols 8 through 17 introduced ten compatibility changes. Then apply the
-protocol 18, 19, and 20 migration sections above after these:
+protocol 18, 19, 20, and 21 migration sections above after these:
 
 - Protocol 8 replaced `manaCost.whiteRedHybrid` with the sparse `hybrid`
   array described above.

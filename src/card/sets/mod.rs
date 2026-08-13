@@ -26,6 +26,7 @@ mod y2021;
 use super::record::{CardAbilityBinding, CardRecord, PrintingRecord};
 use crate::AbilityOrigin;
 use crate::card::{AbilityDef, CardBehavior, CardDefinition, CardPrinting, CardRules, CardSet};
+use crate::game::{PileChosen, PilesSeparated};
 
 static UNSUPPORTED_RULES: CardRules = CardRules::unsupported();
 
@@ -341,6 +342,20 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::Mountain => &y1993::alpha::MOUNTAIN.rules,
         CardBehavior::Plains => &y1993::alpha::PLAINS.rules,
         CardBehavior::Unsupported => &UNSUPPORTED_RULES,
+    }
+}
+
+pub(crate) fn piles_separated_resolver(key: &str) -> Option<PilesSeparated> {
+    match key {
+        "lilianaOfTheVeil.pilesSeparated" => Some(y2011::innistrad::LILIANA_PILES_SEPARATED),
+        _ => None,
+    }
+}
+
+pub(crate) fn pile_chosen_resolver(key: &str) -> Option<PileChosen> {
+    match key {
+        "lilianaOfTheVeil.pileChosen" => Some(y2011::innistrad::LILIANA_PILE_CHOSEN),
+        _ => None,
     }
 }
 

@@ -151,7 +151,10 @@ fn an_observation_rebuilds_with_separate_hidden_hypotheses_and_fresh_rng() {
         .expect("checkpoint reconstructs");
     let before: Value = serde_json::from_str(&observation).expect("observation JSON");
     let after: Value = serde_json::from_str(&rebuilt.observe_json(seat)).expect("rebuilt JSON");
-    assert_eq!(after["legalActions"], before["legalActions"]);
+    assert_eq!(
+        after, before,
+        "the complete public observation is preserved"
+    );
     assert_eq!(after["hand"], before["hand"], "public ids are preserved");
     assert!(after.get("seed").is_none());
     assert!(after["checkpoint"].get("rng").is_none());

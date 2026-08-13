@@ -127,8 +127,8 @@ fn migrated_spells_do_not_require_an_additional_protocol_bump() {
     let catalog = poc::catalog().expect("catalog builds");
     let value = catalog_json_for_format(&catalog, Format::IsdRtrStandard);
     assert_eq!(
-        PROTOCOL_VERSION, 20,
-        "reconstructible checkpoints own protocol 19; Chaos Orb owns protocol 20"
+        PROTOCOL_VERSION, 21,
+        "complete typed reconstruction checkpoints own protocol 21"
     );
     assert_eq!(value["protocolVersion"], PROTOCOL_VERSION);
 

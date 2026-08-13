@@ -65,7 +65,7 @@ impl Game {
             Target::Card(target) => {
                 let grant = TemporaryAbilityGrant {
                     object: target,
-                    ability,
+                    ability: *ability,
                 };
                 if self.card_in_nonbattlefield_zone(target).is_some()
                     && !self.temporary_ability_grants.contains(&grant)
@@ -102,7 +102,7 @@ impl Game {
                     permanent
                         .temporary_granted_abilities
                         .push(TemporaryGrantedAbility {
-                            ability,
+                            ability: *ability,
                             source,
                             source_definition,
                             source_part,

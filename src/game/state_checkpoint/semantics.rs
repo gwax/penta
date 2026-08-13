@@ -1,8 +1,13 @@
-use super::model::{AbilityLocator, AnimationSnapshot, KeywordSnapshot};
+use super::model::{
+    AbilityLocator, AppliedEffectLocator, KeywordSnapshot, ManaPayloadLocator,
+    ReplacementEffectLocator, ScopedEffectSnapshot,
+};
+use super::model_animation::AnimationSnapshot;
+use super::{Mana, ScopedEffect};
 use crate::CardCatalog;
 use crate::card::{
-    AbilityDef, AnimationDef, AppliedEffectDef, DeclarativeAbilityDef, EffectDef, KeywordAbility,
-    ManaColor, SpellAbilityDef,
+    AbilityDef, AddManaEffectDef, AnimationDef, AppliedEffectDef, DeclarativeAbilityDef, EffectDef,
+    KeywordAbility, ManaColor, ManaSpendEffectDef, ReplacementEffectDef, SpellAbilityDef,
 };
 
 pub(super) fn ability_locator(
@@ -40,6 +45,296 @@ pub(super) fn catalog_ability(
         current = **child_abilities(&current).get(index)?;
     }
     Some(current)
+}
+
+pub(super) fn mana_payload_locator(
+    catalog: &CardCatalog,
+    mana: Mana,
+) -> Option<ManaPayloadLocator> {
+    if mana.restrictions.is_empty() && mana.spend_effects.is_empty() {
+        return None;
+    }
+    let ability = ability_locator(catalog, |candidate| {
+        mana_effects(candidate)
+            .iter()
+            .any(|effect| mana_effect_matches(*effect, mana))
+    })?;
+    let definition = catalog_ability(catalog, &ability)?;
+    let effect_index = mana_effects(&definition)
+        .iter()
+        .position(|effect| mana_effect_matches(*effect, mana))?;
+    Some(ManaPayloadLocator {
+        ability,
+        effect_index,
+    })
+}
+
+pub(super) fn catalog_mana_payload(
+    catalog: &CardCatalog,
+    locator: &ManaPayloadLocator,
+) -> Option<AddManaEffectDef> {
+    let ability = catalog_ability(catalog, &locator.ability)?;
+    mana_effects(&ability).get(locator.effect_index).copied()
+}
+
+pub(super) fn applied_effect_locator(
+    catalog: &CardCatalog,
+    expected: AppliedEffectDef,
+) -> Option<AppliedEffectLocator> {
+    let ability = ability_locator(catalog, |candidate| {
+        applied_effects(candidate).contains(&expected)
+    })?;
+    let definition = catalog_ability(catalog, &ability)?;
+    let effect_index = applied_effects(&definition)
+        .iter()
+        .position(|effect| *effect == expected)?;
+    Some(AppliedEffectLocator {
+        ability,
+        effect_index,
+    })
+}
+
+pub(super) fn catalog_applied_effect(
+    catalog: &CardCatalog,
+    locator: &AppliedEffectLocator,
+) -> Option<AppliedEffectDef> {
+    let ability = catalog_ability(catalog, &locator.ability)?;
+    applied_effects(&ability).get(locator.effect_index).copied()
+}
+
+fn applied_effects(ability: &AbilityDef) -> Vec<AppliedEffectDef> {
+    let mut found = Vec::new();
+    collect_applied_effects_from_effect(ability.effect.definition, &mut found);
+    for mana in mana_effects(ability) {
+        for spend in mana.spend_effects {
+            if let ManaSpendEffectDef::ApplyToPaidSpell(effect) = *spend {
+                collect_applied_effect(effect, &mut found);
+            }
+        }
+    }
+    found
+}
+
+fn collect_applied_effects_from_effect(effect: EffectDef, found: &mut Vec<AppliedEffectDef>) {
+    if let EffectDef::Apply { effect, .. } = effect {
+        collect_applied_effect(effect, found);
+    }
+    for child in child_effects(effect) {
+        collect_applied_effects_from_effect(child, found);
+    }
+}
+
+fn collect_applied_effect(effect: AppliedEffectDef, found: &mut Vec<AppliedEffectDef>) {
+    found.push(effect);
+    if let AppliedEffectDef::Composite(children) = effect {
+        for child in children {
+            collect_applied_effect(*child, found);
+        }
+    }
+}
+
+pub(super) fn scoped_effect_snapshot(
+    ability: &AbilityDef,
+    effect: ScopedEffect,
+) -> Option<ScopedEffectSnapshot> {
+    let mut path = Vec::new();
+    locate_effect(ability.effect.definition, effect.effect, &mut path).then_some(
+        ScopedEffectSnapshot {
+            path,
+            target_base: effect.target_base,
+        },
+    )
+}
+
+pub(super) fn catalog_scoped_effect(
+    catalog: &CardCatalog,
+    ability: &AbilityLocator,
+    snapshot: &ScopedEffectSnapshot,
+) -> Option<ScopedEffect> {
+    let ability = catalog_ability(catalog, ability)?;
+    let mut effect = ability.effect.definition;
+    for &index in &snapshot.path {
+        effect = *child_effects(effect).get(index)?;
+    }
+    Some(ScopedEffect {
+        effect,
+        target_base: snapshot.target_base,
+    })
+}
+
+pub(super) fn replacement_effect_locator(
+    catalog: &CardCatalog,
+    expected: ReplacementEffectDef,
+) -> Option<ReplacementEffectLocator> {
+    let ability = ability_locator(catalog, |candidate| {
+        replacement_effects(candidate)
+            .into_iter()
+            .any(|effect| effect == expected)
+    })?;
+    let definition = catalog_ability(catalog, &ability)?;
+    let effect_index = replacement_effects(&definition)
+        .into_iter()
+        .position(|effect| effect == expected)?;
+    Some(ReplacementEffectLocator {
+        ability,
+        effect_index,
+    })
+}
+
+pub(super) fn catalog_replacement_effect(
+    catalog: &CardCatalog,
+    locator: &ReplacementEffectLocator,
+) -> Option<ReplacementEffectDef> {
+    let ability = catalog_ability(catalog, &locator.ability)?;
+    replacement_effects(&ability)
+        .get(locator.effect_index)
+        .copied()
+}
+
+fn replacement_effects(ability: &AbilityDef) -> Vec<ReplacementEffectDef> {
+    let mut effects = Vec::new();
+    collect_replacement_effects_from_effect(ability.effect.definition, &mut effects);
+    effects
+}
+
+fn collect_replacement_effects_from_effect(
+    effect: EffectDef,
+    found: &mut Vec<ReplacementEffectDef>,
+) {
+    if let EffectDef::Replacement(replacement) = effect {
+        collect_replacement_effects(replacement, found);
+    }
+    for child in child_effects(effect) {
+        collect_replacement_effects_from_effect(child, found);
+    }
+}
+
+fn collect_replacement_effects(
+    effect: ReplacementEffectDef,
+    found: &mut Vec<ReplacementEffectDef>,
+) {
+    found.push(effect);
+    match effect {
+        ReplacementEffectDef::Sequence(effects) => {
+            for effect in effects {
+                collect_replacement_effects(*effect, found);
+            }
+        }
+        ReplacementEffectDef::Conditional {
+            if_true, if_false, ..
+        } => {
+            for effect in if_true.iter().chain(if_false.iter()) {
+                collect_replacement_effects(*effect, found);
+            }
+        }
+        ReplacementEffectDef::OptionalPayment {
+            if_paid,
+            if_declined,
+            ..
+        } => {
+            for effect in if_paid.iter().chain(if_declined.iter()) {
+                collect_replacement_effects(*effect, found);
+            }
+        }
+        ReplacementEffectDef::None | ReplacementEffectDef::ModifyBattlefieldEntry(_) => {}
+    }
+}
+
+fn locate_effect(current: EffectDef, needle: EffectDef, path: &mut Vec<usize>) -> bool {
+    if current == needle {
+        return true;
+    }
+    for (index, child) in child_effects(current).into_iter().enumerate() {
+        path.push(index);
+        if locate_effect(child, needle, path) {
+            return true;
+        }
+        path.pop();
+    }
+    false
+}
+
+fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
+    match effect {
+        EffectDef::Sequence(effects) => effects.to_vec(),
+        EffectDef::Randomized {
+            on_success,
+            on_failure,
+            ..
+        } => vec![*on_success, *on_failure],
+        EffectDef::OptionalPayment { if_paid, .. } => vec![*if_paid],
+        EffectDef::UnlessPaid { otherwise, .. }
+        | EffectDef::May(otherwise)
+        | EffectDef::IfCondition {
+            then: otherwise, ..
+        }
+        | EffectDef::AtNextStep {
+            effect: otherwise, ..
+        }
+        | EffectDef::ChoosePermanent {
+            then: otherwise, ..
+        } => vec![*otherwise],
+        EffectDef::SacrificeOfChoice {
+            then: Some(effect), ..
+        } => vec![*effect],
+        EffectDef::LookAtTopAndSelect { selection, .. } => {
+            selection.then.into_iter().copied().collect()
+        }
+        _ => Vec::new(),
+    }
+}
+
+fn mana_effect_matches(effect: AddManaEffectDef, mana: Mana) -> bool {
+    effect.restrictions == mana.restrictions
+        && effect.spend_effects == mana.spend_effects
+        && match effect.mana {
+            crate::card::ManaSelectionDef::One(color) => color == mana.color,
+            crate::card::ManaSelectionDef::Choice(colors) => colors.contains(&mana.color),
+        }
+}
+
+fn mana_effects(ability: &AbilityDef) -> Vec<AddManaEffectDef> {
+    let mut effects = Vec::new();
+    collect_mana_effects(ability.effect.definition, &mut effects);
+    effects
+}
+
+fn collect_mana_effects(effect: EffectDef, found: &mut Vec<AddManaEffectDef>) {
+    match effect {
+        EffectDef::AddMana(mana) => found.push(mana),
+        EffectDef::Sequence(effects) => {
+            for effect in effects {
+                collect_mana_effects(*effect, found);
+            }
+        }
+        EffectDef::Randomized {
+            on_success,
+            on_failure,
+            ..
+        } => {
+            collect_mana_effects(*on_success, found);
+            collect_mana_effects(*on_failure, found);
+        }
+        EffectDef::OptionalPayment {
+            if_paid: effect, ..
+        }
+        | EffectDef::UnlessPaid {
+            otherwise: effect, ..
+        }
+        | EffectDef::May(effect)
+        | EffectDef::IfCondition { then: effect, .. }
+        | EffectDef::AtNextStep { effect, .. }
+        | EffectDef::ChoosePermanent { then: effect, .. }
+        | EffectDef::SacrificeOfChoice {
+            then: Some(effect), ..
+        } => collect_mana_effects(*effect, found),
+        EffectDef::LookAtTopAndSelect { selection, .. } => {
+            if let Some(effect) = selection.then {
+                collect_mana_effects(*effect, found);
+            }
+        }
+        _ => {}
+    }
 }
 
 fn locate_ability(

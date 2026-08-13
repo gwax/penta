@@ -22,7 +22,7 @@ pub(super) enum AbilityEffectExpiration {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct TemporaryGrantedAbility {
-    pub(super) ability: &'static AbilityDef,
+    pub(super) ability: AbilityDef,
     pub(super) source: GameObjectId,
     pub(super) source_definition: CardDefinitionId,
     pub(super) source_part: CardPartId,
@@ -42,10 +42,13 @@ pub(super) struct TemporaryRemovedAbilities {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+// Ability definitions are immutable catalog values with static references.
+// Keeping this operation Copy avoids allocation in the hot ability-layer walk.
+#[allow(clippy::large_enum_variant)]
 pub(super) enum AbilityLayerOperationKind {
     Add {
         origin: AbilityOrigin,
-        ability: &'static AbilityDef,
+        ability: AbilityDef,
     },
     Remove(AbilityPredicateDef),
 }
@@ -62,7 +65,7 @@ pub(super) struct AbilityLayerOperation {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct TemporaryAbilityGrant {
     pub(super) object: GameObjectId,
-    pub(super) ability: &'static AbilityDef,
+    pub(super) ability: AbilityDef,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -13,7 +13,10 @@ use crate::card::{
     TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
 };
-use crate::game::{CardAbilityResolver, CardRuntime, PileChoice, PileSplit, ResolvedAbility};
+use crate::game::{
+    CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
+    ResolvedAbility,
+};
 use crate::ids::{AbilityId, CardPartId, PlayOptionId, TargetIndex, TargetSlotId};
 use crate::mana_cost;
 
@@ -1772,9 +1775,15 @@ fn resolve_liliana_ultimate(runtime: &mut CardRuntime<'_>, ability: &ResolvedAbi
         ability.controller(),
         victim,
         &permanents,
-        liliana_piles_separated,
+        LILIANA_PILES_SEPARATED,
     );
 }
+
+pub(in crate::card) static LILIANA_PILES_SEPARATED: PilesSeparated =
+    PilesSeparated::new("lilianaOfTheVeil.pilesSeparated", liliana_piles_separated);
+
+pub(in crate::card) static LILIANA_PILE_CHOSEN: PileChosen =
+    PileChosen::new("lilianaOfTheVeil.pileChosen", liliana_pile_chosen);
 
 fn liliana_piles_separated(runtime: &mut CardRuntime<'_>, piles: PileSplit) {
     let victim = piles.subject();
@@ -1783,7 +1792,7 @@ fn liliana_piles_separated(runtime: &mut CardRuntime<'_>, piles: PileSplit) {
         piles,
         "Choose a pile to sacrifice",
         "Sacrifice pile",
-        liliana_pile_chosen,
+        LILIANA_PILE_CHOSEN,
     );
 }
 

@@ -22,7 +22,7 @@ fn alternative_cast_action(
 fn grant_card_cost_flashback(game: &mut Game, object: GameObjectId) {
     game.temporary_ability_grants.push(TemporaryAbilityGrant {
         object,
-        ability: &CARD_COST_FLASHBACK,
+        ability: CARD_COST_FLASHBACK,
     });
 }
 

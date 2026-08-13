@@ -19,8 +19,8 @@ impl BotGame {
     /// # Errors
     ///
     /// Returns a message for a version mismatch, malformed or inconsistent
-    /// hidden zones, or checkpoint state not yet represented by stable
-    /// semantic locators.
+    /// hidden zones, checkpoint state without stable catalog semantics, or a
+    /// reconstruction that changes the public observation.
     pub fn from_observation_json(
         observation_json: &str,
         hidden_json: &str,
@@ -72,6 +72,16 @@ impl BotGame {
             .map_err(|error| format!("rebuilt observation was invalid: {error}"))?;
         if rebuilt_observation["legalActions"] != observation["legalActions"] {
             return Err("checkpoint rebuilt a different legal-action list".into());
+        }
+        let rebuilt_fields = rebuilt_observation
+            .as_object()
+            .ok_or("rebuilt observation must be an object")?;
+        for (field, rebuilt_value) in rebuilt_fields {
+            if observation.get(field) != Some(rebuilt_value) {
+                return Err(format!(
+                    "checkpoint rebuilt a different public observation field: {field}"
+                ));
+            }
         }
         Ok(rebuilt)
     }

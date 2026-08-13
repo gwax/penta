@@ -12,18 +12,27 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
-## Unreleased — protocol 20
+## Unreleased — protocol 21
 
-The current development checkout reports engine 0.6.0 and protocol 20. Pin
+The current development checkout reports engine 0.6.0 and protocol 21. Pin
 both; the engine version alone does not distinguish it from earlier 0.6.0
 snapshots.
 
 ### Added
 
-- Game reconstruction now has one typed `GameSnapshot` serde schema behind
-  the existing protocol-20 `checkpoint` field. Encoding and decoding share
-  that schema, replacing the parallel hand-written JSON constructors and
-  field parsers without changing the bot wire format.
+- **Protocol 21.** Game reconstruction now has one typed `GameSnapshot` serde
+  schema behind the observation `checkpoint`. Encoding and decoding share that
+  schema, replacing the parallel hand-written JSON constructors and parsers.
+  The snapshot now carries every ordinary hosted action-boundary continuation:
+  pending decisions and entry events, delayed/floating/pending triggers,
+  restricted and source-specific mana, retired-object last-known information,
+  combat assignments, dynamic/copy characteristics, temporary abilities, and
+  stack copies or runtime modifications. Catalog executable data is addressed
+  by semantic locators rather than serialized code or mutating `set_*` calls.
+  Construction verifies both the legal-action list and every engine-owned
+  public observation field; malformed, inconsistent, or unlocatable state
+  continues to fail explicitly. This expands the checkpoint JSON shape and is
+  therefore an incompatible protocol change.
 
 - **Protocol 19.** Every observation now includes a hidden-safe `checkpoint`
   object with turn counters, combat progression, once-per-turn flags, delayed

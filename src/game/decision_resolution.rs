@@ -439,7 +439,7 @@ impl Game {
                     .cloned()
                     .collect();
                 let mut runtime = CardRuntime { game: self };
-                on_complete(
+                on_complete.run(
                     &mut runtime,
                     PileSplit {
                         resolving_controller,
@@ -473,7 +473,7 @@ impl Game {
                         .collect::<Vec<_>>()
                 };
                 let mut runtime = CardRuntime { game: self };
-                on_complete(
+                on_complete.run(
                     &mut runtime,
                     PileChoice {
                         resolving_controller: piles.resolving_controller,

@@ -118,7 +118,7 @@ impl Game {
     ) {
         if items.is_empty() {
             let mut runtime = CardRuntime { game: self };
-            on_complete(
+            on_complete.run(
                 &mut runtime,
                 PileSplit {
                     resolving_controller,
@@ -156,7 +156,7 @@ impl Game {
     ) {
         if piles.first.is_empty() && piles.second.is_empty() {
             let mut runtime = CardRuntime { game: self };
-            on_complete(
+            on_complete.run(
                 &mut runtime,
                 PileChoice {
                     resolving_controller: piles.resolving_controller,

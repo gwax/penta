@@ -16,7 +16,7 @@ mod characteristics;
 mod creature_types;
 mod model;
 mod record;
-mod sets;
+pub(crate) mod sets;
 
 pub(crate) use record::{AbilityPolicyHint, CardAbilityBinding};
 

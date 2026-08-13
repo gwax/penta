@@ -115,8 +115,71 @@ impl PileChoice {
     }
 }
 
-pub(crate) type PilesSeparated = for<'game> fn(&mut CardRuntime<'game>, PileSplit);
-pub(crate) type PileChosen = for<'game> fn(&mut CardRuntime<'game>, PileChoice);
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct PilesSeparated {
+    key: &'static str,
+    resolve: for<'game> fn(&mut CardRuntime<'game>, PileSplit),
+}
+
+impl PartialEq for PilesSeparated {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
+}
+
+impl Eq for PilesSeparated {}
+
+impl PilesSeparated {
+    #[must_use]
+    pub(crate) const fn new(
+        key: &'static str,
+        resolve: for<'game> fn(&mut CardRuntime<'game>, PileSplit),
+    ) -> Self {
+        Self { key, resolve }
+    }
+
+    #[must_use]
+    pub(crate) const fn key(self) -> &'static str {
+        self.key
+    }
+
+    pub(super) fn run(self, runtime: &mut CardRuntime<'_>, piles: PileSplit) {
+        (self.resolve)(runtime, piles);
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct PileChosen {
+    key: &'static str,
+    resolve: for<'game> fn(&mut CardRuntime<'game>, PileChoice),
+}
+
+impl PartialEq for PileChosen {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
+}
+
+impl Eq for PileChosen {}
+
+impl PileChosen {
+    #[must_use]
+    pub(crate) const fn new(
+        key: &'static str,
+        resolve: for<'game> fn(&mut CardRuntime<'game>, PileChoice),
+    ) -> Self {
+        Self { key, resolve }
+    }
+
+    #[must_use]
+    pub(crate) const fn key(self) -> &'static str {
+        self.key
+    }
+
+    pub(super) fn run(self, runtime: &mut CardRuntime<'_>, choice: PileChoice) {
+        (self.resolve)(runtime, choice);
+    }
+}
 
 /// Narrow capability surface available to card-owned resolution callbacks.
 /// Its game reference is private so set modules cannot mutate unrelated state.
