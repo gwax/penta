@@ -1136,7 +1136,15 @@ pub(in crate::card::sets) static ACTIVE_VOLCANO: CardRecord = CardRecord::new(
 );
 
 // LEG 131 — Aerathi Berserker
-// Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
+pub(in crate::card::sets) static AERATHI_BERSERKER: CardRecord = CardRecord::new(
+    cards::AERATHI_BERSERKER,
+    "Aerathi Berserker",
+    CardArt::new("06673800-22a7-4ee3-92fa-7c7cd4865d30", "Melissa A. Benson"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{R}{R}{R}"), &["Human", "Berserker"], 2, 4).with_abilities(&[
+        abilities::rampage(3, "Rampage 3 (Whenever this creature becomes blocked, it gets +3/+3 until end of turn for each creature blocking it beyond the first.)"),
+    ]),
+);
 
 // LEG 132 — Backdraft
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Choose a player who cast one or more sorcery spells this turn. Backdraft deals damage to that player equal to half the damage dealt by one of those sorcery spells this turn, rounded down”.
@@ -1268,7 +1276,15 @@ pub(in crate::card::sets) static ETERNAL_WARRIOR: CardRecord = CardRecord::new(
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “If this creature would die, return it to its owner's hand instead. Until that player's next turn, that player plays with that card revealed in their hand and can't play it”.
 
 // LEG 148 — Frost Giant
-// Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
+pub(in crate::card::sets) static FROST_GIANT: CardRecord = CardRecord::new(
+    cards::FROST_GIANT,
+    "Frost Giant",
+    CardArt::new("6955d54f-7b37-4e43-8183-51677fb1ee11", "Daniel Gelon"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{R}{R}{R}"), &["Giant"], 4, 4).with_abilities(&[
+        abilities::rampage(2, "Rampage 2 (Whenever this creature becomes blocked, it gets +2/+2 until end of turn for each creature blocking it beyond the first.)"),
+    ]),
+);
 
 // LEG 149 — Giant Strength
 pub(in crate::card::sets) static GIANT_STRENGTH: CardRecord = CardRecord::new(
@@ -1662,7 +1678,16 @@ pub(in crate::card::sets) static CONCORDANT_CROSSROADS: CardRecord = CardRecord:
 );
 
 // LEG 180 — Craw Giant
-// Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
+pub(in crate::card::sets) static CRAW_GIANT: CardRecord = CardRecord::new(
+    cards::CRAW_GIANT,
+    "Craw Giant",
+    CardArt::new("707dadf0-735f-445d-9240-e49660913314", "Christopher Rush"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}{G}{G}"), &["Giant"], 6, 4).with_abilities(&[
+        abilities::trample(),
+        abilities::rampage(2, "Rampage 2 (Whenever this creature becomes blocked, it gets +2/+2 until end of turn for each creature blocking it beyond the first.)"),
+    ]),
+);
 
 // LEG 181 — Deadfall
 // Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with forestwalk can be blocked as though they didn't have forestwalk”.
@@ -1996,7 +2021,15 @@ pub(in crate::card::sets) static WHIRLING_DERVISH: CardRecord = CardRecord::new(
 // Audit: blocked — Needs one chosen-X target set with a flying-dependent damage follow-up linked to the creatures it tapped.
 
 // LEG 214 — Wolverine Pack
-// Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
+pub(in crate::card::sets) static WOLVERINE_PACK: CardRecord = CardRecord::new(
+    cards::WOLVERINE_PACK,
+    "Wolverine Pack",
+    CardArt::new("ba5aee52-095e-4c69-93eb-5adac11ed1fc", "Jeff A. Menges"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Wolverine"], 2, 4).with_abilities(&[
+        abilities::rampage(2, "Rampage 2 (Whenever this creature becomes blocked, it gets +2/+2 until end of turn for each creature blocking it beyond the first.)"),
+    ]),
+);
 
 // LEG 215 — Wood Elemental
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Wood Elemental's power and toughness are each equal to the number of Forests sacrificed as it entered”.
@@ -2136,7 +2169,16 @@ pub(in crate::card::sets) static BORIS_DEVILBOON: CardRecord = CardRecord::new(
 // Audit: blocked — Needs the exact token definition and creation/lifecycle behavior for “When Hazezon enters, create X 1/1 Sand Warrior creature tokens that are red, green, and white at the beginning of your next upkeep, where X is the number of lands you control at that time”.
 
 // LEG 231 — Hunding Gjornersen
-// Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
+pub(in crate::card::sets) static HUNDING_GJORNERSEN: CardRecord = CardRecord::new(
+    cards::HUNDING_GJORNERSEN,
+    "Hunding Gjornersen",
+    CardArt::new("07d8e501-6857-4a52-a3b9-2bf0bee5b08c", "Richard Thomas"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{W}{U}{U}"), &["Human", "Warrior"], 5, 4)
+        .with_supertype(CardSupertype::Legendary).with_abilities(&[
+        abilities::rampage(1, "Rampage 1 (Whenever this creature becomes blocked, it gets +1/+1 until end of turn for each creature blocking it beyond the first.)"),
+    ]),
+);
 
 // LEG 232 — Jacques le Vert
 pub(in crate::card::sets) static JACQUES_LE_VERT: CardRecord = CardRecord::new(
@@ -2264,7 +2306,16 @@ const NICOL_BOLAS_ENTIRE_HAND: ValueDef = ValueDef::Constant(i32::MAX);
 // Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Creatures with forestwalk can be blocked as though they didn't have forestwalk”.
 
 // LEG 244 — Marhault Elsdragon
-// Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
+pub(in crate::card::sets) static MARHAULT_ELSDRAGON: CardRecord = CardRecord::new(
+    cards::MARHAULT_ELSDRAGON,
+    "Marhault Elsdragon",
+    CardArt::new("67330004-6720-46d9-9de0-c79230110583", "Mark Poole"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{R}{R}{G}"), &["Elf", "Warrior"], 4, 6)
+        .with_supertype(CardSupertype::Legendary).with_abilities(&[
+        abilities::rampage(1, "Rampage 1 (Whenever this creature becomes blocked, it gets +1/+1 until end of turn for each creature blocking it beyond the first.)"),
+    ]),
+);
 
 // LEG 245 — Nebuchadnezzar
 // Audit: blocked — Needs seeded random selection with replay-visible provenance for “{X}, {T}: Choose a card name. Target opponent reveals X cards at random from their hand. Then that player discards all cards with that name revealed this way. Activate only during your turn”.
@@ -2977,11 +3028,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THE_ABYSS,
     &WALKING_DEAD,
     &ACTIVE_VOLCANO,
+    &AERATHI_BERSERKER,
     &CHAIN_LIGHTNING,
     &CRIMSON_KOBOLDS,
     &CRIMSON_MANTICORE,
     &CROOKSHANK_KOBOLDS,
     &ETERNAL_WARRIOR,
+    &FROST_GIANT,
     &GIANT_STRENGTH,
     &GRAVITY_SPHERE,
     &IMMOLATION,
@@ -2999,6 +3052,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BARBARY_APES,
     &CAT_WARRIORS,
     &CONCORDANT_CROSSROADS,
+    &CRAW_GIANT,
     &DURKWOOD_BOARS,
     &ELVEN_RIDERS,
     &EMERALD_DRAGONFLY,
@@ -3012,10 +3066,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TYPHOON,
     &UNTAMED_WILDS,
     &WHIRLING_DERVISH,
+    &WOLVERINE_PACK,
     &ADUN_OAKENSHIELD,
     &AXELROD_GUNNARSON,
     &BARKTOOTH_WARBEARD,
     &BORIS_DEVILBOON,
+    &HUNDING_GJORNERSEN,
     &JACQUES_LE_VERT,
     &JASMINE_BOREAL,
     &JEDIT_OJANEN,
@@ -3023,6 +3079,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KASIMIR_THE_LONE_WOLF,
     &LADY_CALERIA,
     &LADY_ORCA,
+    &MARHAULT_ELSDRAGON,
     &NICOL_BOLAS,
     &PALLADIA_MORS,
     &PAVEL_MALIKI,

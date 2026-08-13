@@ -60,6 +60,10 @@ pub enum ValueDef {
     /// The negation of another value, so a "for each" penalty can reuse the
     /// same count a bonus would.
     Negate(&'static ValueDef),
+    /// Another value multiplied by a constant, for the clauses that pay more
+    /// than one per thing counted. Held by reference for the same reason
+    /// [`Self::Negate`] is: `ValueDef` stays one word wide.
+    Scaled(&'static ScaledValueDef),
     /// How many counters of one kind sit on the ability's own source.
     CountersOnSource(CounterKind),
     /// The morbid condition. Held by reference so that `ValueDef` stays one
@@ -80,4 +84,18 @@ pub enum ValueDef {
     /// The mana value of what a target slot points at, read from last-known
     /// information after a permanent or spell has left its zone.
     TargetManaValue(TargetIndex),
+}
+
+/// A value and the constant it is multiplied by, for "+N/+N for each ...".
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ScaledValueDef {
+    pub value: ValueDef,
+    pub factor: i32,
+}
+
+impl ScaledValueDef {
+    #[must_use]
+    pub const fn new(value: ValueDef, factor: i32) -> Self {
+        Self { value, factor }
+    }
 }

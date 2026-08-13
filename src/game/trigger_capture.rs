@@ -513,6 +513,9 @@ impl Game {
             && self.trigger_object_matches(predicate, dealer, source, false)
     }
 
+    // Long because the event vocabulary is wide, not because the function
+    // does several things: every arm pairs one definition with one event.
+    #[allow(clippy::too_many_lines)]
     pub(super) fn trigger_event_matches(
         &self,
         definition: TriggerEventDef,
@@ -547,6 +550,10 @@ impl Game {
             | (
                 TriggerEventDef::CombatDamageDealtToPlayer { source: predicate },
                 CommittedTriggerEvent::CombatDamageDealtToPlayer { object, .. },
+            )
+            | (
+                TriggerEventDef::BecomesBlocked(predicate),
+                CommittedTriggerEvent::BecomesBlocked { object, .. },
             ) => self.trigger_object_matches(predicate, object, source, false),
             (
                 trigger @ TriggerEventDef::CombatDamageDealtToSource { .. },

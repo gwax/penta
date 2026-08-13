@@ -904,6 +904,10 @@ pub enum TriggerEventDef {
     /// declaration triggers separately, as CR 508.2 has them all attack at
     /// once rather than one at a time.
     Attacks(ObjectPredicateDef),
+    /// CR 509.1h: the attacker became blocked. The event carries how many
+    /// creatures are blocking it beyond the first, which is the quantity
+    /// every rampage-style clause is written against.
+    BecomesBlocked(ObjectPredicateDef),
     /// The first time a matching creature attacks in a turn. An extra combat
     /// phase is the only way a creature attacks twice, which is exactly what
     /// the cards carrying this wording tend to grant.

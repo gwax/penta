@@ -262,6 +262,32 @@ impl Game {
                 assignments,
             });
         }
+        self.capture_becomes_blocked_triggers(&blocked);
+    }
+
+    /// CR 509.1h. Each attacker becomes blocked once, however many creatures
+    /// blocked it, so the event fires per attacker and carries the count the
+    /// rampage-style clauses are written against.
+    fn capture_becomes_blocked_triggers(&mut self, blocked: &[GameObjectId]) {
+        let mut attackers = blocked.to_vec();
+        attackers.sort_unstable();
+        attackers.dedup();
+        for attacker in attackers {
+            let blockers = blocked.iter().filter(|id| **id == attacker).count();
+            let Some(object) = self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == attacker)
+                .map(|permanent| self.trigger_event_object(permanent))
+            else {
+                continue;
+            };
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::BecomesBlocked {
+                object,
+                blockers_beyond_first: u16::try_from(blockers.saturating_sub(1))
+                    .unwrap_or(u16::MAX),
+            });
+        }
     }
 
     pub(super) fn start_combat_damage(&mut self) {

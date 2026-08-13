@@ -83,6 +83,9 @@ fn validate_value_target_references(
 ) -> Result<(), GrantedAbilityValidationError> {
     match value {
         ValueDef::Negate(value) => validate_value_target_references(*value, target_count),
+        ValueDef::Scaled(scaled) => {
+            validate_value_target_references(scaled.value, target_count)
+        }
         ValueDef::IfCreatureDiedThisTurn(condition) => {
             validate_value_target_references(condition.then, target_count)?;
             validate_value_target_references(condition.otherwise, target_count)

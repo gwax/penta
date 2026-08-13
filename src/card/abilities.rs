@@ -8,7 +8,8 @@ use super::model::{
     AddManaEffectDef, AlternativeCastKindDef, AnimationDef, AppliedEffectDef, BasicLandType,
     BattlefieldEntryModificationDef, CardType, CardTypeSet, ConditionDef, CostDef, EffectDef,
     EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef,
-    ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEffectDef, ZoneKind,
+    ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEffectDef, ScaledValueDef,
+    TriggerEventDef, ValueDef, ZoneKind,
 };
 
 /// The target an "Enchant creature" Aura spell chooses.
@@ -153,6 +154,43 @@ pub const fn undying() -> AbilityDef {
 #[must_use]
 pub const fn indestructible() -> AbilityDef {
     keyword("Indestructible", KeywordAbility::Indestructible)
+}
+
+/// Rampage N (CR 702.23): whenever this creature becomes blocked, it gets
+/// +N/+N until end of turn for each creature blocking it beyond the first.
+/// The event carries that count, so the clause only supplies N.
+/// The per-blocker bonus for each printed rampage value. `ValueDef::Scaled`
+/// holds its operand by reference, and a value built from a parameter cannot
+/// be promoted to `'static`, so the printed amounts are named here.
+static RAMPAGE_SCALES: [ScaledValueDef; 4] = [
+    ScaledValueDef::new(ValueDef::TriggerEventAmount, 0),
+    ScaledValueDef::new(ValueDef::TriggerEventAmount, 1),
+    ScaledValueDef::new(ValueDef::TriggerEventAmount, 2),
+    ScaledValueDef::new(ValueDef::TriggerEventAmount, 3),
+];
+
+/// # Panics
+///
+/// Panics when `amount` is not a printed rampage value (1 through 3).
+#[must_use]
+pub const fn rampage(amount: usize, text: &'static str) -> AbilityDef {
+    assert!(
+        amount >= 1 && amount < RAMPAGE_SCALES.len(),
+        "rampage is only printed with amounts 1 through 3"
+    );
+    let scale = &RAMPAGE_SCALES[amount];
+    AbilityDef::triggered(
+        text,
+        TriggerEventDef::BecomesBlocked(ObjectPredicateDef::Source),
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Scaled(scale),
+                toughness: ValueDef::Scaled(scale),
+            },
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+    )
 }
 
 /// The printed landwalk clause for one basic land type. The rules text is the

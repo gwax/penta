@@ -107,6 +107,12 @@ pub(super) enum CommittedTriggerEvent {
     Attacks {
         object: TriggerEventObject,
     },
+    BecomesBlocked {
+        object: TriggerEventObject,
+        /// Blockers beyond the first, so a clause reading the trigger amount
+        /// gets the quantity it is printed against without recounting.
+        blockers_beyond_first: u16,
+    },
     TappedForMana {
         object: TriggerEventObject,
     },
@@ -185,6 +191,16 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
+                chosen_objects: [None; ChoiceIndex::COUNT],
+            },
+            Self::BecomesBlocked {
+                object,
+                blockers_beyond_first,
+            } => TriggerContext {
+                object: Some(object.id),
+                object_controller: Some(object.controller),
+                event_player: None,
+                amount: Some(i32::from(*blockers_beyond_first)),
                 chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::LifeGained { player, amount } => TriggerContext {

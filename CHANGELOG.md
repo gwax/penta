@@ -34,6 +34,18 @@ distinguishes snapshots of the covered source and build inputs.
   now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
+- **Rampage, and the becomes-blocked event under it.** The engine had no
+  trigger for a creature becoming blocked, so none of the nine printed rampage
+  cards could be expressed. `TriggerEventDef::BecomesBlocked` fires once per
+  attacker when blockers are finalized and carries the blocker count beyond the
+  first, which is the quantity every rampage clause is written against.
+  `ValueDef::Scaled` multiplies a value by a constant so the printed amounts 1,
+  2, and 3 all read the same event. Six Legends identities are now executable:
+  Aerathi Berserker, Frost Giant, Craw Giant, Wolverine Pack, Hunding
+  Gjornersen, and Marhault Elsdragon. Chromium, Gabriel Angelfire, and Rapid
+  Fire print rampage alongside capabilities this does not add and keep their
+  audit lines.
+
 - **Landwalk is one keyword parameterized by land type.** CR 702.14 is a single
   rule, but the engine carried Mountainwalk and Forestwalk as separate keywords
   with the blocking check spelled out once per variant, so the other three could

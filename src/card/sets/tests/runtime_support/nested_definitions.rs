@@ -20,6 +20,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         }
         TriggerEventDef::BecomesTapped(object)
         | TriggerEventDef::Attacks(object)
+        | TriggerEventDef::BecomesBlocked(object)
         | TriggerEventDef::AttacksFirstTimeThisTurn(object)
         | TriggerEventDef::TappedForMana(object)
         | TriggerEventDef::SpellCast(object) => shared_object_predicate(object),

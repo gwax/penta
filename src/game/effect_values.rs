@@ -87,6 +87,9 @@ impl Game {
             ValueDef::Negate(inner) => self
                 .effect_value(*inner, object, context, scoped)
                 .saturating_neg(),
+            ValueDef::Scaled(scaled) => self
+                .effect_value(scaled.value, object, context, scoped)
+                .saturating_mul(scaled.factor),
         }
     }
 

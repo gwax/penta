@@ -395,7 +395,8 @@ impl HandcraftedPolicy {
             | ValueDef::IfCreatureDiedThisTurn(_)
             | ValueDef::IfTargetMatches(_)
             | ValueDef::IfMatchingObjectCount(_)
-            | ValueDef::Negate(_) => None,
+            | ValueDef::Negate(_)
+            | ValueDef::Scaled(_) => None,
         }
     }
 }
