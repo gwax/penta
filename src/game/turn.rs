@@ -404,6 +404,7 @@ impl Game {
             }
             permanent.unblockable_this_turn = false;
             permanent.combat_damage_prevented = false;
+            permanent.combat_damage_dealt_by_prevented = false;
             permanent.destroy_at_end = false;
             permanent.animation = None;
             permanent.activations_this_turn.clear();

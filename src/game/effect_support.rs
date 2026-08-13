@@ -865,7 +865,8 @@ impl Game {
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::AttackedThisTurn
-            | ObjectPredicateDef::HasKeyword(_) => false,
+            | ObjectPredicateDef::HasKeyword(_)
+            | ObjectPredicateDef::HasNonManaActivatedAbility => false,
         }
     }
 

@@ -60,6 +60,9 @@ pub enum ObjectPredicateDef {
     /// Has this keyword. Protection is not askable this way, because it is a
     /// keyword per color rather than one keyword.
     HasKeyword(KeywordAbility),
+    /// Has at least one ordinary activated ability rather than only mana
+    /// abilities. This is the distinction Tsabo's Web asks for.
+    HasNonManaActivatedAbility,
     /// A creature currently declared as an attacker in combat.
     Attacking,
     /// A creature that was declared as an attacker at any point this turn,

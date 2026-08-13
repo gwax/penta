@@ -2,8 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, EffectDef,
-    ManaColor, ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet,
+    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::{ZonePlacement, mana_cost};
 
@@ -26,6 +27,43 @@ pub(in crate::card::sets) static FACT_OR_FICTION: CardRecord = CardRecord::new(
     )),
 );
 
+// INV 317 — Tsabo's Web
+pub(in crate::card::sets) static TSABOS_WEB: CardRecord = CardRecord::new(
+    cards::TSABOS_WEB,
+    "Tsabo's Web",
+    CardArt::new("0dee69f8-cceb-41b9-a0ee-6b2ac9f4bad9", "Carl Critchlow"),
+    CardSet::Invasion,
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::triggered(
+            "When this artifact enters, draw a card.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::static_ability(
+            "Each land with an activated ability that isn't a mana ability doesn't untap during its controller's untap step.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::HasNonManaActivatedAbility,
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
+
 // INV 321 — Coastal Tower
 pub(in crate::card::sets) static COASTAL_TOWER: CardRecord = CardRecord::new(
     cards::COASTAL_TOWER,
@@ -45,6 +83,7 @@ pub(in crate::card::sets) static COASTAL_TOWER: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FACT_OR_FICTION, &COASTAL_TOWER];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&FACT_OR_FICTION, &TSABOS_WEB, &COASTAL_TOWER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -6,7 +6,58 @@ use crate::card::{
     BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef, EffectDurationDef,
     EffectRecipientDef, ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, cards,
 };
-use crate::{TargetIndex, mana_cost};
+use crate::{PlayerRelation, TargetIndex, TurnStepDef, mana_cost};
+
+// ONS 206 — Goblin Pyromancer
+pub(in crate::card::sets) static GOBLIN_PYROMANCER: CardRecord = CardRecord::new(
+    cards::GOBLIN_PYROMANCER,
+    "Goblin Pyromancer",
+    CardArt::new(
+        "bb4815b7-fc20-44a4-ad1c-66d92993557f",
+        "Edward P. Beard, Jr.",
+    ),
+    CardSet::Onslaught,
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Goblin", "Wizard"], 2, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "When this creature enters, Goblin creatures get +3/+0 until end of turn.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Subtype("Goblin"),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(3),
+                    toughness: ValueDef::Constant(0),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::triggered(
+            "At the beginning of the end step, destroy all Goblins.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::Any,
+            },
+            EffectDef::Destroy {
+                object: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::Subtype("Goblin"),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                can_regenerate: true,
+            },
+        ),
+    ]),
+);
 
 // ONS 207 — Goblin Sharpshooter
 pub(in crate::card::sets) static GOBLIN_SHARPSHOOTER: CardRecord = CardRecord::new(
@@ -105,6 +156,7 @@ const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) ->
 }
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &GOBLIN_PYROMANCER,
     &GOBLIN_SHARPSHOOTER,
     &NATURALIZE,
     &FLOODED_STRAND,

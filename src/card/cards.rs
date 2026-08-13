@@ -315,3 +315,7 @@ pub const STASIS: CardDefinitionId = CardDefinitionId(302);
 pub const PRESENCE_OF_THE_MASTER: CardDefinitionId = CardDefinitionId(303);
 pub const TORMODS_CRYPT: CardDefinitionId = CardDefinitionId(304);
 pub const REANIMATE: CardDefinitionId = CardDefinitionId(305);
+pub const FIRE_ICE: CardDefinitionId = CardDefinitionId(306);
+pub const GOBLIN_PYROMANCER: CardDefinitionId = CardDefinitionId(307);
+pub const KOR_HAVEN: CardDefinitionId = CardDefinitionId(308);
+pub const TSABOS_WEB: CardDefinitionId = CardDefinitionId(309);

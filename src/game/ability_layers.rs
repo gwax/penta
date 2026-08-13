@@ -7,6 +7,25 @@ use super::{
 };
 
 impl Game {
+    /// Whether an object has a nonmana activated ability without recursively
+    /// walking static effects. Static-effect recipient matching calls this
+    /// helper, so folding static grants back into the query would recurse.
+    /// Printed/copied abilities and already-resolved grants/removals are all
+    /// represented here, which covers the current rules vocabulary.
+    pub(super) fn has_nonmana_activated_ability(&self, permanent: &Permanent) -> bool {
+        let mut abilities = self.collect_base_effective_abilities(permanent, None);
+        for operation in Self::resolved_ability_layer_operations(permanent) {
+            Self::apply_ability_layer_operation(&mut abilities, operation);
+        }
+        abilities.into_iter().any(|effective| {
+            effective.ability.is_executable()
+                && matches!(
+                    effective.ability.definition,
+                    DeclarativeAbilityDef::Activated(_)
+                )
+        })
+    }
+
     /// Abilities the object currently has after the modeled layer-4 subtype
     /// setters and ordered layer-6 add/remove operations.
     pub(super) fn visit_effective_abilities(

@@ -414,6 +414,7 @@ impl Game {
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::AttackedThisTurn
+            | ObjectPredicateDef::HasNonManaActivatedAbility
             | ObjectPredicateDef::Special(_) => false,
         }
     }

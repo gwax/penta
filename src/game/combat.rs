@@ -523,6 +523,14 @@ impl Game {
                 .any(|permanent| permanent.card.id == id && permanent.combat_damage_prevented))
     }
 
+    /// Whether combat damage from this permanent is prevented for the turn.
+    pub(super) fn combat_damage_is_prevented_from(&self, source: GameObjectId) -> bool {
+        self.battlefield.iter().any(|permanent| {
+            permanent.card.id == source
+                && (permanent.combat_damage_prevented || permanent.combat_damage_dealt_by_prevented)
+        })
+    }
+
     /// How much life a drain can take from a recipient: what it had before
     /// the damage, which is all it can give however much is dealt.
     pub(super) fn drainable_from(&self, target: Target) -> u16 {
@@ -667,7 +675,7 @@ impl Game {
                     .find(|permanent| permanent.card.id == *id)
                     .filter(|permanent| {
                         self.deals_damage_in_current_combat_step(permanent)
-                            && !permanent.combat_damage_prevented
+                            && !self.combat_damage_is_prevented_from(permanent.card.id)
                     })
                     .and_then(|permanent| self.power(permanent))
                     .map(|power| (*id, power.max(0).cast_unsigned()))
@@ -723,7 +731,7 @@ impl Game {
                 .cast_unsigned();
             let attacker_deals_damage = self
                 .deals_damage_in_current_combat_step(&self.battlefield[attacker_index])
-                && !self.battlefield[attacker_index].combat_damage_prevented;
+                && !self.combat_damage_is_prevented_from(attacker_id);
             let blockers: Vec<_> = self
                 .battlefield
                 .iter()

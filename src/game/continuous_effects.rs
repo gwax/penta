@@ -278,6 +278,7 @@ impl Game {
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventCombatDamageThisTurn { .. }
+            | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }

@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef,
-    abilities, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, DividedTotal, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm,
+    TriggerEventDef, TurnStepDef, ValueDef, abilities, cards,
 };
-use crate::mana_cost;
+use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
 
 // APC 47 — Phyrexian Arena
 pub(in crate::card::sets) static PHYREXIAN_ARENA: CardRecord = CardRecord::new(
@@ -45,6 +46,91 @@ pub(in crate::card::sets) static VINDICATE: CardRecord = CardRecord::new(
         true,
     )),
 );
+
+static FIRE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
+    predicate: AbilityTargetPredicate::AnyTarget,
+    minimum: 1,
+    maximum: 2,
+    divided_total: Some(DividedTotal::Fixed(2)),
+}];
+
+const fn fire_rules() -> CardRules {
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Fire deals 2 damage divided as you choose among one or two targets.",
+        &FIRE_TARGETS,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::DividedAmongTargets,
+        },
+    ))
+}
+
+static ICE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Any,
+)];
+
+static ICE_EFFECTS: [EffectDef; 2] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
+
+const fn ice_rules() -> CardRules {
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap target permanent.\nDraw a card.",
+        &ICE_TARGETS,
+        EffectDef::Sequence(&ICE_EFFECTS),
+    ))
+}
+
+fn fire_ice_composition() -> CardComposition {
+    let fire = fire_rules();
+    let ice = ice_rules();
+    CardComposition {
+        parts: vec![
+            CardPart::new(CardPartId::PRIMARY, "Fire", fire),
+            CardPart::new(CardPartId(1), "Ice", ice),
+        ],
+        structure: CardStructure::Split {
+            parts: vec![CardPartId::PRIMARY, CardPartId(1)],
+            fused: None,
+        },
+        play_options: vec![
+            PlayOptionDef::cast(
+                PlayOptionId::DEFAULT,
+                "Fire",
+                SpellForm::Part(CardPartId::PRIMARY),
+                fire.mana_cost().expect("Fire has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+            PlayOptionDef::cast(
+                PlayOptionId(1),
+                "Ice",
+                SpellForm::Part(CardPartId(1)),
+                ice.mana_cost().expect("Ice has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+        ],
+    }
+    .with_derived_spell_targets()
+}
+
+// APC 128 — Fire // Ice
+pub(in crate::card::sets) static FIRE_ICE: CardRecord = CardRecord::new(
+    cards::FIRE_ICE,
+    "Fire // Ice",
+    CardArt::new(
+        "f98f4538-5b5b-475d-b98f-49d01dae6f04",
+        "David Martin & Franz Vohwinkel",
+    ),
+    CardSet::Apocalypse,
+    fire_rules(),
+)
+.with_composition(fire_ice_composition);
 
 // APC 140 — Caves of Koilos
 pub(in crate::card::sets) static CAVES_OF_KOILOS: CardRecord = CardRecord::new(
@@ -85,6 +171,7 @@ pub(in crate::card::sets) static YAVIMAYA_COAST: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PHYREXIAN_ARENA,
     &VINDICATE,
+    &FIRE_ICE,
     &CAVES_OF_KOILOS,
     &LLANOWAR_WASTES,
     &YAVIMAYA_COAST,

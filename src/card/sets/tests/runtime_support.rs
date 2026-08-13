@@ -34,6 +34,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn => true,
     }
@@ -371,6 +372,7 @@ pub(super) fn shared_stack_effect_at_position(
         EffectDef::Tap { object }
         | EffectDef::Untap { object }
         | EffectDef::PreventCombatDamageThisTurn { object }
+        | EffectDef::PreventCombatDamageDealtByThisTurn { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
         | EffectDef::ExileLinkedToSource { object }
@@ -615,6 +617,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::Tap { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
+        | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::Destroy { .. }
@@ -817,6 +820,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Tap { .. }
                     | EffectDef::Untap { .. }
                     | EffectDef::PreventCombatDamageThisTurn { .. }
+                    | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
                     | EffectDef::Attach { .. }
                     | EffectDef::CreateToken { .. }
                     | EffectDef::Destroy { .. }

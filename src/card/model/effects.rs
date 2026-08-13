@@ -449,6 +449,12 @@ pub enum EffectDef {
     PreventCombatDamageThisTurn {
         object: EffectRecipientDef,
     },
+    /// No combat damage is dealt by the affected permanent for the rest of
+    /// the turn. Unlike [`Self::PreventCombatDamageThisTurn`], damage that
+    /// blockers deal to it is unaffected.
+    PreventCombatDamageDealtByThisTurn {
+        object: EffectRecipientDef,
+    },
     /// Puts token copies of `token` onto the battlefield under the resolving
     /// object's controller.
     CreateToken {

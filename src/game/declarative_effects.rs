@@ -240,6 +240,18 @@ impl Game {
                     }
                 }
             }
+            EffectDef::PreventCombatDamageDealtByThisTurn { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Permanent(id) = target
+                        && let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == id)
+                    {
+                        permanent.combat_damage_dealt_by_prevented = true;
+                    }
+                }
+            }
             EffectDef::Destroy {
                 object: recipient,
                 can_regenerate,

@@ -12,9 +12,9 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 62 cards present in Penta's catalog
-- 83 cards still need catalog records
-- 42 cards have completed their Premodern interaction audit; the other 103
+- 66 cards present in Penta's catalog
+- 79 cards still need catalog records
+- 46 cards have completed their Premodern interaction audit; the other 99
   still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -30,7 +30,7 @@ Marvin's Angry Hermit.
   implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
-- Add accurate characteristics and Oracle clauses for the 88 uncataloged
+- Add accurate characteristics and Oracle clauses for the 79 uncataloged
   cards. Unsupported clauses must be metadata-only rather than executable
   no-ops.
 - Implement reusable mechanics before card-local behavior: cycling and
@@ -46,8 +46,8 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (62; the forty-two marked below were audited in the first
-seven implementation tranches, while the older definitions still require an
+Already cataloged (66; the forty-six marked below were audited in the first
+eight implementation tranches, while the older definitions still require an
 audit):
 
 - `Adarkar Wastes` — complete
@@ -66,14 +66,17 @@ audit):
 - `Dust Bowl` — complete
 - `Earthquake`
 - `Fact or Fiction` — complete
+- `Fire // Ice` — complete
 - `Flooded Strand` — complete
 - `Forest`
+- `Goblin Pyromancer` — complete
 - `Goblin Sharpshooter` — complete
 - `Hydroblast` — complete
 - `Incinerate` — damage complete; no-regeneration rider is partial
 - `Island`
 - `Jackal Pup` — complete
 - `Karplusan Forest` — complete
+- `Kor Haven` — complete
 - `Lightning Bolt`
 - `Llanowar Wastes` — complete
 - `Lotus Petal` — complete
@@ -103,6 +106,7 @@ audit):
 - `Sylvan Safekeeper` — complete
 - `Tormod's Crypt` — complete
 - `Tranquil Domain` — complete
+- `Tsabo's Web` — complete
 - `Underground River` — complete
 - `Upheaval` — complete
 - `Vindicate` — complete
@@ -113,7 +117,7 @@ audit):
 - `Wrath of God`
 - `Yavimaya Coast` — complete
 
-Not yet cataloged (83):
+Not yet cataloged (79):
 
 - [ ] `Abeyance`
 - [ ] `Akroma's Vengeance`
@@ -138,7 +142,6 @@ Not yet cataloged (83):
 - [ ] `Enlightened Tutor`
 - [ ] `Eternal Dragon`
 - [ ] `Exalted Angel`
-- [ ] `Fire // Ice`
 - [ ] `Fireblast`
 - [ ] `Flash of Insight`
 - [ ] `Forsaken City`
@@ -151,7 +154,6 @@ Not yet cataloged (83):
 - [ ] `Goblin Matron`
 - [ ] `Goblin Patrol`
 - [ ] `Goblin Piledriver`
-- [ ] `Goblin Pyromancer`
 - [ ] `Goblin Ringleader`
 - [ ] `Goblin Tinkerer`
 - [ ] `Goblin Vandal`
@@ -163,7 +165,6 @@ Not yet cataloged (83):
 - [ ] `Humility`
 - [ ] `Impulse`
 - [ ] `Intuition`
-- [ ] `Kor Haven`
 - [ ] `Krosan Reclamation`
 - [ ] `Meddling Mage`
 - [ ] `Mogg Salvage`
@@ -195,7 +196,6 @@ Not yet cataloged (83):
 - [ ] `Thawing Glaciers`
 - [ ] `Thwart`
 - [ ] `Treva's Ruins`
-- [ ] `Tsabo's Web`
 - [ ] `Vision Charm`
 - [ ] `Worldly Tutor`
 

@@ -154,6 +154,7 @@ impl Game {
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventCombatDamageThisTurn { .. }
+            | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::Destroy { .. }
@@ -304,6 +305,7 @@ impl Game {
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }
                 | EffectDef::PreventCombatDamageThisTurn { .. }
+                | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
                 | EffectDef::Attach { .. }
                 | EffectDef::CreateToken { .. }
                 | EffectDef::Destroy { .. }

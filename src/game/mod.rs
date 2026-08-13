@@ -203,6 +203,9 @@ struct Permanent {
     /// rest of the turn. Maze of Ith sets it; the creature stays an attacker
     /// so its attack triggers and its blockers are unaffected.
     combat_damage_prevented: bool,
+    /// Whether combat damage from this permanent is prevented without also
+    /// preventing combat damage to it. Kor Haven uses this narrower marker.
+    combat_damage_dealt_by_prevented: bool,
     /// Who controls this permanent again once the turn ends, set while a
     /// control-changing effect holds it. Cleanup restores it.
     control_reverts_to: Option<PlayerId>,
@@ -306,6 +309,7 @@ impl Permanent {
             activated_loyalty_this_turn: false,
             unblockable_this_turn: false,
             combat_damage_prevented: false,
+            combat_damage_dealt_by_prevented: false,
             control_reverts_to: None,
             blocked: false,
             blocking: None,

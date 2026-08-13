@@ -162,6 +162,7 @@ fn validate_effect_target_references(
         | EffectDef::Tap { object }
         | EffectDef::Untap { object }
         | EffectDef::PreventCombatDamageThisTurn { object }
+        | EffectDef::PreventCombatDamageDealtByThisTurn { object }
         | EffectDef::Attach { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }

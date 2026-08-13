@@ -263,6 +263,7 @@ impl Game {
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventCombatDamageThisTurn { .. }
+            | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
@@ -701,6 +702,11 @@ impl Game {
             ObjectPredicateDef::HasKeyword(keyword) => keyword
                 .simple_index()
                 .is_some_and(|index| object.keywords & (1 << index) != 0),
+            ObjectPredicateDef::HasNonManaActivatedAbility => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == object.id)
+                .is_some_and(|permanent| self.has_nonmana_activated_ability(permanent)),
             ObjectPredicateDef::ControlledBy(relation) => {
                 self.controller_of_object(source).is_some_and(|controller| {
                     self.player_relation_matches(
