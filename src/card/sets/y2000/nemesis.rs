@@ -3,9 +3,33 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, EffectDef, EffectRecipientDef, ValueDef, cards,
+    CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ValueDef, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+// NEM 18 — Seal of Cleansing
+pub(in crate::card::sets) static SEAL_OF_CLEANSING: CardRecord = CardRecord::new(
+    cards::SEAL_OF_CLEANSING,
+    "Seal of Cleansing",
+    CardArt::new(
+        "af6c921e-1b82-412c-9979-adfdf83440f7",
+        "Christopher Moeller",
+    ),
+    CardSet::Nemesis,
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "Sacrifice this enchantment: Destroy target artifact or enchantment.",
+            &[AbilityCostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::HasType(CardType::Artifact),
+                    ObjectPredicateDef::HasType(CardType::Enchantment),
+                ]),
+            )],
+            EffectDef::destroy_target(TargetIndex::PRIMARY, true),
+        ),
+    ),
+);
 
 // NEM 98 — Seal of Fire
 pub(in crate::card::sets) static SEAL_OF_FIRE: CardRecord = CardRecord::new(
@@ -29,6 +53,6 @@ pub(in crate::card::sets) static SEAL_OF_FIRE: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&SEAL_OF_FIRE];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&SEAL_OF_CLEANSING, &SEAL_OF_FIRE];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

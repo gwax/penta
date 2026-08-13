@@ -10,7 +10,9 @@ mod y1993;
 mod y1994;
 mod y1995;
 mod y1997;
+mod y1998;
 mod y2000;
+mod y2001;
 mod y2002;
 mod y2004;
 mod y2007;
@@ -121,9 +123,34 @@ const SET_MODULES: &[SetModule] = &[
         y1997::tempest::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Stronghold,
+        y1998::stronghold::CARDS,
+        y1998::stronghold::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::PortalSecondAge,
+        y1998::portal_second_age::CARDS,
+        y1998::portal_second_age::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::UrzasSaga,
+        y1998::urzas_saga::CARDS,
+        y1998::urzas_saga::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Nemesis,
         y2000::nemesis::CARDS,
         y2000::nemesis::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Invasion,
+        y2000::invasion::CARDS,
+        y2000::invasion::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Apocalypse,
+        y2001::apocalypse::CARDS,
+        y2001::apocalypse::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::Onslaught,
@@ -198,7 +225,7 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let mut definitions = Vec::with_capacity(270);
+    let mut definitions = Vec::with_capacity(278);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }

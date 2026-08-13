@@ -80,7 +80,7 @@ fn printed_set_sources_follow_collector_number_order() {
     }
 
     assert_eq!(
-        definition_count, 259,
+        definition_count, 267,
         "the organization guard must cover every printed card definition"
     );
     assert_eq!(
@@ -128,7 +128,12 @@ fn set_code_for_file(path: &Path) -> &'static str {
         Some("the_dark.rs") => "DRK",
         Some("ice_age.rs") => "ICE",
         Some("tempest.rs") => "TMP",
+        Some("stronghold.rs") => "STH",
+        Some("portal_second_age.rs") => "P02",
+        Some("urzas_saga.rs") => "USG",
         Some("nemesis.rs") => "NEM",
+        Some("invasion.rs") => "INV",
+        Some("apocalypse.rs") => "APC",
         Some("onslaught.rs") => "ONS",
         Some("darksteel.rs") => "DST",
         Some("future_sight.rs") => "FUT",
@@ -245,12 +250,15 @@ fn parse_header(line: &str) -> Option<(&str, &str, &str)> {
 }
 
 fn registry_symbols<'a>(source: &'a str, path: &Path) -> Vec<&'a str> {
-    const REGISTRY_PREFIX: &str = "pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[";
+    const REGISTRY_DECLARATION: &str = "pub(in crate::card::sets) static CARDS: &[&CardRecord] =";
 
     let start = source
-        .find(REGISTRY_PREFIX)
+        .find(REGISTRY_DECLARATION)
         .unwrap_or_else(|| panic!("{}: CARDS registry is missing", path.display()));
-    let body = &source[start + REGISTRY_PREFIX.len()..];
+    let body = source[start + REGISTRY_DECLARATION.len()..]
+        .trim_start()
+        .strip_prefix("&[")
+        .unwrap_or_else(|| panic!("{}: CARDS registry is malformed", path.display()));
     let body = body.split_once("];").map_or_else(
         || panic!("{}: CARDS registry is malformed", path.display()),
         |(body, _)| body,

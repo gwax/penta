@@ -12,9 +12,9 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 27 cards present in Penta's catalog
-- 118 cards still need catalog records
-- 7 cards have completed their Premodern interaction audit; the other 138
+- 35 cards present in Penta's catalog
+- 110 cards still need catalog records
+- 15 cards have completed their Premodern interaction audit; the other 130
   still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -30,7 +30,7 @@ Marvin's Angry Hermit.
   implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
-- Add accurate characteristics and Oracle clauses for the 118 uncataloged
+- Add accurate characteristics and Oracle clauses for the 110 uncataloged
   cards. Unsupported clauses must be metadata-only rather than executable
   no-ops.
 - Implement reusable mechanics before card-local behavior: cycling and
@@ -46,9 +46,10 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (27; the seven marked below were audited in the first
-implementation tranche, while the older definitions still require an audit):
+Already cataloged (35; the fifteen marked below were audited in the first two
+implementation tranches, while the older definitions still require an audit):
 
+- `Annul` — complete
 - `Armageddon`
 - `Black Vise`
 - `Blue Elemental Blast`
@@ -57,33 +58,39 @@ implementation tranche, while the older definitions still require an audit):
 - `Disenchant`
 - `Duress`
 - `Earthquake`
+- `Fact or Fiction` — complete
 - `Forest`
 - `Hydroblast` — complete
 - `Incinerate` — damage complete; no-regeneration rider is partial
-- `Jackal Pup` — complete
 - `Island`
+- `Jackal Pup` — complete
 - `Lightning Bolt`
+- `Lotus Petal` — complete
+- `Mana Leak` — complete
 - `Mishra's Factory`
 - `Mogg Fanatic` — complete
+- `Monk Realist` — complete
 - `Mountain`
 - `Naturalize` — complete
 - `Plains`
 - `Pyroblast` — complete
 - `Ray of Revelation`
 - `Red Elemental Blast`
+- `Seal of Cleansing` — complete
 - `Seal of Fire` — complete
 - `Swamp`
 - `Swords to Plowshares`
 - `Syncopate`
+- `Vindicate` — complete
+- `Volcanic Hammer` — complete
 - `Wrath of God`
 
-Not yet cataloged (118):
+Not yet cataloged (110):
 
 - [ ] `Abeyance`
 - [ ] `Adarkar Wastes`
 - [ ] `Akroma's Vengeance`
 - [ ] `Ancient Tomb`
-- [ ] `Annul`
 - [ ] `Arcane Denial`
 - [ ] `Attunement`
 - [ ] `Aura of Silence`
@@ -109,7 +116,6 @@ Not yet cataloged (118):
 - [ ] `Enlightened Tutor`
 - [ ] `Eternal Dragon`
 - [ ] `Exalted Angel`
-- [ ] `Fact or Fiction`
 - [ ] `Fire // Ice`
 - [ ] `Fireblast`
 - [ ] `Flash of Insight`
@@ -141,12 +147,9 @@ Not yet cataloged (118):
 - [ ] `Kor Haven`
 - [ ] `Krosan Reclamation`
 - [ ] `Llanowar Wastes`
-- [ ] `Lotus Petal`
-- [ ] `Mana Leak`
 - [ ] `Mana Short`
 - [ ] `Meddling Mage`
 - [ ] `Mogg Salvage`
-- [ ] `Monk Realist`
 - [ ] `Mox Diamond`
 - [ ] `Opalescence`
 - [ ] `Opt`
@@ -167,7 +170,6 @@ Not yet cataloged (118):
 - [ ] `Replenish`
 - [ ] `Rishadan Port`
 - [ ] `Root Maze`
-- [ ] `Seal of Cleansing`
 - [ ] `Secluded Steppe`
 - [ ] `Shallow Grave`
 - [ ] `Siege-Gang Commander`
@@ -189,9 +191,7 @@ Not yet cataloged (118):
 - [ ] `Tsabo's Web`
 - [ ] `Underground River`
 - [ ] `Upheaval`
-- [ ] `Vindicate`
 - [ ] `Vision Charm`
-- [ ] `Volcanic Hammer`
 - [ ] `Warmth`
 - [ ] `Wasteland`
 - [ ] `Wooded Foothills`

@@ -2,8 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, EffectDef, EffectRecipientDef, ObjectPredicateDef, TriggerEventDef, ValueDef, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    TriggerEventDef, ValueDef, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -49,6 +50,20 @@ pub(in crate::card::sets) static MOGG_FANATIC: CardRecord = CardRecord::new(
     ),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&JACKAL_PUP, &MOGG_FANATIC];
+// TMP 294 — Lotus Petal
+pub(in crate::card::sets) static LOTUS_PETAL: CardRecord = CardRecord::new(
+    cards::LOTUS_PETAL,
+    "Lotus Petal",
+    CardArt::new("6c877da3-68fa-41d0-8a24-8c79fcd8ecc1", "April Lee"),
+    CardSet::Tempest,
+    CardRules::new_artifact(mana_cost!("{0}")).with_ability(AbilityDef::activated_mana(
+        "{T}, Sacrifice this artifact: Add one mana of any color.",
+        &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+        EffectDef::AddMana(AddManaEffectDef::any_color()),
+    )),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&JACKAL_PUP, &MOGG_FANATIC, &LOTUS_PETAL];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
