@@ -258,6 +258,22 @@ pub const fn tap_for(mana: ManaColor) -> AbilityDef {
     )
 }
 
+/// The two mana abilities shared by the allied- and enemy-color painlands.
+#[must_use]
+pub const fn pain_land(
+    colored_text: &'static str,
+    colors: &'static [ManaColor],
+) -> [AbilityDef; 2] {
+    [
+        tap_for(ManaColor::Colorless),
+        AbilityDef::activated_mana(
+            colored_text,
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(colors).with_damage_to_controller(1)),
+        ),
+    ]
+}
+
 /// The shared replacement clause printed on shock lands.
 #[must_use]
 pub const fn shock_land_enters() -> AbilityDef {
@@ -313,7 +329,8 @@ pub const fn enters_tapped_unless_you_control(
 mod tests {
     use super::{
         banding, bloodrush, check_land_enters, double_strike, first_strike, flashback,
-        flashback_for_card_mana_cost, flying, intimidate, overload, shock_land_enters, tap_for,
+        flashback_for_card_mana_cost, flying, intimidate, overload, pain_land, shock_land_enters,
+        tap_for,
     };
     use crate::card::{
         AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AddManaEffectDef,
@@ -349,6 +366,28 @@ mod tests {
                 Some(EffectDef::AddMana(AddManaEffectDef::one(mana)))
             );
         }
+    }
+
+    #[test]
+    fn pain_land_keeps_damage_on_only_the_colored_ability() {
+        let abilities = pain_land(
+            "{T}: Add {W} or {U}. This land deals 1 damage to you.",
+            &[ManaColor::White, ManaColor::Blue],
+        );
+
+        assert_eq!(
+            abilities[0].declarative_effect(),
+            Some(EffectDef::AddMana(AddManaEffectDef::one(
+                ManaColor::Colorless
+            )))
+        );
+        assert_eq!(
+            abilities[1].declarative_effect(),
+            Some(EffectDef::AddMana(
+                AddManaEffectDef::choice(&[ManaColor::White, ManaColor::Blue])
+                    .with_damage_to_controller(1)
+            ))
+        );
     }
 
     #[test]

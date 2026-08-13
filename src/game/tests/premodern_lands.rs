@@ -1,6 +1,81 @@
 use super::*;
 
 #[test]
+fn painlands_offer_safe_colorless_or_colored_mana_with_immediate_damage() {
+    for (definition, colors) in [
+        (cards::ADARKAR_WASTES, [ManaColor::White, ManaColor::Blue]),
+        (cards::KARPLUSAN_FOREST, [ManaColor::Red, ManaColor::Green]),
+        (
+            cards::UNDERGROUND_RIVER,
+            [ManaColor::Blue, ManaColor::Black],
+        ),
+        (cards::CAVES_OF_KOILOS, [ManaColor::White, ManaColor::Black]),
+        (cards::LLANOWAR_WASTES, [ManaColor::Black, ManaColor::Green]),
+        (cards::YAVIMAYA_COAST, [ManaColor::Green, ManaColor::Blue]),
+    ] {
+        let mut game = ready_game();
+        let land = creature(10_000, definition, PlayerId::One);
+        let source = land.card.id;
+        game.battlefield.push(land);
+        game.apply(
+            PlayerId::One,
+            Action::ActivateManaAbility {
+                source,
+                ability: mana_ability_for(&game, source, ManaColor::Colorless),
+                color: ManaColor::Colorless,
+            },
+        )
+        .unwrap();
+        assert_eq!(game.players[PlayerId::One.index()].life, 20);
+        assert_eq!(game.players[PlayerId::One.index()].mana_pool.colorless, 1);
+
+        for color in colors {
+            let mut game = ready_game();
+            let land = creature(10_000, definition, PlayerId::One);
+            let source = land.card.id;
+            game.battlefield.push(land);
+            game.apply(
+                PlayerId::One,
+                Action::ActivateManaAbility {
+                    source,
+                    ability: mana_ability_for(&game, source, color),
+                    color,
+                },
+            )
+            .unwrap();
+            assert_eq!(game.players[PlayerId::One.index()].life, 19);
+            assert_eq!(
+                game.players[PlayerId::One.index()].mana_pool.amount(color),
+                1
+            );
+            assert!(game.stack.is_empty(), "mana abilities do not use the stack");
+        }
+    }
+}
+
+#[test]
+fn ancient_tomb_adds_two_colorless_and_deals_two_damage_immediately() {
+    let mut game = ready_game();
+    let tomb = creature(10_000, cards::ANCIENT_TOMB, PlayerId::One);
+    let source = tomb.card.id;
+    game.battlefield.push(tomb);
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source,
+            ability: mana_ability_for(&game, source, ManaColor::Colorless),
+            color: ManaColor::Colorless,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.colorless, 2);
+    assert_eq!(game.players[PlayerId::One.index()].life, 18);
+    assert!(game.stack.is_empty());
+}
+
+#[test]
 fn wasteland_sacrifices_to_destroy_a_nonbasic_but_cannot_target_a_basic() {
     let mut game = ready_game();
     let wasteland = creature(10_000, cards::WASTELAND, PlayerId::One);

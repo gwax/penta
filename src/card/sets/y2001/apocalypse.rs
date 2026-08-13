@@ -3,7 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, cards,
+    ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef,
+    abilities, cards,
 };
 use crate::mana_cost;
 
@@ -45,6 +46,48 @@ pub(in crate::card::sets) static VINDICATE: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&PHYREXIAN_ARENA, &VINDICATE];
+// APC 140 — Caves of Koilos
+pub(in crate::card::sets) static CAVES_OF_KOILOS: CardRecord = CardRecord::new(
+    cards::CAVES_OF_KOILOS,
+    "Caves of Koilos",
+    CardArt::new("144dd08e-451e-4438-b572-7a138e1a15f3", "Jim Nelson"),
+    CardSet::Apocalypse,
+    CardRules::new_land(&[]).with_abilities(&abilities::pain_land(
+        "{T}: Add {W} or {B}. This land deals 1 damage to you.",
+        &[ManaColor::White, ManaColor::Black],
+    )),
+);
+
+// APC 141 — Llanowar Wastes
+pub(in crate::card::sets) static LLANOWAR_WASTES: CardRecord = CardRecord::new(
+    cards::LLANOWAR_WASTES,
+    "Llanowar Wastes",
+    CardArt::new("610b7cd5-5532-45a9-acfe-24a818034d1c", "Rob Alexander"),
+    CardSet::Apocalypse,
+    CardRules::new_land(&[]).with_abilities(&abilities::pain_land(
+        "{T}: Add {B} or {G}. This land deals 1 damage to you.",
+        &[ManaColor::Black, ManaColor::Green],
+    )),
+);
+
+// APC 143 — Yavimaya Coast
+pub(in crate::card::sets) static YAVIMAYA_COAST: CardRecord = CardRecord::new(
+    cards::YAVIMAYA_COAST,
+    "Yavimaya Coast",
+    CardArt::new("177ee102-d981-4fc3-9f09-9dd07755f22c", "Anthony S. Waters"),
+    CardSet::Apocalypse,
+    CardRules::new_land(&[]).with_abilities(&abilities::pain_land(
+        "{T}: Add {G} or {U}. This land deals 1 damage to you.",
+        &[ManaColor::Green, ManaColor::Blue],
+    )),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &PHYREXIAN_ARENA,
+    &VINDICATE,
+    &CAVES_OF_KOILOS,
+    &LLANOWAR_WASTES,
+    &YAVIMAYA_COAST,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

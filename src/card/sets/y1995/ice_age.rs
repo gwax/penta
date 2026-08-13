@@ -3,7 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ValueDef, cards,
+    CardSet, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ValueDef, abilities,
+    cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -78,6 +79,49 @@ pub(in crate::card::sets) static PYROBLAST: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&HYDROBLAST, &INCINERATE, &PYROBLAST];
+// ICE 351 — Adarkar Wastes
+pub(in crate::card::sets) static ADARKAR_WASTES: CardRecord = CardRecord::new(
+    cards::ADARKAR_WASTES,
+    "Adarkar Wastes",
+    CardArt::new("09dd9023-f7ee-4e99-8821-7059deb83730", "Mike Raabe"),
+    CardSet::IceAge,
+    CardRules::new_land(&[]).with_abilities(&abilities::pain_land(
+        "{T}: Add {W} or {U}. This land deals 1 damage to you.",
+        &[ManaColor::White, ManaColor::Blue],
+    )),
+);
+
+// ICE 356 — Karplusan Forest
+pub(in crate::card::sets) static KARPLUSAN_FOREST: CardRecord = CardRecord::new(
+    cards::KARPLUSAN_FOREST,
+    "Karplusan Forest",
+    CardArt::new("ba6f1263-d598-49fb-b5f8-09f11822ebd0", "Nicola Leonard"),
+    CardSet::IceAge,
+    CardRules::new_land(&[]).with_abilities(&abilities::pain_land(
+        "{T}: Add {R} or {G}. This land deals 1 damage to you.",
+        &[ManaColor::Red, ManaColor::Green],
+    )),
+);
+
+// ICE 362 — Underground River
+pub(in crate::card::sets) static UNDERGROUND_RIVER: CardRecord = CardRecord::new(
+    cards::UNDERGROUND_RIVER,
+    "Underground River",
+    CardArt::new("92369d7e-5e5a-46f9-bb31-c57d62410283", "NéNé Thomas"),
+    CardSet::IceAge,
+    CardRules::new_land(&[]).with_abilities(&abilities::pain_land(
+        "{T}: Add {U} or {B}. This land deals 1 damage to you.",
+        &[ManaColor::Blue, ManaColor::Black],
+    )),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &HYDROBLAST,
+    &INCINERATE,
+    &PYROBLAST,
+    &ADARKAR_WASTES,
+    &KARPLUSAN_FOREST,
+    &UNDERGROUND_RIVER,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -274,6 +274,13 @@ impl Game {
             self.sacrifice_permanent(source);
         }
         self.add_mana(player, produced_mana);
+        if activation.effect.damage_to_controller > 0 {
+            self.damage_target_from(
+                Some(source),
+                Some(Target::Player(player)),
+                activation.effect.damage_to_controller,
+            );
+        }
         self.consecutive_passes = 0;
         self.events.push(GameEvent::ManaAdded { player, source });
     }

@@ -12,9 +12,9 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 50 cards present in Penta's catalog
-- 95 cards still need catalog records
-- 30 cards have completed their Premodern interaction audit; the other 115
+- 57 cards present in Penta's catalog
+- 88 cards still need catalog records
+- 37 cards have completed their Premodern interaction audit; the other 108
   still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -30,7 +30,7 @@ Marvin's Angry Hermit.
   implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
-- Add accurate characteristics and Oracle clauses for the 95 uncataloged
+- Add accurate characteristics and Oracle clauses for the 88 uncataloged
   cards. Unsupported clauses must be metadata-only rather than executable
   no-ops.
 - Implement reusable mechanics before card-local behavior: cycling and
@@ -46,14 +46,17 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (50; the thirty marked below were audited in the first five
-implementation tranches, while the older definitions still require an
+Already cataloged (57; the thirty-seven marked below were audited in the first
+six implementation tranches, while the older definitions still require an
 audit):
 
+- `Adarkar Wastes` — complete
+- `Ancient Tomb` — complete
 - `Annul` — complete
 - `Armageddon`
 - `Black Vise`
 - `Blue Elemental Blast`
+- `Caves of Koilos` — complete
 - `City of Brass`
 - `Claws of Gix` — complete
 - `Coastal Tower` — complete
@@ -70,7 +73,9 @@ audit):
 - `Incinerate` — damage complete; no-regeneration rider is partial
 - `Island`
 - `Jackal Pup` — complete
+- `Karplusan Forest` — complete
 - `Lightning Bolt`
+- `Llanowar Wastes` — complete
 - `Lotus Petal` — complete
 - `Mana Leak` — complete
 - `Mishra's Factory`
@@ -93,6 +98,7 @@ audit):
 - `Syncopate`
 - `Sylvan Safekeeper` — complete
 - `Tranquil Domain` — complete
+- `Underground River` — complete
 - `Upheaval` — complete
 - `Vindicate` — complete
 - `Volcanic Hammer` — complete
@@ -100,20 +106,18 @@ audit):
 - `Wasteland` — complete
 - `Wooded Foothills` — complete
 - `Wrath of God`
+- `Yavimaya Coast` — complete
 
-Not yet cataloged (95):
+Not yet cataloged (88):
 
 - [ ] `Abeyance`
-- [ ] `Adarkar Wastes`
 - [ ] `Akroma's Vengeance`
-- [ ] `Ancient Tomb`
 - [ ] `Arcane Denial`
 - [ ] `Attunement`
 - [ ] `Aura of Silence`
 - [ ] `Barbarian Ring`
 - [ ] `Brain Freeze`
 - [ ] `Cabal Therapy`
-- [ ] `Caves of Koilos`
 - [ ] `Cephalid Coliseum`
 - [ ] `Chain of Vapor`
 - [ ] `Chill`
@@ -154,10 +158,8 @@ Not yet cataloged (95):
 - [ ] `Humility`
 - [ ] `Impulse`
 - [ ] `Intuition`
-- [ ] `Karplusan Forest`
 - [ ] `Kor Haven`
 - [ ] `Krosan Reclamation`
-- [ ] `Llanowar Wastes`
 - [ ] `Mana Short`
 - [ ] `Meddling Mage`
 - [ ] `Mogg Salvage`
@@ -194,10 +196,8 @@ Not yet cataloged (95):
 - [ ] `Tormod's Crypt`
 - [ ] `Treva's Ruins`
 - [ ] `Tsabo's Web`
-- [ ] `Underground River`
 - [ ] `Vision Charm`
 - [ ] `Worldly Tutor`
-- [ ] `Yavimaya Coast`
 
 [tournament]: https://melee.gg/Tournament/View/441083
 [rules]: https://premodernmagic.com/

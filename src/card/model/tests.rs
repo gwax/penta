@@ -634,6 +634,7 @@ fn mana_effects_keep_restrictions_attached_to_each_counted_unit() {
 
     assert_eq!(workshop_mana.amount, 3);
     assert_eq!(workshop_mana.restrictions, RESTRICTIONS);
+    assert_eq!(workshop_mana.damage_to_controller, 0);
 }
 
 #[test]
@@ -644,4 +645,5 @@ fn any_color_mana_effect_chooses_from_the_five_colors() {
     assert_eq!(mana.amount, 1);
     assert!(mana.restrictions.is_empty());
     assert!(mana.spend_effects.is_empty());
+    assert_eq!(mana.damage_to_controller, 0);
 }

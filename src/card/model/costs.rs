@@ -212,6 +212,10 @@ pub struct AddManaEffectDef {
     pub amount: u16,
     pub restrictions: &'static [ManaRestrictionDef],
     pub spend_effects: &'static [ManaSpendEffectDef],
+    /// Damage the source deals to its controller as this mana ability
+    /// resolves. This is damage rather than a life-payment cost, so ordinary
+    /// damage prevention and source attribution still apply.
+    pub damage_to_controller: u16,
 }
 
 impl AddManaEffectDef {
@@ -222,6 +226,7 @@ impl AddManaEffectDef {
             amount: 1,
             restrictions: &[],
             spend_effects: &[],
+            damage_to_controller: 0,
         }
     }
 
@@ -232,6 +237,7 @@ impl AddManaEffectDef {
             amount: 1,
             restrictions: &[],
             spend_effects: &[],
+            damage_to_controller: 0,
         }
     }
 
@@ -258,6 +264,12 @@ impl AddManaEffectDef {
         spend_effects: &'static [ManaSpendEffectDef],
     ) -> Self {
         self.spend_effects = spend_effects;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_damage_to_controller(mut self, amount: u16) -> Self {
+        self.damage_to_controller = amount;
         self
     }
 }

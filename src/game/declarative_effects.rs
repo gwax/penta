@@ -25,6 +25,7 @@ impl Game {
                 amount,
                 restrictions,
                 spend_effects,
+                damage_to_controller,
             }) => {
                 let color = kind;
                 let source = object
@@ -41,6 +42,13 @@ impl Game {
                     object.controller,
                     std::iter::repeat_n(mana, usize::from(amount)),
                 );
+                if damage_to_controller > 0 {
+                    self.damage_target_from(
+                        object.source.or(Some(object.id)),
+                        Some(Target::Player(object.controller)),
+                        damage_to_controller,
+                    );
+                }
             }
             EffectDef::DrainLife { recipient, amount } => {
                 let amount = self

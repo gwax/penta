@@ -104,6 +104,23 @@ pub(in crate::card::sets) static LOTUS_PETAL: CardRecord = CardRecord::new(
     )),
 );
 
+// TMP 315 — Ancient Tomb
+pub(in crate::card::sets) static ANCIENT_TOMB: CardRecord = CardRecord::new(
+    cards::ANCIENT_TOMB,
+    "Ancient Tomb",
+    CardArt::new("30e401e3-282b-4524-87e1-c6cd50cd6d00", "Colin MacNeil"),
+    CardSet::Tempest,
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated_mana(
+        "{T}: Add {C}{C}. This land deals 2 damage to you.",
+        &[AbilityCostDef::TapSource],
+        EffectDef::AddMana(
+            AddManaEffectDef::one(ManaColor::Colorless)
+                .with_amount(2)
+                .with_damage_to_controller(2),
+        ),
+    )),
+);
+
 // TMP 330 — Wasteland
 pub(in crate::card::sets) static WASTELAND: CardRecord = CardRecord::new(
     cards::WASTELAND,
@@ -132,6 +149,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MOGG_FANATIC,
     &ROOT_MAZE,
     &LOTUS_PETAL,
+    &ANCIENT_TOMB,
     &WASTELAND,
 ];
 

@@ -225,6 +225,7 @@ impl Game {
                 amount,
                 restrictions,
                 spend_effects,
+                damage_to_controller,
             }) => {
                 let mana = Mana::from_ability(
                     kind,
@@ -236,6 +237,13 @@ impl Game {
                     spend_effects,
                 );
                 self.add_mana(controller, std::iter::repeat_n(mana, usize::from(amount)));
+                if damage_to_controller > 0 {
+                    self.damage_target_from(
+                        Some(source.object),
+                        Some(Target::Player(controller)),
+                        damage_to_controller,
+                    );
+                }
             }
             EffectDef::None
             | EffectDef::AddMana(AddManaEffectDef {
