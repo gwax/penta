@@ -1,85 +1,92 @@
-use serde_json::{Value, json};
+use serde_json::Value;
 
-use crate::{CardDefinitionId, GameObjectId, PlayerId, Target};
+use crate::{CardDefinitionId, GameObjectId, PlayerId};
 
 use super::super::{
     DecisionContinuation, DecisionKind, DecisionObservation, DecisionOption,
     DecisionOrderSemantics, DecisionPreference, DecisionVisibility, DecisionZone, PendingDecision,
 };
-use super::{array, bool_field, field, parse_ids, seat_value, str_field, u32_field, usize_field};
+use super::model::{
+    DecisionContinuationSnapshot, DecisionPreferenceSnapshot, DecisionStateSnapshot,
+};
+use super::stack::{parse_target, target_snapshot};
+use super::{array, bool_field, field, seat_value, str_field, u32_field, usize_field};
 
-pub(super) fn decision_checkpoint_json(pending: &PendingDecision) -> Option<Value> {
-    let continuation = continuation_json(&pending.continuation)?;
-    Some(json!({
-        "preference": preference_json(pending.observation.preference),
-        "continuation": continuation,
-    }))
+pub(super) fn decision_snapshot(pending: &PendingDecision) -> Option<DecisionStateSnapshot> {
+    Some(DecisionStateSnapshot {
+        preference: preference_snapshot(pending.observation.preference),
+        continuation: continuation_snapshot(&pending.continuation)?,
+    })
 }
 
 #[allow(clippy::too_many_lines)]
-fn continuation_json(continuation: &DecisionContinuation) -> Option<Value> {
+fn continuation_snapshot(
+    continuation: &DecisionContinuation,
+) -> Option<DecisionContinuationSnapshot> {
     let value = match continuation {
-        DecisionContinuation::BasicLandTypeTextChange { target } => json!({
-            "kind": "basicLandTypeTextChange",
-            "target": target_json(*target),
-        }),
+        DecisionContinuation::BasicLandTypeTextChange { target } => {
+            DecisionContinuationSnapshot::BasicLandTypeTextChange {
+                target: target_snapshot(*target),
+            }
+        }
         DecisionContinuation::MiracleReveal { card } => {
-            json!({"kind": "miracleReveal", "card": card.0})
+            DecisionContinuationSnapshot::MiracleReveal { card: card.0 }
         }
-        DecisionContinuation::PileSplit { owner } => {
-            json!({"kind": "pileSplit", "owner": owner.index()})
+        DecisionContinuation::PileSplit { owner } => DecisionContinuationSnapshot::PileSplit {
+            owner: owner.index(),
+        },
+        DecisionContinuation::PileChoice { first, second } => {
+            DecisionContinuationSnapshot::PileChoice {
+                first: ids(first),
+                second: ids(second),
+            }
         }
-        DecisionContinuation::PileChoice { first, second } => json!({
-            "kind": "pileChoice",
-            "first": ids_json(first),
-            "second": ids_json(second),
-        }),
         DecisionContinuation::SacrificeOfChoice {
             followup: None,
             optional,
-        } => json!({"kind": "sacrificeOfChoice", "optional": optional}),
-        DecisionContinuation::DestroyOfChoice { can_regenerate } => json!({
-            "kind": "destroyOfChoice",
-            "canRegenerate": can_regenerate,
-        }),
+        } => DecisionContinuationSnapshot::SacrificeOfChoice {
+            optional: *optional,
+        },
+        DecisionContinuation::DestroyOfChoice { can_regenerate } => {
+            DecisionContinuationSnapshot::DestroyOfChoice {
+                can_regenerate: *can_regenerate,
+            }
+        }
         DecisionContinuation::TimeVault {
             permanent,
             remaining,
-        } => json!({
-            "kind": "timeVault",
-            "permanent": permanent.0,
-            "remaining": ids_json(remaining),
-        }),
-        DecisionContinuation::SylvanOffer { player } => {
-            json!({"kind": "sylvanOffer", "player": player.index()})
-        }
+        } => DecisionContinuationSnapshot::TimeVault {
+            permanent: permanent.0,
+            remaining: ids(remaining),
+        },
+        DecisionContinuation::SylvanOffer { player } => DecisionContinuationSnapshot::SylvanOffer {
+            player: player.index(),
+        },
         DecisionContinuation::SylvanSelect {
             player,
             candidates,
             choices_left,
-        } => json!({
-            "kind": "sylvanSelect",
-            "player": player.index(),
-            "candidates": ids_json(candidates),
-            "choicesLeft": choices_left,
-        }),
+        } => DecisionContinuationSnapshot::SylvanSelect {
+            player: player.index(),
+            candidates: ids(candidates),
+            choices_left: *choices_left,
+        },
         DecisionContinuation::SylvanMode {
             player,
             card,
             candidates,
             choices_left,
-        } => json!({
-            "kind": "sylvanMode",
-            "player": player.index(),
-            "card": card.0,
-            "candidates": ids_json(candidates),
-            "choicesLeft": choices_left,
-        }),
+        } => DecisionContinuationSnapshot::SylvanMode {
+            player: player.index(),
+            card: card.0,
+            candidates: ids(candidates),
+            choices_left: *choices_left,
+        },
         DecisionContinuation::TetravusDetach { source } => {
-            json!({"kind": "tetravusDetach", "source": source.0})
+            DecisionContinuationSnapshot::TetravusDetach { source: source.0 }
         }
         DecisionContinuation::TetravusAssemble { source } => {
-            json!({"kind": "tetravusAssemble", "source": source.0})
+            DecisionContinuationSnapshot::TetravusAssemble { source: source.0 }
         }
         DecisionContinuation::DiscardForEffect { .. }
         | DecisionContinuation::Tutor
@@ -119,30 +126,24 @@ fn continuation_json(continuation: &DecisionContinuation) -> Option<Value> {
 
 pub(super) fn parse_pending_decision(
     observation: &Value,
-    checkpoint: &Value,
+    state: Option<&DecisionStateSnapshot>,
 ) -> Result<Option<PendingDecision>, String> {
     let Some(visible) = observation.get("decision").filter(|value| !value.is_null()) else {
-        if checkpoint
-            .get("decisionState")
-            .is_some_and(|value| !value.is_null())
-        {
+        if state.is_some() {
             return Err("checkpoint decision is not visible to its viewer".into());
         }
         return Ok(None);
     };
-    let state = field(checkpoint, "decisionState")?;
-    if state.is_null() {
-        return Err("decision continuation lacks a semantic checkpoint encoding".into());
-    }
+    let state = state.ok_or("decision continuation lacks a semantic checkpoint encoding")?;
     Ok(Some(PendingDecision {
-        observation: parse_decision_observation(visible, field(state, "preference")?)?,
-        continuation: parse_continuation(field(state, "continuation")?)?,
+        observation: parse_decision_observation(visible, &state.preference)?,
+        continuation: parse_continuation(&state.continuation)?,
     }))
 }
 
 fn parse_decision_observation(
     value: &Value,
-    preference: &Value,
+    preference: &DecisionPreferenceSnapshot,
 ) -> Result<DecisionObservation, String> {
     Ok(DecisionObservation {
         id: u32_field(value, "id")?,
@@ -208,107 +209,123 @@ fn parse_option(value: &Value) -> Result<DecisionOption, String> {
     })
 }
 
-#[allow(clippy::too_many_lines)]
-fn parse_continuation(value: &Value) -> Result<DecisionContinuation, String> {
-    let player = |name| field(value, name).and_then(seat_index);
-    let id = |name| u32_field(value, name).map(GameObjectId);
-    match str_field(value, "kind")? {
-        "basicLandTypeTextChange" => Ok(DecisionContinuation::BasicLandTypeTextChange {
-            target: parse_target(field(value, "target")?)?,
-        }),
-        "miracleReveal" => Ok(DecisionContinuation::MiracleReveal { card: id("card")? }),
-        "pileSplit" => Ok(DecisionContinuation::PileSplit {
-            owner: player("owner")?,
-        }),
-        "pileChoice" => Ok(DecisionContinuation::PileChoice {
-            first: parse_ids(field(value, "first")?)?,
-            second: parse_ids(field(value, "second")?)?,
-        }),
-        "sacrificeOfChoice" => Ok(DecisionContinuation::SacrificeOfChoice {
-            followup: None,
-            optional: bool_field(value, "optional")?,
-        }),
-        "destroyOfChoice" => Ok(DecisionContinuation::DestroyOfChoice {
-            can_regenerate: bool_field(value, "canRegenerate")?,
-        }),
-        "timeVault" => Ok(DecisionContinuation::TimeVault {
-            permanent: id("permanent")?,
-            remaining: parse_ids(field(value, "remaining")?)?,
-        }),
-        "sylvanOffer" => Ok(DecisionContinuation::SylvanOffer {
-            player: player("player")?,
-        }),
-        "sylvanSelect" => Ok(DecisionContinuation::SylvanSelect {
-            player: player("player")?,
-            candidates: parse_ids(field(value, "candidates")?)?,
-            choices_left: usize_field(value, "choicesLeft")?,
-        }),
-        "sylvanMode" => Ok(DecisionContinuation::SylvanMode {
-            player: player("player")?,
-            card: id("card")?,
-            candidates: parse_ids(field(value, "candidates")?)?,
-            choices_left: usize_field(value, "choicesLeft")?,
-        }),
-        "tetravusDetach" => Ok(DecisionContinuation::TetravusDetach {
-            source: id("source")?,
-        }),
-        "tetravusAssemble" => Ok(DecisionContinuation::TetravusAssemble {
-            source: id("source")?,
-        }),
-        other => Err(format!("unknown decision continuation {other}")),
-    }
+fn parse_continuation(
+    value: &DecisionContinuationSnapshot,
+) -> Result<DecisionContinuation, String> {
+    Ok(match value {
+        DecisionContinuationSnapshot::BasicLandTypeTextChange { target } => {
+            DecisionContinuation::BasicLandTypeTextChange {
+                target: parse_target(*target),
+            }
+        }
+        DecisionContinuationSnapshot::MiracleReveal { card } => {
+            DecisionContinuation::MiracleReveal {
+                card: GameObjectId(*card),
+            }
+        }
+        DecisionContinuationSnapshot::PileSplit { owner } => DecisionContinuation::PileSplit {
+            owner: player(*owner)?,
+        },
+        DecisionContinuationSnapshot::PileChoice { first, second } => {
+            DecisionContinuation::PileChoice {
+                first: game_ids(first),
+                second: game_ids(second),
+            }
+        }
+        DecisionContinuationSnapshot::SacrificeOfChoice { optional } => {
+            DecisionContinuation::SacrificeOfChoice {
+                followup: None,
+                optional: *optional,
+            }
+        }
+        DecisionContinuationSnapshot::DestroyOfChoice { can_regenerate } => {
+            DecisionContinuation::DestroyOfChoice {
+                can_regenerate: *can_regenerate,
+            }
+        }
+        DecisionContinuationSnapshot::TimeVault {
+            permanent,
+            remaining,
+        } => DecisionContinuation::TimeVault {
+            permanent: GameObjectId(*permanent),
+            remaining: game_ids(remaining),
+        },
+        DecisionContinuationSnapshot::SylvanOffer { player: owner } => {
+            DecisionContinuation::SylvanOffer {
+                player: player(*owner)?,
+            }
+        }
+        DecisionContinuationSnapshot::SylvanSelect {
+            player: owner,
+            candidates,
+            choices_left,
+        } => DecisionContinuation::SylvanSelect {
+            player: player(*owner)?,
+            candidates: game_ids(candidates),
+            choices_left: *choices_left,
+        },
+        DecisionContinuationSnapshot::SylvanMode {
+            player: owner,
+            card,
+            candidates,
+            choices_left,
+        } => DecisionContinuation::SylvanMode {
+            player: player(*owner)?,
+            card: GameObjectId(*card),
+            candidates: game_ids(candidates),
+            choices_left: *choices_left,
+        },
+        DecisionContinuationSnapshot::TetravusDetach { source } => {
+            DecisionContinuation::TetravusDetach {
+                source: GameObjectId(*source),
+            }
+        }
+        DecisionContinuationSnapshot::TetravusAssemble { source } => {
+            DecisionContinuation::TetravusAssemble {
+                source: GameObjectId(*source),
+            }
+        }
+    })
 }
 
-fn preference_json(preference: DecisionPreference) -> Value {
+fn preference_snapshot(preference: DecisionPreference) -> DecisionPreferenceSnapshot {
     match preference {
-        DecisionPreference::HigherCardValue => Value::from("higherCardValue"),
-        DecisionPreference::LowerCardValue => Value::from("lowerCardValue"),
-        DecisionPreference::BalancedPartition => Value::from("balancedPartition"),
-        DecisionPreference::LinkedExileTargets => Value::from("linkedExileTargets"),
-        DecisionPreference::RemovalChoice => Value::from("removalChoice"),
-        DecisionPreference::PreferOption(option) => json!({"preferOption": option}),
-        DecisionPreference::Neutral => Value::from("neutral"),
+        DecisionPreference::HigherCardValue => {
+            DecisionPreferenceSnapshot::Name("higherCardValue".into())
+        }
+        DecisionPreference::LowerCardValue => {
+            DecisionPreferenceSnapshot::Name("lowerCardValue".into())
+        }
+        DecisionPreference::BalancedPartition => {
+            DecisionPreferenceSnapshot::Name("balancedPartition".into())
+        }
+        DecisionPreference::LinkedExileTargets => {
+            DecisionPreferenceSnapshot::Name("linkedExileTargets".into())
+        }
+        DecisionPreference::RemovalChoice => {
+            DecisionPreferenceSnapshot::Name("removalChoice".into())
+        }
+        DecisionPreference::PreferOption(prefer_option) => {
+            DecisionPreferenceSnapshot::PreferOption { prefer_option }
+        }
+        DecisionPreference::Neutral => DecisionPreferenceSnapshot::Name("neutral".into()),
     }
 }
 
-fn parse_preference(value: &Value) -> Result<DecisionPreference, String> {
-    match value.as_str() {
-        Some("higherCardValue") => Ok(DecisionPreference::HigherCardValue),
-        Some("lowerCardValue") => Ok(DecisionPreference::LowerCardValue),
-        Some("balancedPartition") => Ok(DecisionPreference::BalancedPartition),
-        Some("linkedExileTargets") => Ok(DecisionPreference::LinkedExileTargets),
-        Some("removalChoice") => Ok(DecisionPreference::RemovalChoice),
-        Some("neutral") => Ok(DecisionPreference::Neutral),
-        Some(other) => Err(format!("unknown decision preference {other}")),
-        None => Ok(DecisionPreference::PreferOption(u32_field(
-            value,
-            "preferOption",
-        )?)),
-    }
-}
-
-fn ids_json(ids: &[GameObjectId]) -> Vec<u32> {
-    ids.iter().map(|id| id.0).collect()
-}
-
-fn target_json(target: Target) -> Value {
-    match target {
-        Target::Player(player) => json!({"type": "player", "seat": seat_name(player)}),
-        Target::Card(id) => json!({"type": "card", "objectId": id.0}),
-        Target::Permanent(id) => json!({"type": "permanent", "objectId": id.0}),
-        Target::Spell(id) => json!({"type": "spell", "objectId": id.0}),
-    }
-}
-
-fn parse_target(value: &Value) -> Result<Target, String> {
-    match str_field(value, "type")? {
-        "player" => Ok(Target::Player(seat_value(field(value, "seat")?)?)),
-        "card" => Ok(Target::Card(GameObjectId(u32_field(value, "objectId")?))),
-        "permanent" => Ok(Target::Permanent(GameObjectId(u32_field(
-            value, "objectId",
-        )?))),
-        "spell" => Ok(Target::Spell(GameObjectId(u32_field(value, "objectId")?))),
-        other => Err(format!("unknown target kind {other}")),
+fn parse_preference(value: &DecisionPreferenceSnapshot) -> Result<DecisionPreference, String> {
+    match value {
+        DecisionPreferenceSnapshot::Name(name) => match name.as_str() {
+            "higherCardValue" => Ok(DecisionPreference::HigherCardValue),
+            "lowerCardValue" => Ok(DecisionPreference::LowerCardValue),
+            "balancedPartition" => Ok(DecisionPreference::BalancedPartition),
+            "linkedExileTargets" => Ok(DecisionPreference::LinkedExileTargets),
+            "removalChoice" => Ok(DecisionPreference::RemovalChoice),
+            "neutral" => Ok(DecisionPreference::Neutral),
+            other => Err(format!("unknown decision preference {other}")),
+        },
+        DecisionPreferenceSnapshot::PreferOption { prefer_option } => {
+            Ok(DecisionPreference::PreferOption(*prefer_option))
+        }
     }
 }
 
@@ -327,14 +344,18 @@ fn parse_decision_zone(value: &str) -> Result<DecisionZone, String> {
     }
 }
 
-fn seat_index(value: &Value) -> Result<PlayerId, String> {
-    match value.as_u64() {
-        Some(0) => Ok(PlayerId::One),
-        Some(1) => Ok(PlayerId::Two),
-        _ => Err("seat index must be 0 or 1".into()),
-    }
+fn ids(ids: &[GameObjectId]) -> Vec<u32> {
+    ids.iter().map(|id| id.0).collect()
 }
 
-fn seat_name(player: PlayerId) -> &'static str {
-    if player == PlayerId::One { "p1" } else { "p2" }
+fn game_ids(ids: &[u32]) -> Vec<GameObjectId> {
+    ids.iter().copied().map(GameObjectId).collect()
+}
+
+fn player(index: usize) -> Result<PlayerId, String> {
+    match index {
+        0 => Ok(PlayerId::One),
+        1 => Ok(PlayerId::Two),
+        _ => Err("seat index must be 0 or 1".into()),
+    }
 }

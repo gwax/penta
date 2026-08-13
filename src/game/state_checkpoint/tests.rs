@@ -2,11 +2,12 @@ use super::*;
 use crate::ManaColor;
 use crate::card::KeywordAbility;
 use crate::game::DecisionContinuation;
+use serde_json::json;
 
 #[test]
 fn catalog_semantics_rehydrate_an_animation_without_a_card_name_switch() {
     let catalog = crate::poc::catalog().expect("catalog builds");
-    let key = animation_json(&crate::card::abilities::MISHRAS_FACTORY_ANIMATION);
+    let key = animation_snapshot(&crate::card::abilities::MISHRAS_FACTORY_ANIMATION);
     let rebuilt = catalog_animation(&catalog, &key).expect("animation is cataloged");
     assert_eq!(*rebuilt, crate::card::abilities::MISHRAS_FACTORY_ANIMATION);
 }
@@ -22,21 +23,18 @@ fn catalog_semantics_rehydrate_top_level_and_nested_abilities() {
         .next()
         .expect("catalog has an ability")
         .definition;
-    let locator = ability_locator_json(&catalog, |candidate| *candidate == top_level)
+    let locator = ability_locator(&catalog, |candidate| *candidate == top_level)
         .expect("top-level ability has a locator");
     assert_eq!(catalog_ability(&catalog, &locator), Some(top_level));
 
     let granted_text =
         "At the beginning of your upkeep, sacrifice this artifact unless you pay {2}.";
-    let locator = ability_locator_json(&catalog, |candidate| candidate.text == granted_text)
+    let locator = ability_locator(&catalog, |candidate| candidate.text == granted_text)
         .expect("nested granted ability has a locator");
     let rebuilt = catalog_ability(&catalog, &locator).expect("nested locator resolves");
     assert_eq!(rebuilt.text, granted_text);
     assert!(
-        !locator["nested"]
-            .as_array()
-            .expect("nested path")
-            .is_empty(),
+        !locator.nested.is_empty(),
         "the granted clause is addressed beneath its printed source"
     );
 }
@@ -77,7 +75,7 @@ fn every_runtime_keyword_has_a_stable_checkpoint_round_trip() {
         .map(KeywordAbility::ProtectionFrom),
     );
     for keyword in keywords {
-        assert_eq!(parse_keyword(&keyword_json(keyword)), Ok(keyword));
+        assert_eq!(parse_keyword(keyword_snapshot(keyword)), keyword);
     }
 }
 
@@ -103,6 +101,35 @@ fn checkpoint_redacts_opposing_hidden_object_ids() {
     let checkpoint = game.checkpoint_json(PlayerId::One);
     assert_eq!(checkpoint["drawnThisTurn"][0], json!([own.0]));
     assert_eq!(checkpoint["miracleWindow"], own.0);
+}
+
+#[test]
+fn checkpoint_json_is_a_projection_of_one_typed_snapshot_schema() {
+    let catalog = crate::poc::catalog().expect("catalog builds");
+    let deck = crate::Deck {
+        main: vec![crate::card::cards::MOUNTAIN; 60],
+        sideboard: Vec::new(),
+    };
+    let game = Game::new(catalog, [deck.clone(), deck], 42).expect("game starts");
+    let json = game.checkpoint_json(PlayerId::One);
+    let snapshot: GameSnapshot =
+        serde_json::from_value(json.clone()).expect("checkpoint matches GameSnapshot");
+    assert_eq!(
+        serde_json::to_value(snapshot).expect("snapshot serializes"),
+        json
+    );
+
+    let mut malformed = json;
+    malformed
+        .as_object_mut()
+        .expect("snapshot object")
+        .remove("turnsStarted");
+    assert!(
+        serde_json::from_value::<GameSnapshot>(malformed)
+            .expect_err("missing required state must fail")
+            .to_string()
+            .contains("turnsStarted")
+    );
 }
 
 #[test]

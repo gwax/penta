@@ -1,26 +1,25 @@
-use serde_json::{Value, json};
-
+use super::model::{AbilityLocator, AnimationSnapshot, KeywordSnapshot};
 use crate::CardCatalog;
 use crate::card::{
     AbilityDef, AnimationDef, AppliedEffectDef, DeclarativeAbilityDef, EffectDef, KeywordAbility,
     ManaColor, SpellAbilityDef,
 };
 
-pub(super) fn ability_locator_json(
+pub(super) fn ability_locator(
     catalog: &CardCatalog,
     mut matches: impl FnMut(&AbilityDef) -> bool,
-) -> Option<Value> {
+) -> Option<AbilityLocator> {
     for definition in catalog.definitions() {
         for part in &definition.parts {
             for attached in part.rules.indexed_abilities() {
                 let mut nested = Vec::new();
                 if locate_ability(&attached.definition, &mut matches, &mut nested) {
-                    return Some(json!({
-                        "definition": definition.id.0,
-                        "partId": part.id.0,
-                        "abilityId": attached.id.0,
-                        "nested": nested,
-                    }));
+                    return Some(AbilityLocator {
+                        definition: definition.id.0,
+                        part_id: part.id.0,
+                        ability_id: attached.id.0,
+                        nested,
+                    });
                 }
             }
         }
@@ -28,28 +27,16 @@ pub(super) fn ability_locator_json(
     None
 }
 
-pub(super) fn catalog_ability(catalog: &CardCatalog, locator: &Value) -> Option<AbilityDef> {
-    let definition = locator
-        .get("definition")?
-        .as_u64()
-        .and_then(|value| u16::try_from(value).ok())?;
-    let part = locator
-        .get("partId")?
-        .as_u64()
-        .and_then(|value| u8::try_from(value).ok())?;
-    let ability = locator
-        .get("abilityId")?
-        .as_u64()
-        .and_then(|value| u8::try_from(value).ok())?;
+pub(super) fn catalog_ability(
+    catalog: &CardCatalog,
+    locator: &AbilityLocator,
+) -> Option<AbilityDef> {
     let mut current = *catalog
-        .get(crate::CardDefinitionId(definition))?
-        .part(crate::CardPartId(part))?
+        .get(crate::CardDefinitionId(locator.definition))?
+        .part(crate::CardPartId(locator.part_id))?
         .rules
-        .ability(crate::AbilityId(ability))?;
-    for index in locator.get("nested")?.as_array()? {
-        let index = index
-            .as_u64()
-            .and_then(|value| usize::try_from(value).ok())?;
+        .ability(crate::AbilityId(locator.ability_id))?;
+    for &index in &locator.nested {
         current = **child_abilities(&current).get(index)?;
     }
     Some(current)
@@ -197,86 +184,92 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
     }
 }
 
-pub(super) fn animation_json(animation: &AnimationDef) -> Value {
-    json!({
-        "power": animation.power,
-        "toughness": animation.toughness,
-        "types": animation.types.type_name(),
-        "subtypes": animation.subtypes,
-        "allCreatureTypes": animation.all_creature_types,
-        "replacesSubtypes": animation.replaces_subtypes,
-        "losesAbilities": animation.loses_abilities,
-        "colors": animation.colors.map(crate::card::ColorSet::to_flags),
-    })
+pub(super) fn animation_snapshot(animation: &AnimationDef) -> AnimationSnapshot {
+    AnimationSnapshot {
+        power: animation.power,
+        toughness: animation.toughness,
+        types: animation.types.type_name().clone(),
+        subtypes: animation
+            .subtypes
+            .iter()
+            .map(|value| (*value).to_owned())
+            .collect(),
+        all_creature_types: animation.all_creature_types,
+        replaces_subtypes: animation.replaces_subtypes,
+        loses_abilities: animation.loses_abilities,
+        colors: animation.colors.map(crate::card::ColorSet::to_flags),
+    }
 }
 
-pub(super) fn keyword_json(keyword: KeywordAbility) -> Value {
-    Value::from(match keyword {
-        KeywordAbility::Flying => "flying",
-        KeywordAbility::Trample => "trample",
-        KeywordAbility::Haste => "haste",
-        KeywordAbility::FirstStrike => "firstStrike",
-        KeywordAbility::DoubleStrike => "doubleStrike",
-        KeywordAbility::Banding => "banding",
-        KeywordAbility::Vigilance => "vigilance",
-        KeywordAbility::Defender => "defender",
-        KeywordAbility::Deathtouch => "deathtouch",
-        KeywordAbility::Lifelink => "lifelink",
-        KeywordAbility::Reach => "reach",
-        KeywordAbility::Flash => "flash",
-        KeywordAbility::Hexproof => "hexproof",
-        KeywordAbility::Shroud => "shroud",
-        KeywordAbility::Intimidate => "intimidate",
-        KeywordAbility::Undying => "undying",
-        KeywordAbility::Indestructible => "indestructible",
-        KeywordAbility::AttacksEachCombatIfAble => "attacksEachCombatIfAble",
-        KeywordAbility::Mountainwalk => "mountainwalk",
-        KeywordAbility::Forestwalk => "forestwalk",
-        KeywordAbility::ProtectionFrom(ManaColor::White) => "protectionFromWhite",
-        KeywordAbility::ProtectionFrom(ManaColor::Blue) => "protectionFromBlue",
-        KeywordAbility::ProtectionFrom(ManaColor::Black) => "protectionFromBlack",
-        KeywordAbility::ProtectionFrom(ManaColor::Red) => "protectionFromRed",
-        KeywordAbility::ProtectionFrom(ManaColor::Green) => "protectionFromGreen",
-        KeywordAbility::ProtectionFrom(ManaColor::Colorless) => "protectionFromColorless",
-    })
+pub(super) const fn keyword_snapshot(keyword: KeywordAbility) -> KeywordSnapshot {
+    match keyword {
+        KeywordAbility::Flying => KeywordSnapshot::Flying,
+        KeywordAbility::Trample => KeywordSnapshot::Trample,
+        KeywordAbility::Haste => KeywordSnapshot::Haste,
+        KeywordAbility::FirstStrike => KeywordSnapshot::FirstStrike,
+        KeywordAbility::DoubleStrike => KeywordSnapshot::DoubleStrike,
+        KeywordAbility::Banding => KeywordSnapshot::Banding,
+        KeywordAbility::Vigilance => KeywordSnapshot::Vigilance,
+        KeywordAbility::Defender => KeywordSnapshot::Defender,
+        KeywordAbility::Deathtouch => KeywordSnapshot::Deathtouch,
+        KeywordAbility::Lifelink => KeywordSnapshot::Lifelink,
+        KeywordAbility::Reach => KeywordSnapshot::Reach,
+        KeywordAbility::Flash => KeywordSnapshot::Flash,
+        KeywordAbility::Hexproof => KeywordSnapshot::Hexproof,
+        KeywordAbility::Shroud => KeywordSnapshot::Shroud,
+        KeywordAbility::Intimidate => KeywordSnapshot::Intimidate,
+        KeywordAbility::Undying => KeywordSnapshot::Undying,
+        KeywordAbility::Indestructible => KeywordSnapshot::Indestructible,
+        KeywordAbility::AttacksEachCombatIfAble => KeywordSnapshot::AttacksEachCombatIfAble,
+        KeywordAbility::Mountainwalk => KeywordSnapshot::Mountainwalk,
+        KeywordAbility::Forestwalk => KeywordSnapshot::Forestwalk,
+        KeywordAbility::ProtectionFrom(ManaColor::White) => KeywordSnapshot::ProtectionFromWhite,
+        KeywordAbility::ProtectionFrom(ManaColor::Blue) => KeywordSnapshot::ProtectionFromBlue,
+        KeywordAbility::ProtectionFrom(ManaColor::Black) => KeywordSnapshot::ProtectionFromBlack,
+        KeywordAbility::ProtectionFrom(ManaColor::Red) => KeywordSnapshot::ProtectionFromRed,
+        KeywordAbility::ProtectionFrom(ManaColor::Green) => KeywordSnapshot::ProtectionFromGreen,
+        KeywordAbility::ProtectionFrom(ManaColor::Colorless) => {
+            KeywordSnapshot::ProtectionFromColorless
+        }
+    }
 }
 
-pub(super) fn parse_keyword(value: &Value) -> Result<KeywordAbility, String> {
-    match value.as_str() {
-        Some("flying") => Ok(KeywordAbility::Flying),
-        Some("trample") => Ok(KeywordAbility::Trample),
-        Some("haste") => Ok(KeywordAbility::Haste),
-        Some("firstStrike") => Ok(KeywordAbility::FirstStrike),
-        Some("doubleStrike") => Ok(KeywordAbility::DoubleStrike),
-        Some("banding") => Ok(KeywordAbility::Banding),
-        Some("vigilance") => Ok(KeywordAbility::Vigilance),
-        Some("defender") => Ok(KeywordAbility::Defender),
-        Some("deathtouch") => Ok(KeywordAbility::Deathtouch),
-        Some("lifelink") => Ok(KeywordAbility::Lifelink),
-        Some("reach") => Ok(KeywordAbility::Reach),
-        Some("flash") => Ok(KeywordAbility::Flash),
-        Some("hexproof") => Ok(KeywordAbility::Hexproof),
-        Some("shroud") => Ok(KeywordAbility::Shroud),
-        Some("intimidate") => Ok(KeywordAbility::Intimidate),
-        Some("undying") => Ok(KeywordAbility::Undying),
-        Some("indestructible") => Ok(KeywordAbility::Indestructible),
-        Some("attacksEachCombatIfAble") => Ok(KeywordAbility::AttacksEachCombatIfAble),
-        Some("mountainwalk") => Ok(KeywordAbility::Mountainwalk),
-        Some("forestwalk") => Ok(KeywordAbility::Forestwalk),
-        Some("protectionFromWhite") => Ok(KeywordAbility::ProtectionFrom(ManaColor::White)),
-        Some("protectionFromBlue") => Ok(KeywordAbility::ProtectionFrom(ManaColor::Blue)),
-        Some("protectionFromBlack") => Ok(KeywordAbility::ProtectionFrom(ManaColor::Black)),
-        Some("protectionFromRed") => Ok(KeywordAbility::ProtectionFrom(ManaColor::Red)),
-        Some("protectionFromGreen") => Ok(KeywordAbility::ProtectionFrom(ManaColor::Green)),
-        Some("protectionFromColorless") => Ok(KeywordAbility::ProtectionFrom(ManaColor::Colorless)),
-        Some(other) => Err(format!("unknown keyword {other}")),
-        None => Err("keyword must be a string".into()),
+pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
+    match value {
+        KeywordSnapshot::Flying => KeywordAbility::Flying,
+        KeywordSnapshot::Trample => KeywordAbility::Trample,
+        KeywordSnapshot::Haste => KeywordAbility::Haste,
+        KeywordSnapshot::FirstStrike => KeywordAbility::FirstStrike,
+        KeywordSnapshot::DoubleStrike => KeywordAbility::DoubleStrike,
+        KeywordSnapshot::Banding => KeywordAbility::Banding,
+        KeywordSnapshot::Vigilance => KeywordAbility::Vigilance,
+        KeywordSnapshot::Defender => KeywordAbility::Defender,
+        KeywordSnapshot::Deathtouch => KeywordAbility::Deathtouch,
+        KeywordSnapshot::Lifelink => KeywordAbility::Lifelink,
+        KeywordSnapshot::Reach => KeywordAbility::Reach,
+        KeywordSnapshot::Flash => KeywordAbility::Flash,
+        KeywordSnapshot::Hexproof => KeywordAbility::Hexproof,
+        KeywordSnapshot::Shroud => KeywordAbility::Shroud,
+        KeywordSnapshot::Intimidate => KeywordAbility::Intimidate,
+        KeywordSnapshot::Undying => KeywordAbility::Undying,
+        KeywordSnapshot::Indestructible => KeywordAbility::Indestructible,
+        KeywordSnapshot::AttacksEachCombatIfAble => KeywordAbility::AttacksEachCombatIfAble,
+        KeywordSnapshot::Mountainwalk => KeywordAbility::Mountainwalk,
+        KeywordSnapshot::Forestwalk => KeywordAbility::Forestwalk,
+        KeywordSnapshot::ProtectionFromWhite => KeywordAbility::ProtectionFrom(ManaColor::White),
+        KeywordSnapshot::ProtectionFromBlue => KeywordAbility::ProtectionFrom(ManaColor::Blue),
+        KeywordSnapshot::ProtectionFromBlack => KeywordAbility::ProtectionFrom(ManaColor::Black),
+        KeywordSnapshot::ProtectionFromRed => KeywordAbility::ProtectionFrom(ManaColor::Red),
+        KeywordSnapshot::ProtectionFromGreen => KeywordAbility::ProtectionFrom(ManaColor::Green),
+        KeywordSnapshot::ProtectionFromColorless => {
+            KeywordAbility::ProtectionFrom(ManaColor::Colorless)
+        }
     }
 }
 
 pub(super) fn catalog_animation(
     catalog: &CardCatalog,
-    key: &Value,
+    key: &AnimationSnapshot,
 ) -> Option<&'static AnimationDef> {
     catalog
         .definitions()
@@ -286,7 +279,10 @@ pub(super) fn catalog_animation(
         .find_map(|attached| animation_in_ability(&attached.definition, key))
 }
 
-fn animation_in_ability(ability: &AbilityDef, key: &Value) -> Option<&'static AnimationDef> {
+fn animation_in_ability(
+    ability: &AbilityDef,
+    key: &AnimationSnapshot,
+) -> Option<&'static AnimationDef> {
     if let DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) = ability.definition
         && let Some(animation) = modal
             .modes
@@ -298,7 +294,10 @@ fn animation_in_ability(ability: &AbilityDef, key: &Value) -> Option<&'static An
     animation_in_effect(ability.effect.definition, key)
 }
 
-fn animation_in_effect(effect: EffectDef, key: &Value) -> Option<&'static AnimationDef> {
+fn animation_in_effect(
+    effect: EffectDef,
+    key: &AnimationSnapshot,
+) -> Option<&'static AnimationDef> {
     match effect {
         EffectDef::Sequence(effects) => effects
             .iter()
@@ -324,9 +323,12 @@ fn animation_in_effect(effect: EffectDef, key: &Value) -> Option<&'static Animat
     }
 }
 
-fn animation_in_applied(effect: AppliedEffectDef, key: &Value) -> Option<&'static AnimationDef> {
+fn animation_in_applied(
+    effect: AppliedEffectDef,
+    key: &AnimationSnapshot,
+) -> Option<&'static AnimationDef> {
     match effect {
-        AppliedEffectDef::Animate(animation) if animation_json(animation) == *key => {
+        AppliedEffectDef::Animate(animation) if animation_snapshot(animation) == *key => {
             Some(animation)
         }
         AppliedEffectDef::Composite(effects) => effects

@@ -20,6 +20,11 @@ snapshots.
 
 ### Added
 
+- Game reconstruction now has one typed `GameSnapshot` serde schema behind
+  the existing protocol-20 `checkpoint` field. Encoding and decoding share
+  that schema, replacing the parallel hand-written JSON constructors and
+  field parsers without changing the bot wire format.
+
 - **Protocol 19.** Every observation now includes a hidden-safe `checkpoint`
   object with turn counters, combat progression, once-per-turn flags, delayed
   turn changes, per-permanent raw counters, and the other rules bookkeeping

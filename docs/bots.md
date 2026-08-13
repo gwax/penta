@@ -248,7 +248,15 @@ Construction fails closed when versions differ, a hypothesized zone has the
 wrong size, a card definition is unknown, the checkpoint contains a transient
 rules payload which lacks a stable semantic locator, or reconstruction would
 produce a different legal-action list. It never quietly creates an
-approximate game. The currently accepted checkpoints cover pregame and
+approximate game. Internally, the engine creates one typed `GameSnapshot` and
+serializes it at the protocol boundary; reconstruction deserializes that same
+schema before building a `Game`. The `checkpoint` field name remains part of
+the protocol-20 wire format, but it is no longer assembled or parsed through
+ad hoc JSON field lookups. Catalog-owned executable data is represented by
+stable semantic locators, while hidden-zone identities are supplied by the
+separate hypothesis above.
+
+The currently accepted snapshots cover pregame and
 quiescent turn/combat decisions, ordinary battlefield state, and ordinary
 spells, activated abilities, and triggered abilities on the stack. Stack
 ability payloads identify their printed or nested/granted catalog definition,

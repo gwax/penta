@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, VecDeque};
 
-use serde_json::{Value, json};
+use serde_json::Value;
 
 use super::{
     CardInstance, CharacteristicSource, CombatDamageStage, ContinuousEffectTimestamp, CounterKind,
@@ -17,25 +17,31 @@ use crate::{
 
 mod decision;
 mod emblem;
+mod model;
 mod semantics;
 mod stack;
 
-use decision::{decision_checkpoint_json, parse_pending_decision};
-use emblem::{emblem_checkpoint_json, parse_emblems};
+use decision::{decision_snapshot, parse_pending_decision};
+use emblem::{emblem_snapshot, parse_emblems};
+use model::{
+    CombatDamageAssignmentSnapshot, CombatDamageStageSnapshot, GameSnapshot, PermanentSnapshot,
+    PregameSnapshot, StackSnapshot, UpkeepKeywordSnapshot,
+};
 use semantics::{
-    ability_locator_json, animation_json, catalog_ability, catalog_animation, keyword_json,
+    ability_locator, animation_snapshot, catalog_ability, catalog_animation, keyword_snapshot,
     parse_keyword,
 };
-use stack::{parse_stack, stack_ability_checkpoint_json, stack_object_requires_retired};
+use stack::{parse_stack, stack_ability_snapshot, stack_object_requires_retired};
 
 impl Game {
     /// Hidden-safe rules bookkeeping needed to use an observation as a
     /// current-state checkpoint. Presentation fields stay in the ordinary
     /// observation; this object carries the state which cannot be inferred
     /// reliably from them.
-    pub(super) fn checkpoint_json(&self, viewer: PlayerId) -> Value {
+    #[allow(clippy::too_many_lines)]
+    fn snapshot(&self, viewer: PlayerId) -> GameSnapshot {
         let decision_state = (self.pending_decisions.len() == 1)
-            .then(|| decision_checkpoint_json(&self.pending_decisions[0]))
+            .then(|| decision_snapshot(&self.pending_decisions[0]))
             .flatten();
         let has_unsupported_decision =
             !self.pending_decisions.is_empty() && decision_state.is_none();
@@ -49,91 +55,133 @@ impl Game {
                 Vec::new()
             }
         });
-        json!({
-            "turnsStarted": self.turns_started,
-            "consecutivePasses": self.consecutive_passes,
-            "attackersDeclared": self.attackers_declared,
-            "blockersDeclared": self.blockers_declared,
-            "untapPending": self.untap_pending,
-            "cleanupPending": self.cleanup_pending,
-            "mulligans": self.mulligans,
-            "landPlayedThisTurn": [
+        GameSnapshot {
+            turns_started: self.turns_started,
+            consecutive_passes: self.consecutive_passes,
+            attackers_declared: self.attackers_declared,
+            blockers_declared: self.blockers_declared,
+            untap_pending: self.untap_pending,
+            cleanup_pending: self.cleanup_pending,
+            mulligans: self.mulligans,
+            land_played_this_turn: [
                 self.players[0].land_played_this_turn,
                 self.players[1].land_played_this_turn,
             ],
-            "triedToDrawFromEmptyLibrary": [
+            tried_to_draw_from_empty_library: [
                 self.players[0].tried_to_draw_from_empty_library,
                 self.players[1].tried_to_draw_from_empty_library,
             ],
-            "creatureDiedThisTurn": self.creature_died_this_turn,
-            "linkedExiles": self.linked_exiles.iter().map(|(source, card)| {
-                json!([source.0, card.0])
-            }).collect::<Vec<_>>(),
-            "sorceryFlashGrants": self.sorcery_flash_grants,
-            "additionalCombatPhases": self.additional_combat_phases,
-            "noncreatureCastsLocked": self.noncreature_casts_locked,
-            "spellsCastThisTurn": self.spells_cast_this_turn,
-            "spellsCastLastTurn": self.spells_cast_last_turn,
-            "cardsDrawnThisTurn": self.cards_drawn_this_turn,
-            "drawnThisTurn": visible_drawn_this_turn,
-            "miracleWindow": self.miracle_window.filter(|id| {
-                self.players[viewer.index()].hand.iter().any(|card| card.id == *id)
-            }).map(|id| id.0),
-            "pendingCombatAttackers": self.pending_combat_attackers.iter().map(|id| id.0).collect::<Vec<_>>(),
-            "combatBlockedAttackers": self.combat_blocked_attackers.iter().map(|id| id.0).collect::<Vec<_>>(),
-            "extraTurns": self.extra_turns.iter().map(|player| player.index()).collect::<Vec<_>>(),
-            "channelActive": self.channel_active,
-            "skippedTurns": self.skipped_turns,
-            "pregame": self.pregame.map(|pregame| match pregame {
-                Pregame::Mulligan(player) => json!({"kind": "mulligan", "seat": player.index()}),
-                Pregame::Bottom(player) => json!({"kind": "bottom", "seat": player.index()}),
-            }),
-            "combatDamageStage": match &self.combat_damage_stage {
-                CombatDamageStage::NotStarted => json!({"kind": "notStarted"}),
-                CombatDamageStage::Single => json!({"kind": "single"}),
-                CombatDamageStage::FirstStrike { strike_wave_combatants } => json!({
-                    "kind": "firstStrike",
-                    "combatants": strike_wave_combatants.iter().map(|id| id.0).collect::<Vec<_>>(),
-                }),
-                CombatDamageStage::RegularAfterFirstStrike { strike_wave_combatants } => json!({
-                    "kind": "regularAfterFirstStrike",
-                    "combatants": strike_wave_combatants.iter().map(|id| id.0).collect::<Vec<_>>(),
-                }),
-            },
-            "battlefield": self.battlefield.iter().map(permanent_checkpoint_json).collect::<Vec<_>>(),
-            "emblems": self.emblems.iter().map(emblem_checkpoint_json).collect::<Vec<_>>(),
-            "stack": self.stack.iter().map(|object| {
-                let ability_payload = (object.kind != StackObjectKind::Spell)
-                    .then(|| stack_ability_checkpoint_json(self, object));
-                json!({
-                    "objectId": object.id.0,
-                    "owner": object.card.owner.index(),
-                    "abilityPayload": ability_payload,
-                    "requiresRetiredObject": stack_object_requires_retired(self, object),
-                    "hasRuntimeOverrides": !object.applied_effects.is_empty()
-                        || !object.text_changes.is_empty()
-                        || object.colors.is_some()
-                        || object.cast_via_flashback
-                        || object.is_copy,
+            creature_died_this_turn: self.creature_died_this_turn,
+            linked_exiles: self
+                .linked_exiles
+                .iter()
+                .map(|(source, card)| [source.0, card.0])
+                .collect(),
+            sorcery_flash_grants: self.sorcery_flash_grants,
+            additional_combat_phases: self.additional_combat_phases,
+            noncreature_casts_locked: self.noncreature_casts_locked,
+            spells_cast_this_turn: self.spells_cast_this_turn,
+            spells_cast_last_turn: self.spells_cast_last_turn,
+            cards_drawn_this_turn: self.cards_drawn_this_turn,
+            drawn_this_turn: visible_drawn_this_turn,
+            miracle_window: self
+                .miracle_window
+                .filter(|id| {
+                    self.players[viewer.index()]
+                        .hand
+                        .iter()
+                        .any(|card| card.id == *id)
                 })
-            }).collect::<Vec<_>>(),
-            "decisionState": decision_state,
-            "hasDeferredState": !self.temporary_ability_grants.is_empty()
+                .map(|id| id.0),
+            pending_combat_attackers: self
+                .pending_combat_attackers
+                .iter()
+                .map(|id| id.0)
+                .collect(),
+            combat_blocked_attackers: self
+                .combat_blocked_attackers
+                .iter()
+                .map(|id| id.0)
+                .collect(),
+            extra_turns: self
+                .extra_turns
+                .iter()
+                .map(|player| player.index())
+                .collect(),
+            channel_active: self.channel_active,
+            skipped_turns: self.skipped_turns,
+            pregame: self.pregame.map(|pregame| match pregame {
+                Pregame::Mulligan(player) => PregameSnapshot::Mulligan {
+                    seat: player.index(),
+                },
+                Pregame::Bottom(player) => PregameSnapshot::Bottom {
+                    seat: player.index(),
+                },
+            }),
+            combat_damage_stage: match &self.combat_damage_stage {
+                CombatDamageStage::NotStarted => CombatDamageStageSnapshot::NotStarted,
+                CombatDamageStage::Single => CombatDamageStageSnapshot::Single,
+                CombatDamageStage::FirstStrike {
+                    strike_wave_combatants,
+                } => CombatDamageStageSnapshot::FirstStrike {
+                    combatants: strike_wave_combatants.iter().map(|id| id.0).collect(),
+                },
+                CombatDamageStage::RegularAfterFirstStrike {
+                    strike_wave_combatants,
+                } => CombatDamageStageSnapshot::RegularAfterFirstStrike {
+                    combatants: strike_wave_combatants.iter().map(|id| id.0).collect(),
+                },
+            },
+            battlefield: self.battlefield.iter().map(permanent_snapshot).collect(),
+            emblems: self.emblems.iter().map(emblem_snapshot).collect(),
+            stack: self
+                .stack
+                .iter()
+                .map(|object| {
+                    let ability_payload = (object.kind != StackObjectKind::Spell)
+                        .then(|| stack_ability_snapshot(self, object))
+                        .flatten();
+                    StackSnapshot {
+                        object_id: object.id.0,
+                        owner: object.card.owner.index(),
+                        ability_payload,
+                        requires_retired_object: stack_object_requires_retired(self, object),
+                        has_runtime_overrides: !object.applied_effects.is_empty()
+                            || !object.text_changes.is_empty()
+                            || object.colors.is_some()
+                            || object.cast_via_flashback
+                            || object.is_copy,
+                    }
+                })
+                .collect(),
+            decision_state,
+            has_deferred_state: !self.temporary_ability_grants.is_empty()
                 || !self.delayed_triggers.is_empty()
                 || !self.floating_triggers.is_empty()
                 || has_unsupported_decision
                 || !self.pending_events.is_empty()
                 || !self.pending_triggers.is_empty()
-                || self.players.iter().any(|player| player.mana.iter().any(|mana| {
-                    mana.source.is_some()
-                        || !mana.restrictions.is_empty()
-                        || !mana.spend_effects.is_empty()
-                }))
-                || self.battlefield.iter().any(|permanent| !permanent.damage_sources.is_empty()),
+                || self.players.iter().any(|player| {
+                    player.mana.iter().any(|mana| {
+                        mana.source.is_some()
+                            || !mana.restrictions.is_empty()
+                            || !mana.spend_effects.is_empty()
+                    })
+                })
+                || self
+                    .battlefield
+                    .iter()
+                    .any(|permanent| !permanent.damage_sources.is_empty()),
             // Makes accidental reuse with another seat fail closed in the
             // importer without revealing anything about that other seat.
-            "viewer": viewer.index(),
-        })
+            viewer: viewer.index(),
+        }
+    }
+
+    /// Compatibility projection for protocol 20. The checkpoint has one
+    /// typed schema internally; only this boundary turns it into JSON.
+    pub(super) fn checkpoint_json(&self, viewer: PlayerId) -> Value {
+        serde_json::to_value(self.snapshot(viewer)).expect("GameSnapshot is serializable")
     }
 
     /// Rebuilds a decision-boundary state from its seat checkpoint and
@@ -146,12 +194,14 @@ impl Game {
         hidden: &Value,
         rollout_seed: u64,
     ) -> Result<Self, String> {
-        let checkpoint = field(observation, "checkpoint")?;
-        if bool_field(checkpoint, "hasDeferredState")? {
+        let checkpoint: GameSnapshot =
+            serde_json::from_value(field(observation, "checkpoint")?.clone())
+                .map_err(|error| format!("invalid game snapshot: {error}"))?;
+        if checkpoint.has_deferred_state {
             return Err("checkpoint contains a decision, deferred trigger, emblem, restricted mana, or other rules state not yet represented by semantic locators".into());
         }
         let viewer = seat_value(field(observation, "seat")?)?;
-        if usize_field(checkpoint, "viewer")? != viewer.index() {
+        if checkpoint.viewer != viewer.index() {
             return Err("checkpoint viewer does not match observation seat".into());
         }
 
@@ -196,8 +246,8 @@ impl Game {
             [opponent_hand, own_hand]
         };
         let libraries = [library_one, library_two];
-        let land_played = bool_pair(field(checkpoint, "landPlayedThisTurn")?)?;
-        let tried_empty = bool_pair(field(checkpoint, "triedToDrawFromEmptyLibrary")?)?;
+        let land_played = checkpoint.land_played_this_turn;
+        let tried_empty = checkpoint.tried_to_draw_from_empty_library;
         let mana_values = array(field(observation, "manaPools")?)?;
         if mana_values.len() != 2 {
             return Err("manaPools must contain p1 and p2 values".into());
@@ -218,7 +268,7 @@ impl Game {
             land_played_this_turn: land_played[player.index()],
         });
 
-        let turns_started = u32_pair(field(checkpoint, "turnsStarted")?)?;
+        let turns_started = checkpoint.turns_started;
         let mut game = Self {
             format,
             seed: rollout_seed,
@@ -236,48 +286,58 @@ impl Game {
             turns_started,
             active_player: seat_value(field(observation, "activeSeat")?)?,
             priority: seat_value(field(observation, "prioritySeat")?)?,
-            consecutive_passes: u8_field(checkpoint, "consecutivePasses")?,
+            consecutive_passes: checkpoint.consecutive_passes,
             step: parse_step(str_field(observation, "step")?)?,
-            attackers_declared: bool_field(checkpoint, "attackersDeclared")?,
-            creature_died_this_turn: bool_field(checkpoint, "creatureDiedThisTurn")?,
-            linked_exiles: parse_id_pairs(field(checkpoint, "linkedExiles")?)?,
-            sorcery_flash_grants: u8_pair(field(checkpoint, "sorceryFlashGrants")?)?,
-            additional_combat_phases: u8_field(checkpoint, "additionalCombatPhases")?,
-            noncreature_casts_locked: bool_pair(field(checkpoint, "noncreatureCastsLocked")?)?,
+            attackers_declared: checkpoint.attackers_declared,
+            creature_died_this_turn: checkpoint.creature_died_this_turn,
+            linked_exiles: checkpoint
+                .linked_exiles
+                .iter()
+                .map(|pair| (GameObjectId(pair[0]), GameObjectId(pair[1])))
+                .collect(),
+            sorcery_flash_grants: checkpoint.sorcery_flash_grants,
+            additional_combat_phases: checkpoint.additional_combat_phases,
+            noncreature_casts_locked: checkpoint.noncreature_casts_locked,
             emblems: Vec::new(),
-            spells_cast_this_turn: u16_pair(field(checkpoint, "spellsCastThisTurn")?)?,
-            spells_cast_last_turn: u16_pair(field(checkpoint, "spellsCastLastTurn")?)?,
-            cards_drawn_this_turn: u16_pair(field(checkpoint, "cardsDrawnThisTurn")?)?,
-            drawn_this_turn: parse_drawn_this_turn(checkpoint, hidden, viewer, &checkpoint_hands)?,
-            miracle_window: parse_miracle_window(checkpoint, hidden, viewer, &checkpoint_hands)?,
+            spells_cast_this_turn: checkpoint.spells_cast_this_turn,
+            spells_cast_last_turn: checkpoint.spells_cast_last_turn,
+            cards_drawn_this_turn: checkpoint.cards_drawn_this_turn,
+            drawn_this_turn: parse_drawn_this_turn(&checkpoint, hidden, viewer, &checkpoint_hands)?,
+            miracle_window: parse_miracle_window(&checkpoint, hidden, viewer, &checkpoint_hands)?,
             delayed_triggers: Vec::new(),
             floating_triggers: Vec::new(),
-            blockers_declared: bool_field(checkpoint, "blockersDeclared")?,
-            untap_pending: bool_field(checkpoint, "untapPending")?,
-            pregame: parse_pregame(checkpoint.get("pregame"))?,
-            mulligans: u8_pair(field(checkpoint, "mulligans")?)?,
-            cleanup_pending: bool_field(checkpoint, "cleanupPending")?,
+            blockers_declared: checkpoint.blockers_declared,
+            untap_pending: checkpoint.untap_pending,
+            pregame: parse_pregame(checkpoint.pregame)?,
+            mulligans: checkpoint.mulligans,
+            cleanup_pending: checkpoint.cleanup_pending,
             pending_decisions: Vec::new(),
             next_decision_id: 0,
             pending_events: VecDeque::new(),
             pending_triggers: Vec::new(),
             next_trigger_id: 0,
             last_seen_hands: [None, None],
-            pending_combat_attackers: parse_ids(field(checkpoint, "pendingCombatAttackers")?)?,
-            combat_damage_stage: parse_combat_stage(field(checkpoint, "combatDamageStage")?)?,
-            combat_blocked_attackers: parse_ids(field(checkpoint, "combatBlockedAttackers")?)?,
-            extra_turns: parse_seat_indices(field(checkpoint, "extraTurns")?)?,
-            channel_active: bool_pair(field(checkpoint, "channelActive")?)?,
-            skipped_turns: u16_pair(field(checkpoint, "skippedTurns")?)?,
+            pending_combat_attackers: ids(&checkpoint.pending_combat_attackers),
+            combat_damage_stage: parse_combat_stage(&checkpoint.combat_damage_stage),
+            combat_blocked_attackers: ids(&checkpoint.combat_blocked_attackers),
+            extra_turns: checkpoint
+                .extra_turns
+                .iter()
+                .copied()
+                .map(player_from_index)
+                .collect::<Result<Vec<_>, _>>()?,
+            channel_active: checkpoint.channel_active,
+            skipped_turns: checkpoint.skipped_turns,
             result: None,
             events: vec![GameEvent::GameStarted { seed: rollout_seed }],
         };
-        game.battlefield = parse_battlefield(observation, checkpoint, &game.catalog)?;
-        game.emblems = parse_emblems(observation, checkpoint, &game)?;
-        game.stack = parse_stack(observation, checkpoint, &game)?;
-        game.pending_decisions = parse_pending_decision(observation, checkpoint)?
-            .into_iter()
-            .collect();
+        game.battlefield = parse_battlefield(observation, &checkpoint.battlefield, &game.catalog)?;
+        game.emblems = parse_emblems(observation, &checkpoint.emblems, &game)?;
+        game.stack = parse_stack(observation, &checkpoint.stack, &game)?;
+        game.pending_decisions =
+            parse_pending_decision(observation, checkpoint.decision_state.as_ref())?
+                .into_iter()
+                .collect();
         game.next_decision_id = game
             .pending_decisions
             .first()
@@ -296,44 +356,58 @@ impl Game {
     }
 }
 
-fn permanent_checkpoint_json(permanent: &Permanent) -> Value {
-    json!({
-        "objectId": permanent.card.id.0,
-        "owner": permanent.card.owner.index(),
-        "timestamp": permanent.timestamp.0,
-        "enteredControllerTurn": permanent.entered_controller_turn,
-        "powerBonus": permanent.power_bonus,
-        "toughnessBonus": permanent.toughness_bonus,
-        "unblockableThisTurn": permanent.unblockable_this_turn,
-        "combatDamagePrevented": permanent.combat_damage_prevented,
-        "combatDamageDealtByPrevented": permanent.combat_damage_dealt_by_prevented,
-        "controlRevertsTo": permanent.control_reverts_to.map(PlayerId::index),
-        "chosenPlayer": permanent.chosen_player.map(PlayerId::index),
-        "destroyAtEnd": permanent.destroy_at_end,
-        "counters": permanent.counters,
-        "attachedTo": permanent.attached_to.map(|id| id.0),
-        "exileInsteadOfDying": permanent.exile_instead_of_dying,
-        "combatDamageAssignment": permanent.combat_damage_assignment.iter().map(|assignment| {
-            json!({"recipient": format!("{:?}", assignment.recipient), "amount": assignment.amount})
-        }).collect::<Vec<_>>(),
-        "regenerationShields": permanent.regeneration_shields,
-        "attackedThisTurn": permanent.attacked_this_turn,
-        "attacksThisTurn": permanent.attacks_this_turn,
-        "damageSources": permanent.damage_sources.iter().map(|id| id.0).collect::<Vec<_>>(),
-        "dealtDamageToOpponentThisTurn": permanent.dealt_damage_to_opponent_this_turn,
-        "deathtouchDamage": permanent.deathtouch_damage,
-        "createdBy": permanent.created_by.map(|id| id.0),
-        "animation": permanent.animation.map(animation_json),
-        "temporaryKeywords": permanent.temporary_keywords.iter().copied().map(keyword_json).collect::<Vec<_>>(),
-        "keywordsUntilUpkeepOf": permanent.keywords_until_upkeep_of.iter().map(|(player, keyword)| json!({
-            "seat": player.index(),
-            "keyword": keyword_json(*keyword),
-        })).collect::<Vec<_>>(),
-        "hasDynamicCharacteristics": !permanent.temporary_granted_abilities.is_empty()
+fn permanent_snapshot(permanent: &Permanent) -> PermanentSnapshot {
+    PermanentSnapshot {
+        object_id: permanent.card.id.0,
+        owner: permanent.card.owner.index(),
+        timestamp: permanent.timestamp.0,
+        entered_controller_turn: permanent.entered_controller_turn,
+        power_bonus: permanent.power_bonus,
+        toughness_bonus: permanent.toughness_bonus,
+        unblockable_this_turn: permanent.unblockable_this_turn,
+        combat_damage_prevented: permanent.combat_damage_prevented,
+        combat_damage_dealt_by_prevented: permanent.combat_damage_dealt_by_prevented,
+        control_reverts_to: permanent.control_reverts_to.map(PlayerId::index),
+        chosen_player: permanent.chosen_player.map(PlayerId::index),
+        destroy_at_end: permanent.destroy_at_end,
+        counters: permanent.counters.to_vec(),
+        attached_to: permanent.attached_to.map(|id| id.0),
+        exile_instead_of_dying: permanent.exile_instead_of_dying,
+        combat_damage_assignment: permanent
+            .combat_damage_assignment
+            .iter()
+            .map(|assignment| CombatDamageAssignmentSnapshot {
+                recipient: format!("{:?}", assignment.recipient),
+                amount: assignment.amount,
+            })
+            .collect(),
+        regeneration_shields: permanent.regeneration_shields,
+        attacked_this_turn: permanent.attacked_this_turn,
+        attacks_this_turn: permanent.attacks_this_turn,
+        damage_sources: permanent.damage_sources.iter().map(|id| id.0).collect(),
+        dealt_damage_to_opponent_this_turn: permanent.dealt_damage_to_opponent_this_turn,
+        deathtouch_damage: permanent.deathtouch_damage,
+        created_by: permanent.created_by.map(|id| id.0),
+        animation: permanent.animation.map(animation_snapshot),
+        temporary_keywords: permanent
+            .temporary_keywords
+            .iter()
+            .copied()
+            .map(keyword_snapshot)
+            .collect(),
+        keywords_until_upkeep_of: permanent
+            .keywords_until_upkeep_of
+            .iter()
+            .map(|(player, keyword)| UpkeepKeywordSnapshot {
+                seat: player.index(),
+                keyword: keyword_snapshot(*keyword),
+            })
+            .collect(),
+        has_dynamic_characteristics: !permanent.temporary_granted_abilities.is_empty()
             || !permanent.temporary_removed_abilities.is_empty()
             || permanent.copy_effect.is_some()
             || !permanent.text_changes.is_empty(),
-    })
+    }
 }
 
 fn field<'a>(value: &'a Value, name: &str) -> Result<&'a Value, String> {
@@ -384,14 +458,6 @@ fn seat_value(value: &Value) -> Result<PlayerId, String> {
         _ => Err("seat must be p1 or p2".into()),
     }
 }
-fn seat_index(value: &Value) -> Result<PlayerId, String> {
-    match value.as_u64() {
-        Some(0) => Ok(PlayerId::One),
-        Some(1) => Ok(PlayerId::Two),
-        _ => Err("seat index must be 0 or 1".into()),
-    }
-}
-
 fn definitions(value: &Value) -> Result<Vec<CardDefinitionId>, String> {
     array(value)?
         .iter()
@@ -507,20 +573,6 @@ fn walk_object_ids(value: &Value) -> Box<dyn Iterator<Item = u32> + '_> {
     }
 }
 
-macro_rules! pair {
-    ($name:ident, $ty:ty, $read:ident) => {
-        fn $name(value: &Value) -> Result<[$ty; 2], String> {
-            let values = array(value)?;
-            if values.len() != 2 {
-                return Err("expected a two-element array".into());
-            }
-            Ok([$read(&values[0])?, $read(&values[1])?])
-        }
-    };
-}
-fn read_bool(v: &Value) -> Result<bool, String> {
-    v.as_bool().ok_or_else(|| "expected boolean".into())
-}
 fn read_u8(v: &Value) -> Result<u8, String> {
     v.as_u64()
         .and_then(|n| u8::try_from(n).ok())
@@ -541,11 +593,13 @@ fn read_i16(v: &Value) -> Result<i16, String> {
         .and_then(|n| i16::try_from(n).ok())
         .ok_or_else(|| "expected i16".into())
 }
-pair!(bool_pair, bool, read_bool);
-pair!(u8_pair, u8, read_u8);
-pair!(u16_pair, u16, read_u16);
-pair!(u32_pair, u32, read_u32);
-pair!(i16_pair, i16, read_i16);
+fn i16_pair(value: &Value) -> Result<[i16; 2], String> {
+    let values = array(value)?;
+    if values.len() != 2 {
+        return Err("expected a two-element array".into());
+    }
+    Ok([read_i16(&values[0])?, read_i16(&values[1])?])
+}
 
 fn parse_mana_pool(value: &Value) -> Result<super::ManaPool, String> {
     Ok(super::ManaPool {
@@ -575,24 +629,23 @@ fn mana_from_pool(pool: super::ManaPool) -> Vec<super::Mana> {
     .collect()
 }
 
+fn ids(values: &[u32]) -> Vec<GameObjectId> {
+    values.iter().copied().map(GameObjectId).collect()
+}
 fn parse_ids(value: &Value) -> Result<Vec<GameObjectId>, String> {
     array(value)?
         .iter()
-        .map(|v| read_u32(v).map(GameObjectId))
+        .map(|value| read_u32(value).map(GameObjectId))
         .collect()
 }
 fn parse_drawn_this_turn(
-    checkpoint: &Value,
+    checkpoint: &GameSnapshot,
     hidden: &Value,
     viewer: PlayerId,
     hands: &[Vec<CardInstance>; 2],
 ) -> Result<[Vec<GameObjectId>; 2], String> {
-    let visible = array(field(checkpoint, "drawnThisTurn")?)?;
-    if visible.len() != 2 {
-        return Err("drawnThisTurn must contain p1 and p2 arrays".into());
-    }
     let mut drawn = [Vec::new(), Vec::new()];
-    drawn[viewer.index()] = parse_ids(&visible[viewer.index()])?;
+    drawn[viewer.index()] = ids(&checkpoint.drawn_this_turn[viewer.index()]);
     let opponent = viewer.opponent();
     if let Some(indices) = hidden
         .get("drawnThisTurn")
@@ -619,13 +672,13 @@ fn hidden_hand_indices(value: &Value, hand: &[CardInstance]) -> Result<Vec<GameO
 }
 
 fn parse_miracle_window(
-    checkpoint: &Value,
+    checkpoint: &GameSnapshot,
     hidden: &Value,
     viewer: PlayerId,
     hands: &[Vec<CardInstance>; 2],
 ) -> Result<Option<GameObjectId>, String> {
-    if let Some(object) = optional_id(checkpoint.get("miracleWindow")) {
-        return Ok(Some(object));
+    if let Some(object) = checkpoint.miracle_window {
+        return Ok(Some(GameObjectId(object)));
     }
     let Some(window) = hidden.get("miracleWindow").filter(|value| !value.is_null()) else {
         return Ok(None);
@@ -639,21 +692,6 @@ fn parse_miracle_window(
         .get(index)
         .map(|card| Some(card.id))
         .ok_or_else(|| format!("hidden miracle hand index {index} is out of range"))
-}
-fn parse_id_pairs(value: &Value) -> Result<Vec<(GameObjectId, GameObjectId)>, String> {
-    array(value)?
-        .iter()
-        .map(|pair| {
-            let pair = array(pair)?;
-            if pair.len() != 2 {
-                return Err("linked exile pair must have two ids".into());
-            }
-            Ok((
-                GameObjectId(read_u32(&pair[0])?),
-                GameObjectId(read_u32(&pair[1])?),
-            ))
-        })
-        .collect()
 }
 fn optional_id(value: Option<&Value>) -> Option<GameObjectId> {
     value
@@ -680,10 +718,6 @@ fn parse_last_seen_hand(value: Option<&Value>) -> Result<super::LastSeenHand, St
         .collect::<Result<Vec<_>, String>>()?;
     Ok(Some((player, cards)))
 }
-fn parse_seat_indices(value: &Value) -> Result<Vec<PlayerId>, String> {
-    array(value)?.iter().map(seat_index).collect()
-}
-
 fn parse_step(value: &str) -> Result<Step, String> {
     match value {
         "Upkeep" => Ok(Step::Upkeep),
@@ -700,58 +734,53 @@ fn parse_step(value: &str) -> Result<Step, String> {
         _ => Err(format!("unknown step {value}")),
     }
 }
-fn parse_pregame(value: Option<&Value>) -> Result<Option<Pregame>, String> {
-    let Some(value) = value.filter(|v| !v.is_null()) else {
-        return Ok(None);
-    };
-    let player = seat_index(field(value, "seat")?)?;
-    match str_field(value, "kind")? {
-        "mulligan" => Ok(Some(Pregame::Mulligan(player))),
-        "bottom" => Ok(Some(Pregame::Bottom(player))),
-        other => Err(format!("unknown pregame kind {other}")),
-    }
+fn parse_pregame(value: Option<PregameSnapshot>) -> Result<Option<Pregame>, String> {
+    value
+        .map(|value| match value {
+            PregameSnapshot::Mulligan { seat } => player_from_index(seat).map(Pregame::Mulligan),
+            PregameSnapshot::Bottom { seat } => player_from_index(seat).map(Pregame::Bottom),
+        })
+        .transpose()
 }
-fn parse_combat_stage(value: &Value) -> Result<CombatDamageStage, String> {
-    let combatants = || field(value, "combatants").and_then(parse_ids);
-    match str_field(value, "kind")? {
-        "notStarted" => Ok(CombatDamageStage::NotStarted),
-        "single" => Ok(CombatDamageStage::Single),
-        "firstStrike" => Ok(CombatDamageStage::FirstStrike {
-            strike_wave_combatants: combatants()?,
-        }),
-        "regularAfterFirstStrike" => Ok(CombatDamageStage::RegularAfterFirstStrike {
-            strike_wave_combatants: combatants()?,
-        }),
-        other => Err(format!("unknown combat stage {other}")),
+fn parse_combat_stage(value: &CombatDamageStageSnapshot) -> CombatDamageStage {
+    match value {
+        CombatDamageStageSnapshot::NotStarted => CombatDamageStage::NotStarted,
+        CombatDamageStageSnapshot::Single => CombatDamageStage::Single,
+        CombatDamageStageSnapshot::FirstStrike { combatants } => CombatDamageStage::FirstStrike {
+            strike_wave_combatants: ids(combatants),
+        },
+        CombatDamageStageSnapshot::RegularAfterFirstStrike { combatants } => {
+            CombatDamageStage::RegularAfterFirstStrike {
+                strike_wave_combatants: ids(combatants),
+            }
+        }
     }
 }
 
 fn parse_battlefield(
     observation: &Value,
-    checkpoint: &Value,
+    snapshots: &[PermanentSnapshot],
     catalog: &CardCatalog,
 ) -> Result<Vec<Permanent>, String> {
     let visible = array(field(observation, "battlefield")?)?;
-    let raw = array(field(checkpoint, "battlefield")?)?;
-    if visible.len() != raw.len() {
+    if visible.len() != snapshots.len() {
         return Err("checkpoint battlefield does not match observation".into());
     }
-    visible.iter().zip(raw).map(|(shown, state)| {
-        if bool_field(state, "hasDynamicCharacteristics")? { return Err("checkpoint permanent has dynamic characteristics not yet represented by semantic locators".into()); }
-        if !array(field(state, "combatDamageAssignment")?)?.is_empty() { return Err("checkpoint permanent has a combat damage assignment not yet represented structurally".into()); }
+    visible.iter().zip(snapshots).map(|(shown, state)| {
+        if state.has_dynamic_characteristics { return Err("checkpoint permanent has dynamic characteristics not yet represented by semantic locators".into()); }
+        if !state.combat_damage_assignment.is_empty() { return Err("checkpoint permanent has a combat damage assignment not yet represented structurally".into()); }
         let id = GameObjectId(u32_field(shown, "objectId")?);
-        if id.0 != u32_field(state, "objectId")? { return Err("checkpoint permanent id does not match observation".into()); }
+        if id.0 != state.object_id { return Err("checkpoint permanent id does not match observation".into()); }
         let definition = CardDefinitionId(u16::try_from(usize_field(shown, "definition")?).map_err(|_| "definition too large")?);
-        let owner = seat_index(field(state, "owner")?)?;
+        let owner = player_from_index(state.owner)?;
         let controller = seat_value(field(shown, "controller")?)?;
-        let counters_values = array(field(state, "counters")?)?;
-        if counters_values.len() != CounterKind::COUNT { return Err("counter vector has the wrong length".into()); }
-        let mut counters = [0; CounterKind::COUNT]; for (slot, value) in counters.iter_mut().zip(counters_values) { *slot = read_u16(value)?; }
-        let mut permanent = Permanent::entering(card(id, definition, owner, catalog)?, CardPartId(u8::try_from(usize_field(shown, "presentedPartId")?).map_err(|_| "part id too large")?), controller, u32_field(state, "enteredControllerTurn")?);
-        permanent.timestamp = ContinuousEffectTimestamp(field(state, "timestamp")?.as_u64().ok_or("timestamp must be u64")?);
+        if state.counters.len() != CounterKind::COUNT { return Err("counter vector has the wrong length".into()); }
+        let mut counters = [0; CounterKind::COUNT]; counters.copy_from_slice(&state.counters);
+        let mut permanent = Permanent::entering(card(id, definition, owner, catalog)?, CardPartId(u8::try_from(usize_field(shown, "presentedPartId")?).map_err(|_| "part id too large")?), controller, state.entered_controller_turn);
+        permanent.timestamp = ContinuousEffectTimestamp(state.timestamp);
         permanent.tapped = bool_field(shown, "tapped")?;
         permanent.damage = u16::try_from(usize_field(shown, "damage")?).map_err(|_| "damage too large")?;
-        permanent.power_bonus = read_i16(field(state, "powerBonus")?)?; permanent.toughness_bonus = read_i16(field(state, "toughnessBonus")?)?;
+        permanent.power_bonus = state.power_bonus; permanent.toughness_bonus = state.toughness_bonus;
         permanent.attacking = bool_field(shown, "attacking")?; permanent.blocked = bool_field(shown, "blockedThisCombat")?; permanent.blocking = optional_id(shown.get("blocking"));
         permanent.attack_defender = shown
             .get("attackDefender")
@@ -759,8 +788,8 @@ fn parse_battlefield(
             .map(parse_attack_defender)
             .transpose()?;
         permanent.activated_loyalty_this_turn = bool_field(shown, "loyaltyAbilityUsedThisTurn")?;
-        permanent.unblockable_this_turn = bool_field(state, "unblockableThisTurn")?; permanent.combat_damage_prevented = bool_field(state, "combatDamagePrevented")?; permanent.combat_damage_dealt_by_prevented = bool_field(state, "combatDamageDealtByPrevented")?;
-        permanent.control_reverts_to = state.get("controlRevertsTo").filter(|v| !v.is_null()).map(seat_index).transpose()?; permanent.chosen_player = state.get("chosenPlayer").filter(|v| !v.is_null()).map(seat_index).transpose()?;
+        permanent.unblockable_this_turn = state.unblockable_this_turn; permanent.combat_damage_prevented = state.combat_damage_prevented; permanent.combat_damage_dealt_by_prevented = state.combat_damage_dealt_by_prevented;
+        permanent.control_reverts_to = state.control_reverts_to.map(player_from_index).transpose()?; permanent.chosen_player = state.chosen_player.map(player_from_index).transpose()?;
         permanent.chosen_creature_type = shown
             .get("chosenCreatureType")
             .and_then(Value::as_str)
@@ -769,31 +798,33 @@ fn parse_battlefield(
             .get("chosenCardName")
             .and_then(Value::as_str)
             .map(str::to_owned);
-        permanent.animation = state
-            .get("animation")
-            .filter(|value| !value.is_null())
+        permanent.animation = state.animation
+            .as_ref()
             .map(|value| {
                 catalog_animation(catalog, value)
                     .ok_or_else(|| "checkpoint animation is absent from this catalog".to_owned())
             })
             .transpose()?;
-        permanent.temporary_keywords = array(field(state, "temporaryKeywords")?)?
-            .iter()
+        permanent.temporary_keywords = state.temporary_keywords.iter().copied()
             .map(parse_keyword)
-            .collect::<Result<Vec<_>, _>>()?;
-        permanent.keywords_until_upkeep_of = array(field(state, "keywordsUntilUpkeepOf")?)?
-            .iter()
+            .collect();
+        permanent.keywords_until_upkeep_of = state.keywords_until_upkeep_of.iter()
             .map(|entry| {
-                Ok((
-                    seat_index(field(entry, "seat")?)?,
-                    parse_keyword(field(entry, "keyword")?)?,
-                ))
+                Ok((player_from_index(entry.seat)?, parse_keyword(entry.keyword)))
             })
             .collect::<Result<Vec<_>, String>>()?;
-        permanent.destroy_at_end = bool_field(state, "destroyAtEnd")?; permanent.counters = counters; permanent.attached_to = optional_id(state.get("attachedTo")); permanent.exile_instead_of_dying = bool_field(state, "exileInsteadOfDying")?;
-        permanent.regeneration_shields = u8_field(state, "regenerationShields")?; permanent.attacked_this_turn = bool_field(state, "attackedThisTurn")?; permanent.attacks_this_turn = u8_field(state, "attacksThisTurn")?; permanent.damage_sources = parse_ids(field(state, "damageSources")?)?; permanent.dealt_damage_to_opponent_this_turn = bool_field(state, "dealtDamageToOpponentThisTurn")?; permanent.deathtouch_damage = bool_field(state, "deathtouchDamage")?; permanent.created_by = optional_id(state.get("createdBy"));
+        permanent.destroy_at_end = state.destroy_at_end; permanent.counters = counters; permanent.attached_to = state.attached_to.map(GameObjectId); permanent.exile_instead_of_dying = state.exile_instead_of_dying;
+        permanent.regeneration_shields = state.regeneration_shields; permanent.attacked_this_turn = state.attacked_this_turn; permanent.attacks_this_turn = state.attacks_this_turn; permanent.damage_sources = ids(&state.damage_sources); permanent.dealt_damage_to_opponent_this_turn = state.dealt_damage_to_opponent_this_turn; permanent.deathtouch_damage = state.deathtouch_damage; permanent.created_by = state.created_by.map(GameObjectId);
         Ok(permanent)
     }).collect()
+}
+
+fn player_from_index(index: usize) -> Result<PlayerId, String> {
+    match index {
+        0 => Ok(PlayerId::One),
+        1 => Ok(PlayerId::Two),
+        _ => Err("seat index must be 0 or 1".into()),
+    }
 }
 
 fn parse_attack_defender(value: &Value) -> Result<AttackDefender, String> {

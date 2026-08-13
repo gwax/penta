@@ -26,6 +26,7 @@ repository = "https://github.com/lacker/penta"
 path = "src/lib.rs"
 
 [dependencies]
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 # Keep profiling representative of release behavior while retaining enough

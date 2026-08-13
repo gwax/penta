@@ -1,23 +1,31 @@
+use super::model::{
+    SeatSnapshot, StackAbilitySnapshot, StackSnapshot, TargetSelectionSnapshot, TargetSnapshot,
+    TriggerContextSnapshot,
+};
 use super::{
     AbilityId, AbilityOrigin, BasicLandType, CardDefinitionId, CardPartId, CharacteristicSource,
     DeclarativeAbilityDef, Game, GameObjectId, GameStack, GrantId, PlayerId, StackAbilityPayload,
-    StackObject, StackObjectKind, Target, TargetSelection, TriggerContext, Value,
-    ability_locator_json, array, bool_field, card, catalog_ability, field, json, optional_id,
-    parse_cast_signature, parse_ids, parse_target_selection, seat_index, seat_label, seat_value,
+    StackObject, StackObjectKind, Target, TargetSelection, TriggerContext, Value, ability_locator,
+    array, card, catalog_ability, field, optional_id, parse_cast_signature, parse_ids, seat_value,
     str_field, u8_field, u32_field, usize_field,
 };
 
-pub(super) fn stack_ability_checkpoint_json(game: &Game, object: &StackObject) -> Value {
-    let Some(payload) = object.ability.as_ref() else {
-        return Value::Null;
-    };
-    let locator = ability_locator_json(&game.catalog, |candidate| {
+pub(super) fn stack_ability_snapshot(
+    game: &Game,
+    object: &StackObject,
+) -> Option<StackAbilitySnapshot> {
+    let payload = object.ability.as_ref()?;
+    let locator = ability_locator(&game.catalog, |candidate| {
         stack_payload_matches(payload, candidate)
     });
-    json!({
-        "abilityLocator": locator,
-        "targetSelections": payload.targets.iter().map(target_selection_checkpoint_json).collect::<Vec<_>>(),
-        "context": trigger_context_json(payload.context),
+    Some(StackAbilitySnapshot {
+        ability_locator: locator,
+        target_selections: payload
+            .targets
+            .iter()
+            .map(target_selection_snapshot)
+            .collect(),
+        context: trigger_context_snapshot(payload.context),
     })
 }
 
@@ -59,65 +67,75 @@ fn stack_payload_matches(
         && payload.resolver == Game::ability_resolver(payload.origin, candidate)
 }
 
-fn target_selection_checkpoint_json(selection: &TargetSelection) -> Value {
-    json!({
-        "slotId": selection.slot().0,
-        "targets": selection.targets().iter().copied().map(target_checkpoint_json).collect::<Vec<_>>(),
-        "amounts": selection.amounts(),
-    })
-}
-
-fn target_checkpoint_json(target: Target) -> Value {
-    match target {
-        Target::Player(player) => json!({"type": "player", "seat": seat_label(player)}),
-        Target::Card(id) => json!({"type": "card", "objectId": id.0}),
-        Target::Permanent(id) => json!({"type": "permanent", "objectId": id.0}),
-        Target::Spell(id) => json!({"type": "spell", "objectId": id.0}),
+fn target_selection_snapshot(selection: &TargetSelection) -> TargetSelectionSnapshot {
+    TargetSelectionSnapshot {
+        slot_id: selection.slot().0,
+        targets: selection
+            .targets()
+            .iter()
+            .copied()
+            .map(target_snapshot)
+            .collect(),
+        amounts: selection.amounts().to_vec(),
     }
 }
 
-fn trigger_context_json(context: TriggerContext) -> Value {
-    json!({
-        "object": context.object.map(|id| id.0),
-        "objectController": context.object_controller.map(PlayerId::index),
-        "eventPlayer": context.event_player.map(PlayerId::index),
-        "amount": context.amount,
-    })
+pub(super) fn target_snapshot(target: Target) -> TargetSnapshot {
+    match target {
+        Target::Player(player) => TargetSnapshot::Player {
+            seat: if player == PlayerId::One {
+                SeatSnapshot::One
+            } else {
+                SeatSnapshot::Two
+            },
+        },
+        Target::Card(id) => TargetSnapshot::Card { object_id: id.0 },
+        Target::Permanent(id) => TargetSnapshot::Permanent { object_id: id.0 },
+        Target::Spell(id) => TargetSnapshot::Spell { object_id: id.0 },
+    }
+}
+
+fn trigger_context_snapshot(context: TriggerContext) -> TriggerContextSnapshot {
+    TriggerContextSnapshot {
+        object: context.object.map(|id| id.0),
+        object_controller: context.object_controller.map(PlayerId::index),
+        event_player: context.event_player.map(PlayerId::index),
+        amount: context.amount,
+    }
 }
 
 #[allow(clippy::too_many_lines)]
 pub(super) fn parse_stack(
     observation: &Value,
-    checkpoint: &Value,
+    snapshots: &[StackSnapshot],
     game: &Game,
 ) -> Result<GameStack, String> {
     let visible = array(field(observation, "stack")?)?;
-    let raw = array(field(checkpoint, "stack")?)?;
-    if visible.len() != raw.len() {
+    if visible.len() != snapshots.len() {
         return Err("checkpoint stack does not match observation".into());
     }
     let mut stack = GameStack::default();
-    for (shown, state) in visible.iter().zip(raw) {
-        if bool_field(state, "hasRuntimeOverrides")? {
+    for (shown, state) in visible.iter().zip(snapshots) {
+        if state.has_runtime_overrides {
             return Err(
                 "stack object has runtime overrides not yet represented by semantic locators"
                     .into(),
             );
         }
-        if bool_field(state, "requiresRetiredObject")? {
+        if state.requires_retired_object {
             return Err(
                 "stack object requires retired-object last-known information not yet represented by the checkpoint"
                     .into(),
             );
         }
         let id = GameObjectId(u32_field(shown, "objectId")?);
-        if id.0 != u32_field(state, "objectId")? {
+        if id.0 != state.object_id {
             return Err("checkpoint stack id does not match observation".into());
         }
         let definition = CardDefinitionId(
             u16::try_from(usize_field(shown, "definition")?).map_err(|_| "definition too large")?,
         );
-        let owner = seat_index(field(state, "owner")?)?;
+        let owner = seat_index_value(state.owner)?;
         let controller = seat_value(field(shown, "controller")?)?;
         let kind = match str_field(shown, "kind")? {
             "Spell" => StackObjectKind::Spell,
@@ -137,17 +155,19 @@ pub(super) fn parse_stack(
                 )
             }
             StackObjectKind::ActivatedAbility | StackObjectKind::TriggeredAbility => {
-                let payload_state = field(state, "abilityPayload")?;
-                if payload_state.is_null() {
-                    return Err("stack ability is missing its frozen payload".into());
-                }
+                let payload_state = state
+                    .ability_payload
+                    .as_ref()
+                    .ok_or("stack ability is missing its frozen payload")?;
                 let origin = parse_ability_origin(field(shown, "ability")?)?;
                 let source = optional_id(shown.get("sourceObjectId"));
-                let definition_snapshot =
-                    catalog_ability(&game.catalog, field(payload_state, "abilityLocator")?)
-                        .ok_or_else(|| {
-                            "stack ability locator is absent from this catalog".to_owned()
-                        })?;
+                let definition_snapshot = payload_state
+                    .ability_locator
+                    .as_ref()
+                    .and_then(|locator| catalog_ability(&game.catalog, locator))
+                    .ok_or_else(|| {
+                        "stack ability locator is absent from this catalog".to_owned()
+                    })?;
                 let (target_defs, condition) = match (kind, definition_snapshot.definition) {
                     (
                         StackObjectKind::ActivatedAbility,
@@ -163,11 +183,12 @@ pub(super) fn parse_stack(
                         );
                     }
                 };
-                let targets = array(field(payload_state, "targetSelections")?)?
+                let targets = payload_state
+                    .target_selections
                     .iter()
                     .map(parse_target_selection)
                     .collect::<Result<Vec<_>, _>>()?;
-                let context = parse_trigger_context(field(payload_state, "context")?)?;
+                let context = parse_trigger_context(payload_state.context)?;
                 let ability = StackAbilityPayload {
                     origin,
                     definition: (kind == StackObjectKind::ActivatedAbility)
@@ -207,30 +228,52 @@ pub(super) fn parse_stack(
     Ok(stack)
 }
 
-fn parse_trigger_context(value: &Value) -> Result<TriggerContext, String> {
-    let optional_seat = |name| {
-        value
-            .get(name)
-            .filter(|value| !value.is_null())
-            .map(seat_index)
-            .transpose()
-    };
+fn parse_trigger_context(value: TriggerContextSnapshot) -> Result<TriggerContext, String> {
     Ok(TriggerContext {
-        object: optional_id(value.get("object")),
-        object_controller: optional_seat("objectController")?,
-        event_player: optional_seat("eventPlayer")?,
-        amount: value
-            .get("amount")
-            .filter(|value| !value.is_null())
-            .map(|value| {
-                value
-                    .as_i64()
-                    .and_then(|amount| i32::try_from(amount).ok())
-                    .ok_or_else(|| "trigger amount must be an i32".to_owned())
-            })
-            .transpose()?,
+        object: value.object.map(GameObjectId),
+        object_controller: value.object_controller.map(seat_index_value).transpose()?,
+        event_player: value.event_player.map(seat_index_value).transpose()?,
+        amount: value.amount,
         chosen_objects: [None; crate::ChoiceIndex::COUNT],
     })
+}
+
+fn parse_target_selection(value: &TargetSelectionSnapshot) -> Result<TargetSelection, String> {
+    let slot = crate::TargetSlotId(value.slot_id);
+    let targets = value.targets.iter().copied().map(parse_target).collect();
+    if value.amounts.is_empty() {
+        Ok(TargetSelection::new(slot, targets))
+    } else if value.amounts.len() == targets.len() {
+        Ok(TargetSelection::divided(
+            slot,
+            targets,
+            value.amounts.clone(),
+        ))
+    } else {
+        Err("divided target amounts do not match targets".into())
+    }
+}
+
+pub(super) fn parse_target(value: TargetSnapshot) -> Target {
+    match value {
+        TargetSnapshot::Player {
+            seat: SeatSnapshot::One,
+        } => Target::Player(PlayerId::One),
+        TargetSnapshot::Player {
+            seat: SeatSnapshot::Two,
+        } => Target::Player(PlayerId::Two),
+        TargetSnapshot::Card { object_id } => Target::Card(GameObjectId(object_id)),
+        TargetSnapshot::Permanent { object_id } => Target::Permanent(GameObjectId(object_id)),
+        TargetSnapshot::Spell { object_id } => Target::Spell(GameObjectId(object_id)),
+    }
+}
+
+fn player_from_index(index: usize) -> Option<PlayerId> {
+    [PlayerId::One, PlayerId::Two].get(index).copied()
+}
+
+fn seat_index_value(index: usize) -> Result<PlayerId, String> {
+    player_from_index(index).ok_or_else(|| "seat index must be 0 or 1".into())
 }
 
 pub(super) fn parse_ability_origin(value: &Value) -> Result<AbilityOrigin, String> {
