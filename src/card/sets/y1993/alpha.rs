@@ -796,7 +796,35 @@ pub(in crate::card::sets) static LIFETAP: CardRecord = CardRecord::new(
 );
 
 // LEA 62 — Lord of Atlantis
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Other Merfolk get +1/+1 and have islandwalk”.
+pub(in crate::card::sets) static LORD_OF_ATLANTIS: CardRecord = CardRecord::new(
+    cards::LORD_OF_ATLANTIS,
+    "Lord of Atlantis",
+    CardArt::new("210c4a90-fc7a-4c76-aeaa-20a005e45386", "Melissa A. Benson"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{U}{U}"), &["Merfolk"], 2, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "Other Merfolk get +1/+1 and have islandwalk.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Subtype("Merfolk"),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(1),
+                        toughness: ValueDef::Constant(1),
+                    },
+                    AppliedEffectDef::GrantAbility(&abilities::landwalk(BasicLandType::Island)),
+                ]),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // LEA 63 — Magical Hack
 // Audit: partial — Text changing rewrites land type lines and intrinsic mana only, not landwalk, predicates, other rules text, or spell text.
@@ -3991,6 +4019,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &INVISIBILITY,
     &JUMP,
     &LIFETAP,
+    &LORD_OF_ATLANTIS,
     &MAGICAL_HACK,
     &MAHAMOTI_DJINN,
     &MANA_SHORT,

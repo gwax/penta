@@ -8,3 +8,4 @@ pub const DEVOURING_DEEP: CardDefinitionId = CardDefinitionId(1382);
 pub const SEGOVIAN_LEVIATHAN: CardDefinitionId = CardDefinitionId(1383);
 pub const LOST_SOUL: CardDefinitionId = CardDefinitionId(1384);
 pub const MARSH_GOBLINS: CardDefinitionId = CardDefinitionId(1385);
+pub const LORD_OF_ATLANTIS: CardDefinitionId = CardDefinitionId(1386);

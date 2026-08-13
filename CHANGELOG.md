@@ -41,7 +41,8 @@ distinguishes snapshots of the covered source and build inputs.
   the blocking rule is stated once for all five types, and a creature may carry
   several. Six Old School identities blocked only on this are now executable:
   Bog Wraith, Righteous Avengers, Devouring Deep, Segovian Leviathan, Lost Soul,
-  and Marsh Goblins. Checkpoint keyword tags keep their printed names and gain
+  Marsh Goblins, and Lord of Atlantis, whose lord clause grants the walk it
+  could not previously name. Checkpoint keyword tags keep their printed names and gain
   `plainswalk`, `islandwalk`, and `swampwalk` additively.
 
 - **Regeneration is a declarative effect.** Arming a regeneration shield is now

@@ -109,6 +109,39 @@ fn several_landwalks_on_one_creature_each_stand_on_their_own() {
     );
 }
 
+/// A lord grants the walk to everything it names, and the grant behaves like
+/// a printed one: the same blocking rule reads it.
+#[test]
+fn a_granted_landwalk_makes_the_recipient_unblockable() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    game.battlefield
+        .push(creature(10_000, cards::LORD_OF_ATLANTIS, PlayerId::One));
+    let mut merfolk = creature(10_001, cards::LORD_OF_ATLANTIS, PlayerId::One);
+    merfolk.attacking = true;
+    merfolk.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+    let merfolk_id = merfolk.card.id;
+    game.battlefield.push(merfolk);
+    game.battlefield
+        .push(creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two));
+
+    game.battlefield
+        .push(creature(10_003, cards::MOUNTAIN, PlayerId::Two));
+    assert!(
+        can_be_blocked(&game, merfolk_id),
+        "without an Island the granted islandwalk does nothing"
+    );
+
+    game.battlefield
+        .retain(|permanent| permanent.card.definition != cards::MOUNTAIN);
+    game.battlefield
+        .push(creature(10_004, cards::ISLAND, PlayerId::Two));
+    assert!(
+        !can_be_blocked(&game, merfolk_id),
+        "the other Merfolk has islandwalk from the lord"
+    );
+}
+
 #[test]
 fn every_newly_unblocked_walker_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -119,6 +152,7 @@ fn every_newly_unblocked_walker_reports_complete_coverage() {
         cards::SEGOVIAN_LEVIATHAN,
         cards::LOST_SOUL,
         cards::MARSH_GOBLINS,
+        cards::LORD_OF_ATLANTIS,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
