@@ -3,10 +3,30 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, TriggerEventDef, ValueDef, abilities, cards,
+    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ValueDef, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+// TMP 51 — Warmth
+pub(in crate::card::sets) static WARMTH: CardRecord = CardRecord::new(
+    cards::WARMTH,
+    "Warmth",
+    CardArt::new("d7dbeea8-06b0-4482-bdae-aa82b9db8856", "Drew Tucker"),
+    CardSet::Tempest,
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(AbilityDef::triggered(
+        "Whenever an opponent casts a red spell, you gain 2 life.",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Color(ManaColor::Red),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+        ])),
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(2),
+        },
+    )),
+);
 
 // TMP 183 — Jackal Pup
 pub(in crate::card::sets) static JACKAL_PUP: CardRecord = CardRecord::new(
@@ -50,6 +70,27 @@ pub(in crate::card::sets) static MOGG_FANATIC: CardRecord = CardRecord::new(
     ),
 );
 
+// TMP 250 — Root Maze
+pub(in crate::card::sets) static ROOT_MAZE: CardRecord = CardRecord::new(
+    cards::ROOT_MAZE,
+    "Root Maze",
+    CardArt::new("99a12b74-f191-4362-81ab-77590ae5e68f", "Rebecca Guay"),
+    CardSet::Tempest,
+    CardRules::new_enchantment(mana_cost!("{G}")).with_ability(AbilityDef::replacement_for(
+        "Artifacts and lands enter tapped.",
+        ReplacementEventDef::ObjectEntersBattlefield {
+            object: ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                ObjectPredicateDef::HasType(CardType::Land),
+            ]),
+            controller: PlayerRelation::Any,
+        },
+        EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::Tapped,
+        )),
+    )),
+);
+
 // TMP 294 — Lotus Petal
 pub(in crate::card::sets) static LOTUS_PETAL: CardRecord = CardRecord::new(
     cards::LOTUS_PETAL,
@@ -85,7 +126,13 @@ pub(in crate::card::sets) static WASTELAND: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&JACKAL_PUP, &MOGG_FANATIC, &LOTUS_PETAL, &WASTELAND];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &WARMTH,
+    &JACKAL_PUP,
+    &MOGG_FANATIC,
+    &ROOT_MAZE,
+    &LOTUS_PETAL,
+    &WASTELAND,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

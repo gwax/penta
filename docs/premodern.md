@@ -12,9 +12,9 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 41 cards present in Penta's catalog
-- 104 cards still need catalog records
-- 21 cards have completed their Premodern interaction audit; the other 124
+- 47 cards present in Penta's catalog
+- 98 cards still need catalog records
+- 27 cards have completed their Premodern interaction audit; the other 118
   still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -30,7 +30,7 @@ Marvin's Angry Hermit.
   implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
-- Add accurate characteristics and Oracle clauses for the 104 uncataloged
+- Add accurate characteristics and Oracle clauses for the 98 uncataloged
   cards. Unsupported clauses must be metadata-only rather than executable
   no-ops.
 - Implement reusable mechanics before card-local behavior: cycling and
@@ -46,8 +46,8 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (41; the twenty-one marked below were audited in the first
-three implementation tranches, while the older definitions still require an
+Already cataloged (47; the twenty-seven marked below were audited in the first
+four implementation tranches, while the older definitions still require an
 audit):
 
 - `Annul` — complete
@@ -55,6 +55,7 @@ audit):
 - `Black Vise`
 - `Blue Elemental Blast`
 - `City of Brass`
+- `Claws of Gix` — complete
 - `Coastal Tower` — complete
 - `Counterspell`
 - `Disenchant`
@@ -76,23 +77,28 @@ audit):
 - `Monk Realist` — complete
 - `Mountain`
 - `Naturalize` — complete
+- `Phyrexian Arena` — complete
 - `Plains`
 - `Pyroblast` — complete
 - `Ray of Revelation`
 - `Red Elemental Blast`
 - `Rishadan Port` — complete
+- `Root Maze` — complete
 - `Seal of Cleansing` — complete
 - `Seal of Fire` — complete
 - `Swamp`
 - `Swords to Plowshares`
 - `Syncopate`
+- `Tranquil Domain` — complete
+- `Upheaval` — complete
 - `Vindicate` — complete
 - `Volcanic Hammer` — complete
+- `Warmth` — complete
 - `Wasteland` — complete
 - `Wooded Foothills` — complete
 - `Wrath of God`
 
-Not yet cataloged (104):
+Not yet cataloged (98):
 
 - [ ] `Abeyance`
 - [ ] `Adarkar Wastes`
@@ -109,7 +115,6 @@ Not yet cataloged (104):
 - [ ] `Chain of Vapor`
 - [ ] `Chill`
 - [ ] `Circle of Protection: Red`
-- [ ] `Claws of Gix`
 - [ ] `Cursed Scroll`
 - [ ] `Cursed Totem`
 - [ ] `Daze`
@@ -159,7 +164,6 @@ Not yet cataloged (104):
 - [ ] `Opt`
 - [ ] `Overload`
 - [ ] `Parallax Wave`
-- [ ] `Phyrexian Arena`
 - [ ] `Phyrexian Dreadnought`
 - [ ] `Phyrexian Furnace`
 - [ ] `Portent`
@@ -172,7 +176,6 @@ Not yet cataloged (104):
 - [ ] `Reanimate`
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`
-- [ ] `Root Maze`
 - [ ] `Secluded Steppe`
 - [ ] `Shallow Grave`
 - [ ] `Siege-Gang Commander`
@@ -189,13 +192,10 @@ Not yet cataloged (104):
 - [ ] `Thawing Glaciers`
 - [ ] `Thwart`
 - [ ] `Tormod's Crypt`
-- [ ] `Tranquil Domain`
 - [ ] `Treva's Ruins`
 - [ ] `Tsabo's Web`
 - [ ] `Underground River`
-- [ ] `Upheaval`
 - [ ] `Vision Charm`
-- [ ] `Warmth`
 - [ ] `Worldly Tutor`
 - [ ] `Yavimaya Coast`
 

@@ -2,8 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    ObjectPredicateDef, TriggerEventDef, ZoneKind, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
+    cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -44,6 +45,31 @@ pub(in crate::card::sets) static ANNUL: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MONK_REALIST, &ANNUL];
+// USG 290 — Claws of Gix
+pub(in crate::card::sets) static CLAWS_OF_GIX: CardRecord = CardRecord::new(
+    cards::CLAWS_OF_GIX,
+    "Claws of Gix",
+    CardArt::new(
+        "78372366-8c4c-46ac-bd7c-a735c2b24b5d",
+        "Henry G. Higginbotham",
+    ),
+    CardSet::UrzasSaga,
+    CardRules::new_artifact(mana_cost!("{0}")).with_ability(AbilityDef::activated(
+        "{1}, Sacrifice a permanent: You gain 1 life.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{1}")),
+            AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::Any,
+                controller: PlayerRelation::You,
+            },
+        ],
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MONK_REALIST, &ANNUL, &CLAWS_OF_GIX];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
