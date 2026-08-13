@@ -15,9 +15,11 @@ use crate::{
     PlayOptionId, Target, TargetSlotId,
 };
 
+mod decision;
 mod semantics;
 mod stack;
 
+use decision::{decision_checkpoint_json, parse_pending_decision};
 use semantics::{
     ability_locator_json, animation_json, catalog_ability, catalog_animation, keyword_json,
     parse_keyword,
@@ -30,6 +32,11 @@ impl Game {
     /// observation; this object carries the state which cannot be inferred
     /// reliably from them.
     pub(super) fn checkpoint_json(&self, viewer: PlayerId) -> Value {
+        let decision_state = (self.pending_decisions.len() == 1)
+            .then(|| decision_checkpoint_json(&self.pending_decisions[0]))
+            .flatten();
+        let has_unsupported_decision =
+            !self.pending_decisions.is_empty() && decision_state.is_none();
         let visible_drawn_this_turn = [PlayerId::One, PlayerId::Two].map(|player| {
             if player == viewer {
                 self.drawn_this_turn[player.index()]
@@ -107,11 +114,12 @@ impl Game {
                         || object.is_copy,
                 })
             }).collect::<Vec<_>>(),
+            "decisionState": decision_state,
             "hasDeferredState": !self.emblems.is_empty()
                 || !self.temporary_ability_grants.is_empty()
                 || !self.delayed_triggers.is_empty()
                 || !self.floating_triggers.is_empty()
-                || !self.pending_decisions.is_empty()
+                || has_unsupported_decision
                 || !self.pending_events.is_empty()
                 || !self.pending_triggers.is_empty()
                 || self.players.iter().any(|player| player.mana.iter().any(|mana| {
@@ -126,8 +134,8 @@ impl Game {
         })
     }
 
-    /// Rebuilds a quiescent decision-boundary state from its seat checkpoint
-    /// and separately supplied hidden-zone hypothesis.
+    /// Rebuilds a decision-boundary state from its seat checkpoint and
+    /// separately supplied hidden-zone hypothesis.
     #[allow(clippy::too_many_lines)]
     pub(crate) fn from_observation_checkpoint(
         catalog: CardCatalog,
@@ -264,6 +272,13 @@ impl Game {
         };
         game.battlefield = parse_battlefield(observation, checkpoint, &game.catalog)?;
         game.stack = parse_stack(observation, checkpoint, &game)?;
+        game.pending_decisions = parse_pending_decision(observation, checkpoint)?
+            .into_iter()
+            .collect();
+        game.next_decision_id = game
+            .pending_decisions
+            .first()
+            .map_or(0, |decision| decision.observation.id.saturating_add(1));
         game.last_seen_hands[viewer.index()] =
             parse_last_seen_hand(observation.get("lastSeenHand"))?;
         game.next_continuous_effect_timestamp = game

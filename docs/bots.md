@@ -256,9 +256,16 @@ retain target-slot groupings and divided amounts, and carry the triggering
 event context. A stack object whose source, triggering object, target, or
 chosen cost object already requires retired-object last-known information
 still rejects explicitly. Dynamic copied or temporarily granted
-characteristics, deferred decisions/triggers, emblems, restricted mana,
-retired-object LKI, and stack-object runtime overrides also still require
-semantic checkpoint encodings before they can be imported.
+characteristics, deferred triggers, emblems, restricted mana, retired-object
+LKI, and stack-object runtime overrides also still require semantic checkpoint
+encodings before they can be imported. Data-only decisions whose referenced
+objects keep their public IDs can already resume: miracle reveal, public pile
+split/choice, target text-change, ordinary sacrifice/destruction choice, Time
+Vault, Sylvan Library, and Tetravus choices. A sacrifice choice is included
+when it has no deferred follow-up. Decisions holding a resolving
+stack object, a prospective replacement event, a card-owned callback, or
+host-hidden zone object IDs reject until those payloads have their own exact
+encodings and hidden-ID reconciliation.
 
 `set_hand` and `set_library` remain useful when exploring alternate hidden
 zones in a game already running locally. `hand(seat)` and `library(seat)` read

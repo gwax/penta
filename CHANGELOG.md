@@ -34,7 +34,10 @@ snapshots.
   stack objects now carry catalog-relative semantic ability locators, complete
   target selections, and captured trigger context, so their response windows
   reconstruct too when resolution does not require retired-object
-  last-known information.
+  last-known information. Data-only pending decisions over preserved public
+  objects or the viewer's own hand also reconstruct with their exact options,
+  bounds, visibility, and policy preference; unsupported continuations still
+  fail closed.
 
 - The unfiltered catalog appends the off-format Premodern cards `Impulse`,
   `Sleight of Hand`, and `Opt` as definitions 310 through 312, and recognizes
