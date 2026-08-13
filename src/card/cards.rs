@@ -3,7 +3,9 @@
 use crate::CardDefinitionId;
 
 mod isd_rtr;
+mod regeneration;
 pub use isd_rtr::*;
+pub use regeneration::*;
 
 pub const ANKH_OF_MISHRA: CardDefinitionId = CardDefinitionId(1);
 pub const ATOG: CardDefinitionId = CardDefinitionId(2);

@@ -419,6 +419,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
+        | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
@@ -602,6 +603,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::EmptyManaPool { .. }
                     | EffectDef::LoseLife { .. }
                     | EffectDef::LoseTheGame { .. }
+                    | EffectDef::Regenerate { .. }
                     | EffectDef::Tap { .. }
                     | EffectDef::Untap { .. }
                     | EffectDef::PreventCombatDamageThisTurn { .. }

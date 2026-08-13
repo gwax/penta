@@ -1047,7 +1047,18 @@ pub(in crate::card::sets) static THE_ABYSS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a per-object, per-turn activation quota for “{B}: This creature gets +1/+0 until end of turn. Activate no more than twice each turn”.
 
 // LEG 126 — Walking Dead
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{B}: Regenerate this creature”.
+pub(in crate::card::sets) static WALKING_DEAD: CardRecord = CardRecord::new(
+    cards::WALKING_DEAD,
+    "Walking Dead",
+    CardArt::new("d7533a72-77d1-40cd-b3a1-7597d566c428", "Dan Frazier"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Zombie"], 1, 1).with_abilities(&[
+        abilities::regenerate_self(
+            "{B}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+        ),
+    ]),
+);
 
 // LEG 127 — Wall of Putrid Flesh
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to this creature by enchanted creatures”.
@@ -2929,6 +2940,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HELL_SWARM,
     &NETHER_VOID,
     &THE_ABYSS,
+    &WALKING_DEAD,
     &ACTIVE_VOLCANO,
     &CHAIN_LIGHTNING,
     &CRIMSON_KOBOLDS,

@@ -537,6 +537,14 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         can_regenerate: bool,
     },
+    /// Creates a regeneration shield (CR 701.15). The shield is not the
+    /// regeneration: it waits, and the next destruction this turn is replaced
+    /// by tapping the permanent, removing it from combat, and removing all
+    /// damage from it. Shields that go unused are cleared in cleanup, so a
+    /// creature that was never destroyed keeps nothing.
+    Regenerate {
+        object: EffectRecipientDef,
+    },
     Sacrifice {
         object: EffectRecipientDef,
     },

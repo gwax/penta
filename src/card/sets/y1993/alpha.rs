@@ -1326,7 +1326,18 @@ pub(in crate::card::sets) static DRAIN_LIFE: CardRecord = CardRecord::new(
 );
 
 // LEA 106 — Drudge Skeletons
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{B}: Regenerate this creature”.
+pub(in crate::card::sets) static DRUDGE_SKELETONS: CardRecord = CardRecord::new(
+    cards::DRUDGE_SKELETONS,
+    "Drudge Skeletons",
+    CardArt::new("23614289-0d73-4747-a849-5cb67cc97d6a", "Sandra Everingham"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Skeleton"], 1, 1).with_abilities(&[
+        abilities::regenerate_self(
+            "{B}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+        ),
+    ]),
+);
 
 // LEA 107 — Evil Presence
 pub(in crate::card::sets) static EVIL_PRESENCE: CardRecord = CardRecord::new(
@@ -1691,7 +1702,19 @@ pub(in crate::card::sets) static UNHOLY_STRENGTH: CardRecord = CardRecord::new(
 );
 
 // LEA 132 — Wall of Bone
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{B}: Regenerate this creature”.
+pub(in crate::card::sets) static WALL_OF_BONE: CardRecord = CardRecord::new(
+    cards::WALL_OF_BONE,
+    "Wall of Bone",
+    CardArt::new("ae20d442-a544-4a03-9ebf-5ecb137c67dd", "Anson Maddocks"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Skeleton", "Wall"], 1, 4).with_abilities(&[
+        abilities::defender(),
+        abilities::regenerate_self(
+            "{B}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+        ),
+    ]),
+);
 
 // LEA 133 — Warp Artifact
 // Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller for “At the beginning of the upkeep of enchanted artifact's controller, this Aura deals 1 damage to that player”.
@@ -1721,7 +1744,19 @@ pub(in crate::card::sets) static WEAKNESS: CardRecord = CardRecord::new(
 );
 
 // LEA 135 — Will-o'-the-Wisp
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{B}: Regenerate this creature”.
+pub(in crate::card::sets) static WILL_O_THE_WISP: CardRecord = CardRecord::new(
+    cards::WILL_O_THE_WISP,
+    "Will-o'-the-Wisp",
+    CardArt::new("a1a6f8e9-7bc1-4151-b55f-acf877b1a7a6", "Jesper Myrfors"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{B}"), &["Spirit"], 0, 1).with_abilities(&[
+        abilities::flying(),
+        abilities::regenerate_self(
+            "{B}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+        ),
+    ]),
+);
 
 // LEA 136 — Word of Command
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Look at target opponent's hand and choose a card from it. You control that player until Word of Command finishes resolving. The player plays that card if able. While doing so, the player…”.
@@ -2267,16 +2302,10 @@ pub(in crate::card::sets) static SEDGE_TROLL: CardRecord = CardRecord::new(
         .with_coverage(AbilityCoverageDef::explained_complete(
             "The conditional characteristic bonus is implemented by the legacy evaluator.",
         )),
-        AbilityDef::activated(
+        abilities::regenerate_self(
             "{B}: Regenerate this creature.",
             &[AbilityCostDef::Mana(mana_cost!("{B}"))],
-            EffectDef::Special("Regenerate the source creature"),
-        )
-        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::SedgeTroll))
-        .with_coverage(AbilityCoverageDef::explained_complete(
-            "Regeneration shields are implemented by the card-local activated-ability resolver.",
-        ))
-        .with_legacy_procedure(),
+        ),
     ]),
 );
 
@@ -2433,7 +2462,18 @@ pub(in crate::card::sets) static TUNNEL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can block an additional creature each combat”.
 
 // LEA 180 — Uthden Troll
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{R}: Regenerate this creature”.
+pub(in crate::card::sets) static UTHDEN_TROLL: CardRecord = CardRecord::new(
+    cards::UTHDEN_TROLL,
+    "Uthden Troll",
+    CardArt::new("2ff21a6f-83a7-4bf3-a078-294e303232cc", "Douglas Shuler"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Troll"], 2, 2).with_abilities(&[
+        abilities::regenerate_self(
+            "{R}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+        ),
+    ]),
+);
 
 // LEA 181 — Wall of Fire
 pub(in crate::card::sets) static WALL_OF_FIRE: CardRecord = CardRecord::new(
@@ -2982,7 +3022,19 @@ pub(in crate::card::sets) static VERDURAN_ENCHANTRESS: CardRecord = CardRecord::
 );
 
 // LEA 223 — Wall of Brambles
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{G}: Regenerate this creature”.
+pub(in crate::card::sets) static WALL_OF_BRAMBLES: CardRecord = CardRecord::new(
+    cards::WALL_OF_BRAMBLES,
+    "Wall of Brambles",
+    CardArt::new("af2a4558-db6e-41b2-aff6-b164d93282a0", "Anson Maddocks"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Plant", "Wall"], 2, 3).with_abilities(&[
+        abilities::defender(),
+        abilities::regenerate_self(
+            "{G}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{G}"))],
+        ),
+    ]),
+);
 
 // LEA 224 — Wall of Ice
 pub(in crate::card::sets) static WALL_OF_ICE: CardRecord = CardRecord::new(
@@ -3431,7 +3483,19 @@ pub(in crate::card::sets) static JUGGERNAUT: CardRecord = CardRecord::new(
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “If an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard”.
 
 // LEA 258 — Living Wall
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{1}: Regenerate this creature”.
+pub(in crate::card::sets) static LIVING_WALL: CardRecord = CardRecord::new(
+    cards::LIVING_WALL,
+    "Living Wall",
+    CardArt::new("4a98ada6-923a-44a5-bdef-ea6a160b481e", "Anson Maddocks"),
+    CardSet::Alpha,
+    CardRules::new_artifact_creature(mana_cost!("{4}"), &["Wall"], 0, 6).with_abilities(&[
+        abilities::defender(),
+        abilities::regenerate_self(
+            "{1}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+        ),
+    ]),
+);
 
 // LEA 259 — Mana Vault
 pub(in crate::card::sets) static MANA_VAULT: CardRecord = CardRecord::new(
@@ -3943,6 +4007,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEATHGRIP,
     &DEMONIC_TUTOR,
     &DRAIN_LIFE,
+    &DRUDGE_SKELETONS,
     &EVIL_PRESENCE,
     &FEAR,
     &FROZEN_SHADE,
@@ -3956,7 +4021,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SINKHOLE,
     &TERROR,
     &UNHOLY_STRENGTH,
+    &WALL_OF_BONE,
     &WEAKNESS,
+    &WILL_O_THE_WISP,
     &BURROWING,
     &DRAGON_WHELP,
     &DWARVEN_DEMOLITION_TEAM,
@@ -3989,6 +4056,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STONE_GIANT,
     &STONE_RAIN,
     &TUNNEL,
+    &UTHDEN_TROLL,
     &WALL_OF_FIRE,
     &WALL_OF_STONE,
     &WHEEL_OF_FORTUNE,
@@ -4015,6 +4083,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TRANQUILITY,
     &TSUNAMI,
     &VERDURAN_ENCHANTRESS,
+    &WALL_OF_BRAMBLES,
     &WALL_OF_ICE,
     &WALL_OF_WOOD,
     &WAR_MAMMOTH,
@@ -4034,6 +4103,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IVORY_CUP,
     &JAYEMDAE_TOME,
     &JUGGERNAUT,
+    &LIVING_WALL,
     &MANA_VAULT,
     &MOX_EMERALD,
     &MOX_JET,

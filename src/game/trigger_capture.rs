@@ -243,6 +243,7 @@ impl Game {
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
             | EffectDef::AddManaEqualTo { .. }
+            | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventCombatDamageThisTurn { .. }

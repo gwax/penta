@@ -96,7 +96,7 @@ fn printed_set_sources_follow_collector_number_order() {
     }
 
     assert_eq!(
-        definition_count, 1_333,
+        definition_count, 1_344,
         "the organization guard must cover every printed card definition"
     );
     assert_eq!(

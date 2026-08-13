@@ -294,6 +294,21 @@ pub const fn enters_tapped(text: &'static str) -> AbilityDef {
     AbilityDef::as_enters(text, ENTER_TAPPED[0])
 }
 
+/// "{cost}: Regenerate this creature." -- by far the most common printed
+/// regeneration clause, and the one every self-regenerating creature shares.
+/// Cards that regenerate something else, or pay something other than mana,
+/// build the clause themselves around [`EffectDef::Regenerate`].
+#[must_use]
+pub const fn regenerate_self(text: &'static str, costs: &'static [AbilityCostDef]) -> AbilityDef {
+    AbilityDef::activated(
+        text,
+        costs,
+        EffectDef::Regenerate {
+            object: EffectRecipientDef::Source,
+        },
+    )
+}
+
 /// A shared checkland-style entry clause backed by the general object-query
 /// condition vocabulary.
 #[must_use]

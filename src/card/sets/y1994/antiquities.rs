@@ -444,7 +444,18 @@ pub(in crate::card::sets) static CRUMBLE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “{X}, {T}: Untap X target lands”.
 
 // ATQ 44 — Clay Statue
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{2}: Regenerate this creature”.
+pub(in crate::card::sets) static CLAY_STATUE: CardRecord = CardRecord::new(
+    cards::CLAY_STATUE,
+    "Clay Statue",
+    CardArt::new("64975352-8d35-4d02-94ac-fa0c6ee12409", "Jesper Myrfors"),
+    CardSet::Antiquities,
+    CardRules::new_artifact_creature(mana_cost!("{4}"), &["Golem"], 3, 1).with_abilities(&[
+        abilities::regenerate_self(
+            "{2}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+        ),
+    ]),
+);
 
 // ATQ 45 — Clockwork Avian
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{X}, {T}: Put up to X +1/+0 counters on this creature. This ability can't cause the total number of +1/+0 counters on this creature to be greater than four. Activate only during your upkeep”.
@@ -1112,6 +1123,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGOTHIAN_PIXIES,
     &CITANUL_DRUID,
     &CRUMBLE,
+    &CLAY_STATUE,
     &DRAGON_ENGINE,
     &GOLGOTHIAN_SYLEX,
     &GRAPESHOT_CATAPULT,

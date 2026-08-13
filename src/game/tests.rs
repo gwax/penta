@@ -395,6 +395,7 @@ mod premodern_library_selection;
 mod premodern_permanents;
 mod premodern_split_and_lock;
 mod premodern_zone_and_denial;
+mod regeneration;
 mod removal_and_keywords;
 mod replacements_and_presentation;
 mod ring_of_maruf;

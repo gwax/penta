@@ -191,7 +191,8 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         EffectDef::ReturnLinkedExiles { zone, .. } => {
             matches!(zone, ZoneKind::Battlefield | ZoneKind::Hand)
         }
-        EffectDef::Tap { object }
+        EffectDef::Regenerate { object }
+        | EffectDef::Tap { object }
         | EffectDef::Untap { object }
         | EffectDef::PreventCombatDamageThisTurn { object }
         | EffectDef::PreventCombatDamageDealtByThisTurn { object }

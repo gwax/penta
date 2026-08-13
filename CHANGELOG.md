@@ -34,6 +34,17 @@ distinguishes snapshots of the covered source and build inputs.
   now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
+- **Regeneration is a declarative effect.** Arming a regeneration shield is now
+  an ordinary `EffectDef`, so a printed "{cost}: Regenerate this creature" is an
+  activated ability like any other rather than an engine-level card branch. The
+  shield machinery and its destroy-event replacement already existed; what was
+  missing was a way for a card to reach them. Sedge Troll's clause moved off its
+  card-identity escape valve onto the shared path, and eleven Old School
+  identities that were blocked only on this are now executable: Drudge
+  Skeletons, Wall of Bone, Will-o'-the-Wisp, Uthden Troll, Wall of Brambles,
+  Living Wall, Clay Statue, Drowned, Ghost Ship, Diabolic Machine, and Walking
+  Dead. New cards move the simulation fingerprint, not the protocol epoch.
+
 - Reconstruction checkpoints now carry their own version and simulation
   fingerprint, independent of the bot-wire epoch. Format 2 replaces the old
   skipped-turn debt with an explicit ordinary-turn anchor and can reconstruct

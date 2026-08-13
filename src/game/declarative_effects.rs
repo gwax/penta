@@ -251,6 +251,13 @@ impl Game {
                     }
                 }
             }
+            EffectDef::Regenerate { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Permanent(permanent) = target {
+                        self.add_regeneration_shield(permanent);
+                    }
+                }
+            }
             EffectDef::CreateToken { token, count } => {
                 for _ in 0..self.effect_value(count, object, context, scoped).max(0) {
                     self.create_token(object.controller, token);

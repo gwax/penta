@@ -146,6 +146,20 @@ impl Game {
         self.move_permanents_to_graveyard_then(&doomed, completion);
     }
 
+    /// Arms one regeneration shield (CR 701.15). The shield is a promise about
+    /// the next destruction, not an effect on the permanent now, so a creature
+    /// that is never destroyed this turn is left untouched and cleanup
+    /// discards the shield.
+    pub(super) fn add_regeneration_shield(&mut self, id: GameObjectId) {
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == id)
+        {
+            permanent.regeneration_shields = permanent.regeneration_shields.saturating_add(1);
+        }
+    }
+
     pub(super) fn regenerate_permanent(&mut self, id: GameObjectId) {
         let Some(index) = self
             .battlefield

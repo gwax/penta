@@ -471,6 +471,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
+        | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }

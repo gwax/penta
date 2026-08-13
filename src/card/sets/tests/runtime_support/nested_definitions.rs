@@ -172,6 +172,9 @@ fn assert_nested_installed_ability(card_name: &str, ability: &AbilityDef) {
     assert_nested_definition_abilities(card_name, ability.effect.definition);
 }
 
+// Long because the effect vocabulary is wide, not because the function
+// does several things: every arm is one variant walked the same way.
+#[allow(clippy::too_many_lines)]
 pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effect: EffectDef) {
     match effect {
         EffectDef::Sequence(effects) => {
@@ -230,6 +233,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
+        | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }

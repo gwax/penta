@@ -194,6 +194,7 @@ fn validate_effect_references(
         EffectDef::LoseTheGame { player: object }
         | EffectDef::ShuffleLibrary { player: object }
         | EffectDef::EmptyManaPool { player: object }
+        | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
         | EffectDef::Untap { object }
         | EffectDef::PreventCombatDamageThisTurn { object }

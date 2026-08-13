@@ -218,7 +218,18 @@ pub(in crate::card::sets) static WITCH_HUNTER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{U}: Until end of turn, if you tap a land you control for mana, it produces {U} instead of any other type”.
 
 // DRK 24 — Drowned
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{B}: Regenerate this creature”.
+pub(in crate::card::sets) static DROWNED: CardRecord = CardRecord::new(
+    cards::DROWNED,
+    "Drowned",
+    CardArt::new("951b6c10-cbba-44b6-aae2-2c386b7ebacb", "Quinton Hoover"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Zombie"], 1, 1).with_abilities(&[
+        abilities::regenerate_self(
+            "{B}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+        ),
+    ]),
+);
 
 // DRK 25 — Electric Eel
 pub(in crate::card::sets) static ELECTRIC_EEL: CardRecord = CardRecord::new(
@@ -293,7 +304,19 @@ pub(in crate::card::sets) static FLOOD: CardRecord = CardRecord::new(
 );
 
 // DRK 28 — Ghost Ship
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{U}{U}{U}: Regenerate this creature”.
+pub(in crate::card::sets) static GHOST_SHIP: CardRecord = CardRecord::new(
+    cards::GHOST_SHIP,
+    "Ghost Ship",
+    CardArt::new("db591b28-37e5-4e7c-ae4d-d761262b12d0", "Tom Wänerstrand"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Spirit"], 2, 4).with_abilities(&[
+        abilities::flying(),
+        abilities::regenerate_self(
+            "{U}{U}{U}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{U}{U}{U}"))],
+        ),
+    ]),
+);
 
 // DRK 29 — Giant Shark
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked by a creature that has been dealt damage this turn, this creature gets +2/+0 and gains trample until end of turn”.
@@ -1154,7 +1177,18 @@ pub(in crate::card::sets) static BOOK_OF_RASS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{T}, Sacrifice this artifact: The next time a source of your choice would deal damage to you this turn, prevent half that damage, rounded down”.
 
 // DRK 101 — Diabolic Machine
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{3}: Regenerate this creature”.
+pub(in crate::card::sets) static DIABOLIC_MACHINE: CardRecord = CardRecord::new(
+    cards::DIABOLIC_MACHINE,
+    "Diabolic Machine",
+    CardArt::new("c3b0f228-6b06-4426-a557-1225d547b908", "Anson Maddocks"),
+    CardSet::TheDark,
+    CardRules::new_artifact_creature(mana_cost!("{7}"), &["Construct"], 4, 4).with_abilities(&[
+        abilities::regenerate_self(
+            "{3}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{3}"))],
+        ),
+    ]),
+);
 
 // DRK 102 — Fellwar Stone
 pub(in crate::card::sets) static FELLWAR_STONE: CardRecord = CardRecord::new(
@@ -1384,8 +1418,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SQUIRE,
     &TIVADARS_CRUSADE,
     &WITCH_HUNTER,
+    &DROWNED,
     &ELECTRIC_EEL,
     &FLOOD,
+    &GHOST_SHIP,
     &RIPTIDE,
     &SUNKEN_CITY,
     &WATER_WURM,
@@ -1416,6 +1452,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DARK_HEART_OF_THE_WOOD,
     &BONE_FLUTE,
     &BOOK_OF_RASS,
+    &DIABOLIC_MACHINE,
     &FELLWAR_STONE,
     &FOUNTAIN_OF_YOUTH,
     &SKULL_OF_ORM,

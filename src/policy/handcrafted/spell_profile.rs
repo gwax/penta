@@ -328,6 +328,7 @@ impl HandcraftedPolicy {
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::LoseLife { .. }
+            | EffectDef::Regenerate { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::DestroyOfChoice { .. }
