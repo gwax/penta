@@ -2,8 +2,12 @@ use super::*;
 use crate::ManaColor;
 use crate::card::KeywordAbility;
 use crate::game::DecisionContinuation;
-use crate::policy::Policy;
 use serde_json::json;
+
+mod adversarial;
+mod broad_audit;
+mod rare_states;
+mod semantics_coverage;
 
 #[test]
 fn catalog_semantics_rehydrate_an_animation_without_a_card_name_switch() {
@@ -357,116 +361,33 @@ fn a_spell_created_delayed_trigger_reconstructs_at_an_action_boundary() {
     );
 }
 
-#[test]
-#[ignore = "slow decision-boundary reconstruction audit"]
-#[allow(clippy::too_many_lines)]
-fn every_sampled_game_decision_reconstructs_from_its_observation() {
-    let catalog = crate::poc::catalog().expect("catalog builds");
-    let mut audited = 0_usize;
-    for (format, games) in [
-        (crate::Format::OldSchool9394, 8_usize),
-        (crate::Format::IsdRtrStandard, 8_usize),
-    ] {
-        let decks = crate::protocol::deck_names_for_format(format);
-        for game_index in 0..games {
-            let first =
-                crate::protocol::deck_by_name_for_format(format, decks[game_index % decks.len()])
-                    .expect("first deck exists");
-            let second = crate::protocol::deck_by_name_for_format(
-                format,
-                decks[(game_index * 5 + 3) % decks.len()],
-            )
-            .expect("second deck exists");
-            let seed = 10_000 + u64::try_from(game_index).expect("game index fits") * 97;
-            let mut game = Game::new_with_format(format, catalog.clone(), [first, second], seed)
-                .expect("game starts");
-            let mut policies = [
-                crate::RandomPolicy::new(seed ^ 0x1111),
-                crate::RandomPolicy::new(seed ^ 0x2222),
-            ];
-
-            for action_number in 0..2_000 {
-                let Some(viewer) = game.decision_player() else {
-                    break;
-                };
-                let observation = game.observe(viewer);
-                let actions = crate::protocol::protocol_actions(&observation);
-                let wire = crate::protocol::observation_json_for_format(
-                    &catalog,
-                    format,
-                    &observation,
-                    game.in_pregame(),
-                    &actions,
-                );
-                let hidden = true_hidden_hypothesis(&game, viewer);
-                let rebuilt = Game::from_observation_checkpoint(
-                    catalog.clone(),
-                    format,
-                    &wire,
-                    &hidden,
-                    seed ^ 0x5555,
-                )
-                .unwrap_or_else(|error| {
-                    let damage_source_retired = game
-                        .battlefield
-                        .iter()
-                        .flat_map(|permanent| permanent.damage_sources.iter().copied())
-                        .filter_map(|id| {
-                            game.retired_objects.get(&id).map(|retired| {
-                                (
-                                    id,
-                                    match retired {
-                                        RetiredObject::Card(_) => "card",
-                                        RetiredObject::Permanent { .. } => "permanent",
-                                        RetiredObject::Stack(_) => "stack",
-                                    },
-                                )
-                            })
-                        })
-                        .collect::<Vec<_>>();
-                    panic!(
-                        "{format:?} game {game_index} action {action_number} ({:?} {:?}) grants={} delayed={} floating={} events={} triggers={} restricted_mana={} damage_sources={} damage_source_retired={damage_source_retired:?} stack_objects={} retired_objects={}: {error}",
-                        game.step,
-                        game.pending_decisions.first().map(|decision| &decision.continuation),
-                        game.temporary_ability_grants.len(),
-                        game.delayed_triggers.len(),
-                        game.floating_triggers.len(),
-                        game.pending_events.len(),
-                        game.pending_triggers.len(),
-                        game.players.iter().flat_map(|player| &player.mana).filter(|mana| mana.source.is_some() || !mana.restrictions.is_empty() || !mana.spend_effects.is_empty()).count(),
-                        game.battlefield.iter().filter(|permanent| !permanent.damage_sources.is_empty()).count(),
-                        game.stack.len(),
-                        game.retired_objects.len(),
-                    )
-                });
-                let rebuilt_observation = rebuilt.observe(viewer);
-                let rebuilt_actions = crate::protocol::protocol_actions(&rebuilt_observation);
-                assert_eq!(
-                    rebuilt_actions, actions,
-                    "{format:?} game {game_index} action {action_number} rebuilt different actions",
-                );
-                let rebuilt_wire = crate::protocol::observation_json_for_format(
-                    &catalog,
-                    format,
-                    &rebuilt_observation,
-                    rebuilt.in_pregame(),
-                    &rebuilt_actions,
-                );
-                assert_eq!(
-                    rebuilt_wire, wire,
-                    "{format:?} game {game_index} action {action_number} rebuilt different public state",
-                );
-                audited += 1;
-
-                let action = policies[viewer.index()]
-                    .choose_action(&observation)
-                    .expect("random policy finds an action");
-                game.apply_observed_action(&observation, action)
-                    .expect("sampled action is legal");
-            }
+/// A hypothesis the seat could have chosen instead of the truth: both hidden
+/// libraries reversed and the opposing hand rotated. Card counts and every
+/// card the seat can actually see survive, so this stays consistent with what
+/// the observation says while naming different cards than the host holds.
+/// Reconstruction that only works from [`true_hidden_hypothesis`] would be no
+/// use to a search bot, which never knows the truth.
+fn determinized(hidden: &Value, viewer: PlayerId) -> Value {
+    let mut hidden = hidden.clone();
+    for seat in ["p1", "p2"] {
+        if let Some(library) = hidden
+            .get_mut("libraries")
+            .and_then(|libraries| libraries.get_mut(seat))
+            .and_then(Value::as_array_mut)
+        {
+            library.reverse();
         }
     }
-    assert!(audited >= 1_000, "audit sampled only {audited} decisions");
+    let opponent = seat_label(viewer.opponent());
+    if let Some(hand) = hidden
+        .get_mut("hands")
+        .and_then(|hands| hands.get_mut(opponent))
+        .and_then(Value::as_array_mut)
+        && !hand.is_empty()
+    {
+        hand.rotate_left(1);
+    }
+    hidden
 }
 
 fn true_hidden_hypothesis(game: &Game, viewer: PlayerId) -> Value {

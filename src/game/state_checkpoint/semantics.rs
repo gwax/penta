@@ -102,7 +102,7 @@ pub(super) fn catalog_applied_effect(
     applied_effects(&ability).get(locator.effect_index).copied()
 }
 
-fn applied_effects(ability: &AbilityDef) -> Vec<AppliedEffectDef> {
+pub(super) fn applied_effects(ability: &AbilityDef) -> Vec<AppliedEffectDef> {
     let mut found = Vec::new();
     collect_applied_effects_from_effect(ability.effect.definition, &mut found);
     for mana in mana_effects(ability) {
@@ -191,7 +191,7 @@ pub(super) fn catalog_replacement_effect(
         .copied()
 }
 
-fn replacement_effects(ability: &AbilityDef) -> Vec<ReplacementEffectDef> {
+pub(super) fn replacement_effects(ability: &AbilityDef) -> Vec<ReplacementEffectDef> {
     let mut effects = Vec::new();
     collect_replacement_effects_from_effect(ability.effect.definition, &mut effects);
     effects
@@ -254,7 +254,7 @@ fn locate_effect(current: EffectDef, needle: EffectDef, path: &mut Vec<usize>) -
     false
 }
 
-fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
+pub(super) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
     match effect {
         EffectDef::Sequence(effects) => effects.to_vec(),
         EffectDef::Randomized {
@@ -293,7 +293,7 @@ fn mana_effect_matches(effect: AddManaEffectDef, mana: Mana) -> bool {
         }
 }
 
-fn mana_effects(ability: &AbilityDef) -> Vec<AddManaEffectDef> {
+pub(super) fn mana_effects(ability: &AbilityDef) -> Vec<AddManaEffectDef> {
     let mut effects = Vec::new();
     collect_mana_effects(ability.effect.definition, &mut effects);
     effects
@@ -355,7 +355,7 @@ fn locate_ability(
     false
 }
 
-fn child_abilities(ability: &AbilityDef) -> Vec<&AbilityDef> {
+pub(super) fn child_abilities(ability: &AbilityDef) -> Vec<&AbilityDef> {
     let mut children = Vec::new();
     if let DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) = ability.definition {
         children.extend(modal.modes);

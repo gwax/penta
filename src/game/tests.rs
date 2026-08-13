@@ -117,7 +117,7 @@ pub(super) fn ready_game() -> Game {
     game
 }
 
-fn card(id: u32, definition: CardDefinitionId, owner: PlayerId) -> CardInstance {
+pub(super) fn card(id: u32, definition: CardDefinitionId, owner: PlayerId) -> CardInstance {
     CardInstance {
         id: CardInstanceId(id),
         definition,
@@ -178,7 +178,11 @@ const fn primary_ability(definition: CardDefinitionId) -> AbilityOrigin {
     }
 }
 
-fn mana_ability_for(game: &Game, source: GameObjectId, color: ManaColor) -> AbilityOrigin {
+pub(super) fn mana_ability_for(
+    game: &Game,
+    source: GameObjectId,
+    color: ManaColor,
+) -> AbilityOrigin {
     game.battlefield
         .iter()
         .find(|permanent| permanent.card.id == source)
