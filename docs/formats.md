@@ -24,6 +24,13 @@ The selected format is stored on each game. Format-specific construction and
 mana rules live in one profile rather than as global switches, so adding a
 format does not change existing games.
 
+## Planned formats
+
+Premodern is staged as the next format expansion. The exact Top 8 decklists
+from the July 2026 Sacred Torch Showdown and the card-by-card implementation
+backlog are tracked in the [Premodern roadmap](premodern.md). These lists are
+not advertised as playable until their catalog and rules coverage are honest.
+
 ### Old School 93/94
 
 The profile includes Alpha, Beta, Unlimited, Collector's Edition,

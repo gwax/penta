@@ -372,6 +372,8 @@ pub fn mono_red_atog() -> Deck {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
+
     use super::{
         BuiltinDeckError, artifacts, bwr_aggro, counterburn, erhnamgeddon, goblins, gr_aggro,
         isd_rtr_standard, jeskai_aggro, lions_dib, lions_dib_bolt, mono_black, mono_red_atog,
@@ -381,6 +383,90 @@ mod tests {
     use crate::{Deck, Format};
 
     type DeckBuilder = fn() -> Deck;
+
+    const STAGED_PREMODERN_TOP_8: &[(&str, &str, usize)] = &[
+        (
+            "Sligh — Neal Sacks",
+            include_str!("../decks/premodern/sligh_neal_sacks.yaml"),
+            60,
+        ),
+        (
+            "GAT — Daniel Sondike",
+            include_str!("../decks/premodern/gat_daniel_sondike.yaml"),
+            60,
+        ),
+        (
+            "Replenish — Bryan Gulotta",
+            include_str!("../decks/premodern/replenish_bryan_gulotta.yaml"),
+            60,
+        ),
+        (
+            "Stasis — Drew Glauberg",
+            include_str!("../decks/premodern/stasis_drew_glauberg.yaml"),
+            61,
+        ),
+        (
+            "BW Control — Chris Danis",
+            include_str!("../decks/premodern/bw_control_chris_danis.yaml"),
+            60,
+        ),
+        (
+            "Landstill — TentacleFan",
+            include_str!("../decks/premodern/landstill_tentaclefan.yaml"),
+            60,
+        ),
+        (
+            "RG Goblins — Andy Dominguez",
+            include_str!("../decks/premodern/rg_goblins_andy_dominguez.yaml"),
+            60,
+        ),
+        (
+            "Angry Hermit — Ryan Marvin",
+            include_str!("../decks/premodern/angry_hermit_ryan_marvin.yaml"),
+            60,
+        ),
+    ];
+
+    fn staged_deck_counts_and_names(yaml: &str) -> (usize, usize, BTreeSet<&str>) {
+        let mut zone = None;
+        let mut main = 0;
+        let mut sideboard = 0;
+        let mut names = BTreeSet::new();
+
+        for raw_line in yaml.lines() {
+            let line = raw_line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            match line {
+                "main:" => {
+                    zone = Some("main");
+                    continue;
+                }
+                "sideboard:" => {
+                    zone = Some("sideboard");
+                    continue;
+                }
+                _ => {}
+            }
+
+            let (name, raw_count) = line
+                .rsplit_once(':')
+                .unwrap_or_else(|| panic!("invalid staged deck entry: {line}"));
+            let count = raw_count
+                .trim()
+                .parse::<usize>()
+                .unwrap_or_else(|_| panic!("invalid staged deck count: {line}"));
+            names.insert(name.trim());
+            match zone {
+                Some("main") => main += count,
+                Some("sideboard") => sideboard += count,
+                _ => panic!("staged deck entry outside a section: {line}"),
+            }
+        }
+
+        (main, sideboard, names)
+    }
 
     #[test]
     fn parser_reports_unknown_cards_with_their_line() {
@@ -442,6 +528,38 @@ mod tests {
             assert_eq!(deck.sideboard.len(), 15);
             deck.validate_for_format(&catalog, Format::IsdRtrStandard)
                 .unwrap();
+        }
+    }
+
+    #[test]
+    fn staged_premodern_top_8_lists_and_backlog_stay_in_sync() {
+        let catalog = card::catalog().unwrap();
+        let roadmap = include_str!("../docs/premodern.md");
+        let mut unique_cards = BTreeSet::new();
+
+        for (deck_name, yaml, expected_main) in STAGED_PREMODERN_TOP_8 {
+            assert!(
+                yaml.contains("# Source: https://melee.gg/Decklist/View/"),
+                "{deck_name} must retain its submitted-list source"
+            );
+            let (main, sideboard, names) = staged_deck_counts_and_names(yaml);
+            assert_eq!(main, *expected_main, "{deck_name} main deck");
+            assert_eq!(sideboard, 15, "{deck_name} sideboard");
+            unique_cards.extend(names);
+        }
+
+        assert_eq!(unique_cards.len(), 145);
+        let cataloged = unique_cards
+            .iter()
+            .filter(|name| catalog.find_by_name(name).is_some())
+            .count();
+        assert_eq!(cataloged, 20);
+
+        for name in unique_cards {
+            assert!(
+                roadmap.contains(&format!("`{name}`")),
+                "Premodern roadmap is missing {name}"
+            );
         }
     }
 }
