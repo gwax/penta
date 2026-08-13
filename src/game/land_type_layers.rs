@@ -358,6 +358,7 @@ impl Game {
             EffectRecipientDef::ControllerOfTarget(_)
             | EffectRecipientDef::ObjectsControlledByTarget { .. }
             | EffectRecipientDef::ObjectsOwnedByTarget { .. }
+            | EffectRecipientDef::CardsOwnedByTarget { .. }
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
             | EffectRecipientDef::EachPlayer

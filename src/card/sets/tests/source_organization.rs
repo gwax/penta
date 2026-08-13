@@ -80,11 +80,11 @@ fn printed_set_sources_follow_collector_number_order() {
     }
 
     assert_eq!(
-        definition_count, 289,
+        definition_count, 294,
         "the organization guard must cover every printed card definition"
     );
     assert_eq!(
-        additional_printing_count, 380,
+        additional_printing_count, 388,
         "the organization guard must cover every additional printing"
     );
 }

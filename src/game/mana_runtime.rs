@@ -149,6 +149,7 @@ impl Game {
             | EffectDef::DrawCards { .. }
             | EffectDef::Discard { .. }
             | EffectDef::ShuffleLibrary { .. }
+            | EffectDef::EmptyManaPool { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
@@ -298,6 +299,7 @@ impl Game {
                 | EffectDef::DrawCards { .. }
                 | EffectDef::Discard { .. }
                 | EffectDef::ShuffleLibrary { .. }
+                | EffectDef::EmptyManaPool { .. }
                 | EffectDef::LoseLife { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::Untap { .. }

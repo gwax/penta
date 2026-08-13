@@ -3,9 +3,9 @@ use super::{
     AppliedEffectDef, CardPartId, CastSignature, ComparisonDef, ContinuousEffectTimestamp,
     ControlFlow, CounterKind, EffectDurationDef, EffectRecipientDef, Game, GameObjectId, GrantId,
     ObjectPredicateDef, ObjectQueryDef, Permanent, PlayerId, QuantifierDef, ScopedEffect,
-    StackObject, StackObjectKind, Target, TargetSelection, TargetSlotId, TemporaryAbilityGrant,
-    TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerConditionDef, TriggerContext,
-    ZoneKind,
+    StackObject, StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId,
+    TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerConditionDef,
+    TriggerContext, ZoneKind,
 };
 
 #[derive(Clone, Copy)]
@@ -309,6 +309,40 @@ impl Game {
             .collect()
     }
 
+    fn cards_owned_by_target(
+        &self,
+        predicate: ObjectPredicateDef,
+        zones: &[ZoneKind],
+        slot: TargetIndex,
+        object: &StackObject,
+        scoped: ScopedEffect,
+    ) -> Vec<Target> {
+        let slot = scoped.target_slot(slot);
+        let Some(Target::Player(player)) = Self::chosen_targets(object, slot)
+            .find(|target| self.stack_ability_target_is_legal(object, slot, *target))
+        else {
+            return Vec::new();
+        };
+        let source = object.source.unwrap_or(object.id);
+        zones
+            .iter()
+            .copied()
+            .filter(|zone| {
+                matches!(
+                    zone,
+                    ZoneKind::Library | ZoneKind::Hand | ZoneKind::Graveyard | ZoneKind::Exile
+                )
+            })
+            .flat_map(|zone| {
+                self.cards_in_zone(zone).filter_map(move |card| {
+                    (card.owner == player
+                        && self.card_object_matches(predicate, card, zone, source))
+                    .then_some(Target::Card(card.id))
+                })
+            })
+            .collect()
+    }
+
     pub(super) fn effect_recipients(
         &self,
         recipient: EffectRecipientDef,
@@ -354,6 +388,15 @@ impl Game {
             return self.battlefield_sweep_for_target(recipient, object, context, scoped);
         }
 
+        if let EffectRecipientDef::CardsOwnedByTarget {
+            object: predicate,
+            zones,
+            slot,
+        } = recipient
+        {
+            return self.cards_owned_by_target(predicate, zones, slot, object, scoped);
+        }
+
         if let EffectRecipientDef::ObjectsSharingNameWithTarget(target) = recipient {
             return self.objects_sharing_name_with_target(scoped.target_slot(target), object);
         }
@@ -393,6 +436,7 @@ impl Game {
                 | EffectRecipientDef::ControllerOfTarget(_)
                 | EffectRecipientDef::ObjectsControlledByTarget { .. }
                 | EffectRecipientDef::ObjectsOwnedByTarget { .. }
+                | EffectRecipientDef::CardsOwnedByTarget { .. }
                 | EffectRecipientDef::MatchingObjects { .. }
                 | EffectRecipientDef::ObjectsSharingNameWithTarget(_) => {
                     unreachable!("target, matching, and shared-name recipients returned above")

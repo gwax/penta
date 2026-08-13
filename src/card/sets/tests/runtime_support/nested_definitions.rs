@@ -37,6 +37,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
         | EffectDef::ShuffleLibrary { .. }
+        | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Tap { .. }

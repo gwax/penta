@@ -5,7 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ValueDef, abilities, cards,
+    ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -25,6 +26,35 @@ pub(in crate::card::sets) static WARMTH: CardRecord = CardRecord::new(
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(2),
         },
+    )),
+);
+
+// TMP 151 — Reanimate
+pub(in crate::card::sets) static REANIMATE: CardRecord = CardRecord::new(
+    cards::REANIMATE,
+    "Reanimate",
+    CardArt::new("fc00f897-988b-4602-969a-c510804ec12a", "Robert Bliss"),
+    CardSet::Tempest,
+    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value.",
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            zones: &[ZoneKind::Graveyard],
+            controller: None,
+            owner: None,
+        })],
+        EffectDef::Sequence(&[
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                controller: Some(PlayerRelation::You),
+            },
+            EffectDef::LoseLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+            },
+        ]),
     )),
 );
 
@@ -145,6 +175,7 @@ pub(in crate::card::sets) static WASTELAND: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WARMTH,
+    &REANIMATE,
     &JACKAL_PUP,
     &MOGG_FANATIC,
     &ROOT_MAZE,

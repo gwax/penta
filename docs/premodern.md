@@ -12,9 +12,9 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 57 cards present in Penta's catalog
-- 88 cards still need catalog records
-- 37 cards have completed their Premodern interaction audit; the other 108
+- 62 cards present in Penta's catalog
+- 83 cards still need catalog records
+- 42 cards have completed their Premodern interaction audit; the other 103
   still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -46,8 +46,8 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (57; the thirty-seven marked below were audited in the first
-six implementation tranches, while the older definitions still require an
+Already cataloged (62; the forty-two marked below were audited in the first
+seven implementation tranches, while the older definitions still require an
 audit):
 
 - `Adarkar Wastes` — complete
@@ -78,6 +78,7 @@ audit):
 - `Llanowar Wastes` — complete
 - `Lotus Petal` — complete
 - `Mana Leak` — complete
+- `Mana Short` — complete
 - `Mishra's Factory`
 - `Mogg Fanatic` — complete
 - `Monk Realist` — complete
@@ -85,18 +86,22 @@ audit):
 - `Naturalize` — complete
 - `Phyrexian Arena` — complete
 - `Plains`
+- `Presence of the Master` — complete
 - `Pyroblast` — complete
 - `Quirion Dryad` — complete
 - `Ray of Revelation`
 - `Red Elemental Blast`
+- `Reanimate` — complete
 - `Rishadan Port` — complete
 - `Root Maze` — complete
 - `Seal of Cleansing` — complete
 - `Seal of Fire` — complete
+- `Stasis` — complete
 - `Swamp`
 - `Swords to Plowshares`
 - `Syncopate`
 - `Sylvan Safekeeper` — complete
+- `Tormod's Crypt` — complete
 - `Tranquil Domain` — complete
 - `Underground River` — complete
 - `Upheaval` — complete
@@ -108,7 +113,7 @@ audit):
 - `Wrath of God`
 - `Yavimaya Coast` — complete
 
-Not yet cataloged (88):
+Not yet cataloged (83):
 
 - [ ] `Abeyance`
 - [ ] `Akroma's Vengeance`
@@ -160,7 +165,6 @@ Not yet cataloged (88):
 - [ ] `Intuition`
 - [ ] `Kor Haven`
 - [ ] `Krosan Reclamation`
-- [ ] `Mana Short`
 - [ ] `Meddling Mage`
 - [ ] `Mogg Salvage`
 - [ ] `Mox Diamond`
@@ -172,11 +176,9 @@ Not yet cataloged (88):
 - [ ] `Phyrexian Furnace`
 - [ ] `Portent`
 - [ ] `Powder Keg`
-- [ ] `Presence of the Master`
 - [ ] `Prohibit`
 - [ ] `Psychatog`
 - [ ] `Pyrokinesis`
-- [ ] `Reanimate`
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`
 - [ ] `Secluded Steppe`
@@ -187,13 +189,11 @@ Not yet cataloged (88):
 - [ ] `Skycloud Expanse`
 - [ ] `Sleight of Hand`
 - [ ] `Standstill`
-- [ ] `Stasis`
 - [ ] `Stifle`
 - [ ] `Sutured Ghoul`
 - [ ] `Teferi's Response`
 - [ ] `Thawing Glaciers`
 - [ ] `Thwart`
-- [ ] `Tormod's Crypt`
 - [ ] `Treva's Ruins`
 - [ ] `Tsabo's Web`
 - [ ] `Vision Charm`

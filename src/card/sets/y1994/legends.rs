@@ -46,6 +46,22 @@ pub(in crate::card::sets) static MOAT: CardRecord = CardRecord::new(
     )]),
 );
 
+// LEG 31 — Presence of the Master
+pub(in crate::card::sets) static PRESENCE_OF_THE_MASTER: CardRecord = CardRecord::new(
+    cards::PRESENCE_OF_THE_MASTER,
+    "Presence of the Master",
+    CardArt::new("610288d2-4e44-4e26-883b-8b0bdd74bf3e", "Phil Foglio"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{3}{W}")).with_ability(AbilityDef::triggered(
+        "Whenever a player casts an enchantment spell, counter it.",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::HasType(CardType::Enchantment)),
+        EffectDef::Counter {
+            object: EffectRecipientDef::TriggeringObject,
+            zone: ZoneKind::Graveyard,
+        },
+    )),
+);
+
 // LEG 39 — Thunder Spirit
 pub(in crate::card::sets) static THUNDER_SPIRIT: CardRecord = CardRecord::new(
     cards::THUNDER_SPIRIT,
@@ -274,6 +290,7 @@ pub(in crate::card::sets) static PENDELHAVEN: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DIVINE_OFFERING,
     &MOAT,
+    &PRESENCE_OF_THE_MASTER,
     &THUNDER_SPIRIT,
     &MANA_DRAIN,
     &RECALL,

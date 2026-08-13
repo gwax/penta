@@ -122,6 +122,14 @@ pub enum EffectRecipientDef {
         object: ObjectPredicateDef,
         slot: TargetIndex,
     },
+    /// Every matching card owned by the player a target slot names in the
+    /// listed nonbattlefield zones, for effects such as "exile target
+    /// player's graveyard."
+    CardsOwnedByTarget {
+        object: ObjectPredicateDef,
+        zones: &'static [ZoneKind],
+        slot: TargetIndex,
+    },
     /// The controller of what a target slot points at, for "its controller".
     /// Read when the effect resolves, using last-known information if that
     /// object has already left the battlefield.
@@ -404,6 +412,12 @@ pub enum EffectDef {
     /// cards from other zones into a library first express those zone moves
     /// with [`Self::MoveToZone`], then use this shared operation.
     ShuffleLibrary {
+        player: EffectRecipientDef,
+    },
+    /// The affected player loses all unspent mana without invoking the
+    /// turn-based mana-pool emptying procedure (and therefore without mana
+    /// burn in formats that use it).
+    EmptyManaPool {
         player: EffectRecipientDef,
     },
     /// Each recipient discards that many cards selected in the specified way.

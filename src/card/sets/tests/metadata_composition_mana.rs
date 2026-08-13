@@ -336,11 +336,11 @@ fn early_core_sets_reuse_definitions_without_duplicating_identity() {
     ];
 
     let early_sets = [
-        (CardSet::Alpha, 85, 90, 2_u16),
-        (CardSet::Beta, 84, 94, 3_u16),
-        (CardSet::Unlimited, 84, 94, 3_u16),
-        (CardSet::CollectorsEdition, 84, 94, 3_u16),
-        (CardSet::InternationalCollectorsEdition, 84, 94, 3_u16),
+        (CardSet::Alpha, 87, 92, 2_u16),
+        (CardSet::Beta, 86, 96, 3_u16),
+        (CardSet::Unlimited, 86, 96, 3_u16),
+        (CardSet::CollectorsEdition, 86, 96, 3_u16),
+        (CardSet::InternationalCollectorsEdition, 86, 96, 3_u16),
     ];
 
     let mut printing_ids = HashSet::new();

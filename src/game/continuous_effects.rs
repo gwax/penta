@@ -272,6 +272,7 @@ impl Game {
             | EffectDef::DrawCards { .. }
             | EffectDef::Discard { .. }
             | EffectDef::ShuffleLibrary { .. }
+            | EffectDef::EmptyManaPool { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Tap { .. }
@@ -338,27 +339,45 @@ impl Game {
         .is_break()
     }
 
-    /// Whether the permanent's own effective static abilities keep the
-    /// turn-based untap action from untapping it. This does not affect an
-    /// explicit untap effect.
+    /// Whether a static ability keeps the turn-based untap action from
+    /// untapping this permanent. This does not affect an explicit untap
+    /// effect. The source may be the permanent itself or another permanent
+    /// applying the restriction globally.
     pub(super) fn does_not_untap_during_untap_step(&self, permanent: &Permanent) -> bool {
-        self.find_effective_ability(permanent, |effective| {
-            effective.ability.is_executable()
-                && matches!(
-                    effective.ability.definition,
-                    DeclarativeAbilityDef::Static(_)
+        if self
+            .find_effective_ability(permanent, |effective| {
+                effective.ability.is_executable()
+                    && matches!(
+                        effective.ability.definition,
+                        DeclarativeAbilityDef::Static(_)
+                    )
+                    && effective
+                        .ability
+                        .declarative_effect()
+                        .is_some_and(|effect| {
+                            Self::static_effect_contains_applied_effect(
+                                effect,
+                                AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                            )
+                        })
+            })
+            .is_some()
+        {
+            return true;
+        }
+        self.visit_static_applied_effects(permanent, |applied| {
+            if applied.source != permanent.card.id
+                && Self::applied_effect_contains(
+                    applied.effect,
+                    AppliedEffectDef::DoesNotUntapDuringUntapStep,
                 )
-                && effective
-                    .ability
-                    .declarative_effect()
-                    .is_some_and(|effect| {
-                        Self::static_effect_contains_applied_effect(
-                            effect,
-                            AppliedEffectDef::DoesNotUntapDuringUntapStep,
-                        )
-                    })
+            {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
         })
-        .is_some()
+        .is_break()
     }
 
     fn static_effect_contains_applied_effect(
@@ -564,6 +583,7 @@ impl Game {
             EffectRecipientDef::ControllerOfTarget(_)
             | EffectRecipientDef::ObjectsControlledByTarget { .. }
             | EffectRecipientDef::ObjectsOwnedByTarget { .. }
+            | EffectRecipientDef::CardsOwnedByTarget { .. }
             | EffectRecipientDef::Controller
             | EffectRecipientDef::Opponent
             | EffectRecipientDef::EachPlayer

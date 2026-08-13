@@ -22,7 +22,9 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&alpha::BRAINGEYSER),    // CEI 51
     PrintingRecord::reprint(&alpha::COPY_ARTIFACT),  // CEI 54
     PrintingRecord::reprint(&alpha::COUNTERSPELL),   // CEI 55
+    PrintingRecord::reprint(&alpha::MANA_SHORT),     // CEI 66
     PrintingRecord::reprint(&alpha::PSIONIC_BLAST),  // CEI 75
+    PrintingRecord::reprint(&alpha::STASIS),         // CEI 81
     PrintingRecord::reprint(&alpha::TIME_WALK),      // CEI 84
     PrintingRecord::reprint(&alpha::TIMETWISTER),    // CEI 85
     PrintingRecord::reprint(&alpha::BLACK_KNIGHT),   // CEI 95

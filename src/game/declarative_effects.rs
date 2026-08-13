@@ -1,9 +1,10 @@
 use super::{
     AbilitySourceRef, AddManaEffectDef, CardPartId, CharacteristicSource, CopiableAbility, CostDef,
     CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, FloatingTrigger, Game, GameResult, Mana, ManaSelectionDef, ManaSource,
-    Permanent, PlayerId, SacrificeFollowup, ScopedEffect, StackObject, Target, TriggerCapture,
-    TriggerContext, ValueDef, WinReason, ZoneKind, ZoneMoveCause, ZonePlacement, public_cards,
+    EffectRecipientDef, FloatingTrigger, Game, GameResult, Mana, ManaPool, ManaSelectionDef,
+    ManaSource, Permanent, PlayerId, SacrificeFollowup, ScopedEffect, StackObject, Target,
+    TriggerCapture, TriggerContext, ValueDef, WinReason, ZoneKind, ZoneMoveCause, ZonePlacement,
+    public_cards,
 };
 
 impl Game {
@@ -143,6 +144,14 @@ impl Game {
                 players.sort_by_key(|player| (*player != self.active_player, player.index()));
                 for player in players {
                     self.rng.shuffle(&mut self.players[player.index()].library);
+                }
+            }
+            EffectDef::EmptyManaPool { player: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.players[player.index()].mana_pool = ManaPool::default();
+                        self.players[player.index()].mana.clear();
+                    }
                 }
             }
             EffectDef::Discard {
@@ -778,10 +787,10 @@ impl Game {
             ValueDef::TargetManaValue(target) => {
                 Self::chosen_targets(object, scoped.target_slot(target))
                     .find_map(|target| match target {
-                        Target::Permanent(id) | Target::Spell(id) => {
+                        Target::Permanent(id) | Target::Card(id) | Target::Spell(id) => {
                             self.current_or_last_known_mana_value(id)
                         }
-                        Target::Player(_) | Target::Card(_) => None,
+                        Target::Player(_) => None,
                     })
                     .map_or(0, i32::from)
             }

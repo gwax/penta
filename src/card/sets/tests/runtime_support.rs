@@ -63,6 +63,16 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
         | EffectRecipientDef::ObjectsOwnedByTarget { object, .. } => {
             shared_object_predicate(object)
         }
+        EffectRecipientDef::CardsOwnedByTarget { object, zones, .. } => {
+            !zones.is_empty()
+                && zones.iter().all(|zone| {
+                    matches!(
+                        zone,
+                        ZoneKind::Library | ZoneKind::Hand | ZoneKind::Graveyard | ZoneKind::Exile
+                    )
+                })
+                && shared_object_predicate(object)
+        }
         EffectRecipientDef::ObjectsSharingNameWithTarget(_)
         | EffectRecipientDef::Source
         | EffectRecipientDef::AttachedPermanent
@@ -307,6 +317,7 @@ pub(super) fn shared_sacrifice_of_choice(effect: EffectDef) -> bool {
         && then.is_none_or(|effect| shared_stack_effect_at_position(*effect, false))
 }
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn shared_stack_effect_at_position(
     effect: EffectDef,
     deferred_decision_allowed: bool,
@@ -326,6 +337,7 @@ pub(super) fn shared_stack_effect_at_position(
         | EffectDef::DrawCards { recipient, .. }
         | EffectDef::Discard { recipient, .. }
         | EffectDef::ShuffleLibrary { player: recipient }
+        | EffectDef::EmptyManaPool { player: recipient }
         | EffectDef::LoseLife { recipient, .. }
         | EffectDef::Mill {
             player: recipient, ..
@@ -368,13 +380,10 @@ pub(super) fn shared_stack_effect_at_position(
         | EffectDef::Attach { object }
         | EffectDef::ChangeTextBasicLandType { object }
         | EffectDef::BecomeCopyOf { object, .. } => shared_effect_recipient(object),
-        // Only the two destinations counter_spell_into knows.
         EffectDef::Counter { object, zone } | EffectDef::CounterUnlessPaid { object, zone, .. } => {
             matches!(zone, ZoneKind::Graveyard | ZoneKind::Exile) && shared_effect_recipient(object)
         }
-        // Neither needs a recipient: a token is created under the
-        // resolving object's controller, and the flash grant is about its
-        // controller's next spell.
+        // Neither needs a recipient: both concern the resolving controller.
         // The amount is computed when the effect resolves, so nothing has
         // to read it ahead of time the way a mana ability does.
         EffectDef::AddManaEqualTo { .. }
@@ -560,6 +569,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
                 | EffectRecipientDef::ControllerOfTarget(_)
                 | EffectRecipientDef::ObjectsControlledByTarget { .. }
                 | EffectRecipientDef::ObjectsOwnedByTarget { .. }
+                | EffectRecipientDef::CardsOwnedByTarget { .. }
                 | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
                 | EffectRecipientDef::TriggeringObject
                 | EffectRecipientDef::ControllerOfTriggeringObject
@@ -599,6 +609,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
         | EffectDef::ShuffleLibrary { .. }
+        | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Tap { .. }
@@ -669,8 +680,8 @@ pub(super) fn shared_static_applied_effect(
         | AppliedEffectDef::PreventDamageFrom(predicate) => {
             recipient == EffectRecipientDef::Source && shared_object_predicate(predicate)
         }
-        AppliedEffectDef::DoesNotUntapDuringUntapStep => recipient == EffectRecipientDef::Source,
-        AppliedEffectDef::RemoveAbilities(_)
+        AppliedEffectDef::DoesNotUntapDuringUntapStep
+        | AppliedEffectDef::RemoveAbilities(_)
         | AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::CannotBeEnchanted => true,
         // Only a resolving animation is supported; nothing reads one off
@@ -800,6 +811,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::DrawCards { .. }
                     | EffectDef::Discard { .. }
                     | EffectDef::ShuffleLibrary { .. }
+                    | EffectDef::EmptyManaPool { .. }
                     | EffectDef::LoseLife { .. }
                     | EffectDef::LoseTheGame { .. }
                     | EffectDef::Tap { .. }

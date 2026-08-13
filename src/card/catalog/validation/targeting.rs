@@ -50,7 +50,8 @@ fn validate_recipient_target_references(
             validate_target_index(target, target_count)
         }
         EffectRecipientDef::ObjectsControlledByTarget { slot, .. }
-        | EffectRecipientDef::ObjectsOwnedByTarget { slot, .. } => {
+        | EffectRecipientDef::ObjectsOwnedByTarget { slot, .. }
+        | EffectRecipientDef::CardsOwnedByTarget { slot, .. } => {
             validate_target_index(slot, target_count)
         }
         EffectRecipientDef::Source
@@ -157,6 +158,7 @@ fn validate_effect_target_references(
         }
         EffectDef::LoseTheGame { player: object }
         | EffectDef::ShuffleLibrary { player: object }
+        | EffectDef::EmptyManaPool { player: object }
         | EffectDef::Tap { object }
         | EffectDef::Untap { object }
         | EffectDef::PreventCombatDamageThisTurn { object }

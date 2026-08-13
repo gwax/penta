@@ -140,6 +140,31 @@ pub(in crate::card::sets) static FELLWAR_STONE: CardRecord = CardRecord::new(
     .with_legacy_procedure()]),
 );
 
+// DRK 112 — Tormod's Crypt
+pub(in crate::card::sets) static TORMODS_CRYPT: CardRecord = CardRecord::new(
+    cards::TORMODS_CRYPT,
+    "Tormod's Crypt",
+    CardArt::new("79be5dc2-fab0-4ca1-a044-83e599ed1b41", "Christopher Rush"),
+    CardSet::TheDark,
+    CardRules::new_artifact(mana_cost!("{0}")).with_ability(AbilityDef::activated_with_targets(
+        "{T}, Sacrifice this artifact: Exile target player's graveyard.",
+        &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::CardsOwnedByTarget {
+                object: ObjectPredicateDef::Any,
+                zones: &[ZoneKind::Graveyard],
+                slot: TargetIndex::PRIMARY,
+            },
+            zone: ZoneKind::Exile,
+            placement: crate::card::ZonePlacement::Top,
+            controller: None,
+        },
+    )),
+);
+
 /// The Maze does not remove the creature from combat: it stays an attacker,
 /// keeps whatever is blocking it, and simply exchanges no combat damage.
 static MAZE_OF_ITH_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
@@ -184,6 +209,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_DIGGING_TEAM,
     &GOBLINS_OF_THE_FLARG,
     &FELLWAR_STONE,
+    &TORMODS_CRYPT,
     &MAZE_OF_ITH,
 ];
 

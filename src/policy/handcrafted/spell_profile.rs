@@ -299,6 +299,7 @@ impl HandcraftedPolicy {
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::ShuffleLibrary { .. }
+            | EffectDef::EmptyManaPool { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Sacrifice { .. }

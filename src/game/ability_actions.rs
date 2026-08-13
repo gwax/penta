@@ -513,10 +513,20 @@ impl Game {
         if let Some(object) = self.stack.iter().find(|object| object.id == id) {
             return Some(self.stack_spell_mana_value(object));
         }
+        if let Some((_, card)) = self.card_in_nonbattlefield_zone(id) {
+            return self
+                .catalog
+                .get(card.definition)
+                .map(|definition| definition.rules.printed_mana_cost().mana_value());
+        }
         match self.retired_objects.get(&id) {
             Some(RetiredObject::Permanent { mana_value, .. }) => Some(*mana_value),
             Some(RetiredObject::Stack(object)) => Some(self.stack_spell_mana_value(object)),
-            Some(RetiredObject::Card(_)) | None => None,
+            Some(RetiredObject::Card(card)) => self
+                .catalog
+                .get(card.definition)
+                .map(|definition| definition.rules.printed_mana_cost().mana_value()),
+            None => None,
         }
     }
 

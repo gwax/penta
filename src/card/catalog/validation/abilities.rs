@@ -444,6 +444,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
         | EffectDef::ShuffleLibrary { .. }
+        | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Tap { .. }
@@ -540,6 +541,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
         | EffectDef::ShuffleLibrary { .. }
+        | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Tap { .. }

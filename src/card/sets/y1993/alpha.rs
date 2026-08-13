@@ -293,6 +293,31 @@ pub(in crate::card::sets) static MAGICAL_HACK: CardRecord = CardRecord::new(
     ),
 );
 
+// LEA 65 — Mana Short
+pub(in crate::card::sets) static MANA_SHORT: CardRecord = CardRecord::new(
+    cards::MANA_SHORT,
+    "Mana Short",
+    CardArt::new("32dc632a-1378-4b3e-b959-1f32ae4d5652", "Dameon Willich"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap all lands target player controls and that player loses all unspent mana.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Tap {
+                object: EffectRecipientDef::ObjectsControlledByTarget {
+                    object: ObjectPredicateDef::HasType(CardType::Land),
+                    slot: TargetIndex::PRIMARY,
+                },
+            },
+            EffectDef::EmptyManaPool {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ]),
+    )),
+);
+
 // LEA 74 — Psionic Blast
 pub(in crate::card::sets) static PSIONIC_BLAST: CardRecord = CardRecord::new(
     cards::PSIONIC_BLAST,
@@ -315,6 +340,41 @@ pub(in crate::card::sets) static PSIONIC_BLAST: CardRecord = CardRecord::new(
             },
         ]),
     )]),
+);
+
+// LEA 80 — Stasis
+pub(in crate::card::sets) static STASIS: CardRecord = CardRecord::new(
+    cards::STASIS,
+    "Stasis",
+    CardArt::new("1e328704-d1d9-47f4-a923-8b5c187d4dc6", "Fay Jones"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{U}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "Players skip their untap steps.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::Any,
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, sacrifice this enchantment unless you pay {U}.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::UnlessPaid {
+                cost: mana_cost!("{U}"),
+                otherwise: &EffectDef::Sacrifice {
+                    object: EffectRecipientDef::Source,
+                },
+            },
+        ),
+    ]),
 );
 
 // LEA 83 — Time Walk
@@ -1687,7 +1747,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COPY_ARTIFACT,
     &COUNTERSPELL,
     &MAGICAL_HACK,
+    &MANA_SHORT,
     &PSIONIC_BLAST,
+    &STASIS,
     &TIME_WALK,
     &TIMETWISTER,
     &BLACK_KNIGHT,
