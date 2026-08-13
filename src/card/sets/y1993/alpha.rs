@@ -1223,7 +1223,14 @@ pub(in crate::card::sets) static BLACK_KNIGHT: CardRecord = CardRecord::new(
 );
 
 // LEA 95 — Bog Wraith
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Swampwalk”.
+pub(in crate::card::sets) static BOG_WRAITH: CardRecord = CardRecord::new(
+    cards::BOG_WRAITH,
+    "Bog Wraith",
+    CardArt::new("6701874e-986e-4b81-9268-90b6171e6187", "Jeff A. Menges"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Wraith"], 3, 3)
+        .with_ability(abilities::landwalk(BasicLandType::Swamp)),
+);
 
 // LEA 96 — Contract from Below
 // Audit: blocked — Needs ante-zone and deck-construction handling for “Discard your hand, ante the top card of your library, then draw seven cards”.
@@ -4003,6 +4010,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WATER_ELEMENTAL,
     &BAD_MOON,
     &BLACK_KNIGHT,
+    &BOG_WRAITH,
     &DARK_RITUAL,
     &DEATHGRIP,
     &DEMONIC_TUTOR,

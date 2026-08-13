@@ -130,14 +130,28 @@ pub const fn indestructible() -> AbilityDef {
     keyword("Indestructible", KeywordAbility::Indestructible)
 }
 
+/// The printed landwalk clause for one basic land type. The rules text is the
+/// keyword on its own, exactly as the card prints it.
+#[must_use]
+pub const fn landwalk(land_type: BasicLandType) -> AbilityDef {
+    let text = match land_type {
+        BasicLandType::Plains => "Plainswalk",
+        BasicLandType::Island => "Islandwalk",
+        BasicLandType::Swamp => "Swampwalk",
+        BasicLandType::Mountain => "Mountainwalk",
+        BasicLandType::Forest => "Forestwalk",
+    };
+    keyword(text, KeywordAbility::Landwalk(land_type))
+}
+
 #[must_use]
 pub const fn mountainwalk() -> AbilityDef {
-    keyword("Mountainwalk", KeywordAbility::Mountainwalk)
+    landwalk(BasicLandType::Mountain)
 }
 
 #[must_use]
 pub const fn forestwalk() -> AbilityDef {
-    keyword("Forestwalk", KeywordAbility::Forestwalk)
+    landwalk(BasicLandType::Forest)
 }
 
 #[must_use]

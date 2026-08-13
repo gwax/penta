@@ -34,6 +34,16 @@ distinguishes snapshots of the covered source and build inputs.
   now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
+- **Landwalk is one keyword parameterized by land type.** CR 702.14 is a single
+  rule, but the engine carried Mountainwalk and Forestwalk as separate keywords
+  with the blocking check spelled out once per variant, so the other three could
+  not be printed at all. `KeywordAbility::Landwalk(BasicLandType)` replaces both,
+  the blocking rule is stated once for all five types, and a creature may carry
+  several. Six Old School identities blocked only on this are now executable:
+  Bog Wraith, Righteous Avengers, Devouring Deep, Segovian Leviathan, Lost Soul,
+  and Marsh Goblins. Checkpoint keyword tags keep their printed names and gain
+  `plainswalk`, `islandwalk`, and `swampwalk` additively.
+
 - **Regeneration is a declarative effect.** Arming a regeneration shield is now
   an ordinary `EffectDef`, so a printed "{cost}: Regenerate this creature" is an
   activated ability like any other rather than an engine-level card branch. The

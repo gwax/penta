@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::model::KeywordSnapshot;
+use super::model_keyword::KeywordSnapshot;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]

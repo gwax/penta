@@ -3,8 +3,10 @@
 use crate::CardDefinitionId;
 
 mod isd_rtr;
+mod landwalk;
 mod regeneration;
 pub use isd_rtr::*;
+pub use landwalk::*;
 pub use regeneration::*;
 
 pub const ANKH_OF_MISHRA: CardDefinitionId = CardDefinitionId(1);

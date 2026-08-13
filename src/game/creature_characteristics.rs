@@ -208,8 +208,14 @@ impl Game {
         self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof)
     }
 
-    pub(super) fn has_mountainwalk(&self, permanent: &Permanent) -> bool {
-        self.permanent_has_executable_keyword(permanent, KeywordAbility::Mountainwalk)
+    /// CR 702.14: landwalk beats blocking when the defending player controls
+    /// a land of the named type. A creature can carry several, and any one of
+    /// them is enough, so this asks the question once for all five.
+    pub(super) fn landwalk_beats(&self, permanent: &Permanent, defender: PlayerId) -> bool {
+        BasicLandType::ALL.iter().any(|land_type| {
+            self.permanent_has_executable_keyword(permanent, KeywordAbility::Landwalk(*land_type))
+                && self.controls_land_type(defender, *land_type)
+        })
     }
 
     pub(super) fn permanent_has_executable_keyword(
@@ -254,16 +260,12 @@ impl Game {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn has_forestwalk(&self, permanent: &Permanent) -> bool {
-        self.permanent_has_executable_keyword(permanent, KeywordAbility::Forestwalk)
-    }
-
-    pub(super) fn controls_mountain(&self, player: PlayerId) -> bool {
-        self.controls_land_type(player, BasicLandType::Mountain)
-    }
-
-    pub(super) fn controls_forest(&self, player: PlayerId) -> bool {
-        self.controls_land_type(player, BasicLandType::Forest)
+        self.permanent_has_executable_keyword(
+            permanent,
+            KeywordAbility::Landwalk(BasicLandType::Forest),
+        )
     }
 
     pub(super) fn can_use_tap_ability(&self, permanent: &Permanent) -> bool {

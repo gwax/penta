@@ -1,11 +1,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules,
-    CardSet, CardType, ComparisonDef, EffectDef, EffectDurationDef, EffectExecutionDef,
-    EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt,
+    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectDurationDef,
+    EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1013,7 +1013,7 @@ pub(in crate::card::sets) static SCARWOOD_HAG: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Keyword(
-                    KeywordAbility::Forestwalk,
+                    KeywordAbility::Landwalk(BasicLandType::Forest),
                 )),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
@@ -1089,7 +1089,14 @@ pub(in crate::card::sets) static TRACKER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “{G}{G}: This creature gains forestwalk until end of turn and deals 2 damage to you”.
 
 // DRK 93 — Marsh Goblins
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Swampwalk”.
+pub(in crate::card::sets) static MARSH_GOBLINS: CardRecord = CardRecord::new(
+    cards::MARSH_GOBLINS,
+    "Marsh Goblins",
+    CardArt::new("8aabd80f-a18a-4bc1-9f05-4c3a63de77ce", "Quinton Hoover"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{B}{R}"), &["Goblin"], 1, 1)
+        .with_ability(abilities::landwalk(BasicLandType::Swamp)),
+);
 
 // DRK 94 — Scarwood Goblins
 pub(in crate::card::sets) static SCARWOOD_GOBLINS: CardRecord = CardRecord::new(
@@ -1448,6 +1455,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCARWOOD_HAG,
     &SCAVENGER_FOLK,
     &TRACKER,
+    &MARSH_GOBLINS,
     &SCARWOOD_GOBLINS,
     &DARK_HEART_OF_THE_WOOD,
     &BONE_FLUTE,

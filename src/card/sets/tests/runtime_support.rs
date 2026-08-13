@@ -112,8 +112,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::Intimidate
             | KeywordAbility::Undying
             | KeywordAbility::Indestructible
-            | KeywordAbility::Mountainwalk
-            | KeywordAbility::Forestwalk
+            | KeywordAbility::Landwalk(_)
             | KeywordAbility::AttacksEachCombatIfAble
             | KeywordAbility::ProtectionFrom(_)
     )

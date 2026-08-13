@@ -29,6 +29,7 @@ mod emblem;
 mod event;
 mod model;
 mod model_animation;
+mod model_keyword;
 mod model_procedure;
 mod model_trigger;
 mod permanent;

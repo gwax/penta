@@ -303,7 +303,14 @@ pub(in crate::card::sets) static PRESENCE_OF_THE_MASTER: CardRecord = CardRecord
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Return to your hand all enchantments you both own and control, all Auras you own attached to permanents you control, and all Auras you own attached to attacking creatures your opponents…”.
 
 // LEG 34 — Righteous Avengers
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Plainswalk”.
+pub(in crate::card::sets) static RIGHTEOUS_AVENGERS: CardRecord = CardRecord::new(
+    cards::RIGHTEOUS_AVENGERS,
+    "Righteous Avengers",
+    CardArt::new("d96b463e-9579-4e7b-87c2-342527b91e7c", "Heather Hudson"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{4}{W}"), &["Human", "Soldier"], 3, 1)
+        .with_ability(abilities::landwalk(BasicLandType::Plains)),
+);
 
 // LEG 35 — Seeker
 pub(in crate::card::sets) static SEEKER: CardRecord = CardRecord::new(
@@ -497,7 +504,14 @@ pub(in crate::card::sets) static BOOMERANG: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “When this creature dies, change the base power and toughness of all creatures that dealt damage to it this turn to 0/2”.
 
 // LEG 50 — Devouring Deep
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Islandwalk”.
+pub(in crate::card::sets) static DEVOURING_DEEP: CardRecord = CardRecord::new(
+    cards::DEVOURING_DEEP,
+    "Devouring Deep",
+    CardArt::new("0855a5a8-8c40-4396-9ad1-8fa0fc6a0c59", "Liz Danforth"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Fish"], 1, 2)
+        .with_ability(abilities::landwalk(BasicLandType::Island)),
+);
 
 // LEG 51 — Dream Coat
 // Audit: blocked — Needs a per-object, per-turn activation quota for “{0}: Enchanted creature becomes the color or colors of your choice. Activate only once each turn”.
@@ -707,7 +721,14 @@ pub(in crate::card::sets) static REMOVE_SOUL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become blue until end of turn”.
 
 // LEG 76 — Segovian Leviathan
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Islandwalk”.
+pub(in crate::card::sets) static SEGOVIAN_LEVIATHAN: CardRecord = CardRecord::new(
+    cards::SEGOVIAN_LEVIATHAN,
+    "Segovian Leviathan",
+    CardArt::new("e5a814f1-7f8d-4c2c-b706-ee0ed5892f7b", "Melissa A. Benson"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{4}{U}"), &["Leviathan"], 3, 3)
+        .with_ability(abilities::landwalk(BasicLandType::Island)),
+);
 
 // LEG 77 — Silhouette
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Choose target creature. If a spell or ability that targets that creature would cause a source to deal damage to that creature this turn, prevent that damage”.
@@ -956,7 +977,17 @@ pub(in crate::card::sets) static HELL_SWARM: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{B}: If this creature's power is 1 or more, it gets -1/-0 until end of turn and put a -0/-1 counter on target creature blocking or blocked by this creature. Activate only during the…”.
 
 // LEG 111 — Lost Soul
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Swampwalk”.
+pub(in crate::card::sets) static LOST_SOUL: CardRecord = CardRecord::new(
+    cards::LOST_SOUL,
+    "Lost Soul",
+    CardArt::new(
+        "601eed5c-436d-425b-a45f-07881ad893c8",
+        "Randy Asplund-Faith",
+    ),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Spirit", "Minion"], 2, 1)
+        .with_ability(abilities::landwalk(BasicLandType::Swamp)),
+);
 
 // LEG 112 — Mold Demon
 // Audit: blocked — Needs linked sacrifice/destruction accounting for “When this creature enters, sacrifice it unless you sacrifice two Swamps”.
@@ -2914,6 +2945,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LIFEBLOOD,
     &MOAT,
     &PRESENCE_OF_THE_MASTER,
+    &RIGHTEOUS_AVENGERS,
     &SEEKER,
     &SHIELD_WALL,
     &SPIRITUAL_SANCTUARY,
@@ -2923,6 +2955,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ACID_RAIN,
     &AZURE_DRAKE,
     &BOOMERANG,
+    &DEVOURING_DEEP,
     &FLASH_COUNTER,
     &FLASH_FLOOD,
     &FORCE_SPIKE,
@@ -2930,6 +2963,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PSIONIC_ENTITY,
     &RECALL,
     &REMOVE_SOUL,
+    &SEGOVIAN_LEVIATHAN,
     &ZEPHYR_FALCON,
     &CARRION_ANTS,
     &CYCLOPEAN_MUMMY,
@@ -2938,6 +2972,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GREED,
     &HEADLESS_HORSEMAN,
     &HELL_SWARM,
+    &LOST_SOUL,
     &NETHER_VOID,
     &THE_ABYSS,
     &WALKING_DEAD,

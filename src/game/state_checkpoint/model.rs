@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::model_keyword::KeywordSnapshot;
+
 use super::model_animation::{AnimationSnapshot, UpkeepKeywordSnapshot};
 use super::model_procedure::{DrawReplacementSnapshot, PendingProcedureSnapshot};
 use super::model_trigger::{DelayedTriggerSnapshot, FloatingTriggerSnapshot};
@@ -314,37 +316,6 @@ pub(super) enum AttackDefenderSnapshot {
 pub(super) struct CombatDamageAssignmentSnapshot {
     pub(super) recipient: TargetSnapshot,
     pub(super) amount: u16,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) enum KeywordSnapshot {
-    Flying,
-    Trample,
-    Haste,
-    FirstStrike,
-    DoubleStrike,
-    Banding,
-    Vigilance,
-    Defender,
-    Deathtouch,
-    Lifelink,
-    Reach,
-    Flash,
-    Hexproof,
-    Shroud,
-    Intimidate,
-    Undying,
-    Indestructible,
-    AttacksEachCombatIfAble,
-    Mountainwalk,
-    Forestwalk,
-    ProtectionFromWhite,
-    ProtectionFromBlue,
-    ProtectionFromBlack,
-    ProtectionFromRed,
-    ProtectionFromGreen,
-    ProtectionFromColorless,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

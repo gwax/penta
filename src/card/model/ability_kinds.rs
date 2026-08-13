@@ -2,9 +2,9 @@ use crate::ids::{AbilityId, AlternativeCostId, ModeId, TargetIndex};
 
 use super::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AlternativeCostDef,
-    CardBehavior, EffectDef, ImplementationStatus, ManaColor, ManaCost, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, ReplacementConditionDef, ReplacementEventDef, TriggerEventDef,
-    ZoneKind,
+    BasicLandType, CardBehavior, EffectDef, ImplementationStatus, ManaColor, ManaCost,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementConditionDef,
+    ReplacementEventDef, TriggerEventDef, ZoneKind,
 };
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -516,8 +516,10 @@ pub enum KeywordAbility {
     /// like one: a static requirement with no parameters that several cards
     /// state in the same words.
     AttacksEachCombatIfAble,
-    Mountainwalk,
-    Forestwalk,
+    /// CR 702.14. One keyword parameterized by land type: the creature cannot
+    /// be blocked as long as the defending player controls a land of that
+    /// type. The printed variants differ only in which type they name.
+    Landwalk(BasicLandType),
     ProtectionFrom(ManaColor),
 }
 
@@ -543,11 +545,16 @@ impl KeywordAbility {
             Self::Hexproof => 12,
             Self::Intimidate => 13,
             Self::Undying => 14,
-            Self::Mountainwalk => 15,
             Self::AttacksEachCombatIfAble => 16,
-            Self::Forestwalk => 17,
             Self::Indestructible => 18,
             Self::Shroud => 19,
+            // One index per land type, so a set of landwalks still packs into
+            // the same bitmask as the parameterless keywords.
+            Self::Landwalk(BasicLandType::Plains) => 20,
+            Self::Landwalk(BasicLandType::Island) => 21,
+            Self::Landwalk(BasicLandType::Swamp) => 22,
+            Self::Landwalk(BasicLandType::Mountain) => 23,
+            Self::Landwalk(BasicLandType::Forest) => 24,
             Self::ProtectionFrom(_) => return None,
         })
     }

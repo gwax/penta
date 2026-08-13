@@ -164,10 +164,7 @@ impl Game {
                 (
                     permanent.card.id,
                     self.has_flying(permanent),
-                    (self.has_mountainwalk(permanent)
-                        && self.controls_mountain(permanent.controller.opponent()))
-                        || (self.has_forestwalk(permanent)
-                            && self.controls_forest(permanent.controller.opponent())),
+                    self.landwalk_beats(permanent, permanent.controller.opponent()),
                     self.power(permanent).unwrap_or(0),
                 )
             })

@@ -1,13 +1,15 @@
 use super::model::{
-    AbilityLocator, AppliedEffectLocator, KeywordSnapshot, ManaPayloadLocator,
-    ReplacementEffectLocator, ScopedEffectSnapshot,
+    AbilityLocator, AppliedEffectLocator, ManaPayloadLocator, ReplacementEffectLocator,
+    ScopedEffectSnapshot,
 };
 use super::model_animation::AnimationSnapshot;
+use super::model_keyword::KeywordSnapshot;
 use super::{Mana, ScopedEffect};
 use crate::CardCatalog;
 use crate::card::{
-    AbilityDef, AddManaEffectDef, AnimationDef, AppliedEffectDef, DeclarativeAbilityDef, EffectDef,
-    KeywordAbility, ManaColor, ManaSpendEffectDef, ReplacementEffectDef, SpellAbilityDef,
+    AbilityDef, AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType,
+    DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaSpendEffectDef,
+    ReplacementEffectDef, SpellAbilityDef,
 };
 
 pub(super) fn ability_locator(
@@ -611,8 +613,11 @@ pub(super) const fn keyword_snapshot(keyword: KeywordAbility) -> KeywordSnapshot
         KeywordAbility::Undying => KeywordSnapshot::Undying,
         KeywordAbility::Indestructible => KeywordSnapshot::Indestructible,
         KeywordAbility::AttacksEachCombatIfAble => KeywordSnapshot::AttacksEachCombatIfAble,
-        KeywordAbility::Mountainwalk => KeywordSnapshot::Mountainwalk,
-        KeywordAbility::Forestwalk => KeywordSnapshot::Forestwalk,
+        KeywordAbility::Landwalk(BasicLandType::Plains) => KeywordSnapshot::Plainswalk,
+        KeywordAbility::Landwalk(BasicLandType::Island) => KeywordSnapshot::Islandwalk,
+        KeywordAbility::Landwalk(BasicLandType::Swamp) => KeywordSnapshot::Swampwalk,
+        KeywordAbility::Landwalk(BasicLandType::Mountain) => KeywordSnapshot::Mountainwalk,
+        KeywordAbility::Landwalk(BasicLandType::Forest) => KeywordSnapshot::Forestwalk,
         KeywordAbility::ProtectionFrom(ManaColor::White) => KeywordSnapshot::ProtectionFromWhite,
         KeywordAbility::ProtectionFrom(ManaColor::Blue) => KeywordSnapshot::ProtectionFromBlue,
         KeywordAbility::ProtectionFrom(ManaColor::Black) => KeywordSnapshot::ProtectionFromBlack,
@@ -644,8 +649,11 @@ pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
         KeywordSnapshot::Undying => KeywordAbility::Undying,
         KeywordSnapshot::Indestructible => KeywordAbility::Indestructible,
         KeywordSnapshot::AttacksEachCombatIfAble => KeywordAbility::AttacksEachCombatIfAble,
-        KeywordSnapshot::Mountainwalk => KeywordAbility::Mountainwalk,
-        KeywordSnapshot::Forestwalk => KeywordAbility::Forestwalk,
+        KeywordSnapshot::Plainswalk => KeywordAbility::Landwalk(BasicLandType::Plains),
+        KeywordSnapshot::Islandwalk => KeywordAbility::Landwalk(BasicLandType::Island),
+        KeywordSnapshot::Swampwalk => KeywordAbility::Landwalk(BasicLandType::Swamp),
+        KeywordSnapshot::Mountainwalk => KeywordAbility::Landwalk(BasicLandType::Mountain),
+        KeywordSnapshot::Forestwalk => KeywordAbility::Landwalk(BasicLandType::Forest),
         KeywordSnapshot::ProtectionFromWhite => KeywordAbility::ProtectionFrom(ManaColor::White),
         KeywordSnapshot::ProtectionFromBlue => KeywordAbility::ProtectionFrom(ManaColor::Blue),
         KeywordSnapshot::ProtectionFromBlack => KeywordAbility::ProtectionFrom(ManaColor::Black),

@@ -382,6 +382,7 @@ mod guardian_beast;
 mod identity_and_mana;
 mod land_and_ability_layers;
 mod land_characteristics;
+mod landwalk;
 mod mana_and_costs;
 mod mana_vault;
 mod modal_effects;

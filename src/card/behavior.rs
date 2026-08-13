@@ -41,8 +41,8 @@ pub enum CardBehavior {
 }
 
 use super::{
-    CardRules, CardSupertype, CardTypeSet, ColorSet, CreatureStats, KeywordAbility, ManaColor,
-    ManaCost,
+    BasicLandType, CardRules, CardSupertype, CardTypeSet, ColorSet, CreatureStats, KeywordAbility,
+    ManaColor, ManaCost,
 };
 use crate::card::sets;
 
@@ -91,7 +91,7 @@ impl CardBehavior {
     #[must_use]
     pub fn has_mountainwalk(self) -> bool {
         self.rules()
-            .has_executable_keyword(KeywordAbility::Mountainwalk)
+            .has_executable_keyword(KeywordAbility::Landwalk(BasicLandType::Mountain))
     }
 
     /// Returns the object's printed color-characteristic set.
