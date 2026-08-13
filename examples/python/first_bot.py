@@ -16,9 +16,17 @@ import penta
 CATALOG = {card["definition"]: card for card in json.loads(penta.catalog())["cards"]}
 
 
-def spell_score(action):
-    """Bigger creatures first, then anything else castable."""
-    card = CATALOG.get(action.get("card"))
+def spell_score(action, hand):
+    """Bigger creatures first, then anything else castable.
+
+    A cast action names the card by `objectId` -- which copy of the card is
+    being cast -- while the catalog is keyed by `definition`, which is what
+    the card *is*. Going through the hand is what connects the two. Reading
+    the catalog with an object id straight from the action looks like it
+    works, because both are small integers, and quietly scores the wrong
+    card or none at all.
+    """
+    card = CATALOG.get(hand.get(action.get("card")))
     if card is None:
         return 0
     power = card.get("power") or 0
@@ -28,6 +36,7 @@ def spell_score(action):
 def choose(observation):
     """Pick an action index from one observation. Replace me with a model."""
     actions = observation["legalActions"]
+    hand = {card["objectId"]: card["definition"] for card in observation["hand"]}
     by_type = {}
     for action in actions:
         by_type.setdefault(action["type"], []).append(action)
@@ -50,8 +59,8 @@ def choose(observation):
     # Cast the beefiest thing on offer. Actions whose costs cannot be paid
     # are simply absent from legalActions, so no mana math is needed.
     if "CastSpell" in by_type:
-        best = max(by_type["CastSpell"], key=spell_score)
-        if spell_score(best) > 0:
+        best = max(by_type["CastSpell"], key=lambda action: spell_score(action, hand))
+        if spell_score(best, hand) > 0:
             return best["index"]
 
     # Turn every creature sideways.

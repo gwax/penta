@@ -390,6 +390,19 @@ An index belongs only to the observation that contains it. Acting changes the
 state and rebuilds `legalActions`, so re-observe before choosing again; do not
 cache an index across actions even when the visible `type` is the same.
 
+Wherever an action names a card — `card`, `sacrifices`, `attacker`, `blocker`,
+`costObject` — it does so by **object ID**, never by `definition`. To ask what
+a cast is actually casting, go through the observation's own zone listing:
+
+```python
+hand = {card["objectId"]: card["definition"] for card in observation["hand"]}
+card = CATALOG[hand[action["card"]]]
+```
+
+Reading the catalog with an object ID directly appears to work, because both
+are small integers and the lookup usually finds *something*. It is simply a
+different card, with no error to notice.
+
 For `CastSpell`, `card` and `sacrifices` are top-level. The canonical nested
 `choices` object contains `playOptionId`, ordered `modeIds`, nullable
 `alternativeCostId`, `additionalCostIds`, `x`, and `targetSelections`.
