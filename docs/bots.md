@@ -256,10 +256,12 @@ retain target-slot groupings and divided amounts, and carry the triggering
 event context. A stack object whose source, triggering object, target, or
 chosen cost object already requires retired-object last-known information
 still rejects explicitly. Dynamic copied or temporarily granted
-characteristics, deferred triggers, emblems, restricted mana, retired-object
-LKI, and stack-object runtime overrides also still require semantic checkpoint
-encodings before they can be imported. Data-only decisions whose referenced
-objects keep their public IDs can already resume: miracle reveal, public pile
+characteristics, deferred triggers, restricted mana, retired-object LKI, and
+stack-object runtime overrides also still require semantic checkpoint
+encodings before they can be imported. Command-zone emblems already
+reconstruct from their catalog definition and creating ability provenance.
+Data-only decisions whose referenced objects keep their public IDs can already
+resume: miracle reveal, public pile
 split/choice, target text-change, ordinary sacrifice/destruction choice, Time
 Vault, Sylvan Library, and Tetravus choices. A sacrifice choice is included
 when it has no deferred follow-up. Decisions holding a resolving

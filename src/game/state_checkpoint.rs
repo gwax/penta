@@ -16,10 +16,12 @@ use crate::{
 };
 
 mod decision;
+mod emblem;
 mod semantics;
 mod stack;
 
 use decision::{decision_checkpoint_json, parse_pending_decision};
+use emblem::{emblem_checkpoint_json, parse_emblems};
 use semantics::{
     ability_locator_json, animation_json, catalog_ability, catalog_animation, keyword_json,
     parse_keyword,
@@ -99,6 +101,7 @@ impl Game {
                 }),
             },
             "battlefield": self.battlefield.iter().map(permanent_checkpoint_json).collect::<Vec<_>>(),
+            "emblems": self.emblems.iter().map(emblem_checkpoint_json).collect::<Vec<_>>(),
             "stack": self.stack.iter().map(|object| {
                 let ability_payload = (object.kind != StackObjectKind::Spell)
                     .then(|| stack_ability_checkpoint_json(self, object));
@@ -115,8 +118,7 @@ impl Game {
                 })
             }).collect::<Vec<_>>(),
             "decisionState": decision_state,
-            "hasDeferredState": !self.emblems.is_empty()
-                || !self.temporary_ability_grants.is_empty()
+            "hasDeferredState": !self.temporary_ability_grants.is_empty()
                 || !self.delayed_triggers.is_empty()
                 || !self.floating_triggers.is_empty()
                 || has_unsupported_decision
@@ -271,6 +273,7 @@ impl Game {
             events: vec![GameEvent::GameStarted { seed: rollout_seed }],
         };
         game.battlefield = parse_battlefield(observation, checkpoint, &game.catalog)?;
+        game.emblems = parse_emblems(observation, checkpoint, &game)?;
         game.stack = parse_stack(observation, checkpoint, &game)?;
         game.pending_decisions = parse_pending_decision(observation, checkpoint)?
             .into_iter()
@@ -284,6 +287,7 @@ impl Game {
         game.next_continuous_effect_timestamp = game
             .battlefield
             .iter()
+            .chain(&game.emblems)
             .map(|permanent| permanent.timestamp.0)
             .max()
             .unwrap_or(u64::from(game.next_object_id))
@@ -476,11 +480,18 @@ fn parse_two_public_zones(
 }
 
 fn max_public_object_id(observation: &Value) -> Option<u32> {
-    ["hand", "graveyards", "exiles", "battlefield", "stack"]
-        .into_iter()
-        .filter_map(|name| observation.get(name))
-        .flat_map(walk_object_ids)
-        .max()
+    [
+        "hand",
+        "graveyards",
+        "exiles",
+        "battlefield",
+        "emblems",
+        "stack",
+    ]
+    .into_iter()
+    .filter_map(|name| observation.get(name))
+    .flat_map(walk_object_ids)
+    .max()
 }
 fn walk_object_ids(value: &Value) -> Box<dyn Iterator<Item = u32> + '_> {
     match value {

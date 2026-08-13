@@ -179,3 +179,67 @@ fn a_hidden_zone_decision_without_id_reconciliation_fails_closed() {
     assert!(checkpoint["decisionState"].is_null());
     assert_eq!(checkpoint["hasDeferredState"], true);
 }
+
+#[test]
+fn an_emblem_rebuilds_with_identity_and_source_provenance() {
+    let catalog = crate::poc::catalog().expect("catalog builds");
+    let deck = crate::Deck {
+        main: vec![crate::card::cards::MOUNTAIN; 60],
+        sideboard: Vec::new(),
+    };
+    let mut game = Game::new(catalog.clone(), [deck.clone(), deck], 53).expect("game starts");
+    let controller = PlayerId::One;
+    let definition = crate::card::cards::DOMRI_RADE_EMBLEM;
+    let card = game.unbacked_object(
+        definition,
+        controller,
+        CharacteristicSource::Ability(definition),
+    );
+    let emblem_id = card.id;
+    let mut emblem = Permanent::entering(
+        card,
+        CardPartId::PRIMARY,
+        controller,
+        game.turns_started[controller.index()],
+    );
+    emblem.timestamp = game.allocate_continuous_effect_timestamp();
+    emblem.emblem_source = Some(AbilityOrigin::Printed {
+        definition: crate::card::cards::DOMRI_RADE,
+        part: CardPartId::PRIMARY,
+        ability: AbilityId(2),
+    });
+    game.emblems.push(emblem);
+
+    let observation = game.observe(controller);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let observation_json = crate::protocol::observation_json_for_format(
+        &catalog,
+        game.format,
+        &observation,
+        true,
+        &actions,
+    );
+    let definitions = |cards: &[CardInstance]| {
+        cards
+            .iter()
+            .map(|card| card.definition.0)
+            .collect::<Vec<_>>()
+    };
+    let hidden = json!({
+        "hands": {
+            "p2": definitions(&game.players[PlayerId::Two.index()].hand),
+        },
+        "libraries": {
+            "p1": definitions(&game.players[PlayerId::One.index()].library),
+            "p2": definitions(&game.players[PlayerId::Two.index()].library),
+        },
+    });
+    assert_eq!(observation_json["checkpoint"]["hasDeferredState"], false);
+
+    let rebuilt =
+        Game::from_observation_checkpoint(catalog, game.format, &observation_json, &hidden, 1_009)
+            .expect("emblem reconstructs");
+    assert_eq!(rebuilt.emblems.len(), 1);
+    assert_eq!(rebuilt.emblems[0].card.id, emblem_id);
+    assert_eq!(rebuilt.observed_emblems(), observation.emblems);
+}

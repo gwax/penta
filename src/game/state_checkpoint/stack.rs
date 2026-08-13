@@ -232,7 +232,7 @@ fn parse_trigger_context(value: &Value) -> Result<TriggerContext, String> {
     })
 }
 
-fn parse_ability_origin(value: &Value) -> Result<AbilityOrigin, String> {
+pub(super) fn parse_ability_origin(value: &Value) -> Result<AbilityOrigin, String> {
     match str_field(value, "kind")? {
         "printed" => Ok(AbilityOrigin::Printed {
             definition: CardDefinitionId(
