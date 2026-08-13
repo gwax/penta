@@ -122,6 +122,105 @@ fn observations_carry_indexed_legal_actions_and_no_hidden_cards() {
 }
 
 #[test]
+fn an_observation_rebuilds_with_separate_hidden_hypotheses_and_fresh_rng() {
+    let game = BotGame::new("Sligh", "The Deck", Opponent::External, PlayerId::Two, 73)
+        .expect("game starts");
+    let seat = game.decision_seat().expect("mulligan decision");
+    assert_eq!(seat, PlayerId::One);
+    let observation = game.observe_json(seat);
+    let definitions = |json: String| {
+        serde_json::from_str::<Value>(&json)
+            .expect("zone JSON")
+            .as_array()
+            .expect("zone array")
+            .iter()
+            .map(|card| card["definition"].as_u64().expect("definition"))
+            .collect::<Vec<_>>()
+    };
+    let hidden = json!({
+        "hands": {
+            "p2": definitions(game.hand_json(PlayerId::Two)),
+        },
+        "libraries": {
+            "p1": definitions(game.library_json(PlayerId::One)),
+            "p2": definitions(game.library_json(PlayerId::Two)),
+        },
+    });
+
+    let mut rebuilt = BotGame::from_observation_json(&observation, &hidden.to_string(), 999)
+        .expect("checkpoint reconstructs");
+    let before: Value = serde_json::from_str(&observation).expect("observation JSON");
+    let after: Value = serde_json::from_str(&rebuilt.observe_json(seat)).expect("rebuilt JSON");
+    assert_eq!(after["legalActions"], before["legalActions"]);
+    assert_eq!(after["hand"], before["hand"], "public ids are preserved");
+    assert!(after.get("seed").is_none());
+    assert!(after["checkpoint"].get("rng").is_none());
+
+    rebuilt.act(0).expect("the reconstructed game is live");
+    assert_eq!(rebuilt.decision_seat(), Some(PlayerId::Two));
+}
+
+#[test]
+fn an_ordinary_spell_on_the_stack_rebuilds_as_a_response_window() {
+    let mut game = BotGame::new("Sligh", "The Deck", Opponent::External, PlayerId::Two, 7)
+        .expect("game starts");
+    let (viewer, observation) = loop {
+        let viewer = game.decision_seat().expect("game continues");
+        let observation: Value =
+            serde_json::from_str(&game.observe_json(viewer)).expect("observation JSON");
+        let actions = observation["legalActions"].as_array().expect("actions");
+        if !observation["stack"].as_array().expect("stack").is_empty() {
+            break (viewer, observation);
+        }
+        let preferred = ["KeepHand", "PlayLand", "CastSpell", "PassPriority"];
+        let index = preferred
+            .iter()
+            .find_map(|kind| {
+                actions
+                    .iter()
+                    .position(|action| action["type"].as_str() == Some(kind))
+            })
+            .unwrap_or_else(|| pass_bot(&observation));
+        game.act(index).expect("selected action is legal");
+    };
+    assert_eq!(observation["stack"][0]["kind"], "Spell");
+
+    let zone_definitions = |json: String| {
+        serde_json::from_str::<Value>(&json)
+            .expect("zone JSON")
+            .as_array()
+            .expect("zone array")
+            .iter()
+            .map(|card| card["definition"].as_u64().expect("definition"))
+            .collect::<Vec<_>>()
+    };
+    let opponent_key = if viewer.opponent() == PlayerId::One {
+        "p1"
+    } else {
+        "p2"
+    };
+    let hidden = json!({
+        "hands": {
+            (opponent_key): zone_definitions(game.hand_json(viewer.opponent())),
+        },
+        "libraries": {
+            "p1": zone_definitions(game.library_json(PlayerId::One)),
+            "p2": zone_definitions(game.library_json(PlayerId::Two)),
+        },
+    });
+    let rebuilt =
+        BotGame::from_observation_json(&observation.to_string(), &hidden.to_string(), 123)
+            .expect("response window reconstructs");
+    let rebuilt_observation: Value =
+        serde_json::from_str(&rebuilt.observe_json(viewer)).expect("rebuilt observation");
+    assert_eq!(rebuilt_observation["stack"], observation["stack"]);
+    assert_eq!(
+        rebuilt_observation["legalActions"],
+        observation["legalActions"]
+    );
+}
+
+#[test]
 #[allow(clippy::too_many_lines)]
 fn protocol_reincarnates_public_object_identity_across_cast_zones() {
     let mut game = BotGame::new("Goblins", "Goblins", Opponent::External, PlayerId::Two, 0)

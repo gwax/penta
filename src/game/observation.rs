@@ -2,6 +2,7 @@ use crate::{
     AbilityOrigin, Action, AttackDefender, CardDefinitionId, CardPartId, CardTypeSet,
     CastSignature, GameObjectId, PlayerId, Target,
 };
+use serde_json::Value;
 
 use super::{DecisionObservation, GameResult, ManaPool, StackObjectKind, Step};
 
@@ -136,4 +137,7 @@ pub struct PlayerObservation {
     pub decision: Option<DecisionObservation>,
     pub result: Option<GameResult>,
     pub legal_actions: Vec<Action>,
+    /// Hidden-safe rules bookkeeping needed to treat this observation as a
+    /// current-state checkpoint for local determinization.
+    pub checkpoint: Value,
 }

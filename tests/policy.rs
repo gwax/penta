@@ -56,6 +56,7 @@ fn policy_observation(
         decision: None,
         result: None,
         legal_actions,
+        checkpoint: serde_json::json!({}),
     }
 }
 

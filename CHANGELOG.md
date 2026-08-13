@@ -12,13 +12,25 @@ Two numbers matter to a bot, and they move independently:
 Pin both alongside trained weights. Until 1.0 the engine version bumps its
 minor for breaking changes, per Cargo's 0.x convention.
 
-## Unreleased — protocol 18
+## Unreleased — protocol 19
 
-The current development checkout reports engine 0.6.0 and protocol 18. Pin
+The current development checkout reports engine 0.6.0 and protocol 19. Pin
 both; the engine version alone does not distinguish it from earlier 0.6.0
 snapshots.
 
 ### Added
+
+- **Protocol 19.** Every observation now includes a hidden-safe `checkpoint`
+  object with turn counters, combat progression, once-per-turn flags, delayed
+  turn changes, per-permanent raw counters, and the other rules bookkeeping
+  that cannot be recovered from display labels. It contains neither the host
+  seed nor RNG state and does not reveal either library or the opposing hand.
+  `Game.from_observation(observation, hidden, rollout_seed)` in Python,
+  `BotGame::from_observation_json` in Rust, and `penta_from_observation` in C
+  build a live local determinization while preserving public object IDs and
+  minting fresh IDs for hypothesized hidden cards. The constructor validates
+  protocol and engine versions, hidden-zone sizes, and the rebuilt legal-action
+  list instead of accepting an approximate world.
 
 - The unfiltered catalog appends the off-format Premodern cards `Impulse`,
   `Sleight of Hand`, and `Opt` as definitions 310 through 312, and recognizes

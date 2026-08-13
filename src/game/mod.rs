@@ -73,6 +73,7 @@ mod replacement_state;
 mod stack_resolution;
 mod stack_rules;
 mod state_based;
+mod state_checkpoint;
 mod targeting;
 mod trigger_capture;
 mod trigger_placement;

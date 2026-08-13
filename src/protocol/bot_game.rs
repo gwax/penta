@@ -11,6 +11,71 @@ use crate::policy::Policy;
 use crate::{Action, Format, Game, GameResult, HandcraftedPolicy, PlayerId, RandomPolicy, poc};
 
 impl BotGame {
+    /// Constructs a local determinization from a redacted observation and a
+    /// separate hidden-zone hypothesis. `rollout_seed` initializes only the
+    /// reconstructed game's future randomness; observations never carry the
+    /// host game's seed or RNG state.
+    ///
+    /// # Errors
+    ///
+    /// Returns a message for a version mismatch, malformed or inconsistent
+    /// hidden zones, or checkpoint state not yet represented by stable
+    /// semantic locators.
+    pub fn from_observation_json(
+        observation_json: &str,
+        hidden_json: &str,
+        rollout_seed: u64,
+    ) -> Result<Self, String> {
+        let observation: Value = serde_json::from_str(observation_json)
+            .map_err(|error| format!("bad observation JSON: {error}"))?;
+        let hidden: Value = serde_json::from_str(hidden_json)
+            .map_err(|error| format!("bad hidden-state JSON: {error}"))?;
+        if observation["protocolVersion"].as_u64() != Some(u64::from(super::PROTOCOL_VERSION)) {
+            return Err(format!(
+                "observation protocol version does not match {}",
+                super::PROTOCOL_VERSION
+            ));
+        }
+        if observation["engineVersion"].as_str() != Some(super::ENGINE_VERSION) {
+            return Err(format!(
+                "observation engine version does not match {}",
+                super::ENGINE_VERSION
+            ));
+        }
+        let format = parse_format_slug(
+            observation["format"]
+                .as_str()
+                .ok_or("observation format must be a string")?,
+        )?;
+        let viewer = seat_by_name(
+            observation["seat"]
+                .as_str()
+                .ok_or("observation seat must be a string")?,
+        )
+        .ok_or("observation seat must be p1 or p2")?;
+        let catalog = poc::catalog().map_err(|error| error.to_string())?;
+        let game = Game::from_observation_checkpoint(
+            catalog.clone(),
+            format,
+            &observation,
+            &hidden,
+            rollout_seed,
+        )?;
+        let rebuilt = Self {
+            game,
+            catalog,
+            format,
+            opponent_seat: viewer.opponent(),
+            opponent: OpponentPolicy::External,
+        };
+        let rebuilt_observation: Value = serde_json::from_str(&rebuilt.observe_json(viewer))
+            .map_err(|error| format!("rebuilt observation was invalid: {error}"))?;
+        if rebuilt_observation["legalActions"] != observation["legalActions"] {
+            return Err("checkpoint rebuilt a different legal-action list".into());
+        }
+        Ok(rebuilt)
+    }
+
     /// Starts a game. `p1_deck`/`p2_deck` name built-in decks; `opponent`
     /// plays `opponent_seat` unless it is [`Opponent::External`].
     ///

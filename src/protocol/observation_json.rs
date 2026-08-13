@@ -259,6 +259,7 @@ pub fn observation_json_for_format(
             }
             value
         }).collect::<Vec<_>>(),
+        "checkpoint": observation.checkpoint,
     })
 }
 

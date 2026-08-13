@@ -528,6 +528,7 @@ impl Game {
             }),
             result: self.result,
             legal_actions: self.legal_actions(viewer),
+            checkpoint: self.checkpoint_json(viewer),
         }
     }
 

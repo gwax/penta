@@ -5,7 +5,7 @@ ships Eternal Central Old School 93/94 and the final pre-Theros ISD–RTR
 Standard format. This guide is for writing a program that plays it: from
 Python, C, C++, or Rust, against the included bots or against itself.
 
-This guide describes the current development wire contract, **protocol 18**.
+This guide describes the current development wire contract, **protocol 19**.
 Query `protocol_version()` and `engine_version()` through the selected binding
 and reject or migrate versions your client does not understand; pin both
 alongside trained weights. Old School remains the default for compatibility;
@@ -90,6 +90,7 @@ The module surface:
 | `game.choose_decision([ids])` | answer a multi-pick decision explicitly (see below) |
 | `game.decision_seat()` | `"p1"` / `"p2"` / `None` when the game is over |
 | `game.clone()` | an independent copy of the game — fork it, try a line, discard it |
+| `penta.Game.from_observation(observation, hidden, rollout_seed=0)` | build a local rollout world from a hosted observation and hidden-zone hypothesis |
 | `game.hand(seat)`, `game.library(seat)` | a zone's real contents, unredacted — for simulating, not for playing |
 | `game.set_hand(seat, defs)`, `game.set_library(seat, defs)` | say what a zone holds, in a fork |
 | `game.result()` | `None`, `"p1"`, `"p2"`, or `"draw"` |
@@ -200,43 +201,65 @@ other, and a clone fed the same indices replays byte-identically.
 
 ### Rolling out against worlds you cannot see
 
-A clone forks the *true* state, hidden zones included. For self-play training
-that is exactly right. For a search bot choosing a move in a real match it is
-not: rollouts on the true world are influenced by cards the searcher has not
-seen, so the outcomes it measures encode information it does not have.
+A clone forks the *true* state, hidden zones included. That is right for
+self-play but wrong for a search bot in a hosted match: its rollouts must use
+worlds consistent with its observation, not cards only the host knows.
 
-The fix is to search over worlds consistent with what your seat actually
-knows. You do not know their last card — it could be a Lightning Bolt, it
-could be a Counterspell — so build both worlds and roll each one out:
+Protocol 19 observations are current-state checkpoints. Supply a hypothesis
+for the zones the observation intentionally redacts, then construct a live
+local game:
 
 ```python
-catalog = {c["name"]: c["definition"] for c in json.loads(penta.catalog())["cards"]}
-
-for guess in ("Lightning Bolt", "Counterspell"):
-    world = game.clone()
-    world.set_hand("p2", [catalog["Mountain"], catalog[guess]])
-    # ... roll this world out and score it
+view_json = hosted_observation
+view = json.loads(view_json)
+hidden = {
+    "hands": {
+        # Only the opposing hand is supplied. The observing seat's hand and
+        # its public object IDs come from the observation.
+        "p2": [mountain, lightning_bolt],
+    },
+    "libraries": {
+        # Top card first; each length must match view["librarySizes"].
+        "p1": my_library_hypothesis,
+        "p2": their_library_hypothesis,
+    },
+}
+world = penta.Game.from_observation(
+    view_json,
+    json.dumps(hidden),
+    rollout_seed=1234,
+)
 ```
 
-`set_hand` and `set_library` say what a zone *holds*, by card definition. The
-cards are built fresh, so you are stating a hypothesis rather than shuffling
-the real one, and nothing is conserved: stack a library, empty it, or hand
-someone a card that was never in their deck. A world you invented has no
-reason to balance.
+The observation preserves every public object ID. Hypothesized hidden cards
+receive fresh IDs, so private identities cannot collide with or disclose the
+host's objects. `rollout_seed` controls random choices made *after* local
+construction; it is not the host seed, and neither host seed nor RNG state is
+ever present in `checkpoint`.
 
-`hand(seat)` and `library(seat)` read the zones back as
-`[{objectId, definition}]`, unredacted, so you can see the true state you are
-replacing and weight your guesses however you like. The engine ships no
-sampler — a uniform re-deal, a weighting by what the opponent has cast, and a
-belief filter maintained across turns are all just different lists of
-definitions.
+When opposing hand identity matters to a rule, the hypothesis can additionally
+carry `drawnThisTurn: {"p2": [0, 2]}` using indexes into that hypothesized hand,
+and `miracleWindow: {"seat": "p2", "handIndex": 0}`. These belong in the
+hidden hypothesis rather than the observation: even an object ID with no card
+name can reveal which opposing card was drawn or retained. Omit them when the
+hypothesized world has no such state.
 
-Two things to know. Rewritten cards get new object IDs, so rewrite an
-opponent's zones rather than your own if you are holding IDs from an earlier
-observation. And these accessors are not redacted, which is not a hole in
-match secrecy: a tournament server hands a bot redacted observations over a
-wire and never a game object, so transparency here only reaches someone
-simulating in their own process, where there is nobody to hide from.
+Construction fails closed when versions differ, a hypothesized zone has the
+wrong size, a card definition is unknown, the checkpoint contains a transient
+rules payload which lacks a stable semantic locator, or reconstruction would
+produce a different legal-action list. It never quietly creates an
+approximate game. The currently accepted checkpoints cover pregame and
+quiescent turn/combat decisions, ordinary battlefield state, and ordinary
+spells on the stack. Frozen activated/triggered payloads, dynamic copied or
+temporarily granted characteristics, deferred decisions/triggers, emblems,
+restricted mana, and stack-object runtime overrides are exposed enough to
+reject explicitly but still require semantic checkpoint encodings before they
+can be imported.
+
+`set_hand` and `set_library` remain useful when exploring alternate hidden
+zones in a game already running locally. `hand(seat)` and `library(seat)` read
+those local zones back unredacted. They are simulation helpers, not a hosted
+match API; a remote bot receives only redacted observations.
 
 ## The observation
 
@@ -255,6 +278,7 @@ simulating in their own process, where there is nobody to hide from.
 | `opponentHandSize` | their current hidden hand as a count; learned snapshots are reported separately in `lastSeenHand` |
 | `lastSeenHand` | null or the most recently revealed hand snapshot as `{seat, cards}`; it records known information and can outlive later hand changes |
 | `battlefield` | every permanent, including its current-zone object ID, canonical definition, and presented card-part ID; a planeswalker also reports `loyalty` and `loyaltyAbilityUsedThisTurn` |
+| `checkpoint` | hidden-safe rules bookkeeping for reconstructing the current state: turn/combat counters, once-per-turn flags, raw permanent state, and stable import guards; it never contains host RNG state or hidden-zone cards |
 | `emblems` | command-zone emblems, each with its controller, name, granting ability, and clause texts |
 | `stack` | pending spells, activated abilities, and triggered abilities, bottom to top; entries expose the source object ID, creating definition and ability origin/text, controller, counterability, targets, chosen permanents, X, and a locked cast signature when applicable |
 | `graveyards`, `exiles` | public zones, both players |

@@ -11,7 +11,7 @@
 //! - Strings returned as `const char *` are borrowed; do not free them.
 //!   [`penta_last_error`] stays valid until the next failing call on the
 //!   same thread.
-//! - Games from [`penta_new`] and [`penta_clone`] are freed with
+//! - Games from [`penta_new`], [`penta_from_observation`], and [`penta_clone`] are freed with
 //!   [`penta_free`].
 
 use std::cell::RefCell;
@@ -189,6 +189,39 @@ pub unsafe extern "C" fn penta_new(config_json: *const c_char) -> *mut BotGame {
     }
 }
 
+/// Reconstructs a local rollout world from one observation and a separate
+/// hidden-zone hypothesis. Returns null on error.
+///
+/// # Safety
+///
+/// Both JSON pointers must be valid NUL-terminated UTF-8 strings.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn penta_from_observation(
+    observation_json: *const c_char,
+    hidden_json: *const c_char,
+    rollout_seed: u64,
+) -> *mut BotGame {
+    if observation_json.is_null() || hidden_json.is_null() {
+        set_error("observation_json and hidden_json must not be null");
+        return std::ptr::null_mut();
+    }
+    let Ok(observation) = (unsafe { CStr::from_ptr(observation_json) }).to_str() else {
+        set_error("observation_json is not valid UTF-8");
+        return std::ptr::null_mut();
+    };
+    let Ok(hidden) = (unsafe { CStr::from_ptr(hidden_json) }).to_str() else {
+        set_error("hidden_json is not valid UTF-8");
+        return std::ptr::null_mut();
+    };
+    match BotGame::from_observation_json(observation, hidden, rollout_seed) {
+        Ok(game) => Box::into_raw(Box::new(game)),
+        Err(message) => {
+            set_error(&message);
+            std::ptr::null_mut()
+        }
+    }
+}
+
 /// An independent copy of a game: same state, same future for the same
 /// actions — the built-in opponent's state included — so a bot can fork a
 /// game, roll out a candidate line, and discard the copy. Freed with
@@ -197,7 +230,8 @@ pub unsafe extern "C" fn penta_new(config_json: *const c_char) -> *mut BotGame {
 ///
 /// # Safety
 ///
-/// `game` must be a live pointer from [`penta_new`] or [`penta_clone`].
+/// `game` must be a live pointer from [`penta_new`],
+/// [`penta_from_observation`], or [`penta_clone`].
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn penta_clone(game: *const BotGame) -> *mut BotGame {
     let Some(game) = (unsafe { game.as_ref() }) else {
@@ -348,12 +382,13 @@ pub unsafe extern "C" fn penta_string_free(string: *mut c_char) {
     }
 }
 
-/// Frees a game from [`penta_new`] or [`penta_clone`]. Null is a no-op.
+/// Frees a game from [`penta_new`], [`penta_from_observation`], or
+/// [`penta_clone`]. Null is a no-op.
 ///
 /// # Safety
 ///
-/// `game` must have come from [`penta_new`] or [`penta_clone`] and not been
-/// freed before.
+/// `game` must have come from [`penta_new`], [`penta_from_observation`], or
+/// [`penta_clone`] and not been freed before.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn penta_free(game: *mut BotGame) {
     if !game.is_null() {

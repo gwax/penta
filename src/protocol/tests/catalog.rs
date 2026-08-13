@@ -134,8 +134,8 @@ fn migrated_spells_do_not_require_an_additional_protocol_bump() {
     let catalog = poc::catalog().expect("catalog builds");
     let value = catalog_json_for_format(&catalog, Format::IsdRtrStandard);
     assert_eq!(
-        PROTOCOL_VERSION, 18,
-        "the timeout loss reason owns this branch's bump"
+        PROTOCOL_VERSION, 19,
+        "the reconstructible checkpoint owns this branch's bump"
     );
     assert_eq!(value["protocolVersion"], PROTOCOL_VERSION);
 

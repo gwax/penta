@@ -46,6 +46,7 @@ fn observation_json_carries_interwave_state_and_presented_card_part() {
         decision: None,
         result: None,
         legal_actions: Vec::new(),
+        checkpoint: json!({}),
     };
 
     let value =

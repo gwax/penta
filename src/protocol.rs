@@ -69,7 +69,10 @@ use observation_json::{card_part_name, decision_json, stack_object_json};
 /// and planeswalker targets for its damage mode to supported-format actions.
 /// Version 17 makes Mana Vault's optional upkeep payment available even while
 /// it is untapped, adding that decision to supported-format legal actions.
-pub const PROTOCOL_VERSION: u32 = 18;
+/// Version 18 adds host-enforced timeout as a game-result reason. Version 19
+/// adds the hidden-safe `checkpoint` object and observation reconstruction
+/// entry points used for local determinizations.
+pub const PROTOCOL_VERSION: u32 = 19;
 
 /// The engine crate version. Rules behavior is part of the contract too: a
 /// fix can change what a trained policy sees even when the shapes hold

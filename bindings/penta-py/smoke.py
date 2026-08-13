@@ -117,6 +117,28 @@ while game.result() is None:
     assert steps < 200000
 print("self-play:", game.result(), "in", steps, "decisions")
 
+# A hosted observation can become a live local determinization without the
+# host seed. Here the hypotheses happen to use a local game's true hidden
+# zones only so the smoke test can obtain correctly sized lists cheaply.
+game = penta.Game("Sligh", "The Deck", opponent="external", seed=31)
+view_json = game.observe("p1")
+view = json.loads(view_json)
+zone_definitions = lambda zone: [card["definition"] for card in json.loads(zone)]
+hidden = {
+    "hands": {"p2": zone_definitions(game.hand("p2"))},
+    "libraries": {
+        "p1": zone_definitions(game.library("p1")),
+        "p2": zone_definitions(game.library("p2")),
+    },
+}
+world = penta.Game.from_observation(view_json, json.dumps(hidden), rollout_seed=999)
+rebuilt = json.loads(world.observe("p1"))
+assert rebuilt["hand"] == view["hand"], "public object ids survive reconstruction"
+assert rebuilt["legalActions"] == view["legalActions"]
+assert "seed" not in rebuilt and "rng" not in rebuilt["checkpoint"]
+world.act(0)
+print("checkpoint: redacted observation rebuilt as a live local world")
+
 
 # hypothetical worlds: you do not know what the opponent holds, so build the
 # worlds you think are plausible and roll each one out. The engine supplies no

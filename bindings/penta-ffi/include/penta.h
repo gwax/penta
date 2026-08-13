@@ -60,6 +60,13 @@ char *penta_deck_names_for_format_json(const char *format);
  * seats). Returns NULL on error; see penta_last_error(). */
 PentaGame *penta_new(const char *config_json);
 
+/* Builds a local rollout world from a redacted observation and a separate
+ * hidden-zone hypothesis. rollout_seed controls only future local random
+ * choices; it is not the host game's private seed. */
+PentaGame *penta_from_observation(const char *observation_json,
+                                  const char *hidden_json,
+                                  uint64_t rollout_seed);
+
 /* An independent copy of a game: same state, and the same future for the
  * same actions, the built-in opponent's state included. Fork a game to
  * roll out a candidate line without disturbing the original. Free it with
