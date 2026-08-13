@@ -2,11 +2,11 @@ use super::{CardRecord, PrintingRecord};
 use crate::Format;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AnimationDef, AppliedEffectDef, CardArt, CardBehavior, CardChoiceSourceDef,
-    CardRules, CardSet, CardType, ComparisonDef, DiscardSelectionDef, EffectDef, EffectDurationDef,
-    EffectExecutionDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PaymentDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior,
+    CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef, DiscardSelectionDef,
+    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -127,7 +127,27 @@ pub(in crate::card::sets) static REPENTANT_BLACKSMITH: CardRecord = CardRecord::
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack unless defending player controls an Island”.
 
 // ARN 13 — Fishliver Oil
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Enchanted creature has islandwalk”.
+pub(in crate::card::sets) static FISHLIVER_OIL: CardRecord = CardRecord::new(
+    cards::FISHLIVER_OIL,
+    "Fishliver Oil",
+    CardArt::new("deb6ed87-aa07-4b5e-ac40-1e16dc2a817a", "Anson Maddocks"),
+    CardSet::ArabianNights,
+    CardRules::new_enchantment(mana_cost!("{1}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature has islandwalk.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&abilities::landwalk(
+                        BasicLandType::Island,
+                    )),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+        ]),
+);
 
 // ARN 14 — Flying Men
 pub(in crate::card::sets) static FLYING_MEN: CardRecord = CardRecord::new(
@@ -919,6 +939,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MOORISH_CAVALRY,
     &PIETY,
     &REPENTANT_BLACKSMITH,
+    &FISHLIVER_OIL,
     &FLYING_MEN,
     &SERENDIB_EFREET,
     &GUARDIAN_BEAST,

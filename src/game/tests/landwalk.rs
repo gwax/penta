@@ -142,6 +142,35 @@ fn a_granted_landwalk_makes_the_recipient_unblockable() {
     );
 }
 
+/// An Aura grants the walk to what it enchants, which is the same grant
+/// mechanism read through an attachment rather than a lord's query.
+#[test]
+fn an_aura_grants_landwalk_to_the_creature_it_enchants() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    attacker.attacking = true;
+    attacker.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two));
+    game.battlefield
+        .push(creature(10_002, cards::ISLAND, PlayerId::Two));
+    assert!(
+        can_be_blocked(&game, attacker_id),
+        "the unenchanted attacker is blockable"
+    );
+
+    let mut oil = creature(10_003, cards::FISHLIVER_OIL, PlayerId::One);
+    oil.attached_to = Some(attacker_id);
+    game.battlefield.push(oil);
+    assert!(
+        !can_be_blocked(&game, attacker_id),
+        "the Aura's islandwalk applies to the creature it enchants"
+    );
+}
+
 #[test]
 fn every_newly_unblocked_walker_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -153,6 +182,7 @@ fn every_newly_unblocked_walker_reports_complete_coverage() {
         cards::LOST_SOUL,
         cards::MARSH_GOBLINS,
         cards::LORD_OF_ATLANTIS,
+        cards::FISHLIVER_OIL,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

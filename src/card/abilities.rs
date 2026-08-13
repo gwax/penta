@@ -11,6 +11,31 @@ use super::model::{
     ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEffectDef, ZoneKind,
 };
 
+/// The target an "Enchant creature" Aura spell chooses.
+pub static ENCHANT_CREATURE_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::HasType(CardType::Creature),
+    )];
+
+/// The target an "Enchant land" Aura spell chooses.
+pub static ENCHANT_LAND_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Land),
+)];
+
+/// An Aura's own spell clause: it targets what it will enchant, and attaching
+/// is what the spell does when it resolves. Every Aura prints one, so it
+/// belongs here rather than once per set module.
+#[must_use]
+pub const fn aura_spell(text: &'static str, targets: &'static [AbilityTargetDef]) -> AbilityDef {
+    AbilityDef::spell_with_targets(
+        text,
+        targets,
+        EffectDef::Attach {
+            object: EffectRecipientDef::Target(crate::ids::TargetIndex::PRIMARY),
+        },
+    )
+}
+
 /// Mishra's Factory's 2/2 Assembly-Worker artifact creature. The card's
 /// animation still resolves through its legacy immediate path, which reads
 /// this definition rather than restating the creature it becomes.

@@ -12,23 +12,7 @@ use crate::card::{
 use crate::ids::{ChoiceIndex, TargetIndex};
 use crate::mana_cost;
 
-static ENCHANT_CREATURE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
-    ObjectPredicateDef::HasType(CardType::Creature),
-)];
-
-static ENCHANT_LAND_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
-    ObjectPredicateDef::HasType(CardType::Land),
-)];
-
-const fn aura_spell(text: &'static str, targets: &'static [AbilityTargetDef]) -> AbilityDef {
-    AbilityDef::spell_with_targets(
-        text,
-        targets,
-        EffectDef::Attach {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        },
-    )
-}
+use abilities::{ENCHANT_CREATURE_TARGET, ENCHANT_LAND_TARGET, aura_spell};
 
 // LEA 1 — Animate Wall
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Enchanted Wall can attack as though it didn't have defender”.
