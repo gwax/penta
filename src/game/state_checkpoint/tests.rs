@@ -8,6 +8,7 @@ mod adversarial;
 mod broad_audit;
 mod rare_states;
 mod semantics_coverage;
+mod trajectory;
 
 #[test]
 fn catalog_semantics_rehydrate_an_animation_without_a_card_name_switch() {

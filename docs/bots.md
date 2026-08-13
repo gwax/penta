@@ -90,7 +90,7 @@ The module surface:
 | `game.choose_decision([ids])` | answer a multi-pick decision explicitly (see below) |
 | `game.decision_seat()` | `"p1"` / `"p2"` / `None` when the game is over |
 | `game.clone()` | an independent copy of the game — fork it, try a line, discard it |
-| `penta.Game.from_observation(observation, hidden, rollout_seed=0)` | build a local rollout world from a hosted observation and hidden-zone hypothesis |
+| `penta.Game.from_observation(observation, hidden, rollout_seed=0)` | build a local rollout world from a hosted observation and hidden-zone hypothesis — how a hosted search bot gets something to clone |
 | `game.hand(seat)`, `game.library(seat)` | a zone's real contents, unredacted — for simulating, not for playing |
 | `game.set_hand(seat, defs)`, `game.set_library(seat, defs)` | say what a zone holds, in a fork |
 | `game.result()` | `None`, `"p1"`, `"p2"`, or `"draw"` |
@@ -280,10 +280,30 @@ function pointers. Public object IDs remain unchanged, including those needed
 by suspended continuations, while hypothesized private cards are rebound to
 fresh local IDs.
 
+A rebuilt world is not just correct at the instant you build it; it stays in
+step as you play it. Feed the reconstruction and the host game the same
+`legalActions` indices and they remain the same game — same public state, same
+legal actions — which is what makes a rollout worth anything. Two things
+legitimately end that correspondence, and neither is a bug:
+
+- **Local randomness.** `rollout_seed` is deliberately not the host's seed, so
+  the first shuffle, or the first effect that discards at random, moves your
+  world's hidden zones somewhere the host's did not go.
+- **A wrong guess.** Everything after a hypothesized card is revealed is a
+  sample from the world you guessed, not a prediction of the real one.
+
+Both are the honest limits of determinized search rather than defects: run N
+worlds and act on the consensus. Up to that point the reconstruction is exact,
+and the engine's test suite holds it to that standard — it walks reconstructed
+and host games forward side by side and requires them to agree action for
+action until local randomness parts them.
+
 `set_hand` and `set_library` remain useful when exploring alternate hidden
 zones in a game already running locally. `hand(seat)` and `library(seat)` read
 those local zones back unredacted. They are simulation helpers, not a hosted
-match API; a remote bot receives only redacted observations.
+match API; a remote bot receives only redacted observations, and
+`from_observation` — not a sequence of setters — is how it turns one into a
+world it can search.
 
 ## The observation
 
@@ -658,6 +678,16 @@ Everything above runs a bot in your own process. To let other people play it,
 put it in the registry: register once, then heartbeat. Heartbeating is what
 "online" means, and the heartbeat's reply is where games arrive.
 
+**If your bot searches, read [Rolling out against worlds you cannot
+see](#rolling-out-against-worlds-you-cannot-see) before you port it.** A local
+bot searches by cloning the true game; a hosted one is handed a redacted
+observation and cannot, which will quietly cost a search bot most of its
+strength if it discovers this by measuring its own win rate. The replacement is
+`Game.from_observation`: it turns the observation you were given, plus your own
+hypothesis for the hidden zones, into a live game you can clone and roll out
+like any other. Redaction should cost a bot the knowledge it is not entitled
+to, not the ability to think ahead.
+
 ### Which server
 
 Two, and the only difference to your code is one string.
@@ -865,5 +895,9 @@ legality and implementation coverage.
 
 The local protocol is the intended basis for a future tournament service: the
 authoritative engine can stay on the server while a bot receives redacted
-observations and returns action indices. The wire contract is still evolving
-before 1.0, so version-check at startup and use the changelog to migrate.
+observations and returns action indices. Search bots are meant to be
+first-class there rather than structurally disadvantaged, which is what
+[`Game.from_observation`](#rolling-out-against-worlds-you-cannot-see) is for:
+a seat that can only see its own observation can still build worlds consistent
+with it and search them. The wire contract is still evolving before 1.0, so
+version-check at startup and use the changelog to migrate.
