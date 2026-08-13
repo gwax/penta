@@ -7,6 +7,25 @@ use crate::card::{
 };
 use crate::mana_cost;
 
+// MIR 14 — Enlightened Tutor
+pub(in crate::card::sets) static ENLIGHTENED_TUTOR: CardRecord = CardRecord::new(
+    cards::ENLIGHTENED_TUTOR,
+    "Enlightened Tutor",
+    CardArt::new("cbac1d27-15e2-4e2f-82ab-625a16e096cb", "Dan Frazier"),
+    CardSet::Mirage,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell(
+        "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top.",
+        EffectDef::SearchLibrary {
+            player: EffectRecipientDef::Controller,
+            object: ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                ObjectPredicateDef::HasType(CardType::Enchantment),
+            ]),
+            destination: ZoneKind::Library,
+        },
+    )),
+);
+
 // MIR 245 — Tranquil Domain
 pub(in crate::card::sets) static TRANQUIL_DOMAIN: CardRecord = CardRecord::new(
     cards::TRANQUIL_DOMAIN,
@@ -32,6 +51,23 @@ pub(in crate::card::sets) static TRANQUIL_DOMAIN: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&TRANQUIL_DOMAIN];
+// MIR 255 — Worldly Tutor
+pub(in crate::card::sets) static WORLDLY_TUTOR: CardRecord = CardRecord::new(
+    cards::WORLDLY_TUTOR,
+    "Worldly Tutor",
+    CardArt::new("f00115bc-b551-4bf5-a121-bebb37201575", "David O'Connor"),
+    CardSet::Mirage,
+    CardRules::new_instant(mana_cost!("{G}")).with_ability(AbilityDef::spell(
+        "Search your library for a creature card, reveal it, then shuffle and put the card on top.",
+        EffectDef::SearchLibrary {
+            player: EffectRecipientDef::Controller,
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            destination: ZoneKind::Library,
+        },
+    )),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&ENLIGHTENED_TUTOR, &TRANQUIL_DOMAIN, &WORLDLY_TUTOR];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

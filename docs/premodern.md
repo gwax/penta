@@ -12,9 +12,9 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 69 cards present in Penta's catalog
-- 76 cards still need catalog records
-- 49 cards have completed their Premodern interaction audit; the other 96
+- 71 cards present in Penta's catalog
+- 74 cards still need catalog records
+- 51 cards have completed their Premodern interaction audit; the other 94
   still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -30,7 +30,7 @@ Marvin's Angry Hermit.
   implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
-- Add accurate characteristics and Oracle clauses for the 76 uncataloged
+- Add accurate characteristics and Oracle clauses for the 74 uncataloged
   cards. Unsupported clauses must be metadata-only rather than executable
   no-ops.
 - Implement reusable mechanics before card-local behavior: cycling and
@@ -46,8 +46,8 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (69; the forty-nine marked below were audited in the first
-nine implementation tranches, while the older definitions still require an
+Already cataloged (71; the fifty-one marked below were audited in the first
+ten implementation tranches, while the older definitions still require an
 audit):
 
 - `Adarkar Wastes` — complete
@@ -65,6 +65,7 @@ audit):
 - `Duress`
 - `Dust Bowl` — complete
 - `Earthquake`
+- `Enlightened Tutor` — complete
 - `Fact or Fiction` — complete
 - `Fire // Ice` — complete
 - `Flooded Strand` — complete
@@ -117,10 +118,11 @@ audit):
 - `Warmth` — complete
 - `Wasteland` — complete
 - `Wooded Foothills` — complete
+- `Worldly Tutor` — complete
 - `Wrath of God`
 - `Yavimaya Coast` — complete
 
-Not yet cataloged (76):
+Not yet cataloged (74):
 
 - [ ] `Abeyance`
 - [ ] `Akroma's Vengeance`
@@ -142,7 +144,6 @@ Not yet cataloged (76):
 - [ ] `Defense Grid`
 - [ ] `Dragon Breath`
 - [ ] `Engineered Plague`
-- [ ] `Enlightened Tutor`
 - [ ] `Eternal Dragon`
 - [ ] `Exalted Angel`
 - [ ] `Fireblast`
@@ -197,7 +198,6 @@ Not yet cataloged (76):
 - [ ] `Thwart`
 - [ ] `Treva's Ruins`
 - [ ] `Vision Charm`
-- [ ] `Worldly Tutor`
 
 [tournament]: https://melee.gg/Tournament/View/441083
 [rules]: https://premodernmagic.com/

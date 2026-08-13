@@ -402,6 +402,7 @@ impl Game {
                 ZoneKind::Battlefield => {
                     "Choose a card to put onto the battlefield, or fail to find"
                 }
+                ZoneKind::Library => "Choose a card to put on top, or fail to find",
                 _ => "Choose a card to put into your hand, or fail to find",
             },
             DecisionVisibility::Private,

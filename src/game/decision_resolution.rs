@@ -509,18 +509,38 @@ impl Game {
                     .iter()
                     .find(|option| options.contains(&option.id))
                     .and_then(|option| option.card);
-                if let Some((card, _)) = found
+                let mut found_for_library = None;
+                if let Some((card, definition)) = found
                     && let Some(card) = remove_card(&mut self.players[player.index()].library, card)
                 {
-                    if destination == ZoneKind::Battlefield {
-                        self.put_card_onto_battlefield_from(card, ZoneKind::Library, player, None);
-                    } else {
-                        let (card, _zone_change) = self.zone_change_card(card);
-                        self.players[player.index()].hand.push(card);
+                    match destination {
+                        ZoneKind::Battlefield => {
+                            self.put_card_onto_battlefield_from(
+                                card,
+                                ZoneKind::Library,
+                                player,
+                                None,
+                            );
+                        }
+                        ZoneKind::Library => {
+                            self.events.push(crate::GameEvent::CardRevealed {
+                                player,
+                                card: card.id,
+                                definition,
+                            });
+                            found_for_library = Some(card);
+                        }
+                        _ => {
+                            let (card, _zone_change) = self.zone_change_card(card);
+                            self.players[player.index()].hand.push(card);
+                        }
                     }
                 }
                 if shuffle {
                     self.rng.shuffle(&mut self.players[player.index()].library);
+                }
+                if let Some(card) = found_for_library {
+                    self.players[player.index()].library.push(card);
                 }
             }
             DecisionContinuation::Tutor => {

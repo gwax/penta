@@ -27,6 +27,10 @@ snapshots.
   resumes follow-up effects only after the choice, which makes Opt draw after
   its scry decision. This is a compatible protocol-18 catalog growth: the
   definitions are not legal in either currently shipped format.
+- `Enlightened Tutor` and `Worldly Tutor` join the unfiltered catalog as
+  append-only definitions 313 and 314. The shared library search can now
+  reveal a selected card, shuffle the rest, and put the selection on top;
+  both tutors remain off-format in the currently shipped profiles.
 - Hosted rooms are no longer open to whoever knows their id. Starting a room
   mints a token per seat and returns both; every route then requires the
   token for the seat it speaks for, so a room id names a room without

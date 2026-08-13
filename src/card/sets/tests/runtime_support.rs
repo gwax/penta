@@ -379,7 +379,10 @@ pub(super) fn shared_stack_effect_at_position(
         } => {
             shared_effect_recipient(player)
                 && shared_object_predicate(object)
-                && matches!(destination, ZoneKind::Battlefield | ZoneKind::Hand)
+                && matches!(
+                    destination,
+                    ZoneKind::Battlefield | ZoneKind::Hand | ZoneKind::Library
+                )
         }
         // Only the two destinations the return path knows.
         EffectDef::ReturnLinkedExiles { zone, .. } => {

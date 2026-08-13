@@ -191,3 +191,80 @@ fn opt_draws_after_the_scry_choice() {
         vec![cards::LIGHTNING_BOLT]
     );
 }
+
+#[test]
+fn enlightened_tutor_reveals_an_artifact_or_enchantment_after_shuffling() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (14_500, cards::LIGHTNING_BOLT),
+            (14_501, cards::BLACK_VISE),
+            (14_502, cards::PRESENCE_OF_THE_MASTER),
+            (14_503, cards::SERRA_ANGEL),
+        ],
+    );
+    cast_library_spell(
+        &mut game,
+        cards::ENLIGHTENED_TUTOR,
+        ManaPool {
+            white: 1,
+            ..ManaPool::default()
+        },
+    );
+
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    let offered = decision
+        .options
+        .iter()
+        .map(|option| option.label.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(offered.len(), 2);
+    assert!(offered.contains(&"Black Vise"));
+    assert!(offered.contains(&"Presence of the Master"));
+    choose_decision_by_label(&mut game, PlayerId::One, "Black Vise");
+
+    let top = game.players[0].library.last().unwrap();
+    assert_eq!(top.definition, cards::BLACK_VISE);
+    assert!(game.events.iter().any(|event| matches!(
+        event,
+        GameEvent::CardRevealed {
+            player: PlayerId::One,
+            definition: cards::BLACK_VISE,
+            ..
+        }
+    )));
+}
+
+#[test]
+fn worldly_tutor_puts_only_a_creature_on_top() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (14_600, cards::LIGHTNING_BOLT),
+            (14_601, cards::SERRA_ANGEL),
+            (14_602, cards::BLACK_VISE),
+        ],
+    );
+    cast_library_spell(
+        &mut game,
+        cards::WORLDLY_TUTOR,
+        ManaPool {
+            green: 1,
+            ..ManaPool::default()
+        },
+    );
+
+    let decision = game.observe(PlayerId::One).decision.unwrap();
+    assert_eq!(decision.options.len(), 1);
+    assert_eq!(decision.options[0].label, "Serra Angel");
+    choose_decision_by_label(&mut game, PlayerId::One, "Serra Angel");
+
+    assert_eq!(
+        game.players[0].library.last().unwrap().definition,
+        cards::SERRA_ANGEL
+    );
+}

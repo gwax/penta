@@ -558,9 +558,10 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         selection: &'static TopCardSelectionDef,
     },
-    /// Search a library for one matching card and put it somewhere, then
-    /// shuffle. Searching a hidden zone never obliges the searcher to find,
-    /// so a printed "may" adds nothing on top of this.
+    /// Search a library for one matching card and put it somewhere. The
+    /// library is shuffled after other destinations, or before a card whose
+    /// destination is the top of that same library. Searching a hidden zone
+    /// never obliges the searcher to find, so a printed "may" adds nothing.
     SearchLibrary {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,

@@ -423,6 +423,9 @@ The protocol-18 catalog also appends the Premodern library-selection cards
 (definition 312). `Impulse` introduces the `visions` debut-set slug. These
 definitions remain off-format in the currently shipped format profiles, so
 the additive catalog entries do not add legal actions to those games.
+`Enlightened Tutor` (definition 313) and `Worldly Tutor` (definition 314)
+follow as off-format catalog additions; a successful search publicly reveals
+the selected card, shuffles the remaining library, and puts that card on top.
 
 Cards and parts expose `implementationStatus` as `complete`, `partial`, or
 `metadataOnly`; the old execution gate is not public coverage metadata.

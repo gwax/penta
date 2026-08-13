@@ -96,6 +96,8 @@ pub(super) enum DecisionContinuation {
     },
     Tutor,
     LibrarySearch {
+        /// `Library` means reveal the selection, shuffle the other cards, and
+        /// then put the selection on top.
         destination: ZoneKind,
         /// A search shuffles whether or not it found anything. Looking at the
         /// top card does not: the rest of the library was never disturbed.

@@ -322,3 +322,5 @@ pub const TSABOS_WEB: CardDefinitionId = CardDefinitionId(309);
 pub const IMPULSE: CardDefinitionId = CardDefinitionId(310);
 pub const SLEIGHT_OF_HAND: CardDefinitionId = CardDefinitionId(311);
 pub const OPT: CardDefinitionId = CardDefinitionId(312);
+pub const ENLIGHTENED_TUTOR: CardDefinitionId = CardDefinitionId(313);
+pub const WORLDLY_TUTOR: CardDefinitionId = CardDefinitionId(314);
