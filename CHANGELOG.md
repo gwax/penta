@@ -30,7 +30,11 @@ snapshots.
   build a live local determinization while preserving public object IDs and
   minting fresh IDs for hypothesized hidden cards. The constructor validates
   protocol and engine versions, hidden-zone sizes, and the rebuilt legal-action
-  list instead of accepting an approximate world.
+  list instead of accepting an approximate world. Activated and triggered
+  stack objects now carry catalog-relative semantic ability locators, complete
+  target selections, and captured trigger context, so their response windows
+  reconstruct too when resolution does not require retired-object
+  last-known information.
 
 - The unfiltered catalog appends the off-format Premodern cards `Impulse`,
   `Sleight of Hand`, and `Opt` as definitions 310 through 312, and recognizes

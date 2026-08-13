@@ -5,18 +5,24 @@ use serde_json::{Value, json};
 use super::{
     CardInstance, CharacteristicSource, CombatDamageStage, ContinuousEffectTimestamp, CounterKind,
     Game, GameEvent, GameObjectId, GameStack, ObjectBacking, Permanent, PlayerId, PlayerState,
-    Pregame, ReplayRng, StackObject, StackObjectKind, Step,
+    Pregame, ReplayRng, StackAbilityPayload, StackObject, StackObjectKind, Step, TriggerContext,
 };
-use crate::card::SpellForm;
+use crate::card::{BasicLandType, DeclarativeAbilityDef, SpellForm};
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::{
-    AdditionalCostId, AlternativeCostId, AttackDefender, CardCatalog, CardDefinitionId, CardPartId,
-    Format, GameObjectId as PublicGameObjectId, ModeId, PlayOptionId, Target, TargetSlotId,
+    AbilityId, AbilityOrigin, AdditionalCostId, AlternativeCostId, AttackDefender, CardCatalog,
+    CardDefinitionId, CardPartId, Format, GameObjectId as PublicGameObjectId, GrantId, ModeId,
+    PlayOptionId, Target, TargetSlotId,
 };
 
 mod semantics;
+mod stack;
 
-use semantics::{animation_json, catalog_animation, keyword_json, parse_keyword};
+use semantics::{
+    ability_locator_json, animation_json, catalog_ability, catalog_animation, keyword_json,
+    parse_keyword,
+};
+use stack::{parse_stack, stack_ability_checkpoint_json, stack_object_requires_retired};
 
 impl Game {
     /// Hidden-safe rules bookkeeping needed to use an observation as a
@@ -86,15 +92,21 @@ impl Game {
                 }),
             },
             "battlefield": self.battlefield.iter().map(permanent_checkpoint_json).collect::<Vec<_>>(),
-            "stack": self.stack.iter().map(|object| json!({
-                "objectId": object.id.0,
-                "owner": object.card.owner.index(),
-                "hasRuntimeOverrides": !object.applied_effects.is_empty()
-                    || !object.text_changes.is_empty()
-                    || object.colors.is_some()
-                    || object.cast_via_flashback
-                    || object.is_copy,
-            })).collect::<Vec<_>>(),
+            "stack": self.stack.iter().map(|object| {
+                let ability_payload = (object.kind != StackObjectKind::Spell)
+                    .then(|| stack_ability_checkpoint_json(self, object));
+                json!({
+                    "objectId": object.id.0,
+                    "owner": object.card.owner.index(),
+                    "abilityPayload": ability_payload,
+                    "requiresRetiredObject": stack_object_requires_retired(self, object),
+                    "hasRuntimeOverrides": !object.applied_effects.is_empty()
+                        || !object.text_changes.is_empty()
+                        || object.colors.is_some()
+                        || object.cast_via_flashback
+                        || object.is_copy,
+                })
+            }).collect::<Vec<_>>(),
             "hasDeferredState": !self.emblems.is_empty()
                 || !self.temporary_ability_grants.is_empty()
                 || !self.delayed_triggers.is_empty()
@@ -126,7 +138,7 @@ impl Game {
     ) -> Result<Self, String> {
         let checkpoint = field(observation, "checkpoint")?;
         if bool_field(checkpoint, "hasDeferredState")? {
-            return Err("checkpoint contains a stack, decision, trigger, emblem, or other deferred rules state not yet represented by semantic locators".into());
+            return Err("checkpoint contains a decision, deferred trigger, emblem, restricted mana, or other rules state not yet represented by semantic locators".into());
         }
         let viewer = seat_value(field(observation, "seat")?)?;
         if usize_field(checkpoint, "viewer")? != viewer.index() {
@@ -766,53 +778,6 @@ fn parse_attack_defender(value: &Value) -> Result<AttackDefender, String> {
         )?))),
         other => Err(format!("unknown attack defender type {other}")),
     }
-}
-
-fn parse_stack(observation: &Value, checkpoint: &Value, game: &Game) -> Result<GameStack, String> {
-    let visible = array(field(observation, "stack")?)?;
-    let raw = array(field(checkpoint, "stack")?)?;
-    if visible.len() != raw.len() {
-        return Err("checkpoint stack does not match observation".into());
-    }
-    let mut stack = GameStack::default();
-    for (shown, state) in visible.iter().zip(raw) {
-        if str_field(shown, "kind")? != "Spell" {
-            return Err("activated and triggered stack objects are not yet represented by frozen semantic payloads".into());
-        }
-        if bool_field(state, "hasRuntimeOverrides")? {
-            return Err(
-                "stack object has runtime overrides not yet represented by semantic locators"
-                    .into(),
-            );
-        }
-        let id = GameObjectId(u32_field(shown, "objectId")?);
-        if id.0 != u32_field(state, "objectId")? {
-            return Err("checkpoint stack id does not match observation".into());
-        }
-        let definition = CardDefinitionId(
-            u16::try_from(usize_field(shown, "definition")?).map_err(|_| "definition too large")?,
-        );
-        let owner = seat_index(field(state, "owner")?)?;
-        let controller = seat_value(field(shown, "controller")?)?;
-        let signature = parse_cast_signature(field(shown, "signature")?)?;
-        let card = card(id, definition, owner, &game.catalog)?;
-        stack.push(StackObject {
-            id,
-            kind: StackObjectKind::Spell,
-            card,
-            source: None,
-            ability: game.frozen_spell_payload(definition, &signature),
-            controller,
-            signature: Some(signature),
-            chosen_permanents: parse_ids(field(shown, "chosenPermanents")?)?,
-            applied_effects: Vec::new(),
-            text_changes: Vec::new(),
-            colors: None,
-            cast_via_flashback: false,
-            is_copy: false,
-        });
-    }
-    Ok(stack)
 }
 
 fn parse_cast_signature(value: &Value) -> Result<CastSignature, String> {

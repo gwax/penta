@@ -11,6 +11,36 @@ fn catalog_semantics_rehydrate_an_animation_without_a_card_name_switch() {
 }
 
 #[test]
+fn catalog_semantics_rehydrate_top_level_and_nested_abilities() {
+    let catalog = crate::poc::catalog().expect("catalog builds");
+    let top_level = catalog
+        .definitions()
+        .into_iter()
+        .flat_map(|definition| &definition.parts)
+        .flat_map(|part| part.rules.indexed_abilities())
+        .next()
+        .expect("catalog has an ability")
+        .definition;
+    let locator = ability_locator_json(&catalog, |candidate| *candidate == top_level)
+        .expect("top-level ability has a locator");
+    assert_eq!(catalog_ability(&catalog, &locator), Some(top_level));
+
+    let granted_text =
+        "At the beginning of your upkeep, sacrifice this artifact unless you pay {2}.";
+    let locator = ability_locator_json(&catalog, |candidate| candidate.text == granted_text)
+        .expect("nested granted ability has a locator");
+    let rebuilt = catalog_ability(&catalog, &locator).expect("nested locator resolves");
+    assert_eq!(rebuilt.text, granted_text);
+    assert!(
+        !locator["nested"]
+            .as_array()
+            .expect("nested path")
+            .is_empty(),
+        "the granted clause is addressed beneath its printed source"
+    );
+}
+
+#[test]
 fn every_runtime_keyword_has_a_stable_checkpoint_round_trip() {
     let mut keywords = vec![
         KeywordAbility::Flying,

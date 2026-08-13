@@ -221,6 +221,147 @@ fn an_ordinary_spell_on_the_stack_rebuilds_as_a_response_window() {
 }
 
 #[test]
+fn an_activated_ability_on_the_stack_rebuilds_as_a_response_window() {
+    let mut game = BotGame::new(
+        "The Deck",
+        "The Deck",
+        Opponent::External,
+        PlayerId::Two,
+        29,
+    )
+    .expect("game starts");
+    let (viewer, observation) = (0..1_200)
+        .find_map(|_| {
+            let viewer = game.decision_seat().expect("game continues");
+            let observation: Value =
+                serde_json::from_str(&game.observe_json(viewer)).expect("observation JSON");
+            if observation["stack"].as_array().is_some_and(|stack| {
+                stack
+                    .iter()
+                    .any(|object| object["kind"] == "ActivatedAbility")
+            }) {
+                return Some((viewer, observation));
+            }
+            let actions = observation["legalActions"].as_array().expect("actions");
+            let factory_activation = actions.iter().position(|action| {
+                action["type"] == "ActivateAbility"
+                    && observation["battlefield"]
+                        .as_array()
+                        .is_some_and(|battlefield| {
+                            battlefield.iter().any(|permanent| {
+                                permanent["objectId"] == action["source"]
+                                    && permanent["name"] == "Mishra's Factory"
+                            })
+                        })
+            });
+            let index = factory_activation.unwrap_or_else(|| advancing_action(&observation));
+            game.act(index).expect("selected action is legal");
+            None
+        })
+        .expect("a Factory activation reaches the stack");
+
+    let hidden = hidden_hypothesis(&game, viewer);
+    let rebuilt =
+        BotGame::from_observation_json(&observation.to_string(), &hidden.to_string(), 1_001)
+            .expect("activated response window reconstructs");
+    let rebuilt_observation: Value =
+        serde_json::from_str(&rebuilt.observe_json(viewer)).expect("rebuilt observation");
+    assert_eq!(rebuilt_observation["stack"], observation["stack"]);
+    assert_eq!(
+        rebuilt_observation["legalActions"],
+        observation["legalActions"]
+    );
+}
+
+#[test]
+fn a_triggered_ability_on_the_stack_rebuilds_with_its_event_context() {
+    let mut game = BotGame::new(
+        "The Deck",
+        "The Deck",
+        Opponent::External,
+        PlayerId::Two,
+        31,
+    )
+    .expect("game starts");
+    let (viewer, observation) = (0..1_200)
+        .find_map(|_| {
+            let viewer = game.decision_seat().expect("game continues");
+            let observation: Value =
+                serde_json::from_str(&game.observe_json(viewer)).expect("observation JSON");
+            if observation["stack"].as_array().is_some_and(|stack| {
+                stack
+                    .iter()
+                    .any(|object| object["kind"] == "TriggeredAbility")
+            }) {
+                return Some((viewer, observation));
+            }
+            game.act(advancing_action(&observation))
+                .expect("selected action is legal");
+            None
+        })
+        .expect("a triggered ability reaches the stack");
+
+    let hidden = hidden_hypothesis(&game, viewer);
+    let rebuilt =
+        BotGame::from_observation_json(&observation.to_string(), &hidden.to_string(), 1_003)
+            .expect("triggered response window reconstructs");
+    let rebuilt_observation: Value =
+        serde_json::from_str(&rebuilt.observe_json(viewer)).expect("rebuilt observation");
+    assert_eq!(rebuilt_observation["stack"], observation["stack"]);
+    assert_eq!(
+        rebuilt_observation["legalActions"],
+        observation["legalActions"]
+    );
+}
+
+fn advancing_action(observation: &Value) -> usize {
+    let actions = observation["legalActions"].as_array().expect("actions");
+    [
+        "KeepHand",
+        "PlayLand",
+        "CastSpell",
+        "DeclareAttacker",
+        "FinishDeclaringAttackers",
+        "DeclareBlocker",
+        "FinishDeclaringBlockers",
+        "PassPriority",
+    ]
+    .iter()
+    .find_map(|kind| {
+        actions
+            .iter()
+            .position(|action| action["type"].as_str() == Some(kind))
+    })
+    .unwrap_or_else(|| pass_bot(observation))
+}
+
+fn hidden_hypothesis(game: &BotGame, viewer: PlayerId) -> Value {
+    let definitions = |json: String| {
+        serde_json::from_str::<Value>(&json)
+            .expect("zone JSON")
+            .as_array()
+            .expect("zone array")
+            .iter()
+            .map(|card| card["definition"].as_u64().expect("definition"))
+            .collect::<Vec<_>>()
+    };
+    let opponent_key = if viewer.opponent() == PlayerId::One {
+        "p1"
+    } else {
+        "p2"
+    };
+    json!({
+        "hands": {
+            (opponent_key): definitions(game.hand_json(viewer.opponent())),
+        },
+        "libraries": {
+            "p1": definitions(game.library_json(PlayerId::One)),
+            "p2": definitions(game.library_json(PlayerId::Two)),
+        },
+    })
+}
+
+#[test]
 #[allow(clippy::too_many_lines)]
 fn protocol_reincarnates_public_object_identity_across_cast_zones() {
     let mut game = BotGame::new("Goblins", "Goblins", Opponent::External, PlayerId::Two, 0)

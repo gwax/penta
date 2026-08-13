@@ -250,11 +250,15 @@ rules payload which lacks a stable semantic locator, or reconstruction would
 produce a different legal-action list. It never quietly creates an
 approximate game. The currently accepted checkpoints cover pregame and
 quiescent turn/combat decisions, ordinary battlefield state, and ordinary
-spells on the stack. Frozen activated/triggered payloads, dynamic copied or
-temporarily granted characteristics, deferred decisions/triggers, emblems,
-restricted mana, and stack-object runtime overrides are exposed enough to
-reject explicitly but still require semantic checkpoint encodings before they
-can be imported.
+spells, activated abilities, and triggered abilities on the stack. Stack
+ability payloads identify their printed or nested/granted catalog definition,
+retain target-slot groupings and divided amounts, and carry the triggering
+event context. A stack object whose source, triggering object, target, or
+chosen cost object already requires retired-object last-known information
+still rejects explicitly. Dynamic copied or temporarily granted
+characteristics, deferred decisions/triggers, emblems, restricted mana,
+retired-object LKI, and stack-object runtime overrides also still require
+semantic checkpoint encodings before they can be imported.
 
 `set_hand` and `set_library` remain useful when exploring alternate hidden
 zones in a game already running locally. `hand(seat)` and `library(seat)` read
