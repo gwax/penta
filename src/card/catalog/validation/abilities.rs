@@ -433,6 +433,11 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         EffectDef::SacrificeOfChoice {
             then: Some(effect), ..
         } => collect_ability_grants(*effect, grants),
+        EffectDef::LookAtTopAndSelect { selection, .. } => {
+            if let Some(effect) = selection.then {
+                collect_ability_grants(*effect, grants);
+            }
+        }
         EffectDef::Apply { effect, .. } => collect_applied_ability_grants(effect, grants),
         EffectDef::TriggerUntilYourNextTurn { .. }
         | EffectDef::None
@@ -531,6 +536,9 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::SacrificeOfChoice {
             then: Some(effect), ..
         } => ability_grant_sites(*effect),
+        EffectDef::LookAtTopAndSelect { selection, .. } => selection
+            .then
+            .map_or(0, |effect| ability_grant_sites(*effect)),
         EffectDef::Apply { effect, .. } => applied_ability_grant_sites(effect),
         EffectDef::TriggerUntilYourNextTurn { .. }
         | EffectDef::None

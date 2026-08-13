@@ -20,6 +20,13 @@ snapshots.
 
 ### Added
 
+- The unfiltered catalog appends the off-format Premodern cards `Impulse`,
+  `Sleight of Hand`, and `Opt` as definitions 310 through 312, and recognizes
+  the `visions` debut-set slug. Their shared private top-of-library selection
+  procedure supports moving the chosen and unchosen groups independently and
+  resumes follow-up effects only after the choice, which makes Opt draw after
+  its scry decision. This is a compatible protocol-18 catalog growth: the
+  definitions are not legal in either currently shipped format.
 - Hosted rooms are no longer open to whoever knows their id. Starting a room
   mints a token per seat and returns both; every route then requires the
   token for the seat it speaks for, so a room id names a room without

@@ -390,6 +390,22 @@ pub enum DiscardSelectionDef {
     Random,
 }
 
+/// A private look at the top of a library followed by one bounded card
+/// selection. Selected and unselected cards can go to different zones; an
+/// optional follow-up resumes only after the choice is complete. This covers
+/// both selection spells such as Impulse and scry-then-draw sequencing.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct TopCardSelectionDef {
+    pub count: ValueDef,
+    pub minimum: u8,
+    pub maximum: u8,
+    pub selected_zone: ZoneKind,
+    pub selected_placement: ZonePlacement,
+    pub rest_zone: ZoneKind,
+    pub rest_placement: ZonePlacement,
+    pub then: Option<&'static EffectDef>,
+}
+
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
@@ -535,6 +551,12 @@ pub enum EffectDef {
     LookAtTopAndMayTake {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
+    },
+    /// Look privately at the top cards of a library, choose a bounded subset,
+    /// place both groups, then optionally continue resolving.
+    LookAtTopAndSelect {
+        player: EffectRecipientDef,
+        selection: &'static TopCardSelectionDef,
     },
     /// Search a library for one matching card and put it somewhere, then
     /// shuffle. Searching a hidden zone never obliges the searcher to find,

@@ -233,6 +233,7 @@ impl HandcraftedPolicy {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(super) fn collect_spell_effect_profile(
         effect: EffectDef,
         x: u16,
@@ -310,6 +311,7 @@ impl HandcraftedPolicy {
             | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
+            | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::AddCounters { .. }

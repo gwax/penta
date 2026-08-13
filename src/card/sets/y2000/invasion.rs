@@ -4,9 +4,10 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet,
     CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    PlayerRelation, TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
-use crate::{ZonePlacement, mana_cost};
+use crate::mana_cost;
 
 // INV 57 — Fact or Fiction
 pub(in crate::card::sets) static FACT_OR_FICTION: CardRecord = CardRecord::new(
@@ -23,6 +24,37 @@ pub(in crate::card::sets) static FACT_OR_FICTION: CardRecord = CardRecord::new(
             count: ValueDef::Constant(5),
             rest: ZoneKind::Graveyard,
             placement: ZonePlacement::Top,
+        },
+    )),
+);
+
+static OPT_DRAW: EffectDef = EffectDef::DrawCards {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::Constant(1),
+};
+
+static OPT_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(1),
+    minimum: 0,
+    maximum: 1,
+    selected_zone: ZoneKind::Library,
+    selected_placement: ZonePlacement::Bottom,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Top,
+    then: Some(&OPT_DRAW),
+};
+
+// INV 64 — Opt
+pub(in crate::card::sets) static OPT: CardRecord = CardRecord::new(
+    cards::OPT,
+    "Opt",
+    CardArt::new("958262ec-8e52-40cf-a9fd-a60e42643e15", "John Howe"),
+    CardSet::Invasion,
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell(
+        "Scry 1.\nDraw a card.",
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Controller,
+            selection: &OPT_SELECTION,
         },
     )),
 );
@@ -84,6 +116,6 @@ pub(in crate::card::sets) static COASTAL_TOWER: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&FACT_OR_FICTION, &TSABOS_WEB, &COASTAL_TOWER];
+    &[&FACT_OR_FICTION, &OPT, &TSABOS_WEB, &COASTAL_TOWER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

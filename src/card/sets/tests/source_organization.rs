@@ -80,7 +80,7 @@ fn printed_set_sources_follow_collector_number_order() {
     }
 
     assert_eq!(
-        definition_count, 298,
+        definition_count, 301,
         "the organization guard must cover every printed card definition"
     );
     assert_eq!(
@@ -128,6 +128,7 @@ fn set_code_for_file(path: &Path) -> &'static str {
         Some("the_dark.rs") => "DRK",
         Some("ice_age.rs") => "ICE",
         Some("mirage.rs") => "MIR",
+        Some("visions.rs") => "VIS",
         Some("tempest.rs") => "TMP",
         Some("stronghold.rs") => "STH",
         Some("portal_second_age.rs") => "P02",

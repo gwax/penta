@@ -3,10 +3,61 @@ use super::{
     CounterKind, DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility,
     DecisionZone, DeclarativeAbilityDef, EffectDef, Game, GameObjectId, ObjectPredicateDef,
     Permanent, PileChoice, PileChosen, PileSplit, PilesSeparated, PlayerId, SacrificeFollowup,
-    Step, TriggerContext, ZoneKind, ZoneMoveCause, ZonePlacement,
+    ScopedEffect, StackObject, Step, TopCardSelectionDef, TriggerContext, ZoneKind, ZoneMoveCause,
+    ZonePlacement,
 };
 
 impl Game {
+    pub(super) fn queue_top_card_selection(
+        &mut self,
+        player: PlayerId,
+        selection: &'static TopCardSelectionDef,
+        object: &StackObject,
+        context: TriggerContext,
+        scoped: ScopedEffect,
+    ) {
+        let count = self
+            .effect_value(selection.count, object, context, scoped)
+            .max(0);
+        let Ok(count) = usize::try_from(count) else {
+            return;
+        };
+        let revealed = self.take_top_of_library(player, count);
+        let followup = selection
+            .then
+            .map(|then| (Box::new(object.clone()), context, scoped.with_effect(*then)));
+        if revealed.is_empty() {
+            if let Some((object, context, effect)) = followup {
+                self.resolve_effect_def(effect, &object, context);
+            }
+            return;
+        }
+        let options = self.card_decision_options(&revealed, DecisionZone::Library);
+        let preference = if selection.selected_zone == ZoneKind::Hand {
+            DecisionPreference::HigherCardValue
+        } else {
+            DecisionPreference::LowerCardValue
+        };
+        self.queue_decision(
+            player,
+            "Choose cards from the top of the library",
+            DecisionVisibility::Private,
+            preference,
+            usize::from(selection.minimum)..=usize::from(selection.maximum),
+            false,
+            options,
+            DecisionContinuation::TopCardSelection {
+                player,
+                revealed,
+                selected_zone: selection.selected_zone,
+                selected_placement: selection.selected_placement,
+                rest_zone: selection.rest_zone,
+                rest_placement: selection.rest_placement,
+                followup,
+            },
+        );
+    }
+
     pub(super) fn card_decision_options(
         &self,
         cards: &[CardInstance],

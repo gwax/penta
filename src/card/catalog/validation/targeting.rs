@@ -200,6 +200,14 @@ fn validate_effect_target_references(
         | EffectDef::LookAtTopAndMayTake { player, .. } => {
             validate_recipient_target_references(player, target_count)
         }
+        EffectDef::LookAtTopAndSelect { player, selection } => {
+            validate_recipient_target_references(player, target_count)?;
+            validate_value_target_references(selection.count, target_count)?;
+            if let Some(effect) = selection.then {
+                validate_effect_target_references(*effect, target_count)?;
+            }
+            Ok(())
+        }
         EffectDef::Mill { player, amount } => {
             validate_recipient_target_references(player, target_count)?;
             validate_value_target_references(amount, target_count)

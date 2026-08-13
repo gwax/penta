@@ -372,6 +372,16 @@ impl Game {
                     }
                 }
             }
+            EffectDef::LookAtTopAndSelect {
+                player: recipient,
+                selection,
+            } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.queue_top_card_selection(player, selection, object, context, scoped);
+                    }
+                }
+            }
             EffectDef::SearchLibrary {
                 player: recipient,
                 object: predicate,

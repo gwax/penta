@@ -255,6 +255,17 @@ pub(super) enum DecisionContinuation {
         player: PlayerId,
         revealed: Vec<CardInstance>,
     },
+    /// A generic private top-of-library selection. The cards have already
+    /// left the library, so both groups and any deferred follow-up live here.
+    TopCardSelection {
+        player: PlayerId,
+        revealed: Vec<CardInstance>,
+        selected_zone: ZoneKind,
+        selected_placement: ZonePlacement,
+        rest_zone: ZoneKind,
+        rest_placement: ZonePlacement,
+        followup: Option<(Box<StackObject>, TriggerContext, ScopedEffect)>,
+    },
     /// The affected object's controller chooses which currently applicable
     /// replacement effect to apply next.
     BattlefieldEntryReplacement {

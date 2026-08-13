@@ -18,6 +18,7 @@ pub enum CardSet {
     Promo1994,
     IceAge,
     Mirage,
+    Visions,
     Tempest,
     Stronghold,
     PortalSecondAge,

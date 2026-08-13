@@ -292,6 +292,12 @@ impl Game {
         placement: ZonePlacement,
     ) {
         match zone {
+            ZoneKind::Hand => {
+                for card in cards {
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    self.players[player.index()].hand.push(card);
+                }
+            }
             ZoneKind::Library => {
                 for card in cards {
                     let (card, _zone_change) = self.zone_change_card(card);
@@ -309,7 +315,11 @@ impl Game {
                     self.players[player.index()].exile.push(card);
                 }
             }
-            _ => self.bury_cards(player, cards),
+            ZoneKind::Graveyard => self.bury_cards(player, cards),
+            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {
+                debug_assert!(false, "unsupported revealed-card destination: {zone:?}");
+                self.bury_cards(player, cards);
+            }
         }
     }
 

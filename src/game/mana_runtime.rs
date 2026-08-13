@@ -166,6 +166,7 @@ impl Game {
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
+            | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::SearchLibrary { .. }
             | EffectDef::Counter { .. }
@@ -317,6 +318,7 @@ impl Game {
                 | EffectDef::LoseTheGame { .. }
                 | EffectDef::Mill { .. }
                 | EffectDef::LookAtTopAndMayTake { .. }
+                | EffectDef::LookAtTopAndSelect { .. }
                 | EffectDef::LookAtHand { .. }
                 | EffectDef::SearchLibrary { .. }
                 | EffectDef::Counter { .. }

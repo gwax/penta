@@ -125,6 +125,11 @@ const SET_MODULES: &[SetModule] = &[
         y1996::mirage::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Visions,
+        y1997::visions::CARDS,
+        y1997::visions::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Tempest,
         y1997::tempest::CARDS,
         y1997::tempest::ADDITIONAL_PRINTINGS,

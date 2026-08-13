@@ -418,6 +418,12 @@ definition IDs are append-only. The out-of-format interaction fixtures
 `legal` set to `false` for both supported formats. They therefore add no legal
 actions to an ordinary supported-format game.
 
+The protocol-18 catalog also appends the Premodern library-selection cards
+`Impulse` (definition 310), `Sleight of Hand` (definition 311), and `Opt`
+(definition 312). `Impulse` introduces the `visions` debut-set slug. These
+definitions remain off-format in the currently shipped format profiles, so
+the additive catalog entries do not add legal actions to those games.
+
 Cards and parts expose `implementationStatus` as `complete`, `partial`, or
 `metadataOnly`; the old execution gate is not public coverage metadata.
 Definition, part, play-option, mode, and cost IDs join directly. Target-slot

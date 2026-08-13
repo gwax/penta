@@ -295,6 +295,21 @@ pub(super) fn shared_decision_effect(effect: EffectDef) -> bool {
         | EffectDef::DestroyOfChoice { player, object, .. } => {
             shared_effect_recipient(player) && shared_object_predicate(object)
         }
+        EffectDef::LookAtTopAndSelect { player, selection } => {
+            let supported_zone = |zone| {
+                matches!(
+                    zone,
+                    ZoneKind::Hand | ZoneKind::Library | ZoneKind::Graveyard | ZoneKind::Exile
+                )
+            };
+            shared_effect_recipient(player)
+                && selection.minimum <= selection.maximum
+                && supported_zone(selection.selected_zone)
+                && supported_zone(selection.rest_zone)
+                && selection
+                    .then
+                    .is_none_or(|effect| shared_stack_effect_at_position(*effect, true))
+        }
         _ => false,
     }
 }
@@ -353,7 +368,8 @@ pub(super) fn shared_stack_effect_at_position(
         EffectDef::DestroyOfChoice { .. }
         | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
         | EffectDef::RevealAndSplitIntoPiles { .. }
-        | EffectDef::LookAtTopAndMayTake { .. } => {
+        | EffectDef::LookAtTopAndMayTake { .. }
+        | EffectDef::LookAtTopAndSelect { .. } => {
             deferred_decision_allowed && shared_decision_effect(effect)
         }
         EffectDef::SearchLibrary {
@@ -548,6 +564,7 @@ pub(super) fn shared_static_non_apply_effect(source_zones: &[ZoneKind], effect: 
     }
 }
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef) -> bool {
     match effect {
         EffectDef::CannotBeForcedToSacrifice
@@ -628,6 +645,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::RevealAndSplitIntoPiles { .. }
         | EffectDef::Mill { .. }
         | EffectDef::LookAtTopAndMayTake { .. }
+        | EffectDef::LookAtTopAndSelect { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::SearchLibrary { .. }
         | EffectDef::Counter { .. }
@@ -831,6 +849,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::RevealAndSplitIntoPiles { .. }
                     | EffectDef::Mill { .. }
                     | EffectDef::LookAtTopAndMayTake { .. }
+                    | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
                     | EffectDef::SearchLibrary { .. }
                     | EffectDef::Counter { .. }

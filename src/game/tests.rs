@@ -382,6 +382,7 @@ mod old_school_spells;
 mod old_school_upkeep;
 mod premodern_cards;
 mod premodern_lands;
+mod premodern_library_selection;
 mod premodern_permanents;
 mod premodern_split_and_lock;
 mod premodern_zone_and_denial;

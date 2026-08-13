@@ -12,9 +12,9 @@ correctly.
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche
-- 66 cards present in Penta's catalog
-- 79 cards still need catalog records
-- 46 cards have completed their Premodern interaction audit; the other 99
+- 69 cards present in Penta's catalog
+- 76 cards still need catalog records
+- 49 cards have completed their Premodern interaction audit; the other 96
   still need one even when an older format already exercises the card
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -30,7 +30,7 @@ Marvin's Angry Hermit.
   implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
-- Add accurate characteristics and Oracle clauses for the 79 uncataloged
+- Add accurate characteristics and Oracle clauses for the 76 uncataloged
   cards. Unsupported clauses must be metadata-only rather than executable
   no-ops.
 - Implement reusable mechanics before card-local behavior: cycling and
@@ -46,8 +46,8 @@ Marvin's Angry Hermit.
 
 ## Card inventory
 
-Already cataloged (66; the forty-six marked below were audited in the first
-eight implementation tranches, while the older definitions still require an
+Already cataloged (69; the forty-nine marked below were audited in the first
+nine implementation tranches, while the older definitions still require an
 audit):
 
 - `Adarkar Wastes` — complete
@@ -72,6 +72,7 @@ audit):
 - `Goblin Pyromancer` — complete
 - `Goblin Sharpshooter` — complete
 - `Hydroblast` — complete
+- `Impulse` — complete
 - `Incinerate` — damage complete; no-regeneration rider is partial
 - `Island`
 - `Jackal Pup` — complete
@@ -87,6 +88,7 @@ audit):
 - `Monk Realist` — complete
 - `Mountain`
 - `Naturalize` — complete
+- `Opt` — complete
 - `Phyrexian Arena` — complete
 - `Plains`
 - `Presence of the Master` — complete
@@ -99,6 +101,7 @@ audit):
 - `Root Maze` — complete
 - `Seal of Cleansing` — complete
 - `Seal of Fire` — complete
+- `Sleight of Hand` — complete
 - `Stasis` — complete
 - `Swamp`
 - `Swords to Plowshares`
@@ -117,7 +120,7 @@ audit):
 - `Wrath of God`
 - `Yavimaya Coast` — complete
 
-Not yet cataloged (79):
+Not yet cataloged (76):
 
 - [ ] `Abeyance`
 - [ ] `Akroma's Vengeance`
@@ -163,14 +166,12 @@ Not yet cataloged (79):
 - [ ] `Haunting Echoes`
 - [ ] `Hermit Druid`
 - [ ] `Humility`
-- [ ] `Impulse`
 - [ ] `Intuition`
 - [ ] `Krosan Reclamation`
 - [ ] `Meddling Mage`
 - [ ] `Mogg Salvage`
 - [ ] `Mox Diamond`
 - [ ] `Opalescence`
-- [ ] `Opt`
 - [ ] `Overload`
 - [ ] `Parallax Wave`
 - [ ] `Phyrexian Dreadnought`
@@ -188,7 +189,6 @@ Not yet cataloged (79):
 - [ ] `Skeletal Scrying`
 - [ ] `Skirk Prospector`
 - [ ] `Skycloud Expanse`
-- [ ] `Sleight of Hand`
 - [ ] `Standstill`
 - [ ] `Stifle`
 - [ ] `Sutured Ghoul`

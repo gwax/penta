@@ -109,6 +109,31 @@ impl Game {
                     self.players[player.index()].library.push(card);
                 }
             }
+            DecisionContinuation::TopCardSelection {
+                player,
+                revealed,
+                selected_zone,
+                selected_placement,
+                rest_zone,
+                rest_placement,
+                followup,
+            } => {
+                let selected = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                let (chosen, rest): (Vec<_>, Vec<_>) = revealed
+                    .into_iter()
+                    .partition(|card| selected.contains(&card.id));
+                self.place_revealed_remainder(player, chosen, selected_zone, selected_placement);
+                self.place_revealed_remainder(player, rest, rest_zone, rest_placement);
+                if let Some((object, context, effect)) = followup {
+                    self.resolve_effect_def(effect, &object, context);
+                }
+            }
             DecisionContinuation::BattlefieldEntryReplacement { candidates } => {
                 let selected = options
                     .first()

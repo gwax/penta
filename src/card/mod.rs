@@ -42,8 +42,8 @@ pub use model::{
     PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRelation, PrintedManaCost,
     QuantifierDef, ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef,
     SpecialActionDef, SpellAbilityDef, SpellForm, StaticAbilityDef, TargetConditionDef,
-    TargetPredicate, TargetSlotDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef,
-    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
+    TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

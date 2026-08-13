@@ -28,6 +28,11 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         EffectDef::Apply { effect, .. } => {
             assert_nested_definition_applied_effect(card_name, effect);
         }
+        EffectDef::LookAtTopAndSelect { selection, .. } => {
+            if let Some(effect) = selection.then {
+                assert_nested_definition_abilities(card_name, *effect);
+            }
+        }
         EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }

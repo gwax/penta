@@ -319,3 +319,6 @@ pub const FIRE_ICE: CardDefinitionId = CardDefinitionId(306);
 pub const GOBLIN_PYROMANCER: CardDefinitionId = CardDefinitionId(307);
 pub const KOR_HAVEN: CardDefinitionId = CardDefinitionId(308);
 pub const TSABOS_WEB: CardDefinitionId = CardDefinitionId(309);
+pub const IMPULSE: CardDefinitionId = CardDefinitionId(310);
+pub const SLEIGHT_OF_HAND: CardDefinitionId = CardDefinitionId(311);
+pub const OPT: CardDefinitionId = CardDefinitionId(312);

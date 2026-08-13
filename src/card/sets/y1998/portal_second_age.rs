@@ -3,9 +3,35 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, EffectDef,
-    EffectRecipientDef, ValueDef, cards,
+    EffectRecipientDef, TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+static SLEIGHT_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(2),
+    minimum: 1,
+    maximum: 1,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Bottom,
+    then: None,
+};
+
+// P02 46 — Sleight of Hand
+pub(in crate::card::sets) static SLEIGHT_OF_HAND: CardRecord = CardRecord::new(
+    cards::SLEIGHT_OF_HAND,
+    "Sleight of Hand",
+    CardArt::new("f3405184-dcda-4bb6-ade6-c2a87bc3296d", "Phil Foglio"),
+    CardSet::PortalSecondAge,
+    CardRules::new_sorcery(mana_cost!("{U}")).with_ability(AbilityDef::spell(
+        "Look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library.",
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Controller,
+            selection: &SLEIGHT_SELECTION,
+        },
+    )),
+);
 
 // P02 119 — Volcanic Hammer
 pub(in crate::card::sets) static VOLCANIC_HAMMER: CardRecord = CardRecord::new(
@@ -28,6 +54,6 @@ pub(in crate::card::sets) static VOLCANIC_HAMMER: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&VOLCANIC_HAMMER];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&SLEIGHT_OF_HAND, &VOLCANIC_HAMMER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
