@@ -71,6 +71,12 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Battalion**, sharing exalted's event. The attack-declaration event now
+  carries how many creatures attacked, and each keyword states the range it
+  wants: exactly one for exalted, three or more for battalion. Eight Gatecrash
+  identities are now executable. Their audit line said declarative trigger
+  conditions are rechecked on resolution as intervening-if conditions, which is
+  true and is why the count belongs in the event rather than in a condition.
 - **Exalted**, and the attacks-alone event it is written against. The event is
   decided by the attack declaration as a whole, so it is captured there and
   carries the lone attacker as its triggering object. Exalted is a keyword that

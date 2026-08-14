@@ -127,3 +127,87 @@ fn every_exalted_identity_reports_complete_coverage() {
         );
     }
 }
+
+/// Battalion, which asks the same event a different question: three or more
+/// attackers rather than exactly one. Both are decided by the declaration, so
+/// neither can be a condition rechecked when the ability resolves -- which is
+/// what the audit line said stood in the way.
+mod battalion {
+    use super::*;
+
+    fn squad(count: usize) -> (Game, GameObjectId, Vec<GameObjectId>) {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        let elite = creature(10_000, cards::BOROS_ELITE, PlayerId::One);
+        let elite_id = elite.card.id;
+        game.battlefield.push(elite);
+        let mut allies = Vec::new();
+        for index in 0..count {
+            let ally = creature(
+                10_100 + u32::try_from(index).expect("few creatures"),
+                cards::SAVANNAH_LIONS,
+                PlayerId::One,
+            );
+            allies.push(ally.card.id);
+            game.battlefield.push(ally);
+        }
+        (game, elite_id, allies)
+    }
+
+    #[test]
+    fn three_attackers_turn_it_on() {
+        let (mut game, elite_id, allies) = squad(2);
+        let mut all = vec![elite_id];
+        all.extend(allies);
+
+        attack_with(&mut game, &all);
+
+        assert_eq!(power_of(&game, elite_id), 3, "a 1/1 with +2/+2");
+    }
+
+    /// Two is not three, and this is the boundary the keyword is named for.
+    #[test]
+    fn two_attackers_do_not() {
+        let (mut game, elite_id, allies) = squad(1);
+        let mut all = vec![elite_id];
+        all.extend(allies);
+
+        attack_with(&mut game, &all);
+
+        assert_eq!(power_of(&game, elite_id), 1);
+    }
+
+    /// The creature has to be among the attackers itself: three allies
+    /// attacking without it is not its battalion.
+    #[test]
+    fn it_has_to_attack_itself() {
+        let (mut game, elite_id, allies) = squad(3);
+
+        attack_with(&mut game, &allies);
+
+        assert_eq!(power_of(&game, elite_id), 1);
+    }
+
+    #[test]
+    fn every_battalion_identity_reports_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [
+            cards::BOROS_ELITE,
+            cards::DARING_SKYJEK,
+            cards::NAV_SQUAD_COMMANDOS,
+            cards::BOMBER_CORPS,
+            cards::WARMIND_INFANTRY,
+            cards::FIREMANE_AVENGER,
+            cards::ORDRUUN_VETERAN,
+            cards::WOJEK_HALBERDIERS,
+        ] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
+    }
+}

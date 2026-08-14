@@ -39,8 +39,10 @@ pub(in crate::card::sets) static ANGELIC_BENEDICTION: CardRecord = CardRecord::n
         abilities::exalted(),
         AbilityDef::triggered_with_targets(
             "Whenever a creature you control attacks alone, you may tap target creature.",
-            TriggerEventDef::AttacksAlone {
+            TriggerEventDef::AttacksInGroup {
                 attacker: ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                minimum_total: 1,
+                maximum_total: Some(1),
             },
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),

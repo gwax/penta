@@ -4,6 +4,7 @@ use crate::CardDefinitionId;
 
 mod activation_timing;
 mod attack_restrictions;
+mod battalion;
 mod coin_flips;
 mod control_duration;
 mod counted_bodies;
@@ -29,6 +30,7 @@ mod tapped_and_untap;
 mod targeted_regeneration;
 pub use activation_timing::*;
 pub use attack_restrictions::*;
+pub use battalion::*;
 pub use coin_flips::*;
 pub use control_duration::*;
 pub use counted_bodies::*;

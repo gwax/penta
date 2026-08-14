@@ -937,12 +937,20 @@ pub enum TriggerEventDef {
     DamageDealtBy {
         source: ObjectPredicateDef,
     },
-    /// A matching creature was declared as the only attacker. The attacker is
-    /// the triggering object, so an ability watching this can reach it with
-    /// [`EffectRecipientDef::TriggeringObject`]. This is what exalted is
-    /// written against, and it fires from any permanent, not only a creature.
-    AttacksAlone {
+    /// A matching creature was declared as an attacker in a declaration of a
+    /// given size. The attacker is the triggering object, so an ability
+    /// watching this can reach it with
+    /// [`EffectRecipientDef::TriggeringObject`], and the ability need not be
+    /// on a creature.
+    ///
+    /// The size is known only at declaration, which is why this is its own
+    /// event rather than a condition rechecked later. Exalted asks for
+    /// exactly one; battalion asks for three or more.
+    AttacksInGroup {
         attacker: ObjectPredicateDef,
+        minimum_total: u8,
+        /// An upper bound, for "attacks alone". `None` means no maximum.
+        maximum_total: Option<u8>,
     },
     /// A creature matching `source` dealt combat damage to a player. The
     /// damaged player is the event player and the amount is available as

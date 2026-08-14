@@ -566,15 +566,21 @@ impl Game {
                 CommittedTriggerEvent::BecomesBlocked { object, .. },
             )
             | (
-                TriggerEventDef::AttacksAlone {
-                    attacker: predicate,
-                },
-                CommittedTriggerEvent::AttacksAlone { object },
-            )
-            | (
                 TriggerEventDef::DamageDealtBy { source: predicate },
                 CommittedTriggerEvent::DamageDealt { source: object, .. },
             ) => self.trigger_object_matches(predicate, object, source, false),
+            (
+                TriggerEventDef::AttacksInGroup {
+                    attacker: predicate,
+                    minimum_total,
+                    maximum_total,
+                },
+                CommittedTriggerEvent::AttacksInGroup { object, total },
+            ) => {
+                *total >= minimum_total
+                    && maximum_total.is_none_or(|maximum| *total <= maximum)
+                    && self.trigger_object_matches(predicate, object, source, false)
+            }
             (
                 trigger @ TriggerEventDef::CombatDamageDealtToSource { .. },
                 damage @ CommittedTriggerEvent::DamageDealt { .. },

@@ -142,18 +142,25 @@ impl Game {
                     })
             })
             .collect::<Vec<_>>();
-        // CR 506.5-ish: "attacks alone" is decided by the declaration as a
-        // whole, so it is known here and nowhere later.
-        if let [lone] = attackers.as_slice()
-            && let Some(permanent) = self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == *lone)
-        {
-            let alone = CommittedTriggerEvent::AttacksAlone {
-                object: self.trigger_event_object(permanent),
-            };
-            self.capture_battlefield_triggers(&alone);
+        // How many creatures attacked is decided by the declaration as a
+        // whole, so it is known here and nowhere later. Every attacker gets
+        // the same total; what varies is what each watching ability asks of
+        // it.
+        let total = u8::try_from(attackers.len()).unwrap_or(u8::MAX);
+        let group = attackers
+            .iter()
+            .filter_map(|attacker| {
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == *attacker)
+                    .map(|permanent| CommittedTriggerEvent::AttacksInGroup {
+                        object: self.trigger_event_object(permanent),
+                        total,
+                    })
+            })
+            .collect::<Vec<_>>();
+        for event in &group {
+            self.capture_battlefield_triggers(event);
         }
         for event in &events {
             self.capture_battlefield_triggers(event);

@@ -438,8 +438,10 @@ pub const fn exalted() -> AbilityDef {
     AbilityDef::triggered(
         "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until \
          end of turn.)",
-        TriggerEventDef::AttacksAlone {
+        TriggerEventDef::AttacksInGroup {
             attacker: ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            minimum_total: 1,
+            maximum_total: Some(1),
         },
         EffectDef::Apply {
             recipient: EffectRecipientDef::TriggeringObject,
@@ -451,6 +453,21 @@ pub const fn exalted() -> AbilityDef {
         },
     )
 }
+
+/// Battalion. Like exalted it is a keyword defined as a triggered ability, so
+/// it takes the effect its card prints rather than being one fixed clause.
+#[must_use]
+pub const fn battalion(text: &'static str, effect: EffectDef) -> AbilityDef {
+    AbilityDef::triggered(text, BATTALION_EVENT, effect)
+}
+
+/// "This creature and at least two other creatures attack" -- three in all,
+/// with this one among them.
+pub const BATTALION_EVENT: TriggerEventDef = TriggerEventDef::AttacksInGroup {
+    attacker: ObjectPredicateDef::Source,
+    minimum_total: 3,
+    maximum_total: None,
+};
 
 /// A shared checkland-style entry clause backed by the general object-query
 /// condition vocabulary.

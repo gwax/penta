@@ -138,7 +138,25 @@ pub(in crate::card::sets) static BLIND_OBEDIENCE: CardRecord = CardRecord::new(
 );
 
 // GTC 7 — Boros Elite
-// Audit: blocked — Battalion is a trigger-time restriction, but declarative trigger conditions are rechecked on resolution as intervening-if conditions.
+pub(in crate::card::sets) static BOROS_ELITE: CardRecord = CardRecord::new(
+    cards::BOROS_ELITE,
+    "Boros Elite",
+    CardArt::new("a03974e6-aced-4664-8c5c-3190bb1eb233", "Willian Murai"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 1).with_abilities(&[
+        abilities::battalion(
+            "Battalion — Whenever this creature and at least two other creatures attack, this creature gets +2/+2 until end of turn.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(2),
+                    toughness: ValueDef::Constant(2),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // GTC 8 — Court Street Denizen
 pub(in crate::card::sets) static COURT_STREET_DENIZEN: CardRecord = CardRecord::new(
@@ -173,7 +191,22 @@ pub(in crate::card::sets) static COURT_STREET_DENIZEN: CardRecord = CardRecord::
 );
 
 // GTC 9 — Daring Skyjek
-// Audit: blocked — Battalion is a trigger-time restriction, but declarative trigger conditions are rechecked on resolution as intervening-if conditions.
+pub(in crate::card::sets) static DARING_SKYJEK: CardRecord = CardRecord::new(
+    cards::DARING_SKYJEK,
+    "Daring Skyjek",
+    CardArt::new("6c28412d-9add-4911-8487-c84559006fb0", "Jason Chan"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Knight"], 3, 1).with_abilities(&[
+        abilities::battalion(
+            "Battalion — Whenever this creature and at least two other creatures attack, this creature gains flying until end of turn.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::GrantAbility(&BATTALION_FLYING),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 static DEBTORS_PULPIT_TAP: AbilityDef = AbilityDef::activated_with_targets(
     "{T}: Tap target creature.",
@@ -348,7 +381,33 @@ pub(in crate::card::sets) static LUMINATE_PRIMORDIAL: CardRecord = CardRecord::n
 // Audit: blocked — Needs an Aura trigger keyed to the attached permanent dying and its last-known power.
 
 // GTC 22 — Nav Squad Commandos
-// Audit: blocked — Battalion is a trigger-time restriction, but declarative trigger conditions are rechecked on resolution as intervening-if conditions.
+pub(in crate::card::sets) static NAV_SQUAD_COMMANDOS: CardRecord = CardRecord::new(
+    cards::NAV_SQUAD_COMMANDOS,
+    "Nav Squad Commandos",
+    CardArt::new("9d81d7f8-375f-40f5-98cd-08be08580bef", "Steve Prescott"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{4}{W}"), &["Human", "Soldier"], 3, 5).with_ability(
+        abilities::battalion(
+            "Battalion — Whenever this creature and at least two other creatures attack, this \
+             creature gets +1/+1 until end of turn. Untap it.",
+            EffectDef::Sequence(&NAV_SQUAD_BATTALION),
+        ),
+    ),
+);
+
+static NAV_SQUAD_BATTALION: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::ModifyPowerToughness {
+            power: ValueDef::Constant(1),
+            toughness: ValueDef::Constant(1),
+        },
+        duration: EffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::Untap {
+        object: EffectRecipientDef::Source,
+    },
+];
 
 // GTC 23 — Righteous Charge
 pub(in crate::card::sets) static RIGHTEOUS_CHARGE: CardRecord = CardRecord::new(
@@ -1020,7 +1079,26 @@ pub(in crate::card::sets) static ACT_OF_TREASON: CardRecord = CardRecord::new(
 );
 
 // GTC 86 — Bomber Corps
-// Audit: blocked — Battalion is a trigger-time restriction, but declarative trigger conditions are rechecked on resolution as intervening-if conditions.
+pub(in crate::card::sets) static BOMBER_CORPS: CardRecord = CardRecord::new(
+    cards::BOMBER_CORPS,
+    "Bomber Corps",
+    CardArt::new("9b1675f2-e950-4f3c-9dd3-29ead615ff23", "Chase Stone"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Soldier"], 1, 2).with_ability(
+        AbilityDef::triggered_with_targets(
+            "Battalion — Whenever this creature and at least two other creatures attack, this \
+             creature deals 1 damage to any target.",
+            abilities::BATTALION_EVENT,
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
+);
 
 // GTC 87 — Cinder Elemental
 pub(in crate::card::sets) static CINDER_ELEMENTAL: CardRecord = CardRecord::new(
@@ -1345,7 +1423,25 @@ pub(in crate::card::sets) static VIASHINO_SHANKTAIL: CardRecord = CardRecord::ne
 );
 
 // GTC 111 — Warmind Infantry
-// Audit: blocked — Battalion is a trigger-time restriction, but declarative trigger conditions are rechecked on resolution as intervening-if conditions.
+pub(in crate::card::sets) static WARMIND_INFANTRY: CardRecord = CardRecord::new(
+    cards::WARMIND_INFANTRY,
+    "Warmind Infantry",
+    CardArt::new("d8a5f801-9e55-4e14-85b0-5719521cd9d6", "Greg Staples"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Elemental", "Soldier"], 2, 3).with_abilities(&[
+        abilities::battalion(
+            "Battalion — Whenever this creature and at least two other creatures attack, this creature gets +2/+0 until end of turn.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(2),
+                    toughness: ValueDef::Constant(0),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // GTC 112 — Wrecking Ogre
 pub(in crate::card::sets) static WRECKING_OGRE: CardRecord = CardRecord::new(
@@ -2051,7 +2147,35 @@ pub(in crate::card::sets) static DRAKEWING_KRASIS: CardRecord = CardRecord::new(
 // Audit: blocked — Evolve and a trigger for a +1/+1 counter being placed on the source are unavailable.
 
 // GTC 163 — Firemane Avenger
-// Audit: blocked — Battalion is a trigger-time restriction, but declarative trigger conditions are rechecked on resolution as intervening-if conditions.
+pub(in crate::card::sets) static FIREMANE_AVENGER: CardRecord = CardRecord::new(
+    cards::FIREMANE_AVENGER,
+    "Firemane Avenger",
+    CardArt::new("e244c198-efdc-492a-9c52-76aac006de9d", "Wayne Reynolds"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{2}{R}{W}"), &["Angel"], 3, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_with_targets(
+            "Battalion — Whenever this creature and at least two other creatures attack, this \
+             creature deals 3 damage to any target and you gain 3 life.",
+            abilities::BATTALION_EVENT,
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::Sequence(&FIREMANE_AVENGER_BATTALION),
+        ),
+    ]),
+);
+
+static FIREMANE_AVENGER_BATTALION: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    },
+];
 
 // GTC 164 — Fortress Cyclops
 // Audit: blocked — Attacks is available, but there is no trigger event for the source blocking.
@@ -2372,7 +2496,22 @@ pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord:
 // Audit: blocked — Needs attack, block, and activated-ability prohibitions plus an upkeep trigger keyed to the attached creature's controller.
 
 // GTC 184 — Ordruun Veteran
-// Audit: blocked — Battalion is a trigger-time restriction, but declarative trigger conditions are rechecked on resolution as intervening-if conditions.
+pub(in crate::card::sets) static ORDRUUN_VETERAN: CardRecord = CardRecord::new(
+    cards::ORDRUUN_VETERAN,
+    "Ordruun Veteran",
+    CardArt::new("20fea3f6-e64a-4964-86bc-c0b8fef0ab25", "Greg Staples"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{2}{R}{W}"), &["Minotaur", "Soldier"], 3, 1).with_abilities(&[
+        abilities::battalion(
+            "Battalion — Whenever this creature and at least two other creatures attack, this creature gains double strike until end of turn.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::GrantAbility(&BATTALION_DOUBLE_STRIKE),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // GTC 185 — Orzhov Charm
 // Audit: blocked — Needs returning all Auras attached to one target, a target-toughness life-loss value, and a graveyard target predicate with dynamic mana-value semantics.
@@ -2673,7 +2812,22 @@ pub(in crate::card::sets) static TRUEFIRE_PALADIN: CardRecord = CardRecord::new(
 // Audit: blocked — Needs simultaneous whole-hand discard with the greatest discarded count, plus cipher encoding and free copy casting.
 
 // GTC 208 — Wojek Halberdiers
-// Audit: blocked — Battalion is a trigger-time restriction, but declarative trigger conditions are rechecked on resolution as intervening-if conditions.
+pub(in crate::card::sets) static WOJEK_HALBERDIERS: CardRecord = CardRecord::new(
+    cards::WOJEK_HALBERDIERS,
+    "Wojek Halberdiers",
+    CardArt::new("423f0870-dc1c-4cd8-b92c-6d5f92abbaec", "Nic Klein"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{R}{W}"), &["Human", "Soldier"], 3, 2).with_abilities(&[
+        abilities::battalion(
+            "Battalion — Whenever this creature and at least two other creatures attack, this creature gains first strike until end of turn.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::GrantAbility(&BATTALION_FIRST_STRIKE),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // GTC 209 — Zameck Guildmage
 // Audit: blocked — Needs a turn-long entry replacement on future creatures and removing a +1/+1 counter from a chosen creature as a cost.
@@ -3180,13 +3334,16 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ASSAULT_GRIFFIN,
     &BASILICA_GUARDS,
     &BLIND_OBEDIENCE,
+    &BOROS_ELITE,
     &COURT_STREET_DENIZEN,
+    &DARING_SKYJEK,
     &DEBTORS_PULPIT,
     &DUTIFUL_THRULL,
     &HOLD_THE_GATES,
     &KNIGHT_OF_OBLIGATION,
     &KNIGHT_WATCH,
     &LUMINATE_PRIMORDIAL,
+    &NAV_SQUAD_COMMANDOS,
     &RIGHTEOUS_CHARGE,
     &SHIELDED_PASSAGE,
     &SYNDIC_OF_TITHES,
@@ -3210,6 +3367,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SYNDICATE_ENFORCER,
     &WIGHT_OF_PRECINCT_SIX,
     &ACT_OF_TREASON,
+    &BOMBER_CORPS,
     &CINDER_ELEMENTAL,
     &FOUNDRY_STREET_DENIZEN,
     &HELLRAISER_GOBLIN,
@@ -3220,6 +3378,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SKINBRAND_GOBLIN,
     &TOWERING_THUNDERFIST,
     &VIASHINO_SHANKTAIL,
+    &WARMIND_INFANTRY,
     &WRECKING_OGRE,
     &BURST_OF_STRENGTH,
     &DISCIPLE_OF_THE_OLD_WAYS,
@@ -3240,6 +3399,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DINROVA_HORROR,
     &DOMRI_RADE,
     &DRAKEWING_KRASIS,
+    &FIREMANE_AVENGER,
     &FOUNDRY_CHAMPION,
     &GHOR_CLAN_RAMPAGER,
     &GROUND_ASSAULT,
@@ -3248,6 +3408,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MARTIAL_GLORY,
     &MORTUS_STRIDER,
     &OBZEDAT_GHOST_COUNCIL,
+    &ORDRUUN_VETERAN,
     &PRIMAL_VISITATION,
     &PSYCHIC_STRIKE,
     &RUINATION_WURM,
@@ -3257,6 +3418,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SUNHOME_GUILDMAGE,
     &TREASURY_THRULL,
     &TRUEFIRE_PALADIN,
+    &WOJEK_HALBERDIERS,
     &ZHUR_TAA_SWINE,
     &ARROWS_OF_JUSTICE,
     &BECKON_APPARITION,
@@ -3285,3 +3447,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&crate::card::sets::y2002::onslaught::NATURALIZE), // GTC 127
 ];
+
+static BATTALION_FLYING: AbilityDef = abilities::flying();
+static BATTALION_DOUBLE_STRIKE: AbilityDef = abilities::double_strike();
+static BATTALION_FIRST_STRIKE: AbilityDef = abilities::first_strike();

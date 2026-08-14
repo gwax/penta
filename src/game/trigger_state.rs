@@ -108,8 +108,9 @@ pub(super) enum CommittedTriggerEvent {
         player: PlayerId,
         amount: u16,
     },
-    AttacksAlone {
+    AttacksInGroup {
         object: TriggerEventObject,
+        total: u8,
     },
     Attacks {
         object: TriggerEventObject,
@@ -160,7 +161,7 @@ impl CommittedTriggerEvent {
         match self {
             Self::ZoneChanged { object, .. }
             | Self::BecomesTapped { object }
-            | Self::AttacksAlone { object }
+            | Self::AttacksInGroup { object, .. }
             | Self::Attacks { object }
             | Self::Transformed { object }
             | Self::DamagedCreatureDied { object, .. } => TriggerContext {
