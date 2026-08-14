@@ -911,3 +911,75 @@ fn put_onto_battlefield_reaches_a_board_state_directly() {
         "an unknown definition is refused rather than guessed at"
     );
 }
+
+/// Feldon's Cane sweeps a whole graveyard into its library. The query
+/// vocabulary already reached card zones; only the audit line said otherwise.
+mod graveyard_sweep {
+    use super::*;
+
+    #[test]
+    fn feldons_cane_returns_your_graveyard_and_leaves_the_opponents_alone() {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        let cane = creature(10_000, cards::FELDONS_CANE, PlayerId::One);
+        let cane_id = cane.card.id;
+        game.battlefield.push(cane);
+        for id in [10_001, 10_002, 10_003] {
+            game.players[PlayerId::One.index()].graveyard.push(card(
+                id,
+                cards::SAVANNAH_LIONS,
+                PlayerId::One,
+            ));
+        }
+        game.players[PlayerId::Two.index()].graveyard.push(card(
+            10_004,
+            cards::SEDGE_TROLL,
+            PlayerId::Two,
+        ));
+        let library_before = game.players[PlayerId::One.index()].library.len();
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == cane_id)
+            })
+            .expect("the Cane offers its ability");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        drain_pending(&mut game);
+
+        assert!(
+            game.players[PlayerId::One.index()].graveyard.is_empty(),
+            "your graveyard went to your library"
+        );
+        assert_eq!(
+            game.players[PlayerId::One.index()].library.len(),
+            library_before + 3,
+        );
+        assert_eq!(
+            game.players[PlayerId::Two.index()].graveyard.len(),
+            1,
+            "and the opponent's graveyard is untouched"
+        );
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == cane_id),
+            "the Cane exiled itself paying for it"
+        );
+    }
+
+    #[test]
+    fn feldons_cane_reports_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        let card = catalog
+            .get(cards::FELDONS_CANE)
+            .expect("the card is cataloged");
+        assert_eq!(
+            card.rules.implementation_status(),
+            crate::ImplementationStatus::Complete,
+        );
+    }
+}

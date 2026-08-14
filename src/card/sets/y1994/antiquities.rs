@@ -674,7 +674,35 @@ pub(in crate::card::sets) static DRAGON_ENGINE: CardRecord = CardRecord::new(
 );
 
 // ATQ 50 — Feldon's Cane
-// Audit: blocked — Needs a zone-object query and identity-preserving continuation for “{T}, Exile this artifact: Shuffle your graveyard into your library”.
+pub(in crate::card::sets) static FELDONS_CANE: CardRecord = CardRecord::new(
+    cards::FELDONS_CANE,
+    "Feldon's Cane",
+    CardArt::new("bb6af436-bcfd-4d47-a1aa-e84b587a725a", "Mark Tedin"),
+    CardSet::Antiquities,
+    CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated(
+        "{T}, Exile this artifact: Shuffle your graveyard into your library.",
+        &[AbilityCostDef::TapSource, AbilityCostDef::ExileSource],
+        EffectDef::Sequence(&FELDONS_CANE_SHUFFLE),
+    )),
+);
+
+/// The documented composition: move the cards, then shuffle the library they
+/// arrived in.
+static FELDONS_CANE_SHUFFLE: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::MatchingObjects {
+            object: ObjectPredicateDef::Any,
+            zones: &[ZoneKind::Graveyard],
+            controller: PlayerRelation::You,
+        },
+        zone: ZoneKind::Library,
+        controller: None,
+        placement: ZonePlacement::Top,
+    },
+    EffectDef::ShuffleLibrary {
+        player: EffectRecipientDef::Controller,
+    },
+];
 
 // ATQ 51 — Golgothian Sylex
 // Audit: partial — Its expansion predicate follows physical identity rather than the permanent's current copied name.
@@ -1311,6 +1339,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CLAY_STATUE,
     &COLOSSUS_OF_SARDIA,
     &DRAGON_ENGINE,
+    &FELDONS_CANE,
     &GOLGOTHIAN_SYLEX,
     &GRAPESHOT_CATAPULT,
     &IVORY_TOWER,

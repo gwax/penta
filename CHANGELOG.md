@@ -60,6 +60,10 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Feldon's Cane**, with no engine change. Its audit line asked for a
+  zone-object query, and the query vocabulary has reached graveyards, hands,
+  and exile for a while -- the effect is the composition the shuffle operation
+  documents: move the cards, then shuffle the library they arrived in.
 - **A "whenever this deals damage" trigger**, carrying the amount. The existing
   damage trigger only ever matched damage arriving at the ability's own source,
   whatever predicate it named, so the other direction had no event at all.
