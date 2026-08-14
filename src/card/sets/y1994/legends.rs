@@ -878,8 +878,38 @@ pub(in crate::card::sets) static SEGOVIAN_LEVIATHAN: CardRecord = CardRecord::ne
 // LEG 77 — Silhouette
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Choose target creature. If a spell or ability that targets that creature would cause a source to deal damage to that creature this turn, prevent that damage”.
 
+static SPECTRAL_SHROUD: AbilityDef = abilities::shroud();
+
 // LEG 78 — Spectral Cloak
-// Audit: blocked — Needs executable shroud target-legality and a temporary keyword grant for “Enchanted creature has shroud as long as it's untapped”.
+pub(in crate::card::sets) static SPECTRAL_CLOAK: CardRecord = CardRecord::new(
+    cards::SPECTRAL_CLOAK,
+    "Spectral Cloak",
+    CardArt::new("7524fd0d-a675-41d6-bc99-bd3ba336893b", "Rob Alexander"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{U}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature has shroud as long as it's untapped.",
+                EffectDef::Apply {
+                    // The condition rides on the recipient rather than on the
+                    // effect, so tapping the host takes the shroud away
+                    // without the Aura being touched.
+                    recipient: EffectRecipientDef::MatchingObjects {
+                        object: ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::AttachedToSource,
+                            ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+                        ]),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: PlayerRelation::Any,
+                    },
+                    effect: AppliedEffectDef::GrantAbility(&SPECTRAL_SHROUD),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+        ]),
+);
 
 // LEG 79 — Telekinesis
 pub(in crate::card::sets) static TELEKINESIS: CardRecord = CardRecord::new(
@@ -3871,6 +3901,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RECALL,
     &REMOVE_SOUL,
     &SEGOVIAN_LEVIATHAN,
+    &SPECTRAL_CLOAK,
     &TELEKINESIS,
     &UNDERTOW,
     &WALL_OF_VAPOR,

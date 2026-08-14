@@ -302,7 +302,7 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
 );
 
 // FEM 17 — Deep Spawn
-// Audit: blocked — Needs executable shroud target-legality and a temporary keyword grant for “{U}: This creature gains shroud until end of turn and doesn't untap during your next untap step. Tap this creature”.
+// Audit: blocked — Needs an unless-clause whose cost is milling rather than mana for “At the beginning of your upkeep, sacrifice this creature unless you mill two cards”. Its shroud ability is available.
 
 // FEM 18a — High Tide
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Until end of turn, whenever a player taps an Island for mana, that player adds an additional {U}”.
@@ -425,7 +425,33 @@ pub(in crate::card::sets) static HOMARID_SHAMAN: CardRecord = CardRecord::new(
 // Audit: blocked — Needs Camarid token creation whose count is the sacrificed creature's mana value.
 
 // FEM 22a — Homarid Warrior
-// Audit: blocked — Needs executable shroud target-legality and a temporary keyword grant for “{U}: This creature gains shroud until end of turn and doesn't untap during your next untap step. Tap it”.
+pub(in crate::card::sets) static HOMARID_WARRIOR: CardRecord = CardRecord::new(
+    cards::HOMARID_WARRIOR,
+    "Homarid Warrior",
+    CardArt::new("627ca588-917f-4768-a69d-3d93c1210390", "Daniel Gelon"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{4}{U}"), &["Homarid", "Warrior"], 3, 3).with_ability(
+        AbilityDef::activated(
+            "{U}: This creature gains shroud until end of turn and doesn't untap during your \
+             next untap step. Tap it.",
+            &[AbilityCostDef::Mana(mana_cost!("{U}"))],
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::GrantAbility(&SHROUD),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+                EffectDef::SkipNextUntapSteps {
+                    object: EffectRecipientDef::Source,
+                    count: 1,
+                },
+                EffectDef::Tap {
+                    object: EffectRecipientDef::Source,
+                },
+            ]),
+        ),
+    ),
+);
 
 // FEM 23a — Merseine
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Enchanted creature doesn't untap during its controller's untap step if this Aura has a net counter on it”.
@@ -1577,6 +1603,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORDER_OF_LEITBUR,
     &HOMARID,
     &HOMARID_SHAMAN,
+    &HOMARID_WARRIOR,
     &RIVER_MERFOLK,
     &SVYELUNITE_PRIEST,
     &VODALIAN_KNIGHTS,

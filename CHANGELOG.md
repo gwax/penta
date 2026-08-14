@@ -78,6 +78,12 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Shroud granted for a while, and shroud granted on a condition.** Both
+  shapes were already expressible and the audit lines saying otherwise had
+  gone stale. Homarid Warrior buys its shroud with a tap and a skipped untap
+  step; Spectral Cloak carries the condition on the recipient, so tapping the
+  host takes the shroud away and untapping gives it back without the Aura
+  being touched.
 - **Lands animated by a static ability.** "All Forests are 1/1 creatures that
   are still lands" keeps applying as Forests come and go, so unlike a resolved
   animation it cannot be written onto the land; it is read live. That raises

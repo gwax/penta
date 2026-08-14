@@ -438,6 +438,7 @@ mod replacements_and_presentation;
 mod ring_of_maruf;
 mod scavenge;
 mod search_and_reveal;
+mod shroud_grants;
 mod spore;
 mod stale_followups;
 mod stat_counters;

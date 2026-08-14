@@ -29,3 +29,5 @@ pub const SPIRIT_SHACKLE: CardDefinitionId = CardDefinitionId(1654);
 pub const LIVING_LANDS: CardDefinitionId = CardDefinitionId(1655);
 pub const KORMUS_BELL: CardDefinitionId = CardDefinitionId(1656);
 pub const LIVING_PLANE: CardDefinitionId = CardDefinitionId(1657);
+pub const HOMARID_WARRIOR: CardDefinitionId = CardDefinitionId(1658);
+pub const SPECTRAL_CLOAK: CardDefinitionId = CardDefinitionId(1659);
