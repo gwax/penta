@@ -571,6 +571,12 @@ impl Game {
                 CommittedTriggerEvent::BecomesBlocked { object, .. },
             )
             | (
+                TriggerEventDef::AttacksAndIsNotBlocked {
+                    attacker: predicate,
+                },
+                CommittedTriggerEvent::AttacksAndIsNotBlocked { object },
+            )
+            | (
                 TriggerEventDef::DamageDealtBy { source: predicate },
                 CommittedTriggerEvent::DamageDealt { source: object, .. },
             ) => self.trigger_object_matches(predicate, object, source, false),

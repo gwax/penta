@@ -355,6 +355,23 @@ impl Game {
         }
         self.capture_becomes_blocked_triggers(&blocked);
         self.capture_blocking_relationship_triggers();
+        self.capture_unblocked_attacker_triggers(&blocked);
+    }
+
+    /// CR 509.1h leaves an attacker nobody blocked unblocked, which is what
+    /// these clauses read. It can only be answered once blocking is done.
+    fn capture_unblocked_attacker_triggers(&mut self, blocked: &[GameObjectId]) {
+        let unblocked = self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.attacking && !blocked.contains(&permanent.card.id))
+            .map(|permanent| self.trigger_event_object(permanent))
+            .collect::<Vec<_>>();
+        for object in unblocked {
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::AttacksAndIsNotBlocked {
+                object,
+            });
+        }
     }
 
     /// One event per ordered pair of a blocker and what it blocks, so a

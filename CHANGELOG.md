@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **"Whenever this creature attacks and isn't blocked."** Not answerable when
+  attackers are declared -- only once blocking is done -- so it is captured
+  where the blocking relationships are, alongside the pair events. Mindstab
+  Thrull and Necrite, both of which offer to sacrifice themselves for the
+  effect and so exercise the optional half in both directions.
 - **A group-wide "can't attack".** The printed "can't attack unless ..." is
   something a creature says about itself and was read only from its own
   clauses; this one is applied from elsewhere, so one permanent can hold back

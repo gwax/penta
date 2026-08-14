@@ -488,11 +488,83 @@ pub(in crate::card::sets) static HYMN_TO_TOURACH: CardRecord = CardRecord::new(
 // FEM 39a — Initiates of the Ebon Hand
 // Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{1}: Add {B}. If this ability has been activated four or more times this turn, sacrifice this creature at the beginning of the next end step”.
 
+static MINDSTAB_THRULL_STRIKE: [EffectDef; 2] = [
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::Source,
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Opponent,
+        amount: ValueDef::Constant(3),
+        selection: DiscardSelectionDef::RecipientChooses,
+    },
+];
+
 // FEM 40a — Mindstab Thrull
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature attacks and isn't blocked, you may sacrifice it. If you do, defending player discards three cards”.
+pub(in crate::card::sets) static MINDSTAB_THRULL: CardRecord = CardRecord::new(
+    cards::MINDSTAB_THRULL,
+    "Mindstab Thrull",
+    CardArt::new(
+        "499a791f-ac4f-4a96-b59b-37043686a79a",
+        "Richard Kane Ferguson",
+    ),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Thrull"], 2, 2).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature attacks and isn't blocked, you may sacrifice it. If you do, \
+             defending player discards three cards.",
+            TriggerEventDef::AttacksAndIsNotBlocked {
+                attacker: ObjectPredicateDef::Source,
+            },
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Sequence(&MINDSTAB_THRULL_STRIKE),
+            },
+        ),
+    ),
+);
+
+static NECRITE_STRIKE: [EffectDef; 2] = [
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::Source,
+    },
+    // "It can't be regenerated" is the destruction's own flag rather than a
+    // separate prohibition: nothing else this turn is being denied a shield.
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: false,
+    },
+];
+
+static NECRITE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
 
 // FEM 41a — Necrite
-// Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “Whenever this creature attacks and isn't blocked, you may sacrifice it. If you do, destroy target creature defending player controls. It can't be regenerated”.
+pub(in crate::card::sets) static NECRITE: CardRecord = CardRecord::new(
+    cards::NECRITE,
+    "Necrite",
+    CardArt::new("311d752a-ce8a-44cb-8aeb-1ed66705eb09", "Ron Spencer"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Thrull"], 2, 2).with_ability(
+        AbilityDef::triggered_with_targets(
+            "Whenever this creature attacks and isn't blocked, you may sacrifice it. If you do, \
+             destroy target creature defending player controls. It can't be regenerated.",
+            TriggerEventDef::AttacksAndIsNotBlocked {
+                attacker: ObjectPredicateDef::Source,
+            },
+            &NECRITE_TARGET,
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Sequence(&NECRITE_STRIKE),
+            },
+        ),
+    ),
+);
 
 // FEM 42a — Order of the Ebon Hand
 pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord::new(
@@ -1332,6 +1404,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BASAL_THRULL,
     &BREEDING_PIT,
     &HYMN_TO_TOURACH,
+    &MINDSTAB_THRULL,
+    &NECRITE,
     &ORDER_OF_THE_EBON_HAND,
     &THRULL_CHAMPION,
     &THRULL_RETAINER,

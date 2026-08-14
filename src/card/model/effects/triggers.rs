@@ -61,6 +61,12 @@ pub enum TriggerEventDef {
         /// An upper bound, for "attacks alone". `None` means no maximum.
         maximum_total: Option<u8>,
     },
+    /// A matching creature was declared as an attacker and no creature
+    /// blocked it. This fires once blockers are declared, which is the only
+    /// moment "isn't blocked" is knowable.
+    AttacksAndIsNotBlocked {
+        attacker: ObjectPredicateDef,
+    },
     /// This creature blocked a matching creature, or was blocked by one. The
     /// two directions are one printed clause, and the creature on the other
     /// side is the triggering object either way.

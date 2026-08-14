@@ -433,6 +433,7 @@ mod targeting_characteristics;
 mod triggers_and_stack;
 mod turn_and_loyalty;
 mod tutors_and_fetch_lands;
+mod unblocked_attackers;
 mod unleash;
 mod untap_skips;
 mod wards;

@@ -41,6 +41,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
             attacker: source, ..
         }
         | TriggerEventDef::DamageDealtToPlayer { source, .. }
+        | TriggerEventDef::AttacksAndIsNotBlocked { attacker: source }
         | TriggerEventDef::BlocksOrBecomesBlockedBy { object: source } => {
             shared_object_predicate(source)
         }

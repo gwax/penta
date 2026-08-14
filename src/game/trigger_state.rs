@@ -121,6 +121,11 @@ pub(super) enum CommittedTriggerEvent {
         /// gets the quantity it is printed against without recounting.
         blockers_beyond_first: u16,
     },
+    /// An attacker that no creature blocked, committed once blockers are
+    /// declared.
+    AttacksAndIsNotBlocked {
+        object: TriggerEventObject,
+    },
     /// One side of one blocking relationship. Emitted once per ordered pair,
     /// so a clause on either creature sees the other as the triggering
     /// object without having to know which of them attacked.
@@ -171,7 +176,8 @@ impl CommittedTriggerEvent {
             | Self::AttacksInGroup { object, .. }
             | Self::Attacks { object }
             | Self::Transformed { object }
-            | Self::DamagedCreatureDied { object, .. } => TriggerContext {
+            | Self::DamagedCreatureDied { object, .. }
+            | Self::AttacksAndIsNotBlocked { object } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: None,
