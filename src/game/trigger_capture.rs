@@ -765,13 +765,23 @@ impl Game {
                 let flying = KeywordAbility::Flying
                     .simple_index()
                     .is_some_and(|index| object.keywords & (1 << index) != 0);
-                object.types.contains(CardType::Creature)
-                    && match group {
-                        DamageSourceGroupDef::CreaturesWithFlying => flying,
-                        DamageSourceGroupDef::AttackingCreaturesWithoutFlying => {
-                            object.attacking && !flying
-                        }
+                match group {
+                    DamageSourceGroupDef::CreaturesWithFlying => {
+                        object.types.contains(CardType::Creature) && flying
                     }
+                    DamageSourceGroupDef::AttackingCreaturesWithoutFlying => {
+                        object.types.contains(CardType::Creature) && object.attacking && !flying
+                    }
+                    DamageSourceGroupDef::Artifacts => object.types.contains(CardType::Artifact),
+                    DamageSourceGroupDef::UnblockedCreatures => {
+                        object.types.contains(CardType::Creature)
+                            && object.attacking
+                            && !self
+                                .battlefield
+                                .iter()
+                                .any(|blocker| blocker.blocking == Some(object.id))
+                    }
+                }
             }),
         }
     }

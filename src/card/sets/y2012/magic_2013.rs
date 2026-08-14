@@ -3096,8 +3096,8 @@ pub(in crate::card::sets) static RING_OF_EVOS_ISLE: CardRecord = CardRecord::new
                 &[AbilityCostDef::Mana(mana_cost!("{2}"))],
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&EVOS_ISLE_HEXPROOF),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    effect: AppliedEffectDef::add_ability(&EVOS_ISLE_HEXPROOF),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ),
             AbilityDef::triggered_if(
@@ -3136,10 +3136,9 @@ pub(in crate::card::sets) static RING_OF_KALONIA: CardRecord = CardRecord::new(
         .with_abilities(&[
             AbilityDef::static_ability(
                 "Equipped creature has trample.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&KALONIA_TRAMPLE),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::add_ability(&KALONIA_TRAMPLE),
                 },
             ),
             AbilityDef::triggered_if(
@@ -3178,10 +3177,9 @@ pub(in crate::card::sets) static RING_OF_THUNE: CardRecord = CardRecord::new(
         .with_abilities(&[
             AbilityDef::static_ability(
                 "Equipped creature has vigilance.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&THUNE_VIGILANCE),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::add_ability(&THUNE_VIGILANCE),
                 },
             ),
             AbilityDef::triggered_if(
@@ -3219,10 +3217,9 @@ pub(in crate::card::sets) static RING_OF_VALKAS: CardRecord = CardRecord::new(
         .with_abilities(&[
             AbilityDef::static_ability(
                 "Equipped creature has haste.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&VALKAS_HASTE),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::add_ability(&VALKAS_HASTE),
                 },
             ),
             AbilityDef::triggered_if(
