@@ -153,10 +153,18 @@ pub enum AppliedEffectDef {
     /// turn-scoped [`EffectDef::PreventCombatDamageThisTurn`] this holds for
     /// as long as the effect applies, which is what an Aura needs.
     PreventCombatDamage,
+    /// Only the combat damage the affected permanent would deal is
+    /// prevented. Unlike [`Self::PreventCombatDamage`] this is one direction,
+    /// so the permanent still takes what its blockers deal it.
+    PreventCombatDamageDealtBy,
     /// Damage from a source matching this predicate is prevented before it
     /// touches the affected permanent. Only a permanent can be the source
     /// today, which is all "damage from artifact creatures" needs.
     PreventDamageFrom(ObjectPredicateDef),
+    /// As [`Self::PreventDamageFrom`], but only for combat damage. A card
+    /// that names combat means combat: a burn spell from the same source
+    /// still lands.
+    PreventCombatDamageFrom(ObjectPredicateDef),
     /// Adds land subtypes without removing the object's existing subtypes.
     AddLandTypes(&'static [BasicLandType]),
     /// Sets the object's land subtypes, removing its existing land subtypes and

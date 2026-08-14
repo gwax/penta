@@ -78,6 +78,13 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Combat-damage prevention gains a direction and a source filter.** The
+  static prevention covered damage to *and* by a permanent in one lump, and
+  the source-filtered one covered all damage rather than combat damage. Both
+  now have the narrower form the cards actually print: Demonic Torment stops
+  only what its host deals, and its host still takes what its blocker deals
+  back; Enchanted Being names combat, so a burn spell from the same enchanted
+  creature still lands.
 - **Two more identities from the tap/untap group.** Giant Tortoise reads its
   own tapped state through the recipient condition, and Elvish Hunter spends
   its tap to take one untap step away. Both audit lines had gone stale.

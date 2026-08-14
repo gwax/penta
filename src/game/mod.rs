@@ -86,6 +86,7 @@ mod state_based;
 mod state_checkpoint;
 mod static_animation;
 mod targeting;
+mod tokens;
 mod trigger_capture;
 mod trigger_placement;
 mod trigger_state;

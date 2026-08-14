@@ -173,7 +173,9 @@ impl Game {
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
             | AppliedEffectDef::PreventDamageFrom(_)
+            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::PreventCombatDamage
+            | AppliedEffectDef::PreventCombatDamageDealtBy
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::GrantAbility(_)
             | AppliedEffectDef::RemoveAbilities(_)
@@ -341,7 +343,9 @@ impl Game {
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
             | AppliedEffectDef::PreventDamageFrom(_)
+            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::PreventCombatDamage
+            | AppliedEffectDef::PreventCombatDamageDealtBy
             | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::GrantAbility(_)

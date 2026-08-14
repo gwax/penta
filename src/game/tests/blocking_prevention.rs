@@ -110,6 +110,62 @@ fn an_aura_on_the_attacker_is_what_turns_the_prevention_on() {
     );
 }
 
+/// Enchanted Being names combat, so a burn spell from the same enchanted
+/// creature still lands. That is the whole difference from Wall of Putrid
+/// Flesh, which prevents all damage from one.
+#[test]
+fn enchanted_being_stops_combat_damage_only() {
+    let (mut game, attacker, being) =
+        blocked_by_attacker(cards::SHIVAN_DRAGON, cards::ENCHANTED_BEING);
+    let mut aura = creature(10_002, cards::UNHOLY_STRENGTH, PlayerId::One);
+    aura.attached_to = Some(attacker);
+    game.battlefield.push(aura);
+    game.check_state_based_actions();
+
+    game.deal_combat_damage();
+    assert_eq!(damage_on(&game, being), 0, "combat damage is prevented");
+
+    game.damage_target_from(Some(attacker), Some(Target::Permanent(being)), 1);
+    assert_eq!(
+        damage_on(&game, being),
+        1,
+        "but an ability of the same creature still burns it"
+    );
+}
+
+/// Demonic Torment prevents one direction. The enchanted creature deals
+/// nothing, and still takes what its blocker deals back.
+#[test]
+fn demonic_torment_stops_only_what_its_host_deals() {
+    let mut game = ready_game();
+    let mut attacker = creature(10_000, cards::SHIVAN_DRAGON, PlayerId::One);
+    attacker.attacking = true;
+    attacker.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let mut torment = creature(10_001, cards::DEMONIC_TORMENT, PlayerId::Two);
+    torment.attached_to = Some(attacker_id);
+    game.battlefield.push(torment);
+    let mut blocker = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two);
+    blocker.blocking = Some(attacker_id);
+    let blocker_id = blocker.card.id;
+    game.battlefield.push(blocker);
+    game.check_state_based_actions();
+
+    game.deal_combat_damage();
+
+    assert_eq!(
+        damage_on(&game, blocker_id),
+        0,
+        "the tormented creature deals nothing"
+    );
+    assert_eq!(
+        damage_on(&game, attacker_id),
+        4,
+        "and still takes what the blocker deals"
+    );
+}
+
 #[test]
 fn every_wall_identity_reports_its_audited_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -117,6 +173,8 @@ fn every_wall_identity_reports_its_audited_coverage() {
         (cards::WALL_OF_VAPOR, ImplementationStatus::Complete),
         (cards::WALL_OF_PUTRID_FLESH, ImplementationStatus::Complete),
         (cards::WALL_OF_SHADOWS, ImplementationStatus::Partial),
+        (cards::ENCHANTED_BEING, ImplementationStatus::Complete),
+        (cards::DEMONIC_TORMENT, ImplementationStatus::Complete),
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

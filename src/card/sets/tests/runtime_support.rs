@@ -167,7 +167,9 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
+        | AppliedEffectDef::PreventCombatDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
+        | AppliedEffectDef::PreventCombatDamageDealtBy
         | AppliedEffectDef::AddLandTypes(_)
         | AppliedEffectDef::SetLandTypes(_)
         | AppliedEffectDef::RemoveAbilities(_)
@@ -251,7 +253,9 @@ fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
+        | AppliedEffectDef::PreventCombatDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
+        | AppliedEffectDef::PreventCombatDamageDealtBy
         | AppliedEffectDef::AddLandTypes(_)
         | AppliedEffectDef::SetLandTypes(_)
         | AppliedEffectDef::Animate(_)
@@ -305,7 +309,9 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
+        | AppliedEffectDef::PreventCombatDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
+        | AppliedEffectDef::PreventCombatDamageDealtBy
         | AppliedEffectDef::AddLandTypes(_)
         | AppliedEffectDef::SetLandTypes(_)
         | AppliedEffectDef::Special(_) => false,
@@ -578,7 +584,8 @@ pub(super) fn shared_static_applied_effect(
             ) && shared_object_predicate(predicate)
         }
         AppliedEffectDef::CanBlockOnly(predicate)
-        | AppliedEffectDef::PreventDamageFrom(predicate) => {
+        | AppliedEffectDef::PreventDamageFrom(predicate)
+        | AppliedEffectDef::PreventCombatDamageFrom(predicate) => {
             matches!(
                 recipient,
                 EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
@@ -586,10 +593,12 @@ pub(super) fn shared_static_applied_effect(
         }
         // A static combat-damage prevention carries no predicate, so only the
         // recipient it is applied to has to be one the runtime understands.
-        AppliedEffectDef::PreventCombatDamage => matches!(
-            recipient,
-            EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
-        ),
+        AppliedEffectDef::PreventCombatDamage | AppliedEffectDef::PreventCombatDamageDealtBy => {
+            matches!(
+                recipient,
+                EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
+            )
+        }
         // Read only off the Aura whose attachment it is defending, which is
         // the source of the ability granting the protection.
         AppliedEffectDef::RemainsAttachedThroughProtection => {

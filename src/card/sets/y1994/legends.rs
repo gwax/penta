@@ -216,7 +216,26 @@ pub(in crate::card::sets) static DIVINE_TRANSFORMATION: CardRecord = CardRecord:
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “When this creature blocks, it loses defender”.
 
 // LEG 12 — Enchanted Being
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt to this creature by enchanted creatures”.
+pub(in crate::card::sets) static ENCHANTED_BEING: CardRecord = CardRecord::new(
+    cards::ENCHANTED_BEING,
+    "Enchanted Being",
+    CardArt::new("94c2880d-b37a-43ea-9fee-cd5a8ed75a7e", "Douglas Shuler"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human"], 2, 2).with_ability(
+        AbilityDef::static_ability(
+            "Prevent all combat damage that would be dealt to this creature by enchanted \
+             creatures.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::PreventCombatDamageFrom(ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Enchanted,
+                ])),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ),
+);
 
 // LEG 13 — Equinox
 // Audit: blocked — Needs a granted ability that can target a spell by prospectively determining whether that spell would destroy one of its controller's lands.
@@ -1113,7 +1132,33 @@ pub(in crate::card::sets) static DARKNESS: CardRecord = CardRecord::new(
 );
 
 // LEG 95 — Demonic Torment
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt by enchanted creature”.
+pub(in crate::card::sets) static DEMONIC_TORMENT: CardRecord = CardRecord::new(
+    cards::DEMONIC_TORMENT,
+    "Demonic Torment",
+    CardArt::new("d3ec14bc-95e9-47ce-b51e-d5eac9b345fe", "Anson Maddocks"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{2}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature can't attack.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::CannotAttack,
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::static_ability(
+                "Prevent all combat damage that would be dealt by enchanted creature.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::PreventCombatDamageDealtBy,
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+        ]),
+);
 
 // LEG 96 — Evil Eye of Orms-by-Gore
 pub(in crate::card::sets) static EVIL_EYE_OF_ORMS_BY_GORE: CardRecord = CardRecord::new(
@@ -3892,6 +3937,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DAVENANT_ARCHER,
     &DIVINE_OFFERING,
     &DIVINE_TRANSFORMATION,
+    &ENCHANTED_BEING,
     &GREAT_DEFENDER,
     &GREAT_WALL,
     &GREATER_REALM_OF_PRESERVATION,
@@ -3933,6 +3979,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CARRION_ANTS,
     &CYCLOPEAN_MUMMY,
     &DARKNESS,
+    &DEMONIC_TORMENT,
     &EVIL_EYE_OF_ORMS_BY_GORE,
     &FALLEN_ANGEL,
     &GHOSTS_OF_THE_DAMNED,

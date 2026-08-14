@@ -718,7 +718,7 @@ impl Game {
                 .iter()
                 .any(|permanent| permanent.card.id == id
                     && (permanent.combat_damage_prevented
-                        || self.static_combat_damage_prevented(permanent))))
+                        || self.static_combat_damage_prevented(permanent, false))))
     }
 
     /// Whether combat damage from this permanent is prevented for the turn.
@@ -730,17 +730,24 @@ impl Game {
             permanent.card.id == source
                 && (permanent.combat_damage_prevented
                     || permanent.combat_damage_dealt_by_prevented
-                    || self.static_combat_damage_prevented(permanent))
+                    || self.static_combat_damage_prevented(permanent, true))
         })
     }
 
-    /// Whether a continuous effect currently stops all combat damage to and
-    /// by this permanent. The turn-scoped flags above are set once and cleared
-    /// at cleanup; this is asked afresh, so an Aura leaving the battlefield
-    /// mid-combat stops applying immediately.
-    fn static_combat_damage_prevented(&self, permanent: &Permanent) -> bool {
+    /// Whether a continuous effect currently stops this permanent's combat
+    /// damage in the given direction. The turn-scoped flags above are set
+    /// once and cleared at cleanup; this is asked afresh, so an Aura leaving
+    /// the battlefield mid-combat stops applying immediately.
+    fn static_combat_damage_prevented(&self, permanent: &Permanent, dealt_by: bool) -> bool {
         self.visit_static_applied_effects(permanent, |applied| {
-            if matches!(applied.effect, AppliedEffectDef::PreventCombatDamage) {
+            let prevented = match applied.effect {
+                AppliedEffectDef::PreventCombatDamage => true,
+                // One direction only: the permanent still takes what its
+                // blockers deal it.
+                AppliedEffectDef::PreventCombatDamageDealtBy => dealt_by,
+                _ => false,
+            };
+            if prevented {
                 ControlFlow::Break(())
             } else {
                 ControlFlow::Continue(())

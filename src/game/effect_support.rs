@@ -181,6 +181,53 @@ impl Game {
         }
     }
 
+    /// Where a resolved power/toughness modification lands: on the ordinary
+    /// accumulator that cleanup zeroes, or -- for "as long as this artifact
+    /// remains tapped" -- on a record naming the source it depends on.
+    fn apply_stat_modification(
+        &mut self,
+        target: Target,
+        power: super::ValueDef,
+        toughness: super::ValueDef,
+        resolution: ResolvedAppliedEffect<'_>,
+    ) {
+        let Target::Permanent(target) = target else {
+            return;
+        };
+        let resolve = |value| {
+            i16::try_from(
+                self.effect_value(
+                    value,
+                    resolution.object,
+                    resolution.context,
+                    resolution.scoped,
+                )
+                .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
+            )
+            .expect("the effect value was clamped to i16")
+        };
+        let power = resolve(power);
+        let toughness = resolve(toughness);
+        let while_tapped = (resolution.duration == EffectDurationDef::WhileSourceTapped)
+            .then(|| resolution.object.source.unwrap_or(resolution.object.id));
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == target)
+        {
+            if let Some(source) = while_tapped {
+                permanent.while_source_tapped.push(TappedSourceStatBonus {
+                    source,
+                    power,
+                    toughness,
+                });
+            } else {
+                permanent.power_bonus = permanent.power_bonus.saturating_add(power);
+                permanent.toughness_bonus = permanent.toughness_bonus.saturating_add(toughness);
+            }
+        }
+    }
+
     fn apply_applied_effect_component(
         &mut self,
         target: Target,
@@ -231,51 +278,7 @@ impl Game {
                 }
             }
             AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
-                let Target::Permanent(target) = target else {
-                    return;
-                };
-                let power = i16::try_from(
-                    self.effect_value(
-                        power,
-                        resolution.object,
-                        resolution.context,
-                        resolution.scoped,
-                    )
-                    .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
-                )
-                .expect("the effect value was clamped to i16");
-                let toughness = i16::try_from(
-                    self.effect_value(
-                        toughness,
-                        resolution.object,
-                        resolution.context,
-                        resolution.scoped,
-                    )
-                    .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
-                )
-                .expect("the effect value was clamped to i16");
-                // "For as long as this artifact remains tapped" has no
-                // deadline to record, so the source is recorded instead and
-                // the bonus is read against it.
-                let while_tapped = (resolution.duration == EffectDurationDef::WhileSourceTapped)
-                    .then(|| resolution.object.source.unwrap_or(resolution.object.id));
-                if let Some(permanent) = self
-                    .battlefield
-                    .iter_mut()
-                    .find(|permanent| permanent.card.id == target)
-                {
-                    if let Some(source) = while_tapped {
-                        permanent.while_source_tapped.push(TappedSourceStatBonus {
-                            source,
-                            power,
-                            toughness,
-                        });
-                    } else {
-                        permanent.power_bonus = permanent.power_bonus.saturating_add(power);
-                        permanent.toughness_bonus =
-                            permanent.toughness_bonus.saturating_add(toughness);
-                    }
-                }
+                self.apply_stat_modification(target, power, toughness, resolution);
             }
             // Only the printed static forms of these exist. "Can't attack"
             // is applied from elsewhere and read off the continuous layer;
@@ -292,7 +295,9 @@ impl Game {
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
             | AppliedEffectDef::PreventDamageFrom(_)
+            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::PreventCombatDamage
+            | AppliedEffectDef::PreventCombatDamageDealtBy
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::SetLandTypes(_)
             | AppliedEffectDef::Special(_) => {}

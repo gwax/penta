@@ -2,9 +2,8 @@
 use super::{AbilityId, AbilityOrigin};
 use super::{
     AbilityTargetPredicate, AppliedEffectDef, CardDefinitionId, CardRules, CardSet, CardTypeSet,
-    CharacteristicSource, ColorSet, ControlFlow, DeclarativeAbilityDef, EffectDef,
-    EffectDurationDef, EffectRecipientDef, EntryCompletion, Game, GameObjectId, GrantId,
-    KeywordAbility, ManaColor, PendingBattlefieldEntry, Permanent, PlayerId, RetiredObject,
+    ColorSet, ControlFlow, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
+    Game, GameObjectId, GrantId, KeywordAbility, ManaColor, Permanent, PlayerId, RetiredObject,
     StackAbilityResolver, StackObject, StaticAppliedEffect, StaticEffectTraversal, Target,
     TargetIndex, TriggerContext, ZoneKind,
 };
@@ -239,7 +238,9 @@ impl Game {
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
             | AppliedEffectDef::PreventDamageFrom(_)
+            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::PreventCombatDamage
+            | AppliedEffectDef::PreventCombatDamageDealtBy
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::SetLandTypes(_)
             | AppliedEffectDef::Animate(_)
@@ -662,67 +663,6 @@ impl Game {
             })
     }
 
-    /// Whether a definition is a token rather than a printed card.
-    pub(super) fn is_token(&self, definition: CardDefinitionId) -> bool {
-        self.catalog
-            .get(definition)
-            .is_some_and(|card| card.debut_set == CardSet::Token)
-    }
-
-    /// Puts one token onto the battlefield under `controller`.
-    ///
-    /// A token is a real permanent built from a catalog definition that no
-    /// format allows, so it can be looked up and rendered like any other card
-    /// while never being deck-legal.
-    pub(super) fn create_token(&mut self, controller: PlayerId, token: CardDefinitionId) {
-        self.create_token_from(controller, token, None);
-    }
-
-    /// Puts one token onto the battlefield, remembering which permanent's
-    /// ability made it. Only the cards that later refer to their own tokens
-    /// pass a creator; for everything else the link is dead weight.
-    pub(super) fn create_token_from(
-        &mut self,
-        controller: PlayerId,
-        token: CardDefinitionId,
-        creator: Option<GameObjectId>,
-    ) {
-        self.create_token_arriving(controller, token, creator, false);
-    }
-
-    /// The same, for a token whose card says it arrives tapped.
-    pub(super) fn create_token_arriving(
-        &mut self,
-        controller: PlayerId,
-        token: CardDefinitionId,
-        creator: Option<GameObjectId>,
-        tapped: bool,
-    ) {
-        let Some(definition) = self.catalog.get(token) else {
-            return;
-        };
-        let presented = definition.primary_part_id();
-        // A token has no physical card behind it, which is exactly what an
-        // unbacked object is.
-        let card = self.unbacked_object(token, controller, CharacteristicSource::Card(token));
-        let mut permanent = Permanent::entering(
-            card,
-            presented,
-            controller,
-            self.turns_started[controller.index()],
-        );
-        permanent.created_by = creator;
-        // Set before entry replacements run, the same point an as-enters
-        // clause would set it.
-        permanent.tapped = tapped;
-        self.enqueue_battlefield_entry(PendingBattlefieldEntry {
-            permanent,
-            from: ZoneKind::Stack,
-            completion: EntryCompletion::None,
-        });
-    }
-
-    /// What an Aura is attached to, if it is on the battlefield and attached.
     pub(super) fn attached_host(&self, aura: GameObjectId) -> Option<GameObjectId> {
         self.battlefield
             .iter()

@@ -17,6 +17,7 @@ impl Game {
         &self,
         permanent: &Permanent,
         source: Option<GameObjectId>,
+        combat: bool,
     ) -> bool {
         let Some(source) = source.and_then(|source| {
             self.battlefield
@@ -27,9 +28,16 @@ impl Game {
         };
         let subject = self.trigger_event_object(source);
         self.visit_static_applied_effects(permanent, |applied| {
-            if matches!(applied.effect, AppliedEffectDef::PreventDamageFrom(predicate)
-                if self.trigger_object_matches(predicate, &subject, permanent.card.id, false))
-            {
+            let predicate = match applied.effect {
+                AppliedEffectDef::PreventDamageFrom(predicate) => Some(predicate),
+                // A card that names combat means combat: a burn spell from
+                // the same source still lands.
+                AppliedEffectDef::PreventCombatDamageFrom(predicate) if combat => Some(predicate),
+                _ => None,
+            };
+            if predicate.is_some_and(|predicate| {
+                self.trigger_object_matches(predicate, &subject, permanent.card.id, false)
+            }) {
                 ControlFlow::Break(())
             } else {
                 ControlFlow::Continue(())
@@ -161,7 +169,7 @@ impl Game {
                     .find(|permanent| permanent.card.id == id)
                     .is_some_and(|permanent| {
                         self.is_protected_from_colors(permanent, source_colors)
-                            || self.damage_is_prevented_from(permanent, source)
+                            || self.damage_is_prevented_from(permanent, source, combat)
                     }),
                 Target::Player(_) | Target::Card(_) | Target::Spell(_) => false,
             })
