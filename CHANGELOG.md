@@ -78,6 +78,11 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Preventing every kind of damage one creature would deal.** The
+  turn-scoped by-direction prevention covered combat damage only, so a card
+  that stops a creature's damage outright had no form. Kry Shield silences an
+  Orcish Artillery's ability as well as its attack; Subdue, whose audit line
+  had gone stale, names combat and leaves the ability alone.
 - **Turn-long prevention that names a group of sources, and a fog's window.**
   A relational prevention could cover a player and their creatures, or every
   source but one; it could not name a group. The group is a closed vocabulary

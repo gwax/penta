@@ -90,6 +90,7 @@ pub(super) fn permanent_snapshot(
         color_override: permanent.color_override.map(ColorSet::to_flags),
         combat_damage_prevented: permanent.combat_damage_prevented,
         combat_damage_dealt_by_prevented: permanent.combat_damage_dealt_by_prevented,
+        damage_dealt_by_prevented: permanent.damage_dealt_by_prevented,
         control_reverts_to: permanent.control_reverts_to.map(PlayerId::index),
         cannot_regenerate_this_turn: permanent.cannot_regenerate_this_turn,
         control_source: permanent.control_source.map(|id| id.0),

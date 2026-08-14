@@ -730,6 +730,7 @@ impl Game {
             permanent.card.id == source
                 && (permanent.combat_damage_prevented
                     || permanent.combat_damage_dealt_by_prevented
+                    || permanent.damage_dealt_by_prevented
                     || self.static_combat_damage_prevented(permanent, true))
         })
     }

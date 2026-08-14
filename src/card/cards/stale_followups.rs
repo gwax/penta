@@ -46,3 +46,5 @@ pub const DEMONIC_TORMENT: CardDefinitionId = CardDefinitionId(1671);
 pub const ANGUS_MACKENZIE: CardDefinitionId = CardDefinitionId(1672);
 pub const SCARECROW: CardDefinitionId = CardDefinitionId(1673);
 pub const AL_ABARAS_CARPET: CardDefinitionId = CardDefinitionId(1674);
+pub const SUBDUE: CardDefinitionId = CardDefinitionId(1675);
+pub const KRY_SHIELD: CardDefinitionId = CardDefinitionId(1676);

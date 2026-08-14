@@ -253,6 +253,9 @@ struct Permanent {
     /// Whether combat damage from this permanent is prevented without also
     /// preventing combat damage to it. Kor Haven uses this narrower marker.
     combat_damage_dealt_by_prevented: bool,
+    /// Every kind of damage this permanent would deal is prevented for the
+    /// rest of the turn, not only its combat damage.
+    damage_dealt_by_prevented: bool,
     /// Who controls this permanent again once the turn ends, set while a
     /// control-changing effect holds it. Cleanup restores it.
     control_reverts_to: Option<PlayerId>,
@@ -372,6 +375,7 @@ impl Permanent {
             color_override: None,
             combat_damage_prevented: false,
             combat_damage_dealt_by_prevented: false,
+            damage_dealt_by_prevented: false,
             control_reverts_to: None,
             cannot_regenerate_this_turn: false,
             control_source: None,

@@ -554,6 +554,7 @@ fn parse_permanent(
     permanent.color_override = state.color_override.map(color_set_from_flags);
     permanent.combat_damage_prevented = state.combat_damage_prevented;
     permanent.combat_damage_dealt_by_prevented = state.combat_damage_dealt_by_prevented;
+    permanent.damage_dealt_by_prevented = state.damage_dealt_by_prevented;
     permanent.control_reverts_to = state
         .control_reverts_to
         .map(player_from_index)

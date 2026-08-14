@@ -140,6 +140,16 @@ impl Game {
         }
     }
 
+    /// Whether a source is under an all-damage prevention, which stops every
+    /// kind it would deal rather than only its combat damage.
+    fn source_deals_no_damage(&self, source: Option<GameObjectId>) -> bool {
+        source.is_some_and(|source| {
+            self.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == source && permanent.damage_dealt_by_prevented)
+        })
+    }
+
     fn relational_damage_is_prevented(
         &self,
         source: Option<GameObjectId>,
@@ -199,7 +209,8 @@ impl Game {
             return 0;
         };
         let source_colors = source.map_or([false; 5], |source| self.object_colors(source));
-        if self.relational_damage_is_prevented(source, target, combat)
+        if self.source_deals_no_damage(source)
+            || self.relational_damage_is_prevented(source, target, combat)
             || target.is_some_and(|target| match target {
                 Target::Permanent(id) => self
                     .battlefield

@@ -2525,8 +2525,35 @@ pub(in crate::card::sets) static RADJAN_SPIRIT: CardRecord = CardRecord::new(
 // LEG 205 — Storm Seeker
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Storm Seeker deals damage to target player equal to the number of cards in that player's hand”.
 
+static SUBDUE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
 // LEG 206 — Subdue
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt by target creature this turn. That creature gets +0/+X until end of turn, where X is its mana value”.
+pub(in crate::card::sets) static SUBDUE: CardRecord = CardRecord::new(
+    cards::SUBDUE,
+    "Subdue",
+    CardArt::new("123d6097-8021-46cd-a8c3-01013245e347", "Brian Snõddy"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Prevent all combat damage that would be dealt by target creature this turn. That \
+         creature gets +0/+X until end of turn, where X is its mana value.",
+        &SUBDUE_TARGET,
+        EffectDef::Sequence(&[
+            EffectDef::PreventCombatDamageDealtByThisTurn {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(0),
+                    toughness: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ]),
+    )),
+);
 
 // LEG 207 — Sylvan Library
 pub(in crate::card::sets) static SYLVAN_LIBRARY: CardRecord = CardRecord::new(
@@ -3735,8 +3762,44 @@ pub(in crate::card::sets) static HORN_OF_DEAFENING: CardRecord = CardRecord::new
 // LEG 281 — Knowledge Vault
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “{2}, {T}: Exile the top card of your library face down”.
 
+static KRY_SHIELD_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
 // LEG 282 — Kry Shield
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{2}, {T}: Prevent all damage that would be dealt this turn by target creature you control. That creature gets +0/+X until end of turn, where X is its mana value”.
+pub(in crate::card::sets) static KRY_SHIELD: CardRecord = CardRecord::new(
+    cards::KRY_SHIELD,
+    "Kry Shield",
+    CardArt::new("a558f23c-c2ce-40d0-b894-f8ccbff8f622", "Richard Thomas"),
+    CardSet::Legends,
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::activated_with_targets(
+        "{2}, {T}: Prevent all damage that would be dealt this turn by target creature you \
+         control. That creature gets +0/+X until end of turn, where X is its mana value.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{2}")),
+            AbilityCostDef::TapSource,
+        ],
+        &KRY_SHIELD_TARGET,
+        EffectDef::Sequence(&[
+            EffectDef::PreventDamageDealtByThisTurn {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(0),
+                    toughness: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ]),
+    )),
+);
 
 // LEG 283 — Life Chisel
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Sacrifice a creature: You gain life equal to the sacrificed creature's toughness. Activate only during your upkeep”.
@@ -4075,6 +4138,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PIXIE_QUEEN,
     &PRADESH_GYPSIES,
     &RADJAN_SPIRIT,
+    &SUBDUE,
     &SYLVAN_LIBRARY,
     &TYPHOON,
     &UNTAMED_WILDS,
@@ -4126,6 +4190,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AL_ABARAS_CARPET,
     &ARENA_OF_THE_ANCIENTS,
     &HORN_OF_DEAFENING,
+    &KRY_SHIELD,
     &RELIC_BARRIER,
     &SERPENT_GENERATOR,
     &KARAKAS,

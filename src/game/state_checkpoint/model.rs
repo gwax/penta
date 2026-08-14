@@ -212,6 +212,9 @@ pub(super) struct PermanentSnapshot {
     pub(super) color_override: Option<[bool; 5]>,
     pub(super) combat_damage_prevented: bool,
     pub(super) combat_damage_dealt_by_prevented: bool,
+    /// Absent from checkpoints that predate the all-damage form.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) damage_dealt_by_prevented: bool,
     pub(super) control_reverts_to: Option<usize>,
     /// Whether a "can't be regenerated" effect covers this permanent for the
     /// rest of the turn.

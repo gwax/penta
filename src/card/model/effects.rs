@@ -532,6 +532,12 @@ pub enum EffectDef {
     PreventCombatDamageDealtByThisTurn {
         object: EffectRecipientDef,
     },
+    /// Prevent every kind of damage the recipient would deal for the rest of
+    /// the turn. Unlike [`Self::PreventCombatDamageDealtByThisTurn`] this
+    /// also stops the damage its abilities would deal.
+    PreventDamageDealtByThisTurn {
+        object: EffectRecipientDef,
+    },
     /// Prevent all damage to one player and to creatures they control for the
     /// rest of the turn. This modifies the rules rather than a fixed object
     /// set, so it also covers creatures that enter later (CR 611.2c).

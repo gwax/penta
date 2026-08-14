@@ -35,6 +35,32 @@ impl Game {
         }
     }
 
+    /// Marks each recipient as dealing no damage for the rest of the turn,
+    /// either combat damage alone or every kind.
+    fn silence_damage_sources(
+        &mut self,
+        recipient: EffectRecipientDef,
+        every_kind: bool,
+        object: &StackObject,
+        context: TriggerContext,
+        scoped: ScopedEffect,
+    ) {
+        for target in self.effect_recipients(recipient, object, context, scoped) {
+            if let Target::Permanent(id) = target
+                && let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == id)
+            {
+                if every_kind {
+                    permanent.damage_dealt_by_prevented = true;
+                } else {
+                    permanent.combat_damage_dealt_by_prevented = true;
+                }
+            }
+        }
+    }
+
     pub(super) fn resolve_prevention_effect(
         &mut self,
         scoped: ScopedEffect,
@@ -94,16 +120,10 @@ impl Game {
                 }
             }
             EffectDef::PreventCombatDamageDealtByThisTurn { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Permanent(id) = target
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|permanent| permanent.card.id == id)
-                    {
-                        permanent.combat_damage_dealt_by_prevented = true;
-                    }
-                }
+                self.silence_damage_sources(recipient, false, object, context, scoped);
+            }
+            EffectDef::PreventDamageDealtByThisTurn { object: recipient } => {
+                self.silence_damage_sources(recipient, true, object, context, scoped);
             }
             EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { player } => {
                 for target in self.effect_recipients(player, object, context, scoped) {
