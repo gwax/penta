@@ -8,10 +8,10 @@ use super::{
     CombatDamageStage, ContinuousEffectTimestamp, CopiableAbility, CopiableCharacteristics,
     CounterKind, EntryCompletion, Game, GameEvent, GameObjectId, GameStack, Mana, ManaSource,
     ObjectBacking, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent,
-    PlayerId, PlayerState, Pregame, ReplaceableEvent, ReplacementEffectContext, ReplayRng,
-    RetiredObject, ScopedEffect, StackAbilityPayload, StackObject, StackObjectKind, Step,
-    TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerContext,
-    ZoneMoveCause,
+    PlayerId, PlayerState, Pregame, PreventionShield, ReplaceableEvent, ReplacementEffectContext,
+    ReplayRng, RetiredObject, ScopedEffect, StackAbilityPayload, StackObject, StackObjectKind,
+    Step, TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities,
+    TriggerContext, ZoneMoveCause,
 };
 use crate::card::{
     AppliedEffectDef, BasicLandType, CardType, CardTypeSet, DeclarativeAbilityDef, EffectDef,
@@ -331,6 +331,14 @@ impl Game {
             next_regular_player: self.next_regular_player.index(),
             channel_active: self.channel_active,
             all_combat_damage_prevented: self.all_combat_damage_prevented,
+            prevention_shields: self
+                .prevention_shields
+                .iter()
+                .map(|shield| model::PreventionShieldSnapshot {
+                    recipient: target_snapshot(shield.recipient),
+                    remaining: shield.remaining,
+                })
+                .collect(),
             pregame: self.pregame.map(|pregame| match pregame {
                 Pregame::Mulligan(player) => PregameSnapshot::Mulligan {
                     seat: player.index(),
@@ -629,6 +637,14 @@ impl Game {
             next_regular_player: player_from_index(checkpoint.next_regular_player)?,
             channel_active: checkpoint.channel_active,
             all_combat_damage_prevented: checkpoint.all_combat_damage_prevented,
+            prevention_shields: checkpoint
+                .prevention_shields
+                .iter()
+                .map(|shield| PreventionShield {
+                    recipient: parse_snapshot_target(shield.recipient),
+                    remaining: shield.remaining,
+                })
+                .collect(),
             result: None,
             events: vec![GameEvent::GameStarted { seed: rollout_seed }],
         };

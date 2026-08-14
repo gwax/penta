@@ -81,6 +81,8 @@ impl Game {
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventAllCombatDamageThisTurn
+            | EffectDef::PreventNextDamage { .. }
+            | EffectDef::PreventAllDamageThisTurn { .. }
             | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
             | EffectDef::Attach { .. }

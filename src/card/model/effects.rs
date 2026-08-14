@@ -508,6 +508,18 @@ pub enum EffectDef {
     Untap {
         object: EffectRecipientDef,
     },
+    /// Prevent the next `amount` damage that would be dealt to the recipient
+    /// this turn. The shield waits for damage rather than acting now, and is
+    /// spent as the damage it covers arrives.
+    PreventNextDamage {
+        object: EffectRecipientDef,
+        amount: ValueDef,
+    },
+    /// Prevent all damage that would be dealt to the recipient this turn.
+    /// Unlike [`Self::PreventNextDamage`] nothing spends it; it simply lasts.
+    PreventAllDamageThisTurn {
+        object: EffectRecipientDef,
+    },
     /// No combat damage is dealt at all for the rest of the turn, by anything,
     /// to anything. Unlike [`Self::PreventCombatDamageThisTurn`] this is not a
     /// property of any permanent, so it survives the creatures involved

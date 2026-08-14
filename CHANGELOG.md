@@ -42,7 +42,11 @@ distinguishes snapshots of the covered source and build inputs.
   cleanup, and the checkpoint carries it as an additive member so a
   reconstruction mid-Fog is faithful. Fog, Holy Day, and Darkness are now
   executable, and Fog's M13 printing joins the definition it was blocked
-  against.
+  against. `EffectDef::PreventNextDamage` and `EffectDef::PreventAllDamageThisTurn`
+  add the general shield: a promise attached to a recipient that waits for
+  damage, is spent as the damage it covers arrives, and is discarded at
+  cleanup. Prevented damage is never dealt, so nothing watching for damage
+  sees it. Samite Healer, Indestructible Aura, and Amulet of Kroog follow.
 
 - **Attack restrictions.** `EffectDef::CannotAttackUnless` is a static clause
   read while attackers are declared, carrying an ordinary object query rather

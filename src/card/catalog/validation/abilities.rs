@@ -492,6 +492,8 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::Tap { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
+        | EffectDef::PreventNextDamage { .. }
+        | EffectDef::PreventAllDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }
@@ -642,6 +644,8 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::Tap { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
+        | EffectDef::PreventNextDamage { .. }
+        | EffectDef::PreventAllDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }

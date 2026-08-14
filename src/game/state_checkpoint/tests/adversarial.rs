@@ -173,7 +173,7 @@ fn a_checkpoint_missing_any_required_field_is_rejected_by_name() {
     // checkpoint written before they existed still decodes. They are the one
     // kind of field that is not load-bearing, and each is listed rather than
     // inferred so a genuinely required field cannot quietly join them.
-    const ADDITIVE: &[&str] = &["allCombatDamagePrevented"];
+    const ADDITIVE: &[&str] = &["allCombatDamagePrevented", "preventionShields"];
 
     let fixture = Fixture::played(120, 8_101);
     fixture.assert_baseline_rebuilds();

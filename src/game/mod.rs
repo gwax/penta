@@ -716,8 +716,20 @@ pub struct Game {
     /// creature, and applies to combatants that were not on the battlefield
     /// when it resolved.
     all_combat_damage_prevented: bool,
+    /// Prevention shields waiting for damage this turn. Each is spent as the
+    /// damage it covers is dealt, and whatever is left is discarded in
+    /// cleanup, so a shield never outlives the turn that made it.
+    prevention_shields: Vec<PreventionShield>,
     result: Option<GameResult>,
     events: Vec<GameEvent>,
+}
+
+/// One "prevent the next N damage" promise. `remaining` of `None` is the
+/// "prevent all damage" form, which is never spent and simply lasts the turn.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct PreventionShield {
+    recipient: Target,
+    remaining: Option<u16>,
 }
 
 #[cfg(test)]

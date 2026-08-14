@@ -47,6 +47,10 @@ pub(super) struct GameSnapshot {
     /// contract asks of an additive member.
     #[serde(default)]
     pub(super) all_combat_damage_prevented: bool,
+    /// Prevention shields still waiting for damage. Additive for the same
+    /// reason the Fog flag is.
+    #[serde(default)]
+    pub(super) prevention_shields: Vec<PreventionShieldSnapshot>,
     pub(super) pregame: Option<PregameSnapshot>,
     pub(super) combat_damage_stage: CombatDamageStageSnapshot,
     pub(super) battlefield: Vec<PermanentSnapshot>,
@@ -972,4 +976,12 @@ pub(super) struct PendingTriggerSnapshot {
 pub(super) struct TriggerPlacementBatchSnapshot {
     pub(super) controller: usize,
     pub(super) triggers: Vec<PendingTriggerSnapshot>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct PreventionShieldSnapshot {
+    pub(super) recipient: TargetSnapshot,
+    /// Absent for the "prevent all damage" form, which is never spent.
+    pub(super) remaining: Option<u16>,
 }

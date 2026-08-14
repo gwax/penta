@@ -406,6 +406,7 @@ impl Game {
     pub(super) fn finish_cleanup(&mut self) {
         self.temporary_ability_grants.clear();
         self.all_combat_damage_prevented = false;
+        self.prevention_shields.clear();
         for replacements in &mut self.draw_replacements {
             replacements.clear();
         }

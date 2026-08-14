@@ -480,6 +480,8 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::Tap { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
+        | EffectDef::PreventNextDamage { .. }
+        | EffectDef::PreventAllDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }

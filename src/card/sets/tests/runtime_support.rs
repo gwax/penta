@@ -435,6 +435,8 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::Tap { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
+        | EffectDef::PreventNextDamage { .. }
+        | EffectDef::PreventAllDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }
@@ -620,6 +622,8 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Tap { .. }
                     | EffectDef::Untap { .. }
                     | EffectDef::PreventAllCombatDamageThisTurn
+                    | EffectDef::PreventNextDamage { .. }
+                    | EffectDef::PreventAllDamageThisTurn { .. }
                     | EffectDef::PreventCombatDamageThisTurn { .. }
                     | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
                     | EffectDef::Attach { .. }

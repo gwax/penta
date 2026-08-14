@@ -37,6 +37,38 @@ impl Game {
         .is_break()
     }
 
+    /// Applies any prevention shields covering this recipient, returning what
+    /// is left to deal. `None` means all of it was prevented, so no damage
+    /// event happens at all -- prevented damage was never dealt, so nothing
+    /// that watches for damage should see it.
+    fn spend_prevention_shields(&mut self, target: Option<Target>, amount: u16) -> Option<u16> {
+        let Some(target) = target else {
+            return Some(amount);
+        };
+        if amount == 0
+            || !self
+                .prevention_shields
+                .iter()
+                .any(|s| s.recipient == target)
+        {
+            return (amount > 0).then_some(amount);
+        }
+        let mut left = amount;
+        for shield in &mut self.prevention_shields {
+            if shield.recipient != target || left == 0 {
+                continue;
+            }
+            // "Prevent all damage" is never spent; it simply holds.
+            let remaining = shield.remaining.as_mut()?;
+            let spent = (*remaining).min(left);
+            *remaining -= spent;
+            left -= spent;
+        }
+        self.prevention_shields
+            .retain(|shield| shield.remaining != Some(0));
+        (left > 0).then_some(left)
+    }
+
     pub(super) fn damage_target_from(
         &mut self,
         source: Option<GameObjectId>,
@@ -53,6 +85,9 @@ impl Game {
         amount: u16,
         combat: bool,
     ) {
+        let Some(amount) = self.spend_prevention_shields(target, amount) else {
+            return;
+        };
         let source_colors = source.map_or([false; 5], |source| self.object_colors(source));
         let lifelink_controller = source.and_then(|source| {
             self.source_controller_with_keyword(source, KeywordAbility::Lifelink)

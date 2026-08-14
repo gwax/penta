@@ -480,7 +480,25 @@ pub(in crate::card::sets) static RIGHTEOUSNESS: CardRecord = CardRecord::new(
 );
 
 // LEA 37 — Samite Healer
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{T}: Prevent the next 1 damage that would be dealt to any target this turn”.
+pub(in crate::card::sets) static SAMITE_HEALER: CardRecord = CardRecord::new(
+    cards::SAMITE_HEALER,
+    "Samite Healer",
+    CardArt::new("efba235e-04e5-449c-906c-0ac33f6d7929", "Tom Wänerstrand"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Cleric"], 1, 1).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{T}: Prevent the next 1 damage that would be dealt to any target this turn.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::PreventNextDamage {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
 
 // LEA 38 — Savannah Lions
 pub(in crate::card::sets) static SAVANNAH_LIONS: CardRecord = CardRecord::new(
@@ -4060,6 +4078,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PEARLED_UNICORN,
     &RESURRECTION,
     &RIGHTEOUSNESS,
+    &SAMITE_HEALER,
     &SAVANNAH_LIONS,
     &SERRA_ANGEL,
     &SWORDS_TO_PLOWSHARES,

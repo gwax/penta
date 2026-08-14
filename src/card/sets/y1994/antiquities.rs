@@ -420,7 +420,31 @@ pub(in crate::card::sets) static CRUMBLE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs static animation of every noncreature artifact with dynamic mana-value power/toughness and ability removal.
 
 // ATQ 36 — Amulet of Kroog
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{2}, {T}: Prevent the next 1 damage that would be dealt to any target this turn”.
+pub(in crate::card::sets) static AMULET_OF_KROOG: CardRecord = CardRecord::new(
+    cards::AMULET_OF_KROOG,
+    "Amulet of Kroog",
+    CardArt::new(
+        "b094f8dd-0184-41a2-9767-e848a6e4eac1",
+        "Margaret Organ-Kean",
+    ),
+    CardSet::Antiquities,
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{2}, {T}: Prevent the next 1 damage that would be dealt to any target this turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::PreventNextDamage {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
 
 // ATQ 37 — Armageddon Clock
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your draw step, this artifact deals damage equal to the number of doom counters on it to each player”.
@@ -1123,6 +1147,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGOTHIAN_PIXIES,
     &CITANUL_DRUID,
     &CRUMBLE,
+    &AMULET_OF_KROOG,
     &CLAY_STATUE,
     &DRAGON_ENGINE,
     &GOLGOTHIAN_SYLEX,

@@ -12,6 +12,11 @@ use crate::card::{
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
+static INDESTRUCTIBLE_AURA_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::HasType(CardType::Creature),
+    )];
+
 // LEG 1 — Akron Legionnaire
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Except for creatures named Akron Legionnaire and artifact creatures, creatures you control can't attack”.
 
@@ -218,7 +223,19 @@ pub(in crate::card::sets) static HOLY_DAY: CardRecord = CardRecord::new(
 );
 
 // LEG 21 — Indestructible Aura
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to target creature this turn”.
+pub(in crate::card::sets) static INDESTRUCTIBLE_AURA: CardRecord = CardRecord::new(
+    cards::INDESTRUCTIBLE_AURA,
+    "Indestructible Aura",
+    CardArt::new("ed2a7333-c9ce-4011-b00e-1304e1eec25e", "Mark Poole"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{W}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Prevent all damage that would be dealt to target creature this turn.",
+        &INDESTRUCTIBLE_AURA_TARGET,
+        EffectDef::PreventAllDamageThisTurn {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )]),
+);
 
 // LEG 22 — Infinite Authority
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever enchanted creature blocks or becomes blocked by a creature with toughness 3 or less, destroy the other creature at end of combat. At the beginning of the next end step, if that…”.
@@ -3105,6 +3122,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GREAT_DEFENDER,
     &GREAT_WALL,
     &HOLY_DAY,
+    &INDESTRUCTIBLE_AURA,
     &KEEPERS_OF_THE_FAITH,
     &KISMET,
     &LIFEBLOOD,

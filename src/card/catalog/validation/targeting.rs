@@ -200,6 +200,8 @@ fn validate_effect_references(
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
         | EffectDef::Untap { object }
+        | EffectDef::PreventNextDamage { object, .. }
+        | EffectDef::PreventAllDamageThisTurn { object }
         | EffectDef::PreventCombatDamageThisTurn { object }
         | EffectDef::PreventCombatDamageDealtByThisTurn { object }
         | EffectDef::Attach { object }

@@ -2,9 +2,9 @@ use super::{
     AbilitySourceRef, AddManaEffectDef, CardPartId, CharacteristicSource, CopiableAbility, CostDef,
     CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger, DiscardSelectionDef,
     DrawReplacement, EffectDef, EffectRecipientDef, FloatingTrigger, Game, GameResult, Mana,
-    ManaPool, ManaSelectionDef, ManaSource, Permanent, SacrificeFollowup, ScopedEffect,
-    StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason, ZoneKind,
-    ZoneMoveCause, public_cards,
+    ManaPool, ManaSelectionDef, ManaSource, Permanent, PreventionShield, SacrificeFollowup,
+    ScopedEffect, StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason,
+    ZoneKind, ZoneMoveCause, public_cards,
 };
 
 impl Game {
@@ -273,6 +273,30 @@ impl Game {
                     {
                         permanent.tapped = false;
                     }
+                }
+            }
+            EffectDef::PreventNextDamage {
+                object: recipient,
+                amount,
+            } => {
+                let amount = self
+                    .effect_value(amount, object, context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    self.prevention_shields.push(PreventionShield {
+                        recipient: target,
+                        remaining: Some(amount),
+                    });
+                }
+            }
+            EffectDef::PreventAllDamageThisTurn { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    self.prevention_shields.push(PreventionShield {
+                        recipient: target,
+                        remaining: None,
+                    });
                 }
             }
             EffectDef::PreventAllCombatDamageThisTurn => {

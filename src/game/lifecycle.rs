@@ -200,6 +200,7 @@ impl Game {
             extra_turns: Vec::new(),
             channel_active: [false, false],
             all_combat_damage_prevented: false,
+            prevention_shields: Vec::new(),
             result: None,
             events: vec![GameEvent::GameStarted { seed }],
         })
