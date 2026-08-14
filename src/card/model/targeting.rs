@@ -38,8 +38,8 @@ pub enum ObjectPredicateDef {
     ManaValueAtMostValue(ValueDef),
     /// Power at least this much, for "power N or greater". Target legality
     /// reads real current power, so a creature a Crusade has pumped qualifies.
-    /// Trigger and static matching read power without continuous statics; see
-    /// [`crate::card::ObjectPredicateDef::HasKeyword`] for the same seam.
+    /// Trigger and static matching still read power without continuous
+    /// statics, because that view is what static resolution is handed.
     PowerAtLeast(i16),
     /// Power exactly this much. Like [`Self::PowerAtLeast`] this reads
     /// current power for target legality, so "target 1/1 creature" stops being
@@ -68,11 +68,10 @@ pub enum ObjectPredicateDef {
     /// Has this keyword. Protection is not askable this way, because it is a
     /// keyword per color rather than one keyword.
     ///
-    /// Unlike the power and toughness predicates, this still reads a keyword
-    /// mask that excludes continuous static grants, so a creature wearing a
-    /// Lord's granted keyword does not match. Building the mask means walking
-    /// static ability grants rather than reading an existing value, which is
-    /// why that half is not done.
+    /// This reads keywords a continuous static effect grants or removes, so a
+    /// creature wearing a Lord's granted keyword matches. The one place it
+    /// does not is a static ability that grants or removes abilities choosing
+    /// its own recipients, which is answered from the layer below itself.
     HasKeyword(KeywordAbility),
     /// Has at least one ordinary activated ability rather than only mana
     /// abilities. This is the distinction Tsabo's Web asks for.

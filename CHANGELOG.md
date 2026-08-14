@@ -32,7 +32,8 @@ distinguishes snapshots of the covered source and build inputs.
   was using the same view, so a creature a Crusade had made 2/2 was still a
   legal target for Pendelhaven's "target 1/1 creature", and one pushed past a
   "power 2 or less" ceiling still qualified. Target legality now reads the real
-  values. The keyword mask has the same seam and is unchanged.
+  values. The keyword mask had the same seam and is now closed too, by a
+  different route -- see the keyword-predicate entry under Added.
 - **Berserk never destroyed the creature it pumped.** Its delayed trigger asks
   whether the creature attacked this turn, and that predicate was reading
   whether the creature is *still* attacking. End of combat clears that flag
@@ -130,13 +131,8 @@ distinguishes snapshots of the covered source and build inputs.
   ten audit lines rewritten to name their real gap. Twelve identities cited
   "the printed landwalk variant and its defending-player land/blocking
   semantics" after landwalk landed; three of them -- Land's Edge, The Fallen,
-  and Eternal Flame -- print no landwalk text at all. Wormwood Treefolk is now
-  complete. Merfolk Assassin is declared `partial`: target legality reads the
-  keyword mask, which excludes live static effects, so a Merfolk wearing a Lord
-  of Atlantis grant is unblockable across an Island yet cannot be targeted by
-  "target creature with islandwalk". The blocking rules ask a different
-  question and do see the grant; the inconsistency is pinned by a test rather
-  than left to be rediscovered.
+  and Eternal Flame -- print no landwalk text at all. Wormwood Treefolk and
+  Merfolk Assassin are both complete.
 - **Seven identities whose audit lines outlived their gap.** Regeneration and
   rampage both landed as primitives, but eleven audit lines still named them,
   and seven of those identities turned out to need no engine work at all:
@@ -145,6 +141,26 @@ distinguishes snapshots of the covered source and build inputs.
   have rewritten lines naming their real gap -- a random discard cost, a
   conditional grant, a four-way random ability choice, and a granted
   counter-consuming ability -- rather than a primitive that already exists.
+- **Keyword predicates read the keywords a static effect grants or removes.**
+  A creature wearing a Lord of Atlantis grant used to be unblockable across an
+  Island and untargetable by "target creature with islandwalk", because the
+  bitmask behind `HasKeyword` deliberately omitted live static effects while the
+  blocking rules did not. It omitted them to terminate: a static ability is
+  matched against the characteristics of the permanent it might apply to, so
+  reading the ability set back inside that match calls itself. The two readers
+  are now one. Gathering the layer-6 slice is stratified instead of truncated --
+  the first caller owns the pass and any query raised underneath it sees the
+  printed, copied, and already-resolved abilities alone -- so everything outside
+  that walk gets the complete set: target legality, blocking, trigger matching,
+  resolution-time recipients, and static power and toughness effects keyed on a
+  keyword. Nineteen identities across ten sets drop the coverage line they
+  carried for this, among them Earthquake, Hurricane, Elven Riders, Flood,
+  Merfolk Assassin, Grapeshot Catapult, Doorkeeper, One-Eyed Scarecrow, Air
+  Servant, and Windstorm. What is left is one level down and pinned by its own
+  test: a static ability that grants or removes abilities still picks its
+  recipients from the layer below itself, so it cannot see a keyword another
+  static ability hands out. That is the CR 613.8 dependency case, and it needs
+  the fixed-point evaluator rather than a deeper recursion.
 
 - **A tapped object predicate**, which was the whole of Royal Assassin's gap.
   Island Fish Jasconius joins it from the same sweep with no engine change:

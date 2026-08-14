@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use crate::card::AbilityPredicateDef;
 
 use super::{
@@ -6,12 +8,41 @@ use super::{
     EffectiveAbility, Game, KeywordAbility, Permanent, StaticAppliedEffect, abilities,
 };
 
+thread_local! {
+    /// Set while a layer-6 gathering pass is running on this thread.
+    ///
+    /// This is scratch state rather than game state: it is false at every
+    /// point an action can observe a game, nothing that changes a game reads
+    /// it, and keeping it per-thread rather than per-`Game` means two threads
+    /// sharing one game still each get the same answer they would get alone.
+    static STATIC_ABILITY_LAYER_PASS: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Owns the layer-6 gathering pass for as long as it lives, and releases it
+/// afterwards even if that pass unwinds.
+struct StaticAbilityLayerGuard;
+
+impl StaticAbilityLayerGuard {
+    /// Claims the pass, or returns `None` when one is already running and the
+    /// caller must therefore answer from the layer below.
+    fn enter() -> Option<Self> {
+        STATIC_ABILITY_LAYER_PASS.with(|pass| if pass.replace(true) { None } else { Some(Self) })
+    }
+}
+
+impl Drop for StaticAbilityLayerGuard {
+    fn drop(&mut self) {
+        STATIC_ABILITY_LAYER_PASS.with(|pass| pass.set(false));
+    }
+}
+
 impl Game {
-    /// Whether an object has a nonmana activated ability without recursively
-    /// walking static effects. Static-effect recipient matching calls this
-    /// helper, so folding static grants back into the query would recurse.
-    /// Printed/copied abilities and already-resolved grants/removals are all
-    /// represented here, which covers the current rules vocabulary.
+    /// Whether an object has a nonmana activated ability, reading printed and
+    /// copied abilities plus already-resolved grants and removals. The one
+    /// predicate that asks — Rising Waters' recipient query — is itself a
+    /// static effect, so this deliberately stops where
+    /// [`Self::collect_ability_layer_operations`] would stop for it anyway.
+    /// Nothing else needs the question, so no full-walk variant exists yet.
     pub(super) fn has_nonmana_activated_ability(&self, permanent: &Permanent) -> bool {
         let mut abilities = self.collect_base_effective_abilities(permanent, None);
         for operation in Self::resolved_ability_layer_operations(permanent) {
@@ -144,12 +175,26 @@ impl Game {
     /// does not feed layer-6 removals back into the set of static sources;
     /// dependencies where one static ability removes its own or another
     /// source's static ability still require the future fixed-point evaluator.
+    ///
+    /// Gathering the static half is not re-entrant. A static source is matched
+    /// against the characteristics of the permanent it might apply to, and one
+    /// of those characteristics is the ability set this function produces, so
+    /// the walk would otherwise call itself forever. Instead the first caller
+    /// claims the pass and every query raised underneath it sees the printed,
+    /// copied, and already-resolved abilities alone. That is the one-level
+    /// stratification the future fixed-point evaluator replaces: it answers a
+    /// static ability's own "which permanents do I apply to?" question from the
+    /// layer below, which is right whenever no two static ability grants depend
+    /// on each other, and is what CR 613.8 dependency ordering generalizes.
     fn collect_ability_layer_operations(
         &self,
         permanent: &Permanent,
         prospective: Option<&Permanent>,
     ) -> Vec<AbilityLayerOperation> {
         let mut operations = Self::resolved_ability_layer_operations(permanent);
+        let Some(_pass) = StaticAbilityLayerGuard::enter() else {
+            return operations;
+        };
         let mut visit_static = |applied: StaticAppliedEffect| {
             let order = u16::try_from(operations.len()).unwrap_or(u16::MAX);
             if let Some(operation) = Self::static_ability_layer_operation(applied, order) {
@@ -323,20 +368,20 @@ impl Game {
         abilities
     }
 
-    /// The keywords an object presents without consulting ability-layer
-    /// operations from static sources. Resolved additions and removals are
-    /// safe to apply here because they cannot recurse through recipient
-    /// matching; granted static abilities remain outside this boundary until
-    /// fixed-point evaluation exists.
-    pub(super) fn keyword_mask_ignoring_static_effects(
+    /// The keywords an object presents, as a bitmask over
+    /// [`KeywordAbility::simple_index`].
+    ///
+    /// This is the same ability set every other reader sees, so a predicate
+    /// asking "target creature with islandwalk" and the blocking rules asking
+    /// whether islandwalk applies agree. Asked from inside the layer-6 walk it
+    /// degrades to printed, copied, and already-resolved keywords, which is
+    /// what keeps `collect_ability_layer_operations` terminating.
+    pub(super) fn keyword_mask(
         &self,
         permanent: &Permanent,
         prospective: Option<&Permanent>,
     ) -> u32 {
-        let mut abilities = self.collect_base_effective_abilities(permanent, prospective);
-        for operation in Self::resolved_ability_layer_operations(permanent) {
-            Self::apply_ability_layer_operation(&mut abilities, &operation);
-        }
+        let abilities = self.collect_effective_abilities(permanent, prospective);
         let mut mask = 0;
         let mut set = |keyword: KeywordAbility| {
             if let Some(index) = keyword.simple_index() {

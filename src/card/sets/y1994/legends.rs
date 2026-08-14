@@ -1904,7 +1904,6 @@ pub(in crate::card::sets) static DURKWOOD_BOARS: CardRecord = CardRecord::new(
 );
 
 // LEG 183 — Elven Riders
-// Audit: partial — Its blocker predicate omits flying granted by static continuous effects.
 pub(in crate::card::sets) static ELVEN_RIDERS: CardRecord = CardRecord::new(
     cards::ELVEN_RIDERS,
     "Elven Riders",
@@ -1923,10 +1922,7 @@ pub(in crate::card::sets) static ELVEN_RIDERS: CardRecord = CardRecord::new(
                 )),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "Blocking checks printed and temporary flying but not flying granted by static continuous effects.",
-        )),
+        ),
     ),
 );
 

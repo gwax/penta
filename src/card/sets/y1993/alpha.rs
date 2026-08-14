@@ -2177,7 +2177,6 @@ pub(in crate::card::sets) static EARTH_ELEMENTAL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs an Aura-entry condition on the attached creature plus a persistent removal of flying created during resolution.
 
 // LEA 146 — Earthquake
-// Audit: partial — The flying predicate omits abilities granted or removed by static continuous effects.
 pub(in crate::card::sets) static EARTHQUAKE: CardRecord = CardRecord::new(
     cards::EARTHQUAKE,
     "Earthquake",
@@ -2204,10 +2203,7 @@ pub(in crate::card::sets) static EARTHQUAKE: CardRecord = CardRecord::new(
                 amount: ValueDef::ChosenX,
             },
         ]),
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "The flying predicate omits abilities granted or removed by static continuous effects.",
-    ))]),
+    )]),
 );
 
 // LEA 147 — False Orders
@@ -3083,7 +3079,6 @@ pub(in crate::card::sets) static GRIZZLY_BEARS: CardRecord = CardRecord::new(
 );
 
 // LEA 200 — Hurricane
-// Audit: partial — The flying predicate omits abilities granted or removed by static continuous effects.
 pub(in crate::card::sets) static HURRICANE: CardRecord = CardRecord::new(
     cards::HURRICANE,
     "Hurricane",
@@ -3108,10 +3103,7 @@ pub(in crate::card::sets) static HURRICANE: CardRecord = CardRecord::new(
                 amount: ValueDef::ChosenX,
             },
         ]),
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "The flying predicate omits abilities granted or removed by static continuous effects.",
-    ))]),
+    )]),
 );
 
 // LEA 201 — Ice Storm

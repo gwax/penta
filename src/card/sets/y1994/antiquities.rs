@@ -703,7 +703,6 @@ pub(in crate::card::sets) static GOLGOTHIAN_SYLEX: CardRecord = CardRecord::new(
 );
 
 // ATQ 52 — Grapeshot Catapult
-// Audit: partial — Its flying predicate omits abilities granted or removed by static continuous effects.
 pub(in crate::card::sets) static GRAPESHOT_CATAPULT: CardRecord = CardRecord::new(
     cards::GRAPESHOT_CATAPULT,
     "Grapeshot Catapult",
@@ -723,10 +722,7 @@ pub(in crate::card::sets) static GRAPESHOT_CATAPULT: CardRecord = CardRecord::ne
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(1),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The flying predicate omits abilities granted or removed by static continuous effects.",
-        )),
+        ),
     ]),
 );
 

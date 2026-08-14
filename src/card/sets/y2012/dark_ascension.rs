@@ -1529,10 +1529,7 @@ static CRUSHING_VINES_MODES: [AbilityDef; 2] = [
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             can_regenerate: true,
         },
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "The flying target predicate does not yet account for flying granted or removed by static continuous effects.",
-    )),
+    ),
     AbilityDef::spell_with_targets(
         "Destroy target artifact",
         &[AbilityTargetDef::exactly_one_permanent(
@@ -1546,7 +1543,6 @@ static CRUSHING_VINES_MODES: [AbilityDef; 2] = [
 ];
 
 // DKA 110 — Crushing Vines
-// Audit: partial — The creature mode's flying target predicate misses flying granted or removed by static continuous effects.
 pub(in crate::card::sets) static CRUSHING_VINES: CardRecord = CardRecord::new(
     cards::CRUSHING_VINES,
     "Crushing Vines",

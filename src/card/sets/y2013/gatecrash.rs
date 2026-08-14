@@ -2977,7 +2977,7 @@ pub(in crate::card::sets) static RAZORTIP_WHIP: CardRecord = CardRecord::new(
 // Audit: blocked — Animation cannot set the keyrune's green-blue colors while retaining its printed mana ability and exact subtype behavior.
 
 // GTC 238 — Skyblinder Staff
-// Audit: blocked — Needs Equipment attachment and a blocker predicate whose flying test includes abilities granted by static effects.
+// Audit: blocked — Needs the equip procedure and static attachment bonuses.
 
 // GTC 239 — Boros Guildgate
 pub(in crate::card::sets) static BOROS_GUILDGATE: CardRecord = CardRecord::new(

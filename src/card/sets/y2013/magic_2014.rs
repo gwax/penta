@@ -482,7 +482,6 @@ pub(in crate::card::sets) static SUNTAIL_HAWK: CardRecord = CardRecord::new(
 );
 
 // M14 42 — Air Servant
-// Audit: partial — HasKeyword(Flying) does not yet see flying granted or removed by static continuous effects when choosing the activated ability's target.
 pub(in crate::card::sets) static AIR_SERVANT: CardRecord = CardRecord::new(
     cards::AIR_SERVANT,
     "Air Servant",
@@ -493,17 +492,16 @@ pub(in crate::card::sets) static AIR_SERVANT: CardRecord = CardRecord::new(
         AbilityDef::activated_with_targets(
             "{2}{U}: Tap target creature with flying.",
             &[AbilityCostDef::Mana(mana_cost!("{2}{U}"))],
-            &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
-                ObjectPredicateDef::HasType(CardType::Creature),
-                ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
-            ]))],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
+                ]),
+            )],
             EffectDef::Tap {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The flying target predicate does not yet account for flying granted or removed by static continuous effects.",
-        )),
+        ),
     ]),
 );
 
@@ -817,7 +815,6 @@ pub(in crate::card::sets) static WATER_SERVANT: CardRecord = CardRecord::new(
 );
 
 // M14 81 — Windreader Sphinx
-// Audit: partial — HasKeyword(Flying) does not yet see flying granted or removed by static continuous effects when matching attackers.
 pub(in crate::card::sets) static WINDREADER_SPHINX: CardRecord = CardRecord::new(
     cards::WINDREADER_SPHINX,
     "Windreader Sphinx",
@@ -838,10 +835,7 @@ pub(in crate::card::sets) static WINDREADER_SPHINX: CardRecord = CardRecord::new
                     amount: ValueDef::Constant(1),
                 },
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The flying event predicate does not yet account for flying granted or removed by static continuous effects.",
-        )),
+        ),
     ]),
 );
 
@@ -2390,31 +2384,25 @@ pub(in crate::card::sets) static SPOREMOUND: CardRecord = CardRecord::new(
 // Audit: blocked — Entry replacements cannot derive a counter amount from life gained during the turn.
 
 // M14 201 — Windstorm
-// Audit: partial — HasKeyword(Flying) does not yet see flying granted or removed by static continuous effects when matching the damage recipients.
 pub(in crate::card::sets) static WINDSTORM: CardRecord = CardRecord::new(
     cards::WINDSTORM,
     "Windstorm",
     CardArt::new("3cb7d122-34e8-48e1-a978-831c78a37d0c", "Rob Alexander"),
     CardSet::Magic2014,
-    CardRules::new_instant(mana_cost!("{X}{G}")).with_ability(
-        AbilityDef::spell(
-            "Windstorm deals X damage to each creature with flying.",
-            EffectDef::DealDamage {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
-                    ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
-                amount: ValueDef::ChosenX,
+    CardRules::new_instant(mana_cost!("{X}{G}")).with_ability(AbilityDef::spell(
+        "Windstorm deals X damage to each creature with flying.",
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::Any,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The flying recipient predicate does not yet account for flying granted or removed by static continuous effects.",
-        )),
-    ),
+            amount: ValueDef::ChosenX,
+        },
+    )),
 );
 
 // M14 202 — Witchstalker

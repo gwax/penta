@@ -2165,7 +2165,6 @@ pub(in crate::card::sets) static SMELT: CardRecord = CardRecord::new(
 );
 
 // M13 150 — Thundermaw Hellkite
-// Audit: partial — Creature matching by flying ignores abilities granted or removed by static effects.
 pub(in crate::card::sets) static THUNDERMAW_HELLKITE: CardRecord = CardRecord::new(
     cards::THUNDERMAW_HELLKITE,
     "Thundermaw Hellkite",
@@ -2204,10 +2203,7 @@ pub(in crate::card::sets) static THUNDERMAW_HELLKITE: CardRecord = CardRecord::n
                     },
                 },
             ]),
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "Creature matching by flying ignores abilities granted or removed by static effects.",
-        )),
+        ),
     ]),
 );
 

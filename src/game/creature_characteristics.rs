@@ -105,11 +105,18 @@ impl Game {
 
     /// Power without continuous static bonuses.
     ///
-    /// Characteristics handed to a predicate cannot use full `power`: static
-    /// effects are resolved by matching each source against the affected
-    /// permanent's characteristics, so asking for power there would re-enter
-    /// this computation forever. A `PowerAtLeast` predicate therefore sees
-    /// counters and until-end-of-turn pumps but not a Crusade-style static.
+    /// Characteristics handed to static resolution cannot use full `power`:
+    /// static effects are resolved by matching each source against the
+    /// affected permanent's characteristics, so asking for power there would
+    /// re-enter this computation forever. Target legality reaches around that
+    /// with `Game::targeting_event_object`; a `PowerAtLeast` predicate asked
+    /// during trigger or static matching still sees counters and
+    /// until-end-of-turn pumps but not a Crusade-style static.
+    ///
+    /// Keywords were truncated for the same reason and no longer are:
+    /// [`Game::collect_ability_layer_operations`] stratifies its walk so only
+    /// queries raised inside it fall back, which would work here too and would
+    /// retire the second characteristics view.
     pub(super) fn power_ignoring_static_effects(&self, permanent: &Permanent) -> Option<i16> {
         let base = self.base_stats(permanent)?;
         Some(self.creature_stats_parts(permanent, base, (0, 0)).power)

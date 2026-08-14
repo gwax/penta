@@ -491,25 +491,19 @@ pub(in crate::card::sets) static UBUL_SAR_GATEKEEPERS: CardRecord = CardRecord::
 // Audit: blocked — Needs a turn-long restriction preventing every monocolored creature from blocking.
 
 // DGM 32 — Clear a Path
-// Audit: partial — Defender target matching ignores abilities granted or removed by continuous static effects.
 pub(in crate::card::sets) static CLEAR_A_PATH: CardRecord = CardRecord::new(
     cards::CLEAR_A_PATH,
     "Clear a Path",
     CardArt::new("8a8f904b-a9a3-4bae-9284-4e9cbe7592ee", "Karl Kopinski"),
     CardSet::DragonsMaze,
-    CardRules::new_sorcery(mana_cost!("{R}")).with_ability(
-        AbilityDef::destroy_target(
-            "Destroy target creature with defender.",
-            &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
-                ObjectPredicateDef::HasType(CardType::Creature),
-                ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Defender),
-            ])),
-            true,
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "Keyword target matching ignores abilities granted or removed by continuous static effects.",
-        )),
-    ),
+    CardRules::new_sorcery(mana_cost!("{R}")).with_ability(AbilityDef::destroy_target(
+        "Destroy target creature with defender.",
+        &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Defender),
+        ])),
+        true,
+    )),
 );
 
 // DGM 33 — Maze Rusher

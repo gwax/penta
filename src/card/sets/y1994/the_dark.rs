@@ -275,7 +275,6 @@ pub(in crate::card::sets) static ELECTRIC_EEL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller for “At the beginning of the upkeep of enchanted land's controller, destroy that land unless that player pays {1} or 1 life”.
 
 // DRK 27 — Flood
-// Audit: partial — Its flying predicate omits flying granted by static continuous effects.
 pub(in crate::card::sets) static FLOOD: CardRecord = CardRecord::new(
     cards::FLOOD,
     "Flood",
@@ -296,10 +295,7 @@ pub(in crate::card::sets) static FLOOD: CardRecord = CardRecord::new(
             EffectDef::Tap {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The target predicate sees printed and temporary flying but not flying granted by static continuous effects.",
-        )),
+        ),
     ]),
 );
 
@@ -328,7 +324,6 @@ pub(in crate::card::sets) static GHOST_SHIP: CardRecord = CardRecord::new(
 // Audit: blocked — Needs linked sacrifice/destruction accounting for “At the beginning of each player's upkeep, that player sacrifices a land of their choice”.
 
 // DRK 32 — Merfolk Assassin
-// Audit: partial — Its islandwalk predicate omits islandwalk granted by static continuous effects, so a Merfolk wearing a Lord of Atlantis grant is unblockable but untargetable.
 pub(in crate::card::sets) static MERFOLK_ASSASSIN: CardRecord = CardRecord::new(
     cards::MERFOLK_ASSASSIN,
     "Merfolk Assassin",
@@ -343,12 +338,7 @@ pub(in crate::card::sets) static MERFOLK_ASSASSIN: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 can_regenerate: true,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "Target legality reads printed and layer-resolved keywords, so islandwalk granted by \
-             a static continuous effect such as Lord of Atlantis is not seen here even though \
-             the blocking rules do see it.",
-        ))],
+        )],
     ),
 );
 

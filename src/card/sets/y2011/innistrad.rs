@@ -2794,7 +2794,6 @@ pub(in crate::card::sets) static RIOT_DEVILS: CardRecord = CardRecord::new(
 );
 
 // ISD 161 — Rolling Temblor
-// Audit: partial — HasKeyword does not include flying granted or removed by static continuous effects when selecting recipients.
 pub(in crate::card::sets) static ROLLING_TEMBLOR: CardRecord = CardRecord::new(
     cards::ROLLING_TEMBLOR,
     "Rolling Temblor",
@@ -2816,10 +2815,7 @@ pub(in crate::card::sets) static ROLLING_TEMBLOR: CardRecord = CardRecord::new(
                 },
                 amount: ValueDef::Constant(2),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The without-flying predicate reads resolved keyword changes but not keyword changes supplied by static continuous effects.",
-        )),
+        ),
         abilities::flashback(mana_cost!("{4}{R}{R}")),
     ]),
 );
@@ -3204,10 +3200,7 @@ static DAYBREAK_RANGER_FRONT_ABILITIES: [AbilityDef; 2] = [
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Constant(2),
         },
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "The flying target predicate reads resolved keyword changes but not flying granted or removed by static continuous effects.",
-    )),
+    ),
     WEREWOLF_FRONT_TRANSFORM,
 ];
 
@@ -3278,7 +3271,6 @@ fn daybreak_ranger_composition() -> CardComposition {
 }
 
 // ISD 176 — Daybreak Ranger
-// Audit: partial — The front face's flying target predicate ignores flying granted or removed by static continuous effects.
 pub(in crate::card::sets) static DAYBREAK_RANGER: CardRecord = CardRecord::new(
     cards::DAYBREAK_RANGER,
     "Daybreak Ranger",
@@ -3751,7 +3743,6 @@ pub(in crate::card::sets) static MULCH: CardRecord = CardRecord::new(
 );
 
 // ISD 198 — Orchard Spirit
-// Audit: partial — Its flying-or-reach blocker predicate ignores those keywords when granted or removed by static continuous effects.
 pub(in crate::card::sets) static ORCHARD_SPIRIT: CardRecord = CardRecord::new(
     cards::ORCHARD_SPIRIT,
     "Orchard Spirit",
@@ -3770,10 +3761,7 @@ pub(in crate::card::sets) static ORCHARD_SPIRIT: CardRecord = CardRecord::new(
                 )),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The blocker predicate reads resolved keyword changes but not flying or reach granted or removed by static continuous effects.",
-        )),
+        ),
     ),
 );
 
@@ -4112,7 +4100,6 @@ pub(in crate::card::sets) static GALVANIC_JUGGERNAUT: CardRecord = CardRecord::n
 );
 
 // ISD 223 — Geistcatcher's Rig
-// Audit: partial — Its flying target predicate ignores flying granted or removed by static continuous effects.
 pub(in crate::card::sets) static GEISTCATCHERS_RIG: CardRecord = CardRecord::new(
     cards::GEISTCATCHERS_RIG,
     "Geistcatcher's Rig",
@@ -4142,10 +4129,7 @@ pub(in crate::card::sets) static GEISTCATCHERS_RIG: CardRecord = CardRecord::new
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(4),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The flying target predicate reads resolved keyword changes but not flying granted or removed by static continuous effects.",
-        )),
+        ),
     ),
 );
 
@@ -4181,7 +4165,6 @@ pub(in crate::card::sets) static GHOULCALLERS_BELL: CardRecord = CardRecord::new
 // Audit: blocked — Needs the equip procedure and static attachment bonuses.
 
 // ISD 230 — One-Eyed Scarecrow
-// Audit: partial — Its flying match ignores flying granted or removed by static continuous effects.
 pub(in crate::card::sets) static ONE_EYED_SCARECROW: CardRecord = CardRecord::new(
     cards::ONE_EYED_SCARECROW,
     "One-Eyed Scarecrow",
@@ -4206,10 +4189,7 @@ pub(in crate::card::sets) static ONE_EYED_SCARECROW: CardRecord = CardRecord::ne
                 },
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The flying match reads resolved keyword changes but not flying granted or removed by static continuous effects.",
-        )),
+        ),
     ]),
 );
 

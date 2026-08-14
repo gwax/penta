@@ -88,7 +88,7 @@ impl Game {
             mana_value: self.permanent_mana_value(permanent),
             power: self.power_ignoring_static_effects(permanent),
             toughness: self.toughness_ignoring_static_effects(permanent),
-            keywords: self.keyword_mask_ignoring_static_effects(permanent, None),
+            keywords: self.keyword_mask(permanent, None),
             supertypes: {
                 let mut supertypes = [false; CardSupertype::COUNT];
                 for supertype in CardSupertype::ALL {
@@ -102,18 +102,19 @@ impl Game {
         }
     }
 
-    /// The same characteristics with continuous static effects included.
+    /// The same characteristics with continuous static power and toughness
+    /// included.
     ///
-    /// [`Self::trigger_event_object`] deliberately leaves statics out: it is
+    /// [`Self::trigger_event_object`] deliberately leaves those out: it is
     /// used while static effects are being resolved, and asking for a value
     /// that depends on them there would re-enter the computation. Target
     /// legality is asked from outside that resolution, so it can and must see
     /// the real numbers -- a creature a Crusade has made 2/2 is not a legal
     /// target for "target 1/1 creature".
     ///
-    /// Keywords are not widened here. The keyword mask has the same seam and
-    /// the same fix, but building it needs to walk static ability grants
-    /// rather than read a value that already exists.
+    /// Keywords need no widening here. `Game::keyword_mask` stratifies its
+    /// walk instead of truncating it, so every caller already reads the
+    /// complete set; only power and toughness still need the second view.
     pub(super) fn targeting_event_object(&self, permanent: &Permanent) -> TriggerEventObject {
         TriggerEventObject {
             power: self.power(permanent),
@@ -143,7 +144,7 @@ impl Game {
             mana_value: self.permanent_mana_value(permanent),
             power: self.power_ignoring_static_effects(permanent),
             toughness: self.toughness_ignoring_static_effects(permanent),
-            keywords: self.keyword_mask_ignoring_static_effects(permanent, Some(prospective)),
+            keywords: self.keyword_mask(permanent, Some(prospective)),
             supertypes: {
                 let mut supertypes = [false; CardSupertype::COUNT];
                 for supertype in CardSupertype::ALL {

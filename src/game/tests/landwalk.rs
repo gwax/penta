@@ -360,14 +360,12 @@ mod follow_up {
         );
     }
 
-    /// The declared limitation, pinned so it cannot drift silently: a Merfolk
-    /// wearing a Lord of Atlantis grant really is unblockable across an Island,
-    /// and Merfolk Assassin still cannot target it. Target legality reads the
-    /// keyword mask, which excludes live static effects to avoid re-entering
-    /// the static computation; the blocking rules ask a different question and
-    /// do see the grant. This is why the card is `partial`.
+    /// A Merfolk wearing a Lord of Atlantis grant is unblockable across an
+    /// Island, and Merfolk Assassin can target it. The blocking rules and
+    /// target legality read one ability set, so a static grant cannot make a
+    /// creature unblockable and untargetable at the same time.
     #[test]
-    fn merfolk_assassin_cannot_target_islandwalk_a_lord_handed_out() {
+    fn merfolk_assassin_targets_islandwalk_a_lord_handed_out() {
         let (mut game, assassin_id) = assassin_game();
         let merfolk = creature(10_001, cards::MERFOLK_ASSASSIN, PlayerId::Two);
         let merfolk_id = merfolk.card.id;
@@ -387,11 +385,11 @@ mod follow_up {
             ),
             "the blocking rules see the Lord's grant"
         );
-        assert!(
-            destroy_targets(&game, assassin_id).is_empty(),
-            "and target legality does not, which is exactly the declared gap"
+        assert_eq!(
+            destroy_targets(&game, assassin_id),
+            vec![assassin_id, merfolk_id],
+            "and so does target legality, for every Merfolk the Lord hands a walk to"
         );
-        let _ = assassin_id;
     }
 
     /// Wormwood Treefolk grants itself a walk for the turn and pays two damage
@@ -447,8 +445,8 @@ mod follow_up {
             .expect("the card is cataloged");
         assert_eq!(
             assassin.rules.implementation_status(),
-            ImplementationStatus::Partial,
-            "Merfolk Assassin is declared with its target-legality gap named",
+            ImplementationStatus::Complete,
+            "Merfolk Assassin's target legality now reads the same keywords blocking does",
         );
     }
 }

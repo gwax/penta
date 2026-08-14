@@ -582,7 +582,6 @@ static DEFENDERS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
 };
 
 // RTR 37 — Doorkeeper
-// Audit: partial — Its defender count ignores defender granted or removed by static continuous effects.
 pub(in crate::card::sets) static DOORKEEPER: CardRecord = CardRecord::new(
     cards::DOORKEEPER,
     "Doorkeeper",
@@ -603,10 +602,7 @@ pub(in crate::card::sets) static DOORKEEPER: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::CountMatchingObjects(&DEFENDERS_YOU_CONTROL),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The defender predicate reads resolved keyword changes but not defender granted or removed by static continuous effects.",
-        )),
+        ),
     ]),
 );
 
@@ -1794,7 +1790,7 @@ pub(in crate::card::sets) static RACECOURSE_FURY: CardRecord = CardRecord::new(
 // Audit: blocked — Unleash needs an optional enters-with-counter replacement tied to a cannot-block restriction.
 
 // RTR 106 — Street Spasm
-// Audit: blocked — The mana model cannot represent the overload cost {X}{X}{R}{R}, and the without-flying predicate ignores continuous static keyword changes.
+// Audit: blocked — The mana model cannot represent the overload cost {X}{X}{R}{R}.
 
 // RTR 107 — Survey the Wreckage
 pub(in crate::card::sets) static SURVEY_THE_WRECKAGE: CardRecord = CardRecord::new(
@@ -1943,36 +1939,30 @@ pub(in crate::card::sets) static VIASHINO_RACKETEER: CardRecord = CardRecord::ne
 );
 
 // RTR 113 — Aerial Predation
-// Audit: partial — Its flying target predicate ignores flying granted or removed by static continuous effects.
 pub(in crate::card::sets) static AERIAL_PREDATION: CardRecord = CardRecord::new(
     cards::AERIAL_PREDATION,
     "Aerial Predation",
     CardArt::new("ec3c023c-037e-495a-b7df-32be42a75f36", "BD"),
     CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{2}{G}")).with_ability(
-        AbilityDef::spell_with_targets(
-            "Destroy target creature with flying. You gain 2 life.",
-            &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
-                ]),
-            )],
-            EffectDef::Sequence(&[
-                EffectDef::Destroy {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    can_regenerate: true,
-                },
-                EffectDef::GainLife {
-                    recipient: EffectRecipientDef::Controller,
-                    amount: ValueDef::Constant(2),
-                },
+    CardRules::new_instant(mana_cost!("{2}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target creature with flying. You gain 2 life.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
             ]),
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The flying target predicate reads resolved keyword changes but not flying granted or removed by static continuous effects.",
-        )),
-    ),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ]),
+    )),
 );
 
 // RTR 114 — Archweaver

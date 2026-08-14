@@ -74,13 +74,14 @@ pub(super) struct TriggerEventObject {
     /// Whether this object is in combat. Cheap to carry and it cannot feed
     /// back into a characteristic, unlike a keyword or a static bonus.
     pub(super) attacking_or_blocking: bool,
-    /// Printed and temporary keywords, as a bitmask over
+    /// The object's keywords, as a bitmask over
     /// [`crate::card::KeywordAbility::simple_index`].
     ///
-    /// A keyword granted by a static effect is deliberately missing, for the
-    /// same reason power is: resolving static effects matches their sources
-    /// against these characteristics, so reading a granted keyword back here
-    /// would not terminate.
+    /// Unlike power, this includes keywords a static continuous effect grants
+    /// or removes: `Game::keyword_mask` stratifies the layer-6 walk rather than
+    /// omitting it, so a predicate here and the combat rules give one answer.
+    /// The one exception is the walk's own recipient matching, which reads the
+    /// layer below itself; `Game::collect_ability_layer_operations` says why.
     pub(super) keywords: u32,
     /// Whether this creature is attacking, excluding a creature that is only
     /// blocking. Bloodrush and similar predicates need the narrower state.
