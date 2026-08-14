@@ -71,6 +71,10 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **"Power less than this creature's power"** as a blocking restriction. The
+  mirror predicate for greater power already existed for evolve; this is the
+  other direction, read live against the source so pumping the attacker widens
+  the restriction mid-combat. Howlgeist and Wandering Wolf.
 - **Clauses conditioned on what an Equipment is attached to**, which is what
   "as long as equipped creature is a Human" asks. It is read live rather than
   frozen when the Equipment moved, so the same Pitchfork gives its bonus on

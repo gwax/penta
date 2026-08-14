@@ -734,6 +734,7 @@ impl Game {
         let (value, stat, greater) = match predicate {
             ObjectPredicateDef::ToughnessLessThan(value) => (value, object.toughness, false),
             ObjectPredicateDef::PowerGreaterThan(value) => (value, object.power, true),
+            ObjectPredicateDef::PowerLessThan(value) => (value, object.power, false),
             ObjectPredicateDef::ToughnessGreaterThan(value) => (value, object.toughness, true),
             _ => return false,
         };
@@ -791,6 +792,7 @@ impl Game {
             ObjectPredicateDef::ToughnessExactly(exact) => object.toughness == Some(exact),
             ObjectPredicateDef::ToughnessLessThan(_)
             | ObjectPredicateDef::PowerGreaterThan(_)
+            | ObjectPredicateDef::PowerLessThan(_)
             | ObjectPredicateDef::ToughnessGreaterThan(_) => {
                 self.computed_stat_matches(predicate, object, source)
             }

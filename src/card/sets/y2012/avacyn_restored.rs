@@ -2424,8 +2424,30 @@ pub(in crate::card::sets) static GROUNDED: CardRecord = CardRecord::new(
         ]),
 );
 
+/// "Creatures with power less than this creature's power can't block it."
+/// The comparison is against the source's current power, so pumping it widens
+/// the restriction.
+static WEAKER_THAN_SOURCE: ObjectPredicateDef =
+    ObjectPredicateDef::PowerLessThan(ValueDef::SourcePower);
+
 // AVR 182 — Howlgeist
-// Audit: blocked — Needs a blocking predicate that dynamically compares each prospective blocker's power with this creature's current power.
+pub(in crate::card::sets) static HOWLGEIST: CardRecord = CardRecord::new(
+    cards::HOWLGEIST,
+    "Howlgeist",
+    CardArt::new("dad60d45-1c99-41d1-a237-c0ee18ce5361", "David Rapoza"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{5}{G}"), &["Spirit", "Wolf"], 4, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "Creatures with power less than this creature's power can't block it.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBeBlockedBy(WEAKER_THAN_SOURCE),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        abilities::undying(),
+    ]),
+);
 
 // AVR 183 — Joint Assault
 // Audit: blocked — Needs soulbond pairing state and the identity of the creature paired with the target.
@@ -2646,7 +2668,22 @@ pub(in crate::card::sets) static VORSTCLAW: CardRecord = CardRecord::new(
 );
 
 // AVR 202 — Wandering Wolf
-// Audit: blocked — Needs a blocking predicate that dynamically compares each prospective blocker's power with this creature's current power.
+pub(in crate::card::sets) static WANDERING_WOLF: CardRecord = CardRecord::new(
+    cards::WANDERING_WOLF,
+    "Wandering Wolf",
+    CardArt::new("ac606ad5-b8d0-4c93-a9de-5e41229a8229", "Tomasz Jedruszek"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Wolf"], 2, 1).with_abilities(&[
+        AbilityDef::static_ability(
+            "Creatures with power less than this creature's power can't block it.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBeBlockedBy(WEAKER_THAN_SOURCE),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // AVR 203 — Wild Defiance
 // Audit: blocked — Needs an event for a creature becoming the target of an instant or sorcery spell, carrying that creature as the effect recipient.
@@ -3105,6 +3142,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRATERHOOF_BEHEMOTH,
     &DRUIDS_REPOSITORY,
     &GROUNDED,
+    &HOWLGEIST,
     &NATURAL_END,
     &NETTLE_SWINE,
     &RAIN_OF_THORNS,
@@ -3113,6 +3151,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TERRIFYING_PRESENCE,
     &TIMBERLAND_GUIDE,
     &VORSTCLAW,
+    &WANDERING_WOLF,
     &WOLFIR_AVENGER,
     &YEW_SPIRIT,
     &SIGARDA_HOST_OF_HERONS,

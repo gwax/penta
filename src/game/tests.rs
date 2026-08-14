@@ -414,6 +414,7 @@ mod old_school_permanents;
 mod old_school_spells;
 mod old_school_upkeep;
 mod poison;
+mod power_blocking;
 mod premodern_cards;
 mod premodern_lands;
 mod premodern_library_selection;

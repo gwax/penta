@@ -56,6 +56,9 @@ pub enum ObjectPredicateDef {
     PowerGreaterThan(ValueDef),
     /// Toughness strictly above a computed value.
     ToughnessGreaterThan(ValueDef),
+    /// Power strictly below a computed value, for "creatures with power less
+    /// than this creature's power". The mirror of [`Self::PowerGreaterThan`].
+    PowerLessThan(ValueDef),
     /// Controlled by a player in this relation to the ability's controller,
     /// for "a creature you control" and "whenever you cast".
     ControlledBy(PlayerRelation),
