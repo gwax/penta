@@ -711,6 +711,11 @@ pub struct Game {
     next_regular_player: PlayerId,
     extra_turns: Vec<PlayerId>,
     channel_active: [bool; 2],
+    /// A Fog: all combat damage this turn is prevented. This is game state
+    /// rather than permanent state because it outlives any particular
+    /// creature, and applies to combatants that were not on the battlefield
+    /// when it resolved.
+    all_combat_damage_prevented: bool,
     result: Option<GameResult>,
     events: Vec<GameEvent>,
 }

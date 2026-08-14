@@ -199,6 +199,7 @@ impl Game {
             next_regular_player: PlayerId::Two,
             extra_turns: Vec::new(),
             channel_active: [false, false],
+            all_combat_damage_prevented: false,
             result: None,
             events: vec![GameEvent::GameStarted { seed }],
         })

@@ -310,6 +310,7 @@ impl Game {
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::PreventAllCombatDamageThisTurn
             | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
             | EffectDef::Destroy { .. }

@@ -2507,9 +2507,6 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
     ]),
 );
 
-// M13 172 — Fog
-// Audit: blocked — Per-object combat prevention cannot also cover creatures that enter after the spell resolves.
-
 // M13 173 — Fungal Sprouting
 // Audit: blocked — No value expression computes the greatest power among creatures the controller controls.
 
@@ -3195,6 +3192,7 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&alpha::FIRE_ELEMENTAL),         // M13 130
     PrintingRecord::reprint(&dark_ascension::TORCH_FIEND),   // M13 151
     PrintingRecord::reprint(&alpha::WALL_OF_FIRE),           // M13 156
+    PrintingRecord::reprint(&alpha::FOG),                    // M13 172
     PrintingRecord::reprint(&onslaught::NATURALIZE),         // M13 178
     PrintingRecord::reprint(&innistrad::PREY_UPON),          // M13 181
     PrintingRecord::reprint(&planeshift::QUIRION_DRYAD),     // M13 184

@@ -206,7 +206,16 @@ pub(in crate::card::sets) static GREAT_WALL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become white until end of turn”.
 
 // LEG 20 — Holy Day
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt this turn”.
+pub(in crate::card::sets) static HOLY_DAY: CardRecord = CardRecord::new(
+    cards::HOLY_DAY,
+    "Holy Day",
+    CardArt::new("f6c95a2b-bf44-4ff2-9c6a-916773346edd", "Justin Hampton"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell(
+        "Prevent all combat damage that would be dealt this turn.",
+        EffectDef::PreventAllCombatDamageThisTurn,
+    )),
+);
 
 // LEG 21 — Indestructible Aura
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to target creature this turn”.
@@ -857,7 +866,16 @@ pub(in crate::card::sets) static CYCLOPEAN_MUMMY: CardRecord = CardRecord::new(
 );
 
 // LEG 94 — Darkness
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt this turn”.
+pub(in crate::card::sets) static DARKNESS: CardRecord = CardRecord::new(
+    cards::DARKNESS,
+    "Darkness",
+    CardArt::new("53b04dab-45b7-418b-a0f0-bcf35145fc53", "Harold McNeill"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell(
+        "Prevent all combat damage that would be dealt this turn.",
+        EffectDef::PreventAllCombatDamageThisTurn,
+    )),
+);
 
 // LEG 95 — Demonic Torment
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt by enchanted creature”.
@@ -3086,6 +3104,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DIVINE_TRANSFORMATION,
     &GREAT_DEFENDER,
     &GREAT_WALL,
+    &HOLY_DAY,
     &KEEPERS_OF_THE_FAITH,
     &KISMET,
     &LIFEBLOOD,
@@ -3114,6 +3133,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ZEPHYR_FALCON,
     &CARRION_ANTS,
     &CYCLOPEAN_MUMMY,
+    &DARKNESS,
     &FALLEN_ANGEL,
     &GHOSTS_OF_THE_DAMNED,
     &GREED,

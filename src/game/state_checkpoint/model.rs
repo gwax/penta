@@ -42,6 +42,11 @@ pub(super) struct GameSnapshot {
     pub(super) extra_turns: Vec<usize>,
     pub(super) next_regular_player: usize,
     pub(super) channel_active: [bool; 2],
+    /// A Fog resolved this turn. Defaulted so a checkpoint written before
+    /// this field existed still decodes, which is what the open-world
+    /// contract asks of an additive member.
+    #[serde(default)]
+    pub(super) all_combat_damage_prevented: bool,
     pub(super) pregame: Option<PregameSnapshot>,
     pub(super) combat_damage_stage: CombatDamageStageSnapshot,
     pub(super) battlefield: Vec<PermanentSnapshot>,

@@ -508,6 +508,11 @@ pub enum EffectDef {
     Untap {
         object: EffectRecipientDef,
     },
+    /// No combat damage is dealt at all for the rest of the turn, by anything,
+    /// to anything. Unlike [`Self::PreventCombatDamageThisTurn`] this is not a
+    /// property of any permanent, so it survives the creatures involved
+    /// leaving the battlefield -- which is what a Fog has to do.
+    PreventAllCombatDamageThisTurn,
     /// No combat damage is dealt to or by the affected permanent for the rest
     /// of the turn. This is prevention rather than removal from combat: the
     /// creature is still attacking, and everything that reads that still

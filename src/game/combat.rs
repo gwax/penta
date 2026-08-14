@@ -560,6 +560,9 @@ impl Game {
     /// Whether combat damage to this recipient is prevented for the turn.
     /// Only a permanent can carry the prevention; a player never does.
     pub(super) fn combat_damage_is_prevented_for(&self, recipient: Target) -> bool {
+        if self.all_combat_damage_prevented {
+            return true;
+        }
         matches!(recipient, Target::Permanent(id)
             if self
                 .battlefield
@@ -569,6 +572,9 @@ impl Game {
 
     /// Whether combat damage from this permanent is prevented for the turn.
     pub(super) fn combat_damage_is_prevented_from(&self, source: GameObjectId) -> bool {
+        if self.all_combat_damage_prevented {
+            return true;
+        }
         self.battlefield.iter().any(|permanent| {
             permanent.card.id == source
                 && (permanent.combat_damage_prevented || permanent.combat_damage_dealt_by_prevented)

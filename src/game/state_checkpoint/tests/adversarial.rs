@@ -169,6 +169,12 @@ fn checkpoint_mut(wire: &mut Value) -> &mut serde_json::Map<String, Value> {
 
 #[test]
 fn a_checkpoint_missing_any_required_field_is_rejected_by_name() {
+    // Additive members carry `#[serde(default)]` deliberately, so that a
+    // checkpoint written before they existed still decodes. They are the one
+    // kind of field that is not load-bearing, and each is listed rather than
+    // inferred so a genuinely required field cannot quietly join them.
+    const ADDITIVE: &[&str] = &["allCombatDamagePrevented"];
+
     let fixture = Fixture::played(120, 8_101);
     fixture.assert_baseline_rebuilds();
     let names = fixture.wire["checkpoint"]
@@ -183,7 +189,7 @@ fn a_checkpoint_missing_any_required_field_is_rejected_by_name() {
     );
     for name in names {
         // Optional fields legitimately vanish; the rest are load-bearing.
-        if fixture.wire["checkpoint"][&name].is_null() {
+        if fixture.wire["checkpoint"][&name].is_null() || ADDITIVE.contains(&name.as_str()) {
             continue;
         }
         let error = fixture.rejects_wire(&format!("a checkpoint missing {name}"), |wire| {

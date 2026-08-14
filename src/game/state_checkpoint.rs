@@ -330,6 +330,7 @@ impl Game {
                 .collect(),
             next_regular_player: self.next_regular_player.index(),
             channel_active: self.channel_active,
+            all_combat_damage_prevented: self.all_combat_damage_prevented,
             pregame: self.pregame.map(|pregame| match pregame {
                 Pregame::Mulligan(player) => PregameSnapshot::Mulligan {
                     seat: player.index(),
@@ -627,6 +628,7 @@ impl Game {
                 .collect::<Result<Vec<_>, _>>()?,
             next_regular_player: player_from_index(checkpoint.next_regular_player)?,
             channel_active: checkpoint.channel_active,
+            all_combat_damage_prevented: checkpoint.all_combat_damage_prevented,
             result: None,
             events: vec![GameEvent::GameStarted { seed: rollout_seed }],
         };

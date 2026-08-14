@@ -216,6 +216,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
         | EffectDef::AdditionalCombatPhase
+        | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::GrantFlashToNextSorcery => true,
         // Each of these asks a question and then runs an inner effect,
         // so the question has to be allowed here and the answer has to be

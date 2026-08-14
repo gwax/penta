@@ -275,6 +275,9 @@ impl Game {
                     }
                 }
             }
+            EffectDef::PreventAllCombatDamageThisTurn => {
+                self.all_combat_damage_prevented = true;
+            }
             EffectDef::PreventCombatDamageThisTurn { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Permanent(id) = target

@@ -311,6 +311,7 @@ impl HandcraftedPolicy {
             }
             EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::PreventAllCombatDamageThisTurn
             | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::PreventCombatDamageDealtByThisTurn { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);

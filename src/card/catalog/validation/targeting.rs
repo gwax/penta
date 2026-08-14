@@ -304,6 +304,7 @@ fn validate_effect_references(
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::AdditionalCombatPhase
+        | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::MultiplyEventAmount(_)
         | EffectDef::Special(_) => Ok(()),
         EffectDef::Replacement(effect) => {

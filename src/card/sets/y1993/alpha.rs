@@ -2740,7 +2740,16 @@ pub(in crate::card::sets) static ELVISH_ARCHERS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Whenever you play a land, if it wasn't the first land you played this turn, this enchantment deals 1 damage to you”.
 
 // LEA 193 — Fog
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt this turn”.
+pub(in crate::card::sets) static FOG: CardRecord = CardRecord::new(
+    cards::FOG,
+    "Fog",
+    CardArt::new("cfba606d-bb55-43ba-aa0c-299649958788", "Jesper Myrfors"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{G}")).with_ability(AbilityDef::spell(
+        "Prevent all combat damage that would be dealt this turn.",
+        EffectDef::PreventAllCombatDamageThisTurn,
+    )),
+);
 
 // LEA 194 — Force of Nature
 pub(in crate::card::sets) static FORCE_OF_NATURE: CardRecord = CardRecord::new(
@@ -4153,6 +4162,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CHANNEL,
     &CRAW_WURM,
     &ELVISH_ARCHERS,
+    &FOG,
     &FORCE_OF_NATURE,
     &FUNGUSAUR,
     &GIANT_GROWTH,

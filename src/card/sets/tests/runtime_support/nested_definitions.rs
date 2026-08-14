@@ -237,6 +237,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
         | EffectDef::Untap { .. }
+        | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventCombatDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }

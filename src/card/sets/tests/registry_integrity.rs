@@ -82,11 +82,11 @@ fn built_in_records_keep_stable_dense_ids_and_unique_identity() {
         .iter()
         .flat_map(|module| module.cards.iter().copied())
         .collect::<Vec<_>>();
-    assert_eq!(records.len(), 1_405);
+    assert_eq!(records.len(), 1_408);
 
     let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
     ids.sort_unstable();
-    assert_eq!(ids, (1..=1_405).map(CardDefinitionId).collect::<Vec<_>>());
+    assert_eq!(ids, (1..=1_408).map(CardDefinitionId).collect::<Vec<_>>());
     // Names identify the cards a decklist can name. Tokens are not among
     // them, and Magic prints several that share a name.
     let deck_legal = records
@@ -115,13 +115,13 @@ fn built_in_catalog_indexes_definitions_and_printings_separately() {
         .partition(|record| record.debut_set == CardSet::Token);
 
     assert_eq!(token_records.len(), 35);
-    assert_eq!(printed_records.len(), 1_370);
+    assert_eq!(printed_records.len(), 1_373);
     assert_eq!(
         SET_MODULES
             .iter()
             .map(|module| module.additional_printings.len())
             .sum::<usize>(),
-        558
+        559
     );
 
     for record in token_records {
@@ -135,7 +135,7 @@ fn built_in_catalog_indexes_definitions_and_printings_separately() {
         .map(|record| catalog.printings_for(record.id).len())
         .sum::<usize>();
 
-    assert_eq!(printing_count, 1_928);
+    assert_eq!(printing_count, 1_932);
     for variant in 0..3 {
         assert!(
             catalog
@@ -332,7 +332,7 @@ fn every_non_declarative_clause_explains_its_implementation() {
         .iter()
         .flat_map(|module| module.cards.iter().copied())
         .collect::<Vec<_>>();
-    assert_eq!(records.len(), 1_405);
+    assert_eq!(records.len(), 1_408);
 
     for record in records {
         let definition = record.definition();
