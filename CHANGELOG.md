@@ -71,6 +71,9 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Two more detain identities**, with no engine change. Lyev Decree detains
+  from a spell and New Prahv Guildmage from an activated ability, which are the
+  two ways into the restriction the first pass did not use.
 - **A printed static "can't be blocked"**, the attacker's side of the
   prohibition added with the blocker's. The turn-scoped form was a resolving
   rider; this one holds while its source does. Elusive Krasis and Soulsworn

@@ -106,6 +106,51 @@ fn detain_outlasts_the_turn_it_landed_on() {
     );
 }
 
+/// Detain from an activated ability rather than an entry trigger, and from a
+/// spell -- the restriction is the same wherever it comes from.
+#[test]
+fn detain_works_from_an_activated_ability() {
+    let mut game = ready_game();
+    game.turns_started[PlayerId::One.index()] = 1;
+    let mage = creature(10_000, cards::NEW_PRAHV_GUILDMAGE, PlayerId::One);
+    let mage_id = mage.card.id;
+    game.battlefield.push(mage);
+    // A nonland permanent, since that is what this ability names, and one
+    // with an activated ability so the lock is observable.
+    let victim = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
+    let victim_id = victim.card.id;
+    game.battlefield.push(victim);
+    game.players[PlayerId::Two.index()].mana_pool.black = 1;
+    game.players[PlayerId::One.index()].mana_pool.white = 1;
+    game.players[PlayerId::One.index()].mana_pool.blue = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 3;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == mage_id
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(victim_id))
+            }
+            _ => false,
+        })
+        .expect("the Guildmage can detain that permanent");
+    game.apply(PlayerId::One, action)
+        .expect("the ability activates");
+    drain_pending(&mut game);
+
+    assert!(
+        !can_activate(&game, victim_id),
+        "detained by an activated ability just the same"
+    );
+}
+
 #[test]
 fn every_detain_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -117,6 +162,8 @@ fn every_detain_identity_reports_complete_coverage() {
         cards::ISPERIAS_SKYWATCH,
         cards::ARCHON_OF_THE_TRIUMVIRATE,
         cards::LYEV_SKYKNIGHT,
+        cards::LYEV_DECREE,
+        cards::NEW_PRAHV_GUILDMAGE,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

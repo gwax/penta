@@ -3252,7 +3252,43 @@ pub(in crate::card::sets) static LYEV_SKYKNIGHT: CardRecord = CardRecord::new(
 // Audit: blocked — The second ability needs the discarded card's mana value linked through its activation cost as the damage amount.
 
 // RTR 181 — New Prahv Guildmage
-// Audit: blocked — Its flying activation is expressible, but detain's attack, block, and activation lock is not.
+pub(in crate::card::sets) static NEW_PRAHV_GUILDMAGE: CardRecord = CardRecord::new(
+    cards::NEW_PRAHV_GUILDMAGE,
+    "New Prahv Guildmage",
+    CardArt::new("698b47d1-c72e-4dc3-b28b-7421e0163f22", "Karl Kopinski"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{W}{U}"), &["Human", "Wizard"], 2, 2).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{W}{U}: Target creature gains flying until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{W}{U}"))],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::GrantAbility(&NEW_PRAHV_FLYING),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{3}{W}{U}: Detain target nonland permanent an opponent controls.",
+            &[AbilityCostDef::Mana(mana_cost!("{3}{W}{U}"))],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            EffectDef::Detain {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
+
+static NEW_PRAHV_FLYING: AbilityDef = abilities::flying();
 
 // RTR 182 — Nivix Guildmage
 // Audit: blocked — Its second activation needs copying a targeted instant or sorcery spell and optionally choosing new targets for the copy.
@@ -4611,6 +4647,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IZZET_STATICASTER,
     &LOXODON_SMITER,
     &LYEV_SKYKNIGHT,
+    &NEW_PRAHV_GUILDMAGE,
     &NIV_MIZZET_DRACOGENIUS,
     &RAKDOS_RAGEMUTT,
     &RAKDOS_RINGLEADER,

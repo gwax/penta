@@ -98,7 +98,29 @@ pub(in crate::card::sets) static HAAZDA_SNARE_SQUAD: CardRecord = CardRecord::ne
 );
 
 // DGM 3 — Lyev Decree
-// Audit: blocked — Needs detain's persistent attack, block, and activated-ability restrictions through the caster's next turn.
+pub(in crate::card::sets) static LYEV_DECREE: CardRecord = CardRecord::new(
+    cards::LYEV_DECREE,
+    "Lyev Decree",
+    CardArt::new("773cf2aa-4337-4d14-8a8e-ff8b1fdec1b5", "Kev Walker"),
+    CardSet::DragonsMaze,
+    CardRules::new_sorcery(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Detain up to two target creatures your opponents control.",
+        &LYEV_DECREE_TARGETS,
+        EffectDef::Detain {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )),
+);
+
+static LYEV_DECREE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+    2,
+)];
 
 // DGM 4 — Maze Sentinel
 pub(in crate::card::sets) static MAZE_SENTINEL: CardRecord = CardRecord::new(
@@ -2479,6 +2501,7 @@ pub(in crate::card::sets) static SIMIC_CLUESTONE: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BOROS_MASTIFF,
     &HAAZDA_SNARE_SQUAD,
+    &LYEV_DECREE,
     &MAZE_SENTINEL,
     &RENOUNCE_THE_GUILDS,
     &RIOT_CONTROL,

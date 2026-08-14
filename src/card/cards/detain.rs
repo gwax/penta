@@ -9,3 +9,5 @@ pub const INACTION_INJUNCTION: CardDefinitionId = CardDefinitionId(1532);
 pub const ISPERIAS_SKYWATCH: CardDefinitionId = CardDefinitionId(1533);
 pub const ARCHON_OF_THE_TRIUMVIRATE: CardDefinitionId = CardDefinitionId(1534);
 pub const LYEV_SKYKNIGHT: CardDefinitionId = CardDefinitionId(1535);
+pub const LYEV_DECREE: CardDefinitionId = CardDefinitionId(1543);
+pub const NEW_PRAHV_GUILDMAGE: CardDefinitionId = CardDefinitionId(1544);
