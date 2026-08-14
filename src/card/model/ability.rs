@@ -7,9 +7,9 @@ use super::{
     AbilityTargetDef, ActivatedAbilityDef, ActivationTimingDef, AlternativeCastAbilityDef,
     AlternativeCastKindDef, AlternativeCastManaCostDef, CardBehavior, DeclarativeAbilityDef,
     EffectDef, EffectExecutionDef, ImplementationStatus, KeywordAbility, ManaCost,
-    ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, SpecialActionDef,
-    SpellAbilityDef, SpellAdditionalCostDef, StaticAbilityDef, TriggerConditionDef,
-    TriggerEventDef, TriggeredAbilityDef, ZoneKind,
+    ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
+    SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, StaticAbilityDef,
+    TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, ZoneKind,
 };
 
 /// One printed rules clause and its implementation.
@@ -283,6 +283,24 @@ impl AbilityDef {
         Self::replacement_for(
             text,
             ReplacementEventDef::SourceEntersBattlefield,
+            EffectDef::Replacement(effect),
+        )
+    }
+
+    /// The same, gated on a condition read as the permanent enters.
+    #[must_use]
+    pub const fn as_enters_if(
+        text: &'static str,
+        condition: ReplacementConditionDef,
+        effect: ReplacementEffectDef,
+    ) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::Replacement(
+                ReplacementAbilityDef::new()
+                    .with_event(ReplacementEventDef::SourceEntersBattlefield)
+                    .with_condition(condition),
+            ),
             EffectDef::Replacement(effect),
         )
     }

@@ -830,9 +830,10 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             // A permanent's own entry replacement may be optional: the entry
             // path asks its controller. Only its own -- an optional
             // replacement watching another object is still unsupported.
+            // Only a permanent's own entry replacement reads a condition.
+            // The two below watch another object and have no source to ask.
             ReplacementEventDef::SourceEntersBattlefield => {
-                definition.condition.is_none()
-                    && battlefield_only(definition.source_zones)
+                battlefield_only(definition.source_zones)
                     && shared_replacement_event(definition.event)
                     && matches!(effect, EffectDef::Replacement(effect) if shared_entry_replacement_effect(effect))
             }

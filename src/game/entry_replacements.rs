@@ -4,10 +4,10 @@ use super::{
     CommittedTriggerEvent, ConditionDef, ControlFlow, CostDef, DecisionContinuation,
     DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
     EffectDef, EffectDurationDef, EffectRecipientDef, EntryCompletion, Game, GameEvent,
-    ObjectPredicateDef, PaymentDef, PendingBattlefieldEntry, PendingEvent,
+    GameObjectId, ObjectPredicateDef, PaymentDef, PendingBattlefieldEntry, PendingEvent,
     PendingReplacementEffect, Permanent, PlayerId, PlayerRelation, ReplaceableEvent,
-    ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef, Target, TriggerContext,
-    ZoneKind,
+    ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef,
+    Target, TriggerContext, ZoneKind,
 };
 
 impl Game {
@@ -465,6 +465,23 @@ impl Game {
         );
     }
 
+    /// A replacement ability's own "if ..." clause, read where the source is
+    /// known.
+    pub(super) fn replacement_condition_holds(
+        &self,
+        condition: ReplacementConditionDef,
+        source: GameObjectId,
+    ) -> bool {
+        match condition {
+            ReplacementConditionDef::SourceTapped => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+                .is_some_and(|permanent| permanent.tapped),
+            ReplacementConditionDef::CreatureDiedThisTurn => self.creature_died_this_turn,
+        }
+    }
+
     pub(super) fn condition_holds(
         &self,
         pending: &PendingEvent,
@@ -686,6 +703,14 @@ impl Game {
                 let Some(declarative_effect) = ability.declarative_effect() else {
                     return ControlFlow::Continue(());
                 };
+                // Read as the entry is being replaced rather than when the
+                // spell was cast, so morbid sees a creature that died in
+                // response.
+                if let Some(condition) = definition.condition
+                    && !self.replacement_condition_holds(condition, entry.permanent.card.id)
+                {
+                    return ControlFlow::Continue(());
+                }
                 let effect = match (definition.event, declarative_effect) {
                     (
                         ReplacementEventDef::SourceEntersBattlefield,

@@ -62,6 +62,10 @@ pub enum ZoneMoveCauseDef {
 pub enum ReplacementConditionDef {
     /// The permanent carrying the replacement ability is currently tapped.
     SourceTapped,
+    /// A creature died at some point this turn, which is what morbid asks.
+    /// Read as the replacement applies, so a creature dying in response
+    /// changes the answer.
+    CreatureDiedThisTurn,
 }
 
 /// A typed modification to the permanent an object would become as it enters

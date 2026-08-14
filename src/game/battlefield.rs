@@ -362,6 +362,9 @@ impl Game {
                             .iter()
                             .find(|permanent| permanent.card.id == replacement.source.object)
                             .is_some_and(|permanent| permanent.tapped),
+                        ReplacementConditionDef::CreatureDiedThisTurn => {
+                            self.creature_died_this_turn
+                        }
                     }
                 } else {
                     true

@@ -81,6 +81,9 @@ impl Game {
                 let condition_matches = match definition.condition {
                     None => true,
                     Some(ReplacementConditionDef::SourceTapped) => permanent.tapped,
+                    Some(ReplacementConditionDef::CreatureDiedThisTurn) => {
+                        self.creature_died_this_turn
+                    }
                 };
                 if applied.contains(&source)
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)

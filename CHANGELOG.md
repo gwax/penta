@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Morbid**, and with it entry replacements that read a condition. A
+  replacement ability could carry one, but the entry path never looked at it,
+  so "enters with two +1/+1 counters if a creature died this turn" had nowhere
+  to put the "if". It is read as the permanent enters rather than when its
+  spell was cast. Festerhide Boar and Somberwald Spider.
 - **Additional casting costs that spend an object.** The only one in the
   corpus was Goblin Grenade's, hardcoded into the casting enumeration by card
   behavior. It is a declaration now: what may be spent, from which zone, and

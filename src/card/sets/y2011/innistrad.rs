@@ -4,12 +4,13 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::sets::{y1993::alpha, y2002::onslaught};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPolicyHint, AbilityTargetDef,
-    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardAbilityBinding,
-    CardArt, CardBehavior, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
-    CardStructure, CardSupertype, CardType, ComparisonDef, ConditionalValueDef, CostDef,
-    CounterKind, DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectDurationDef,
-    EffectExecutionDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PaymentDef, PlayOptionDef, PlayerRelation, QuantifierDef, SpellAdditionalCostDef, SpellForm,
+    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardAbilityBinding, CardArt, CardBehavior, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    ComparisonDef, ConditionalValueDef, CostDef, CounterKind, DiscardSelectionDef, DoubleFacedKind,
+    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayOptionDef, PlayerRelation, QuantifierDef,
+    ReplacementConditionDef, ReplacementEffectDef, SpellAdditionalCostDef, SpellForm,
     TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef,
     ZoneKind, ZonePlacement, abilities, cards,
 };
@@ -3464,8 +3465,26 @@ pub(in crate::card::sets) static ELDER_OF_LAURELS: CardRecord = CardRecord::new(
 // ISD 178 — Essence of the Wild
 // Audit: blocked — Needs a battlefield entry replacement that copies the source's copiable values onto other creatures.
 
+/// Morbid's entry bonus. The condition is checked as the creature enters, so
+/// a creature dying in response to the spell still counts.
+static MORBID_TWO_COUNTERS: AbilityDef = AbilityDef::as_enters_if(
+    "Morbid — This creature enters with two +1/+1 counters on it if a creature died this turn.",
+    ReplacementConditionDef::CreatureDiedThisTurn,
+    ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::AddCounters {
+        kind: CounterKind::PlusOnePlusOne,
+        amount: 2,
+    }),
+);
+
 // ISD 179 — Festerhide Boar
-// Audit: blocked — Needs a morbid-aware enters-with-two-counters replacement.
+pub(in crate::card::sets) static FESTERHIDE_BOAR: CardRecord = CardRecord::new(
+    cards::FESTERHIDE_BOAR,
+    "Festerhide Boar",
+    CardArt::new("31740fe9-27d2-416e-93de-509ac1a7b7cd", "Nils Hamm"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Boar"], 3, 3)
+        .with_abilities(&[abilities::trample(), MORBID_TWO_COUNTERS]),
+);
 
 // ISD 180 — Full Moon's Rise
 pub(in crate::card::sets) static FULL_MOONS_RISE: CardRecord = CardRecord::new(
@@ -4048,7 +4067,14 @@ pub(in crate::card::sets) static RANGERS_GUILE: CardRecord = CardRecord::new(
 );
 
 // ISD 202 — Somberwald Spider
-// Audit: blocked — Needs a morbid-aware enters-with-two-counters replacement.
+pub(in crate::card::sets) static SOMBERWALD_SPIDER: CardRecord = CardRecord::new(
+    cards::SOMBERWALD_SPIDER,
+    "Somberwald Spider",
+    CardArt::new("43003ad7-2f42-4c85-8b00-77cbf3f50a7b", "Volkan Baǵa"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{4}{G}"), &["Spider"], 2, 4)
+        .with_abilities(&[abilities::reach(), MORBID_TWO_COUNTERS]),
+);
 
 // ISD 203 — Spider Spawning
 pub(in crate::card::sets) static SPIDER_SPAWNING: CardRecord = CardRecord::new(
@@ -5037,6 +5063,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DARKTHICKET_WOLF,
     &DAYBREAK_RANGER,
     &ELDER_OF_LAURELS,
+    &FESTERHIDE_BOAR,
     &FULL_MOONS_RISE,
     &GARRUK_RELENTLESS,
     &GATSTAF_SHEPHERD,
@@ -5048,6 +5075,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORCHARD_SPIRIT,
     &PREY_UPON,
     &RANGERS_GUILE,
+    &SOMBERWALD_SPIDER,
     &SPIDER_SPAWNING,
     &SPIDERY_GRASP,
     &SPLINTERFRIGHT,
