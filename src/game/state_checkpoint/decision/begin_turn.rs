@@ -42,7 +42,7 @@ pub(super) fn begin_turn_replacement_snapshot(
 
 pub(super) fn deferred_begin_turn_effect_snapshot(
     game: &Game,
-    deferred: DeferredBeginTurnEffect,
+    deferred: &DeferredBeginTurnEffect,
 ) -> Option<DeferredBeginTurnEffectSnapshot> {
     let replacement = begin_turn_replacement_snapshot(game, deferred.replacement)?;
     let ability = catalog_ability(&game.catalog, &replacement.effect.ability)?;

@@ -148,6 +148,7 @@ pub(super) fn creature(id: u32, definition: CardDefinitionId, controller: Player
 /// single timestamped effect. Test setup uses this instead of recreating the
 /// fragmented animation, ability, and power/toughness state this model
 /// replaced.
+#[allow(clippy::too_many_lines)]
 pub(super) fn attach_constant_resolved_characteristics(
     game: &mut Game,
     permanent: GameObjectId,

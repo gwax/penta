@@ -372,6 +372,7 @@ impl Game {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(super) fn commit_next_turn(
         &mut self,
         next_player: PlayerId,

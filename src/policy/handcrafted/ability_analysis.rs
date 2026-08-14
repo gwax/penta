@@ -119,11 +119,7 @@ impl HandcraftedPolicy {
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
                 SetOperationDef::Add(types) | SetOperationDef::Set(types),
             )) => types.contains(crate::card::CardType::Creature),
-            AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
-                SetOperationDef::Remove(_),
-            ))
-            | AppliedEffectDef::Characteristic(_)
-            | AppliedEffectDef::Rule(_) => false,
+            AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
         }
     }
 

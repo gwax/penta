@@ -209,7 +209,7 @@ pub(in crate::card::sets) static GIANT_TORTOISE: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Turtle"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "This creature gets +0/+3 as long as it's untapped.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 // Its own condition: the recipient is the source, but only
                 // while untapped, so tapping to attack shrinks it.
                 recipient: EffectRecipientDef::matching_objects(
@@ -220,11 +220,10 @@ pub(in crate::card::sets) static GIANT_TORTOISE: CardRecord = CardRecord::new(
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(0),
-                    toughness: ValueDef::Constant(3),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(3),
+                ),
             },
         ),
     ),
@@ -665,7 +664,7 @@ pub(in crate::card::sets) static MIJAE_DJINN: CardRecord = CardRecord::new(
         AbilityDef::triggered(
             "Whenever this creature attacks, flip a coin. If you lose the flip, remove this \
              creature from combat and tap it.",
-            TriggerEventDef::Attacks(ObjectPredicateDef::Source),
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
             EffectDef::Randomized {
                 likelihood: LikelihoodDef::new(0.5),
                 on_success: &EffectDef::None,

@@ -160,11 +160,10 @@ impl Game {
                     .and_then(|index| candidates.get(index))
                     .copied();
                 if let (Some(pending), Some(selected)) = (self.pending_events.pop_front(), selected)
+                    && let Some(pending) = self.prepare_entry_replacement(pending, selected)
                 {
-                    if let Some(pending) = self.prepare_entry_replacement(pending, selected) {
-                        self.pending_events.push_front(pending);
-                        self.continue_pending_events();
-                    }
+                    self.pending_events.push_front(pending);
+                    self.continue_pending_events();
                 }
             }
             DecisionContinuation::BattlefieldEntryOptional { context, effect } => {

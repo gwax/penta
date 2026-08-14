@@ -17,6 +17,7 @@ pub(super) struct DrawReplacementSnapshot {
     rename_all = "camelCase",
     rename_all_fields = "camelCase"
 )]
+#[allow(clippy::large_enum_variant)]
 pub(super) enum PendingProcedureSnapshot {
     DrawCards {
         player: usize,

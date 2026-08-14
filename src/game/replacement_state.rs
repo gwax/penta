@@ -135,7 +135,7 @@ impl Game {
         &mut self,
         effects: Vec<ScopedEffect>,
         object: &StackObject,
-        context: EffectResolutionContext,
+        context: &EffectResolutionContext,
     ) {
         let mut effects = effects.into_iter();
         while let Some(effect) = effects.next() {

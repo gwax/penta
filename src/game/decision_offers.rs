@@ -75,11 +75,9 @@ impl Game {
             return;
         }
         let can_pay = self.can_pay_effect_payment(player, payment);
-        if !can_pay {
-            if let Some(effect) = otherwise {
-                self.resolve_effect_def(effect, object, context);
-                return;
-            }
+        if !can_pay && let Some(effect) = otherwise {
+            self.resolve_effect_def(effect, object, context);
+            return;
         }
         let mut options = vec![DecisionOption {
             id: 0,

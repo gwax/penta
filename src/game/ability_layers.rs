@@ -50,7 +50,7 @@ impl Game {
         origin: AbilityOrigin,
     ) -> bool {
         let mut abilities = self.collect_base_effective_abilities(permanent, None);
-        for operation in Self::resolved_ability_layer_operations(permanent) {
+        for operation in self.resolved_ability_layer_operations(permanent) {
             Self::apply_ability_layer_operation(&mut abilities, &operation);
         }
         abilities

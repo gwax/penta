@@ -314,32 +314,36 @@ impl Game {
                 .battlefield
                 .iter()
                 .find(|permanent| permanent.card.id == id)
-                .map(|permanent| {
-                    (
-                        self.effective_permanent_name(permanent)
-                            .map_or_else(|| "Unknown permanent".into(), str::to_owned),
-                        Some((id, permanent.card.definition)),
-                        DecisionZone::Battlefield,
-                    )
-                })
-                .unwrap_or_else(|| ("Unknown permanent".into(), None, DecisionZone::Battlefield)),
+                .map_or_else(
+                    || ("Unknown permanent".into(), None, DecisionZone::Battlefield),
+                    |permanent| {
+                        (
+                            self.effective_permanent_name(permanent)
+                                .map_or_else(|| "Unknown permanent".into(), str::to_owned),
+                            Some((id, permanent.card.definition)),
+                            DecisionZone::Battlefield,
+                        )
+                    },
+                ),
             Target::Spell(id) => self
                 .stack
                 .iter()
                 .find(|candidate| candidate.id == id)
-                .map(|candidate| {
-                    (
-                        self.catalog
-                            .get(candidate.card.definition)
-                            .map_or_else(|| "Unknown spell".into(), |card| card.name.clone()),
-                        Some((id, candidate.card.definition)),
-                        DecisionZone::Stack,
-                    )
-                })
-                .unwrap_or_else(|| ("Unknown spell".into(), None, DecisionZone::Stack)),
-            Target::Card(id) => self
-                .card_in_nonbattlefield_zone(id)
-                .map(|(zone, card)| {
+                .map_or_else(
+                    || ("Unknown spell".into(), None, DecisionZone::Stack),
+                    |candidate| {
+                        (
+                            self.catalog
+                                .get(candidate.card.definition)
+                                .map_or_else(|| "Unknown spell".into(), |card| card.name.clone()),
+                            Some((id, candidate.card.definition)),
+                            DecisionZone::Stack,
+                        )
+                    },
+                ),
+            Target::Card(id) => self.card_in_nonbattlefield_zone(id).map_or_else(
+                || ("Unknown card".into(), None, DecisionZone::None),
+                |(zone, card)| {
                     (
                         self.catalog.get(card.definition).map_or_else(
                             || "Unknown card".into(),
@@ -348,8 +352,8 @@ impl Game {
                         Some((id, card.definition)),
                         decision_zone(zone),
                     )
-                })
-                .unwrap_or_else(|| ("Unknown card".into(), None, DecisionZone::None)),
+                },
+            ),
             Target::Player(player) => (
                 format!("Player {}", player.index() + 1),
                 None,

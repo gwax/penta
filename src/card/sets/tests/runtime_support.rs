@@ -239,8 +239,8 @@ fn resolving_effect_supports_while_source_tapped(effect: AppliedEffectDef) -> bo
                     .copied()
                     .all(resolving_effect_supports_while_source_tapped)
         }
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(_)) => true,
-        AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep) => true,
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(_))
+        | AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep) => true,
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
 }
@@ -270,11 +270,10 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
             | DeclarativeAbilityDef::SpecialAction(_)
             | DeclarativeAbilityDef::Legacy => false,
         },
-        AppliedEffectDef::Characteristic(_) => true,
         // Stack-object rules use `AppliedStackEffect`; every other typed rule
         // is stored on a permanent with this Apply's timestamp and duration.
         AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => false,
-        AppliedEffectDef::Rule(_) => true,
+        AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => true,
     }
 }
 

@@ -107,7 +107,7 @@ pub(super) fn damage_prevention_snapshot(
                 DamagePreventionCoverageSnapshot::HalfRoundedDown
             }
         },
-        gain_life: prevention.gain_life.map(|player| player.index()),
+        gain_life: prevention.gain_life.map(PlayerId::index),
         source_ability: event::ability_source_snapshot(prevention.source_ability),
         timestamp: prevention.timestamp.0,
         expiration: expiration_snapshot(prevention.expiration),

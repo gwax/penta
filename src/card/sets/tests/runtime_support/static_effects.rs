@@ -56,7 +56,12 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
             let battlefield_recipient_is_supported = match recipient.0 {
                 EffectRecipientSetDef::Objects(ObjectSetDef::One(
                     ObjectRefDef::Source | ObjectRefDef::AttachedToSource,
-                )) => true,
+                ))
+                | EffectRecipientSetDef::Players(
+                    PlayerSetDef::All
+                    | PlayerSetDef::One(PlayerRefDef::EffectController)
+                    | PlayerSetDef::Related(_),
+                ) => true,
                 EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
                     query.zones == [ZoneKind::Battlefield]
                         && shared_object_predicate(query.object)
@@ -74,18 +79,15 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                     | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::SharingNameWith(_),
                 )
-                | EffectRecipientSetDef::Players(PlayerSetDef::LegalTargets(_))
-                | EffectRecipientSetDef::Players(PlayerSetDef::One(
-                    PlayerRefDef::EventPlayer
-                    | PlayerRefDef::Target(_)
-                    | PlayerRefDef::ControllerOf(_)
-                    | PlayerRefDef::OwnerOf(_),
-                )) => false,
-                EffectRecipientSetDef::Players(
-                    PlayerSetDef::All
-                    | PlayerSetDef::One(PlayerRefDef::EffectController)
-                    | PlayerSetDef::Related(_),
-                ) => true,
+                | EffectRecipientSetDef::Players(
+                    PlayerSetDef::LegalTargets(_)
+                    | PlayerSetDef::One(
+                        PlayerRefDef::EventPlayer
+                        | PlayerRefDef::Target(_)
+                        | PlayerRefDef::ControllerOf(_)
+                        | PlayerRefDef::OwnerOf(_),
+                    ),
+                ) => false,
             };
             let battlefield_effect_is_supported = shared_static_applied_effect(recipient, effect);
             let battlefield_effect = battlefield_only(source_zones)
@@ -194,9 +196,6 @@ pub(in super::super) fn shared_static_applied_effect(
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
             AbilityOperationDef::Add(ability),
         )) => shared_definition_ability(ability),
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
-            AbilityOperationDef::Remove(_),
-        )) => true,
         // Static animation is deliberately narrower than resolving
         // characteristic changes: it may add the creature card type, may
         // repaint color, and must use a query that cannot read anything those
@@ -208,13 +207,15 @@ pub(in super::super) fn shared_static_applied_effect(
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
             SetOperationDef::Set(_),
         )) => shared_static_animation_query(recipient),
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
-            SetOperationDef::Remove(_) | SetOperationDef::Set(_),
-        ))
-        | AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
-            SetOperationDef::Add(_) | SetOperationDef::Remove(_),
-        ))
-        | AppliedEffectDef::Characteristic(CharacteristicOperationDef::CreatureTypes(_)) => false,
+        AppliedEffectDef::Characteristic(
+            CharacteristicOperationDef::CardTypes(
+                SetOperationDef::Remove(_) | SetOperationDef::Set(_),
+            )
+            | CharacteristicOperationDef::Colors(
+                SetOperationDef::Add(_) | SetOperationDef::Remove(_),
+            )
+            | CharacteristicOperationDef::CreatureTypes(_),
+        ) => false,
         // A blocking restriction is read off the ordinary static-effect walk
         // over the attacker, so a group recipient works exactly as a
         // self-applied one does: Bower Passage names every creature you
@@ -266,6 +267,9 @@ pub(in super::super) fn shared_static_applied_effect(
             matches!(recipient.0, EffectRecipientSetDef::Players(_))
                 && shared_object_predicate(restriction.object)
         }
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Remove(_),
+        )) => true,
         AppliedEffectDef::Rule(AppliedRuleDef::RedirectDamageFromTo { .. }) => false,
         AppliedEffectDef::Rule(_) => true,
     }

@@ -17,6 +17,7 @@ pub(super) struct DrawReplacement {
 /// Rules procedures that paused behind a decision and must finish before
 /// state-based actions, trigger placement, or priority.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[allow(clippy::large_enum_variant)]
 pub(super) enum PendingProcedure {
     DrawCards {
         player: PlayerId,

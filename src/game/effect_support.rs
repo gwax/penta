@@ -410,7 +410,6 @@ impl Game {
     }
 
     fn raw_target_reference(
-        &self,
         slot: TargetIndex,
         object: &StackObject,
         scoped: ScopedEffect,
@@ -435,7 +434,7 @@ impl Game {
                 .map(Target::Permanent),
             ObjectRefDef::Target(target) => {
                 let slot = scoped.target_slot(target);
-                self.raw_target_reference(target, object, scoped)
+                Self::raw_target_reference(target, object, scoped)
                     .filter(|target| !matches!(target, Target::Player(_)))
                     .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
             }
@@ -469,7 +468,7 @@ impl Game {
                 .and_then(|source| self.current_or_last_known_attached_host(source)),
             ObjectRefDef::Target(target) => {
                 let slot = scoped.target_slot(target);
-                self.raw_target_reference(target, object, scoped)
+                Self::raw_target_reference(target, object, scoped)
                     .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
                     .and_then(|target| match target {
                         Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(id),
@@ -504,22 +503,22 @@ impl Game {
             // the same resolving effect may ask who controlled or owned an
             // object that an earlier instruction already moved. Preserve the
             // announced target here and answer from last-known information.
-            PlayerRefDef::ControllerOf(ObjectRefDef::Target(target)) => self
-                .raw_target_reference(target, object, scoped)
-                .and_then(|target| match target {
+            PlayerRefDef::ControllerOf(ObjectRefDef::Target(target)) => {
+                Self::raw_target_reference(target, object, scoped).and_then(|target| match target {
                     Target::Player(player) => Some(player),
                     Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => {
                         self.current_or_last_known_controller(id)
                     }
-                }),
-            PlayerRefDef::OwnerOf(ObjectRefDef::Target(target)) => self
-                .raw_target_reference(target, object, scoped)
-                .and_then(|target| match target {
+                })
+            }
+            PlayerRefDef::OwnerOf(ObjectRefDef::Target(target)) => {
+                Self::raw_target_reference(target, object, scoped).and_then(|target| match target {
                     Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => {
                         self.current_or_last_known_owner(id)
                     }
                     Target::Player(_) => None,
-                }),
+                })
+            }
             PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject) => context
                 .trigger
                 .object
@@ -954,97 +953,6 @@ impl Game {
         )
         .contains(&target)
     }
-
-    pub(super) fn ability_target_uses_custom_predicate(predicate: AbilityTargetPredicate) -> bool {
-        match predicate {
-            AbilityTargetPredicate::AnyTarget
-            | AbilityTargetPredicate::PlayerOrPlaneswalker(_)
-            | AbilityTargetPredicate::ControlledByTargetOf { .. }
-            | AbilityTargetPredicate::Player(_) => false,
-            AbilityTargetPredicate::Object { object, .. } => {
-                Self::object_predicate_uses_custom_predicate(object)
-            }
-        }
-    }
-
-    pub(super) fn object_predicate_uses_custom_predicate(predicate: ObjectPredicateDef) -> bool {
-        match predicate {
-            ObjectPredicateDef::Special(_) => true,
-            ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
-                predicates
-                    .iter()
-                    .any(|predicate| Self::object_predicate_uses_custom_predicate(*predicate))
-            }
-            ObjectPredicateDef::Not(predicate) | ObjectPredicateDef::AttachedTo(predicate) => {
-                Self::object_predicate_uses_custom_predicate(*predicate)
-            }
-            ObjectPredicateDef::Any
-            | ObjectPredicateDef::Source
-            | ObjectPredicateDef::Token
-            | ObjectPredicateDef::HasType(_)
-            | ObjectPredicateDef::HasAnyBasicLandType(_)
-            | ObjectPredicateDef::Spell
-            | ObjectPredicateDef::NoncreatureSpell
-            | ObjectPredicateDef::Color(_)
-            | ObjectPredicateDef::ColorCount(_)
-            | ObjectPredicateDef::Subtype(_)
-            | ObjectPredicateDef::ManaValueAtMost(_)
-            | ObjectPredicateDef::ManaValueEqualTo(_)
-            | ObjectPredicateDef::ManaValueAtMostValue(_)
-            | ObjectPredicateDef::PowerAtLeast(_)
-            | ObjectPredicateDef::PowerExactly(_)
-            | ObjectPredicateDef::ToughnessExactly(_)
-            | ObjectPredicateDef::ToughnessLessThan(_)
-            | ObjectPredicateDef::PowerGreaterThan(_)
-            | ObjectPredicateDef::PowerLessThan(_)
-            | ObjectPredicateDef::ToughnessGreaterThan(_)
-            | ObjectPredicateDef::ControlledBy(_)
-            | ObjectPredicateDef::Supertype(_)
-            | ObjectPredicateDef::DebutSet(_)
-            | ObjectPredicateDef::SharesNameWithSource
-            | ObjectPredicateDef::AttackingOrBlocking
-            | ObjectPredicateDef::Tapped
-            | ObjectPredicateDef::Attacking
-            | ObjectPredicateDef::Blocking
-            | ObjectPredicateDef::BlockedBySource
-            | ObjectPredicateDef::Enchanted
-            | ObjectPredicateDef::AttachedToSource
-            | ObjectPredicateDef::AttackedThisTurn
-            | ObjectPredicateDef::HasKeyword(_)
-            | ObjectPredicateDef::HasCounter(_)
-            | ObjectPredicateDef::HasNonManaActivatedAbility => false,
-        }
-    }
 }
 
-/// One comparison, so a condition reads the same however it is counted.
-pub(super) fn compare<T: Ord>(left: &T, comparison: ComparisonDef, right: &T) -> bool {
-    match comparison {
-        ComparisonDef::Less => left < right,
-        ComparisonDef::LessOrEqual => left <= right,
-        ComparisonDef::Equal => left == right,
-        ComparisonDef::GreaterOrEqual => left >= right,
-        ComparisonDef::Greater => left > right,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::compare;
-    use crate::ComparisonDef;
-
-    #[test]
-    fn comparisons_follow_their_ordering_semantics() {
-        assert!(compare(&1, ComparisonDef::Less, &2));
-        assert!(compare(&2, ComparisonDef::LessOrEqual, &2));
-        assert!(compare(&2, ComparisonDef::Equal, &2));
-        assert!(compare(&2, ComparisonDef::GreaterOrEqual, &2));
-        assert!(compare(&3, ComparisonDef::Greater, &2));
-
-        assert!(!compare(&2, ComparisonDef::Less, &2));
-        assert!(!compare(&3, ComparisonDef::LessOrEqual, &2));
-        assert!(!compare(&3, ComparisonDef::Equal, &2));
-        assert!(!compare(&1, ComparisonDef::GreaterOrEqual, &2));
-        assert!(!compare(&2, ComparisonDef::Greater, &2));
-    }
-}
+include!("effect_support/custom_predicates.rs");

@@ -3,7 +3,7 @@ use super::*;
 use crate::card::{AppliedRuleDef, InstalledTriggerDef, PartitionItemsDef, SplitIntoPilesDef};
 use crate::{
     BattlefieldEntryModificationDef, CounterKind, DamageEventMatcherDef, ObjectSetBindingIndex,
-    ReplacementConditionDef, ZoneChangeEventMatcherDef,
+    ReplacementConditionDef, TargetIndex, ZoneChangeEventMatcherDef,
 };
 
 #[test]

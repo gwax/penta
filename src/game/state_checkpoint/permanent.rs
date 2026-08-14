@@ -10,7 +10,6 @@ pub(super) fn permanent_snapshot(
     let resolved_continuous_effects = permanent
         .resolved_continuous_effects
         .iter()
-        .copied()
         .filter_map(|effect| resolved_continuous_effect_snapshot(catalog, effect))
         .collect::<Vec<_>>();
     let has_unlocated_resolved_effect =
@@ -117,7 +116,7 @@ pub(super) fn permanent_snapshot(
 
 fn resolved_continuous_effect_snapshot(
     catalog: &CardCatalog,
-    effect: ResolvedContinuousEffect,
+    effect: &ResolvedContinuousEffect,
 ) -> Option<ResolvedContinuousEffectSnapshot> {
     Some(ResolvedContinuousEffectSnapshot {
         definition: resolved_applied_effect_locator(catalog, effect.source, effect.definition)?,
@@ -125,13 +124,13 @@ fn resolved_continuous_effect_snapshot(
         timestamp: effect.timestamp.0,
         component_order: effect.component_order,
         expiration: expiration_snapshot(effect.expiration),
-        operation: resolved_operation_snapshot(effect.definition, effect.kind)?,
+        operation: resolved_operation_snapshot(effect.definition, &effect.kind)?,
     })
 }
 
 fn resolved_operation_snapshot(
     definition: AppliedEffectDef,
-    kind: ResolvedContinuousEffectKind,
+    kind: &ResolvedContinuousEffectKind,
 ) -> Option<ResolvedContinuousOperationSnapshot> {
     match (definition, kind) {
         (
@@ -142,7 +141,7 @@ fn resolved_operation_snapshot(
                 ability,
                 grant,
             }),
-        ) if *expected == ability => {
+        ) if *expected == *ability => {
             Some(ResolvedContinuousOperationSnapshot::AbilityAdd { grant_id: grant.0 })
         }
         (
@@ -150,26 +149,26 @@ fn resolved_operation_snapshot(
                 AbilityOperationDef::Remove(expected),
             )),
             ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Remove(actual)),
-        ) if expected == actual => Some(ResolvedContinuousOperationSnapshot::AbilityRemove),
+        ) if expected == *actual => Some(ResolvedContinuousOperationSnapshot::AbilityRemove),
         (
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(expected)),
             ResolvedContinuousEffectKind::BasicLandTypes(actual),
-        ) => matching_set_operation(expected, actual)
+        ) => matching_set_operation(expected, *actual)
             .map(|operation| ResolvedContinuousOperationSnapshot::BasicLandTypes { operation }),
         (
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(expected)),
             ResolvedContinuousEffectKind::CardTypes(actual),
-        ) => matching_set_operation(expected, actual)
+        ) => matching_set_operation(expected, *actual)
             .map(|operation| ResolvedContinuousOperationSnapshot::CardTypes { operation }),
         (
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(expected)),
             ResolvedContinuousEffectKind::Colors(actual),
-        ) => matching_set_operation(expected, actual)
+        ) => matching_set_operation(expected, *actual)
             .map(|operation| ResolvedContinuousOperationSnapshot::Colors { operation }),
         (
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::CreatureTypes(expected)),
             ResolvedContinuousEffectKind::CreatureTypes(actual),
-        ) => matching_set_operation(expected, actual)
+        ) => matching_set_operation(expected, *actual)
             .map(|operation| ResolvedContinuousOperationSnapshot::CreatureTypes { operation }),
         (
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
@@ -178,9 +177,12 @@ fn resolved_operation_snapshot(
             ResolvedContinuousEffectKind::PowerToughness(
                 ResolvedPowerToughnessOperation::SetBase { power, toughness },
             ),
-        ) => Some(ResolvedContinuousOperationSnapshot::SetBasePowerToughness { power, toughness }),
+        ) => Some(ResolvedContinuousOperationSnapshot::SetBasePowerToughness {
+            power: *power,
+            toughness: *toughness,
+        }),
         (AppliedEffectDef::Rule(expected), ResolvedContinuousEffectKind::Rule(actual))
-            if expected == actual =>
+            if expected == *actual =>
         {
             Some(ResolvedContinuousOperationSnapshot::Rule)
         }
@@ -192,7 +194,10 @@ fn resolved_operation_snapshot(
                 power,
                 toughness,
             }),
-        ) => Some(ResolvedContinuousOperationSnapshot::ModifyPowerToughness { power, toughness }),
+        ) => Some(ResolvedContinuousOperationSnapshot::ModifyPowerToughness {
+            power: *power,
+            toughness: *toughness,
+        }),
         _ => None,
     }
 }
@@ -201,10 +206,10 @@ fn matching_set_operation<T: Copy + Eq>(
     expected: SetOperationDef<T>,
     actual: SetOperationDef<T>,
 ) -> Option<SetOperationSnapshot> {
-    (expected == actual).then(|| set_operation_snapshot(expected))
+    (expected == actual).then(|| set_operation_snapshot(&expected))
 }
 
-fn set_operation_snapshot<T>(operation: SetOperationDef<T>) -> SetOperationSnapshot {
+fn set_operation_snapshot<T>(operation: &SetOperationDef<T>) -> SetOperationSnapshot {
     match operation {
         SetOperationDef::Add(_) => SetOperationSnapshot::Add,
         SetOperationDef::Remove(_) => SetOperationSnapshot::Remove,

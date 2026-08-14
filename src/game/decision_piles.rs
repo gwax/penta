@@ -45,7 +45,7 @@ impl Game {
             .collect::<Vec<_>>();
         let mut options = self.card_decision_options(&eligible, DecisionZone::Library);
         for option in &mut options {
-            option.members = inspected.clone();
+            option.members.clone_from(&inspected);
         }
         let no_selection = options.is_empty();
         if no_selection {

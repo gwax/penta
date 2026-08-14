@@ -257,6 +257,7 @@ fn a_private_effect_choice_is_not_serialized_for_the_other_seat() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn a_public_effect_choice_cannot_retain_an_unexposed_hidden_object_id() {
     let mut game = crate::game::tests::ready_game();
     let viewer = PlayerId::One;
@@ -373,6 +374,7 @@ fn a_public_effect_choice_cannot_retain_an_unexposed_hidden_object_id() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn retained_trigger_state_never_serializes_unrebindable_hidden_object_ids() {
     let mut game = crate::game::tests::ready_game();
     let viewer = PlayerId::One;

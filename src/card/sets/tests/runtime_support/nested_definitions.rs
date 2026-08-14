@@ -14,6 +14,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
     }
 }
 
+#[allow(clippy::too_many_lines)]
 pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
     match event {
         TriggerEventDef::ZoneChanged(matcher) => {
@@ -69,21 +70,22 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                     .is_none_or(|maximum| matcher.declaration.minimum <= maximum)
                 && matcher.attack_number.is_none_or(|number| number > 0)
         }
-        TriggerEventDef::BecomesBlocked(object) => shared_object_predicate(object),
+        TriggerEventDef::BecomesBlocked(object) | TriggerEventDef::Transforms(object) => {
+            shared_object_predicate(object)
+        }
         TriggerEventDef::SpellCast(object) => {
             shared_object_predicate(object) && !trigger_predicate_requires_live_battlefield(object)
         }
         TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::StateCondition => true,
-        TriggerEventDef::Transforms(object) => shared_object_predicate(object),
         TriggerEventDef::DamageDealt(matcher) => {
             let source = match matcher.source {
                 DamageSourceMatcherDef::Matching(object) => {
                     shared_object_predicate(object)
                         && !trigger_predicate_requires_live_battlefield(object)
                 }
-                DamageSourceMatcherDef::Any => true,
+                DamageSourceMatcherDef::Any | DamageSourceMatcherDef::Group(_) => true,
                 DamageSourceMatcherDef::AffectedObject => false,
                 DamageSourceMatcherDef::Object(reference)
                 | DamageSourceMatcherDef::Except(reference) => matches!(
@@ -94,8 +96,6 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                 ),
             };
             let recipient = match matcher.recipient {
-                DamageRecipientMatcherDef::Any => true,
-                DamageRecipientMatcherDef::AffectedObject => false,
                 DamageRecipientMatcherDef::Recipients(EffectRecipientDef(
                     EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)),
                 )) => matches!(
@@ -104,10 +104,11 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                         | ObjectRefDef::AttachedToSource
                         | ObjectRefDef::TriggeringObject
                 ),
-                DamageRecipientMatcherDef::Recipients(EffectRecipientDef(
+                DamageRecipientMatcherDef::Any
+                | DamageRecipientMatcherDef::Recipients(EffectRecipientDef(
                     EffectRecipientSetDef::Players(_),
-                )) => true,
-                DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
+                ))
+                | DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
                     PlayerRefDef::EffectController | PlayerRefDef::EventPlayer,
                 ) => true,
                 DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
@@ -118,7 +119,8 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                         | ObjectRefDef::AttachedToSource
                         | ObjectRefDef::TriggeringObject
                 ),
-                DamageRecipientMatcherDef::Recipients(_)
+                DamageRecipientMatcherDef::AffectedObject
+                | DamageRecipientMatcherDef::Recipients(_)
                 | DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
                     PlayerRefDef::Target(_),
                 ) => false,

@@ -1,10 +1,10 @@
 use crate::card::{
-    AbilityDef, AbilityOperationDef, AppliedEffectDef, AppliedRuleDef, CharacteristicOperationDef,
-    DamageEventMatcherDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
-    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectRecipientSetDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, PowerToughnessOperationDef, SetOperationDef, TriggerConditionDef, ValueDef,
-    ZoneKind,
+    AbilityDef, AbilityOperationDef, AppliedEffectDef, AppliedRuleDef, CardType,
+    CharacteristicOperationDef, DamageEventMatcherDef, DamageRecipientMatcherDef,
+    DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
+    EffectRecipientSetDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, SetOperationDef,
+    TriggerConditionDef, ValueDef, ZoneKind,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -117,7 +117,7 @@ fn validate_static_effect(
         EffectDef::StaticApply { recipient, effect } => {
             validate_static_apply(source_zones, recipient, effect)
         }
-        EffectDef::CannotBeForcedToSacrifice
+        EffectDef::CannotBeForcedToSacrifice | EffectDef::LandwalkCanBeBlocked(_)
             if position == StaticPosition::Root && source_zones == [ZoneKind::Battlefield] =>
         {
             Ok(())
@@ -127,11 +127,6 @@ fn validate_static_effect(
                 && source_zones == [ZoneKind::Battlefield]
                 && query.zones == [ZoneKind::Battlefield]
                 && static_query_supported(*query) =>
-        {
-            Ok(())
-        }
-        EffectDef::LandwalkCanBeBlocked(_)
-            if position == StaticPosition::Root && source_zones == [ZoneKind::Battlefield] =>
         {
             Ok(())
         }
@@ -230,7 +225,19 @@ fn static_object_applied_effect_supported(
                     .copied()
                     .all(|effect| static_object_applied_effect_supported(recipient, effect))
         }
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(_)) => true,
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(_))
+        | AppliedEffectDef::Rule(
+            AppliedRuleDef::CannotBeEnchanted
+            | AppliedRuleDef::CannotBecomeEnchanted
+            | AppliedRuleDef::CannotAttack
+            | AppliedRuleDef::CannotBeBlocked
+            | AppliedRuleDef::CannotBlock
+            | AppliedRuleDef::CannotChangeController
+            | AppliedRuleDef::CannotRegenerate
+            | AppliedRuleDef::DoesNotUntapDuringUntapStep
+            | AppliedRuleDef::MayChooseNotToUntap
+            | AppliedRuleDef::RemainsAttachedThroughProtection,
+        ) => true,
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(operation)) => {
             match operation {
                 SetOperationDef::Add(types)
@@ -245,14 +252,27 @@ fn static_object_applied_effect_supported(
             static_power_toughness_value_supported(power)
                 && static_power_toughness_value_supported(toughness)
         }
-        // These operations are stored when an effect resolves, but the live
-        // static fixed-point calculation does not yet consume them.
+        // Static animation is deliberately narrower than resolving
+        // characteristic changes: it may add the creature card type, may
+        // repaint color, and must use a query that cannot read anything those
+        // operations supply. Static subtype changes remain outside this
+        // stratified walk.
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+            SetOperationDef::Add(types),
+        )) => types.contains(CardType::Creature) && static_animation_query_supported(recipient),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
+            SetOperationDef::Set(_),
+        )) => static_animation_query_supported(recipient),
         AppliedEffectDef::Characteristic(
-            CharacteristicOperationDef::CardTypes(_)
-            | CharacteristicOperationDef::Colors(_)
+            CharacteristicOperationDef::CardTypes(
+                SetOperationDef::Remove(_) | SetOperationDef::Set(_),
+            )
+            | CharacteristicOperationDef::Colors(
+                SetOperationDef::Add(_) | SetOperationDef::Remove(_),
+            )
             | CharacteristicOperationDef::CreatureTypes(_),
-        ) => false,
-        AppliedEffectDef::Rule(
+        )
+        | AppliedEffectDef::Rule(
             AppliedRuleDef::CannotBeCountered
             | AppliedRuleDef::CannotPlay(_)
             | AppliedRuleDef::RedirectDamageFromTo { .. },
@@ -269,21 +289,10 @@ fn static_object_applied_effect_supported(
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
             ) || recipient.object_query().is_some()
         }
-        AppliedEffectDef::Rule(
-            AppliedRuleDef::CannotBeEnchanted
-            | AppliedRuleDef::CannotBecomeEnchanted
-            | AppliedRuleDef::CannotAttack
-            | AppliedRuleDef::CannotBeBlocked
-            | AppliedRuleDef::CannotBlock
-            | AppliedRuleDef::CannotChangeController
-            | AppliedRuleDef::CannotRegenerate
-            | AppliedRuleDef::DoesNotUntapDuringUntapStep
-            | AppliedRuleDef::MayChooseNotToUntap
-            | AppliedRuleDef::RemainsAttachedThroughProtection,
-        ) => true,
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn validate_resolving_effect(
     effect: EffectDef,
     source_zones: &[ZoneKind],
@@ -369,6 +378,7 @@ fn validate_resolving_effect(
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Tap { .. }
+        | EffectDef::RemoveFromCombat { .. }
         | EffectDef::Untap { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
@@ -470,13 +480,37 @@ fn static_query_supported(query: ObjectQueryDef) -> bool {
         && static_object_predicate_supported(query.object)
 }
 
+fn static_animation_query_supported(recipient: EffectRecipientDef) -> bool {
+    recipient.object_query().is_some_and(|query| {
+        query.zones == [ZoneKind::Battlefield]
+            && static_query_supported(query)
+            && static_animation_predicate_supported(query.object)
+    })
+}
+
+fn static_animation_predicate_supported(predicate: ObjectPredicateDef) -> bool {
+    match predicate {
+        ObjectPredicateDef::Any
+        | ObjectPredicateDef::HasAnyBasicLandType(_)
+        | ObjectPredicateDef::HasType(CardType::Land) => true,
+        ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => predicates
+            .iter()
+            .copied()
+            .all(static_animation_predicate_supported),
+        ObjectPredicateDef::Not(predicate) => static_animation_predicate_supported(*predicate),
+        _ => false,
+    }
+}
+
 fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
     match predicate {
         ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => predicates
             .iter()
             .copied()
             .all(static_object_predicate_supported),
-        ObjectPredicateDef::Not(predicate) => static_object_predicate_supported(*predicate),
+        ObjectPredicateDef::Not(predicate) | ObjectPredicateDef::AttachedTo(predicate) => {
+            static_object_predicate_supported(*predicate)
+        }
         ObjectPredicateDef::ControlledBy(relation) => static_player_relation_supported(relation),
         ObjectPredicateDef::ManaValueEqualTo(value)
         | ObjectPredicateDef::ManaValueAtMostValue(value)
@@ -529,6 +563,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         ValueDef::CountMatchingObjects(query) | ValueDef::AnyMatchingObject(query) => {
             static_query_supported(*query)
         }
+        ValueDef::Scaled(scaled) => static_power_toughness_value_supported(scaled.value),
         ValueDef::ChosenX
         | ValueDef::SourcePower
         | ValueDef::SourceToughness
@@ -536,7 +571,6 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::TriggerEventAmount
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::Negate(_)
-        | ValueDef::Scaled(_)
         | ValueDef::IfCreatureDiedThisTurn(_)
         | ValueDef::IfTargetMatches(_)
         | ValueDef::IfMatchingObjectCount(_)
@@ -594,7 +628,9 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
 
 fn static_damage_matcher_supported(matcher: DamageEventMatcherDef) -> bool {
     let source = match matcher.source {
-        DamageSourceMatcherDef::Any | DamageSourceMatcherDef::AffectedObject => true,
+        DamageSourceMatcherDef::Any
+        | DamageSourceMatcherDef::Group(_)
+        | DamageSourceMatcherDef::AffectedObject => true,
         DamageSourceMatcherDef::Object(reference) | DamageSourceMatcherDef::Except(reference) => {
             static_damage_object_reference_supported(reference)
         }
@@ -638,6 +674,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::LoseLife { .. } => "LoseLife",
         EffectDef::LoseTheGame { .. } => "LoseTheGame",
         EffectDef::Tap { .. } => "Tap",
+        EffectDef::RemoveFromCombat { .. } => "RemoveFromCombat",
         EffectDef::Untap { .. } => "Untap",
         EffectDef::CreateToken { .. } => "CreateToken",
         EffectDef::CreateTokenCopyOf { .. } => "CreateTokenCopyOf",

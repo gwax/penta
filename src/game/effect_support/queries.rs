@@ -107,6 +107,7 @@ impl Game {
         .is_break()
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(in crate::game) fn visit_objects_matching_query_with_prospective(
         &self,
         query: ObjectQueryDef,
@@ -200,6 +201,7 @@ impl Game {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn visit_objects_matching_query_with_context(
         &self,
         query: ObjectQueryDef,

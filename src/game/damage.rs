@@ -13,6 +13,16 @@ use super::{
     Target, TriggerEventObject,
 };
 
+#[derive(Clone, Copy)]
+struct ProspectiveDamage<'a> {
+    source: Option<GameObjectId>,
+    source_object: Option<&'a TriggerEventObject>,
+    source_is_spell: bool,
+    target: Option<Target>,
+    recipient_object: Option<&'a TriggerEventObject>,
+    combat: bool,
+}
+
 impl Game {
     pub(super) fn damage_target(&mut self, target: Option<Target>, amount: u16) -> u16 {
         self.damage_target_from(None, target, amount)
@@ -24,15 +34,10 @@ impl Game {
     /// is spent even when half of one damage rounds down to zero.
     fn apply_resolved_damage_prevention(
         &mut self,
-        source: Option<GameObjectId>,
-        source_object: Option<&TriggerEventObject>,
-        source_is_spell: bool,
-        target: Option<Target>,
-        recipient_object: Option<&TriggerEventObject>,
+        event: ProspectiveDamage<'_>,
         amount: u16,
-        combat: bool,
     ) -> u16 {
-        if amount == 0 || target.is_none() {
+        if amount == 0 || event.target.is_none() {
             return amount;
         }
 
@@ -44,17 +49,7 @@ impl Game {
         let mut gained_life = Vec::new();
 
         for prevention in &mut preventions {
-            if left == 0
-                || !self.resolved_damage_prevention_matches(
-                    prevention,
-                    source,
-                    source_object,
-                    source_is_spell,
-                    target,
-                    recipient_object,
-                    combat,
-                )
-            {
+            if left == 0 || !self.resolved_damage_prevention_matches(prevention, event) {
                 continue;
             }
             let prevented = match &mut prevention.capacity {
@@ -93,15 +88,8 @@ impl Game {
                 if !matches!(
                     prevention.capacity,
                     ResolvedDamagePreventionCapacity::Unlimited
-                ) || !self.resolved_damage_prevention_matches(
-                    prevention,
-                    source,
-                    source_object,
-                    source_is_spell,
-                    target,
-                    recipient_object,
-                    combat,
-                ) {
+                ) || !self.resolved_damage_prevention_matches(prevention, event)
+                {
                     continue;
                 }
                 let prevented = Self::damage_covered(prevention.coverage, left);
@@ -131,24 +119,19 @@ impl Game {
     fn resolved_damage_prevention_matches(
         &self,
         prevention: &ResolvedDamagePrevention,
-        source: Option<GameObjectId>,
-        source_object: Option<&TriggerEventObject>,
-        source_is_spell: bool,
-        target: Option<Target>,
-        recipient_object: Option<&TriggerEventObject>,
-        combat: bool,
+        event: ProspectiveDamage<'_>,
     ) -> bool {
-        (!prevention.combat_only || combat)
+        (!prevention.combat_only || event.combat)
             && self.resolved_damage_source_matches(
                 prevention.source,
-                source,
-                source_object,
-                source_is_spell,
+                event.source,
+                event.source_object,
+                event.source_is_spell,
             )
-            && self.resolved_damage_recipient_matches(
+            && Self::resolved_damage_recipient_matches(
                 prevention.recipient,
-                target,
-                recipient_object,
+                event.target,
+                event.recipient_object,
             )
     }
 
@@ -176,7 +159,6 @@ impl Game {
     }
 
     fn resolved_damage_recipient_matches(
-        &self,
         matcher: ResolvedDamageRecipientMatcher,
         target: Option<Target>,
         recipient_object: Option<&TriggerEventObject>,
@@ -203,37 +185,22 @@ impl Game {
     /// its affected object. A departed damage source is still represented by
     /// its last-known characteristics when a live recipient's predicate asks
     /// what dealt the damage.
-    fn static_damage_is_prevented(
-        &self,
-        source: Option<GameObjectId>,
-        source_object: Option<&TriggerEventObject>,
-        source_is_spell: bool,
-        target: Option<Target>,
-        recipient_object: Option<&TriggerEventObject>,
-        combat: bool,
-    ) -> bool {
-        let target_permanent = target.and_then(|target| match target {
+    fn static_damage_is_prevented(&self, event: ProspectiveDamage<'_>) -> bool {
+        let target_permanent = event.target.and_then(|target| match target {
             Target::Permanent(id) => self
                 .battlefield
                 .iter()
                 .find(|permanent| permanent.card.id == id),
             Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
         });
-        if target_permanent.is_some_and(|affected| {
-            self.static_damage_is_prevented_on(
-                affected,
-                source,
-                source_object,
-                source_is_spell,
-                target,
-                recipient_object,
-                combat,
-            )
-        }) {
+        if target_permanent
+            .is_some_and(|affected| self.static_damage_is_prevented_on(affected, event))
+        {
             return true;
         }
 
-        source
+        event
+            .source
             .and_then(|source| {
                 self.battlefield
                     .iter()
@@ -242,28 +209,13 @@ impl Game {
             .filter(|affected| {
                 target_permanent.is_none_or(|target| target.card.id != affected.card.id)
             })
-            .is_some_and(|affected| {
-                self.static_damage_is_prevented_on(
-                    affected,
-                    source,
-                    source_object,
-                    source_is_spell,
-                    target,
-                    recipient_object,
-                    combat,
-                )
-            })
+            .is_some_and(|affected| self.static_damage_is_prevented_on(affected, event))
     }
 
     fn static_damage_is_prevented_on(
         &self,
         affected: &Permanent,
-        source: Option<GameObjectId>,
-        source_object: Option<&TriggerEventObject>,
-        source_is_spell: bool,
-        target: Option<Target>,
-        recipient_object: Option<&TriggerEventObject>,
-        combat: bool,
+        event: ProspectiveDamage<'_>,
     ) -> bool {
         self.visit_applied_rules(affected, |applied| {
             if matches!(applied.rule, AppliedRuleDef::PreventDamage(matcher)
@@ -271,12 +223,7 @@ impl Game {
                 matcher,
                 applied.source,
                 affected.card.id,
-                source,
-                source_object,
-                source_is_spell,
-                target,
-                recipient_object,
-                combat,
+                event,
             )) {
                 ControlFlow::Break(())
             } else {
@@ -286,53 +233,49 @@ impl Game {
         .is_break()
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn static_damage_matcher_matches(
         &self,
         matcher: DamageEventMatcherDef,
         effect_source: GameObjectId,
         affected: GameObjectId,
-        source: Option<GameObjectId>,
-        source_object: Option<&TriggerEventObject>,
-        source_is_spell: bool,
-        target: Option<Target>,
-        recipient_object: Option<&TriggerEventObject>,
-        combat: bool,
+        event: ProspectiveDamage<'_>,
     ) -> bool {
-        (matcher.kind == DamageKindDef::Any || combat)
+        (matcher.kind == DamageKindDef::Any || event.combat)
             && match matcher.source {
                 DamageSourceMatcherDef::Any => true,
-                DamageSourceMatcherDef::AffectedObject => source == Some(affected),
+                DamageSourceMatcherDef::AffectedObject => event.source == Some(affected),
                 DamageSourceMatcherDef::Object(reference) => self
                     .static_object_reference(reference, effect_source)
-                    .is_some_and(|expected| source == Some(expected)),
+                    .is_some_and(|expected| event.source == Some(expected)),
                 DamageSourceMatcherDef::Except(reference) => self
                     .static_object_reference(reference, effect_source)
-                    .is_some_and(|excluded| source != Some(excluded)),
+                    .is_some_and(|excluded| event.source != Some(excluded)),
                 DamageSourceMatcherDef::Matching(predicate) => {
-                    source_object.is_some_and(|source| {
+                    event.source_object.is_some_and(|source| {
                         self.trigger_object_matches(
                             predicate,
                             source,
                             effect_source,
-                            source_is_spell,
+                            event.source_is_spell,
                         )
                     })
                 }
-                DamageSourceMatcherDef::Group(group) => source.is_some_and(|source| {
+                DamageSourceMatcherDef::Group(group) => event.source.is_some_and(|source| {
                     self.damage_source_is_in_group(source, Self::relational_source_filter(group))
                 }),
             }
             && match matcher.recipient {
-                DamageRecipientMatcherDef::Any => target.is_some(),
-                DamageRecipientMatcherDef::AffectedObject => {
-                    recipient_object.is_some_and(|recipient| recipient.id == affected)
-                }
+                DamageRecipientMatcherDef::Any => event.target.is_some(),
+                DamageRecipientMatcherDef::AffectedObject => event
+                    .recipient_object
+                    .is_some_and(|recipient| recipient.id == affected),
                 DamageRecipientMatcherDef::Recipients(recipients) => recipients
                     .object_reference()
                     .and_then(|reference| self.static_object_reference(reference, effect_source))
                     .is_some_and(|recipient| {
-                        recipient_object.is_some_and(|object| object.id == recipient)
+                        event
+                            .recipient_object
+                            .is_some_and(|object| object.id == recipient)
                     }),
                 DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(_) => false,
             }
@@ -477,6 +420,7 @@ impl Game {
         target
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(super) fn damage_target_from_kind(
         &mut self,
         source: Option<GameObjectId>,
@@ -503,33 +447,30 @@ impl Game {
             Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
         });
         let source_colors = source.map_or([false; 5], |source| self.object_colors(source));
-        let amount = self.apply_resolved_damage_prevention(
+        let event = ProspectiveDamage {
             source,
-            source_object.as_ref(),
+            source_object: source_object.as_ref(),
             source_is_spell,
             target,
-            recipient_object.as_ref(),
-            amount,
+            recipient_object: recipient_object.as_ref(),
             combat,
-        );
+        };
+        let amount = self.apply_resolved_damage_prevention(event, amount);
         if amount == 0 {
             return 0;
         }
-        if self.static_damage_is_prevented(
-            source,
-            source_object.as_ref(),
-            source_is_spell,
-            target,
-            recipient_object.as_ref(),
-            combat,
-        ) || target.is_some_and(|target| match target {
-            Target::Permanent(id) => self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == id)
-                .is_some_and(|permanent| self.is_protected_from_colors(permanent, source_colors)),
-            Target::Player(_) | Target::Card(_) | Target::Spell(_) => false,
-        }) {
+        if self.static_damage_is_prevented(event)
+            || target.is_some_and(|target| match target {
+                Target::Permanent(id) => self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == id)
+                    .is_some_and(|permanent| {
+                        self.is_protected_from_colors(permanent, source_colors)
+                    }),
+                Target::Player(_) | Target::Card(_) | Target::Spell(_) => false,
+            })
+        {
             return 0;
         }
         let source_has_keyword = |keyword: KeywordAbility| {

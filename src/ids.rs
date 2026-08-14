@@ -310,7 +310,10 @@ mod tests {
         for index in 0..ObjectBindingIndex::COUNT {
             let binding = ObjectBindingIndex::from_index(index).expect("supported binding index");
             assert_eq!(binding.index(), index);
-            assert_eq!(ObjectBindingIndex::new(index as u8), binding);
+            assert_eq!(
+                ObjectBindingIndex::new(u8::try_from(index).expect("binding index fits in u8")),
+                binding
+            );
         }
 
         assert_eq!(
@@ -329,7 +332,10 @@ mod tests {
             let binding =
                 ObjectSetBindingIndex::from_index(index).expect("supported binding index");
             assert_eq!(binding.index(), index);
-            assert_eq!(ObjectSetBindingIndex::new(index as u8), binding);
+            assert_eq!(
+                ObjectSetBindingIndex::new(u8::try_from(index).expect("binding index fits in u8"),),
+                binding
+            );
         }
 
         assert_eq!(

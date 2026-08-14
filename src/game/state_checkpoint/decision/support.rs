@@ -6,6 +6,7 @@ use super::*;
 use crate::game::ResolvedEffectPayment;
 use crate::game::{ApplicableZoneMoveReplacement, PendingBattlefieldExitBatch};
 
+#[allow(clippy::too_many_lines)]
 pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
     continuation: &DecisionContinuation,
 ) -> Vec<GameObjectId> {
@@ -33,7 +34,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             ..
         } => {
             extend_stack_continuation_ids(&mut ids, object, context);
-            ids.extend(candidates.iter().filter_map(target_object_id));
+            ids.extend(candidates.iter().copied().filter_map(target_object_id));
         }
         DecisionContinuation::SplitForEffect {
             object,
@@ -42,7 +43,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             ..
         } => {
             extend_stack_continuation_ids(&mut ids, object, context);
-            ids.extend(items.iter().filter_map(target_object_id));
+            ids.extend(items.iter().copied().filter_map(target_object_id));
         }
         DecisionContinuation::ChoosePileForEffect {
             object,
@@ -52,7 +53,13 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             ..
         } => {
             extend_stack_continuation_ids(&mut ids, object, context);
-            ids.extend(first.iter().chain(second).filter_map(target_object_id));
+            ids.extend(
+                first
+                    .iter()
+                    .chain(second)
+                    .copied()
+                    .filter_map(target_object_id),
+            );
         }
         DecisionContinuation::ChainLightning { spell, .. }
         | DecisionContinuation::Fork { spell, .. } => {
@@ -187,10 +194,10 @@ fn extend_pending_trigger_ids(ids: &mut Vec<GameObjectId>, trigger: &PendingTrig
     ids.extend(resolution_context_referenced_object_ids(&trigger.context));
 }
 
-fn target_object_id(target: &Target) -> Option<GameObjectId> {
+fn target_object_id(target: Target) -> Option<GameObjectId> {
     match target {
         Target::Player(_) => None,
-        Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
+        Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(id),
     }
 }
 

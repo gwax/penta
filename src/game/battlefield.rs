@@ -690,7 +690,7 @@ impl Game {
                 object,
                 context,
                 effects,
-            } => self.resolve_effect_defs(effects, &object, context),
+            } => self.resolve_effect_defs(effects, &object, &context),
             BattlefieldExitCompletion::FinishStackResolution { object, resolved } => {
                 self.finish_stack_resolution(*object, resolved);
             }

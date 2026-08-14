@@ -126,6 +126,7 @@ pub enum GrantedAbilityValidationError {
 }
 
 impl fmt::Display for GrantedAbilityValidationError {
+    #[allow(clippy::too_many_lines)]
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TooManyGrantSites { count } => write!(

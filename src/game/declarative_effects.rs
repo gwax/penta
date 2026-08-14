@@ -311,7 +311,7 @@ impl Game {
                 self.resolve_tap_effect(scoped, object, &context);
             }
             EffectDef::RemoveFromCombat { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Permanent(permanent) = target {
                         self.remove_permanent_from_combat(permanent);
                     }

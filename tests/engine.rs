@@ -699,7 +699,7 @@ fn aura_sequence_attaches_to_its_indexed_semantic_target() {
     use penta::{
         AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardComposition,
         CardRules, CardType, EffectDef, EffectRecipientDef, ManaCost, ObjectPredicateDef,
-        ResolvedEffectDurationDef, TargetIndex, ZoneKind,
+        TargetIndex, ZoneKind,
     };
 
     const MOUNTAIN: CardDefinitionId = CardDefinitionId(1);

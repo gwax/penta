@@ -241,7 +241,7 @@ fn lexical_target_referenced_object_ids(payload: &StackAbilityPayload) -> Vec<Ga
         .targets
         .iter()
         .filter(|selection| payload.target_defs.get(selection.slot().index()).is_none())
-        .flat_map(|selection| selection.targets())
+        .flat_map(TargetSelection::targets)
         .filter_map(|target| match target {
             Target::Player(_) => None,
             Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
@@ -269,7 +269,7 @@ pub(super) fn target_selections_referenced_object_ids(
 ) -> Vec<GameObjectId> {
     selections
         .iter()
-        .flat_map(|selection| selection.targets())
+        .flat_map(TargetSelection::targets)
         .filter_map(|target| match target {
             Target::Player(_) => None,
             Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
