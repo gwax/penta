@@ -547,8 +547,33 @@ pub(in crate::card::sets) static TRAINED_CARACAL: CardRecord = keyword_creature(
     abilities::lifelink(),
 );
 
+static TROSTANIS_JUDGMENT_EFFECTS: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Exile,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+    abilities::populate(),
+];
+
 // RTR 28 — Trostani's Judgment
-// Audit: blocked — Populate needs choosing a creature token and creating a copy of it.
+pub(in crate::card::sets) static TROSTANIS_JUDGMENT: CardRecord = CardRecord::new(
+    cards::TROSTANIS_JUDGMENT,
+    "Trostani's Judgment",
+    CardArt::new(
+        "d707bdb1-1f8c-4cc0-be01-496f3f03b878",
+        "Christopher Moeller",
+    ),
+    CardSet::ReturnToRavnica,
+    CardRules::new_instant(mana_cost!("{5}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Exile target creature, then populate.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&TROSTANIS_JUDGMENT_EFFECTS),
+    )),
+);
 
 // RTR 29 — Aquus Steed
 pub(in crate::card::sets) static AQUUS_STEED: CardRecord = CardRecord::new(
@@ -2442,8 +2467,25 @@ pub(in crate::card::sets) static GOBBLING_OOZE: CardRecord = CardRecord::new(
 // RTR 127 — Golgari Decoy
 // Audit: blocked — Needs a forced-block requirement for every able creature, in addition to scavenge's graveyard activation.
 
+static HORNCALLERS_CHANT_EFFECTS: [EffectDef; 2] = [
+    EffectDef::CreateToken {
+        token: cards::RHINO_TOKEN_4_4_GREEN,
+        count: ValueDef::Constant(1),
+    },
+    abilities::populate(),
+];
+
 // RTR 128 — Horncaller's Chant
-// Audit: blocked — Populate needs choosing a creature token and creating a copy of it after the fixed Rhino token.
+pub(in crate::card::sets) static HORNCALLERS_CHANT: CardRecord = CardRecord::new(
+    cards::HORNCALLERS_CHANT,
+    "Horncaller's Chant",
+    CardArt::new("7b8d33ed-9ca2-41d1-ba35-fdeb5b88ad44", "Eric Velhagen"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_sorcery(mana_cost!("{7}{G}")).with_ability(AbilityDef::spell(
+        "Create a 4/4 green Rhino creature token with trample, then populate.",
+        EffectDef::Sequence(&HORNCALLERS_CHANT_EFFECTS),
+    )),
+);
 
 // RTR 129 — Korozda Monitor
 pub(in crate::card::sets) static KOROZDA_MONITOR: CardRecord = CardRecord::new(
@@ -2930,8 +2972,25 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
     ]),
 );
 
+static COURSERS_ACCORD_EFFECTS: [EffectDef; 2] = [
+    EffectDef::CreateToken {
+        token: cards::CENTAUR_TOKEN_3_3_GREEN,
+        count: ValueDef::Constant(1),
+    },
+    abilities::populate(),
+];
+
 // RTR 154 — Coursers' Accord
-// Audit: blocked — Populate needs choosing a creature token and creating a copy of it after the fixed Centaur token.
+pub(in crate::card::sets) static COURSERS_ACCORD: CardRecord = CardRecord::new(
+    cards::COURSERS_ACCORD,
+    "Coursers' Accord",
+    CardArt::new("f027ceb0-5d2b-4cf6-87ad-e6b9b1e20634", "Nils Hamm"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_sorcery(mana_cost!("{4}{G}{W}")).with_ability(AbilityDef::spell(
+        "Create a 3/3 green Centaur creature token, then populate.",
+        EffectDef::Sequence(&COURSERS_ACCORD_EFFECTS),
+    )),
+);
 
 // RTR 155 — Detention Sphere
 pub(in crate::card::sets) static DETENTION_SPHERE: CardRecord = CardRecord::new(
@@ -4698,6 +4757,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SUNSPIRE_GRIFFIN,
     &SWIFT_JUSTICE,
     &TRAINED_CARACAL,
+    &TROSTANIS_JUDGMENT,
     &AQUUS_STEED,
     &BLUSTERSQUALL,
     &CANCEL,
@@ -4770,6 +4830,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRUDGE_BEETLE,
     &GATECREEPER_VINE,
     &GOBBLING_OOZE,
+    &HORNCALLERS_CHANT,
     &KOROZDA_MONITOR,
     &RUBBLEBACK_RHINO,
     &SAVAGE_SURGE,
@@ -4788,6 +4849,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COLLECTIVE_BLESSING,
     &COMMON_BOND,
     &COUNTERFLUX,
+    &COURSERS_ACCORD,
     &DETENTION_SPHERE,
     &DRAMATIC_RESCUE,
     &DREADBORE,

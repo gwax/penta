@@ -98,6 +98,34 @@ fn nothing_to_copy_is_not_a_failure() {
     );
 }
 
+/// A card that makes a token and then populates copies the one it just made,
+/// which is the ordering the word "then" carries.
+#[test]
+fn making_a_token_first_gives_populate_something_to_copy() {
+    let mut game = ready_game();
+    let spell = card(10_000, cards::COURSERS_ACCORD, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.green = 1;
+    game.players[PlayerId::One.index()].mana_pool.white = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 4;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell_id))
+        .expect("it can be cast");
+    game.apply(PlayerId::One, action)
+        .expect("the spell is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        tokens_of(&game, cards::CENTAUR_TOKEN_3_3_GREEN),
+        2,
+        "one made, then one copied from it"
+    );
+}
+
 #[test]
 fn every_populate_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -105,6 +133,9 @@ fn every_populate_identity_reports_complete_coverage() {
         cards::EYES_IN_THE_SKIES,
         cards::ROOTBORN_DEFENSES,
         cards::GROWING_RANKS,
+        cards::TROSTANIS_JUDGMENT,
+        cards::HORNCALLERS_CHANT,
+        cards::COURSERS_ACCORD,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
