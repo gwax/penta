@@ -8,8 +8,8 @@ use super::{
     AlternativeCastKindDef, AlternativeCastManaCostDef, CardBehavior, DeclarativeAbilityDef,
     EffectDef, EffectExecutionDef, ImplementationStatus, KeywordAbility, ManaCost,
     ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
-    SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, StaticAbilityDef,
-    TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, ZoneKind,
+    SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, SpellResolutionDestinationDef,
+    StaticAbilityDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, ZoneKind,
 };
 
 /// One printed rules clause and its implementation.
@@ -63,6 +63,25 @@ impl AbilityDef {
             DeclarativeAbilityDef::Spell(SpellAbilityDef::new().with_targets(targets)),
             effect,
         )
+    }
+
+    /// Declares where this spell's card goes after successful resolution.
+    /// Flashback still replaces that move with exile.
+    ///
+    /// # Panics
+    ///
+    /// Panics when called on an ability that is not a spell.
+    #[must_use]
+    pub const fn with_resolution_destination(
+        mut self,
+        destination: SpellResolutionDestinationDef,
+    ) -> Self {
+        let DeclarativeAbilityDef::Spell(spell) = self.definition else {
+            panic!("a resolution destination belongs on a spell")
+        };
+        self.definition =
+            DeclarativeAbilityDef::Spell(spell.with_resolution_destination(destination));
+        self
     }
 
     /// A one-target counterspell. The effect recipient is derived from the

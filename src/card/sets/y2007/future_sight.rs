@@ -2,11 +2,41 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
-    CreatureStats, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, abilities, cards,
+    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules,
+    CardSet, CardType, CounterKind, CreatureStats, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ResolvedEffectDurationDef, SpellResolutionDestinationDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+static REALITY_STROBE_TIME_COUNTERS: [(CounterKind, u16); 1] = [(CounterKind::Time, 3)];
+
+// FUT 43 — Reality Strobe
+// Audit: partial — Its spell effect and self-exile with time counters are executable, but suspend's upkeep counter removal and free cast from exile need the shared exile-casting lifecycle.
+pub(in crate::card::sets) static REALITY_STROBE: CardRecord = CardRecord::new(
+    cards::REALITY_STROBE,
+    "Reality Strobe",
+    CardArt::new("8e6d881a-f7b1-471f-bc0b-64a79bb491c9", "Dan Murayama Scott"),
+    CardSet::FutureSight,
+    CardRules::new_sorcery(mana_cost!("{4}{U}{U}")).with_ability(
+        AbilityDef::spell_with_targets(
+            "Return target permanent to its owner's hand. Exile Reality Strobe with three time counters on it.\n\nSuspend 3—{2}{U} (Rather than cast this card from your hand, you may pay {2}{U} and exile it with three time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)",
+            &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::Any)],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+                controller: None,
+            },
+        )
+        .with_resolution_destination(SpellResolutionDestinationDef::ExileWithCounters(
+            &REALITY_STROBE_TIME_COUNTERS,
+        ))
+        .with_coverage(AbilityCoverageDef::partial(
+            "Suspend's upkeep counter removal and free cast from exile need the shared exile-casting lifecycle.",
+        )),
+    ),
+);
 
 // FUT 167 — Darksteel Garrison
 pub(in crate::card::sets) static DARKSTEEL_GARRISON: CardRecord = CardRecord::new(
@@ -62,6 +92,7 @@ pub(in crate::card::sets) static DRYAD_ARBOR: CardRecord = CardRecord::new(
         .printed_colors(&[ManaColor::Green]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&DARKSTEEL_GARRISON, &DRYAD_ARBOR];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&REALITY_STROBE, &DARKSTEEL_GARRISON, &DRYAD_ARBOR];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

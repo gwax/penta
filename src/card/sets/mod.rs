@@ -22,6 +22,7 @@ mod y2011;
 mod y2012;
 mod y2013;
 mod y2014;
+mod y2015;
 mod y2021;
 mod y2022;
 mod y2024;
@@ -262,6 +263,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::KhansOfTarkir,
         y2014::khans_of_tarkir::CARDS,
         y2014::khans_of_tarkir::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::DragonsOfTarkir,
+        y2015::dragons_of_tarkir::CARDS,
+        y2015::dragons_of_tarkir::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::ModernHorizons2,

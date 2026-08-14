@@ -4,6 +4,7 @@ use super::{
     EntryCompletion, Game, GameEvent, GameObjectId, PendingBattlefieldEntry, Permanent, PlayerId,
     ResolvedAbility, StackAbilityResolver, StackObject, StackObjectKind, Target, ZoneKind,
 };
+use crate::SpellResolutionDestinationDef;
 
 impl Game {
     pub(super) fn pass_priority(&mut self, _player: PlayerId) {
@@ -38,7 +39,7 @@ impl Game {
                 if self.defer_stack_resolution(pending_before, &object, resolved) {
                     return;
                 }
-                self.finish_stack_resolution(object, resolved);
+                self.finish_stack_resolution(&object, resolved);
                 return;
             }
             StackObjectKind::Spell => {}
@@ -85,7 +86,9 @@ impl Game {
                 },
             });
             return;
-        } else if aura_fizzles || self.spell_fizzles(&object) {
+        }
+        let spell_fizzled = aura_fizzles || self.spell_fizzles(&object);
+        if spell_fizzled {
             // 608.2b: a spell whose targets are all illegal on resolution does
             // nothing at all — a second Counterspell aimed at the same target
             // arrives to find it gone and goes to the graveyard spent.
@@ -106,10 +109,10 @@ impl Game {
                 return;
             }
         }
-        self.finish_stack_resolution(object, true);
+        self.finish_stack_resolution(&object, !spell_fizzled);
     }
 
-    pub(super) fn finish_stack_resolution(&mut self, object: StackObject, resolved: bool) {
+    pub(super) fn finish_stack_resolution(&mut self, object: &StackObject, resolved: bool) {
         let definition = object.card.definition;
         match object.kind {
             StackObjectKind::ActivatedAbility => {
@@ -159,28 +162,80 @@ impl Game {
             .behavior(definition)
             .unwrap_or(CardBehavior::Unsupported);
         let spell_types = self
-            .stack_spell_types(&object)
+            .stack_spell_types(object)
             .unwrap_or_else(|| behavior.types());
         let aura_fizzles = spell_types.is_permanent()
-            && Self::aura_host_for(&object).is_some()
-            && self.spell_fizzles(&object);
+            && Self::aura_host_for(object).is_some()
+            && self.spell_fizzles(object);
         let card_id = object.id;
-        if (!spell_types.is_permanent() || aura_fizzles) && !object.is_copy {
-            let owner = object.card.owner;
-            // A flashback spell exiles itself instead of returning to the
-            // graveyard it was cast from, which is what keeps it from being
-            // flashed back again.
-            let (card, _zone_change) = self.zone_change_card(object.card);
-            if object.cast_via_flashback || behavior == CardBehavior::Recall {
-                self.players[owner.index()].exile.push(card);
-            } else {
-                self.put_card_into_graveyard(owner, card);
-            }
+        if !spell_types.is_permanent() || aura_fizzles {
+            self.finish_spell_destination(object, behavior, resolved);
         }
         self.events.push(GameEvent::SpellResolved {
             card: card_id,
             definition,
         });
+    }
+
+    fn finish_spell_destination(
+        &mut self,
+        object: &StackObject,
+        behavior: CardBehavior,
+        resolved: bool,
+    ) {
+        let owner = object.card.owner;
+        let destination = if resolved {
+            object
+                .ability
+                .as_ref()
+                .and_then(|ability| ability.definition.as_deref())
+                .and_then(|ability| match ability.definition {
+                    crate::card::DeclarativeAbilityDef::Spell(spell) => {
+                        Some(spell.resolution_destination())
+                    }
+                    _ => None,
+                })
+                .unwrap_or(SpellResolutionDestinationDef::Graveyard)
+        } else {
+            SpellResolutionDestinationDef::Graveyard
+        };
+        if object.is_copy {
+            // A copy has no card to move, but "shuffle it into its owner's
+            // library" still instructs its controller to shuffle.
+            if destination == SpellResolutionDestinationDef::LibraryShuffled {
+                self.rng.shuffle(&mut self.players[owner.index()].library);
+            }
+            return;
+        }
+
+        // Flashback replaces the move from the stack with exile, not the rest
+        // of the resolution. In particular, White Sun's Zenith still shuffles
+        // its owner's library, and a spell that already exiles itself still
+        // gets its destination counters.
+        let flashback_replaces_move = object.cast_via_flashback || behavior == CardBehavior::Recall;
+        let (mut card, _zone_change) = self.zone_change_card(object.card.clone());
+        match destination {
+            SpellResolutionDestinationDef::Graveyard if !flashback_replaces_move => {
+                self.put_card_into_graveyard(owner, card);
+            }
+            SpellResolutionDestinationDef::Graveyard | SpellResolutionDestinationDef::Exile => {
+                self.players[owner.index()].exile.push(card);
+            }
+            SpellResolutionDestinationDef::ExileWithCounters(counters) => {
+                for &(kind, amount) in counters {
+                    card.add_counters(kind, amount);
+                }
+                self.players[owner.index()].exile.push(card);
+            }
+            SpellResolutionDestinationDef::LibraryShuffled => {
+                if flashback_replaces_move {
+                    self.players[owner.index()].exile.push(card);
+                } else {
+                    self.players[owner.index()].library.push(card);
+                }
+                self.rng.shuffle(&mut self.players[owner.index()].library);
+            }
+        }
     }
 
     fn defer_stack_resolution(

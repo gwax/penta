@@ -188,6 +188,14 @@ pub(in crate::card::sets) static CITIZEN_TOKEN_1_1_WHITE: CardRecord = CardRecor
         .printed_colors(&[ManaColor::White]),
 );
 
+pub(in crate::card::sets) static CAT_TOKEN_2_2_WHITE: CardRecord = CardRecord::new(
+    cards::CAT_TOKEN_2_2_WHITE,
+    "Cat",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Cat"], 2, 2).printed_colors(&[ManaColor::White]),
+);
+
 pub(in crate::card::sets) static THRULL_TOKEN_0_1_BLACK: CardRecord = CardRecord::new(
     cards::THRULL_TOKEN_0_1_BLACK,
     "Thrull",
@@ -478,6 +486,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ASSASSIN_TOKEN_1_1_BLACK,
     &BIRD_TOKEN_4_4_RED,
     &CITIZEN_TOKEN_1_1_WHITE,
+    &CAT_TOKEN_2_2_WHITE,
     &THRULL_TOKEN_0_1_BLACK,
     &WASP_TOKEN_1_1_COLORLESS,
     &MINOR_DEMON_TOKEN_1_1_BLACK_RED,

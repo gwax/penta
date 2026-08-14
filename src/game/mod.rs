@@ -202,6 +202,22 @@ struct CardInstance {
     owner: PlayerId,
     backing: ObjectBacking,
     characteristics: CharacteristicSource,
+    /// Counters on a card outside the battlefield, such as suspend's time
+    /// counters. Zone changes clear this along with every other object-local
+    /// property.
+    counters: [u16; CounterKind::COUNT],
+}
+
+impl CardInstance {
+    const fn add_counters(&mut self, kind: CounterKind, amount: u16) {
+        let index = kind.index();
+        self.counters[index] = self.counters[index].saturating_add(amount);
+    }
+
+    #[cfg(test)]
+    const fn counters(&self, kind: CounterKind) -> u16 {
+        self.counters[kind.index()]
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

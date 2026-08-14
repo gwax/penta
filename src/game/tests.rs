@@ -132,6 +132,7 @@ pub(super) fn card(id: u32, definition: CardDefinitionId, owner: PlayerId) -> Ca
         owner,
         backing: ObjectBacking::Cards(vec![PhysicalCardId(id)]),
         characteristics: CharacteristicSource::Card(definition),
+        counters: [0; CounterKind::COUNT],
     }
 }
 
@@ -572,6 +573,7 @@ mod rampage;
 mod regeneration;
 mod removal_and_keywords;
 mod replacements_and_presentation;
+mod resolution_destinations;
 mod ring_of_maruf;
 mod rings;
 mod scavenge;

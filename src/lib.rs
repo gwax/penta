@@ -45,10 +45,10 @@ pub use card::{
     PowerToughnessOperationDef, PrintedManaCost, ReplacementAbilityDef, ReplacementChoiceDef,
     ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
     ScalarChoiceListDef, SetOperationDef, SpecialActionDef, SpellAbilityDef, SpellForm,
-    StaticAbilityDef, TapEventMatcherDef, TapPurposeDef, TargetConditionDef, TargetPredicate,
-    TargetSlotDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnKindDef,
-    TurnPhaseDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef,
-    ZonePlacement, applicable_part_ids,
+    SpellResolutionDestinationDef, StaticAbilityDef, TapEventMatcherDef, TapPurposeDef,
+    TargetConditionDef, TargetPredicate, TargetSlotDef, TriggerConditionDef, TriggerEventDef,
+    TriggeredAbilityDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
+    ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
 };
 pub use casting::{
     CastChoices, CastSignature, CostConfiguration, TargetReplacementError, TargetSelection,

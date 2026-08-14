@@ -1,6 +1,6 @@
 use super::ManaColor;
 
-/// A kind of counter a permanent can carry. Only `PlusOnePlusOne` has rules
+/// A kind of counter a game object can carry. Only `PlusOnePlusOne` has rules
 /// meaning of its own; the rest are named markers that the cards putting them
 /// there give meaning to.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -22,10 +22,13 @@ pub enum CounterKind {
     /// Spirit Shackle's counter: toughness only, so it does not annihilate
     /// with a +1/+1 counter the way [`Self::MinusOneMinusOne`] does.
     MinusZeroMinusTwo,
+    /// Suspend's counter, which can sit on a card in exile rather than a
+    /// permanent on the battlefield.
+    Time,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 11;
+    pub const COUNT: usize = 12;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -39,6 +42,7 @@ impl CounterKind {
         Self::Credit,
         Self::Tide,
         Self::MinusZeroMinusTwo,
+        Self::Time,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -57,7 +61,8 @@ impl CounterKind {
             | Self::Loyalty
             | Self::Spore
             | Self::Credit
-            | Self::Tide => (0, 0),
+            | Self::Tide
+            | Self::Time => (0, 0),
         }
     }
 
@@ -75,6 +80,7 @@ impl CounterKind {
             Self::Credit => 8,
             Self::Tide => 9,
             Self::MinusZeroMinusTwo => 10,
+            Self::Time => 11,
         }
     }
 
@@ -92,6 +98,7 @@ impl CounterKind {
             Self::Credit => "credit",
             Self::Tide => "tide",
             Self::MinusZeroMinusTwo => "-0/-2",
+            Self::Time => "time",
         }
     }
 }
