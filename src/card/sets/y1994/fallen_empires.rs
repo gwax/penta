@@ -486,7 +486,35 @@ pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: Gain control of target Thrull for as long as you control this creature”.
 
 // FEM 45 — Thrull Retainer
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “Sacrifice this Aura: Regenerate enchanted creature”.
+pub(in crate::card::sets) static THRULL_RETAINER: CardRecord = CardRecord::new(
+    cards::THRULL_RETAINER,
+    "Thrull Retainer",
+    CardArt::new("d800512b-1492-41d2-931d-57c625044454", "Ron Spencer"),
+    CardSet::FallenEmpires,
+    CardRules::new_enchantment(mana_cost!("{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +1/+1.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(1),
+                        toughness: ValueDef::Constant(1),
+                    },
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::activated(
+                "Sacrifice this Aura: Regenerate enchanted creature.",
+                &[AbilityCostDef::SacrificeSource],
+                EffectDef::Regenerate {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+        ]),
+);
 
 // FEM 46 — Thrull Wizard
 // Audit: blocked — Needs a spell-color predicate in trigger capture for “{1}{B}: Counter target black spell unless that spell's controller pays {B} or {3}”.
@@ -1076,6 +1104,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BREEDING_PIT,
     &HYMN_TO_TOURACH,
     &ORDER_OF_THE_EBON_HAND,
+    &THRULL_RETAINER,
     &DWARVEN_LIEUTENANT,
     &GOBLIN_GRENADE,
     &ELVEN_FORTRESS,

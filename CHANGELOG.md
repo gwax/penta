@@ -34,6 +34,16 @@ distinguishes snapshots of the covered source and build inputs.
   now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
+- **A sweep for stale audit lines**, prompted by two turning up incidentally.
+  Regeneration takes any recipient, so "regenerate target creature" and
+  "regenerate enchanted creature" have been expressible since the effect
+  existed; eight identities were blocked on their audit line rather than on a
+  capability. Death Ward, Regeneration, The Brute, Elephant Graveyard, Niall
+  Silvain, Ragnar, Thrull Retainer, and Zombie Master are now executable, with
+  no engine change at all. Zombie Master grants both a landwalk and a
+  regeneration ability to other Zombies, so it exercises two of this series'
+  primitives through a third path -- a granted activated ability.
+
 - **Legendary landwalk**, which reads a land supertype rather than a basic
   land type and so needs its own keyword rather than a new `BasicLandType`.
   Livonya Silone is now executable. Argothian Treefolk joins it: its clause

@@ -971,7 +971,27 @@ pub(in crate::card::sets) static LAND_LEECHES: CardRecord = CardRecord::new(
 // Audit: blocked — Needs player poison counters and the poison-based state check, including this card's counter placement.
 
 // DRK 82 — Niall Silvain
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{G}{G}{G}{G}, {T}: Regenerate target creature”.
+pub(in crate::card::sets) static NIALL_SILVAIN: CardRecord = CardRecord::new(
+    cards::NIALL_SILVAIN,
+    "Niall Silvain",
+    CardArt::new("9d5911b5-a54e-4ebb-9c36-d4dc8e97bb4b", "Christopher Rush"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{G}{G}{G}"), &["Ouphe"], 2, 2).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{G}{G}{G}{G}, {T}: Regenerate target creature.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{G}{G}{G}{G}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
 
 // DRK 83 — People of the Woods
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “People of the Woods's toughness is equal to the number of Forests you control”.
@@ -1452,6 +1472,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CARNIVOROUS_PLANT,
     &HIDDEN_PATH,
     &LAND_LEECHES,
+    &NIALL_SILVAIN,
     &SCARWOOD_HAG,
     &SCAVENGER_FOLK,
     &TRACKER,

@@ -27,6 +27,10 @@ static YOU_CONTROL_NO_ISLANDS: TriggerConditionDef = TriggerConditionDef::Object
     amount: 0,
 };
 
+static ELEPHANT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Subtype("Elephant"),
+)];
+
 // ARN 1 — Abu Ja'far
 // Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “When this creature dies, destroy all creatures blocking or blocked by it. They can't be regenerated”.
 
@@ -936,7 +940,23 @@ pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “{T}, Sacrifice a creature: You gain life equal to the sacrificed creature's toughness”.
 
 // ARN 74 — Elephant Graveyard
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{T}: Regenerate target Elephant”.
+pub(in crate::card::sets) static ELEPHANT_GRAVEYARD: CardRecord = CardRecord::new(
+    cards::ELEPHANT_GRAVEYARD,
+    "Elephant Graveyard",
+    CardArt::new("18348df2-9037-4db4-bddb-76dc933229bf", "Rob Alexander"),
+    CardSet::ArabianNights,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated_with_targets(
+            "{T}: Regenerate target Elephant.",
+            &[AbilityCostDef::TapSource],
+            &ELEPHANT_TARGET,
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
 
 // ARN 75 — Island of Wak-Wak
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “{T}: Target creature with flying has base power 0 until end of turn”.
@@ -1002,6 +1022,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RING_OF_MARUF,
     &BAZAAR_OF_BAGHDAD,
     &CITY_OF_BRASS,
+    &ELEPHANT_GRAVEYARD,
     &LIBRARY_OF_ALEXANDRIA,
 ];
 

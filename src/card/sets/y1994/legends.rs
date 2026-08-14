@@ -1643,7 +1643,35 @@ pub(in crate::card::sets) static SPINAL_VILLAIN: CardRecord = CardRecord::new(
 // Audit: blocked — Needs random hand reveal, an opponent life-payment choice, and a permanent ownership exchange between cards in different zones.
 
 // LEG 167 — The Brute
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{R}{R}{R}: Regenerate enchanted creature”.
+pub(in crate::card::sets) static THE_BRUTE: CardRecord = CardRecord::new(
+    cards::THE_BRUTE,
+    "The Brute",
+    CardArt::new("f9ffb265-872f-47b3-974c-92bcbebd557e", "Mark Poole"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{1}{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +1/+0.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(1),
+                        toughness: ValueDef::Constant(0),
+                    },
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::activated(
+                "{R}{R}{R}: Regenerate enchanted creature.",
+                &[AbilityCostDef::Mana(mana_cost!("{R}{R}{R}"))],
+                EffectDef::Regenerate {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+        ]),
+);
 
 // LEG 168 — Wall of Dust
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks a creature, that creature can't attack during its controller's next turn”.
@@ -2564,7 +2592,27 @@ pub(in crate::card::sets) static PRINCESS_LUCREZIA: CardRecord = CardRecord::new
 );
 
 // LEG 250 — Ragnar
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{G}{W}{U}, {T}: Regenerate target creature”.
+pub(in crate::card::sets) static RAGNAR: CardRecord = CardRecord::new(
+    cards::RAGNAR,
+    "Ragnar",
+    CardArt::new("2cf6a3a3-4a06-4eb7-981a-b70cf05b2473", "Melissa A. Benson"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{G}{W}{U}"), &["Human", "Cleric"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[AbilityDef::activated_with_targets(
+            "{G}{W}{U}, {T}: Regenerate target creature.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{G}{W}{U}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        )]),
+);
 
 // LEG 251 — Ramirez DePietro
 pub(in crate::card::sets) static RAMIREZ_DEPIETRO: CardRecord = CardRecord::new(
@@ -3193,6 +3241,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PYROTECHNICS,
     &RAGING_BULL,
     &SPINAL_VILLAIN,
+    &THE_BRUTE,
     &WALL_OF_EARTH,
     &WALL_OF_HEAT,
     &WALL_OF_OPPOSITION,
@@ -3235,6 +3284,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PALLADIA_MORS,
     &PAVEL_MALIKI,
     &PRINCESS_LUCREZIA,
+    &RAGNAR,
     &RAMIREZ_DEPIETRO,
     &RIVEN_TURNBULL,
     &SIR_SHANDLAR_OF_EBERYN,

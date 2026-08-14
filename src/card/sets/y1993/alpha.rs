@@ -30,6 +30,19 @@ static YOU_CONTROL_NO_ISLANDS: TriggerConditionDef = TriggerConditionDef::Object
     amount: 0,
 };
 
+static OTHER_ZOMBIES: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Subtype("Zombie"),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
+static ZOMBIE_REGENERATION: AbilityDef = AbilityDef::activated(
+    "{B}: Regenerate this permanent.",
+    &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+    EffectDef::Regenerate {
+        object: EffectRecipientDef::Source,
+    },
+);
+
 // LEA 1 — Animate Wall
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Enchanted Wall can attack as though it didn't have defender”.
 
@@ -187,7 +200,19 @@ pub(in crate::card::sets) static CRUSADE: CardRecord = CardRecord::new(
 );
 
 // LEA 17 — Death Ward
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “Regenerate target creature”.
+pub(in crate::card::sets) static DEATH_WARD: CardRecord = CardRecord::new(
+    cards::DEATH_WARD,
+    "Death Ward",
+    CardArt::new("fa5466cc-aa57-4a7f-8b21-d92b2fe02e13", "Mark Poole"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{W}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Regenerate target creature.",
+        &ENCHANT_CREATURE_TARGET,
+        EffectDef::Regenerate {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )]),
+);
 
 // LEA 18 — Disenchant
 pub(in crate::card::sets) static DISENCHANT: CardRecord = CardRecord::new(
@@ -1864,7 +1889,38 @@ pub(in crate::card::sets) static WILL_O_THE_WISP: CardRecord = CardRecord::new(
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Look at target opponent's hand and choose a card from it. You control that player until Word of Command finishes resolving. The player plays that card if able. While doing so, the player…”.
 
 // LEA 137 — Zombie Master
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “Other Zombies have "{B}: Regenerate this permanent."”.
+pub(in crate::card::sets) static ZOMBIE_MASTER: CardRecord = CardRecord::new(
+    cards::ZOMBIE_MASTER,
+    "Zombie Master",
+    CardArt::new("3d4255a0-d445-4c00-b936-bbf07851e1c8", "Jeff A. Menges"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Zombie"], 2, 3).with_abilities(&[
+        AbilityDef::static_ability(
+            "Other Zombie creatures have swampwalk.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: OTHER_ZOMBIES,
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::GrantAbility(&abilities::landwalk(BasicLandType::Swamp)),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::static_ability(
+            "Other Zombies have \"{B}: Regenerate this permanent.\"",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: OTHER_ZOMBIES,
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::GrantAbility(&ZOMBIE_REGENERATION),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // LEA 138 — Burrowing
 pub(in crate::card::sets) static BURROWING: CardRecord = CardRecord::new(
@@ -3006,7 +3062,24 @@ static REGROWTH_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Look at the top three cards of target player's library, then put them back in any order. You may have that player shuffle”.
 
 // LEA 213 — Regeneration
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{G}: Regenerate enchanted creature”.
+pub(in crate::card::sets) static REGENERATION: CardRecord = CardRecord::new(
+    cards::REGENERATION,
+    "Regeneration",
+    CardArt::new("b7b7aa34-b4f8-41b4-82ce-ab2e204c3bf4", "Quinton Hoover"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
+            AbilityDef::activated(
+                "{G}: Regenerate enchanted creature.",
+                &[AbilityCostDef::Mana(mana_cost!("{G}"))],
+                EffectDef::Regenerate {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+        ]),
+);
 
 // LEA 214 — Regrowth
 pub(in crate::card::sets) static REGROWTH: CardRecord = CardRecord::new(
@@ -4068,6 +4141,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLESSING,
     &CONVERSION,
     &CRUSADE,
+    &DEATH_WARD,
     &DISENCHANT,
     &FARMSTEAD,
     &HOLY_ARMOR,
@@ -4140,6 +4214,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WALL_OF_BONE,
     &WEAKNESS,
     &WILL_O_THE_WISP,
+    &ZOMBIE_MASTER,
     &BURROWING,
     &DRAGON_WHELP,
     &DWARVEN_DEMOLITION_TEAM,
@@ -4193,6 +4268,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LEY_DRUID,
     &LIFEFORCE,
     &LLANOWAR_ELVES,
+    &REGENERATION,
     &REGROWTH,
     &SCRYB_SPRITES,
     &SHANODIN_DRYADS,

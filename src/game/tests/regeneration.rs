@@ -255,3 +255,114 @@ fn every_newly_unblocked_regenerator_reports_complete_coverage() {
         );
     }
 }
+
+/// Regeneration takes any recipient, so "regenerate target creature" and
+/// "regenerate enchanted creature" were expressible from the moment the
+/// effect existed. These cards were blocked on an audit line rather than on
+/// a capability, so the test drives one of each shape rather than trusting
+/// the coverage status alone.
+#[test]
+fn a_spell_can_regenerate_a_creature_it_targets() {
+    let mut game = ready_game();
+    let lions = creature(12_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    let lions_id = lions.card.id;
+    game.battlefield.push(lions);
+    let ward = card(11_000, cards::DEATH_WARD, PlayerId::One);
+    let ward_id = ward.id;
+    game.players[PlayerId::One.index()].hand.push(ward);
+    for color in [
+        ManaColor::White,
+        ManaColor::Green,
+        ManaColor::Red,
+        ManaColor::Black,
+    ] {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::CastSpell { card, choices, .. }
+                    if *card == ward_id
+                        && choices.iter_targets().copied().eq([Target::Permanent(lions_id)])
+            )
+        })
+        .expect("Death Ward can target the Lions");
+    game.apply(PlayerId::One, cast).expect("the cast is legal");
+    pass_priority_pair(&mut game);
+
+    let shielded = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == lions_id)
+        .expect("the Lions are on the battlefield");
+    assert_eq!(shielded.regeneration_shields, 1, "the target was shielded");
+}
+
+/// An Aura regenerates what it is attached to, which is the same effect
+/// reading a different recipient.
+#[test]
+fn an_aura_regenerates_the_creature_it_enchants() {
+    let mut game = ready_game();
+    let lions = creature(12_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    let lions_id = lions.card.id;
+    game.battlefield.push(lions);
+    let mut aura = creature(12_001, cards::REGENERATION, PlayerId::One);
+    aura.attached_to = Some(lions_id);
+    let aura_id = aura.card.id;
+    game.battlefield.push(aura);
+    for color in [
+        ManaColor::White,
+        ManaColor::Green,
+        ManaColor::Red,
+        ManaColor::Black,
+    ] {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == aura_id),
+        )
+        .expect("the Aura offers its regeneration ability");
+    game.apply(PlayerId::One, action).expect("it activates");
+    pass_priority_pair(&mut game);
+
+    let shielded = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == lions_id)
+        .expect("the enchanted creature is on the battlefield");
+    assert_eq!(
+        shielded.regeneration_shields, 1,
+        "the enchanted creature was shielded, not the Aura"
+    );
+}
+
+#[test]
+fn every_swept_regeneration_card_reports_complete_coverage() {
+    let catalog = poc::catalog().expect("catalog builds");
+    for definition in [
+        cards::DEATH_WARD,
+        cards::REGENERATION,
+        cards::THE_BRUTE,
+        cards::ELEPHANT_GRAVEYARD,
+        cards::NIALL_SILVAIN,
+        cards::RAGNAR,
+        cards::THRULL_RETAINER,
+        cards::ZOMBIE_MASTER,
+    ] {
+        let card = catalog.get(definition).expect("the card is cataloged");
+        assert_eq!(
+            card.rules.implementation_status(),
+            ImplementationStatus::Complete,
+            "{} should be fully executable",
+            card.name,
+        );
+    }
+}

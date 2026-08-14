@@ -182,7 +182,7 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
         .flat_map(|module| module.cards.iter().copied())
         .filter(|record| record.rules.has_type(crate::card::CardType::Land))
         .collect::<Vec<_>>();
-    assert_eq!(lands.len(), 98);
+    assert_eq!(lands.len(), 99);
 
     let lands_without_mana = lands
         .iter()
@@ -352,7 +352,7 @@ fn early_core_sets_reuse_definitions_without_duplicating_identity() {
     ];
 
     let early_sets = [
-        (CardSet::Alpha, 188, 193, 2_u16),
+        (CardSet::Alpha, 191, 196, 2_u16),
         (CardSet::Beta, 86, 96, 3_u16),
         (CardSet::Unlimited, 86, 96, 3_u16),
         (CardSet::CollectorsEdition, 86, 96, 3_u16),
