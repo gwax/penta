@@ -375,6 +375,7 @@ mod combat_and_life;
 mod combat_keywords;
 mod continuous_and_zones;
 mod copy_effects;
+mod counted_bodies;
 mod countering_and_mana;
 mod decisions_and_effects;
 mod delayed_triggers;

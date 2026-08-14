@@ -42,6 +42,14 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Creatures whose printed body is a battlefield count**, declared the way the
+  token vocabulary already declared them: a zero-or-one body plus a static
+  counted bonus. Plague Rats, Keldon Warlord, Gaea's Avenger, and Dakkon
+  Blackblade are executable and `partial` -- a real characteristic-defining
+  ability sets power and toughness in every zone, and this is a
+  battlefield-only continuous effect. Nightmare stays blocked: its M14 printing
+  already carried an audit line saying exactly that, and overruling it for one
+  more card would have been the wrong trade.
 - **Two identities the activation window unblocked on its own.** Colossus of
   Sardia pairs a static untap restriction with an upkeep-only untap, and
   Hell's Caretaker trades a creature for one in its graveyard during its own

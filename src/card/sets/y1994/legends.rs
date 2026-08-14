@@ -2385,7 +2385,41 @@ pub(in crate::card::sets) static CHROMIUM: CardRecord = CardRecord::new(
 );
 
 // LEG 225 — Dakkon Blackblade
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Dakkon Blackblade's power and toughness are each equal to the number of lands you control”.
+// Audit: partial — Its power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so they read as printed in every other zone.
+pub(in crate::card::sets) static DAKKON_BLACKBLADE: CardRecord = CardRecord::new(
+    cards::DAKKON_BLACKBLADE,
+    "Dakkon Blackblade",
+    CardArt::new(
+        "fbfd1278-1486-4516-8846-007ce1985ee9",
+        "Richard Kane Ferguson",
+    ),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{W}{U}{U}{B}"), &["Human", "Warrior"], 0, 0)
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::static_ability(
+            "Dakkon Blackblade's power and toughness are each equal to the number of lands you \
+             control.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL),
+                    toughness: ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL),
+                },
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        )
+        .with_coverage(AbilityCoverageDef::partial(
+            "A characteristic-defining ability sets power and toughness in every zone. This is a \
+             battlefield-only continuous effect, so the value is right wherever the card is \
+             played and absent for anything reading it in another zone.",
+        ))),
+);
+
+static LANDS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::HasType(CardType::Land),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::You,
+};
 
 // LEG 226 — Gabriel Angelfire
 // Audit: blocked — Needs a random choice among four named abilities and a grant of the chosen one; the randomized effect vocabulary selects between two branches, not among four.
@@ -3474,6 +3508,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BARKTOOTH_WARBEARD,
     &BORIS_DEVILBOON,
     &CHROMIUM,
+    &DAKKON_BLACKBLADE,
     &GOSTA_DIRK,
     &GWENDLYN_DI_CORCI,
     &HUNDING_GJORNERSEN,

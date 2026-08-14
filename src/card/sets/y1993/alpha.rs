@@ -1707,7 +1707,7 @@ static PESTILENCE_NO_CREATURES: TriggerConditionDef = TriggerConditionDef::Objec
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{T}: Choose target non-Wall creature the active player has controlled continuously since the beginning of the turn. That creature attacks this turn if able. Destroy it at the beginning…”.
 
 // LEA 118 — Nightmare
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Nightmare's power and toughness are each equal to the number of Swamps you control”.
+// Audit: blocked — Dynamic power/toughness effects are battlefield-only and cannot implement a characteristic-defining ability in every zone.
 
 // LEA 119 — Paralyze
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “Enchanted creature doesn't untap during its controller's untap step”.
@@ -1752,7 +1752,43 @@ pub(in crate::card::sets) static PESTILENCE: CardRecord = CardRecord::new(
 );
 
 // LEA 121 — Plague Rats
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Plague Rats's power and toughness are each equal to the number of creatures named Plague Rats on the battlefield”.
+// Audit: partial — Its power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so they read as printed in every other zone.
+pub(in crate::card::sets) static PLAGUE_RATS: CardRecord = CardRecord::new(
+    cards::PLAGUE_RATS,
+    "Plague Rats",
+    CardArt::new("b3724e40-0622-4aee-9334-6c9fff88bcd5", "Anson Maddocks"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Rat"], 0, 0)
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Plague Rats's power and toughness are each equal to the number of creatures named Plague Rats on the battlefield.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::CountMatchingObjects(&CREATURES_NAMED_LIKE_THE_SOURCE),
+                        toughness: ValueDef::CountMatchingObjects(&CREATURES_NAMED_LIKE_THE_SOURCE),
+                    },
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            )
+            .with_coverage(AbilityCoverageDef::partial(
+                "A characteristic-defining ability sets power and toughness in every zone. This \
+                 is a battlefield-only continuous effect, so the value is right wherever the \
+                 card is played and absent for anything reading it in another zone.",
+            )),
+        ]),
+);
+
+/// Every Plague Rats counts every other, whoever controls them, which is why
+/// this query is name-based rather than controller-based.
+static CREATURES_NAMED_LIKE_THE_SOURCE: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::SharesNameWithSource,
+    ]),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::Any,
+};
 
 // LEA 122 — Raise Dead
 pub(in crate::card::sets) static RAISE_DEAD: CardRecord = CardRecord::new(
@@ -2388,7 +2424,41 @@ pub(in crate::card::sets) static IRONCLAW_ORCS: CardRecord = CardRecord::new(
 );
 
 // LEA 160 — Keldon Warlord
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Keldon Warlord's power and toughness are each equal to the number of non-Wall creatures you control”.
+// Audit: partial — Its power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so they read as printed in every other zone.
+pub(in crate::card::sets) static KELDON_WARLORD: CardRecord = CardRecord::new(
+    cards::KELDON_WARLORD,
+    "Keldon Warlord",
+    CardArt::new("8fe3fd83-969c-4add-888f-86f4306b067c", "Kev Brockschmidt"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Human", "Barbarian"], 0, 0)
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Keldon Warlord's power and toughness are each equal to the number of non-Wall creatures you control.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::CountMatchingObjects(&NON_WALL_CREATURES_YOU_CONTROL),
+                        toughness: ValueDef::CountMatchingObjects(&NON_WALL_CREATURES_YOU_CONTROL),
+                    },
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            )
+            .with_coverage(AbilityCoverageDef::partial(
+                "A characteristic-defining ability sets power and toughness in every zone. This \
+                 is a battlefield-only continuous effect, so the value is right wherever the \
+                 card is played and absent for anything reading it in another zone.",
+            )),
+        ]),
+);
+
+static NON_WALL_CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Wall")),
+    ]),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::You,
+};
 
 // LEA 161 — Lightning Bolt
 pub(in crate::card::sets) static LIGHTNING_BOLT: CardRecord = CardRecord::new(
@@ -4337,6 +4407,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HYPNOTIC_SPECTER,
     &MIND_TWIST,
     &PESTILENCE,
+    &PLAGUE_RATS,
     &RAISE_DEAD,
     &ROYAL_ASSASSIN,
     &SCATHE_ZOMBIES,
@@ -4366,6 +4437,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HILL_GIANT,
     &HURLOON_MINOTAUR,
     &IRONCLAW_ORCS,
+    &KELDON_WARLORD,
     &LIGHTNING_BOLT,
     &MANABARBS,
     &MONSS_GOBLIN_RAIDERS,

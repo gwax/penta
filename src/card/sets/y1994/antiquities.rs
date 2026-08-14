@@ -5,8 +5,8 @@ use crate::card::{
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
     CardTypeSet, CounterKind, DiscardSelectionDef, EffectDef, EffectDurationDef,
     EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
-    ObjectPredicateDef, PaymentDef, PlayerRelation, ReplacementEffectDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEffectDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -512,7 +512,40 @@ pub(in crate::card::sets) static CRUMBLE: CardRecord = CardRecord::new(
 );
 
 // ATQ 33 — Gaea's Avenger
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Gaea's Avenger's power and toughness are each equal to 1 plus the number of artifacts your opponents control”.
+// Audit: partial — Its power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so they read as printed in every other zone.
+pub(in crate::card::sets) static GAEAS_AVENGER: CardRecord = CardRecord::new(
+    cards::GAEAS_AVENGER,
+    "Gaea's Avenger",
+    CardArt::new("39d763bd-b0a9-46ba-bcd2-9304063446f2", "Pete Venters"),
+    CardSet::Antiquities,
+    // The printed "1 plus" is the body itself, so the counted bonus only has
+    // to supply the rest.
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Treefolk"], 1, 1).with_ability(
+        AbilityDef::static_ability(
+            "Gaea's Avenger's power and toughness are each equal to 1 plus the number of \
+             artifacts your opponents control.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
+                    toughness: ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
+                },
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        )
+        .with_coverage(AbilityCoverageDef::partial(
+            "A characteristic-defining ability sets power and toughness in every zone. This is a \
+             battlefield-only continuous effect, so the value is right wherever the card is \
+             played and absent for anything reading it in another zone.",
+        )),
+    ),
+);
+
+static ARTIFACTS_YOUR_OPPONENTS_CONTROL: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::HasType(CardType::Artifact),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::Opponent,
+};
 
 // ATQ 34 — Powerleech
 // Audit: blocked — Needs opponent-artifact tap and non-tap activated-ability events, including inspection of activation costs.
@@ -1277,6 +1310,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGOTHIAN_TREEFOLK,
     &CITANUL_DRUID,
     &CRUMBLE,
+    &GAEAS_AVENGER,
     &AMULET_OF_KROOG,
     &CLAY_STATUE,
     &COLOSSUS_OF_SARDIA,

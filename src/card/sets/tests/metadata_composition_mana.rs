@@ -353,7 +353,7 @@ fn early_core_sets_reuse_definitions_without_duplicating_identity() {
     ];
 
     let early_sets = [
-        (CardSet::Alpha, 199, 204, 2_u16),
+        (CardSet::Alpha, 201, 206, 2_u16),
         (CardSet::Beta, 87, 97, 3_u16),
         (CardSet::Unlimited, 86, 96, 3_u16),
         (CardSet::CollectorsEdition, 86, 96, 3_u16),
