@@ -1,7 +1,7 @@
 use super::{
     AppliedEffectDef, CardType, CommittedTriggerEvent, ControlFlow, CounterKind, Game,
-    GameObjectId, KeywordAbility, Permanent, PlayerId, PreventionShield, RetiredObject, Target,
-    TriggerEventObject,
+    GameObjectId, KeywordAbility, Permanent, PlayerId, PreventionShield, RetiredObject,
+    ShieldCoverageDef, Target, TriggerEventObject,
 };
 
 impl Game {
@@ -61,17 +61,25 @@ impl Game {
         }
         let mut left = amount;
         let mut spent_named = Vec::new();
+        let mut gained_life = Vec::new();
         for shield in &mut self.prevention_shields {
             if !answers(shield) || left == 0 {
                 continue;
             }
             let Some(remaining) = shield.remaining.as_mut() else {
                 // "Prevent all damage" is never spent; it simply holds. A
-                // shield naming a source instead prevents all of this one
-                // damage and is then gone.
+                // shield naming a source instead covers this one damage --
+                // all of it, or the part its coverage names -- and is gone.
                 shield.source?;
+                let prevented = match shield.coverage {
+                    ShieldCoverageDef::All => left,
+                    ShieldCoverageDef::HalfRoundedDown => left / 2,
+                };
+                if shield.gain_life {
+                    gained_life.push((target, prevented));
+                }
                 spent_named.push(shield.source);
-                left = 0;
+                left -= prevented;
                 break;
             };
             let spent = (*remaining).min(left);
@@ -82,6 +90,15 @@ impl Game {
             shield.remaining != Some(0)
                 && !(shield.source.is_some() && spent_named.contains(&shield.source))
         });
+        // "You gain life equal to the damage prevented this way" reads the
+        // amount actually stopped, so it is paid after the arithmetic above.
+        for (recipient, prevented) in gained_life {
+            if let Target::Player(player) = recipient
+                && prevented > 0
+            {
+                self.gain_life(player, prevented);
+            }
+        }
         (left > 0).then_some(left)
     }
 

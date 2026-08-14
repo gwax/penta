@@ -4,10 +4,10 @@ use crate::card::{
     AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt,
     CardBehavior, CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectDurationDef,
     EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    ObjectQueryDef, PlayerRelation, ShieldCoverageDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ChoiceIndex, TargetIndex};
 use crate::mana_cost;
 
 // DRK 1 — Angry Mob
@@ -1273,7 +1273,25 @@ pub(in crate::card::sets) static BOOK_OF_RASS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{3}, Sacrifice this creature: Add {R}{R}{R}”.
 
 // DRK 100 — Dark Sphere
-// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{T}, Sacrifice this artifact: The next time a source of your choice would deal damage to you this turn, prevent half that damage, rounded down”.
+pub(in crate::card::sets) static DARK_SPHERE: CardRecord = CardRecord::new(
+    cards::DARK_SPHERE,
+    "Dark Sphere",
+    CardArt::new("72cfe9b9-677d-4ecb-83ab-67fb6481371d", "Mark Tedin"),
+    CardSet::TheDark,
+    CardRules::new_artifact(mana_cost!("{0}")).with_ability(AbilityDef::activated(
+        "{T}, Sacrifice this artifact: The next time a source of your choice would deal damage to \
+         you this turn, prevent half that damage, rounded down.",
+        &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+        abilities::shield_against_a_chosen_source(ObjectPredicateDef::Any, &DARK_SPHERE_SHIELD),
+    )),
+);
+
+static DARK_SPHERE_SHIELD: EffectDef = EffectDef::PreventNextDamageFromSource {
+    object: EffectRecipientDef::Controller,
+    source: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+    coverage: ShieldCoverageDef::HalfRoundedDown,
+    gain_life: false,
+};
 
 // DRK 101 — Diabolic Machine
 pub(in crate::card::sets) static DIABOLIC_MACHINE: CardRecord = CardRecord::new(
@@ -1555,6 +1573,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DARK_HEART_OF_THE_WOOD,
     &BONE_FLUTE,
     &BOOK_OF_RASS,
+    &DARK_SPHERE,
     &DIABOLIC_MACHINE,
     &FELLWAR_STONE,
     &FOUNTAIN_OF_YOUTH,

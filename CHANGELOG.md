@@ -42,6 +42,12 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Shields that stop part of a hit, or pay a rider when they fire.** A shield
+  now carries how much of a covered hit it stops and whether spending it gains
+  its recipient that much life. Dark Sphere stops half, rounded down, so an odd
+  point still lands and a single point is not reduced at all. Reverse Damage
+  gains exactly what it prevented rather than what was aimed. Both are additive
+  checkpoint members skipped when false.
 - **A prevention shield keyed to a chosen source**, which is what a Circle of
   Protection is. The existing shields attach to a recipient and spend on the
   next damage from anything; a Circle names one source and answers that source

@@ -989,4 +989,10 @@ pub(super) struct PreventionShieldSnapshot {
     /// an additive member an older consumer can ignore.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) source: Option<u32>,
+    /// Whether this shield stops only half of a covered hit, rounded down.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) half_rounded_down: bool,
+    /// Whether spending this shield gains its recipient that much life.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) gain_life: bool,
 }

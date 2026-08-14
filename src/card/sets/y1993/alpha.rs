@@ -6,8 +6,8 @@ use crate::card::{
     DeclarativeAbilityDef, DiscardSelectionDef, EffectDef, EffectDurationDef, EffectExecutionDef,
     EffectRecipientDef, KeywordAbility, LikelihoodDef, ManaColor, ObjectPredicateDef,
     ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementAbilityDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, TriggerConditionDef, TriggerEventDef, TurnKindDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ReplacementEffectDef, ReplacementEventDef, ShieldCoverageDef, TriggerConditionDef,
+    TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ChoiceIndex, TargetIndex};
 use crate::mana_cost;
@@ -531,7 +531,24 @@ pub(in crate::card::sets) static RESURRECTION: CardRecord = CardRecord::new(
 );
 
 // LEA 35 — Reverse Damage
-// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “The next time a source of your choice would deal damage to you this turn, prevent that damage. You gain life equal to the damage prevented this way”.
+pub(in crate::card::sets) static REVERSE_DAMAGE: CardRecord = CardRecord::new(
+    cards::REVERSE_DAMAGE,
+    "Reverse Damage",
+    CardArt::new("943baea8-b173-4863-a3ab-dd217d483cd9", "Dameon Willich"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{1}{W}{W}")).with_ability(AbilityDef::spell(
+        "The next time a source of your choice would deal damage to you this turn, prevent that \
+         damage. You gain life equal to the damage prevented this way.",
+        abilities::shield_against_a_chosen_source(ObjectPredicateDef::Any, &REVERSE_DAMAGE_SHIELD),
+    )),
+);
+
+static REVERSE_DAMAGE_SHIELD: EffectDef = EffectDef::PreventNextDamageFromSource {
+    object: EffectRecipientDef::Controller,
+    source: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+    coverage: ShieldCoverageDef::All,
+    gain_life: true,
+};
 
 // LEA 36 — Righteousness
 pub(in crate::card::sets) static RIGHTEOUSNESS: CardRecord = CardRecord::new(
@@ -4242,6 +4259,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NORTHERN_PALADIN,
     &PEARLED_UNICORN,
     &RESURRECTION,
+    &REVERSE_DAMAGE,
     &RIGHTEOUSNESS,
     &SAMITE_HEALER,
     &SAVANNAH_LIONS,

@@ -9,7 +9,7 @@ use super::model::{
     BattlefieldEntryModificationDef, CardType, CardTypeSet, ConditionDef, CostDef, EffectDef,
     EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef,
     ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEffectDef, ScaledValueDef,
-    TriggerEventDef, ValueDef, ZoneKind,
+    ShieldCoverageDef, TriggerEventDef, ValueDef, ZoneKind,
 };
 use crate::ids::ChoiceIndex;
 
@@ -409,7 +409,25 @@ pub const fn circle_of_protection(
 static SHIELD_AGAINST_THE_CHOSEN_SOURCE: EffectDef = EffectDef::PreventNextDamageFromSource {
     object: EffectRecipientDef::Controller,
     source: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+    coverage: ShieldCoverageDef::All,
+    gain_life: false,
 };
+
+/// The same shape as a Circle of Protection, for the printed cards that
+/// choose a source once rather than repeatedly and vary what happens when
+/// the shield fires.
+#[must_use]
+pub const fn shield_against_a_chosen_source(
+    source: ObjectPredicateDef,
+    then: &'static EffectDef,
+) -> EffectDef {
+    EffectDef::ChooseDamageSource {
+        choice: ChoiceIndex::PRIMARY,
+        chooser: EffectRecipientDef::Controller,
+        object: source,
+        then,
+    }
+}
 
 /// A shared checkland-style entry clause backed by the general object-query
 /// condition vocabulary.

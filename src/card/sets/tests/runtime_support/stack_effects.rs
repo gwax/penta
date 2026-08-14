@@ -96,7 +96,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             };
             branch_is_shared(*on_success) && branch_is_shared(*on_failure)
         }
-        EffectDef::PreventNextDamageFromSource { object, source } => {
+        EffectDef::PreventNextDamageFromSource { object, source, .. } => {
             shared_effect_recipient(object) && shared_effect_recipient(source)
         }
         EffectDef::ChooseDamageSource { then, .. } | EffectDef::ChoosePermanent { then, .. } => {

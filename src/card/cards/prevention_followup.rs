@@ -19,3 +19,5 @@ pub const CIRCLE_OF_PROTECTION_WHITE: CardDefinitionId = CardDefinitionId(1449);
 pub const CIRCLE_OF_PROTECTION_BLACK: CardDefinitionId = CardDefinitionId(1450);
 pub const CIRCLE_OF_PROTECTION_ARTIFACTS: CardDefinitionId = CardDefinitionId(1451);
 pub const GREATER_REALM_OF_PRESERVATION: CardDefinitionId = CardDefinitionId(1452);
+pub const REVERSE_DAMAGE: CardDefinitionId = CardDefinitionId(1453);
+pub const DARK_SPHERE: CardDefinitionId = CardDefinitionId(1454);

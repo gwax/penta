@@ -3,8 +3,8 @@ use super::{
     CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger, DiscardSelectionDef,
     DrawReplacement, EffectDef, EffectRecipientDef, FloatingTrigger, Game, GameResult, Mana,
     ManaPool, ManaSelectionDef, ManaSource, Permanent, PreventionShield, SacrificeFollowup,
-    ScopedEffect, StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason,
-    ZoneKind, ZoneMoveCause, public_cards,
+    ScopedEffect, ShieldCoverageDef, StackObject, Target, TriggerCapture, TriggerContext, ValueDef,
+    WinReason, ZoneKind, ZoneMoveCause, public_cards,
 };
 
 impl Game {
@@ -289,6 +289,8 @@ impl Game {
                         recipient: target,
                         remaining: Some(amount),
                         source: None,
+                        coverage: ShieldCoverageDef::All,
+                        gain_life: false,
                     });
                 }
             }
@@ -315,6 +317,8 @@ impl Game {
             EffectDef::PreventNextDamageFromSource {
                 object: recipient,
                 source,
+                coverage,
+                gain_life,
             } => {
                 // No chosen source means nothing matched, and a shield that
                 // answers nothing is not worth carrying.
@@ -331,6 +335,8 @@ impl Game {
                             recipient: target,
                             remaining: None,
                             source: Some(named),
+                            coverage,
+                            gain_life,
                         });
                     }
                 }
@@ -341,6 +347,8 @@ impl Game {
                         recipient: target,
                         remaining: None,
                         source: None,
+                        coverage: ShieldCoverageDef::All,
+                        gain_life: false,
                     });
                 }
             }

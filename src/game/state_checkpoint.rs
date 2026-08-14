@@ -9,9 +9,9 @@ use super::{
     CounterKind, EntryCompletion, Game, GameEvent, GameObjectId, GameStack, Mana, ManaSource,
     ObjectBacking, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent,
     PlayerId, PlayerState, Pregame, PreventionShield, ReplaceableEvent, ReplacementEffectContext,
-    ReplayRng, RetiredObject, ScopedEffect, StackAbilityPayload, StackObject, StackObjectKind,
-    Step, TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities,
-    TriggerContext, ZoneMoveCause,
+    ReplayRng, RetiredObject, ScopedEffect, ShieldCoverageDef, StackAbilityPayload, StackObject,
+    StackObjectKind, Step, TemporaryAbilityGrant, TemporaryGrantedAbility,
+    TemporaryRemovedAbilities, TriggerContext, ZoneMoveCause,
 };
 use crate::card::{
     AppliedEffectDef, BasicLandType, CardType, CardTypeSet, DeclarativeAbilityDef, EffectDef,
@@ -338,6 +338,8 @@ impl Game {
                     recipient: target_snapshot(shield.recipient),
                     remaining: shield.remaining,
                     source: shield.source.map(|source| source.0),
+                    half_rounded_down: shield.coverage == ShieldCoverageDef::HalfRoundedDown,
+                    gain_life: shield.gain_life,
                 })
                 .collect(),
             pregame: self.pregame.map(|pregame| match pregame {
@@ -645,6 +647,12 @@ impl Game {
                     recipient: parse_snapshot_target(shield.recipient),
                     remaining: shield.remaining,
                     source: shield.source.map(GameObjectId),
+                    coverage: if shield.half_rounded_down {
+                        ShieldCoverageDef::HalfRoundedDown
+                    } else {
+                        ShieldCoverageDef::All
+                    },
+                    gain_life: shield.gain_life,
                 })
                 .collect(),
             result: None,

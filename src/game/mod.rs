@@ -19,9 +19,9 @@ use crate::card::{
     EffectRecipientDef, HybridPair, KeywordAbility, ManaCost, ManaRestrictionDef, ManaSelectionDef,
     ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind,
     PlayOptionDef, PlayRestriction, PlayerRelation, QuantifierDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
+    ReplacementEffectDef, ReplacementEventDef, ShieldCoverageDef, TargetPredicate, TargetSlotDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;
@@ -737,6 +737,13 @@ struct PreventionShield {
     /// much it prevents, so it is removed on use even without a remaining
     /// count.
     source: Option<GameObjectId>,
+    /// How much of a covered hit this shield stops. Only a shield naming a
+    /// source uses anything but the whole of it.
+    coverage: ShieldCoverageDef,
+    /// Whether the recipient's controller gains life equal to what this
+    /// shield actually prevented, which Reverse Damage does and an ordinary
+    /// shield does not.
+    gain_life: bool,
 }
 
 #[cfg(test)]

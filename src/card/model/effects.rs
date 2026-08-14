@@ -355,6 +355,16 @@ pub struct TopCardSelectionDef {
     pub then: Option<&'static EffectDef>,
 }
 
+/// How much of a covered hit a prevention shield stops. Most shields stop the
+/// whole thing; a few printed cards stop a computed part of it and let the
+/// rest through.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ShieldCoverageDef {
+    All,
+    /// Half the damage, rounded down, which lets an odd point through.
+    HalfRoundedDown,
+}
+
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
@@ -388,12 +398,16 @@ pub enum EffectDef {
         object: ObjectPredicateDef,
         then: &'static EffectDef,
     },
-    /// Prevent all of the next damage one named source would deal to the
-    /// recipient this turn. The shield answers that source only, and the
-    /// first damage it prevents spends it however much that damage was.
+    /// Prevent the next damage one named source would deal to the recipient
+    /// this turn. The shield answers that source only, and the first damage it
+    /// covers spends it however much that damage was.
     PreventNextDamageFromSource {
         object: EffectRecipientDef,
         source: EffectRecipientDef,
+        coverage: ShieldCoverageDef,
+        /// Whether the recipient's controller gains life equal to the damage
+        /// this shield actually prevented.
+        gain_life: bool,
     },
     AddMana(AddManaEffectDef),
     DealDamage {
