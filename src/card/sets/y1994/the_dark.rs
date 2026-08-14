@@ -209,7 +209,22 @@ pub(in crate::card::sets) static WITCH_HUNTER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Target player reveals their hand and discards all nonland cards”.
 
 // DRK 21 — Apprentice Wizard
-// Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{U}, {T}: Add {C}{C}{C}”.
+pub(in crate::card::sets) static APPRENTICE_WIZARD: CardRecord = CardRecord::new(
+    cards::APPRENTICE_WIZARD,
+    "Apprentice Wizard",
+    CardArt::new("151b332e-164b-4646-8f52-741984cd71ad", "Dan Frazier"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Human", "Wizard"], 0, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{U}, {T}: Add {C}{C}{C}.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{U}")),
+                AbilityCostDef::TapSource,
+            ],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_amount(3)),
+        ),
+    ),
+);
 
 // DRK 22 — Dance of Many
 // Audit: blocked — Needs copiable-value or rules-text mutation support for “When this enchantment enters, create a token that's a copy of target nontoken creature”.
@@ -1354,7 +1369,22 @@ pub(in crate::card::sets) static BOOK_OF_RASS: CardRecord = CardRecord::new(
 );
 
 // DRK 99 — Coal Golem
-// Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{3}, Sacrifice this creature: Add {R}{R}{R}”.
+pub(in crate::card::sets) static COAL_GOLEM: CardRecord = CardRecord::new(
+    cards::COAL_GOLEM,
+    "Coal Golem",
+    CardArt::new("1ad7692d-5a51-493f-a322-7b615446ea8e", "Christopher Rush"),
+    CardSet::TheDark,
+    CardRules::new_artifact_creature(mana_cost!("{5}"), &["Golem"], 3, 3).with_ability(
+        AbilityDef::activated_mana(
+            "{3}, Sacrifice this creature: Add {R}{R}{R}.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{3}")),
+                AbilityCostDef::SacrificeSource,
+            ],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red).with_amount(3)),
+        ),
+    ),
+);
 
 // DRK 100 — Dark Sphere
 pub(in crate::card::sets) static DARK_SPHERE: CardRecord = CardRecord::new(
@@ -1619,6 +1649,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SQUIRE,
     &TIVADARS_CRUSADE,
     &WITCH_HUNTER,
+    &APPRENTICE_WIZARD,
     &DROWNED,
     &ELECTRIC_EEL,
     &FLOOD,
@@ -1662,6 +1693,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BARLS_CAGE,
     &BONE_FLUTE,
     &BOOK_OF_RASS,
+    &COAL_GOLEM,
     &DARK_SPHERE,
     &DIABOLIC_MACHINE,
     &FELLWAR_STONE,

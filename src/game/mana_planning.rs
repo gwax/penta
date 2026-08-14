@@ -257,6 +257,25 @@ impl Game {
             .saturating_sub(spare.total())
     }
 
+    /// Whether the player's floating pool alone covers this cost.
+    ///
+    /// A mana ability that costs mana is paid from the pool and nowhere
+    /// else. Planning further activations to cover it would ask the planner
+    /// about the very ability being planned, so the mana has to be there
+    /// already: tap the land, then filter what it made.
+    pub(super) fn pool_covers_cost(&self, player: PlayerId, cost: ManaCost) -> bool {
+        let mut spare = self.eligible_mana_pool(player, &ManaPaymentPurpose::Other);
+        spare.add_color(ManaColor::Colorless, self.channel_mana_available(player));
+        for color in colored_mana() {
+            let required = mana_cost_amount(cost, color);
+            if spare.amount(color) < required {
+                return false;
+            }
+            spare.remove_color(color, required);
+        }
+        spare.total() >= cost.generic
+    }
+
     pub(super) fn assigned_mana_activations_for(
         &self,
         player: PlayerId,
@@ -305,10 +324,19 @@ impl Game {
                             AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource
                         )
                     });
+                    // An activation that itself costs mana is left to the
+                    // player. The plan adds each source's production to a
+                    // running pool, and one that also spends from that pool
+                    // would be counted as free.
+                    let costs_mana = activation
+                        .costs
+                        .iter()
+                        .any(|cost| matches!(cost, AbilityCostDef::Mana(_)));
                     Self::mana_for_activation(*activation)
                         .first()
                         .is_some_and(|mana| self.mana_can_pay_for(*mana, purpose))
                         && preserves_required_source
+                        && !costs_mana
                 })
                 .collect::<Vec<_>>();
             // When several outputs are legal, prefer one whose spend rider

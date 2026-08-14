@@ -2133,7 +2133,23 @@ pub(in crate::card::sets) static EMERALD_DRAGONFLY: CardRecord = CardRecord::new
 // Audit: blocked — Needs a hidden-zone decision and continuation for “Starting with you, each player may put a permanent card from their hand onto the battlefield. Repeat this process until no one puts a card onto the battlefield”.
 
 // LEG 186 — Fire Sprites
-// Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{G}, {T}: Add {R}”.
+pub(in crate::card::sets) static FIRE_SPRITES: CardRecord = CardRecord::new(
+    cards::FIRE_SPRITES,
+    "Fire Sprites",
+    CardArt::new("d26fa79a-ede8-4c80-98d5-f49696f8104d", "Julie Baroh"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Faerie"], 1, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::activated_mana(
+            "{G}, {T}: Add {R}.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{G}")),
+                AbilityCostDef::TapSource,
+            ],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+        ),
+    ]),
+);
 
 // LEG 187 — Floral Spuzzem
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature attacks and isn't blocked, you may destroy target artifact defending player controls. If you do, this creature assigns no combat damage this turn”.
@@ -3791,6 +3807,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DURKWOOD_BOARS,
     &ELVEN_RIDERS,
     &EMERALD_DRAGONFLY,
+    &FIRE_SPRITES,
     &HORNET_COBRA,
     &KILLER_BEES,
     &MOSS_MONSTER,

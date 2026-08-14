@@ -257,8 +257,13 @@ impl Game {
                 AbilityCostDef::PayLife(amount) => {
                     self.lose_life(player, *amount);
                 }
-                AbilityCostDef::Mana(_)
-                | AbilityCostDef::DiscardSource
+                AbilityCostDef::Mana(cost) => {
+                    // Out of the pool, never by planning: the mana this
+                    // ability is about to make is not available to pay for
+                    // making it.
+                    let _ = self.pay_player_cost(player, *cost, 0);
+                }
+                AbilityCostDef::DiscardSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::ExileCardFromGraveyard(_)

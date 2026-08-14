@@ -1377,7 +1377,24 @@ pub(in crate::card::sets) static ELVEN_LYRE: CardRecord = CardRecord::new(
 );
 
 // FEM 88 — Implements of Sacrifice
-// Audit: blocked — Needs the mana-ability runtime to pay the ability's {1} activation cost.
+pub(in crate::card::sets) static IMPLEMENTS_OF_SACRIFICE: CardRecord = CardRecord::new(
+    cards::IMPLEMENTS_OF_SACRIFICE,
+    "Implements of Sacrifice",
+    CardArt::new(
+        "aa5deb95-79a6-4398-b82a-c1df169550d9",
+        "Margaret Organ-Kean",
+    ),
+    CardSet::FallenEmpires,
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::activated_mana(
+        "{1}, {T}, Sacrifice this artifact: Add two mana of any one color.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{1}")),
+            AbilityCostDef::TapSource,
+            AbilityCostDef::SacrificeSource,
+        ],
+        EffectDef::AddMana(AddManaEffectDef::any_color().with_amount(2)),
+    )),
+);
 
 // FEM 89 — Ring of Renewal
 pub(in crate::card::sets) static RING_OF_RENEWAL: CardRecord = CardRecord::new(
@@ -1589,6 +1606,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THORN_THALLID,
     &AEOLIPILE,
     &ELVEN_LYRE,
+    &IMPLEMENTS_OF_SACRIFICE,
     &RING_OF_RENEWAL,
     &DWARVEN_RUINS,
     &EBON_STRONGHOLD,

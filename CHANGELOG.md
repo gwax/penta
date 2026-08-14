@@ -78,6 +78,12 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Mana abilities that cost mana.** A mana ability could tap, sacrifice, or
+  exile its source, but not spend mana, so filters had nothing to filter with.
+  The cost comes out of the pool and nowhere else: the ability is offered only
+  while the pool already covers it, and the automatic payment planner leaves
+  such an ability alone rather than counting production it has not paid for.
+  Fire Sprites, Apprentice Wizard, Coal Golem, and Implements of Sacrifice.
 - **Tapping a chosen permanent as a cost.** A cost could tap the ability's own
   source, or sacrifice a chosen permanent, but not tap one -- so "tap an
   untapped Gate you control" had no way to be paid. The candidate has to be

@@ -28,23 +28,17 @@ impl Game {
                 .count()
                 <= 1
             && !(taps_source && (permanent.tapped || !self.can_use_tap_ability(permanent)))
-            && definition.costs.iter().all(|cost| {
-                matches!(
-                    cost,
-                    AbilityCostDef::TapSource
-                        | AbilityCostDef::SacrificeSource
-                        | AbilityCostDef::ExileSource
-                        | AbilityCostDef::RemoveCountersFromSource { .. }
-                        | AbilityCostDef::PayLife(_)
-                )
-            })
+            && definition
+                .costs
+                .iter()
+                .all(|cost| Self::mana_ability_cost_is_supported(definition, cost))
             && definition.costs.iter().all(|cost| match cost {
+                AbilityCostDef::Mana(cost) => self.pool_covers_cost(permanent.controller, *cost),
                 AbilityCostDef::PayLife(amount) => {
                     self.players[permanent.controller.index()].life
                         >= i16::try_from(*amount).unwrap_or(i16::MAX)
                 }
                 AbilityCostDef::RemoveCountersFromSource { .. }
-                | AbilityCostDef::Mana(_)
                 | AbilityCostDef::TapSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::SacrificeSource
@@ -58,6 +52,46 @@ impl Game {
                 | AbilityCostDef::Special(_) => true,
             })
             && Self::source_counter_costs_are_payable(permanent, definition.costs.as_slice())
+    }
+
+    /// Whether the runtime can pay this cost as part of a mana ability.
+    ///
+    /// A mana cost is payable only out of the pool, so the ability also has
+    /// to spend its source: one that could be activated again and again
+    /// without changing the board would have nothing to stop it. That is
+    /// also why hybrid and {X} are excluded -- both would need a choice the
+    /// activation has no room to carry.
+    pub(super) fn mana_ability_cost_is_supported(
+        definition: ActivatedAbilityDef,
+        cost: &AbilityCostDef,
+    ) -> bool {
+        match cost {
+            AbilityCostDef::TapSource
+            | AbilityCostDef::SacrificeSource
+            | AbilityCostDef::ExileSource
+            | AbilityCostDef::RemoveCountersFromSource { .. }
+            | AbilityCostDef::PayLife(_) => true,
+            AbilityCostDef::Mana(mana) => {
+                !mana.variable_x
+                    && mana.hybrid.iter().all(|count| *count == 0)
+                    && definition.costs.iter().any(|cost| {
+                        matches!(
+                            cost,
+                            AbilityCostDef::TapSource
+                                | AbilityCostDef::SacrificeSource
+                                | AbilityCostDef::ExileSource
+                        )
+                    })
+            }
+            AbilityCostDef::UntapSource
+            | AbilityCostDef::DiscardSource
+            | AbilityCostDef::DiscardCards(_)
+            | AbilityCostDef::SacrificePermanent { .. }
+            | AbilityCostDef::TapPermanent { .. }
+            | AbilityCostDef::Loyalty(_)
+            | AbilityCostDef::ExileCardFromGraveyard(_)
+            | AbilityCostDef::Special(_) => false,
+        }
     }
 
     pub(super) fn source_counter_costs_are_payable(

@@ -4,7 +4,7 @@ mod stack_effects;
 pub(super) use nested_definitions::*;
 pub(super) use stack_effects::shared_stack_effect;
 
-use crate::card::{ReplacementConditionDef, SpellAdditionalCostDef};
+use crate::card::{ActivatedAbilityDef, ReplacementConditionDef, SpellAdditionalCostDef};
 
 use super::*;
 
@@ -668,6 +668,17 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             }
         }
         DeclarativeAbilityDef::ActivatedMana(definition) => {
+            fn spends_its_source(definition: ActivatedAbilityDef) -> bool {
+                definition.costs.iter().any(|cost| {
+                    matches!(
+                        cost,
+                        AbilityCostDef::TapSource
+                            | AbilityCostDef::SacrificeSource
+                            | AbilityCostDef::ExileSource
+                    )
+                })
+            }
+
             battlefield_only(definition.source_zones)
                 && definition.procedure == AbilityProcedureDef::Shared
                 && !definition.costs.as_slice().is_empty()
@@ -679,6 +690,15 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                             | AbilityCostDef::ExileSource
                             | AbilityCostDef::RemoveCountersFromSource { .. }
                             | AbilityCostDef::PayLife(_)
+                    ) || matches!(
+                        cost,
+                        // Mana is paid out of the pool, so the ability also
+                        // has to spend its source; hybrid and {X} would need
+                        // a choice the activation cannot carry.
+                        AbilityCostDef::Mana(mana)
+                            if !mana.variable_x
+                                && mana.hybrid.iter().all(|count| *count == 0)
+                                && spends_its_source(definition)
                     )
                 })
                 && definition

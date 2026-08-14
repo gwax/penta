@@ -16,3 +16,7 @@ pub const LILIANAS_REAVER: CardDefinitionId = CardDefinitionId(1631);
 pub const XATHRID_NECROMANCER: CardDefinitionId = CardDefinitionId(1632);
 pub const GATEWAY_SHADE: CardDefinitionId = CardDefinitionId(1633);
 pub const CRACKLING_PERIMETER: CardDefinitionId = CardDefinitionId(1634);
+pub const APPRENTICE_WIZARD: CardDefinitionId = CardDefinitionId(1635);
+pub const COAL_GOLEM: CardDefinitionId = CardDefinitionId(1636);
+pub const FIRE_SPRITES: CardDefinitionId = CardDefinitionId(1637);
+pub const IMPLEMENTS_OF_SACRIFICE: CardDefinitionId = CardDefinitionId(1638);
