@@ -111,6 +111,7 @@ fn validate_effect_references(
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
         | EffectDef::Attach { object }
+        | EffectDef::Reconfigure { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
         | EffectDef::DiscardCards { object }
@@ -221,6 +222,7 @@ fn validate_effect_references(
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ScheduleTurnPhases(_)
+        | EffectDef::CreateAttachedToken { .. }
         | EffectDef::Special(_) => Ok(()),
     }
 }

@@ -135,6 +135,7 @@ fn validate_effect_target_shapes(
         | EffectDef::RemoveFromCombat { object }
         | EffectDef::Untap { object }
         | EffectDef::Attach { object }
+        | EffectDef::Reconfigure { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::DestroyAtEndOfCombat { object }
         | EffectDef::Detain { object }
@@ -229,6 +230,7 @@ fn validate_effect_target_shapes(
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::CreateEmblem { .. }
+        | EffectDef::CreateAttachedToken { .. }
         | EffectDef::Special(_) => Ok(()),
     }
 }

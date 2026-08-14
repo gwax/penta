@@ -271,6 +271,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::GainControl { object, .. }
         | EffectDef::AddCounters { object, .. }
         | EffectDef::Attach { object }
+        | EffectDef::Reconfigure { object }
         | EffectDef::ChangeTextBasicLandType { object }
         | EffectDef::BecomeCopyOf { object, .. } => shared_effect_recipient(object),
         EffectDef::Counter { object, zone } => {
@@ -281,6 +282,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // to read it ahead of time the way a mana ability does.
         EffectDef::AddManaEqualTo { .. }
         | EffectDef::CreateToken { .. }
+        | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
