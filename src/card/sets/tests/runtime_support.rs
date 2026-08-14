@@ -156,6 +156,7 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
         | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
+        | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
@@ -233,6 +234,7 @@ fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
+        | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
@@ -284,6 +286,7 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
+        | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
@@ -549,6 +552,11 @@ pub(super) fn shared_static_applied_effect(
             recipient,
             EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
         ),
+        // Read only off the Aura whose attachment it is defending, which is
+        // the source of the ability granting the protection.
+        AppliedEffectDef::RemainsAttachedThroughProtection => {
+            recipient == EffectRecipientDef::Source
+        }
         AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock

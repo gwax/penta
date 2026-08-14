@@ -587,6 +587,7 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
+        | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage

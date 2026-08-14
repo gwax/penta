@@ -593,6 +593,7 @@ fn collect_applied_ability_grants(effect: AppliedEffectDef, grants: &mut Vec<&Ab
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
+        | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
@@ -757,6 +758,7 @@ fn applied_ability_grant_sites(effect: AppliedEffectDef) -> usize {
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
+        | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage

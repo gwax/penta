@@ -429,6 +429,7 @@ mod triggers_and_stack;
 mod turn_and_loyalty;
 mod tutors_and_fetch_lands;
 mod unleash;
+mod wards;
 mod zone_effects;
 mod zone_move_replacements;
 

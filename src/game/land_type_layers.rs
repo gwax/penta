@@ -168,6 +168,7 @@ impl Game {
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBecomeEnchanted
             | AppliedEffectDef::CannotChangeController
+            | AppliedEffectDef::RemainsAttachedThroughProtection
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::PreventCombatDamage
@@ -333,6 +334,7 @@ impl Game {
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBecomeEnchanted
             | AppliedEffectDef::CannotChangeController
+            | AppliedEffectDef::RemainsAttachedThroughProtection
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::PreventCombatDamage

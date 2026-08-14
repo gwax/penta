@@ -362,6 +362,7 @@ pub(in super::super) fn assert_nested_definition_applied_effect(
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
+        | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage

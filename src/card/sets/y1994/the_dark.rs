@@ -98,7 +98,7 @@ pub(in crate::card::sets) static HOLY_LIGHT: CardRecord = CardRecord::new(
 );
 
 // DRK 11 — Knights of Thorn
-// Audit: blocked — Needs the named-color protection rules and Aura self-retention exception for “Protection from red; banding”.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Protection from red is available.
 
 // DRK 12 — Martyr's Cry
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “Exile all white creatures. For each creature exiled this way, its controller draws a card”.

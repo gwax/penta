@@ -71,6 +71,13 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **The Ward cycle**, and the printed exception that lets an Aura survive its
+  own effect. Protection already made an existing attachment illegal, so a
+  white Aura granting protection from white fell off the moment it worked.
+  "This effect doesn't remove this Aura" is now its own applied effect,
+  exempting that one Aura rather than weakening the protection: another white
+  Aura on the same creature still falls off. Black, Blue, Green, Red, and
+  White Ward.
 - **Scavenge**, and with it activated abilities that work from a graveyard.
   Nothing activated from that zone before, so this adds four things: the
   graveyard is enumerated for its owner's activations, one resolves through

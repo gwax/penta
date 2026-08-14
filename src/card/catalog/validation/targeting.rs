@@ -142,6 +142,7 @@ fn validate_applied_effect_target_references(
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
+        | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage

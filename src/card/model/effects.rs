@@ -117,6 +117,11 @@ pub enum AppliedEffectDef {
     CannotBecomeEnchanted,
     /// Another player cannot gain control of the affected permanent.
     CannotChangeController,
+    /// The affected Aura stays attached even when protection would otherwise
+    /// make its host an illegal one. This is the printed "This effect doesn't
+    /// remove this Aura" exception, which an Aura granting protection from
+    /// its own color needs in order to survive granting it.
+    RemainsAttachedThroughProtection,
     /// A creature matching this predicate cannot block the affected creature.
     CannotBeBlockedBy(ObjectPredicateDef),
     /// The affected creature cannot block at all. This is the blocker's own

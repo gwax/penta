@@ -33,6 +33,7 @@ mod spore;
 mod tapped_and_untap;
 mod targeted_regeneration;
 mod unleash;
+mod wards;
 pub use activation_timing::*;
 pub use attack_restrictions::*;
 pub use battalion::*;
@@ -64,6 +65,7 @@ pub use spore::*;
 pub use tapped_and_untap::*;
 pub use targeted_regeneration::*;
 pub use unleash::*;
+pub use wards::*;
 
 pub const ANKH_OF_MISHRA: CardDefinitionId = CardDefinitionId(1);
 pub const ATOG: CardDefinitionId = CardDefinitionId(2);

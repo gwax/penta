@@ -90,7 +90,22 @@ pub(in crate::card::sets) static BALANCE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEA 5 — Black Ward
-// Audit: blocked — Needs the named-color protection rules and Aura self-retention exception for “Enchanted creature has protection from black. This effect doesn't remove this Aura”.
+pub(in crate::card::sets) static BLACK_WARD: CardRecord = CardRecord::new(
+    cards::BLACK_WARD,
+    "Black Ward",
+    CardArt::new("15967a39-303f-457d-bcde-51837c8d63e1", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
+            abilities::ward(
+                ManaColor::Black,
+                "Enchanted creature has protection from black. This effect doesn't remove \
+                 this Aura.",
+            ),
+        ]),
+);
 
 // LEA 6 — Blaze of Glory
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Target creature defending player controls can block any number of creatures this turn. It blocks each attacking creature this turn if able”.
@@ -121,7 +136,22 @@ pub(in crate::card::sets) static BLESSING: CardRecord = CardRecord::new(
 );
 
 // LEA 8 — Blue Ward
-// Audit: blocked — Needs the named-color protection rules and Aura self-retention exception for “Enchanted creature has protection from blue. This effect doesn't remove this Aura”.
+pub(in crate::card::sets) static BLUE_WARD: CardRecord = CardRecord::new(
+    cards::BLUE_WARD,
+    "Blue Ward",
+    CardArt::new("93f9f0f2-e1cc-4740-888c-1336c6de0a27", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
+            abilities::ward(
+                ManaColor::Blue,
+                "Enchanted creature has protection from blue. This effect doesn't remove \
+                 this Aura.",
+            ),
+        ]),
+);
 
 // LEA 9 — Castle
 // Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “Untapped creatures you control get +0/+2”.
@@ -328,7 +358,22 @@ pub(in crate::card::sets) static FARMSTEAD: CardRecord = CardRecord::new(
 );
 
 // LEA 20 — Green Ward
-// Audit: blocked — Needs the named-color protection rules and Aura self-retention exception for “Enchanted creature has protection from green. This effect doesn't remove this Aura”.
+pub(in crate::card::sets) static GREEN_WARD: CardRecord = CardRecord::new(
+    cards::GREEN_WARD,
+    "Green Ward",
+    CardArt::new("1f6118b2-fe01-425a-a2ed-6d7c42286c8e", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
+            abilities::ward(
+                ManaColor::Green,
+                "Enchanted creature has protection from green. This effect doesn't remove \
+                 this Aura.",
+            ),
+        ]),
+);
 
 // LEA 21 — Guardian Angel
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent the next X damage that would be dealt to any target this turn. Until end of turn, you may pay {1} any time you could cast an instant. If you do, prevent the next 1 damage that…”.
@@ -493,7 +538,22 @@ pub(in crate::card::sets) static PEARLED_UNICORN: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “Target spell or permanent becomes white”.
 
 // LEA 33 — Red Ward
-// Audit: blocked — Needs the named-color protection rules and Aura self-retention exception for “Enchanted creature has protection from red. This effect doesn't remove this Aura”.
+pub(in crate::card::sets) static RED_WARD: CardRecord = CardRecord::new(
+    cards::RED_WARD,
+    "Red Ward",
+    CardArt::new("e0c64c01-c2aa-470b-88c6-3d3e4a969649", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
+            abilities::ward(
+                ManaColor::Red,
+                "Enchanted creature has protection from red. This effect doesn't remove \
+                 this Aura.",
+            ),
+        ]),
+);
 
 // LEA 34 — Resurrection
 pub(in crate::card::sets) static RESURRECTION: CardRecord = CardRecord::new(
@@ -660,7 +720,22 @@ pub(in crate::card::sets) static WHITE_KNIGHT: CardRecord = CardRecord::new(
 );
 
 // LEA 44 — White Ward
-// Audit: blocked — Needs the named-color protection rules and Aura self-retention exception for “Enchanted creature has protection from white. This effect doesn't remove this Aura”.
+pub(in crate::card::sets) static WHITE_WARD: CardRecord = CardRecord::new(
+    cards::WHITE_WARD,
+    "White Ward",
+    CardArt::new("49b22665-1501-420a-82ad-f71f6768bcf8", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
+            abilities::ward(
+                ManaColor::White,
+                "Enchanted creature has protection from white. This effect doesn't remove \
+                 this Aura.",
+            ),
+        ]),
+);
 
 // LEA 45 — Wrath of God
 pub(in crate::card::sets) static WRATH_OF_GOD: CardRecord = CardRecord::new(
@@ -4315,7 +4390,9 @@ pub(in crate::card::sets) static FOREST: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARMAGEDDON,
     &BALANCE,
+    &BLACK_WARD,
     &BLESSING,
+    &BLUE_WARD,
     &CIRCLE_OF_PROTECTION_BLUE,
     &CIRCLE_OF_PROTECTION_GREEN,
     &CIRCLE_OF_PROTECTION_RED,
@@ -4325,12 +4402,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEATH_WARD,
     &DISENCHANT,
     &FARMSTEAD,
+    &GREEN_WARD,
     &HOLY_ARMOR,
     &HOLY_STRENGTH,
     &KARMA,
     &LANCE,
     &NORTHERN_PALADIN,
     &PEARLED_UNICORN,
+    &RED_WARD,
     &RESURRECTION,
     &REVERSE_DAMAGE,
     &RIGHTEOUSNESS,
@@ -4340,6 +4419,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SWORDS_TO_PLOWSHARES,
     &WALL_OF_SWORDS,
     &WHITE_KNIGHT,
+    &WHITE_WARD,
     &WRATH_OF_GOD,
     &AIR_ELEMENTAL,
     &ANCESTRAL_RECALL,

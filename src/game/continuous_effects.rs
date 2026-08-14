@@ -234,6 +234,7 @@ impl Game {
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBecomeEnchanted
             | AppliedEffectDef::CannotChangeController
+            | AppliedEffectDef::RemainsAttachedThroughProtection
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::PreventCombatDamage
@@ -382,6 +383,23 @@ impl Game {
     /// Whether a static effect forbids Auras on this permanent. This is not a
     /// targeting restriction like hexproof: it also makes an Aura that somehow
     /// arrived anyway fall off.
+    /// Whether this Aura prints the exception that keeps it attached through
+    /// protection. Only an Aura granting protection needs it, and it exempts
+    /// that Aura alone rather than weakening the protection itself.
+    pub(super) fn remains_attached_through_protection(&self, aura: &Permanent) -> bool {
+        self.visit_static_applied_effects(aura, |applied| {
+            if Self::applied_effect_contains(
+                applied.effect,
+                AppliedEffectDef::RemainsAttachedThroughProtection,
+            ) {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+
     pub(super) fn cannot_be_enchanted(&self, permanent: &Permanent) -> bool {
         self.visit_static_applied_effects(permanent, |applied| {
             if Self::applied_effect_contains(applied.effect, AppliedEffectDef::CannotBeEnchanted) {
@@ -585,8 +603,12 @@ impl Game {
                             false,
                         )
                         // Hexproof only constrains targeting. Protection also
-                        // makes an existing attachment illegal.
-                        && !self.is_protected_from_colors(host, aura_colors)
+                        // makes an existing attachment illegal, unless this
+                        // Aura is the one printing the exception -- which is
+                        // what an Aura granting protection from its own color
+                        // has to do to survive its own effect.
+                        && (self.remains_attached_through_protection(aura)
+                            || !self.is_protected_from_colors(host, aura_colors))
             }
             AbilityTargetPredicate::AnyTarget
             | AbilityTargetPredicate::PlayerOrPlaneswalker(_)

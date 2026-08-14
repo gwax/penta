@@ -229,6 +229,63 @@ pub const fn protection_from(color: ManaColor) -> AbilityDef {
     keyword(text, KeywordAbility::ProtectionFrom(color))
 }
 
+/// The granted protection and the self-retention exception for each printed
+/// Ward. `EffectDef::Sequence` holds its clauses by reference, and a sequence
+/// built from a parameter cannot be promoted to `'static`, so the five are
+/// named here rather than rebuilt per card.
+static WARD_PROTECTIONS: [AbilityDef; 5] = [
+    protection_from(ManaColor::White),
+    protection_from(ManaColor::Blue),
+    protection_from(ManaColor::Black),
+    protection_from(ManaColor::Red),
+    protection_from(ManaColor::Green),
+];
+
+static WARD_CLAUSES: [[EffectDef; 2]; 5] = [
+    ward_clauses(0),
+    ward_clauses(1),
+    ward_clauses(2),
+    ward_clauses(3),
+    ward_clauses(4),
+];
+
+const fn ward_clauses(color: usize) -> [EffectDef; 2] {
+    [
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::GrantAbility(&WARD_PROTECTIONS[color]),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+        // Without this the Aura would be an illegal attachment the moment it
+        // granted protection from its own colour, which is exactly what the
+        // printed exception exists to stop.
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::RemainsAttachedThroughProtection,
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    ]
+}
+
+/// One Ward's whole granted clause. The card supplies its own rules text,
+/// which names the colour and prints the exception in one sentence.
+///
+/// # Panics
+///
+/// Panics when `color` is colorless, which no Ward is printed with.
+#[must_use]
+pub const fn ward(color: ManaColor, text: &'static str) -> AbilityDef {
+    let clauses = match color {
+        ManaColor::White => &WARD_CLAUSES[0],
+        ManaColor::Blue => &WARD_CLAUSES[1],
+        ManaColor::Black => &WARD_CLAUSES[2],
+        ManaColor::Red => &WARD_CLAUSES[3],
+        ManaColor::Green => &WARD_CLAUSES[4],
+        ManaColor::Colorless => panic!("no Ward is printed with colorless protection"),
+    };
+    AbilityDef::static_ability(text, EffectDef::Sequence(clauses))
+}
+
 /// A printed flashback clause. Its attached ability identity becomes the
 /// spell play option's alternative-cost identity.
 #[must_use]
