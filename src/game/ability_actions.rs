@@ -296,6 +296,7 @@ impl Game {
             }
         }
         self.add_hand_ability_actions(player, actions);
+        self.add_graveyard_ability_actions(player, actions);
     }
 
     #[allow(clippy::too_many_lines)]
@@ -466,6 +467,86 @@ impl Game {
                     }
                 }
             });
+        }
+    }
+
+    /// Activations offered from a player's own graveyard. Only the card's
+    /// controller sees them, and the printed timing window is checked here
+    /// rather than at resolution, matching the battlefield path.
+    pub(super) fn add_graveyard_ability_actions(
+        &self,
+        player: PlayerId,
+        actions: &mut Vec<Action>,
+    ) {
+        for card in &self.players[player.index()].graveyard {
+            self.for_each_printed_card_ability(
+                card,
+                &CharacteristicContext::Graveyard,
+                |effective| {
+                    let ability = effective.ability;
+                    let DeclarativeAbilityDef::Activated(definition) = ability.definition else {
+                        return;
+                    };
+                    if !ability.is_executable()
+                        || definition.procedure != AbilityProcedureDef::Shared
+                        || !definition.source_zones.contains(&ZoneKind::Graveyard)
+                        || !self.activation_timing_allows(player, definition.timing)
+                    {
+                        return;
+                    }
+                    let mut mana_cost = ManaCost::default();
+                    let mut supported = true;
+                    for cost in definition.costs.as_slice() {
+                        match cost {
+                            AbilityCostDef::Mana(cost) => {
+                                mana_cost = add_mana_cost(mana_cost, *cost);
+                            }
+                            // The card itself is the only thing a graveyard
+                            // activation can spend so far.
+                            AbilityCostDef::ExileSource => {}
+                            AbilityCostDef::TapSource
+                            | AbilityCostDef::UntapSource
+                            | AbilityCostDef::SacrificeSource
+                            | AbilityCostDef::RemoveCountersFromSource { .. }
+                            | AbilityCostDef::PayLife(_)
+                            | AbilityCostDef::DiscardSource
+                            | AbilityCostDef::DiscardCards(_)
+                            | AbilityCostDef::SacrificePermanent { .. }
+                            | AbilityCostDef::Loyalty(_)
+                            | AbilityCostDef::ExileCardFromGraveyard(_)
+                            | AbilityCostDef::Special(_) => supported = false,
+                        }
+                    }
+                    let payment_purpose = ManaPaymentPurpose::Ability {
+                        source: card.id,
+                        taps_source: false,
+                        leaves_source: false,
+                    };
+                    // Nothing offers a graveyard activation more than once, so
+                    // a variable X would silently be chosen as zero.
+                    if !supported
+                        || mana_cost.variable_x
+                        || !self.can_pay_cost_for(player, mana_cost, 0, &payment_purpose)
+                    {
+                        return;
+                    }
+                    for targets in self.legal_ability_target_selections(
+                        definition.targets,
+                        player,
+                        card.id,
+                        TriggerContext::empty(),
+                        0,
+                    ) {
+                        actions.push(Action::ActivateAbility {
+                            source: card.id,
+                            ability: effective.origin,
+                            targets,
+                            cost_object: None,
+                            x: 0,
+                        });
+                    }
+                },
+            );
         }
     }
 

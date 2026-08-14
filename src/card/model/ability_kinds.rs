@@ -130,6 +130,10 @@ pub enum ActivationTimingDef {
     YourTurn,
     /// Only during the upkeep step of a turn its controller is taking.
     YourUpkeep,
+    /// Only when its controller could cast a sorcery: their own main phase,
+    /// with the stack empty. Unlike the windows above, this one does depend
+    /// on the stack, because that is what "as a sorcery" means.
+    SorcerySpeed,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

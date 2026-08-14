@@ -71,6 +71,15 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Scavenge**, and with it activated abilities that work from a graveyard.
+  Nothing activated from that zone before, so this adds four things: the
+  graveyard is enumerated for its owner's activations, one resolves through
+  its own path, `ActivationTimingDef::SorcerySpeed` closes the window outside
+  a controller's own main phase with an empty stack, and a card's power stays
+  readable after it has left for exile -- which scavenge needs, because paying
+  its cost exiles the very card whose power it counts. Eight Return to Ravnica
+  identities. Sewer Shambler and Golgari Decoy stay blocked on swampwalk and
+  on a forced-block requirement.
 - **Two more detain identities**, with no engine change. Lyev Decree detains
   from a spell and New Prahv Guildmage from an activated ability, which are the
   two ways into the restriction the first pass did not use.

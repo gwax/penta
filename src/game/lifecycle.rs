@@ -324,8 +324,22 @@ impl Game {
             .and_then(|permanent| self.power(permanent))
             .or_else(|| match self.retired_objects.get(&object) {
                 Some(RetiredObject::Permanent { power, .. }) => *power,
-                Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => None,
+                // A card that was never a permanent still has a power to
+                // read, and nothing in a graveyard or exile modifies it, so
+                // the printed value is the whole answer. Scavenge asks this
+                // of a card it has already exiled to pay its own cost.
+                Some(RetiredObject::Card(card)) => self.printed_card_power(card),
+                Some(RetiredObject::Stack(_)) | None => self
+                    .card_in_nonbattlefield_zone(object)
+                    .and_then(|(_, card)| self.printed_card_power(card)),
             })
+    }
+
+    fn printed_card_power(&self, card: &CardInstance) -> Option<i16> {
+        self.catalog
+            .get(card.definition)
+            .and_then(|definition| definition.rules.creature_stats())
+            .map(|stats| stats.power)
     }
 
     /// The object an Aura was attached to immediately before it left the

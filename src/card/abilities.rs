@@ -5,14 +5,14 @@
 
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
-    AddManaEffectDef, AlternativeCastKindDef, AnimationDef, AppliedEffectDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardType, CardTypeSet, ConditionDef, CostDef, CounterKind,
-    DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ManaCost, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation,
-    ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, ScaledValueDef,
-    ShieldCoverageDef, TriggerEventDef, ValueDef, ZoneKind,
+    ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AnimationDef, AppliedEffectDef,
+    BasicLandType, BattlefieldEntryModificationDef, CardType, CardTypeSet, ConditionDef, CostDef,
+    CounterKind, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, ObjectQueryDef, PaymentDef,
+    PlayerRelation, ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef,
+    ScaledValueDef, ShieldCoverageDef, TriggerEventDef, ValueDef, ZoneKind,
 };
-use crate::ids::ChoiceIndex;
+use crate::ids::{ChoiceIndex, TargetIndex};
 
 /// The target an "Enchant creature" Aura spell chooses.
 pub static ENCHANT_CREATURE_TARGET: [AbilityTargetDef; 1] =
@@ -301,6 +301,29 @@ pub const fn bloodrush(
     )
     .with_source_zones(&[ZoneKind::Hand])
 }
+
+/// Scavenge, whose printed cost is the card's own exile from its owner's
+/// graveyard and whose counter count is the exiled card's power. Reminder
+/// text carries the mana cost, so each card supplies its own literal.
+#[must_use]
+pub const fn scavenge(mana_cost: ManaCost, text: &'static str) -> AbilityDef {
+    AbilityDef::activated_with_cost_list_and_targets(
+        text,
+        AbilityCostList::two(AbilityCostDef::Mana(mana_cost), AbilityCostDef::ExileSource),
+        SCAVENGE_TARGET,
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::SourcePower,
+        },
+    )
+    .with_source_zones(&[ZoneKind::Graveyard])
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed)
+}
+
+static SCAVENGE_TARGET: &[AbilityTargetDef] = &[AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
 
 /// The intrinsic stack-zone rule carried by spells that cannot be countered.
 #[must_use]

@@ -296,6 +296,7 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
 pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[AbilityCostDef]) -> bool {
     let battlefield = source_zones == [ZoneKind::Battlefield];
     let hand = source_zones == [ZoneKind::Hand];
+    let graveyard = source_zones == [ZoneKind::Graveyard];
     let sacrifice_choices = costs
         .iter()
         .filter(|cost| matches!(cost, AbilityCostDef::SacrificePermanent { .. }))
@@ -323,9 +324,11 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             | AbilityCostDef::ExileCardFromGraveyard(object) => {
                 battlefield && shared_object_predicate(*object)
             }
+            // Exiling the source is the one cost a card can pay from its own
+            // graveyard; the rest of these need a permanent to act on.
+            AbilityCostDef::ExileSource => battlefield || graveyard,
             AbilityCostDef::TapSource
             | AbilityCostDef::SacrificeSource
-            | AbilityCostDef::ExileSource
             | AbilityCostDef::RemoveCountersFromSource { .. }
             | AbilityCostDef::PayLife(_)
             | AbilityCostDef::Loyalty(_) => battlefield,
@@ -731,7 +734,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
         DeclarativeAbilityDef::Activated(definition) => {
             matches!(
                     definition.source_zones,
-                    [ZoneKind::Battlefield | ZoneKind::Hand]
+                    [ZoneKind::Battlefield | ZoneKind::Hand | ZoneKind::Graveyard]
                 ) && definition.procedure == AbilityProcedureDef::Shared
                     && shared_activated_costs(definition.source_zones, definition.costs.as_slice())
                     // An activation enumerates its targets once for every

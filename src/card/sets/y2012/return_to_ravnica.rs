@@ -1480,7 +1480,18 @@ pub(in crate::card::sets) static SLUM_REAPER: CardRecord = CardRecord::new(
 // Audit: blocked — Coin flips and their replay-visible random outcomes are unavailable.
 
 // RTR 80 — Terrus Wurm
-// Audit: blocked — Scavenge's graveyard activation, exile cost, and source-power counter amount are unavailable.
+pub(in crate::card::sets) static TERRUS_WURM: CardRecord = CardRecord::new(
+    cards::TERRUS_WURM,
+    "Terrus Wurm",
+    CardArt::new("1998135c-7b7f-402b-a8a5-4f4af131b1bc", "Cliff Childs"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{6}{B}"), &["Zombie", "Wurm"], 5, 5).with_abilities(&[
+        abilities::scavenge(
+            mana_cost!("{6}{B}"),
+            "Scavenge {6}{B} ({6}{B}, Exile this card from your graveyard: Put a number of +1/+1 counters equal to this card's power on target creature. Scavenge only as a sorcery.)",
+        ),
+    ]),
+);
 
 // RTR 81 — Thrill-Kill Assassin
 pub(in crate::card::sets) static THRILL_KILL_ASSASSIN: CardRecord = CardRecord::new(
@@ -1555,7 +1566,19 @@ pub(in crate::card::sets) static UNDERWORLD_CONNECTIONS: CardRecord = CardRecord
 );
 
 // RTR 84 — Zanikev Locust
-// Audit: blocked — Scavenge's graveyard activation, exile cost, and source-power counter amount are unavailable.
+pub(in crate::card::sets) static ZANIKEV_LOCUST: CardRecord = CardRecord::new(
+    cards::ZANIKEV_LOCUST,
+    "Zanikev Locust",
+    CardArt::new("adcbd7ee-8958-46fe-abb0-e899e7d2e654", "Cliff Childs"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{5}{B}"), &["Insect"], 3, 3).with_abilities(&[
+        abilities::flying(),
+        abilities::scavenge(
+            mana_cost!("{2}{B}{B}"),
+            "Scavenge {2}{B}{B} ({2}{B}{B}, Exile this card from your graveyard: Put a number of +1/+1 counters equal to this card's power on target creature. Scavenge only as a sorcery.)",
+        ),
+    ]),
+);
 
 // RTR 85 — Annihilating Fire
 // Audit: blocked — Needs a damage-linked, turn-long replacement that exiles a creature if it dies after being dealt this damage.
@@ -2274,13 +2297,35 @@ pub(in crate::card::sets) static CHORUS_OF_MIGHT: CardRecord = CardRecord::new(
 );
 
 // RTR 120 — Deadbridge Goliath
-// Audit: blocked — Scavenge needs a graveyard-only sorcery-speed activation whose counter amount is linked to the exiled card's power.
+pub(in crate::card::sets) static DEADBRIDGE_GOLIATH: CardRecord = CardRecord::new(
+    cards::DEADBRIDGE_GOLIATH,
+    "Deadbridge Goliath",
+    CardArt::new("6ad03e99-25d3-4a09-819b-9192dfd8c9d2", "Chase Stone"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Insect"], 5, 5).with_abilities(&[
+        abilities::scavenge(
+            mana_cost!("{4}{G}{G}"),
+            "Scavenge {4}{G}{G} ({4}{G}{G}, Exile this card from your graveyard: Put a number of +1/+1 counters equal to this card's power on target creature. Scavenge only as a sorcery.)",
+        ),
+    ]),
+);
 
 // RTR 121 — Death's Presence
 // Audit: blocked — The death event does not preserve the dead creature's power for use as a later counter amount.
 
 // RTR 122 — Drudge Beetle
-// Audit: blocked — Scavenge needs a graveyard-only sorcery-speed activation whose counter amount is linked to the exiled card's power.
+pub(in crate::card::sets) static DRUDGE_BEETLE: CardRecord = CardRecord::new(
+    cards::DRUDGE_BEETLE,
+    "Drudge Beetle",
+    CardArt::new("e4812e81-beca-4afc-b2f2-24d5ab27abff", "Slawomir Maniak"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Insect"], 2, 2).with_abilities(&[
+        abilities::scavenge(
+            mana_cost!("{5}{G}"),
+            "Scavenge {5}{G} ({5}{G}, Exile this card from your graveyard: Put a number of +1/+1 counters equal to this card's power on target creature. Scavenge only as a sorcery.)",
+        ),
+    ]),
+);
 
 // RTR 123 — Druid's Deliverance
 // Audit: blocked — Needs a player-wide combat-damage prevention shield and populate's chosen token-copy procedure.
@@ -2359,7 +2404,19 @@ pub(in crate::card::sets) static GOBBLING_OOZE: CardRecord = CardRecord::new(
 // Audit: blocked — Populate needs choosing a creature token and creating a copy of it after the fixed Rhino token.
 
 // RTR 129 — Korozda Monitor
-// Audit: blocked — Scavenge needs a graveyard-only sorcery-speed activation whose counter amount is linked to the exiled card's power.
+pub(in crate::card::sets) static KOROZDA_MONITOR: CardRecord = CardRecord::new(
+    cards::KOROZDA_MONITOR,
+    "Korozda Monitor",
+    CardArt::new("2f319d57-7a54-4b10-86d4-58d7b3994844", "Lars Grant-West"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Lizard"], 3, 3).with_abilities(&[
+        abilities::trample(),
+        abilities::scavenge(
+            mana_cost!("{5}{G}{G}"),
+            "Scavenge {5}{G}{G} ({5}{G}{G}, Exile this card from your graveyard: Put a number of +1/+1 counters equal to this card's power on target creature. Scavenge only as a sorcery.)",
+        ),
+    ]),
+);
 
 // RTR 130 — Mana Bloom
 // Audit: blocked — Needs X entry counters, a remove-counter mana cost limited to once each turn, and a no-charge-counter upkeep condition.
@@ -2920,7 +2977,19 @@ pub(in crate::card::sets) static DREADBORE: CardRecord = CardRecord::new(
 );
 
 // RTR 158 — Dreg Mangler
-// Audit: blocked — Scavenge needs a graveyard-only sorcery-speed activation whose counter amount is linked to the exiled card's power.
+pub(in crate::card::sets) static DREG_MANGLER: CardRecord = CardRecord::new(
+    cards::DREG_MANGLER,
+    "Dreg Mangler",
+    CardArt::new("28d42d6a-e9a0-449e-9b31-436c09b7c1ba", "Peter Mohrbacher"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{1}{B}{G}"), &["Plant", "Zombie"], 3, 3).with_abilities(&[
+        abilities::haste(),
+        abilities::scavenge(
+            mana_cost!("{3}{B}{G}"),
+            "Scavenge {3}{B}{G} ({3}{B}{G}, Exile this card from your graveyard: Put a number of +1/+1 counters equal to this card's power on target creature. Scavenge only as a sorcery.)",
+        ),
+    ]),
+);
 
 // RTR 159 — Epic Experiment
 // Audit: blocked — Needs linked top-X exile, permission to cast qualifying cards without paying their costs, and cleanup of the uncast cards.
@@ -3521,7 +3590,19 @@ pub(in crate::card::sets) static SKYMARK_ROC: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a nonland card-name choice and a name-linked search across an opponent's graveyard, hand, and library.
 
 // RTR 198 — Sluiceway Scorpion
-// Audit: blocked — Scavenge needs a graveyard-only sorcery-speed activation whose counter amount is linked to the exiled card's power.
+pub(in crate::card::sets) static SLUICEWAY_SCORPION: CardRecord = CardRecord::new(
+    cards::SLUICEWAY_SCORPION,
+    "Sluiceway Scorpion",
+    CardArt::new("7b6dbadf-a6f7-4876-9c3f-44e4a33b2bee", "Slawomir Maniak"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{2}{B}{G}"), &["Scorpion"], 2, 2).with_abilities(&[
+        abilities::deathtouch(),
+        abilities::scavenge(
+            mana_cost!("{1}{B}{G}"),
+            "Scavenge {1}{B}{G} ({1}{B}{G}, Exile this card from your graveyard: Put a number of +1/+1 counters equal to this card's power on target creature. Scavenge only as a sorcery.)",
+        ),
+    ]),
+);
 
 // RTR 199 — Spawn of Rix Maadi
 pub(in crate::card::sets) static SPAWN_OF_RIX_MAADI: CardRecord = CardRecord::new(
@@ -3975,7 +4056,18 @@ pub(in crate::card::sets) static RAKDOS_SHRED_FREAK: CardRecord = keyword_creatu
 );
 
 // RTR 222 — Slitherhead
-// Audit: blocked — Scavenge needs a graveyard-only sorcery-speed activation whose counter amount is linked to the exiled card's power.
+pub(in crate::card::sets) static SLITHERHEAD: CardRecord = CardRecord::new(
+    cards::SLITHERHEAD,
+    "Slitherhead",
+    CardArt::new("d9327905-a254-4885-8310-69fc153ec52f", "Greg Staples"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{B/G}"), &["Plant", "Zombie"], 1, 1).with_abilities(&[
+        abilities::scavenge(
+            mana_cost!("{0}"),
+            "Scavenge {0} ({0}, Exile this card from your graveyard: Put a number of +1/+1 counters equal to this card's power on target creature. Scavenge only as a sorcery.)",
+        ),
+    ]),
+);
 
 // RTR 223 — Sundering Growth
 // Audit: blocked — Destroying the target is expressible, but populate's chosen token-copy procedure is not.
@@ -4582,9 +4674,11 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PERILOUS_SHADOW,
     &SHRIEKING_AFFLICTION,
     &SLUM_REAPER,
+    &TERRUS_WURM,
     &THRILL_KILL_ASSASSIN,
     &ULTIMATE_PRICE,
     &UNDERWORLD_CONNECTIONS,
+    &ZANIKEV_LOCUST,
     &BATTERHORN,
     &BELLOWS_LIZARD,
     &BLOODFRAY_GIANT,
@@ -4614,8 +4708,11 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BRUSHSTRIDER,
     &CENTAURS_HERALD,
     &CHORUS_OF_MIGHT,
+    &DEADBRIDGE_GOLIATH,
+    &DRUDGE_BEETLE,
     &GATECREEPER_VINE,
     &GOBBLING_OOZE,
+    &KOROZDA_MONITOR,
     &RUBBLEBACK_RHINO,
     &SAVAGE_SURGE,
     &SEEK_THE_HORIZON,
@@ -4636,6 +4733,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DETENTION_SPHERE,
     &DRAMATIC_RESCUE,
     &DREADBORE,
+    &DREG_MANGLER,
     &ESSENCE_BACKLASH,
     &FALL_OF_THE_GAVEL,
     &GOLGARI_CHARM,
@@ -4655,6 +4753,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SELESNYA_CHARM,
     &SKULL_REND,
     &SKYMARK_ROC,
+    &SLUICEWAY_SCORPION,
     &SPAWN_OF_RIX_MAADI,
     &SPHINXS_REVELATION,
     &SUPREME_VERDICT,
@@ -4670,6 +4769,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JUDGES_FAMILIAR,
     &RAKDOS_CACKLER,
     &RAKDOS_SHRED_FREAK,
+    &SLITHERHEAD,
     &VASSAL_SOUL,
     &AZORIUS_KEYRUNE,
     &CHROMATIC_LANTERN,
