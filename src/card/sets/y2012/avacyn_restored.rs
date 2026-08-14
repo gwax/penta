@@ -1528,8 +1528,38 @@ pub(in crate::card::sets) static SOULCAGE_FIEND: CardRecord = CardRecord::new(
 // AVR 121 — Treacherous Pit-Dweller
 // Audit: blocked — Needs a graveyard-to-battlefield trigger and a permanent control change to a targeted opponent.
 
+/// "If you control the creature with the greatest power or tied for the
+/// greatest power." A tie counts, so this asks whether anything is strictly
+/// bigger rather than whether one creature stands alone.
+static CONTROLS_THE_BIGGEST: TriggerConditionDef =
+    TriggerConditionDef::ControlsGreatestPowerCreature;
+
 // AVR 122 — Triumph of Cruelty
-// Audit: blocked — Needs a comparison against the greatest creature power on the battlefield, including ties.
+pub(in crate::card::sets) static TRIUMPH_OF_CRUELTY: CardRecord = CardRecord::new(
+    cards::TRIUMPH_OF_CRUELTY,
+    "Triumph of Cruelty",
+    CardArt::new("906618e2-2638-4017-9d6e-e6f282967a81", "Izzy"),
+    CardSet::AvacynRestored,
+    CardRules::new_enchantment(mana_cost!("{2}{B}")).with_ability(
+        AbilityDef::triggered_if_with_targets(
+            "At the beginning of your upkeep, target opponent discards a card if you control \
+             the creature with the greatest power or tied for the greatest power.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &CONTROLS_THE_BIGGEST,
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+            )],
+            EffectDef::Discard {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+                selection: DiscardSelectionDef::RecipientChooses,
+            },
+        ),
+    ),
+);
 
 // AVR 123 — Undead Executioner
 pub(in crate::card::sets) static UNDEAD_EXECUTIONER: CardRecord = CardRecord::new(
@@ -2682,7 +2712,25 @@ pub(in crate::card::sets) static TIMBERLAND_GUIDE: CardRecord = CardRecord::new(
 );
 
 // AVR 198 — Triumph of Ferocity
-// Audit: blocked — Needs a comparison against the greatest creature power on the battlefield, including ties.
+pub(in crate::card::sets) static TRIUMPH_OF_FEROCITY: CardRecord = CardRecord::new(
+    cards::TRIUMPH_OF_FEROCITY,
+    "Triumph of Ferocity",
+    CardArt::new("7bb41fa6-0cc6-43e5-9aa8-fcd9c781f4ce", "James Ryman"),
+    CardSet::AvacynRestored,
+    CardRules::new_enchantment(mana_cost!("{2}{G}")).with_ability(AbilityDef::triggered_if(
+        "At the beginning of your upkeep, draw a card if you control the creature with the \
+         greatest power or tied for the greatest power.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::You,
+        },
+        &CONTROLS_THE_BIGGEST,
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )),
+);
 
 // AVR 199 — Trusted Forcemage
 // Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional +1/+1 bonus to both paired creatures.
@@ -3146,6 +3194,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RENEGADE_DEMON,
     &SEARCHLIGHT_GEIST,
     &SOULCAGE_FIEND,
+    &TRIUMPH_OF_CRUELTY,
     &UNDEAD_EXECUTIONER,
     &ARCHWING_DRAGON,
     &BANNERS_RAISED,
@@ -3184,6 +3233,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SOMBERWALD_SAGE,
     &TERRIFYING_PRESENCE,
     &TIMBERLAND_GUIDE,
+    &TRIUMPH_OF_FEROCITY,
     &VORSTCLAW,
     &WANDERING_WOLF,
     &WOLFIR_AVENGER,

@@ -596,6 +596,25 @@ impl Game {
                         QuantifierDef::Any => matching.any(satisfies),
                     }
                 }
+                // A tie counts, so this asks whether anything is strictly
+                // bigger rather than whether one creature is unique.
+                TriggerConditionDef::ControlsGreatestPowerCreature => {
+                    let mut best: Option<i16> = None;
+                    let mut mine: Option<i16> = None;
+                    for permanent in &self.battlefield {
+                        let Some(power) = self.power(permanent) else {
+                            continue;
+                        };
+                        best = Some(best.map_or(power, |seen: i16| seen.max(power)));
+                        if permanent.controller == controller {
+                            mine = Some(mine.map_or(power, |seen: i16| seen.max(power)));
+                        }
+                    }
+                    match (mine, best) {
+                        (Some(mine), Some(best)) => mine >= best,
+                        _ => false,
+                    }
+                }
                 // Follows the attachment rather than being frozen when the
                 // Equipment moved, so the answer is about where it is now.
                 TriggerConditionDef::AttachedPermanentMatches { object: predicate } => self

@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **"If you control the creature with the greatest power."** A tie counts, so
+  the question is whether anything on the battlefield is strictly bigger
+  rather than whether one creature stands alone, and an empty battlefield
+  makes it false rather than vacuously true. Triumph of Cruelty and Triumph of
+  Ferocity.
 - **An Aura triggering on its host's death**, reading the dead creature's
   power. The trigger is the attached permanent's move from battlefield to
   graveyard, which the predicate vocabulary already described; the amount is

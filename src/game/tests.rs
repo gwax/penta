@@ -440,6 +440,7 @@ mod state_triggers_and_life;
 mod targeted_answers;
 mod targeting_characteristics;
 mod triggers_and_stack;
+mod triumphs;
 mod turn_and_loyalty;
 mod tutors_and_fetch_lands;
 mod unblocked_attackers;

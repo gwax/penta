@@ -306,6 +306,11 @@ pub enum TriggerConditionDef {
     /// Whether the ability's own source is tapped, using last-known
     /// information if it has left the battlefield.
     SourceIsTapped,
+    /// Whether this ability's controller controls a creature whose power is
+    /// at least every other creature's, which is what "the greatest power or
+    /// tied for the greatest power" asks. False when no creature is on the
+    /// battlefield at all.
+    ControlsGreatestPowerCreature,
     /// Whether what the ability's source is attached to matches. This is what
     /// "as long as equipped creature is a Human" asks, and it is read live so
     /// the answer follows the Equipment as it moves.

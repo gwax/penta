@@ -600,6 +600,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceCounters { .. }
+        | TriggerConditionDef::ControlsGreatestPowerCreature
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
