@@ -551,10 +551,24 @@ pub(in crate::card::sets) static AGORAPHOBIA: CardRecord = CardRecord::new(
 );
 
 // GTC 31 — Clinging Anemones
-// Audit: blocked — Evolve needs a trigger comparison against the entering creature's current power and toughness.
+pub(in crate::card::sets) static CLINGING_ANEMONES: CardRecord = CardRecord::new(
+    cards::CLINGING_ANEMONES,
+    "Clinging Anemones",
+    CardArt::new("4e183069-096d-4977-8154-e7b60f17a787", "Mike Bierek"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Jellyfish"], 1, 4)
+        .with_abilities(&[abilities::defender(), abilities::evolve()]),
+);
 
 // GTC 32 — Cloudfin Raptor
-// Audit: blocked — Evolve needs a trigger comparison against the entering creature's current power and toughness.
+pub(in crate::card::sets) static CLOUDFIN_RAPTOR: CardRecord = CardRecord::new(
+    cards::CLOUDFIN_RAPTOR,
+    "Cloudfin Raptor",
+    CardArt::new("e2931f27-43f9-4e52-aab3-967c26739e43", "Peter Mohrbacher"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{U}"), &["Bird", "Mutant"], 0, 1)
+        .with_abilities(&[abilities::flying(), abilities::evolve()]),
+);
 
 // GTC 33 — Diluvian Primordial
 // Audit: blocked — Needs casting a targeted graveyard card without paying its mana cost and replacing that spell card's later graveyard move with exile.
@@ -1497,7 +1511,14 @@ pub(in crate::card::sets) static WRECKING_OGRE: CardRecord = CardRecord::new(
 );
 
 // GTC 113 — Adaptive Snapjaw
-// Audit: blocked — Evolve needs a trigger comparison against the entering creature's current power and toughness.
+pub(in crate::card::sets) static ADAPTIVE_SNAPJAW: CardRecord = CardRecord::new(
+    cards::ADAPTIVE_SNAPJAW,
+    "Adaptive Snapjaw",
+    CardArt::new("0d3c0c43-2d6d-49b8-a112-07611a23ae69", "Tomasz Jedruszek"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{4}{G}"), &["Lizard", "Beast"], 6, 2)
+        .with_abilities(&[abilities::evolve()]),
+);
 
 // GTC 114 — Alpha Authority
 // Audit: blocked — Combat constraints cannot limit an attacker to at most one blocker.
@@ -1527,7 +1548,14 @@ pub(in crate::card::sets) static BURST_OF_STRENGTH: CardRecord = CardRecord::new
 );
 
 // GTC 116 — Crocanura
-// Audit: blocked — Evolve needs a trigger comparison against the entering creature's current power and toughness.
+pub(in crate::card::sets) static CROCANURA: CardRecord = CardRecord::new(
+    cards::CROCANURA,
+    "Crocanura",
+    CardArt::new("b459a988-97b0-4370-b89a-2565f8721b60", "Jack Wang"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Crocodile", "Frog"], 1, 3)
+        .with_abilities(&[abilities::reach(), abilities::evolve()]),
+);
 
 // GTC 117 — Crowned Ceratok
 // Audit: blocked — Continuous recipient predicates cannot test whether a creature currently has a +1/+1 counter.
@@ -2620,7 +2648,14 @@ pub(in crate::card::sets) static RUINATION_WURM: CardRecord = CardRecord::new(
 );
 
 // GTC 193 — Shambleshark
-// Audit: blocked — Evolve needs a trigger comparison against the entering creature's current power and toughness.
+pub(in crate::card::sets) static SHAMBLESHARK: CardRecord = CardRecord::new(
+    cards::SHAMBLESHARK,
+    "Shambleshark",
+    CardArt::new("07855a17-4e68-4257-af7f-275c9fb0a9b8", "Wesley Burt"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{G}{U}"), &["Shark", "Crab"], 2, 1)
+        .with_abilities(&[abilities::flash(), abilities::evolve()]),
+);
 
 // GTC 194 — Signal the Clans
 // Audit: blocked — Needs an exactly-three library search, distinct-name validation, random selection, and shuffling the unselected cards.
@@ -3370,6 +3405,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &URBIS_PROTECTOR,
     &ZARICHI_TIGER,
     &AGORAPHOBIA,
+    &CLINGING_ANEMONES,
+    &CLOUDFIN_RAPTOR,
     &METROPOLIS_SPRITE,
     &MINDEYE_DRAKE,
     &SAGES_ROW_DENIZEN,
@@ -3401,7 +3438,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &VIASHINO_SHANKTAIL,
     &WARMIND_INFANTRY,
     &WRECKING_OGRE,
+    &ADAPTIVE_SNAPJAW,
     &BURST_OF_STRENGTH,
+    &CROCANURA,
     &DISCIPLE_OF_THE_OLD_WAYS,
     &FORCED_ADAPTATION,
     &GREENSIDE_WATCHER,
@@ -3433,6 +3472,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PRIMAL_VISITATION,
     &PSYCHIC_STRIKE,
     &RUINATION_WURM,
+    &SHAMBLESHARK,
     &SIMIC_CHARM,
     &SKYKNIGHT_LEGIONNAIRE,
     &SPARK_TROOPER,

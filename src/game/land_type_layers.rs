@@ -419,6 +419,8 @@ impl Game {
             | ObjectPredicateDef::PowerExactly(_)
             | ObjectPredicateDef::ToughnessExactly(_)
             | ObjectPredicateDef::ToughnessLessThan(_)
+            | ObjectPredicateDef::PowerGreaterThan(_)
+            | ObjectPredicateDef::ToughnessGreaterThan(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::DebutSet(_)
             | ObjectPredicateDef::SharesNameWithSource

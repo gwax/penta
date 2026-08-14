@@ -702,6 +702,31 @@ impl Game {
 
     /// Whether `object` satisfies `predicate`. `source` is the ability's own
     /// object, which is what a controller relation is measured against.
+    /// The predicates comparing a stat against a value read off the ability's
+    /// own source. They share a shape, so they share a body.
+    fn computed_stat_matches(
+        &self,
+        predicate: ObjectPredicateDef,
+        object: &TriggerEventObject,
+        source: GameObjectId,
+    ) -> bool {
+        let (value, stat, greater) = match predicate {
+            ObjectPredicateDef::ToughnessLessThan(value) => (value, object.toughness, false),
+            ObjectPredicateDef::PowerGreaterThan(value) => (value, object.power, true),
+            ObjectPredicateDef::ToughnessGreaterThan(value) => (value, object.toughness, true),
+            _ => return false,
+        };
+        self.value_from_source(value, source)
+            .zip(stat)
+            .is_some_and(|(limit, stat)| {
+                if greater {
+                    i32::from(stat) > limit
+                } else {
+                    i32::from(stat) < limit
+                }
+            })
+    }
+
     pub(super) fn trigger_object_matches(
         &self,
         predicate: ObjectPredicateDef,
@@ -743,10 +768,11 @@ impl Game {
             }
             ObjectPredicateDef::PowerExactly(exact) => object.power == Some(exact),
             ObjectPredicateDef::ToughnessExactly(exact) => object.toughness == Some(exact),
-            ObjectPredicateDef::ToughnessLessThan(value) => self
-                .value_from_source(value, source)
-                .zip(object.toughness)
-                .is_some_and(|(limit, toughness)| i32::from(toughness) < limit),
+            ObjectPredicateDef::ToughnessLessThan(_)
+            | ObjectPredicateDef::PowerGreaterThan(_)
+            | ObjectPredicateDef::ToughnessGreaterThan(_) => {
+                self.computed_stat_matches(predicate, object, source)
+            }
             ObjectPredicateDef::Supertype(supertype) => object.supertypes[supertype.index()],
             // Read from the definition rather than the object: what matters
             // is where the card was first printed, not what it has become.

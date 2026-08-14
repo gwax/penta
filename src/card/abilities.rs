@@ -506,6 +506,40 @@ pub const fn unleash_counter() -> AbilityDef {
 pub const DETAIN_REMINDER: &str = "(Until your next turn, that permanent can't attack or block \
                                    and its activated abilities can't be activated.)";
 
+/// Evolve. The comparison is against the source's own power and toughness at
+/// the moment the creature enters, which is what makes a growing creature
+/// stop evolving once it has outgrown what arrives.
+#[must_use]
+pub const fn evolve() -> AbilityDef {
+    AbilityDef::triggered(
+        "Evolve (Whenever a creature you control enters, if that creature has greater power or \
+         toughness than this creature, put a +1/+1 counter on this creature.)",
+        TriggerEventDef::ZoneChanged {
+            object: ObjectPredicateDef::All(&EVOLVE_SUBJECT),
+            from: None,
+            to: Some(ZoneKind::Battlefield),
+        },
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Constant(1),
+        },
+    )
+}
+
+static EVOLVE_SUBJECT: [ObjectPredicateDef; 4] = [
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    // A creature does not evolve itself as it arrives.
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+    ObjectPredicateDef::AnyOf(&EVOLVE_BIGGER),
+];
+
+static EVOLVE_BIGGER: [ObjectPredicateDef; 2] = [
+    ObjectPredicateDef::PowerGreaterThan(ValueDef::SourcePower),
+    ObjectPredicateDef::ToughnessGreaterThan(ValueDef::SourceToughness),
+];
+
 /// A shared checkland-style entry clause backed by the general object-query
 /// condition vocabulary.
 #[must_use]
