@@ -3,9 +3,10 @@ use crate::card::{
     AbilityProcedureDef, AbilityProgramDef, AbilityTargetDef, AppliedEffectDef,
     CharacteristicOperationDef, ConditionDef, DamageEventMatcherDef, DamagePreventionCapacityDef,
     DamageRecipientMatcherDef, DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef,
-    EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef,
-    ReplacementEffectDef, TriggerConditionDef, ValueDef,
+    EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    PowerToughnessOperationDef, ReplacementEffectDef, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind,
 };
 use crate::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -48,6 +49,13 @@ pub(super) fn validate_ability_program_targets(
 ) -> Result<(), GrantedAbilityValidationError> {
     validate_target_definitions(targets)?;
     validate_program_references(program, targets.len(), BindingScope::EMPTY)
+}
+
+pub(super) fn validate_ability_trigger_event(
+    event: TriggerEventDef,
+    target_count: usize,
+) -> Result<(), GrantedAbilityValidationError> {
+    validate_trigger_event_references(event, target_count, BindingScope::EMPTY)
 }
 
 fn validate_program_references(
@@ -218,6 +226,304 @@ fn validate_damage_matcher_references(
             validate_player_reference(player, target_count, scope)
         }
         DamageRecipientMatcherDef::Any | DamageRecipientMatcherDef::AffectedObject => Ok(()),
+    }
+}
+
+fn unsupported_trigger_event(event: TriggerEventDef) -> GrantedAbilityValidationError {
+    GrantedAbilityValidationError::UnsupportedTriggerEvent { event }
+}
+
+fn validate_trigger_object_predicate(
+    predicate: ObjectPredicateDef,
+    event: TriggerEventDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    match predicate {
+        ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
+            for predicate in predicates {
+                validate_trigger_object_predicate(*predicate, event, target_count, scope)?;
+            }
+            Ok(())
+        }
+        ObjectPredicateDef::Not(predicate) => {
+            validate_trigger_object_predicate(*predicate, event, target_count, scope)
+        }
+        ObjectPredicateDef::ManaValueEqualTo(value)
+        | ObjectPredicateDef::ManaValueAtMostValue(value)
+        | ObjectPredicateDef::ToughnessLessThan(value)
+        | ObjectPredicateDef::PowerGreaterThan(value)
+        | ObjectPredicateDef::ToughnessGreaterThan(value)
+        | ObjectPredicateDef::PowerLessThan(value) => {
+            validate_value_target_references(value, target_count, scope)?;
+            if matches!(
+                value,
+                ValueDef::Constant(_)
+                    | ValueDef::ChosenX
+                    | ValueDef::SourcePower
+                    | ValueDef::SourceToughness
+                    | ValueDef::CountersOnSource(_)
+            ) {
+                Ok(())
+            } else {
+                Err(unsupported_trigger_event(event))
+            }
+        }
+        ObjectPredicateDef::ControlledBy(
+            PlayerRelation::ChosenPlayer | PlayerRelation::EventPlayer,
+        )
+        | ObjectPredicateDef::Special(_) => Err(unsupported_trigger_event(event)),
+        ObjectPredicateDef::Any
+        | ObjectPredicateDef::Source
+        | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
+        | ObjectPredicateDef::HasType(_)
+        | ObjectPredicateDef::HasAnyBasicLandType(_)
+        | ObjectPredicateDef::Spell
+        | ObjectPredicateDef::NoncreatureSpell
+        | ObjectPredicateDef::Color(_)
+        | ObjectPredicateDef::ColorCount(_)
+        | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::ManaValueAtMost(_)
+        | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::PowerExactly(_)
+        | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::HasCounter(_)
+        | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
+        | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::AttackingOrBlocking
+        | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasNonManaActivatedAbility
+        | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::AttachedToSource
+        | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::BlockedBySource
+        | ObjectPredicateDef::Enchanted
+        | ObjectPredicateDef::AttackedThisTurn => Ok(()),
+    }
+}
+
+fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) -> bool {
+    match predicate {
+        ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => predicates
+            .iter()
+            .copied()
+            .any(trigger_predicate_requires_live_battlefield),
+        ObjectPredicateDef::Not(predicate) => {
+            trigger_predicate_requires_live_battlefield(*predicate)
+        }
+        ObjectPredicateDef::HasNonManaActivatedAbility => true,
+        ObjectPredicateDef::Any
+        | ObjectPredicateDef::Source
+        | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
+        | ObjectPredicateDef::HasType(_)
+        | ObjectPredicateDef::HasAnyBasicLandType(_)
+        | ObjectPredicateDef::Spell
+        | ObjectPredicateDef::NoncreatureSpell
+        | ObjectPredicateDef::Color(_)
+        | ObjectPredicateDef::ColorCount(_)
+        | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::ManaValueAtMost(_)
+        | ObjectPredicateDef::ManaValueEqualTo(_)
+        | ObjectPredicateDef::ManaValueAtMostValue(_)
+        | ObjectPredicateDef::PowerAtLeast(_)
+        | ObjectPredicateDef::PowerExactly(_)
+        | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::ToughnessLessThan(_)
+        | ObjectPredicateDef::PowerGreaterThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThan(_)
+        | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::HasCounter(_)
+        | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::Supertype(_)
+        | ObjectPredicateDef::DebutSet(_)
+        | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::AttackingOrBlocking
+        | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::AttachedToSource
+        | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::BlockedBySource
+        | ObjectPredicateDef::Enchanted
+        | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::Special(_) => false,
+    }
+}
+
+fn validate_trigger_object_reference(
+    reference: ObjectRefDef,
+    event: TriggerEventDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    validate_object_reference(reference, target_count, scope)?;
+    if matches!(
+        reference,
+        ObjectRefDef::Source | ObjectRefDef::AttachedToSource | ObjectRefDef::TriggeringObject
+    ) {
+        Ok(())
+    } else {
+        Err(unsupported_trigger_event(event))
+    }
+}
+
+fn validate_trigger_player_reference(
+    reference: PlayerRefDef,
+    event: TriggerEventDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    validate_player_reference(reference, target_count, scope)?;
+    match reference {
+        PlayerRefDef::EffectController | PlayerRefDef::EventPlayer => Ok(()),
+        PlayerRefDef::ControllerOf(reference) | PlayerRefDef::OwnerOf(reference) => {
+            validate_trigger_object_reference(reference, event, target_count, scope)
+        }
+        PlayerRefDef::Target(_) => Err(unsupported_trigger_event(event)),
+    }
+}
+
+fn validate_trigger_player_set(
+    players: PlayerSetDef,
+    event: TriggerEventDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    match players {
+        PlayerSetDef::All | PlayerSetDef::Related(_) => Ok(()),
+        PlayerSetDef::One(reference) => {
+            validate_trigger_player_reference(reference, event, target_count, scope)
+        }
+    }
+}
+
+fn validate_trigger_damage_matcher(
+    matcher: DamageEventMatcherDef,
+    event: TriggerEventDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    match matcher.source {
+        DamageSourceMatcherDef::Any => {}
+        // `AffectedObject` belongs to static prevention rules, whose applied
+        // recipient is resolved outside an event. A triggered listener has no
+        // such anchor and must name Source or another event reference.
+        DamageSourceMatcherDef::AffectedObject => {
+            return Err(unsupported_trigger_event(event));
+        }
+        DamageSourceMatcherDef::Matching(predicate) => {
+            if trigger_predicate_requires_live_battlefield(predicate) {
+                return Err(unsupported_trigger_event(event));
+            }
+            validate_trigger_object_predicate(predicate, event, target_count, scope)?;
+        }
+        DamageSourceMatcherDef::Object(reference) | DamageSourceMatcherDef::Except(reference) => {
+            validate_trigger_object_reference(reference, event, target_count, scope)?;
+        }
+    }
+    match matcher.recipient {
+        DamageRecipientMatcherDef::Any => Ok(()),
+        DamageRecipientMatcherDef::AffectedObject => Err(unsupported_trigger_event(event)),
+        DamageRecipientMatcherDef::Recipients(EffectRecipientDef(
+            EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)),
+        )) => validate_trigger_object_reference(reference, event, target_count, scope),
+        DamageRecipientMatcherDef::Recipients(EffectRecipientDef(
+            EffectRecipientSetDef::Players(players),
+        )) => validate_trigger_player_set(players, event, target_count, scope),
+        DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
+            validate_trigger_player_reference(player, event, target_count, scope)
+        }
+        DamageRecipientMatcherDef::Recipients(_) => Err(unsupported_trigger_event(event)),
+    }
+}
+
+fn validate_trigger_event_references(
+    event: TriggerEventDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    match event {
+        TriggerEventDef::ZoneChanged(matcher) => {
+            const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 9] = [
+                (ZoneKind::Library, ZoneKind::Battlefield),
+                (ZoneKind::Hand, ZoneKind::Battlefield),
+                (ZoneKind::Graveyard, ZoneKind::Battlefield),
+                (ZoneKind::Exile, ZoneKind::Battlefield),
+                (ZoneKind::Stack, ZoneKind::Battlefield),
+                (ZoneKind::Battlefield, ZoneKind::Graveyard),
+                (ZoneKind::Battlefield, ZoneKind::Exile),
+                (ZoneKind::Battlefield, ZoneKind::Hand),
+                (ZoneKind::Battlefield, ZoneKind::Library),
+            ];
+            if !COMMITTED_TRANSITIONS.iter().any(|(from, to)| {
+                matcher.from.is_none_or(|expected| expected == *from)
+                    && matcher.to.is_none_or(|expected| expected == *to)
+            }) {
+                return Err(unsupported_trigger_event(event));
+            }
+            let can_match_departure = COMMITTED_TRANSITIONS.iter().any(|(from, to)| {
+                *from == ZoneKind::Battlefield
+                    && *to != ZoneKind::Battlefield
+                    && matcher.from.is_none_or(|expected| expected == *from)
+                    && matcher.to.is_none_or(|expected| expected == *to)
+            });
+            if can_match_departure && trigger_predicate_requires_live_battlefield(matcher.object) {
+                return Err(unsupported_trigger_event(event));
+            }
+            validate_trigger_object_predicate(matcher.object, event, target_count, scope)?;
+            if let Some(reference) = matcher.previously_damaged_by {
+                if matcher
+                    .from
+                    .is_some_and(|from| from != ZoneKind::Battlefield)
+                    || matcher.to.is_some_and(|to| to != ZoneKind::Graveyard)
+                {
+                    return Err(unsupported_trigger_event(event));
+                }
+                validate_trigger_object_reference(reference, event, target_count, scope)?;
+            }
+            Ok(())
+        }
+        TriggerEventDef::Tapped(matcher) => {
+            validate_trigger_object_predicate(matcher.object, event, target_count, scope)
+        }
+        TriggerEventDef::Attacks(matcher) => {
+            if matcher.declaration.minimum == 0
+                || matcher
+                    .declaration
+                    .maximum
+                    .is_some_and(|maximum| matcher.declaration.minimum > maximum)
+                || matcher.attack_number == Some(0)
+            {
+                return Err(unsupported_trigger_event(event));
+            }
+            validate_trigger_object_predicate(matcher.attacker, event, target_count, scope)
+        }
+        TriggerEventDef::SpellCast(predicate)
+            if trigger_predicate_requires_live_battlefield(predicate) =>
+        {
+            Err(unsupported_trigger_event(event))
+        }
+        TriggerEventDef::AttacksAndIsNotBlocked {
+            attacker: predicate,
+        }
+        | TriggerEventDef::BecomesBlocked(predicate)
+        | TriggerEventDef::BlocksOrBecomesBlockedBy { object: predicate }
+        | TriggerEventDef::SpellCast(predicate)
+        | TriggerEventDef::Transforms(predicate) => {
+            validate_trigger_object_predicate(predicate, event, target_count, scope)
+        }
+        TriggerEventDef::DamageDealt(matcher) => {
+            validate_trigger_damage_matcher(matcher, event, target_count, scope)
+        }
+        TriggerEventDef::LifeGained(PlayerRelation::ChosenPlayer) => {
+            Err(unsupported_trigger_event(event))
+        }
+        TriggerEventDef::StepBegins { .. }
+        | TriggerEventDef::LifeGained(_)
+        | TriggerEventDef::StateCondition => Ok(()),
     }
 }
 
@@ -588,14 +894,19 @@ fn validate_effect_references(
                 return Err(GrantedAbilityValidationError::UnsupportedInstalledTriggerAbility);
             };
             if definition.procedure != AbilityProcedureDef::Shared
+                || definition.source_zones != [ZoneKind::Battlefield]
                 || !definition.targets.is_empty()
                 || trigger.ability.declarative_effect().is_none()
             {
                 return Err(GrantedAbilityValidationError::UnsupportedInstalledTriggerAbility);
             }
+            if definition.event == TriggerEventDef::StateCondition {
+                return Err(unsupported_trigger_event(definition.event));
+            }
             if let Some(condition) = definition.condition {
                 validate_trigger_condition(*condition, target_count, scope)?;
             }
+            validate_trigger_event_references(definition.event, target_count, scope)?;
             if let crate::card::InstalledTriggerLifetimeDef::UntilNextTurn(player) =
                 trigger.lifetime
             {
@@ -635,7 +946,7 @@ fn validate_effect_references(
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
-        | EffectDef::AdditionalCombatPhase
+        | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::Special(_) => Ok(()),
     }
 }

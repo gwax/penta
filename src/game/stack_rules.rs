@@ -111,7 +111,7 @@ impl Game {
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
-            | EffectDef::AdditionalCombatPhase
+            | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery

@@ -212,6 +212,23 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "ability {ability:?} on part {part:?} of card definition {definition:?} installs an ability that is not a targetless shared declarative triggered ability"
             ),
+            Self::UnsupportedTriggerEvent {
+                definition,
+                part,
+                ability,
+                event,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses unsupported trigger event {event:?}"
+            ),
+            Self::UnsupportedTriggeredManaProgram {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "triggered mana ability {ability:?} on part {part:?} of card definition {definition:?} cannot resolve its program immediately"
+            ),
             Self::TooManyAbilityTargets {
                 definition,
                 part,

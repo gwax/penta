@@ -407,7 +407,7 @@ impl Game {
                 | EffectDef::ChangeTextBasicLandType { .. }
                 | EffectDef::BecomeCopyOf { .. }
                 | EffectDef::May { .. }
-                | EffectDef::AdditionalCombatPhase
+                | EffectDef::ScheduleTurnPhases(_)
                 | EffectDef::TakeExtraTurn { .. }
                 | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                 | EffectDef::GrantFlashToNextSorcery
@@ -991,6 +991,12 @@ impl Game {
                     .flat_map(|player| player.outside_game.iter())
                     .find(|card| card.id == object)
                     .map(|card| card.definition)
+            })
+            .or_else(|| match self.retired_objects.get(&object) {
+                Some(RetiredObject::Card(card)) => Some(card.definition),
+                Some(RetiredObject::Permanent { permanent, .. }) => Some(permanent.card.definition),
+                Some(RetiredObject::Stack(stack)) => Some(stack.card.definition),
+                None => None,
             })
     }
 

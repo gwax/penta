@@ -1712,3 +1712,49 @@ fn checkpoint_round_trips_extra_turns_and_the_regular_turn_anchor() {
     assert_eq!(rebuilt.active_player, PlayerId::Two);
     assert_eq!(rebuilt.next_regular_player, PlayerId::One);
 }
+
+#[test]
+fn checkpoint_round_trips_the_ordered_turn_phase_queue_and_resume_boundary() {
+    let mut game = crate::game::tests::ready_game();
+    game.step = Step::BeginningOfCombat;
+    game.turn_phase_queue = VecDeque::from([
+        TurnPhaseDef::PostcombatMain,
+        TurnPhaseDef::Combat,
+        TurnPhaseDef::PostcombatMain,
+    ]);
+    game.turn_phase_resume = Some(TurnPhaseResume::Step(Step::End));
+
+    let (wire, mut rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 92);
+    assert_eq!(
+        wire["checkpoint"]["turnPhaseQueue"],
+        json!(["postcombatMain", "combat", "postcombatMain"])
+    );
+    assert_eq!(wire["checkpoint"]["turnPhaseResume"], json!("end"));
+    assert_eq!(wire["checkpoint"]["hasDeferredState"], false);
+    assert_eq!(rebuilt.turn_phase_queue, game.turn_phase_queue);
+    assert_eq!(rebuilt.turn_phase_resume, game.turn_phase_resume);
+
+    rebuilt.step = Step::EndOfCombat;
+    rebuilt.advance_step();
+    assert_eq!(rebuilt.step, Step::PostcombatMain);
+    rebuilt.advance_step();
+    assert_eq!(rebuilt.step, Step::BeginningOfCombat);
+    rebuilt.step = Step::EndOfCombat;
+    rebuilt.advance_step();
+    assert_eq!(rebuilt.step, Step::PostcombatMain);
+    assert!(rebuilt.turn_phase_queue.is_empty());
+    assert_eq!(
+        rebuilt.turn_phase_resume,
+        Some(TurnPhaseResume::Step(Step::End))
+    );
+
+    // The final inserted phase has no queued successor but still needs the
+    // frozen continuation. That active state is independently reconstructible.
+    let (final_wire, mut final_rebuilt) = rebuild_current_checkpoint(&rebuilt, PlayerId::One, 93);
+    assert_eq!(final_wire["checkpoint"]["turnPhaseQueue"], json!([]));
+    assert_eq!(final_wire["checkpoint"]["turnPhaseResume"], json!("end"));
+    final_rebuilt.advance_step();
+    assert_eq!(final_rebuilt.step, Step::End);
+    assert!(final_rebuilt.turn_phase_queue.is_empty());
+    assert_eq!(final_rebuilt.turn_phase_resume, None);
+}

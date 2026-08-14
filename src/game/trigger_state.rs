@@ -171,20 +171,22 @@ pub(super) enum CommittedTriggerEvent {
         object: TriggerEventObject,
         from: ZoneKind,
         to: ZoneKind,
+        /// Damage sources recorded on the departing battlefield object. This
+        /// is frozen with the exit event and empty for all other moves.
+        damage_sources: Vec<GameObjectId>,
     },
-    BecomesTapped {
+    Tapped {
         object: TriggerEventObject,
+        for_mana: bool,
     },
     LifeGained {
         player: PlayerId,
         amount: u16,
     },
-    AttacksInGroup {
-        object: TriggerEventObject,
-        total: u8,
-    },
     Attacks {
         object: TriggerEventObject,
+        declaration_size: u8,
+        attack_number: u8,
     },
     BecomesBlocked {
         object: TriggerEventObject,
@@ -204,24 +206,16 @@ pub(super) enum CommittedTriggerEvent {
         creature: TriggerEventObject,
         other: TriggerEventObject,
     },
-    TappedForMana {
-        object: TriggerEventObject,
-    },
     DamageDealt {
-        source: TriggerEventObject,
+        source: Option<TriggerEventObject>,
+        /// Whether the source snapshot represents a spell on the stack.
+        /// Object characteristics alone cannot distinguish a spell from the
+        /// same card in another zone, so this fact is frozen separately.
+        source_is_spell: bool,
         recipient: Target,
+        recipient_object: Option<TriggerEventObject>,
         amount: u16,
         combat: bool,
-    },
-    CombatDamageDealtToPlayer {
-        object: TriggerEventObject,
-        player: PlayerId,
-        amount: u16,
-    },
-    DamageDealtToPlayer {
-        object: TriggerEventObject,
-        player: PlayerId,
-        amount: u16,
     },
     SpellCast {
         object: TriggerEventObject,
@@ -233,25 +227,24 @@ pub(super) enum CommittedTriggerEvent {
         step: TurnStepDef,
         player: PlayerId,
     },
-    DamagedCreatureDied {
-        object: TriggerEventObject,
-        source: GameObjectId,
-    },
 }
 
 impl CommittedTriggerEvent {
     pub(super) fn context(&self) -> TriggerContext {
         match self {
             Self::ZoneChanged { object, .. }
-            | Self::BecomesTapped { object }
-            | Self::AttacksInGroup { object, .. }
-            | Self::Attacks { object }
+            | Self::Attacks { object, .. }
             | Self::Transformed { object }
-            | Self::DamagedCreatureDied { object, .. }
             | Self::AttacksAndIsNotBlocked { object } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: None,
+                amount: None,
+            },
+            Self::Tapped { object, for_mana } => TriggerContext {
+                object: Some(object.id),
+                object_controller: Some(object.controller),
+                event_player: for_mana.then_some(object.controller),
                 amount: None,
             },
             Self::DamageDealt {
@@ -260,27 +253,12 @@ impl CommittedTriggerEvent {
                 amount,
                 ..
             } => TriggerContext {
-                object: Some(source.id),
-                object_controller: Some(source.controller),
+                object: source.as_ref().map(|source| source.id),
+                object_controller: source.as_ref().map(|source| source.controller),
                 event_player: match recipient {
                     Target::Player(player) => Some(*player),
                     Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
                 },
-                amount: Some(i32::from(*amount)),
-            },
-            Self::CombatDamageDealtToPlayer {
-                object,
-                player,
-                amount,
-            }
-            | Self::DamageDealtToPlayer {
-                object,
-                player,
-                amount,
-            } => TriggerContext {
-                object: Some(object.id),
-                object_controller: Some(object.controller),
-                event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
             },
             Self::BlocksOrBecomesBlocked { other, .. } => TriggerContext {
@@ -304,9 +282,7 @@ impl CommittedTriggerEvent {
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
             },
-            // The player who tapped a permanent for mana is its controller,
-            // which is the same shape a cast spell has.
-            Self::TappedForMana { object } | Self::SpellCast { object } => TriggerContext {
+            Self::SpellCast { object } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: Some(object.controller),

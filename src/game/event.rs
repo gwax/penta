@@ -32,6 +32,15 @@ impl Step {
     }
 }
 
+/// Where ordinary turn progression resumes after an inserted phase sequence.
+/// The next-turn sentinel keeps a sequence created during the ending phase in
+/// the same turn until every inserted phase has happened.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum TurnPhaseResume {
+    Step(Step),
+    NextTurn,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GameResult {
     Winner { winner: PlayerId, reason: WinReason },

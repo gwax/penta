@@ -588,8 +588,8 @@ impl Game {
                     }
                 }
             }
-            EffectDef::AdditionalCombatPhase => {
-                self.additional_combat_phases = self.additional_combat_phases.saturating_add(1);
+            EffectDef::ScheduleTurnPhases(phases) => {
+                self.schedule_turn_phases(phases);
             }
             EffectDef::TakeExtraTurn { player: recipient } => {
                 let players = self

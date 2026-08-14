@@ -587,6 +587,7 @@ mod static_animation;
 mod static_keyword_predicates;
 mod targeted_answers;
 mod targeting_characteristics;
+mod trigger_event_matchers;
 mod triggers_and_stack;
 mod triumphs;
 mod turn_and_loyalty;

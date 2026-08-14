@@ -70,11 +70,7 @@ pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new
     )
     .with_abilities(&[
         abilities::flying(),
-        AbilityDef::triggered_with_targets("When this creature enters, you may exile up to three other target creatures from the battlefield and/or creature cards from graveyards.", TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            }, &[AbilityTargetDef::up_to(
+        AbilityDef::triggered_with_targets("When this creature enters, you may exile up to three other target creatures from the battlefield and/or creature cards from graveyards.", TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)), &[AbilityTargetDef::up_to(
             AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
@@ -93,11 +89,7 @@ pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new
             }),
         AbilityDef::triggered(
             "When this creature leaves the battlefield, return the exiled cards to their owners' hands.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: None,
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), None),
             EffectDef::ReturnLinkedExiles {
                 zone: ZoneKind::Hand,
                 grant: None,
@@ -124,11 +116,11 @@ pub(in crate::card::sets) static AZORIUS_ARRESTER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Soldier"], 2, 1).with_abilities(&[
         AbilityDef::triggered_with_targets(
             "When this creature enters, detain target creature an opponent controls.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -153,11 +145,11 @@ pub(in crate::card::sets) static AZORIUS_JUSTICIAR: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Human", "Wizard"], 2, 2).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature enters, detain up to two target creatures your opponents control.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &UP_TO_TWO_OPPOSING_CREATURES,
             EffectDef::Detain {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -185,7 +177,7 @@ pub(in crate::card::sets) static BAZAAR_KROVOD: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{4}{W}"), &["Beast"], 2, 5).with_ability(
         AbilityDef::triggered_with_targets(
             "Whenever this creature attacks, another target attacking creature gets +0/+2 until end of turn. Untap that creature.",
-            TriggerEventDef::Attacks(ObjectPredicateDef::Source),
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
             &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::HasType(CardType::Creature),
                 ObjectPredicateDef::Attacking,
@@ -296,11 +288,11 @@ pub(in crate::card::sets) static KNIGHTLY_VALOR: CardRecord = CardRecord::new(
             ),
             AbilityDef::triggered(
                 "When this Aura enters, create a 2/2 white Knight creature token with vigilance.",
-                TriggerEventDef::ZoneChanged {
-                    object: ObjectPredicateDef::Source,
-                    from: None,
-                    to: Some(ZoneKind::Battlefield),
-                },
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
                 EffectDef::CreateToken {
                     token: cards::KNIGHT_TOKEN_2_2_WHITE,
                     count: ValueDef::Constant(1),
@@ -368,9 +360,7 @@ pub(in crate::card::sets) static PRECINCT_CAPTAIN: CardRecord = CardRecord::new(
             abilities::first_strike(),
             AbilityDef::triggered(
                 "Whenever this creature deals combat damage to a player, create a 1/1 white Soldier creature token.",
-                TriggerEventDef::CombatDamageDealtToPlayer {
-                    source: ObjectPredicateDef::Source,
-                },
+                TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
                 EffectDef::CreateToken {
                     token: cards::SOLDIER_TOKEN_1_1_WHITE,
                     count: ValueDef::Constant(1),
@@ -389,11 +379,11 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
     CardRules::new_enchantment(mana_cost!("{1}{W}")).with_abilities(&[
         AbilityDef::triggered(
             "When this enchantment enters, exile all graveyards.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::Any,
@@ -471,11 +461,11 @@ pub(in crate::card::sets) static SELLER_OF_SONGBIRDS: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Human"], 1, 2).with_ability(
         AbilityDef::triggered(
             "When this creature enters, create a 1/1 white Bird creature token with flying.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::CreateToken {
                 token: cards::BIRD_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
@@ -661,9 +651,7 @@ pub(in crate::card::sets) static CROSSTOWN_COURIER: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Vedalken"], 2, 1).with_ability(
         AbilityDef::triggered(
             "Whenever this creature deals combat damage to a player, that player mills that many cards.",
-            TriggerEventDef::CombatDamageDealtToPlayer {
-                source: ObjectPredicateDef::Source,
-            },
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
             EffectDef::Mill {
                 player: EffectRecipientDef::EventPlayer,
                 amount: ValueDef::TriggerEventAmount,
@@ -875,11 +863,11 @@ pub(in crate::card::sets) static ISPERIAS_SKYWATCH: CardRecord = CardRecord::new
         abilities::flying(),
         AbilityDef::triggered_with_targets(
             "When this creature enters, detain target creature an opponent controls.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -899,7 +887,7 @@ pub(in crate::card::sets) static ISPERIAS_SKYWATCH: CardRecord = CardRecord::new
 /// so "an opponent" is read against the player who installed it.
 static JACE_ATTACK_TAX: AbilityDef = AbilityDef::triggered(
     "Whenever a creature an opponent controls attacks, it gets -1/-0 until end of turn.",
-    TriggerEventDef::Attacks(ObjectPredicateDef::All(&[
+    TriggerEventDef::attacks(ObjectPredicateDef::All(&[
         ObjectPredicateDef::HasType(CardType::Creature),
         ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
     ])),
@@ -1048,11 +1036,11 @@ pub(in crate::card::sets) static RUNEWING: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::triggered(
             "When this creature dies, draw a card.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -1084,11 +1072,11 @@ pub(in crate::card::sets) static SOULSWORN_SPIRIT: CardRecord = CardRecord::new(
         abilities::cannot_be_blocked("This creature can't be blocked."),
         AbilityDef::triggered_with_targets(
             "When this creature enters, detain target creature an opponent controls.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -1116,9 +1104,7 @@ pub(in crate::card::sets) static STEALER_OF_SECRETS: CardRecord = CardRecord::ne
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Rogue"], 2, 2).with_ability(
         AbilityDef::triggered(
             "Whenever this creature deals combat damage to a player, draw a card.",
-            TriggerEventDef::CombatDamageDealtToPlayer {
-                source: ObjectPredicateDef::Source,
-            },
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -1184,11 +1170,11 @@ pub(in crate::card::sets) static VOIDWIELDER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{4}{U}"), &["Human", "Wizard"], 1, 4).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature enters, you may return target creature to its owner's hand.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -1399,11 +1385,11 @@ pub(in crate::card::sets) static DRAINPIPE_VERMIN: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{B}"), &["Rat"], 1, 1).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature dies, you may pay {B}. If you do, target player discards a card.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Player(PlayerRelation::Any),
             )],
@@ -1455,12 +1441,10 @@ pub(in crate::card::sets) static NECROPOLIS_REGENT: CardRecord = CardRecord::new
         abilities::flying(),
         AbilityDef::triggered(
             "Whenever a creature you control deals combat damage to a player, put that many +1/+1 counters on it.",
-            TriggerEventDef::CombatDamageDealtToPlayer {
-                source: ObjectPredicateDef::All(&[
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                ]),
-            },
+                ])),
             EffectDef::AddCounters {
                 object: EffectRecipientDef::TriggeringObject,
                 kind: CounterKind::PlusOnePlusOne,
@@ -1541,11 +1525,11 @@ pub(in crate::card::sets) static SLUM_REAPER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Horror"], 4, 2).with_ability(
         AbilityDef::triggered(
             "When this creature enters, each player sacrifices a creature of their choice.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::SacrificeOfChoice {
                 player: EffectRecipientDef::EachPlayer,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -1682,11 +1666,11 @@ pub(in crate::card::sets) static BATTERHORN: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{4}{R}"), &["Beast"], 4, 3).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature enters, you may destroy target artifact.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -2220,7 +2204,7 @@ pub(in crate::card::sets) static UTVARA_HELLKITE: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::triggered(
             "Whenever a Dragon you control attacks, create a 6/6 red Dragon creature token with flying.",
-            TriggerEventDef::Attacks(ObjectPredicateDef::All(&[
+            TriggerEventDef::attacks(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::Subtype("Dragon"),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
@@ -2446,11 +2430,7 @@ pub(in crate::card::sets) static GATECREEPER_VINE: CardRecord = CardRecord::new(
         abilities::defender(),
         AbilityDef::triggered(
             "When this creature enters, you may search your library for a basic land card or a Gate card, reveal it, put it into your hand, then shuffle.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
@@ -2702,7 +2682,7 @@ pub(in crate::card::sets) static ARCHON_OF_THE_TRIUMVIRATE: CardRecord = CardRec
         AbilityDef::triggered_with_targets(
             "Whenever this creature attacks, detain up to two target nonland permanents your \
              opponents control.",
-            TriggerEventDef::Attacks(ObjectPredicateDef::Source),
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
             &UP_TO_TWO_OPPOSING_NONLANDS,
             EffectDef::Detain {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -2731,11 +2711,11 @@ pub(in crate::card::sets) static ARMADA_WURM: CardRecord = CardRecord::new(
         abilities::trample(),
         AbilityDef::triggered(
             "When this creature enters, create a 5/5 green Wurm creature token with trample.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::CreateToken {
                 token: cards::WURM_TOKEN_5_5_GREEN,
                 count: ValueDef::Constant(1),
@@ -2847,11 +2827,11 @@ pub(in crate::card::sets) static CENTAUR_HEALER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}{W}"), &["Centaur", "Cleric"], 3, 3).with_ability(
         AbilityDef::triggered(
             "When this creature enters, you gain 3 life.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(3),
@@ -3028,11 +3008,7 @@ pub(in crate::card::sets) static DETENTION_SPHERE: CardRecord = CardRecord::new(
     CardArt::new("afee5464-83b7-4d7a-b407-9ee7de21535b", "Kev Walker"),
     CardSet::ReturnToRavnica,
     CardRules::new_enchantment(mana_cost!("{1}{W}{U}")).with_abilities(&[
-        AbilityDef::triggered_with_targets("When this enchantment enters, you may exile target nonland permanent not named Detention Sphere and all other permanents with the same name as that permanent.", TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            }, &[AbilityTargetDef::exactly_one(
+        AbilityDef::triggered_with_targets("When this enchantment enters, you may exile target nonland permanent not named Detention Sphere and all other permanents with the same name as that permanent.", TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)), &[AbilityTargetDef::exactly_one(
             AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
@@ -3052,11 +3028,7 @@ pub(in crate::card::sets) static DETENTION_SPHERE: CardRecord = CardRecord::new(
             }),
         AbilityDef::triggered(
             "When this enchantment leaves the battlefield, return the exiled cards to the battlefield under their owner's control.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: None,
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), None),
             EffectDef::ReturnLinkedExiles {
                 zone: ZoneKind::Battlefield,
                 grant: None,
@@ -3305,7 +3277,7 @@ pub(in crate::card::sets) static ISPERIA_SUPREME_JUDGE: CardRecord = CardRecord:
             abilities::flying(),
             AbilityDef::triggered(
                 "Whenever a creature attacks you or a planeswalker you control, you may draw a card.",
-                TriggerEventDef::Attacks(ObjectPredicateDef::ControlledBy(
+                TriggerEventDef::attacks(ObjectPredicateDef::ControlledBy(
                     PlayerRelation::Opponent,
                 )),
                 EffectDef::May {
@@ -3432,11 +3404,11 @@ pub(in crate::card::sets) static LYEV_SKYKNIGHT: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::triggered_with_targets(
             "When this creature enters, detain target nonland permanent an opponent controls.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
@@ -3509,10 +3481,7 @@ pub(in crate::card::sets) static NIV_MIZZET_DRACOGENIUS: CardRecord = CardRecord
             abilities::flying(),
             AbilityDef::triggered(
                 "Whenever Niv-Mizzet deals damage to a player, you may draw a card.",
-                TriggerEventDef::DamageDealtToPlayer {
-                    source: ObjectPredicateDef::Source,
-                    player: PlayerRelation::Any,
-                },
+                TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Any),
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
                     effect: &EffectDef::DrawCards {
@@ -3564,9 +3533,7 @@ pub(in crate::card::sets) static RAKDOS_RINGLEADER: CardRecord = CardRecord::new
         abilities::first_strike(),
         AbilityDef::triggered(
             "Whenever this creature deals combat damage to a player, that player discards a card at random.",
-            TriggerEventDef::CombatDamageDealtToPlayer {
-                source: ObjectPredicateDef::Source,
-            },
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
             EffectDef::Discard {
                 recipient: EffectRecipientDef::EventPlayer,
                 amount: ValueDef::Constant(1),
@@ -3696,7 +3663,7 @@ pub(in crate::card::sets) static SKYMARK_ROC: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::triggered_with_targets(
             "Whenever this creature attacks, you may return target creature defending player controls with toughness 2 or less to its owner's hand.",
-            TriggerEventDef::Attacks(ObjectPredicateDef::Source),
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::All(&[
@@ -3913,9 +3880,7 @@ pub(in crate::card::sets) static TRESTLE_TROLL: CardRecord = CardRecord::new(
 /// attack one.
 static VRASKA_RETALIATION: AbilityDef = AbilityDef::triggered(
     "Whenever a creature deals combat damage to Vraska, destroy that creature.",
-    TriggerEventDef::CombatDamageDealtToSource {
-        source: ObjectPredicateDef::HasType(CardType::Creature),
-    },
+    TriggerEventDef::combat_damage_to_source(ObjectPredicateDef::HasType(CardType::Creature)),
     EffectDef::Destroy {
         object: EffectRecipientDef::TriggeringObject,
         can_regenerate: true,
@@ -4398,9 +4363,7 @@ static IZZET_KEYRUNE_LOOT: EffectDef = EffectDef::Sequence(&[
 
 static IZZET_KEYRUNE_COMBAT: AbilityDef = AbilityDef::triggered(
     "Whenever this artifact deals combat damage to a player, you may draw a card. If you do, discard a card.",
-    TriggerEventDef::CombatDamageDealtToPlayer {
-        source: ObjectPredicateDef::Source,
-    },
+    TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
     EffectDef::May {
         player: EffectRecipientDef::Controller,
         effect: &IZZET_KEYRUNE_LOOT,
@@ -4719,11 +4682,11 @@ pub(in crate::card::sets) static TRANSGUILD_PROMENADE: CardRecord = CardRecord::
         abilities::enters_tapped("This land enters tapped."),
         AbilityDef::triggered(
             "When this land enters, sacrifice it unless you pay {1}.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::PayOr(PayOrDef::unless_mana(
                 mana_cost!("{1}"),
                 &EffectDef::Sacrifice {

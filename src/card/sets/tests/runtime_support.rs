@@ -600,7 +600,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::CannotBeForcedToSacrifice
                     | EffectDef::CreateEmblem { .. }
                     | EffectDef::Transform { .. }
-                    | EffectDef::AdditionalCombatPhase
+                    | EffectDef::ScheduleTurnPhases(_)
                     | EffectDef::TakeExtraTurn { .. }
                     | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                     | EffectDef::GrantFlashToNextSorcery
@@ -626,6 +626,11 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             definition.condition.is_none()
                 && definition.procedure == AbilityProcedureDef::Shared
                 && battlefield_only(definition.source_zones)
+                && matches!(
+                    definition.event,
+                    TriggerEventDef::Tapped(matcher)
+                        if matcher.purpose == crate::card::TapPurposeDef::Mana
+                )
                 && shared_trigger_event(definition.event)
                 && immediate_mana_effect(effect)
         }

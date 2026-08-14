@@ -109,9 +109,12 @@ impl Game {
             permanent.attack_defender = Some(defender);
             permanent.attacked_this_turn = true;
             permanent.attacks_this_turn = permanent.attacks_this_turn.saturating_add(1);
-        }
-        if !vigilance {
-            let _ = self.tap_permanent(attacker);
+            if !vigilance {
+                // Tapping is part of the single CR 508.1 declaration. Commit
+                // the state now for later attacker legality, but defer its
+                // trigger event until every attacker has been declared.
+                permanent.tapped = true;
+            }
         }
     }
 
@@ -134,40 +137,33 @@ impl Game {
         });
         // CR 508.2: the whole declaration happens at once, so every attacker
         // is already attacking by the time any of these triggers is captured.
-        let events = attackers
+        // Declaration size and attack number are facts of this event, not
+        // mutable conditions to recheck while placing the trigger.
+        let declaration_size = u8::try_from(attackers.len()).unwrap_or(u8::MAX);
+        let listeners = self.battlefield_trigger_listeners();
+        let mut events = attackers
             .iter()
             .filter_map(|attacker| {
                 self.battlefield
                     .iter()
-                    .find(|permanent| permanent.card.id == *attacker)
-                    .map(|permanent| CommittedTriggerEvent::Attacks {
+                    .find(|permanent| permanent.card.id == *attacker && permanent.tapped)
+                    .map(|permanent| CommittedTriggerEvent::Tapped {
                         object: self.trigger_event_object(permanent),
+                        for_mana: false,
                     })
             })
             .collect::<Vec<_>>();
-        // How many creatures attacked is decided by the declaration as a
-        // whole, so it is known here and nowhere later. Every attacker gets
-        // the same total; what varies is what each watching ability asks of
-        // it.
-        let total = u8::try_from(attackers.len()).unwrap_or(u8::MAX);
-        let group = attackers
-            .iter()
-            .filter_map(|attacker| {
-                self.battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == *attacker)
-                    .map(|permanent| CommittedTriggerEvent::AttacksInGroup {
-                        object: self.trigger_event_object(permanent),
-                        total,
-                    })
-            })
-            .collect::<Vec<_>>();
-        for event in &group {
-            self.capture_battlefield_triggers(event);
-        }
-        for event in &events {
-            self.capture_battlefield_triggers(event);
-        }
+        events.extend(attackers.iter().filter_map(|attacker| {
+            self.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == *attacker)
+                .map(|permanent| CommittedTriggerEvent::Attacks {
+                    object: self.trigger_event_object(permanent),
+                    declaration_size,
+                    attack_number: permanent.attacks_this_turn,
+                })
+        }));
+        self.capture_battlefield_trigger_batch_from_snapshot(&listeners, &events);
     }
 
     /// Whether a static effect on `blocker` narrows what it may block, and
@@ -374,31 +370,35 @@ impl Game {
                 assignments,
             });
         }
-        self.capture_becomes_blocked_triggers(&blocked);
-        self.capture_blocking_relationship_triggers();
-        self.capture_unblocked_attacker_triggers(&blocked);
+        // Blocking is one declaration. Freeze its listeners and every
+        // object-local event before a triggered-mana ability can mutate the
+        // battlefield while the declaration is being published.
+        let listeners = self.battlefield_trigger_listeners();
+        let mut trigger_events = self.becomes_blocked_trigger_events(&blocked);
+        trigger_events.extend(self.blocking_relationship_trigger_events());
+        trigger_events.extend(self.unblocked_attacker_trigger_events(&blocked));
+        self.capture_battlefield_trigger_batch_from_snapshot(&listeners, &trigger_events);
     }
 
     /// CR 509.1h leaves an attacker nobody blocked unblocked, which is what
     /// these clauses read. It can only be answered once blocking is done.
-    fn capture_unblocked_attacker_triggers(&mut self, blocked: &[GameObjectId]) {
-        let unblocked = self
-            .battlefield
+    fn unblocked_attacker_trigger_events(
+        &self,
+        blocked: &[GameObjectId],
+    ) -> Vec<CommittedTriggerEvent> {
+        self.battlefield
             .iter()
             .filter(|permanent| permanent.attacking && !blocked.contains(&permanent.card.id))
-            .map(|permanent| self.trigger_event_object(permanent))
-            .collect::<Vec<_>>();
-        for object in unblocked {
-            self.capture_battlefield_triggers(&CommittedTriggerEvent::AttacksAndIsNotBlocked {
-                object,
-            });
-        }
+            .map(|permanent| CommittedTriggerEvent::AttacksAndIsNotBlocked {
+                object: self.trigger_event_object(permanent),
+            })
+            .collect()
     }
 
     /// One event per ordered pair of a blocker and what it blocks, so a
     /// clause printed on either creature reads the other as the triggering
     /// object. "Blocks or becomes blocked by" is one clause, not two.
-    fn capture_blocking_relationship_triggers(&mut self) {
+    fn blocking_relationship_trigger_events(&self) -> Vec<CommittedTriggerEvent> {
         let pairs = self
             .battlefield
             .iter()
@@ -408,6 +408,7 @@ impl Game {
                     .map(|attacker| (permanent.card.id, attacker))
             })
             .collect::<Vec<_>>();
+        let mut events = Vec::with_capacity(pairs.len().saturating_mul(2));
         for (blocker, attacker) in pairs {
             let Some((blocker, attacker)) = self
                 .battlefield
@@ -424,37 +425,36 @@ impl Game {
                 continue;
             };
             for (creature, other) in [(blocker.clone(), attacker.clone()), (attacker, blocker)] {
-                self.capture_battlefield_triggers(&CommittedTriggerEvent::BlocksOrBecomesBlocked {
-                    creature,
-                    other,
-                });
+                events.push(CommittedTriggerEvent::BlocksOrBecomesBlocked { creature, other });
             }
         }
+        events
     }
 
     /// CR 509.1h. Each attacker becomes blocked once, however many creatures
     /// blocked it, so the event fires per attacker and carries the count the
     /// rampage-style clauses are written against.
-    fn capture_becomes_blocked_triggers(&mut self, blocked: &[GameObjectId]) {
+    fn becomes_blocked_trigger_events(
+        &self,
+        blocked: &[GameObjectId],
+    ) -> Vec<CommittedTriggerEvent> {
         let mut attackers = blocked.to_vec();
         attackers.sort_unstable();
         attackers.dedup();
-        for attacker in attackers {
-            let blockers = blocked.iter().filter(|id| **id == attacker).count();
-            let Some(object) = self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == attacker)
-                .map(|permanent| self.trigger_event_object(permanent))
-            else {
-                continue;
-            };
-            self.capture_battlefield_triggers(&CommittedTriggerEvent::BecomesBlocked {
-                object,
-                blockers_beyond_first: u16::try_from(blockers.saturating_sub(1))
-                    .unwrap_or(u16::MAX),
-            });
-        }
+        attackers
+            .into_iter()
+            .filter_map(|attacker| {
+                let blockers = blocked.iter().filter(|id| **id == attacker).count();
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == attacker)
+                    .map(|permanent| CommittedTriggerEvent::BecomesBlocked {
+                        object: self.trigger_event_object(permanent),
+                        blockers_beyond_first: u16::try_from(blockers.saturating_sub(1))
+                            .unwrap_or(u16::MAX),
+                    })
+            })
+            .collect()
     }
 
     pub(super) fn start_combat_damage(&mut self) {

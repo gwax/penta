@@ -152,9 +152,7 @@ pub(in crate::card::sets) static ASSASSIN_TOKEN_1_1_BLACK: CardRecord = CardReco
         .printed_colors(&[ManaColor::Black])
         .with_ability(AbilityDef::triggered(
             "Whenever this token deals combat damage to a player, that player loses the game.",
-            TriggerEventDef::CombatDamageDealtToPlayer {
-                source: ObjectPredicateDef::Source,
-            },
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
             EffectDef::LoseTheGame {
                 player: EffectRecipientDef::EventPlayer,
             },

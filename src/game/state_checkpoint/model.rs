@@ -39,7 +39,8 @@ pub(super) struct GameSnapshot {
     pub(super) creature_died_this_turn: bool,
     pub(super) linked_exiles: Vec<[u32; 2]>,
     pub(super) sorcery_flash_grants: [u8; 2],
-    pub(super) additional_combat_phases: u8,
+    pub(super) turn_phase_queue: Vec<TurnPhaseSnapshot>,
+    pub(super) turn_phase_resume: Option<TurnPhaseResumeSnapshot>,
     pub(super) noncreature_casts_locked: [bool; 2],
     pub(super) spells_cast_this_turn: [u16; 2],
     pub(super) spells_cast_last_turn: [u16; 2],
@@ -74,6 +75,23 @@ pub(super) struct GameSnapshot {
     pub(super) decision_state: Option<DecisionStateSnapshot>,
     pub(super) has_deferred_state: bool,
     pub(super) viewer: usize,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) enum TurnPhaseSnapshot {
+    Combat,
+    PostcombatMain,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) enum TurnPhaseResumeSnapshot {
+    PrecombatMain,
+    BeginningOfCombat,
+    PostcombatMain,
+    End,
+    NextTurn,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

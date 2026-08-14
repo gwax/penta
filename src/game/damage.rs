@@ -25,7 +25,10 @@ impl Game {
     fn apply_resolved_damage_prevention(
         &mut self,
         source: Option<GameObjectId>,
+        source_object: Option<&TriggerEventObject>,
+        source_is_spell: bool,
         target: Option<Target>,
+        recipient_object: Option<&TriggerEventObject>,
         amount: u16,
         combat: bool,
     ) -> u16 {
@@ -33,8 +36,6 @@ impl Game {
             return amount;
         }
 
-        let source_object = source.and_then(|source| self.damage_source_event_object(source));
-        let source_is_spell = source.is_some_and(|source| self.damage_source_is_spell(source));
         // Detach the vector while matching so predicate evaluation can read
         // the rest of the game without allocating a parallel match bitmap on
         // every damage event.
@@ -47,9 +48,10 @@ impl Game {
                 || !self.resolved_damage_prevention_matches(
                     prevention,
                     source,
-                    source_object.as_ref(),
+                    source_object,
                     source_is_spell,
                     target,
+                    recipient_object,
                     combat,
                 )
             {
@@ -94,9 +96,10 @@ impl Game {
                 ) || !self.resolved_damage_prevention_matches(
                     prevention,
                     source,
-                    source_object.as_ref(),
+                    source_object,
                     source_is_spell,
                     target,
+                    recipient_object,
                     combat,
                 ) {
                     continue;
@@ -132,6 +135,7 @@ impl Game {
         source_object: Option<&TriggerEventObject>,
         source_is_spell: bool,
         target: Option<Target>,
+        recipient_object: Option<&TriggerEventObject>,
         combat: bool,
     ) -> bool {
         (!prevention.combat_only || combat)
@@ -141,7 +145,11 @@ impl Game {
                 source_object,
                 source_is_spell,
             )
-            && self.resolved_damage_recipient_matches(prevention.recipient, target)
+            && self.resolved_damage_recipient_matches(
+                prevention.recipient,
+                target,
+                recipient_object,
+            )
     }
 
     fn resolved_damage_source_matches(
@@ -171,6 +179,7 @@ impl Game {
         &self,
         matcher: ResolvedDamageRecipientMatcher,
         target: Option<Target>,
+        recipient_object: Option<&TriggerEventObject>,
     ) -> bool {
         match matcher {
             ResolvedDamageRecipientMatcher::Any => target.is_some(),
@@ -178,16 +187,11 @@ impl Game {
             ResolvedDamageRecipientMatcher::PlayerAndCreaturesControlledBy(player) => {
                 match target {
                     Some(Target::Player(recipient)) => recipient == player,
-                    Some(Target::Permanent(id)) => self
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == id)
-                        .is_some_and(|permanent| {
-                            permanent.controller == player
-                                && self
-                                    .permanent_types(permanent)
-                                    .is_some_and(|types| types.contains(CardType::Creature))
-                        }),
+                    Some(Target::Permanent(id)) => recipient_object.is_some_and(|recipient| {
+                        recipient.id == id
+                            && recipient.controller == player
+                            && recipient.types.contains(CardType::Creature)
+                    }),
                     Some(Target::Card(_) | Target::Spell(_)) | None => false,
                 }
             }
@@ -205,6 +209,7 @@ impl Game {
         source_object: Option<&TriggerEventObject>,
         source_is_spell: bool,
         target: Option<Target>,
+        recipient_object: Option<&TriggerEventObject>,
         combat: bool,
     ) -> bool {
         let target_permanent = target.and_then(|target| match target {
@@ -221,6 +226,7 @@ impl Game {
                 source_object,
                 source_is_spell,
                 target,
+                recipient_object,
                 combat,
             )
         }) {
@@ -243,6 +249,7 @@ impl Game {
                     source_object,
                     source_is_spell,
                     target,
+                    recipient_object,
                     combat,
                 )
             })
@@ -255,6 +262,7 @@ impl Game {
         source_object: Option<&TriggerEventObject>,
         source_is_spell: bool,
         target: Option<Target>,
+        recipient_object: Option<&TriggerEventObject>,
         combat: bool,
     ) -> bool {
         self.visit_static_applied_effects(affected, |applied| {
@@ -267,6 +275,7 @@ impl Game {
                 source_object,
                 source_is_spell,
                 target,
+                recipient_object,
                 combat,
             )) {
                 ControlFlow::Break(())
@@ -287,6 +296,7 @@ impl Game {
         source_object: Option<&TriggerEventObject>,
         source_is_spell: bool,
         target: Option<Target>,
+        recipient_object: Option<&TriggerEventObject>,
         combat: bool,
     ) -> bool {
         (matcher.kind == DamageKindDef::Any || combat)
@@ -316,12 +326,14 @@ impl Game {
             && match matcher.recipient {
                 DamageRecipientMatcherDef::Any => target.is_some(),
                 DamageRecipientMatcherDef::AffectedObject => {
-                    target == Some(Target::Permanent(affected))
+                    recipient_object.is_some_and(|recipient| recipient.id == affected)
                 }
                 DamageRecipientMatcherDef::Recipients(recipients) => recipients
                     .object_reference()
                     .and_then(|reference| self.static_object_reference(reference, effect_source))
-                    .is_some_and(|recipient| target == Some(Target::Permanent(recipient))),
+                    .is_some_and(|recipient| {
+                        recipient_object.is_some_and(|object| object.id == recipient)
+                    }),
                 DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(_) => false,
             }
     }
@@ -476,18 +488,39 @@ impl Game {
         // preventions below all answer the permanent it lands on
         // rather than the player it was aimed at.
         let target = self.redirected_damage_target(source, target);
-        let amount = self.apply_resolved_damage_prevention(source, target, amount, combat);
+        // Freeze both prospective participants once. Prevention follow-ups can
+        // synchronously change life totals, and characteristic-defining
+        // effects may depend on that state; every matcher and the eventual
+        // committed event must nevertheless describe one damage event.
+        let source_object = source.and_then(|source| self.damage_source_event_object(source));
+        let source_is_spell = source.is_some_and(|source| self.damage_source_is_spell(source));
+        let recipient_object = target.and_then(|target| match target {
+            Target::Permanent(id) => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == id)
+                .map(|permanent| self.trigger_event_object(permanent)),
+            Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+        });
+        let source_colors = source.map_or([false; 5], |source| self.object_colors(source));
+        let amount = self.apply_resolved_damage_prevention(
+            source,
+            source_object.as_ref(),
+            source_is_spell,
+            target,
+            recipient_object.as_ref(),
+            amount,
+            combat,
+        );
         if amount == 0 {
             return 0;
         }
-        let source_object = source.and_then(|source| self.damage_source_event_object(source));
-        let source_is_spell = source.is_some_and(|source| self.damage_source_is_spell(source));
-        let source_colors = source.map_or([false; 5], |source| self.object_colors(source));
         if self.static_damage_is_prevented(
             source,
             source_object.as_ref(),
             source_is_spell,
             target,
+            recipient_object.as_ref(),
             combat,
         ) || target.is_some_and(|target| match target {
             Target::Permanent(id) => self
@@ -499,13 +532,17 @@ impl Game {
         }) {
             return 0;
         }
-        let lifelink_controller = source.and_then(|source| {
-            self.source_controller_with_keyword(source, KeywordAbility::Lifelink)
+        let source_has_keyword = |keyword: KeywordAbility| {
+            source_object.as_ref().is_some_and(|source| {
+                keyword
+                    .simple_index()
+                    .is_some_and(|index| source.keywords & (1 << index) != 0)
+            })
+        };
+        let lifelink_controller = source_object.as_ref().and_then(|source| {
+            source_has_keyword(KeywordAbility::Lifelink).then_some(source.controller)
         });
-        let has_deathtouch = source.is_some_and(|source| {
-            self.source_controller_with_keyword(source, KeywordAbility::Deathtouch)
-                .is_some()
-        });
+        let has_deathtouch = source_has_keyword(KeywordAbility::Deathtouch);
         let dealt_damage = match target {
             Some(Target::Player(player)) => {
                 self.deal_damage(player, amount);
@@ -519,7 +556,6 @@ impl Game {
                 {
                     damager.dealt_damage_to_opponent_this_turn = true;
                 }
-                self.publish_damage_to_player(source, player, amount);
                 true
             }
             Some(Target::Permanent(id)) => {
@@ -564,13 +600,13 @@ impl Game {
         }
         if dealt_damage
             && amount > 0
-            && let Some(source) = source
             && let Some(recipient) = target
-            && let Some(source) = self.damage_source_event_object(source)
         {
             let event = CommittedTriggerEvent::DamageDealt {
-                source,
+                source: source_object,
+                source_is_spell,
                 recipient,
+                recipient_object,
                 amount,
                 combat,
             };

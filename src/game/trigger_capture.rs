@@ -1,10 +1,12 @@
 use super::{
     AbilityDef, AbilityId, AbilityOrigin, AbilityProcedureDef, AbilitySourceRef, AddManaEffectDef,
     BattlefieldTriggerListener, CardDefinitionId, CardPartId, CardType, CommittedTriggerEvent,
-    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectiveAbility, FrozenActivatedAbility,
-    Game, GameEvent, GameObjectId, InstalledTriggerLifetime, Mana, ManaSelectionDef, ManaSource,
-    ObjectPredicateDef, PendingTrigger, Permanent, PlayerId, PlayerRelation, RetiredObject,
-    ScopedEffect, StackAbilityResolver, Target, TriggerCapture, TriggerContext, TriggerEventDef,
+    DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
+    DeclarativeAbilityDef, EffectDef, EffectRecipientSetDef, EffectiveAbility,
+    FrozenActivatedAbility, Game, GameEvent, GameObjectId, InstalledTriggerLifetime, Mana,
+    ManaSelectionDef, ManaSource, ObjectPredicateDef, ObjectRefDef, ObjectSetDef, PendingTrigger,
+    Permanent, PlayerId, PlayerRefDef, PlayerRelation, PlayerSetDef, RetiredObject, ScopedEffect,
+    StackAbilityResolver, TapPurposeDef, Target, TriggerCapture, TriggerContext, TriggerEventDef,
     TriggerEventObject, ZoneKind,
 };
 
@@ -46,8 +48,15 @@ impl Game {
         // Rule 603.4: an intervening-if condition is checked as the ability
         // would trigger. Failing it means the ability never triggers at all,
         // so nothing reaches the stack and nothing is reported.
-        if let Some(condition) = capture.condition
-            && !self.trigger_condition_holds(
+        if !self.trigger_capture_condition_holds(capture) {
+            return;
+        }
+        self.capture_trigger_prechecked(capture);
+    }
+
+    fn trigger_capture_condition_holds(&self, capture: &TriggerCapture) -> bool {
+        capture.condition.is_none_or(|condition| {
+            self.trigger_condition_holds(
                 condition,
                 capture.source.object,
                 capture.controller,
@@ -55,9 +64,10 @@ impl Game {
                 Some(capture.source.ability),
                 None,
             )
-        {
-            return;
-        }
+        })
+    }
+
+    fn capture_trigger_prechecked(&mut self, capture: &TriggerCapture) {
         let id = self.next_trigger_id;
         self.next_trigger_id = self.next_trigger_id.saturating_add(1);
         self.pending_triggers.push(PendingTrigger {
@@ -179,63 +189,92 @@ impl Game {
         listeners: &[BattlefieldTriggerListener],
         event: &CommittedTriggerEvent,
     ) {
-        let mana_triggers = listeners
-            .iter()
-            .cloned()
-            .filter(|listener| {
-                !listener.uses_stack
-                    && self.trigger_event_matches_for_controller(
-                        listener.event,
-                        event,
-                        listener.capture.source.object,
-                        Some(listener.capture.controller),
-                    )
-            })
-            .collect::<Vec<_>>();
-        for listener in mana_triggers {
-            self.resolve_triggered_mana_effect(
-                listener.capture.source,
-                listener.capture.controller,
-                listener.capture.effect,
-            );
+        self.capture_battlefield_trigger_batch_from_snapshot(
+            listeners,
+            std::slice::from_ref(event),
+        );
+    }
+
+    /// Determine every match and intervening-if result for one atomic event
+    /// batch before any triggered-mana ability can mutate the game. Attack
+    /// declarations and simultaneous exits both publish more than one
+    /// object-local event, but all of those facts belong to one rules event.
+    pub(super) fn capture_battlefield_trigger_batch_from_snapshot(
+        &mut self,
+        listeners: &[BattlefieldTriggerListener],
+        events: &[CommittedTriggerEvent],
+    ) {
+        self.capture_battlefield_trigger_batch_with_mana_resolver(
+            listeners,
+            events,
+            |game, capture| {
+                game.resolve_triggered_mana_effect(
+                    capture.source,
+                    capture.controller,
+                    capture.effect,
+                );
+            },
+        );
+    }
+
+    pub(super) fn capture_battlefield_trigger_batch_with_mana_resolver(
+        &mut self,
+        listeners: &[BattlefieldTriggerListener],
+        events: &[CommittedTriggerEvent],
+        mut resolve_mana: impl FnMut(&mut Self, TriggerCapture),
+    ) {
+        let mut consumed_once = Vec::new();
+        let mut matched = Vec::new();
+        for event in events {
+            for listener in listeners {
+                if !self.trigger_event_matches_for_controller(
+                    listener.event,
+                    event,
+                    listener.capture.source.object,
+                    Some(listener.capture.controller),
+                ) {
+                    continue;
+                }
+                if let Some(id) = listener.installed
+                    && self
+                        .installed_triggers
+                        .iter()
+                        .find(|installed| installed.id == id)
+                        .is_some_and(|installed| {
+                            matches!(installed.lifetime, InstalledTriggerLifetime::Once)
+                        })
+                {
+                    if consumed_once.contains(&id) {
+                        continue;
+                    }
+                    // A once-only listener is consumed by the first matching
+                    // event even when its intervening-if condition is false.
+                    consumed_once.push(id);
+                }
+                let mut capture = listener.capture.clone();
+                // Keep installer bindings and targets; only the committed
+                // event-local context changes for this match.
+                capture.context.trigger = event.context();
+                let condition_holds = self.trigger_capture_condition_holds(&capture);
+                matched.push((listener.uses_stack, capture, condition_holds));
+            }
         }
 
-        let stack_triggers = listeners
-            .iter()
-            .cloned()
-            .filter(|listener| {
-                listener.uses_stack
-                    && self.trigger_event_matches_for_controller(
-                        listener.event,
-                        event,
-                        listener.capture.source.object,
-                        Some(listener.capture.controller),
-                    )
-            })
-            .collect::<Vec<_>>();
-        for listener in stack_triggers {
-            if let Some(id) = listener.installed {
-                let Some(index) = self
-                    .installed_triggers
-                    .iter()
-                    .position(|installed| installed.id == id)
-                else {
-                    // A once-only listener can occur more than once in one
-                    // frozen event batch. Its first match already consumed it.
-                    continue;
-                };
-                if matches!(
-                    self.installed_triggers[index].lifetime,
-                    InstalledTriggerLifetime::Once
-                ) {
-                    self.installed_triggers.remove(index);
-                }
+        self.installed_triggers
+            .retain(|installed| !consumed_once.contains(&installed.id));
+
+        // Record ordinary triggers first, using the precomputed condition.
+        // Any triggers caused while a triggered-mana ability resolves are
+        // therefore later in the pending stream than the event that caused it.
+        for (uses_stack, capture, condition_holds) in &matched {
+            if *uses_stack && *condition_holds {
+                self.capture_trigger_prechecked(capture);
             }
-            let mut capture = listener.capture;
-            // Keep every binding and target captured when the trigger was
-            // installed. Only the event-local portion changes on a match.
-            capture.context.trigger = event.context();
-            self.capture_trigger(&capture);
+        }
+        for (uses_stack, capture, condition_holds) in matched {
+            if !uses_stack && condition_holds {
+                resolve_mana(self, capture);
+            }
         }
     }
 
@@ -300,7 +339,7 @@ impl Game {
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
-            | EffectDef::AdditionalCombatPhase
+            | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
             | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
@@ -525,33 +564,6 @@ impl Game {
         }
     }
 
-    /// Combat damage arriving at the ability's own source. A planeswalker is
-    /// dealt combat damage as a permanent, so this is the only shape that can
-    /// see it; the player-facing variants read a life total instead.
-    pub(super) fn combat_damage_to_source_matches(
-        &self,
-        definition: TriggerEventDef,
-        event: &CommittedTriggerEvent,
-        source: GameObjectId,
-        controller: Option<PlayerId>,
-    ) -> bool {
-        let (
-            TriggerEventDef::CombatDamageDealtToSource { source: predicate },
-            CommittedTriggerEvent::DamageDealt {
-                source: dealer,
-                recipient,
-                combat: true,
-                ..
-            },
-        ) = (definition, event)
-        else {
-            return false;
-        };
-        *recipient == Target::Permanent(source)
-            && self
-                .trigger_object_matches_for_controller(predicate, dealer, source, false, controller)
-    }
-
     // Long because the event vocabulary is wide, not because the function
     // does several things: every arm pairs one definition with one event.
     #[allow(clippy::too_many_lines)]
@@ -578,36 +590,42 @@ impl Game {
     ) -> bool {
         match (definition, event) {
             (
-                TriggerEventDef::ZoneChanged {
-                    object: predicate,
-                    from,
-                    to,
-                },
+                TriggerEventDef::ZoneChanged(matcher),
                 CommittedTriggerEvent::ZoneChanged {
                     object,
                     from: actual_from,
                     to: actual_to,
+                    damage_sources,
                 },
             ) => {
-                from.is_none_or(|expected| expected == *actual_from)
-                    && to.is_none_or(|expected| expected == *actual_to)
+                matcher.from.is_none_or(|expected| expected == *actual_from)
+                    && matcher.to.is_none_or(|expected| expected == *actual_to)
+                    && matcher.previously_damaged_by.is_none_or(|reference| {
+                        self.trigger_event_object_reference(reference, source, event)
+                            .is_some_and(|source| damage_sources.contains(&source))
+                    })
                     && self.trigger_object_matches_for_controller(
-                        predicate, object, source, false, controller,
+                        matcher.object,
+                        object,
+                        source,
+                        false,
+                        controller,
                     )
             }
             (
-                TriggerEventDef::BecomesTapped(predicate),
-                CommittedTriggerEvent::BecomesTapped { object },
-            )
-            | (
-                TriggerEventDef::TappedForMana(predicate),
-                CommittedTriggerEvent::TappedForMana { object },
-            )
-            | (
-                TriggerEventDef::CombatDamageDealtToPlayer { source: predicate },
-                CommittedTriggerEvent::CombatDamageDealtToPlayer { object, .. },
-            )
-            | (
+                TriggerEventDef::Tapped(matcher),
+                CommittedTriggerEvent::Tapped { object, for_mana },
+            ) => {
+                (matcher.purpose == TapPurposeDef::Any || *for_mana)
+                    && self.trigger_object_matches_for_controller(
+                        matcher.object,
+                        object,
+                        source,
+                        false,
+                        controller,
+                    )
+            }
+            (
                 TriggerEventDef::BecomesBlocked(predicate),
                 CommittedTriggerEvent::BecomesBlocked { object, .. },
             )
@@ -616,10 +634,6 @@ impl Game {
                     attacker: predicate,
                 },
                 CommittedTriggerEvent::AttacksAndIsNotBlocked { object },
-            )
-            | (
-                TriggerEventDef::DamageDealtBy { source: predicate },
-                CommittedTriggerEvent::DamageDealt { source: object, .. },
             ) => self.trigger_object_matches_for_controller(
                 predicate, object, source, false, controller,
             ),
@@ -633,52 +647,39 @@ impl Game {
                     )
             }
             (
-                TriggerEventDef::AttacksInGroup {
-                    attacker: predicate,
-                    minimum_total,
-                    maximum_total,
+                TriggerEventDef::Attacks(matcher),
+                CommittedTriggerEvent::Attacks {
+                    object,
+                    declaration_size,
+                    attack_number,
                 },
-                CommittedTriggerEvent::AttacksInGroup { object, total },
             ) => {
-                *total >= minimum_total
-                    && maximum_total.is_none_or(|maximum| *total <= maximum)
+                *declaration_size >= matcher.declaration.minimum
+                    && matcher
+                        .declaration
+                        .maximum
+                        .is_none_or(|maximum| *declaration_size <= maximum)
+                    && matcher
+                        .attack_number
+                        .is_none_or(|number| *attack_number == number)
                     && self.trigger_object_matches_for_controller(
-                        predicate, object, source, false, controller,
+                        matcher.attacker,
+                        object,
+                        source,
+                        false,
+                        controller,
                     )
             }
             (
-                trigger @ TriggerEventDef::CombatDamageDealtToSource { .. },
+                TriggerEventDef::DamageDealt(matcher),
                 damage @ CommittedTriggerEvent::DamageDealt { .. },
-            ) => self.combat_damage_to_source_matches(trigger, damage, source, controller),
-            (TriggerEventDef::Attacks(predicate), CommittedTriggerEvent::Attacks { object }) => {
-                self.trigger_object_matches_for_controller(
-                    predicate, object, source, false, controller,
-                )
-            }
+            ) => self.damage_trigger_matches(matcher, damage, source, controller),
             (
-                TriggerEventDef::AttacksFirstTimeThisTurn(predicate),
-                CommittedTriggerEvent::Attacks { object },
-            ) => {
-                self.trigger_object_matches_for_controller(
-                    predicate, object, source, false, controller,
-                ) && self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == object.id)
-                    .is_some_and(|permanent| permanent.attacks_this_turn == 1)
-            }
-
-            (
-                TriggerEventDef::TransformsIntoThisFace,
+                TriggerEventDef::Transforms(predicate),
                 CommittedTriggerEvent::Transformed { object },
-            ) => object.id == source,
-            (
-                TriggerEventDef::DamageDealt {
-                    source: _,
-                    recipient: EffectRecipientDef::Source,
-                },
-                CommittedTriggerEvent::DamageDealt { recipient, .. },
-            ) => *recipient == Target::Permanent(source),
+            ) => self.trigger_object_matches_for_controller(
+                predicate, object, source, false, controller,
+            ),
             (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },
@@ -712,49 +713,199 @@ impl Game {
                     .unwrap_or(*actual_player);
                 self.player_relation_matches(*actual_player, player, controller, event.context())
             }
-            (
-                TriggerEventDef::DamagedCreatureDied,
-                CommittedTriggerEvent::DamagedCreatureDied {
-                    source: actual_source,
-                    ..
-                },
-            ) => source == *actual_source,
-            _ => self.damage_to_player_trigger_matches_with_controller(
-                definition, event, source, controller,
-            ),
+            _ => false,
         }
     }
 
-    /// The one trigger family that reads both what dealt the damage and who
-    /// took it, so "an opponent" excludes a source hitting its own side.
-    fn damage_to_player_trigger_matches_with_controller(
+    fn damage_trigger_matches(
         &self,
-        definition: TriggerEventDef,
+        matcher: DamageEventMatcherDef,
         event: &CommittedTriggerEvent,
-        source: GameObjectId,
+        ability_source: GameObjectId,
         controller: Option<PlayerId>,
     ) -> bool {
-        let (
-            TriggerEventDef::DamageDealtToPlayer {
-                source: predicate,
-                player,
-            },
-            CommittedTriggerEvent::DamageDealtToPlayer {
-                object,
-                player: damaged,
-                ..
-            },
-        ) = (definition, event)
+        let CommittedTriggerEvent::DamageDealt {
+            source,
+            source_is_spell,
+            recipient,
+            recipient_object,
+            combat,
+            ..
+        } = event
         else {
             return false;
         };
-        self.trigger_object_matches_for_controller(predicate, object, source, false, controller)
-            && self.player_relation_matches(
-                *damaged,
-                player,
-                object.controller,
-                TriggerContext::empty(),
+        (matcher.kind == DamageKindDef::Any || *combat)
+            && self.damage_trigger_source_matches(
+                matcher.source,
+                source.as_ref(),
+                *source_is_spell,
+                ability_source,
+                controller,
+                event,
             )
+            && self.damage_trigger_recipient_matches(
+                matcher.recipient,
+                *recipient,
+                recipient_object.as_ref(),
+                ability_source,
+                controller,
+                event,
+            )
+    }
+
+    fn damage_trigger_source_matches(
+        &self,
+        matcher: DamageSourceMatcherDef,
+        damage_source: Option<&TriggerEventObject>,
+        source_is_spell: bool,
+        ability_source: GameObjectId,
+        controller: Option<PlayerId>,
+        event: &CommittedTriggerEvent,
+    ) -> bool {
+        match matcher {
+            DamageSourceMatcherDef::Any => true,
+            DamageSourceMatcherDef::AffectedObject => {
+                damage_source.is_some_and(|object| object.id == ability_source)
+            }
+            DamageSourceMatcherDef::Object(reference) => self
+                .trigger_event_object_reference(reference, ability_source, event)
+                .is_some_and(|expected| damage_source.is_some_and(|object| object.id == expected)),
+            DamageSourceMatcherDef::Except(reference) => self
+                .trigger_event_object_reference(reference, ability_source, event)
+                .is_some_and(|excluded| damage_source.is_none_or(|object| object.id != excluded)),
+            DamageSourceMatcherDef::Matching(predicate) => damage_source.is_some_and(|object| {
+                self.trigger_object_matches_for_controller(
+                    predicate,
+                    object,
+                    ability_source,
+                    source_is_spell,
+                    controller,
+                )
+            }),
+        }
+    }
+
+    fn damage_trigger_recipient_matches(
+        &self,
+        matcher: DamageRecipientMatcherDef,
+        recipient: Target,
+        recipient_object: Option<&TriggerEventObject>,
+        ability_source: GameObjectId,
+        controller: Option<PlayerId>,
+        event: &CommittedTriggerEvent,
+    ) -> bool {
+        match matcher {
+            DamageRecipientMatcherDef::Any => true,
+            DamageRecipientMatcherDef::AffectedObject => {
+                recipient == Target::Permanent(ability_source)
+            }
+            DamageRecipientMatcherDef::Recipients(recipients) => match recipients.0 {
+                EffectRecipientSetDef::LegalTargets(_) => false,
+                EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)) => self
+                    .trigger_event_object_reference(reference, ability_source, event)
+                    .is_some_and(|expected| match recipient {
+                        Target::Card(object)
+                        | Target::Permanent(object)
+                        | Target::Spell(object) => object == expected,
+                        Target::Player(_) => false,
+                    }),
+                EffectRecipientSetDef::Objects(
+                    ObjectSetDef::Binding(_)
+                    | ObjectSetDef::Query(_)
+                    | ObjectSetDef::SharingNameWith(_),
+                ) => false,
+                EffectRecipientSetDef::Players(players) => {
+                    let Target::Player(recipient) = recipient else {
+                        return false;
+                    };
+                    self.damage_trigger_player_set_matches(
+                        players,
+                        recipient,
+                        ability_source,
+                        controller,
+                        event,
+                    )
+                }
+            },
+            DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
+                let Some(player) =
+                    self.trigger_event_player_reference(player, ability_source, controller, event)
+                else {
+                    return false;
+                };
+                match recipient {
+                    Target::Player(recipient) => recipient == player,
+                    Target::Permanent(object) => recipient_object.is_some_and(|recipient| {
+                        recipient.id == object
+                            && recipient.controller == player
+                            && recipient.types.contains(CardType::Creature)
+                    }),
+                    Target::Card(_) | Target::Spell(_) => false,
+                }
+            }
+        }
+    }
+
+    fn damage_trigger_player_set_matches(
+        &self,
+        players: PlayerSetDef,
+        recipient: PlayerId,
+        ability_source: GameObjectId,
+        controller: Option<PlayerId>,
+        event: &CommittedTriggerEvent,
+    ) -> bool {
+        match players {
+            PlayerSetDef::All => true,
+            PlayerSetDef::One(reference) => {
+                self.trigger_event_player_reference(reference, ability_source, controller, event)
+                    == Some(recipient)
+            }
+            PlayerSetDef::Related(PlayerRelation::ChosenPlayer) => {
+                self.chosen_player_of(ability_source) == Some(recipient)
+            }
+            PlayerSetDef::Related(relation) => controller.is_some_and(|controller| {
+                self.player_relation_matches(recipient, relation, controller, event.context())
+            }),
+        }
+    }
+
+    fn trigger_event_player_reference(
+        &self,
+        reference: PlayerRefDef,
+        ability_source: GameObjectId,
+        controller: Option<PlayerId>,
+        event: &CommittedTriggerEvent,
+    ) -> Option<PlayerId> {
+        match reference {
+            PlayerRefDef::EffectController => controller,
+            PlayerRefDef::EventPlayer => event.context().event_player,
+            PlayerRefDef::ControllerOf(reference) => self
+                .trigger_event_object_reference(reference, ability_source, event)
+                .and_then(|object| self.current_or_last_known_controller(object)),
+            PlayerRefDef::OwnerOf(reference) => self
+                .trigger_event_object_reference(reference, ability_source, event)
+                .and_then(|object| self.current_or_last_known_owner(object)),
+            PlayerRefDef::Target(_) => None,
+        }
+    }
+
+    fn trigger_event_object_reference(
+        &self,
+        reference: ObjectRefDef,
+        ability_source: GameObjectId,
+        event: &CommittedTriggerEvent,
+    ) -> Option<GameObjectId> {
+        match reference {
+            ObjectRefDef::Source => Some(ability_source),
+            ObjectRefDef::AttachedToSource => {
+                self.current_or_last_known_attached_host(ability_source)
+            }
+            ObjectRefDef::TriggeringObject => event.context().object,
+            ObjectRefDef::ResolvingObject | ObjectRefDef::Binding(_) | ObjectRefDef::Target(_) => {
+                None
+            }
+        }
     }
 
     /// Who controls an object, whether it is still on the battlefield or has
@@ -955,13 +1106,15 @@ impl Game {
             ObjectPredicateDef::AttackedThisTurn => {
                 object.types.contains(CardType::Creature) && object.attacked_this_turn
             }
+            ObjectPredicateDef::AttachedToSource => self
+                .current_or_last_known_attached_host(source)
+                .is_some_and(|host| host == object.id),
             ObjectPredicateDef::Blocking => {
                 object.types.contains(CardType::Creature)
                     && object.attacking_or_blocking
                     && !object.attacking
             }
             ObjectPredicateDef::HasNonManaActivatedAbility
-            | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::BlockedBySource
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::AttachedTo(_) => {

@@ -994,11 +994,11 @@ pub(in crate::card::sets) static ONULET: CardRecord = CardRecord::new(
     CardRules::new_artifact_creature(mana_cost!("{3}"), &["Construct"], 2, 2).with_abilities(&[
         AbilityDef::triggered(
             "When this creature dies, you gain 2 life.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(2),
@@ -1103,11 +1103,11 @@ pub(in crate::card::sets) static SU_CHI: CardRecord = CardRecord::new(
     CardRules::new_artifact_creature(mana_cost!("{4}"), &["Construct"], 4, 4).with_abilities(&[
         AbilityDef::triggered(
             "When this creature dies, add {C}{C}{C}{C}.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
             EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_amount(4)),
         ),
     ]),
@@ -1121,14 +1121,10 @@ pub(in crate::card::sets) static TABLET_OF_EPITYR: CardRecord = CardRecord::new(
     CardSet::Antiquities,
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[AbilityDef::triggered(
         "Whenever an artifact you control is put into a graveyard from the battlefield, you may pay {1}. If you do, you gain 1 life.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::All(&[
+        TriggerEventDef::zone_changed(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::HasType(CardType::Artifact),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-            ]),
-            from: Some(ZoneKind::Battlefield),
-            to: Some(ZoneKind::Graveyard),
-        },
+            ]), Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
         EffectDef::PayOr(PayOrDef::optional(
             PaymentDef::new(
                 PlayerRelation::You,

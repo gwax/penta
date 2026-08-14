@@ -5,9 +5,9 @@ use super::{
     DeclarativeAbilityDef, EffectDef, EntryCompletion, FrozenZoneMoveReplacement, Game, GameEvent,
     GameObjectId, KeywordAbility, PendingBattlefieldEntry, PendingBattlefieldExitBatch,
     PendingBattlefieldExitMove, Permanent, PlayerId, ReplacementConditionDef,
-    ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef, ScopedEffect, StackObject,
-    StackObjectKind, Step, Target, TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCauseDef,
-    ZonePlacement, remove_card,
+    ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef, RetiredObject,
+    ScopedEffect, StackObject, StackObjectKind, Step, Target, TargetSlotId, TriggerContext,
+    ZoneKind, ZoneMoveCauseDef, ZonePlacement, remove_card,
 };
 
 impl Game {
@@ -37,18 +37,34 @@ impl Game {
     /// The printed name of any object the engine can still find, wherever it
     /// is. Used by the cards that speak about names rather than identity.
     pub(super) fn object_card_name(&self, id: GameObjectId) -> Option<&str> {
-        self.permanent_card_name(id).or_else(|| {
-            self.card_in_nonbattlefield_zone(id)
-                .map(|(_, card)| card)
-                .or_else(|| {
-                    self.players
-                        .iter()
-                        .flat_map(|player| player.outside_game.iter())
-                        .find(|card| card.id == id)
-                })
-                .and_then(|card| self.catalog.get(card.definition))
-                .map(|card| card.name.as_str())
-        })
+        self.permanent_card_name(id)
+            .or_else(|| {
+                self.card_in_nonbattlefield_zone(id)
+                    .map(|(_, card)| card)
+                    .or_else(|| {
+                        self.players
+                            .iter()
+                            .flat_map(|player| player.outside_game.iter())
+                            .find(|card| card.id == id)
+                    })
+                    .and_then(|card| self.catalog.get(card.definition))
+                    .map(|card| card.name.as_str())
+            })
+            .or_else(|| match self.retired_objects.get(&id) {
+                Some(RetiredObject::Permanent { permanent, .. }) => self
+                    .catalog
+                    .get(Self::effective_rules_source(permanent).0)
+                    .map(|card| card.name.as_str()),
+                Some(RetiredObject::Card(card)) => self
+                    .catalog
+                    .get(card.definition)
+                    .map(|definition| definition.name.as_str()),
+                Some(RetiredObject::Stack(stack)) => self
+                    .catalog
+                    .get(stack.card.definition)
+                    .map(|definition| definition.name.as_str()),
+                None => None,
+            })
     }
 
     /// The copiable name a permanent presents, for the cards that gather
@@ -72,25 +88,38 @@ impl Game {
     /// abilities observe mana costs, activated-ability costs, combat, and
     /// resolving tap effects through the same event path.
     pub(super) fn tap_permanent(&mut self, id: GameObjectId) -> Option<CardInstance> {
-        let (card, event, was_tapped) = self
+        self.tap_permanent_with_purpose(id, false)
+    }
+
+    pub(super) fn tap_permanent_for_mana(&mut self, id: GameObjectId) -> Option<CardInstance> {
+        self.tap_permanent_with_purpose(id, true)
+    }
+
+    fn tap_permanent_with_purpose(
+        &mut self,
+        id: GameObjectId,
+        for_mana: bool,
+    ) -> Option<CardInstance> {
+        let (card, was_tapped) = self
             .battlefield
             .iter()
             .find(|permanent| permanent.card.id == id)
-            .map(|permanent| {
-                (
-                    permanent.card.clone(),
-                    self.trigger_event_object(permanent),
-                    permanent.tapped,
-                )
-            })?;
+            .map(|permanent| (permanent.card.clone(), permanent.tapped))?;
         if !was_tapped {
             self.battlefield
                 .iter_mut()
                 .find(|permanent| permanent.card.id == id)
                 .expect("the observed permanent remains on the battlefield")
                 .tapped = true;
-            self.capture_battlefield_triggers(&CommittedTriggerEvent::BecomesTapped {
+            let event = self.trigger_event_object(
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == id)
+                    .expect("the tapped permanent remains on the battlefield"),
+            );
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::Tapped {
                 object: event,
+                for_mana,
             });
         }
         Some(card)
@@ -546,10 +575,13 @@ impl Game {
                     .iter()
                     .find(|permanent| permanent.card.id == proposed.object)
                     .map(|permanent| {
+                        let mut damage_sources = permanent.damage_sources.clone();
+                        damage_sources.sort_unstable();
+                        damage_sources.dedup();
                         (
                             proposed.object,
                             self.battlefield_exit_snapshot(permanent),
-                            permanent.damage_sources.clone(),
+                            damage_sources,
                             proposed.destination,
                             self.has_undying(permanent)
                                 && permanent.counters(CounterKind::PlusOnePlusOne) == 0,
@@ -562,33 +594,40 @@ impl Game {
         self.creature_died_this_turn |= exits.iter().any(|(_, snapshot, _, destination, _, _)| {
             *destination == ZoneKind::Graveyard && snapshot.object.types.is_creature()
         });
-        for (_, snapshot, damage_sources, destination, _, _) in &exits {
-            if *destination != ZoneKind::Graveyard {
-                continue;
-            }
-            for &source in damage_sources {
-                self.capture_battlefield_triggers_from_snapshot(
-                    &listeners,
-                    &CommittedTriggerEvent::DamagedCreatureDied {
-                        object: snapshot.object.clone(),
-                        source,
-                    },
-                );
-            }
-        }
-
         let mut removed = Vec::new();
-        for (id, snapshot, _, destination, undying, presented) in exits {
+        for (id, snapshot, damage_sources, destination, undying, presented) in exits {
             let index = self
                 .battlefield
                 .iter()
                 .position(|permanent| permanent.card.id == id)
                 .expect("a snapshotted battlefield object remains until its batch exits");
             let permanent = self.remove_battlefield_object(index, &snapshot.last_known);
-            removed.push((permanent, snapshot, destination, undying, presented));
+            removed.push((
+                permanent,
+                snapshot,
+                damage_sources,
+                destination,
+                undying,
+                presented,
+            ));
         }
 
-        for (permanent, snapshot, to, undying, presented) in removed {
+        let events = removed
+            .iter()
+            .map(
+                |(_, snapshot, damage_sources, to, _, _)| CommittedTriggerEvent::ZoneChanged {
+                    object: snapshot.object.clone(),
+                    from: ZoneKind::Battlefield,
+                    to: *to,
+                    damage_sources: damage_sources.clone(),
+                },
+            )
+            .collect::<Vec<_>>();
+        self.capture_battlefield_trigger_batch_from_snapshot(&listeners, &events);
+
+        for ((permanent, snapshot, _, to, undying, presented), event) in
+            removed.into_iter().zip(events)
+        {
             let exit = match to {
                 ZoneKind::Exile => BattlefieldExit::Exile,
                 ZoneKind::Graveyard => BattlefieldExit::Graveyard,
@@ -598,12 +637,6 @@ impl Game {
                     unreachable!("unsupported battlefield-exit replacement destination")
                 }
             };
-            let event = CommittedTriggerEvent::ZoneChanged {
-                object: snapshot.object,
-                from: ZoneKind::Battlefield,
-                to,
-            };
-            self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
             self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
             self.record_battlefield_exit(&permanent, exit);
             // 111.7: a token that leaves the battlefield ceases to exist. The
@@ -747,12 +780,14 @@ impl Game {
         else {
             return;
         };
+        let damage_sources = self.battlefield[index].damage_sources.clone();
         let snapshot = self.battlefield_exit_snapshot(&self.battlefield[index]);
         let permanent = self.remove_battlefield_object(index, &snapshot.last_known);
         let event = CommittedTriggerEvent::ZoneChanged {
             object: snapshot.object,
             from: ZoneKind::Battlefield,
             to: ZoneKind::Exile,
+            damage_sources,
         };
         self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
         self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
@@ -856,7 +891,9 @@ impl Game {
         if self.step == Step::Upkeep {
             return;
         }
-        let step = Self::turn_step_def(self.step);
+        let Some(step) = Self::turn_step_def(self.step) else {
+            return;
+        };
         self.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
             step,
             player: self.active_player,
@@ -872,12 +909,14 @@ impl Game {
         else {
             return;
         };
+        let damage_sources = self.battlefield[index].damage_sources.clone();
         let snapshot = self.battlefield_exit_snapshot(&self.battlefield[index]);
         let permanent = self.remove_battlefield_object(index, &snapshot.last_known);
         let event = CommittedTriggerEvent::ZoneChanged {
             object: snapshot.object,
             from: ZoneKind::Battlefield,
             to: ZoneKind::Hand,
+            damage_sources,
         };
         self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
         self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);
@@ -905,12 +944,14 @@ impl Game {
         else {
             return;
         };
+        let damage_sources = self.battlefield[index].damage_sources.clone();
         let snapshot = self.battlefield_exit_snapshot(&self.battlefield[index]);
         let permanent = self.remove_battlefield_object(index, &snapshot.last_known);
         let event = CommittedTriggerEvent::ZoneChanged {
             object: snapshot.object,
             from: ZoneKind::Battlefield,
             to: ZoneKind::Library,
+            damage_sources,
         };
         self.capture_battlefield_triggers_from_snapshot(&listeners, &event);
         self.capture_custom_source_triggers(&permanent, &snapshot.abilities, &event);

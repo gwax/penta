@@ -67,10 +67,7 @@ pub(in crate::card::sets) static JACKAL_PUP: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{R}"), &["Jackal"], 2, 1).with_ability(
         AbilityDef::triggered(
             "Whenever this creature is dealt damage, it deals that much damage to you.",
-            TriggerEventDef::DamageDealt {
-                source: ObjectPredicateDef::Any,
-                recipient: EffectRecipientDef::Source,
-            },
+            TriggerEventDef::damage_to_source(),
             EffectDef::DealDamage {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::TriggerEventAmount,

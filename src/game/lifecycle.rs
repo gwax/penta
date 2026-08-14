@@ -170,7 +170,8 @@ impl Game {
             creature_died_this_turn: false,
             linked_exiles: Vec::new(),
             sorcery_flash_grants: [0; 2],
-            additional_combat_phases: 0,
+            turn_phase_queue: VecDeque::new(),
+            turn_phase_resume: None,
             noncreature_casts_locked: [false; 2],
             emblems: Vec::new(),
             spells_cast_this_turn: [0; 2],
@@ -413,17 +414,10 @@ impl Game {
                     Some(RetiredObject::Stack(object)) => Some(i32::from(object.x())),
                     Some(RetiredObject::Card(_) | RetiredObject::Permanent { .. }) | None => None,
                 }),
-            // Read live, so pumping the source widens what its ability can
-            // reach. This is safe here because a target predicate is not
-            // consulted while static effects are being applied; a static
-            // ability whose own recipient predicate read this would not
-            // terminate.
-            ValueDef::SourcePower => self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == source)
-                .and_then(|permanent| self.power(permanent))
-                .map(i32::from),
+            // Pumping the source widens the predicate while it is live. If
+            // source and triggering object leave simultaneously, use the
+            // same last-known power frozen for the rest of the trigger.
+            ValueDef::SourcePower => self.current_or_last_known_power(source).map(i32::from),
             _ => None,
         }
     }

@@ -296,6 +296,13 @@ impl Game {
     }
 
     fn apply_legal_action(&mut self, player: PlayerId, action: Action) {
+        // Declaration members arrive as separate UI actions, but CR 508.1
+        // and 509.1 make each completed set one turn-based action. Do not let
+        // state-based actions or state triggers inspect a partial set.
+        let declaration_is_still_open = matches!(
+            &action,
+            Action::DeclareAttacker { .. } | Action::DeclareBlocker { .. }
+        );
         match action {
             Action::KeepHand => self.keep_hand(player),
             Action::TakeMulligan => self.take_mulligan(player),
@@ -349,7 +356,7 @@ impl Game {
                 reason: WinReason::OpponentConceded,
             }),
         }
-        if self.result.is_none() {
+        if self.result.is_none() && !declaration_is_still_open {
             self.finish_rules_procedure();
         }
     }

@@ -4,7 +4,7 @@ use std::fmt;
 
 use crate::card::{
     CardEffectStatus, CardPrintingId, ManaCost, ObjectChoiceBindingDef, PlayActionKind,
-    PlayerSetDef, ReplacementEventDef, SpellForm, TargetSlotDef,
+    PlayerSetDef, ReplacementEventDef, SpellForm, TargetSlotDef, TriggerEventDef,
 };
 use crate::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, GrantId, ModeId,
@@ -38,6 +38,14 @@ pub enum GrantedAbilityValidationError {
     /// and the ordinary shared trigger runtime. Reject any nested ability the
     /// runtime would otherwise silently decline to install.
     UnsupportedInstalledTriggerAbility,
+    /// The shared trigger publisher cannot produce or match this event shape.
+    UnsupportedTriggerEvent {
+        event: TriggerEventDef,
+    },
+    /// A shared triggered mana ability must resolve immediately without
+    /// choices or stack-only effects. The runtime supports one or more fixed
+    /// `AddMana` leaves and nothing else.
+    UnsupportedTriggeredManaProgram,
     TooManyTargets {
         count: usize,
     },
@@ -106,6 +114,12 @@ impl fmt::Display for GrantedAbilityValidationError {
             ),
             Self::UnsupportedInstalledTriggerAbility => formatter.write_str(
                 "installs an ability that is not a targetless shared declarative triggered ability",
+            ),
+            Self::UnsupportedTriggerEvent { event } => {
+                write!(formatter, "uses unsupported trigger event {event:?}")
+            }
+            Self::UnsupportedTriggeredManaProgram => formatter.write_str(
+                "uses a triggered mana program that cannot resolve immediately",
             ),
             Self::TooManyTargets { count } => write!(
                 formatter,
@@ -294,6 +308,17 @@ pub enum CatalogError {
         operation: &'static str,
     },
     UnsupportedInstalledTriggerAbility {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+    },
+    UnsupportedTriggerEvent {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        event: TriggerEventDef,
+    },
+    UnsupportedTriggeredManaProgram {
         definition: CardDefinitionId,
         part: CardPartId,
         ability: AbilityId,

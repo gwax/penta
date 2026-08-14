@@ -1,53 +1,134 @@
 use super::*;
 
+fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) -> bool {
+    match predicate {
+        ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => predicates
+            .iter()
+            .copied()
+            .any(trigger_predicate_requires_live_battlefield),
+        ObjectPredicateDef::Not(predicate) => {
+            trigger_predicate_requires_live_battlefield(*predicate)
+        }
+        ObjectPredicateDef::HasNonManaActivatedAbility => true,
+        _ => false,
+    }
+}
+
 pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
     match event {
-        TriggerEventDef::ZoneChanged { object, from, to } => {
-            const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 5] = [
+        TriggerEventDef::ZoneChanged(matcher) => {
+            const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 9] = [
+                (ZoneKind::Library, ZoneKind::Battlefield),
                 (ZoneKind::Hand, ZoneKind::Battlefield),
+                (ZoneKind::Graveyard, ZoneKind::Battlefield),
+                (ZoneKind::Exile, ZoneKind::Battlefield),
                 (ZoneKind::Stack, ZoneKind::Battlefield),
                 (ZoneKind::Battlefield, ZoneKind::Graveyard),
                 (ZoneKind::Battlefield, ZoneKind::Exile),
                 (ZoneKind::Battlefield, ZoneKind::Hand),
+                (ZoneKind::Battlefield, ZoneKind::Library),
             ];
-            shared_object_predicate(object)
+            let can_match_departure =
+                COMMITTED_TRANSITIONS
+                    .iter()
+                    .any(|(actual_from, actual_to)| {
+                        *actual_from == ZoneKind::Battlefield
+                            && *actual_to != ZoneKind::Battlefield
+                            && matcher.from.is_none_or(|expected| expected == *actual_from)
+                            && matcher.to.is_none_or(|expected| expected == *actual_to)
+                    });
+            shared_object_predicate(matcher.object)
+                && (!can_match_departure
+                    || !trigger_predicate_requires_live_battlefield(matcher.object))
                 && COMMITTED_TRANSITIONS
                     .iter()
                     .any(|(actual_from, actual_to)| {
-                        from.is_none_or(|expected| expected == *actual_from)
-                            && to.is_none_or(|expected| expected == *actual_to)
+                        matcher.from.is_none_or(|expected| expected == *actual_from)
+                            && matcher.to.is_none_or(|expected| expected == *actual_to)
                     })
+                && matcher.previously_damaged_by.is_none_or(|reference| {
+                    matcher
+                        .from
+                        .is_none_or(|from| from == ZoneKind::Battlefield)
+                        && matcher.to.is_none_or(|to| to == ZoneKind::Graveyard)
+                        && matches!(
+                            reference,
+                            ObjectRefDef::Source
+                                | ObjectRefDef::AttachedToSource
+                                | ObjectRefDef::TriggeringObject
+                        )
+                })
         }
-        TriggerEventDef::BecomesTapped(object)
-        | TriggerEventDef::Attacks(object)
-        | TriggerEventDef::BecomesBlocked(object)
-        | TriggerEventDef::AttacksFirstTimeThisTurn(object)
-        | TriggerEventDef::TappedForMana(object)
-        | TriggerEventDef::SpellCast(object) => shared_object_predicate(object),
+        TriggerEventDef::Tapped(matcher) => shared_object_predicate(matcher.object),
+        TriggerEventDef::Attacks(matcher) => {
+            shared_object_predicate(matcher.attacker)
+                && matcher.declaration.minimum > 0
+                && matcher
+                    .declaration
+                    .maximum
+                    .is_none_or(|maximum| matcher.declaration.minimum <= maximum)
+                && matcher.attack_number.is_none_or(|number| number > 0)
+        }
+        TriggerEventDef::BecomesBlocked(object) => shared_object_predicate(object),
+        TriggerEventDef::SpellCast(object) => {
+            shared_object_predicate(object) && !trigger_predicate_requires_live_battlefield(object)
+        }
         TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
-        | TriggerEventDef::StateCondition
-        | TriggerEventDef::TransformsIntoThisFace
-        | TriggerEventDef::DamagedCreatureDied => true,
-        // Only "whenever this creature is dealt damage" is committed; a
-        // wider recipient has no event behind it yet.
-        TriggerEventDef::DamageDealt { source, recipient } => {
-            recipient == EffectRecipientDef::Source && source == ObjectPredicateDef::Any
+        | TriggerEventDef::StateCondition => true,
+        TriggerEventDef::Transforms(object) => shared_object_predicate(object),
+        TriggerEventDef::DamageDealt(matcher) => {
+            let source = match matcher.source {
+                DamageSourceMatcherDef::Matching(object) => {
+                    shared_object_predicate(object)
+                        && !trigger_predicate_requires_live_battlefield(object)
+                }
+                DamageSourceMatcherDef::Any => true,
+                DamageSourceMatcherDef::AffectedObject => false,
+                DamageSourceMatcherDef::Object(reference)
+                | DamageSourceMatcherDef::Except(reference) => matches!(
+                    reference,
+                    ObjectRefDef::Source
+                        | ObjectRefDef::AttachedToSource
+                        | ObjectRefDef::TriggeringObject
+                ),
+            };
+            let recipient = match matcher.recipient {
+                DamageRecipientMatcherDef::Any => true,
+                DamageRecipientMatcherDef::AffectedObject => false,
+                DamageRecipientMatcherDef::Recipients(EffectRecipientDef(
+                    EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)),
+                )) => matches!(
+                    reference,
+                    ObjectRefDef::Source
+                        | ObjectRefDef::AttachedToSource
+                        | ObjectRefDef::TriggeringObject
+                ),
+                DamageRecipientMatcherDef::Recipients(EffectRecipientDef(
+                    EffectRecipientSetDef::Players(_),
+                )) => true,
+                DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
+                    PlayerRefDef::EffectController | PlayerRefDef::EventPlayer,
+                ) => true,
+                DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
+                    PlayerRefDef::ControllerOf(reference) | PlayerRefDef::OwnerOf(reference),
+                ) => matches!(
+                    reference,
+                    ObjectRefDef::Source
+                        | ObjectRefDef::AttachedToSource
+                        | ObjectRefDef::TriggeringObject
+                ),
+                DamageRecipientMatcherDef::Recipients(_)
+                | DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
+                    PlayerRefDef::Target(_),
+                ) => false,
+            };
+            source && recipient
         }
-        TriggerEventDef::CombatDamageDealtToPlayer { source }
-        | TriggerEventDef::CombatDamageDealtToSource { source }
-        | TriggerEventDef::DamageDealtBy { source }
-        | TriggerEventDef::AttacksInGroup {
-            attacker: source, ..
-        }
-        | TriggerEventDef::DamageDealtToPlayer { source, .. }
-        | TriggerEventDef::AttacksAndIsNotBlocked { attacker: source }
+        TriggerEventDef::AttacksAndIsNotBlocked { attacker: source }
         | TriggerEventDef::BlocksOrBecomesBlockedBy { object: source } => {
             shared_object_predicate(source)
         }
-        TriggerEventDef::AbilityActivated(_)
-        | TriggerEventDef::ManaAdded(_)
-        | TriggerEventDef::Special(_) => false,
     }
 }
 
@@ -292,7 +373,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
-        | EffectDef::AdditionalCombatPhase
+        | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | EffectDef::GrantFlashToNextSorcery

@@ -381,9 +381,7 @@ pub(in crate::card::sets) static EL_HAJJAJ: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Human", "Wizard"], 1, 1).with_ability(
         AbilityDef::triggered(
             "Whenever this creature deals damage, you gain that much life.",
-            TriggerEventDef::DamageDealtBy {
-                source: ObjectPredicateDef::Source,
-            },
+            TriggerEventDef::damage_dealt_by(ObjectPredicateDef::Source),
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::TriggerEventAmount,
@@ -439,7 +437,7 @@ pub(in crate::card::sets) static HASRAN_OGRESS: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{B}{B}"), &["Ogre"], 3, 2).with_abilities(&[
         AbilityDef::triggered(
             "Whenever this creature attacks, it deals 3 damage to you unless you pay {2}.",
-            TriggerEventDef::Attacks(ObjectPredicateDef::Source),
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
             EffectDef::PayOr(PayOrDef::unless_mana(
                 mana_cost!("{2}"),
                 &EffectDef::DealDamage {
@@ -681,11 +679,7 @@ pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Bird", "Egg"], 0, 3).with_abilities(&[
         AbilityDef::triggered(
             "When this creature dies, create a 4/4 red Bird creature token with flying at the beginning of the next end step.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
             EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
                 "At the beginning of the next end step, create a 4/4 red Bird creature token with flying.",
                 TriggerEventDef::StepBegins {
@@ -1160,7 +1154,7 @@ pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new(
     CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::triggered(
             "Whenever this land becomes tapped, it deals 1 damage to you.",
-            TriggerEventDef::BecomesTapped(ObjectPredicateDef::Source),
+            TriggerEventDef::tapped(ObjectPredicateDef::Source),
             EffectDef::DealDamage {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),

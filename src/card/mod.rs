@@ -30,9 +30,10 @@ pub use model::{
     AbilityTargetDef, AbilityTargetPredicate, ActivatedAbilityDef, ActivationTimingDef,
     AddManaEffectDef, AdditionalCostDef, AlternateSpellKind, AlternativeCastAbilityDef,
     AlternativeCastKindDef, AlternativeCastManaCostDef, AlternativeCostDef, AppliedEffectDef,
-    AttachedAbilityDef, BasicLandType, BattlefieldEntryModificationDef, CardAbilityList, CardArt,
-    CardChoiceSourceDef, CardComposition, CardDefinition, CardEffectStatus, CardPart, CardPrinting,
-    CardPrintingId, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet,
+    AttachedAbilityDef, AttackDeclarationRangeDef, AttackEventMatcherDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardAbilityList, CardArt, CardChoiceSourceDef,
+    CardComposition, CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId,
+    CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet,
     CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef,
     ConditionDef, ConditionalValueDef, CostDef, CountConditionDef, CounterKind, CreatureStats,
     CreatureTypeSetDef, DamageCoverageDef, DamageEventMatcherDef, DamageKindDef,
@@ -49,9 +50,10 @@ pub use model::{
     PrintedManaCost, QuantifierDef, ReplacementAbilityDef, ReplacementChoiceDef,
     ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
     ScaledValueDef, SetOperationDef, SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef,
-    SpellForm, SplitIntoPilesDef, StaticAbilityDef, TargetConditionDef, TargetPredicate,
-    TargetSlotDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef,
-    TurnKindDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
+    SpellForm, SplitIntoPilesDef, StaticAbilityDef, TapEventMatcherDef, TapPurposeDef,
+    TargetConditionDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TriggeredAbilityDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
+    ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

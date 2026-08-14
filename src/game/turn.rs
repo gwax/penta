@@ -4,7 +4,8 @@ use super::{
     DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
     DeferredBeginTurnEffect, EffectResolutionContext, Game, GameEvent, GameObjectId, GameResult,
     InstalledTriggerLifetime, ManaPool, PendingProcedure, PlayerId, ReplacementEffectDef,
-    ReplacementEventDef, Step, TriggerContext, TurnStepDef, one_or_none,
+    ReplacementEventDef, Step, TriggerContext, TurnPhaseDef, TurnPhaseResume, TurnStepDef,
+    one_or_none,
 };
 
 mod begin_turn;
@@ -212,8 +213,8 @@ impl Game {
         self.events.push(GameEvent::DamageDealt { player, amount });
     }
 
-    pub(super) const fn turn_step_def(step: Step) -> TurnStepDef {
-        match step {
+    pub(super) const fn turn_step_def(step: Step) -> Option<TurnStepDef> {
+        Some(match step {
             Step::Upkeep => TurnStepDef::Upkeep,
             Step::Draw => TurnStepDef::Draw,
             Step::PrecombatMain => TurnStepDef::PrecombatMain,
@@ -224,8 +225,8 @@ impl Game {
             Step::EndOfCombat => TurnStepDef::EndOfCombat,
             Step::PostcombatMain => TurnStepDef::PostcombatMain,
             Step::End => TurnStepDef::End,
-            Step::Cleanup => TurnStepDef::Cleanup,
-        }
+            Step::Cleanup => return None,
+        })
     }
 
     /// A miracle window belongs to one card sitting in hand. Once that card
@@ -262,8 +263,16 @@ impl Game {
                     }
                 }
             }
-            Step::Draw => self.step = Step::PrecombatMain,
-            Step::PrecombatMain => self.step = Step::BeginningOfCombat,
+            Step::Draw => {
+                if self.advance_after_turn_phase(TurnPhaseResume::Step(Step::PrecombatMain)) {
+                    return;
+                }
+            }
+            Step::PrecombatMain => {
+                if self.advance_after_turn_phase(TurnPhaseResume::Step(Step::BeginningOfCombat)) {
+                    return;
+                }
+            }
             Step::BeginningOfCombat => {
                 self.step = Step::DeclareAttackers;
                 self.attackers_declared = false;
@@ -280,18 +289,14 @@ impl Game {
             Step::EndOfCombat => {
                 self.destroy_end_of_combat_permanents();
                 self.clear_combat();
-                // An extra combat phase replaces the move to the second main,
-                // which still happens once the extra combats are spent.
-                if self.additional_combat_phases > 0 {
-                    self.additional_combat_phases -= 1;
-                    self.step = Step::BeginningOfCombat;
-                } else {
-                    self.step = Step::PostcombatMain;
+                if self.advance_after_turn_phase(TurnPhaseResume::Step(Step::PostcombatMain)) {
+                    return;
                 }
             }
             Step::PostcombatMain => {
-                self.step = Step::End;
-                self.handle_end_step();
+                if self.advance_after_turn_phase(TurnPhaseResume::Step(Step::End)) {
+                    return;
+                }
             }
             Step::End => {
                 self.step = Step::Cleanup;
@@ -301,12 +306,52 @@ impl Game {
                 }
             }
             Step::Cleanup => {
-                self.start_next_turn();
-                return;
+                if self.advance_after_turn_phase(TurnPhaseResume::NextTurn) {
+                    return;
+                }
             }
         }
 
         self.finish_step_advance();
+    }
+
+    /// Starts the next additional phase, or resumes the ordinary turn once
+    /// the queue is empty. The first boundary displaced by a schedule is
+    /// frozen so an inserted combat created after the postcombat main resumes
+    /// at the end step rather than manufacturing another ordinary main phase.
+    ///
+    /// Returns `true` when progression began the next turn, whose startup path
+    /// publishes its own step change.
+    fn advance_after_turn_phase(&mut self, ordinary_resume: TurnPhaseResume) -> bool {
+        let next = if let Some(phase) = self.turn_phase_queue.pop_front() {
+            self.turn_phase_resume.get_or_insert(ordinary_resume);
+            TurnPhaseResume::Step(match phase {
+                TurnPhaseDef::Combat => Step::BeginningOfCombat,
+                TurnPhaseDef::PostcombatMain => Step::PostcombatMain,
+            })
+        } else {
+            self.turn_phase_resume.take().unwrap_or(ordinary_resume)
+        };
+
+        match next {
+            TurnPhaseResume::Step(step) => {
+                self.step = step;
+                if step == Step::End {
+                    self.handle_end_step();
+                }
+                false
+            }
+            TurnPhaseResume::NextTurn => {
+                self.start_next_turn();
+                true
+            }
+        }
+    }
+
+    pub(super) fn schedule_turn_phases(&mut self, phases: &[TurnPhaseDef]) {
+        for phase in phases.iter().rev() {
+            self.turn_phase_queue.push_front(*phase);
+        }
     }
 
     fn finish_step_advance(&mut self) {
@@ -364,7 +409,8 @@ impl Game {
         }
         self.creature_died_this_turn = false;
         self.sorcery_flash_grants = [0; 2];
-        self.additional_combat_phases = 0;
+        self.turn_phase_queue.clear();
+        self.turn_phase_resume = None;
         self.noncreature_casts_locked = [false; 2];
         self.spells_cast_last_turn = self.spells_cast_this_turn;
         self.spells_cast_this_turn = [0; 2];
@@ -399,6 +445,11 @@ impl Game {
             // One loyalty ability per planeswalker per turn, so the allowance
             // returns as the turn does.
             permanent.activated_loyalty_this_turn = false;
+            permanent.activations_this_turn.clear();
+            permanent.dealt_damage_to_opponent_this_turn = false;
+            permanent.attacked_this_turn = false;
+            permanent.attacks_this_turn = 0;
+            permanent.damage_sources.clear();
         }
         let winter_orb = self.winter_orb_active();
         let smoke = self.count_behavior(CardBehavior::Smoke) > 0;
@@ -498,16 +549,22 @@ impl Game {
     }
 
     pub(super) fn complete_cleanup(&mut self) {
-        self.channel_active[self.active_player.index()] = false;
         self.finish_cleanup();
         self.empty_mana_pools();
-        if self.result.is_none() {
-            self.start_next_turn();
+        if self.result.is_none() && !self.advance_after_turn_phase(TurnPhaseResume::NextTurn) {
+            self.finish_step_advance();
         }
     }
 
     pub(super) fn finish_cleanup(&mut self) {
         self.temporary_ability_grants.clear();
+        // These resolving permissions and restrictions last only until the
+        // cleanup step. A later phase can still be inserted into this turn,
+        // but it must not revive an expired Quicken or Aurelia's Fury effect.
+        self.sorcery_flash_grants = [0; 2];
+        self.noncreature_casts_locked = [false; 2];
+        self.channel_active = [false; 2];
+        self.miracle_window = None;
         self.damage_preventions
             .retain(|prevention| prevention.expiration.survives_cleanup());
         self.damage_redirects
@@ -532,7 +589,6 @@ impl Game {
         for permanent in &mut self.battlefield {
             permanent.damage = 0;
             permanent.exile_instead_of_dying = false;
-            permanent.damage_sources.clear();
             permanent.deathtouch_damage = false;
             permanent.temporary_keywords.clear();
             permanent.resolved_continuous_effects.retain(|effect| {
@@ -552,12 +608,8 @@ impl Game {
             permanent.unblockable_this_turn = false;
             permanent.cannot_block_this_turn = false;
             permanent.destroy_at_end = false;
-            permanent.activations_this_turn.clear();
-            permanent.dealt_damage_to_opponent_this_turn = false;
             permanent.regeneration_shields = 0;
             permanent.cannot_regenerate_this_turn = false;
-            permanent.attacked_this_turn = false;
-            permanent.attacks_this_turn = 0;
         }
     }
 

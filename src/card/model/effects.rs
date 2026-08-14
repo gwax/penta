@@ -297,6 +297,139 @@ pub struct DamageEventMatcherDef {
     pub recipient: DamageRecipientMatcherDef,
 }
 
+/// The number of creatures in the declaration containing one attack event.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct AttackDeclarationRangeDef {
+    pub minimum: u8,
+    /// An inclusive upper bound. `None` means no maximum.
+    pub maximum: Option<u8>,
+}
+
+impl AttackDeclarationRangeDef {
+    pub const ANY: Self = Self {
+        minimum: 1,
+        maximum: None,
+    };
+
+    #[must_use]
+    pub const fn between(minimum: u8, maximum: Option<u8>) -> Self {
+        Self { minimum, maximum }
+    }
+}
+
+/// A conjunctive matcher over one creature being declared as an attacker.
+///
+/// `attack_number` is how many times that creature has attacked this turn,
+/// including this declaration. It is frozen when attackers are declared, so
+/// an extra combat phase can produce number two without re-reading mutable
+/// battlefield state when the trigger is placed on the stack.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct AttackEventMatcherDef {
+    pub attacker: ObjectPredicateDef,
+    pub declaration: AttackDeclarationRangeDef,
+    pub attack_number: Option<u8>,
+}
+
+impl AttackEventMatcherDef {
+    #[must_use]
+    pub const fn any(attacker: ObjectPredicateDef) -> Self {
+        Self {
+            attacker,
+            declaration: AttackDeclarationRangeDef::ANY,
+            attack_number: None,
+        }
+    }
+
+    #[must_use]
+    pub const fn first(attacker: ObjectPredicateDef) -> Self {
+        Self {
+            attacker,
+            declaration: AttackDeclarationRangeDef::ANY,
+            attack_number: Some(1),
+        }
+    }
+
+    #[must_use]
+    pub const fn in_declaration(
+        attacker: ObjectPredicateDef,
+        minimum: u8,
+        maximum: Option<u8>,
+    ) -> Self {
+        Self {
+            attacker,
+            declaration: AttackDeclarationRangeDef::between(minimum, maximum),
+            attack_number: None,
+        }
+    }
+}
+
+/// Why a permanent became tapped.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum TapPurposeDef {
+    Any,
+    Mana,
+}
+
+/// A matcher over one untapped-to-tapped transition.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct TapEventMatcherDef {
+    pub object: ObjectPredicateDef,
+    pub purpose: TapPurposeDef,
+}
+
+impl TapEventMatcherDef {
+    #[must_use]
+    pub const fn any(object: ObjectPredicateDef) -> Self {
+        Self {
+            object,
+            purpose: TapPurposeDef::Any,
+        }
+    }
+
+    #[must_use]
+    pub const fn mana(object: ObjectPredicateDef) -> Self {
+        Self {
+            object,
+            purpose: TapPurposeDef::Mana,
+        }
+    }
+}
+
+/// A matcher over one committed zone transition.
+///
+/// `previously_damaged_by` consults the damage-source history frozen as the
+/// object leaves the battlefield. It therefore remains valid for simultaneous
+/// deaths and never re-reads a fresh object in the destination zone.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ZoneChangeEventMatcherDef {
+    pub object: ObjectPredicateDef,
+    pub from: Option<ZoneKind>,
+    pub to: Option<ZoneKind>,
+    pub previously_damaged_by: Option<ObjectRefDef>,
+}
+
+impl ZoneChangeEventMatcherDef {
+    #[must_use]
+    pub const fn new(
+        object: ObjectPredicateDef,
+        from: Option<ZoneKind>,
+        to: Option<ZoneKind>,
+    ) -> Self {
+        Self {
+            object,
+            from,
+            to,
+            previously_damaged_by: None,
+        }
+    }
+
+    #[must_use]
+    pub const fn previously_damaged_by(mut self, source: ObjectRefDef) -> Self {
+        self.previously_damaged_by = Some(source);
+        self
+    }
+}
+
 impl DamageEventMatcherDef {
     pub const ANY: Self = Self {
         kind: DamageKindDef::Any,
@@ -1272,8 +1405,10 @@ pub enum EffectDef {
     /// keyword is untouched -- anything else reading it still sees it -- so
     /// this is a blocking rule rather than an ability-removing one.
     LandwalkCanBeBlocked(BasicLandType),
-    /// Adds a combat phase after the one now ending.
-    AdditionalCombatPhase,
+    /// Schedules these additional phases after the current phase. Later
+    /// schedules at the same boundary happen before earlier ones, while the
+    /// order inside one schedule is preserved.
+    ScheduleTurnPhases(&'static [TurnPhaseDef]),
     /// Gives each affected player an extra turn after the current one. Extra
     /// turns are queued by the turn engine, so a later-created turn happens
     /// before an earlier-created one.
@@ -1348,10 +1483,22 @@ pub enum DamageSourceGroupDef {
     UnblockedCreatures,
 }
 
-/// Turn structure used by beginning/end-of-step trigger declarations.
+/// A major turn phase that a resolving effect can insert.
+///
+/// This is intentionally narrower than [`TurnStepDef`]. Steps remain trigger
+/// labels inside a phase, and the untap procedure remains part of ordinary
+/// turn startup rather than an independently scheduled step.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum TurnPhaseDef {
+    Combat,
+    PostcombatMain,
+}
+
+/// Observable turn steps used by beginning/end-of-step trigger declarations.
+/// Untap is an engine procedure before upkeep, and cleanup has no ordinary
+/// priority window, so neither is an authored trigger label.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TurnStepDef {
-    Untap,
     Upkeep,
     Draw,
     PrecombatMain,
@@ -1362,5 +1509,4 @@ pub enum TurnStepDef {
     EndOfCombat,
     PostcombatMain,
     End,
-    Cleanup,
 }

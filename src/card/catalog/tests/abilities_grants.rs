@@ -893,6 +893,54 @@ fn installed_triggers_retain_installer_targets_and_reject_fresh_target_scopes() 
         );
     }
 
+    static CONDITIONLESS_STATE_TRIGGER: AbilityDef = AbilityDef::triggered(
+        "Whenever an unspecified state exists, trigger.",
+        TriggerEventDef::StateCondition,
+        EffectDef::None,
+    );
+    assert_eq!(
+        super::validate_ability_targets(
+            &[],
+            EffectDef::InstallTrigger(InstalledTriggerDef::once(&CONDITIONLESS_STATE_TRIGGER,)),
+        ),
+        Err(GrantedAbilityValidationError::UnsupportedTriggerEvent {
+            event: TriggerEventDef::StateCondition,
+        }),
+    );
+    static STATE_CONDITION: TriggerConditionDef = TriggerConditionDef::SourceOnBattlefield;
+    static CONDITIONAL_STATE_TRIGGER: AbilityDef = AbilityDef::triggered_if(
+        "Whenever this remains on the battlefield, trigger.",
+        TriggerEventDef::StateCondition,
+        &STATE_CONDITION,
+        EffectDef::None,
+    );
+    assert_eq!(
+        super::validate_ability_targets(
+            &[],
+            EffectDef::InstallTrigger(InstalledTriggerDef::once(&CONDITIONAL_STATE_TRIGGER,)),
+        ),
+        Err(GrantedAbilityValidationError::UnsupportedTriggerEvent {
+            event: TriggerEventDef::StateCondition,
+        }),
+        "installed state triggers stay rejected until Once consumption joins state capture",
+    );
+    static WRONG_ZONE_TRIGGER: AbilityDef = AbilityDef::triggered(
+        "At the beginning of the next end step, trigger.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::None,
+    )
+    .with_source_zones(&[ZoneKind::Graveyard]);
+    assert_eq!(
+        super::validate_ability_targets(
+            &[],
+            EffectDef::InstallTrigger(InstalledTriggerDef::once(&WRONG_ZONE_TRIGGER)),
+        ),
+        Err(GrantedAbilityValidationError::UnsupportedInstalledTriggerAbility),
+    );
+
     static INVALID_SPELL: AbilityDef = AbilityDef::spell_with_targets(
         "Install an unsupported delayed trigger.",
         &INSTALLER_TARGETS,
@@ -909,6 +957,177 @@ fn installed_triggers_retain_installer_targets_and_reject_fresh_target_scopes() 
             ability: AbilityId::PRIMARY,
         },
     );
+
+    static INVALID_STATE_INSTALL_SPELL: AbilityDef = AbilityDef::spell(
+        "Install an unsupported state trigger.",
+        EffectDef::InstallTrigger(InstalledTriggerDef::once(&CONDITIONLESS_STATE_TRIGGER)),
+    );
+    let mut card = definition(1, "Test Card", CardSet::Alpha);
+    let rules = card.rules.with_ability(INVALID_STATE_INSTALL_SPELL);
+    set_primary_rules(&mut card, &rules);
+    assert_eq!(
+        error(card),
+        CatalogError::UnsupportedTriggerEvent {
+            definition: CardDefinitionId(1),
+            part: CardPartId::PRIMARY,
+            ability: AbilityId::PRIMARY,
+            event: TriggerEventDef::StateCondition,
+        },
+    );
+}
+
+fn definition_with_ability(ability: AbilityDef) -> CardDefinition {
+    let mut card = definition(1, "Test Card", CardSet::Alpha);
+    let rules = card.rules.with_ability(ability);
+    set_primary_rules(&mut card, &rules);
+    card
+}
+
+#[test]
+fn shared_trigger_catalog_rejects_undiscoverable_or_incomplete_listeners() {
+    static CONDITION: TriggerConditionDef = TriggerConditionDef::SourceOnBattlefield;
+    let upkeep = TriggerEventDef::StepBegins {
+        step: TurnStepDef::Upkeep,
+        player: PlayerRelation::You,
+    };
+    let outside_battlefield = AbilityDef::triggered("At upkeep, trigger.", upkeep, EffectDef::None)
+        .with_source_zones(&[ZoneKind::Graveyard]);
+    let mixed_zones = AbilityDef::triggered("At upkeep, trigger.", upkeep, EffectDef::None)
+        .with_source_zones(&[ZoneKind::Battlefield, ZoneKind::Graveyard]);
+    let state_without_condition = AbilityDef::triggered(
+        "Trigger whenever a state exists.",
+        TriggerEventDef::StateCondition,
+        EffectDef::None,
+    );
+    let conditional_mana = AbilityDef::defined(
+        "Whenever this is tapped for mana, if it remains on the battlefield, add {B}.",
+        DeclarativeAbilityDef::TriggeredMana(
+            match AbilityDef::triggered_mana(
+                "placeholder",
+                TriggerEventDef::tapped_for_mana(ObjectPredicateDef::Source),
+                EffectDef::None,
+            )
+            .definition
+            {
+                DeclarativeAbilityDef::TriggeredMana(definition) => {
+                    definition.with_condition(&CONDITION)
+                }
+                _ => unreachable!(),
+            },
+        ),
+        EffectDef::AddMana(crate::card::AddManaEffectDef::one(
+            crate::card::ManaColor::Black,
+        )),
+    );
+    let ordinary_tap_mana = AbilityDef::triggered_mana(
+        "Whenever this becomes tapped, add {B}.",
+        TriggerEventDef::tapped(ObjectPredicateDef::Source),
+        EffectDef::AddMana(crate::card::AddManaEffectDef::one(
+            crate::card::ManaColor::Black,
+        )),
+    );
+    let damage_mana = AbilityDef::triggered_mana(
+        "Whenever this deals damage, add {B}.",
+        TriggerEventDef::damage_dealt_by(ObjectPredicateDef::Source),
+        EffectDef::AddMana(crate::card::AddManaEffectDef::one(
+            crate::card::ManaColor::Black,
+        )),
+    );
+
+    for (ability, event) in [
+        (outside_battlefield, upkeep),
+        (mixed_zones, upkeep),
+        (state_without_condition, TriggerEventDef::StateCondition),
+        (
+            conditional_mana,
+            TriggerEventDef::tapped_for_mana(ObjectPredicateDef::Source),
+        ),
+        (
+            ordinary_tap_mana,
+            TriggerEventDef::tapped(ObjectPredicateDef::Source),
+        ),
+        (
+            damage_mana,
+            TriggerEventDef::damage_dealt_by(ObjectPredicateDef::Source),
+        ),
+    ] {
+        assert_eq!(
+            error(definition_with_ability(ability)),
+            CatalogError::UnsupportedTriggerEvent {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                event,
+            },
+        );
+    }
+}
+
+#[test]
+fn triggered_mana_catalog_requires_a_nonempty_fixed_add_mana_program() {
+    static MIXED_PROGRAM: [EffectDef; 2] = [
+        EffectDef::AddMana(crate::card::AddManaEffectDef::one(
+            crate::card::ManaColor::Black,
+        )),
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ];
+    let event = TriggerEventDef::tapped_for_mana(ObjectPredicateDef::Source);
+    for effect in [
+        EffectDef::None,
+        EffectDef::Sequence(&[]),
+        EffectDef::Sequence(&MIXED_PROGRAM),
+        EffectDef::AddMana(crate::card::AddManaEffectDef::choice(&[
+            crate::card::ManaColor::Black,
+            crate::card::ManaColor::Green,
+        ])),
+    ] {
+        let ability =
+            AbilityDef::triggered_mana("Whenever tapped for mana, add mana.", event, effect);
+        assert_eq!(
+            error(definition_with_ability(ability)),
+            CatalogError::UnsupportedTriggeredManaProgram {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+            },
+        );
+    }
+}
+
+#[test]
+fn trigger_catalog_rejects_static_only_affected_object_anchors() {
+    for event in [
+        TriggerEventDef::DamageDealt(DamageEventMatcherDef {
+            source: DamageSourceMatcherDef::AffectedObject,
+            ..DamageEventMatcherDef::ANY
+        }),
+        TriggerEventDef::DamageDealt(DamageEventMatcherDef {
+            recipient: DamageRecipientMatcherDef::AffectedObject,
+            ..DamageEventMatcherDef::ANY
+        }),
+        TriggerEventDef::SpellCast(ObjectPredicateDef::HasNonManaActivatedAbility),
+        TriggerEventDef::DamageDealt(DamageEventMatcherDef {
+            source: DamageSourceMatcherDef::Matching(
+                ObjectPredicateDef::HasNonManaActivatedAbility,
+            ),
+            ..DamageEventMatcherDef::ANY
+        }),
+    ] {
+        let ability =
+            AbilityDef::triggered("Whenever damage is dealt, trigger.", event, EffectDef::None);
+        assert_eq!(
+            error(definition_with_ability(ability)),
+            CatalogError::UnsupportedTriggerEvent {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                event,
+            },
+        );
+    }
 }
 
 #[test]
@@ -960,7 +1179,7 @@ fn merged_effect_vocabulary_preserves_local_target_bounds() {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::DividedAmongTargets,
         },
-        EffectDef::AdditionalCombatPhase,
+        EffectDef::ScheduleTurnPhases(&[crate::card::TurnPhaseDef::Combat]),
     ];
     super::validate_ability_targets(&TARGETS, EffectDef::Sequence(&VALID_SEQUENCE))
         .expect("implicit divided values and target-free combat effects add no slot reference");

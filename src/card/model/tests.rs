@@ -638,11 +638,11 @@ fn ability_category_is_explicit_and_not_inferred_from_effect() {
     const MANA_ABILITY: AbilityDef = AbilityDef::activated_mana("Add green.", COSTS, ADD_MANA);
     const ORDINARY_TRIGGER: AbilityDef = AbilityDef::triggered(
         "Add green when this dies.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::Source,
-            from: Some(super::ZoneKind::Battlefield),
-            to: Some(super::ZoneKind::Graveyard),
-        },
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            Some(super::ZoneKind::Battlefield),
+            Some(super::ZoneKind::Graveyard),
+        ),
         ADD_MANA,
     );
     const TURN_FACE_UP: AbilityDef = AbilityDef::special_action(

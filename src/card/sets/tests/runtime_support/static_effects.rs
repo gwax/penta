@@ -156,7 +156,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::MoveToZone { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
-        | EffectDef::AdditionalCombatPhase
+        | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | EffectDef::Special(_) => false,

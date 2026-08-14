@@ -216,7 +216,7 @@ A clone forks the *true* state, hidden zones included. That is right for
 self-play but wrong for a search bot in a hosted match: its rollouts must use
 worlds consistent with its observation, not cards only the host knows.
 
-The optional `reconstruction.checkpoint.v5` capability advertises a hidden-safe
+The optional `reconstruction.checkpoint.v6` capability advertises a hidden-safe
 current-state checkpoint in each observation. The checkpoint was introduced in
 protocol 19, expanded in protocol 21 into the complete typed snapshot described
 below, and given its own nested format version in protocol 22. Supply a
@@ -300,12 +300,13 @@ lexical targets or bindings name a card in a hidden zone that has no stable
 public object ID; the checkpoint omits that trigger rather than serializing a
 host-only identity.
 
-Checkpoint format 5 covers every ordinary action boundary emitted by the
+Checkpoint format 6 covers every ordinary action boundary emitted by the
 hosted formats: pregame and turn/combat progression; complete permanent,
 emblem, stack, and combat state; restricted/source-specific mana; copied and
 temporarily modified characteristics; retired-object last-known information;
 pending battlefield-entry replacement programs; installed and pending
-triggers; ordered resolved damage-prevention rules; and every pending decision
+triggers; ordered resolved damage-prevention rules; ordered inserted-turn-phase
+queues and their frozen ordinary continuation; and every pending decision
 continuation emitted by the hosted formats, including prospective begin-turn
 replacement choices. Stack payloads retain target-slot groupings, divided
 amounts, modes, X, complete lexical resolution context, flashback/copy state,
@@ -352,7 +353,7 @@ world it can search.
 | field | meaning |
 | --- | --- |
 | `protocolVersion` | the breaking bot-wire epoch; protocol 22 objects are open-world, but an epoch mismatch requires migration |
-| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v5`; ignore unknown entries |
+| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v6`; ignore unknown entries |
 | `simulationFingerprint` | a conservative identity of simulation source and build requirements; pin it for training and require it for reconstruction |
 | `engineVersion` | package-release provenance; it is not an exact simulation identity |
 | `format` | the rules/deck profile slug, such as `"old-school-93-94"` or `"isd-rtr-standard"` |
@@ -759,6 +760,24 @@ lexical context from their fragmented fields. Current reconstruction consumers
 should require `reconstruction.checkpoint.v5` and regenerate checkpoints with
 the current engine.
 
+### Migrating checkpoint format 5 to 6
+
+This rules change also leaves protocol 22 in place. Checkpoint format 6
+replaces the scalar additional-combat counter with an ordered queue of inserted
+major phases and an optional frozen continuation. A single effect can preserve
+the authored sequence `combat, postcombat main`; a later schedule at the same
+phase boundary runs first; and a schedule created during an inserted phase is
+placed immediately after that phase. The frozen continuation distinguishes an
+insertion after the precombat main, which resumes the ordinary combat, from one
+after the postcombat main, which resumes at the end step. Turn-step names remain
+trigger labels and the ordinary untap procedure is not represented as an
+inserted phase.
+
+Format-5 checkpoints cannot represent ordered mixed phase sequences or their
+displaced continuation. Current reconstruction consumers should require
+`reconstruction.checkpoint.v6` and regenerate checkpoints with the current
+engine.
+
 ### Migrating from protocol 21
 
 Protocol 22 splits wire compatibility from conservative source identity:
@@ -786,7 +805,7 @@ Protocol 22 splits wire compatibility from conservative source identity:
   `requiredSimulationFingerprint` to refuse a different simulation before it
   is listed or assigned.
 
-The current optional capability is `reconstruction.checkpoint.v5`. An ordinary
+The current optional capability is `reconstruction.checkpoint.v6`. An ordinary
 hosted bot that only reads `legalActions` should declare an empty capability
 list; do not copy the server's advertised capabilities without implementing
 them.

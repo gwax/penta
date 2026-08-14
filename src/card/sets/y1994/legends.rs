@@ -382,7 +382,7 @@ pub(in crate::card::sets) static LIFEBLOOD: CardRecord = CardRecord::new(
     CardSet::Legends,
     CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::triggered(
         "Whenever a Mountain an opponent controls becomes tapped, you gain 1 life.",
-        TriggerEventDef::BecomesTapped(ObjectPredicateDef::All(&[
+        TriggerEventDef::tapped(ObjectPredicateDef::All(&[
             ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
             ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
         ])),
@@ -522,9 +522,7 @@ pub(in crate::card::sets) static SPIRIT_LINK: CardRecord = CardRecord::new(
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::triggered(
                 "Whenever enchanted creature deals damage, you gain that much life.",
-                TriggerEventDef::DamageDealtBy {
-                    source: ObjectPredicateDef::AttachedToSource,
-                },
+                TriggerEventDef::damage_dealt_by(ObjectPredicateDef::AttachedToSource),
                 EffectDef::GainLife {
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::TriggerEventAmount,
@@ -1060,7 +1058,7 @@ pub(in crate::card::sets) static BLIGHT: CardRecord = CardRecord::new(
             abilities::aura_spell("Enchant land", &abilities::ENCHANT_LAND_TARGET),
             AbilityDef::triggered(
                 "When enchanted land becomes tapped, destroy it.",
-                TriggerEventDef::BecomesTapped(ObjectPredicateDef::AttachedToSource),
+                TriggerEventDef::tapped(ObjectPredicateDef::AttachedToSource),
                 EffectDef::Destroy {
                     object: EffectRecipientDef::AttachedPermanent,
                     can_regenerate: true,
@@ -1110,11 +1108,7 @@ pub(in crate::card::sets) static CYCLOPEAN_MUMMY: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Zombie"], 2, 1).with_ability(
         AbilityDef::triggered(
             "When this creature dies, exile it.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Exile,
@@ -1500,7 +1494,7 @@ pub(in crate::card::sets) static SPIRIT_SHACKLE: CardRecord = CardRecord::new(
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::triggered(
                 "Whenever enchanted creature becomes tapped, put a -0/-2 counter on it.",
-                TriggerEventDef::BecomesTapped(ObjectPredicateDef::AttachedToSource),
+                TriggerEventDef::tapped(ObjectPredicateDef::AttachedToSource),
                 EffectDef::AddCounters {
                     object: EffectRecipientDef::AttachedPermanent,
                     kind: CounterKind::MinusZeroMinusTwo,
@@ -2841,7 +2835,14 @@ pub(in crate::card::sets) static AXELROD_GUNNARSON: CardRecord = CardRecord::new
         abilities::trample(),
         AbilityDef::triggered_with_targets(
             "Whenever a creature dealt damage by Axelrod Gunnarson this turn dies, you gain 1 life and Axelrod Gunnarson deals 1 damage to any target.",
-            TriggerEventDef::DamagedCreatureDied,
+            TriggerEventDef::ZoneChanged(
+                crate::ZoneChangeEventMatcherDef::new(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                )
+                .previously_damaged_by(ObjectRefDef::Source),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
             )],
@@ -3273,10 +3274,7 @@ pub(in crate::card::sets) static NICOL_BOLAS: CardRecord = CardRecord::new(
         ),
         AbilityDef::triggered(
             "Whenever Nicol Bolas deals damage to an opponent, that player discards their hand.",
-            TriggerEventDef::DamageDealtToPlayer {
-                source: ObjectPredicateDef::Source,
-                player: PlayerRelation::Opponent,
-            },
+            TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Opponent),
             EffectDef::Discard {
                 recipient: EffectRecipientDef::EventPlayer,
                 amount: NICOL_BOLAS_ENTIRE_HAND,
@@ -3793,11 +3791,7 @@ pub(in crate::card::sets) static ARENA_OF_THE_ANCIENTS: CardRecord = CardRecord:
         ),
         AbilityDef::triggered(
             "When this artifact enters, tap all legendary creatures.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
             EffectDef::Tap {
                 object: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),

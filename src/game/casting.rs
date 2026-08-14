@@ -231,20 +231,9 @@ impl Game {
         for cost in activation.costs.as_slice() {
             match cost {
                 AbilityCostDef::TapSource => {
-                    // Captured before the tap so the land's own characteristics
-                    // are the ones a watcher sees, and only here: a mana
-                    // ability with no tap cost never taps anything for mana.
-                    let tapped_for_mana = self
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == source)
-                        .map(|permanent| CommittedTriggerEvent::TappedForMana {
-                            object: self.trigger_event_object(permanent),
-                        });
-                    let _ = self.tap_permanent(source);
-                    if let Some(event) = tapped_for_mana {
-                        self.capture_battlefield_triggers(&event);
-                    }
+                    // The tap transition carries its purpose, so ordinary
+                    // tap triggers and mana-tap triggers scan one event.
+                    let _ = self.tap_permanent_for_mana(source);
                 }
                 AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource => {}
                 AbilityCostDef::RemoveCountersFromSource { kind, amount } => {

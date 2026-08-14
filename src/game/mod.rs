@@ -16,16 +16,17 @@ use crate::card::{
     CardChoiceSourceDef, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
     CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext,
     CharacteristicOperationDef, ColorSet, ComparisonDef, ConditionDef, CostDef, CounterKind,
-    CreatureTypeSetDef, DeclarativeAbilityDef, DiscardSelectionDef, DividedTotal, DoubleFacedKind,
-    EffectDef, EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, HybridPair,
-    KeywordAbility, ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
+    CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
+    DamageSourceMatcherDef, DeclarativeAbilityDef, DiscardSelectionDef, DividedTotal,
+    DoubleFacedKind, EffectDef, EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef,
+    HybridPair, KeywordAbility, ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PaymentDef, PlayActionKind,
     PlayOptionDef, PlayRestriction, PlayerRefDef, PlayerRelation, PlayerSetDef,
     PowerToughnessOperationDef, QuantifierDef, ReplacementChoiceDef, ReplacementConditionDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef,
-    TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnKindDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
-    applicable_part_ids,
+    TapPurposeDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    ZonePlacement, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;
@@ -106,6 +107,7 @@ pub use decision::{
     DecisionVisibility, DecisionZone,
 };
 pub use error::GameError;
+use event::TurnPhaseResume;
 pub use event::{BattlefieldExit, GameEvent, GameResult, StackObjectKind, Step, WinReason};
 pub use mana::{Mana, ManaPool, ManaSource};
 pub use observation::{
@@ -268,7 +270,7 @@ struct Permanent {
     resolved_continuous_effects: Vec<ResolvedContinuousEffect>,
     /// How many times each of this permanent's activated abilities has been
     /// activated this turn, for the cards that count their own activations.
-    /// Cleared with the rest of the once-a-turn state.
+    /// Cleared when the next turn begins, after any inserted phases.
     activations_this_turn: Vec<(AbilityOrigin, u8)>,
     /// Every kind of counter this permanent carries, indexed by
     /// [`CounterKind::index`]. Only +1/+1 counters have rules meaning on their
@@ -309,8 +311,8 @@ struct Permanent {
     /// death trigger can use the live source or its retired LKI snapshot.
     damage_sources: Vec<GameObjectId>,
     /// Whether this permanent has dealt damage to an opponent of its
-    /// controller this turn, by any means. Cleared in cleanup with the rest
-    /// of the once-a-turn state.
+    /// controller this turn, by any means. Cleared when the next turn begins,
+    /// after any inserted phases.
     dealt_damage_to_opponent_this_turn: bool,
     /// Whether any damage still marked on this permanent came from a source
     /// with deathtouch. The source may leave before state-based actions are
@@ -740,9 +742,13 @@ pub struct Game {
     /// How many of each player's next sorceries may be cast as though they
     /// had flash. Quicken grants one, and the grant lapses with the turn.
     sorcery_flash_grants: [u8; 2],
-    /// Combat phases still owed this turn, added by an effect rather than by
-    /// the ordinary turn structure.
-    additional_combat_phases: u8,
+    /// Additional major phases that will happen after the current phase. New
+    /// sequences are prepended, matching the newest-first ordering rule for
+    /// multiple effects that add phases after the same boundary.
+    turn_phase_queue: VecDeque<TurnPhaseDef>,
+    /// The ordinary continuation displaced when the first queued phase starts.
+    /// It stays frozen while nested phase schedules prepend more work.
+    turn_phase_resume: Option<TurnPhaseResume>,
     /// Whether each player has been stopped from casting noncreature spells
     /// for the rest of the turn.
     noncreature_casts_locked: [bool; 2],

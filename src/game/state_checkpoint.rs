@@ -15,13 +15,13 @@ use super::{
     ResolvedDamageRecipientMatcher, ResolvedDamageRedirect, ResolvedDamageSourceMatcher,
     ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect, StackAbilityPayload,
     StackAbilityResolver, StackObject, StackObjectKind, Step, TemporaryAbilityGrant,
-    TriggerCapture, TriggerContext, ZoneMoveCause,
+    TriggerCapture, TriggerContext, TurnPhaseResume, ZoneMoveCause,
 };
 use crate::card::{
     AbilityOperationDef, AppliedEffectDef, BasicLandType, CardType, CardTypeSet,
     CharacteristicOperationDef, ColorSet, DeclarativeAbilityDef, ManaColor,
     PowerToughnessOperationDef, ReplacementEffectDef, ReplacementEventDef, SetOperationDef,
-    SpellForm, ZoneKind,
+    SpellForm, TurnPhaseDef, ZoneKind,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::{
@@ -67,7 +67,8 @@ use model::{
     PendingEventSnapshot, PendingReplacementEffectSnapshot, PermanentSnapshot, PregameSnapshot,
     ReplacementEffectContextSnapshot, ReplacementEffectLocator, ResolvedContinuousEffectSnapshot,
     ResolvedContinuousOperationSnapshot, RetiredObjectSnapshot, SetOperationSnapshot,
-    StackSnapshot, TemporaryAbilityGrantSnapshot, ZoneKindSnapshot,
+    StackSnapshot, TemporaryAbilityGrantSnapshot, TurnPhaseResumeSnapshot, TurnPhaseSnapshot,
+    ZoneKindSnapshot,
 };
 use model_keyword::UpkeepKeywordSnapshot;
 use permanent::{detached_permanent_snapshot, permanent_snapshot};
@@ -409,7 +410,13 @@ impl Game {
                 .map(|(source, card)| [source.0, card.0])
                 .collect(),
             sorcery_flash_grants: self.sorcery_flash_grants,
-            additional_combat_phases: self.additional_combat_phases,
+            turn_phase_queue: self
+                .turn_phase_queue
+                .iter()
+                .copied()
+                .map(turn_phase_snapshot)
+                .collect(),
+            turn_phase_resume: self.turn_phase_resume.map(turn_phase_resume_snapshot),
             noncreature_casts_locked: self.noncreature_casts_locked,
             spells_cast_this_turn: self.spells_cast_this_turn,
             spells_cast_last_turn: self.spells_cast_last_turn,
@@ -687,7 +694,13 @@ impl Game {
                 .map(|pair| (GameObjectId(pair[0]), GameObjectId(pair[1])))
                 .collect(),
             sorcery_flash_grants: checkpoint.sorcery_flash_grants,
-            additional_combat_phases: checkpoint.additional_combat_phases,
+            turn_phase_queue: checkpoint
+                .turn_phase_queue
+                .iter()
+                .copied()
+                .map(parse_turn_phase)
+                .collect(),
+            turn_phase_resume: checkpoint.turn_phase_resume.map(parse_turn_phase_resume),
             noncreature_casts_locked: checkpoint.noncreature_casts_locked,
             emblems: Vec::new(),
             spells_cast_this_turn: checkpoint.spells_cast_this_turn,
@@ -972,6 +985,53 @@ const fn parse_basic_land_type(value: BasicLandTypeSnapshot) -> BasicLandType {
         BasicLandTypeSnapshot::Swamp => BasicLandType::Swamp,
         BasicLandTypeSnapshot::Mountain => BasicLandType::Mountain,
         BasicLandTypeSnapshot::Forest => BasicLandType::Forest,
+    }
+}
+
+const fn turn_phase_snapshot(value: TurnPhaseDef) -> TurnPhaseSnapshot {
+    match value {
+        TurnPhaseDef::Combat => TurnPhaseSnapshot::Combat,
+        TurnPhaseDef::PostcombatMain => TurnPhaseSnapshot::PostcombatMain,
+    }
+}
+
+const fn parse_turn_phase(value: TurnPhaseSnapshot) -> TurnPhaseDef {
+    match value {
+        TurnPhaseSnapshot::Combat => TurnPhaseDef::Combat,
+        TurnPhaseSnapshot::PostcombatMain => TurnPhaseDef::PostcombatMain,
+    }
+}
+
+fn turn_phase_resume_snapshot(value: TurnPhaseResume) -> TurnPhaseResumeSnapshot {
+    match value {
+        TurnPhaseResume::Step(Step::PrecombatMain) => TurnPhaseResumeSnapshot::PrecombatMain,
+        TurnPhaseResume::Step(Step::BeginningOfCombat) => {
+            TurnPhaseResumeSnapshot::BeginningOfCombat
+        }
+        TurnPhaseResume::Step(Step::PostcombatMain) => TurnPhaseResumeSnapshot::PostcombatMain,
+        TurnPhaseResume::Step(Step::End) => TurnPhaseResumeSnapshot::End,
+        TurnPhaseResume::NextTurn => TurnPhaseResumeSnapshot::NextTurn,
+        TurnPhaseResume::Step(
+            Step::Upkeep
+            | Step::Draw
+            | Step::DeclareAttackers
+            | Step::DeclareBlockers
+            | Step::CombatDamage
+            | Step::EndOfCombat
+            | Step::Cleanup,
+        ) => unreachable!("turn phase scheduler stored a non-phase continuation"),
+    }
+}
+
+const fn parse_turn_phase_resume(value: TurnPhaseResumeSnapshot) -> TurnPhaseResume {
+    match value {
+        TurnPhaseResumeSnapshot::PrecombatMain => TurnPhaseResume::Step(Step::PrecombatMain),
+        TurnPhaseResumeSnapshot::BeginningOfCombat => {
+            TurnPhaseResume::Step(Step::BeginningOfCombat)
+        }
+        TurnPhaseResumeSnapshot::PostcombatMain => TurnPhaseResume::Step(Step::PostcombatMain),
+        TurnPhaseResumeSnapshot::End => TurnPhaseResume::Step(Step::End),
+        TurnPhaseResumeSnapshot::NextTurn => TurnPhaseResume::NextTurn,
     }
 }
 

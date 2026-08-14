@@ -259,10 +259,7 @@ pub const fn protection_from(color: ManaColor) -> AbilityDef {
 pub const fn poisonous_damage(amount: i32, text: &'static str) -> AbilityDef {
     AbilityDef::triggered(
         text,
-        TriggerEventDef::DamageDealtToPlayer {
-            source: ObjectPredicateDef::Source,
-            player: PlayerRelation::Any,
-        },
+        TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Any),
         EffectDef::AddPoisonCounters {
             recipient: EffectRecipientDef::EventPlayer,
             amount: ValueDef::Constant(amount),
@@ -719,11 +716,11 @@ pub const fn exalted() -> AbilityDef {
     AbilityDef::triggered(
         "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until \
          end of turn.)",
-        TriggerEventDef::AttacksInGroup {
-            attacker: ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-            minimum_total: 1,
-            maximum_total: Some(1),
-        },
+        TriggerEventDef::attacks_in_declaration(
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            1,
+            Some(1),
+        ),
         EffectDef::Apply {
             recipient: EffectRecipientDef::TriggeringObject,
             effect: AppliedEffectDef::modify_power_toughness(
@@ -744,11 +741,8 @@ pub const fn battalion(text: &'static str, effect: EffectDef) -> AbilityDef {
 
 /// "This creature and at least two other creatures attack" -- three in all,
 /// with this one among them.
-pub const BATTALION_EVENT: TriggerEventDef = TriggerEventDef::AttacksInGroup {
-    attacker: ObjectPredicateDef::Source,
-    minimum_total: 3,
-    maximum_total: None,
-};
+pub const BATTALION_EVENT: TriggerEventDef =
+    TriggerEventDef::attacks_in_declaration(ObjectPredicateDef::Source, 3, None);
 
 /// Unleash. The engine implements both halves from the keyword: an optional
 /// +1/+1 counter offered as the permanent enters, and no blocking for as long
@@ -792,11 +786,11 @@ pub const fn evolve() -> AbilityDef {
     AbilityDef::triggered(
         "Evolve (Whenever a creature you control enters, if that creature has greater power or \
          toughness than this creature, put a +1/+1 counter on this creature.)",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::All(&EVOLVE_SUBJECT),
-            from: None,
-            to: Some(ZoneKind::Battlefield),
-        },
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::All(&EVOLVE_SUBJECT),
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
         EffectDef::AddCounters {
             object: EffectRecipientDef::Source,
             kind: CounterKind::PlusOnePlusOne,

@@ -34,11 +34,11 @@ pub(in crate::card::sets) static NYLEAS_PRESENCE: CardRecord = CardRecord::new(
             ),
             AbilityDef::triggered(
                 "When Nylea's Presence enters, draw a card.",
-                TriggerEventDef::ZoneChanged {
-                    object: ObjectPredicateDef::Source,
-                    from: None,
-                    to: Some(ZoneKind::Battlefield),
-                },
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
                 EffectDef::DrawCards {
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(1),

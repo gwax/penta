@@ -686,14 +686,15 @@ fn animated_factory_keeps_types_and_last_known_stats_under_blood_moon() {
         object: snapshot.object,
         from: ZoneKind::Battlefield,
         to: ZoneKind::Graveyard,
+        damage_sources: Vec::new(),
     };
     for card_type in [CardType::Land, CardType::Creature, CardType::Artifact] {
         assert!(game.trigger_event_matches(
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::HasType(card_type),
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::HasType(card_type),
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard)
+            ),
             &event,
             GameObjectId(99_999),
         ));

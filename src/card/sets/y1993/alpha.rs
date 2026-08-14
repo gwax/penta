@@ -1104,7 +1104,7 @@ pub(in crate::card::sets) static LIFETAP: CardRecord = CardRecord::new(
     CardSet::Alpha,
     CardRules::new_enchantment(mana_cost!("{U}{U}")).with_abilities(&[AbilityDef::triggered(
         "Whenever a Forest an opponent controls becomes tapped, you gain 1 life.",
-        TriggerEventDef::BecomesTapped(ObjectPredicateDef::All(&[
+        TriggerEventDef::tapped(ObjectPredicateDef::All(&[
             ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
             ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
         ])),
@@ -1346,7 +1346,7 @@ pub(in crate::card::sets) static PSYCHIC_VENOM: CardRecord = CardRecord::new(
             AbilityDef::triggered(
                 "Whenever enchanted land becomes tapped, this Aura deals 2 damage to that \
                  land's controller.",
-                TriggerEventDef::BecomesTapped(ObjectPredicateDef::AttachedToSource),
+                TriggerEventDef::tapped(ObjectPredicateDef::AttachedToSource),
                 EffectDef::DealDamage {
                     recipient: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                         ObjectRefDef::AttachedToSource,
@@ -1914,10 +1914,7 @@ pub(in crate::card::sets) static HYPNOTIC_SPECTER: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::triggered(
             "Whenever this creature deals damage to an opponent, that player discards a card at random.",
-            TriggerEventDef::DamageDealtToPlayer {
-                source: ObjectPredicateDef::Source,
-                player: PlayerRelation::Opponent,
-            },
+            TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Opponent),
             EffectDef::Discard {
                 recipient: EffectRecipientDef::EventPlayer,
                 amount: ValueDef::Constant(1),
@@ -2121,7 +2118,14 @@ pub(in crate::card::sets) static SENGIR_VAMPIRE: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::triggered(
             "Whenever a creature dealt damage by this creature this turn dies, put a +1/+1 counter on this creature.",
-            TriggerEventDef::DamagedCreatureDied,
+            TriggerEventDef::ZoneChanged(
+                crate::ZoneChangeEventMatcherDef::new(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                )
+                .previously_damaged_by(ObjectRefDef::Source),
+            ),
             EffectDef::AddCounters {
                 kind: CounterKind::PlusOnePlusOne,
                 object: EffectRecipientDef::Source,
@@ -2763,7 +2767,7 @@ pub(in crate::card::sets) static MANABARBS: CardRecord = CardRecord::new(
     CardSet::Alpha,
     CardRules::new_enchantment(mana_cost!("{3}{R}")).with_abilities(&[AbilityDef::triggered(
         "Whenever a player taps a land for mana, this enchantment deals 1 damage to that player.",
-        TriggerEventDef::TappedForMana(ObjectPredicateDef::HasType(CardType::Land)),
+        TriggerEventDef::tapped_for_mana(ObjectPredicateDef::HasType(CardType::Land)),
         EffectDef::DealDamage {
             recipient: EffectRecipientDef::EventPlayer,
             amount: ValueDef::Constant(1),
@@ -3322,10 +3326,7 @@ pub(in crate::card::sets) static FUNGUSAUR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Fungus", "Dinosaur"], 2, 2).with_abilities(&[
         AbilityDef::triggered(
             "Whenever this creature is dealt damage, put a +1/+1 counter on it.",
-            TriggerEventDef::DamageDealt {
-                source: ObjectPredicateDef::Any,
-                recipient: EffectRecipientDef::Source,
-            },
+            TriggerEventDef::damage_to_source(),
             EffectDef::AddCounters {
                 object: EffectRecipientDef::Source,
                 kind: CounterKind::PlusOnePlusOne,
@@ -3814,11 +3815,11 @@ pub(in crate::card::sets) static ANKH_OF_MISHRA: CardRecord = CardRecord::new(
     CardSet::Alpha,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[AbilityDef::triggered(
         "Whenever a land enters, this artifact deals 2 damage to that land's controller.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::HasType(CardType::Land),
-            from: None,
-            to: Some(ZoneKind::Battlefield),
-        },
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::HasType(CardType::Land),
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
         EffectDef::DealDamage {
             recipient: EffectRecipientDef::ControllerOfTriggeringObject,
             amount: ValueDef::Constant(2),
@@ -4040,11 +4041,7 @@ pub(in crate::card::sets) static DINGUS_EGG: CardRecord = CardRecord::new(
     CardSet::Alpha,
     CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[AbilityDef::triggered(
         "Whenever a land is put into a graveyard from the battlefield, this artifact deals 2 damage to that land's controller.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::HasType(CardType::Land),
-            from: Some(ZoneKind::Battlefield),
-            to: Some(ZoneKind::Graveyard),
-        },
+        TriggerEventDef::zone_changed(ObjectPredicateDef::HasType(CardType::Land), Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
         EffectDef::DealDamage {
             recipient: EffectRecipientDef::ControllerOfTriggeringObject,
             amount: ValueDef::Constant(2),
@@ -4482,11 +4479,11 @@ pub(in crate::card::sets) static SOUL_NET: CardRecord = CardRecord::new(
     CardSet::Alpha,
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[AbilityDef::triggered(
         "Whenever a creature dies, you may pay {1}. If you do, you gain 1 life.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::HasType(CardType::Creature),
-            from: Some(ZoneKind::Battlefield),
-            to: Some(ZoneKind::Graveyard),
-        },
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            Some(ZoneKind::Battlefield),
+            Some(ZoneKind::Graveyard),
+        ),
         EffectDef::PayOr(PayOrDef::optional(
             PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{1}"))]),
             &EffectDef::GainLife {

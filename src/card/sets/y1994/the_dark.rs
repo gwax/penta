@@ -285,11 +285,11 @@ pub(in crate::card::sets) static ELECTRIC_EEL: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{U}"), &["Fish"], 1, 1).with_abilities(&[
         AbilityDef::triggered(
             "When this creature enters, it deals 1 damage to you.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::DealDamage {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -756,7 +756,7 @@ pub(in crate::card::sets) static CAVE_PEOPLE: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Human"], 1, 4).with_abilities(&[
         AbilityDef::triggered(
             "Whenever this creature attacks, it gets +1/-2 until end of turn.",
-            TriggerEventDef::Attacks(ObjectPredicateDef::Source),
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(

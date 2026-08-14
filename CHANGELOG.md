@@ -60,7 +60,7 @@ distinguishes snapshots of the covered source and build inputs.
   fixes, and different legal-action membership through existing action shapes
   change the automatic `simulationFingerprint` instead. Observations and
   catalogs advertise `protocolCapabilities`; the current reconstruction
-  facility is `reconstruction.checkpoint.v5`. Stable wire tags are explicit
+  facility is `reconstruction.checkpoint.v6`. Stable wire tags are explicit
   mappings rather than Rust `Debug` output. Protocol 22 is the one-time
   transition from the former all-purpose counter to this breaking-only epoch.
 - **Banding, in part.** CR 702.22 gives banding two separate jobs, and the
@@ -388,6 +388,17 @@ distinguishes snapshots of the covered source and build inputs.
   typed replacement programs rather than compatibility ordinary effects.
   Format-4 checkpoints must be regenerated; the dedicated capability moves to
   `reconstruction.checkpoint.v5`, while the bot protocol epoch remains 22.
+- **Checkpoint reconstruction v6 and ordered inserted turn phases.** The
+  additional-combat counter is now a queue of authored major-phase sequences
+  with a frozen ordinary continuation. Multiple schedules at one boundary run
+  newest first without reversing either sequence, nested schedules run after
+  the inserted phase in progress, and `combat, postcombat main` composes as one
+  effect. Per-combat state resets between every combat while per-turn attack
+  history remains intact, and mana empties at every phase boundary.
+  Aurelia uses the shared scheduler rather than a combat-only instruction.
+  The queue and continuation round-trip in checkpoint format 6; format-5
+  checkpoints must be regenerated and the dedicated capability moves to
+  `reconstruction.checkpoint.v6`, while the bot protocol epoch remains 22.
 - **Battalion**, sharing exalted's event. The attack-declaration event now
   carries how many creatures attacked, and each keyword states the range it
   wants: exactly one for exalted, three or more for battalion. Eight Gatecrash

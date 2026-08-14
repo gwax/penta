@@ -484,8 +484,8 @@ fn workshop_mana_is_three_individual_values_restricted_to_artifact_spells() {
 #[test]
 fn explicitly_tagged_triggered_mana_ability_resolves_without_the_stack() {
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered_mana(
-        "Whenever this becomes tapped, add {C}.",
-        TriggerEventDef::BecomesTapped(ObjectPredicateDef::Source),
+        "Whenever this is tapped for mana, add {C}.",
+        TriggerEventDef::tapped_for_mana(ObjectPredicateDef::Source),
         EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
     )];
     let definition_id = CardDefinitionId(10_050);
@@ -504,7 +504,7 @@ fn explicitly_tagged_triggered_mana_ability_resolves_without_the_stack() {
     game.battlefield
         .push(creature(10_050, definition_id, PlayerId::One));
 
-    let _ = game.tap_permanent(CardInstanceId(10_050));
+    let _ = game.tap_permanent_for_mana(CardInstanceId(10_050));
 
     assert_eq!(game.players[0].mana_pool.colorless, 1);
     assert_eq!(game.players[0].mana.len(), 1);

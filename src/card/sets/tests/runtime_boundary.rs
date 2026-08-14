@@ -1,7 +1,75 @@
 use super::runtime_support::*;
 use super::*;
 use crate::card::{InstalledTriggerDef, PartitionItemsDef, SplitIntoPilesDef};
-use crate::{CostDef, ObjectSetBindingIndex, PaymentDef};
+use crate::{
+    CostDef, DamageEventMatcherDef, ObjectSetBindingIndex, PaymentDef, ZoneChangeEventMatcherDef,
+};
+
+#[test]
+fn shared_zone_change_events_cover_every_committed_transition() {
+    for (from, to) in [
+        (ZoneKind::Library, ZoneKind::Battlefield),
+        (ZoneKind::Hand, ZoneKind::Battlefield),
+        (ZoneKind::Graveyard, ZoneKind::Battlefield),
+        (ZoneKind::Exile, ZoneKind::Battlefield),
+        (ZoneKind::Stack, ZoneKind::Battlefield),
+        (ZoneKind::Battlefield, ZoneKind::Graveyard),
+        (ZoneKind::Battlefield, ZoneKind::Exile),
+        (ZoneKind::Battlefield, ZoneKind::Hand),
+        (ZoneKind::Battlefield, ZoneKind::Library),
+    ] {
+        assert!(
+            shared_trigger_event(TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Any,
+                Some(from),
+                Some(to),
+            )),
+            "{from:?} -> {to:?} is published by the shared runtime",
+        );
+    }
+
+    let live_only = ObjectPredicateDef::HasNonManaActivatedAbility;
+    assert!(shared_trigger_event(TriggerEventDef::zone_changed(
+        live_only,
+        Some(ZoneKind::Hand),
+        Some(ZoneKind::Battlefield),
+    )));
+    assert!(!shared_trigger_event(TriggerEventDef::zone_changed(
+        live_only,
+        Some(ZoneKind::Battlefield),
+        Some(ZoneKind::Graveyard),
+    )));
+
+    let damaged_death = ZoneChangeEventMatcherDef::new(
+        ObjectPredicateDef::Any,
+        Some(ZoneKind::Battlefield),
+        Some(ZoneKind::Graveyard),
+    )
+    .previously_damaged_by(ObjectRefDef::Source);
+    assert!(shared_trigger_event(TriggerEventDef::ZoneChanged(
+        damaged_death,
+    )));
+    assert!(!shared_trigger_event(TriggerEventDef::ZoneChanged(
+        ZoneChangeEventMatcherDef {
+            to: Some(ZoneKind::Exile),
+            ..damaged_death
+        },
+    )));
+}
+
+#[test]
+fn shared_trigger_event_audit_rejects_live_only_stack_predicates() {
+    let live_only = ObjectPredicateDef::HasNonManaActivatedAbility;
+    assert!(!shared_trigger_event(
+        TriggerEventDef::SpellCast(live_only,)
+    ));
+    assert!(!shared_trigger_event(TriggerEventDef::DamageDealt(
+        DamageEventMatcherDef {
+            source: DamageSourceMatcherDef::Matching(live_only),
+            ..DamageEventMatcherDef::ANY
+        },
+    )));
+}
 
 #[test]
 fn activated_cost_boundary_is_specific_to_the_source_zone() {
@@ -48,15 +116,15 @@ fn triggered_mana_conditions_stay_outside_the_shared_runtime_boundary() {
         amount: 1,
     };
     let ordinary = AbilityDef::triggered_mana(
-        "Whenever this becomes tapped, add {C}.",
-        TriggerEventDef::BecomesTapped(ObjectPredicateDef::Source),
+        "Whenever this is tapped for mana, add {C}.",
+        TriggerEventDef::tapped_for_mana(ObjectPredicateDef::Source),
         EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
     );
     let DeclarativeAbilityDef::TriggeredMana(definition) = ordinary.definition else {
         unreachable!("triggered_mana must construct a triggered mana definition");
     };
     let conditional = AbilityDef::defined(
-        "Whenever this becomes tapped, if you control a permanent, add {C}.",
+        "Whenever this is tapped for mana, if you control a permanent, add {C}.",
         DeclarativeAbilityDef::TriggeredMana(definition.with_condition(&CONDITION)),
         ordinary
             .declarative_effect()

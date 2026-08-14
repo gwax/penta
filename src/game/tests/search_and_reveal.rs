@@ -563,11 +563,11 @@ fn state_based_actions_repeat_after_static_toughness_bonuses_disappear() {
 fn simultaneous_deaths_use_the_pre_exit_trigger_listener_snapshot() {
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered(
         "Whenever a creature dies, you gain 1 life.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::HasType(CardType::Creature),
-            from: Some(ZoneKind::Battlefield),
-            to: Some(ZoneKind::Graveyard),
-        },
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            Some(ZoneKind::Battlefield),
+            Some(ZoneKind::Graveyard),
+        ),
         EffectDef::GainLife {
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(1),
@@ -610,11 +610,11 @@ fn simultaneous_deaths_use_the_pre_exit_trigger_listener_snapshot() {
 fn simultaneous_exits_keep_pre_exit_characteristics_for_trigger_matching() {
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered(
         "Whenever a Mountain leaves the battlefield, you gain 1 life.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::Subtype("Mountain"),
-            from: Some(ZoneKind::Battlefield),
-            to: Some(ZoneKind::Graveyard),
-        },
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Subtype("Mountain"),
+            Some(ZoneKind::Battlefield),
+            Some(ZoneKind::Graveyard),
+        ),
         EffectDef::GainLife {
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(1),

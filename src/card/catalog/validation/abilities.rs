@@ -1,4 +1,4 @@
-use super::targeting::validate_ability_program_targets;
+use super::targeting::{validate_ability_program_targets, validate_ability_trigger_event};
 use crate::card::catalog::{CatalogError, GrantedAbilityValidationError};
 use crate::card::{
     AbilityDef, AbilityOperationDef, AbilityProcedureDef, AbilityProgramDef, AppliedEffectDef,
@@ -329,8 +329,59 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
     if is_mana_ability && !targets.is_empty() {
         return Err(GrantedAbilityValidationError::ManaAbilityHasTargets);
     }
+    if ability.is_executable() {
+        match ability.definition {
+            DeclarativeAbilityDef::TriggeredMana(triggered)
+            | DeclarativeAbilityDef::Triggered(triggered) => {
+                if triggered.procedure == AbilityProcedureDef::Shared
+                    && (triggered.source_zones != [ZoneKind::Battlefield]
+                        || (triggered.event == crate::card::TriggerEventDef::StateCondition
+                            && triggered.condition.is_none())
+                        || (matches!(ability.definition, DeclarativeAbilityDef::TriggeredMana(_))
+                            && (triggered.condition.is_some()
+                                || !matches!(
+                                    triggered.event,
+                                    crate::card::TriggerEventDef::Tapped(matcher)
+                                        if matcher.purpose == crate::card::TapPurposeDef::Mana
+                                ))))
+                {
+                    return Err(GrantedAbilityValidationError::UnsupportedTriggerEvent {
+                        event: triggered.event,
+                    });
+                }
+                validate_ability_trigger_event(triggered.event, targets.len())?;
+                if triggered.procedure == AbilityProcedureDef::Shared
+                    && matches!(ability.definition, DeclarativeAbilityDef::TriggeredMana(_))
+                    && !matches!(
+                        ability.effect.definition,
+                        AbilityProgramDef::Effects(effect)
+                            if triggered_mana_program_is_immediate(effect)
+                    )
+                {
+                    return Err(GrantedAbilityValidationError::UnsupportedTriggeredManaProgram);
+                }
+            }
+            _ => {}
+        }
+    }
     validate_ability_program_targets(targets, ability.effect.definition)?;
     Ok(())
+}
+
+fn triggered_mana_program_is_immediate(effect: EffectDef) -> bool {
+    match effect {
+        EffectDef::Sequence(effects) => {
+            !effects.is_empty()
+                && effects
+                    .iter()
+                    .copied()
+                    .all(triggered_mana_program_is_immediate)
+        }
+        EffectDef::AddMana(mana) => {
+            matches!(mana.mana, crate::card::ManaSelectionDef::One(_)) && mana.amount > 0
+        }
+        _ => false,
+    }
 }
 
 fn validate_ability_program(ability: &AbilityDef) -> Result<(), GrantedAbilityValidationError> {
@@ -635,6 +686,21 @@ fn top_level_ability_error(
                 ability,
             }
         }
+        GrantedAbilityValidationError::UnsupportedTriggerEvent { event } => {
+            CatalogError::UnsupportedTriggerEvent {
+                definition: definition.id,
+                part,
+                ability,
+                event: *event,
+            }
+        }
+        GrantedAbilityValidationError::UnsupportedTriggeredManaProgram => {
+            CatalogError::UnsupportedTriggeredManaProgram {
+                definition: definition.id,
+                part,
+                ability,
+            }
+        }
         GrantedAbilityValidationError::TooManyTargets { count } => {
             CatalogError::TooManyAbilityTargets {
                 definition: definition.id,
@@ -826,7 +892,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
-        | EffectDef::AdditionalCombatPhase
+        | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | EffectDef::GrantFlashToNextSorcery
@@ -996,7 +1062,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
-        | EffectDef::AdditionalCombatPhase
+        | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | EffectDef::GrantFlashToNextSorcery

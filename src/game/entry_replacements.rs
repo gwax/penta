@@ -725,6 +725,7 @@ impl Game {
             object: entered_event,
             from: entry.from,
             to: ZoneKind::Battlefield,
+            damage_sources: Vec::new(),
         });
         self.apply_legend_rule();
 
