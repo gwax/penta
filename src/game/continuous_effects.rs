@@ -3,9 +3,9 @@ use super::{AbilityId, AbilityOrigin};
 use super::{
     AbilityTargetPredicate, AppliedEffectDef, CardDefinitionId, CardRules, CardSet, CardTypeSet,
     ColorSet, ControlFlow, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
-    Game, GameObjectId, GrantId, KeywordAbility, ManaColor, Permanent, PlayerId, RetiredObject,
-    StackAbilityResolver, StackObject, StaticAppliedEffect, StaticEffectTraversal, Target,
-    TargetIndex, TriggerContext, ZoneKind,
+    EffectRecipientSetDef, Game, GameObjectId, GrantId, KeywordAbility, ManaColor, ObjectRefDef,
+    ObjectSetDef, Permanent, PlayerId, RetiredObject, StackAbilityResolver, StackObject,
+    StaticAppliedEffect, StaticEffectTraversal, Target, TargetIndex, TriggerContext, ZoneKind,
 };
 
 impl Game {
@@ -303,9 +303,7 @@ impl Game {
     /// nested in one keeps the clause's target scope.
     pub(super) fn immediate_attachment_target(effect: EffectDef) -> Option<TargetIndex> {
         match effect {
-            EffectDef::Attach {
-                object: EffectRecipientDef::Target(target),
-            } => Some(target),
+            EffectDef::Attach { object } => object.legal_target(),
             EffectDef::Sequence(effects) => effects
                 .iter()
                 .find_map(|effect| Self::immediate_attachment_target(*effect)),
@@ -694,24 +692,25 @@ impl Game {
         affected: &Permanent,
         prospective: Option<&Permanent>,
     ) -> bool {
-        match recipient {
-            EffectRecipientDef::Source => source.card.id == affected.card.id,
-            EffectRecipientDef::AttachedPermanent => source.attached_to == Some(affected.card.id),
-
-            EffectRecipientDef::MatchingObjects {
-                object,
-                zones,
-                controller,
-            } => {
-                zones.contains(&ZoneKind::Battlefield)
-                    && self.player_relation_matches(
-                        affected.controller,
-                        controller,
+        match recipient.0 {
+            EffectRecipientSetDef::Objects(ObjectSetDef::One(ObjectRefDef::Source)) => {
+                source.card.id == affected.card.id
+            }
+            EffectRecipientSetDef::Objects(ObjectSetDef::One(ObjectRefDef::AttachedToSource)) => {
+                source.attached_to == Some(affected.card.id)
+            }
+            EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
+                query.zones.contains(&ZoneKind::Battlefield)
+                    && self.query_player_constraints_match(
+                        Some(affected.controller),
+                        affected.card.owner,
+                        query,
                         source.controller,
                         TriggerContext::empty(),
+                        None,
                     )
                     && self.trigger_object_matches(
-                        object,
+                        query.object,
                         &prospective.map_or_else(
                             || self.trigger_event_object(affected),
                             |prospective| {
@@ -724,20 +723,16 @@ impl Game {
             }
             // None of these name a permanent a static effect could apply to;
             // a static effect has no chosen target either.
-            EffectRecipientDef::ChosenPermanent(_)
-            | EffectRecipientDef::ControllerOfTarget(_)
-            | EffectRecipientDef::ObjectsControlledByTarget { .. }
-            | EffectRecipientDef::ObjectsOwnedByTarget { .. }
-            | EffectRecipientDef::CardsOwnedByTarget { .. }
-            | EffectRecipientDef::Controller
-            | EffectRecipientDef::Opponent
-            | EffectRecipientDef::EachPlayer
-            | EffectRecipientDef::Target(_)
-            | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
-            | EffectRecipientDef::TriggeringObject
-            | EffectRecipientDef::ControllerOfTriggeringObject
-            | EffectRecipientDef::ControllerOfAttachedPermanent
-            | EffectRecipientDef::EventPlayer => false,
+            EffectRecipientSetDef::LegalTargets(_)
+            | EffectRecipientSetDef::Objects(
+                ObjectSetDef::One(
+                    ObjectRefDef::Choice(_)
+                    | ObjectRefDef::Target(_)
+                    | ObjectRefDef::TriggeringObject,
+                )
+                | ObjectSetDef::SharingNameWith(_),
+            )
+            | EffectRecipientSetDef::Players(_) => false,
         }
     }
 

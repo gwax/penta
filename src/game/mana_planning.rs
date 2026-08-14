@@ -549,11 +549,13 @@ impl Game {
                     self.battlefield
                         .iter()
                         .filter(|permanent| {
-                            self.player_relation_matches(
-                                permanent.controller,
-                                query.controller,
+                            self.query_player_constraints_match(
+                                Some(permanent.controller),
+                                permanent.card.owner,
+                                *query,
                                 player,
                                 TriggerContext::empty(),
+                                None,
                             ) && self.trigger_object_matches(
                                 query.object,
                                 &self.trigger_event_object(permanent),

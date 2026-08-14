@@ -68,11 +68,11 @@ pub(in crate::card::sets) static AVACYN_ANGEL_OF_HOPE: CardRecord = CardRecord::
             AbilityDef::static_ability(
                 "Other permanents you control have indestructible.",
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
                     effect: AppliedEffectDef::GrantAbility(&abilities::indestructible()),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
@@ -130,11 +130,11 @@ pub(in crate::card::sets) static CATHARS_CRUSADE: CardRecord = CardRecord::new(
             to: Some(ZoneKind::Battlefield),
         },
         EffectDef::AddCounters {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             kind: CounterKind::PlusOnePlusOne,
             amount: ValueDef::Constant(1),
         },
@@ -293,11 +293,7 @@ pub(in crate::card::sets) static GOLDNIGHT_COMMANDER: CardRecord = CardRecord::n
             to: Some(ZoneKind::Battlefield),
         },
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(1),
                 toughness: ValueDef::Constant(1),
@@ -530,11 +526,7 @@ pub(in crate::card::sets) static TERMINUS: CardRecord = CardRecord::new(
         AbilityDef::spell(
             "Put all creatures on the bottom of their owners' libraries.",
             EffectDef::MoveToZone {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                object: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Any),
                 zone: ZoneKind::Library,
                 controller: None,
                 placement: ZonePlacement::Bottom,
@@ -642,11 +634,11 @@ pub(in crate::card::sets) static ALCHEMISTS_APPRENTICE: CardRecord = CardRecord:
 // AVR 48 — Devastation Tide
 // Audit: blocked — Needs simultaneous batch movement for all nonland permanents rather than processing each battlefield exit separately.
 
-static DREADWATERS_LANDS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Land),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static DREADWATERS_LANDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // AVR 49 — Dreadwaters
 pub(in crate::card::sets) static DREADWATERS: CardRecord = CardRecord::new(
@@ -678,14 +670,14 @@ pub(in crate::card::sets) static FAVORABLE_WINDS: CardRecord = CardRecord::new(
     CardRules::new_enchantment(mana_cost!("{1}{U}")).with_ability(AbilityDef::static_ability(
         "Creatures you control with flying get +1/+1.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::All(&[
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(1),
                 toughness: ValueDef::Constant(1),
@@ -886,11 +878,11 @@ pub(in crate::card::sets) static LUNAR_MYSTIC: CardRecord = CardRecord::new(
     ),
 );
 
-static MASS_APPEAL_HUMANS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::Subtype("Human"),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static MASS_APPEAL_HUMANS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Human"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // AVR 66 — Mass Appeal
 pub(in crate::card::sets) static MASS_APPEAL: CardRecord = CardRecord::new(
@@ -1219,11 +1211,11 @@ pub(in crate::card::sets) static DEATH_WIND: CardRecord = CardRecord::new(
 /// The printed intervening-if condition is checked both as the end step begins
 /// and again when the trigger resolves.
 static EXACTLY_ONE_CREATURE: TriggerConditionDef = TriggerConditionDef::ObjectCount {
-    query: ObjectQueryDef {
-        object: ObjectPredicateDef::HasType(CardType::Creature),
-        zones: &[ZoneKind::Battlefield],
-        controller: PlayerRelation::You,
-    },
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
     comparison: ComparisonDef::Equal,
     amount: 1,
 };
@@ -1662,11 +1654,11 @@ pub(in crate::card::sets) static BANNERS_RAISED: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell(
         "Creatures you control get +1/+0 until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(1),
                 toughness: ValueDef::Constant(0),
@@ -1676,11 +1668,11 @@ pub(in crate::card::sets) static BANNERS_RAISED: CardRecord = CardRecord::new(
     )),
 );
 
-static BATTLE_HYMN_CREATURES: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static BATTLE_HYMN_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // AVR 128 — Battle Hymn
 pub(in crate::card::sets) static BATTLE_HYMN: CardRecord = CardRecord::new(
@@ -1715,10 +1707,7 @@ pub(in crate::card::sets) static BONFIRE_OF_THE_DAMNED: CardRecord = CardRecord:
                     amount: ValueDef::ChosenX,
                 },
                 EffectDef::DealDamage {
-                    recipient: EffectRecipientDef::ObjectsControlledByTarget {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        slot: TargetIndex::PRIMARY,
-                    },
+                    recipient: EffectRecipientDef::objects_controlled_by_target(ObjectPredicateDef::HasType(CardType::Creature), TargetIndex::PRIMARY),
                     amount: ValueDef::ChosenX,
                 },
             ]),
@@ -1924,11 +1913,11 @@ pub(in crate::card::sets) static HOUND_OF_GRISELBRAND: CardRecord = CardRecord::
         .with_abilities(&[abilities::double_strike(), abilities::undying()]),
 );
 
-static KESSIG_MALCONTENTS_HUMANS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::Subtype("Human"),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static KESSIG_MALCONTENTS_HUMANS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Human"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // AVR 142 — Kessig Malcontents
 pub(in crate::card::sets) static KESSIG_MALCONTENTS: CardRecord = CardRecord::new(
@@ -2082,14 +2071,10 @@ pub(in crate::card::sets) static RIOT_RINGLEADER: CardRecord = CardRecord::new(
             "Whenever this creature attacks, Human creatures you control get +1/+0 until end of turn.",
             TriggerEventDef::Attacks(ObjectPredicateDef::Source),
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Human"),
-                    ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(1),
                     toughness: ValueDef::Constant(0),
@@ -2418,11 +2403,11 @@ pub(in crate::card::sets) static BOWER_PASSAGE: CardRecord = CardRecord::new(
     CardRules::new_enchantment(mana_cost!("{1}{G}")).with_ability(AbilityDef::static_ability(
         "Creatures with flying can't block creatures you control.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::HasKeyword(
                 KeywordAbility::Flying,
             )),
@@ -2434,11 +2419,11 @@ pub(in crate::card::sets) static BOWER_PASSAGE: CardRecord = CardRecord::new(
 // AVR 171 — Champion of Lambholt
 // Audit: blocked — Needs a blocking predicate that dynamically compares each prospective blocker's power with this creature's current power.
 
-static CRATERHOOF_CREATURES: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static CRATERHOOF_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // AVR 172 — Craterhoof Behemoth
 pub(in crate::card::sets) static CRATERHOOF_BEHEMOTH: CardRecord = CardRecord::new(
@@ -2456,11 +2441,7 @@ pub(in crate::card::sets) static CRATERHOOF_BEHEMOTH: CardRecord = CardRecord::n
                 to: Some(ZoneKind::Battlefield),
             },
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                 effect: AppliedEffectDef::Composite(&[
                     AppliedEffectDef::ModifyPowerToughness {
                         power: ValueDef::CountMatchingObjects(&CRATERHOOF_CREATURES),
@@ -3002,11 +2983,11 @@ pub(in crate::card::sets) static OTHERWORLD_ATLAS: CardRecord = CardRecord::new(
 );
 
 static CONTROLS_AN_ANGEL: TriggerConditionDef = TriggerConditionDef::ObjectCount {
-    query: ObjectQueryDef {
-        object: ObjectPredicateDef::Subtype("Angel"),
-        zones: &[ZoneKind::Battlefield],
-        controller: PlayerRelation::You,
-    },
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::Subtype("Angel"),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
     comparison: ComparisonDef::GreaterOrEqual,
     amount: 1,
 };

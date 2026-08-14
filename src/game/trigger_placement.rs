@@ -1,9 +1,9 @@
 use super::{
     CardDefinitionId, CharacteristicSource, DecisionContinuation, DecisionKind,
     DecisionObservation, DecisionOption, DecisionOrderSemantics, DecisionPreference,
-    DecisionVisibility, DecisionZone, EffectDef, EffectRecipientDef, Game, GameEvent, GameObjectId,
-    PendingDecision, PendingTrigger, StackAbilityPayload, StackObject, StackObjectKind, Target,
-    TargetSelection, TargetSlotId, TriggerPlacementBatch, ZoneKind,
+    DecisionVisibility, DecisionZone, EffectDef, Game, GameEvent, GameObjectId, PendingDecision,
+    PendingTrigger, StackAbilityPayload, StackObject, StackObjectKind, Target, TargetSelection,
+    TargetSlotId, TriggerPlacementBatch, ZoneKind,
 };
 
 impl Game {
@@ -127,9 +127,10 @@ impl Game {
         };
         let preference = if matches!(
             target_effect,
-            EffectDef::ExileLinkedToSource {
-                object: EffectRecipientDef::Target(slot),
-            } if slot.index() == trigger.targets.len()
+            EffectDef::ExileLinkedToSource { object }
+                if object
+                    .legal_target()
+                    .is_some_and(|slot| slot.index() == trigger.targets.len())
         ) {
             DecisionPreference::LinkedExileTargets
         } else {

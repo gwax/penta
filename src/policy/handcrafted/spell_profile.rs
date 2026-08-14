@@ -4,6 +4,7 @@ use super::{
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, HandcraftedPolicy, ObjectPredicateDef,
     PlayerRelation, SpellForm, ValueDef, ZoneKind,
 };
+use crate::PlayerSetDef;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub(super) struct DeclarativeSpellProfile {
@@ -161,14 +162,18 @@ impl HandcraftedPolicy {
     /// Whether a recipient names every creature an opponent controls, which
     /// is what makes a damage or counter effect a one-sided sweep.
     pub(super) fn hits_every_opposing_creature(recipient: EffectRecipientDef) -> bool {
-        matches!(
-            recipient,
-            EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(crate::CardType::Creature),
-                zones: [ZoneKind::Battlefield],
-                controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
-            }
-        )
+        recipient.object_query().is_some_and(|query| {
+            query.object == ObjectPredicateDef::HasType(crate::CardType::Creature)
+                && query.zones == [ZoneKind::Battlefield]
+                && query.controller.is_none()
+                && query.owner.is_none()
+                && matches!(
+                    query.related_player,
+                    Some(PlayerSetDef::Related(
+                        PlayerRelation::Opponent | PlayerRelation::NotYou
+                    ))
+                )
+        })
     }
 
     /// A destroy is removal; a destroy aimed at every creature on the
@@ -178,15 +183,13 @@ impl HandcraftedPolicy {
         profile: &mut DeclarativeSpellProfile,
     ) {
         profile.mark(DeclarativeSpellProfile::REMOVES);
-        if let EffectRecipientDef::MatchingObjects {
-            object,
-            zones,
-            controller,
-        } = object
-            && zones == [ZoneKind::Battlefield]
-            && controller == PlayerRelation::Any
+        if let Some(query) = object.object_query()
+            && query.zones == [ZoneKind::Battlefield]
+            && query.controller.is_none()
+            && query.owner.is_none()
+            && query.related_player == Some(PlayerSetDef::Related(PlayerRelation::Any))
         {
-            let destroyed_types = Self::globally_destroyed_types(object);
+            let destroyed_types = Self::globally_destroyed_types(query.object);
             profile.global_destroy_types = profile.global_destroy_types.union(destroyed_types);
             if destroyed_types.contains(CardType::Creature) {
                 profile.mark(DeclarativeSpellProfile::SWEEPS_CREATURES);
@@ -290,24 +293,31 @@ impl HandcraftedPolicy {
             }
             EffectDef::Counter { object, .. } => {
                 profile.mark(DeclarativeSpellProfile::COUNTERS);
-                profile.opponent_spell_sweep |= matches!(
-                    object,
-                    EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::Spell,
-                        zones: [ZoneKind::Stack],
-                        controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
-                    }
-                );
+                profile.opponent_spell_sweep |= object.object_query().is_some_and(|query| {
+                    query.object == ObjectPredicateDef::Spell
+                        && query.zones == [ZoneKind::Stack]
+                        && query.controller.is_none()
+                        && query.owner.is_none()
+                        && matches!(
+                            query.related_player,
+                            Some(PlayerSetDef::Related(
+                                PlayerRelation::Opponent | PlayerRelation::NotYou
+                            ))
+                        )
+                });
             }
             EffectDef::CounterUnlessPaid { .. } => {
                 profile.mark(DeclarativeSpellProfile::COUNTERS);
             }
             EffectDef::Destroy { object, .. } => Self::collect_destroy_profile(object, profile),
             EffectDef::MoveToZone {
-                object: EffectRecipientDef::Target(target),
+                object,
                 zone: ZoneKind::Exile,
                 ..
-            } if Self::target_slot_is_on_battlefield(targets, target.index()) => {
+            } if object.legal_target().is_some_and(|target| {
+                Self::target_slot_is_on_battlefield(targets, target.index())
+            }) =>
+            {
                 profile.mark(DeclarativeSpellProfile::REMOVES);
             }
             EffectDef::Tap { .. }

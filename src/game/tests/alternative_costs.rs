@@ -592,13 +592,14 @@ fn ghor_clan_rampager_uses_one_shared_bloodrush_effect() {
         ],
     );
     let EffectDef::Apply {
-        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        recipient,
         effect: AppliedEffectDef::Composite(components),
         duration: EffectDurationDef::UntilEndOfTurn,
     } = bloodrush.effect.definition
     else {
         panic!("Rampager should apply one composite effect until end of turn")
     };
+    assert_eq!(recipient.legal_target(), Some(TargetIndex::PRIMARY));
     assert!(matches!(
         components,
         [

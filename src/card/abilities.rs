@@ -749,11 +749,11 @@ pub const fn enters_tapped_unless_you_control(
     AbilityDef::as_enters(
         text,
         ReplacementEffectDef::Conditional {
-            condition: ConditionDef::Exists(ObjectQueryDef {
+            condition: ConditionDef::Exists(ObjectQueryDef::matching(
                 object,
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            }),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            )),
             if_true: &[],
             if_false: &ENTER_TAPPED,
         },
@@ -771,7 +771,7 @@ mod tests {
         AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AddManaEffectDef,
         AlternativeCastKindDef, AlternativeCastManaCostDef, BasicLandType, CardRules, ConditionDef,
         CostDef, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost,
-        ObjectPredicateDef, PlayerRelation, ReplacementEffectDef, ZoneKind,
+        ObjectPredicateDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ZoneKind,
     };
     use crate::mana_cost;
 
@@ -847,7 +847,8 @@ mod tests {
             Some(EffectDef::Replacement(ReplacementEffectDef::Conditional {
                 condition: ConditionDef::Exists(query),
                 ..
-            })) if query.controller == PlayerRelation::You
+            })) if query.related_player
+                == Some(PlayerSetDef::Related(PlayerRelation::You))
                 && matches!(
                     query.object,
                     ObjectPredicateDef::HasAnyBasicLandType(types)

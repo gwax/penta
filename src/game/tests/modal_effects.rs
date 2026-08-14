@@ -164,13 +164,14 @@ fn selesnya_charm_pumps_and_grants_trample() {
     };
     let mode = spell.mode(ModeId(0)).unwrap();
     let EffectDef::Apply {
-        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        recipient,
         effect: AppliedEffectDef::Composite(components),
         duration: EffectDurationDef::UntilEndOfTurn,
     } = mode.effect.definition
     else {
         panic!("Selesnya Charm should apply one composite effect until end of turn")
     };
+    assert_eq!(recipient.legal_target(), Some(TargetIndex::PRIMARY));
     assert!(matches!(
         components,
         [

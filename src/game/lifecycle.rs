@@ -462,6 +462,29 @@ impl Game {
             })
     }
 
+    pub(super) fn current_or_last_known_owner(&self, object: GameObjectId) -> Option<PlayerId> {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+            .map(|permanent| permanent.card.owner)
+            .or_else(|| {
+                self.stack
+                    .iter()
+                    .find(|candidate| candidate.id == object)
+                    .map(|candidate| candidate.card.owner)
+            })
+            .or_else(|| {
+                self.card_in_nonbattlefield_zone(object)
+                    .map(|(_, card)| card.owner)
+            })
+            .or_else(|| match self.retired_objects.get(&object) {
+                Some(RetiredObject::Card(card)) => Some(card.owner),
+                Some(RetiredObject::Permanent { permanent, .. }) => Some(permanent.card.owner),
+                Some(RetiredObject::Stack(stack)) => Some(stack.card.owner),
+                None => None,
+            })
+    }
+
     pub(super) fn unbacked_object(
         &mut self,
         definition: CardDefinitionId,

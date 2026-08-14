@@ -1,11 +1,12 @@
 use super::{
     AbilityDef, AbilityEffectExpiration, AbilityId, AbilityOrigin, AbilityTargetPredicate,
     AppliedEffectDef, CardPartId, CastSignature, ComparisonDef, ContinuousEffectTimestamp,
-    ControlFlow, CounterKind, EffectDurationDef, EffectRecipientDef, Game, GameObjectId, GrantId,
-    ObjectPredicateDef, ObjectQueryDef, Permanent, PlayerId, QuantifierDef, ScopedEffect,
-    StackObject, StackObjectKind, TappedSourceStatBonus, Target, TargetIndex, TargetSelection,
-    TargetSlotId, TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities,
-    TriggerConditionDef, TriggerContext, ZoneKind,
+    ControlFlow, CounterKind, EffectDurationDef, EffectRecipientDef, EffectRecipientSetDef, Game,
+    GameObjectId, GrantId, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    Permanent, PlayerId, PlayerRefDef, PlayerSetDef, QuantifierDef, ScopedEffect, StackObject,
+    StackObjectKind, TappedSourceStatBonus, Target, TargetIndex, TargetSelection, TargetSlotId,
+    TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerConditionDef,
+    TriggerContext, ZoneKind,
 };
 
 #[derive(Clone, Copy)]
@@ -321,133 +322,149 @@ impl Game {
             .then_some(Target::Card(object))
     }
 
-    /// The battlefield permanents a target-relative sweep names. Control and
-    /// ownership pick out different sets the moment anything has changed
-    /// hands: a stolen artifact goes home to its owner, not to whoever is
-    /// holding it.
-    pub(super) fn battlefield_sweep_for_target(
+    fn raw_target_reference(
         &self,
-        recipient: EffectRecipientDef,
-        object: &StackObject,
-        context: TriggerContext,
-        scoped: ScopedEffect,
-    ) -> Vec<Target> {
-        let (predicate, player_source, by_owner) = match recipient {
-            EffectRecipientDef::ObjectsControlledByTarget { object, slot } => {
-                (object, EffectRecipientDef::ControllerOfTarget(slot), false)
-            }
-            EffectRecipientDef::ObjectsOwnedByTarget { object, slot } => {
-                (object, EffectRecipientDef::Target(slot), true)
-            }
-            _ => return Vec::new(),
-        };
-        let Some(Target::Player(player)) = self
-            .effect_recipients(player_source, object, context, scoped)
-            .into_iter()
-            .next()
-        else {
-            return Vec::new();
-        };
-        let source = object.source.unwrap_or(object.id);
-        self.battlefield
-            .iter()
-            .filter(|permanent| {
-                player
-                    == if by_owner {
-                        permanent.card.owner
-                    } else {
-                        permanent.controller
-                    }
-            })
-            .filter(|permanent| {
-                self.trigger_object_matches(
-                    predicate,
-                    &self.trigger_event_object(permanent),
-                    source,
-                    false,
-                )
-            })
-            .map(|permanent| Target::Permanent(permanent.card.id))
-            .collect()
-    }
-
-    fn cards_owned_by_target(
-        &self,
-        predicate: ObjectPredicateDef,
-        zones: &[ZoneKind],
         slot: TargetIndex,
         object: &StackObject,
         scoped: ScopedEffect,
-    ) -> Vec<Target> {
-        let slot = scoped.target_slot(slot);
-        let Some(Target::Player(player)) = Self::chosen_targets(object, slot)
-            .find(|target| self.stack_ability_target_is_legal(object, slot, *target))
-        else {
-            return Vec::new();
-        };
-        let source = object.source.unwrap_or(object.id);
-        zones
-            .iter()
-            .copied()
-            .filter(|zone| {
-                matches!(
-                    zone,
-                    ZoneKind::Library | ZoneKind::Hand | ZoneKind::Graveyard | ZoneKind::Exile
-                )
-            })
-            .flat_map(|zone| {
-                self.cards_in_zone(zone).filter_map(move |card| {
-                    (card.owner == player
-                        && self.card_object_matches(predicate, card, zone, source))
-                    .then_some(Target::Card(card.id))
-                })
-            })
-            .collect()
+    ) -> Option<Target> {
+        Self::chosen_targets(object, scoped.target_slot(slot)).next()
     }
 
-    /// Every recipient that names at most one thing, which is all of them
-    /// except the query-shaped ones the caller handles.
-    fn single_effect_recipient(
+    fn object_reference_target(
         &self,
-        recipient: EffectRecipientDef,
+        reference: ObjectRefDef,
         object: &StackObject,
         context: TriggerContext,
+        scoped: ScopedEffect,
     ) -> Option<Target> {
-        match recipient {
-            EffectRecipientDef::Source => object.source.map(Target::Permanent),
-            EffectRecipientDef::ChosenPermanent(_) => {
-                unreachable!("chosen permanent returned above")
-            }
-            EffectRecipientDef::AttachedPermanent => object
+        match reference {
+            ObjectRefDef::Source => object.source.map(Target::Permanent),
+            ObjectRefDef::Choice(choice) => context
+                .chosen_object(choice)
+                .and_then(|chosen| self.live_object_target(chosen)),
+            ObjectRefDef::AttachedToSource => object
                 .source
                 .and_then(|source| self.current_or_last_known_attached_host(source))
                 .map(Target::Permanent),
-            EffectRecipientDef::ControllerOfAttachedPermanent => object
-                .source
-                .and_then(|source| self.attached_host_controller_of(source))
-                .map(Target::Player),
-            EffectRecipientDef::Controller => Some(Target::Player(object.controller)),
-            EffectRecipientDef::Opponent => Some(Target::Player(object.controller.opponent())),
-            EffectRecipientDef::EachPlayer => unreachable!("each player returned above"),
-            EffectRecipientDef::TriggeringObject => context
-                .object
-                .and_then(|object| self.live_object_target(object)),
-            EffectRecipientDef::ControllerOfTriggeringObject => context
-                .object
-                .and_then(|object| self.current_or_last_known_controller(object))
-                .or(context.object_controller)
-                .map(Target::Player),
-            EffectRecipientDef::EventPlayer => context.event_player.map(Target::Player),
-            EffectRecipientDef::Target(_)
-            | EffectRecipientDef::ControllerOfTarget(_)
-            | EffectRecipientDef::ObjectsControlledByTarget { .. }
-            | EffectRecipientDef::ObjectsOwnedByTarget { .. }
-            | EffectRecipientDef::CardsOwnedByTarget { .. }
-            | EffectRecipientDef::MatchingObjects { .. }
-            | EffectRecipientDef::ObjectsSharingNameWithTarget(_) => {
-                unreachable!("target, matching, and shared-name recipients returned above")
+            ObjectRefDef::Target(target) => {
+                let slot = scoped.target_slot(target);
+                self.raw_target_reference(target, object, scoped)
+                    .filter(|target| !matches!(target, Target::Player(_)))
+                    .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
             }
+            ObjectRefDef::TriggeringObject => context
+                .object
+                .and_then(|triggering| self.live_object_target(triggering)),
         }
+    }
+
+    fn object_reference_id(
+        &self,
+        reference: ObjectRefDef,
+        object: &StackObject,
+        context: TriggerContext,
+        scoped: ScopedEffect,
+    ) -> Option<GameObjectId> {
+        match reference {
+            ObjectRefDef::Source => object.source,
+            ObjectRefDef::Choice(choice) => context.chosen_object(choice),
+            ObjectRefDef::AttachedToSource => object
+                .source
+                .and_then(|source| self.current_or_last_known_attached_host(source)),
+            ObjectRefDef::Target(target) => self
+                .raw_target_reference(target, object, scoped)
+                .and_then(|target| match target {
+                    Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(id),
+                    Target::Player(_) => None,
+                }),
+            ObjectRefDef::TriggeringObject => context.object,
+        }
+    }
+
+    fn player_reference(
+        &self,
+        reference: PlayerRefDef,
+        object: &StackObject,
+        context: TriggerContext,
+        scoped: ScopedEffect,
+    ) -> Option<PlayerId> {
+        match reference {
+            PlayerRefDef::EffectController => Some(object.controller),
+            PlayerRefDef::EventPlayer => context.event_player,
+            PlayerRefDef::Target(target) => {
+                let slot = scoped.target_slot(target);
+                Self::chosen_targets(object, slot)
+                    .find(|target| self.stack_ability_target_is_legal(object, slot, *target))
+                    .and_then(|target| match target {
+                        Target::Player(player) => Some(player),
+                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                    })
+            }
+            PlayerRefDef::ControllerOf(ObjectRefDef::Target(target)) => self
+                .raw_target_reference(target, object, scoped)
+                .and_then(|target| match target {
+                    Target::Player(player) => Some(player),
+                    Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => {
+                        self.current_or_last_known_controller(id)
+                    }
+                }),
+            PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject) => context
+                .object
+                .and_then(|triggering| self.current_or_last_known_controller(triggering))
+                .or(context.object_controller),
+            PlayerRefDef::ControllerOf(reference) => self
+                .object_reference_id(reference, object, context, scoped)
+                .and_then(|referenced| self.current_or_last_known_controller(referenced)),
+            PlayerRefDef::OwnerOf(reference) => self
+                .object_reference_id(reference, object, context, scoped)
+                .and_then(|referenced| self.current_or_last_known_owner(referenced)),
+        }
+    }
+
+    fn players_in_set(
+        &self,
+        players: PlayerSetDef,
+        object: &StackObject,
+        context: TriggerContext,
+        scoped: ScopedEffect,
+    ) -> Vec<PlayerId> {
+        match players {
+            PlayerSetDef::All => vec![object.controller, object.controller.opponent()],
+            PlayerSetDef::One(reference) => self
+                .player_reference(reference, object, context, scoped)
+                .into_iter()
+                .collect(),
+            PlayerSetDef::Related(relation) => [object.controller, object.controller.opponent()]
+                .into_iter()
+                .filter(|candidate| {
+                    self.player_relation_matches(*candidate, relation, object.controller, context)
+                })
+                .collect(),
+        }
+    }
+
+    fn objects_sharing_name_with_reference(
+        &self,
+        reference: ObjectRefDef,
+        object: &StackObject,
+        context: TriggerContext,
+        scoped: ScopedEffect,
+    ) -> Vec<Target> {
+        if let ObjectRefDef::Target(target) = reference {
+            return self.objects_sharing_name_with_target(scoped.target_slot(target), object);
+        }
+        let Some(name) = self
+            .object_reference_id(reference, object, context, scoped)
+            .and_then(|referenced| self.object_card_name(referenced))
+        else {
+            return Vec::new();
+        };
+        self.battlefield
+            .iter()
+            .filter(|permanent| self.permanent_card_name(permanent.card.id) == Some(name))
+            .map(|permanent| Target::Permanent(permanent.card.id))
+            .collect()
     }
 
     pub(super) fn effect_recipients(
@@ -457,94 +474,29 @@ impl Game {
         context: TriggerContext,
         scoped: ScopedEffect,
     ) -> Vec<Target> {
-        if let EffectRecipientDef::Target(target) = recipient {
-            let slot = scoped.target_slot(target);
-            return Self::chosen_targets(object, slot)
-                .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
-                .collect();
-        }
-
-        if let EffectRecipientDef::ChosenPermanent(choice) = recipient {
-            return context
-                .chosen_object(choice)
-                .map(Target::Permanent)
+        match recipient.0 {
+            EffectRecipientSetDef::LegalTargets(target) => {
+                let slot = scoped.target_slot(target);
+                Self::chosen_targets(object, slot)
+                    .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
+                    .collect()
+            }
+            EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)) => self
+                .object_reference_target(reference, object, context, scoped)
                 .into_iter()
-                .collect();
-        }
-
-        // "Its controller" is read after the rest of the effect has already
-        // run, by which point the target is often gone -- Ghost Quarter
-        // destroys the land before its owner searches. So this reads the
-        // chosen target without the legality filter and falls back to
-        // last-known information.
-        if let EffectRecipientDef::ControllerOfTarget(target) = recipient {
-            let slot = scoped.target_slot(target);
-            return Self::chosen_targets(object, slot)
-                .find_map(|target| match target {
-                    Target::Permanent(id) | Target::Card(id) | Target::Spell(id) => {
-                        self.current_or_last_known_controller(id)
-                    }
-                    Target::Player(player) => Some(player),
-                })
+                .collect(),
+            EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
+                self.objects_matching_effect_query(query, object, context, scoped)
+            }
+            EffectRecipientSetDef::Objects(ObjectSetDef::SharingNameWith(reference)) => {
+                self.objects_sharing_name_with_reference(reference, object, context, scoped)
+            }
+            EffectRecipientSetDef::Players(players) => self
+                .players_in_set(players, object, context, scoped)
+                .into_iter()
                 .map(Target::Player)
-                .into_iter()
-                .collect();
+                .collect(),
         }
-
-        // "Each creature that player controls" and "all artifacts target
-        // player owns" both read a player off a target slot and then sweep the
-        // battlefield, so neither is a plain target nor a relation to the
-        // ability's own controller.
-        if matches!(
-            recipient,
-            EffectRecipientDef::ObjectsControlledByTarget { .. }
-                | EffectRecipientDef::ObjectsOwnedByTarget { .. }
-        ) {
-            return self.battlefield_sweep_for_target(recipient, object, context, scoped);
-        }
-
-        if let EffectRecipientDef::CardsOwnedByTarget {
-            object: predicate,
-            zones,
-            slot,
-        } = recipient
-        {
-            return self.cards_owned_by_target(predicate, zones, slot, object, scoped);
-        }
-
-        if let EffectRecipientDef::ObjectsSharingNameWithTarget(target) = recipient {
-            return self.objects_sharing_name_with_target(scoped.target_slot(target), object);
-        }
-
-        if recipient == EffectRecipientDef::EachPlayer {
-            return vec![
-                Target::Player(object.controller),
-                Target::Player(object.controller.opponent()),
-            ];
-        }
-
-        let EffectRecipientDef::MatchingObjects {
-            object: predicate,
-            zones,
-            controller,
-        } = recipient
-        else {
-            return self
-                .single_effect_recipient(recipient, object, context)
-                .into_iter()
-                .collect();
-        };
-
-        self.objects_matching_query(
-            ObjectQueryDef {
-                object: predicate,
-                zones,
-                controller,
-            },
-            object.controller,
-            object.source.unwrap_or(object.id),
-            context,
-        )
     }
 
     /// Whether a trigger's intervening-if condition holds right now. Rule

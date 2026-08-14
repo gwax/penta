@@ -81,14 +81,10 @@ pub(in crate::card::sets) static TSABOS_WEB: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Each land with an activated ability that isn't a mana ability doesn't untap during its controller's untap step.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Land),
                         ObjectPredicateDef::HasNonManaActivatedAbility,
-                    ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                    ]), &[ZoneKind::Battlefield], PlayerRelation::Any),
                 effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },

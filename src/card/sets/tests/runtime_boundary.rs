@@ -38,11 +38,11 @@ fn activated_cost_boundary_is_specific_to_the_source_zone() {
 #[test]
 fn triggered_mana_conditions_stay_outside_the_shared_runtime_boundary() {
     static CONDITION: TriggerConditionDef = TriggerConditionDef::ObjectCount {
-        query: ObjectQueryDef {
-            object: ObjectPredicateDef::Any,
-            zones: &[ZoneKind::Battlefield],
-            controller: PlayerRelation::You,
-        },
+        query: ObjectQueryDef::matching(
+            ObjectPredicateDef::Any,
+            &[ZoneKind::Battlefield],
+            PlayerRelation::You,
+        ),
         comparison: ComparisonDef::GreaterOrEqual,
         amount: 1,
     };
@@ -62,6 +62,22 @@ fn triggered_mana_conditions_stay_outside_the_shared_runtime_boundary() {
 
     assert!(shared_definition_ability(&ordinary));
     assert!(!shared_definition_ability(&conditional));
+}
+
+#[test]
+fn static_queries_reject_resolution_only_player_references() {
+    static EVENT_PLAYERS_PERMANENTS: ObjectQueryDef = ObjectQueryDef::controlled_by(
+        ObjectPredicateDef::Any,
+        &[ZoneKind::Battlefield],
+        PlayerSetDef::One(PlayerRefDef::EventPlayer),
+    );
+    let effect = EffectDef::Apply {
+        recipient: EffectRecipientDef::objects(ObjectSetDef::Query(EVENT_PLAYERS_PERMANENTS)),
+        effect: AppliedEffectDef::AddLandTypes(&[BasicLandType::Plains]),
+        duration: EffectDurationDef::WhileSourceRemainsInZone,
+    };
+
+    assert!(!shared_static_effect(&[ZoneKind::Battlefield], effect));
 }
 
 fn assert_stack_effect_support(effects: &[EffectDef], expected: bool) {
@@ -449,11 +465,11 @@ fn long_lived_composite_ability_changes_accept_shared_activated_grants() {
         AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Any),
         AppliedEffectDef::GrantAbility(&ACTIVATED),
     ];
-    let recipient = EffectRecipientDef::MatchingObjects {
-        object: ObjectPredicateDef::HasType(CardType::Creature),
-        zones: &[ZoneKind::Battlefield],
-        controller: PlayerRelation::Any,
-    };
+    let recipient = EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::Any,
+    );
 
     assert!(shared_resolving_apply(
         recipient,

@@ -12,18 +12,18 @@ use crate::card::{
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
-static DEFENDER_CONTROLS_AN_ISLAND: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::Opponent,
-};
+static DEFENDER_CONTROLS_AN_ISLAND: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Opponent,
+);
 
 static YOU_CONTROL_NO_ISLANDS: TriggerConditionDef = TriggerConditionDef::ObjectCount {
-    query: ObjectQueryDef {
-        object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
-        zones: &[ZoneKind::Battlefield],
-        controller: PlayerRelation::You,
-    },
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
     comparison: ComparisonDef::Equal,
     amount: 0,
 };
@@ -44,11 +44,11 @@ pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{1}{W}{W}")).with_abilities(&[AbilityDef::spell(
         "Attacking creatures get +2/+0 until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::Attacking,
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Attacking,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(2),
                 toughness: ValueDef::Constant(0),
@@ -110,15 +110,15 @@ pub(in crate::card::sets) static PIETY: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{2}{W}")).with_abilities(&[AbilityDef::spell(
         "Blocking creatures get +0/+3 until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::All(&[
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::AttackingOrBlocking,
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Attacking),
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(0),
                 toughness: ValueDef::Constant(3),
@@ -211,14 +211,14 @@ pub(in crate::card::sets) static GIANT_TORTOISE: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 // Its own condition: the recipient is the source, but only
                 // while untapped, so tapping to attack shrinks it.
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Source,
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(0),
                     toughness: ValueDef::Constant(3),
@@ -403,11 +403,11 @@ static GUARDIAN_BEAST_ARTIFACTS: ObjectPredicateDef = ObjectPredicateDef::All(&[
 ]);
 
 static GUARDIAN_BEAST_PROTECTION: EffectDef = EffectDef::Apply {
-    recipient: EffectRecipientDef::MatchingObjects {
-        object: GUARDIAN_BEAST_ARTIFACTS,
-        zones: &[ZoneKind::Battlefield],
-        controller: PlayerRelation::You,
-    },
+    recipient: EffectRecipientDef::matching_objects(
+        GUARDIAN_BEAST_ARTIFACTS,
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
     effect: AppliedEffectDef::Composite(&[
         AppliedEffectDef::CannotBecomeEnchanted,
         AppliedEffectDef::GrantAbility(&abilities::indestructible()),
@@ -792,14 +792,14 @@ pub(in crate::card::sets) static SANDSTORM: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{G}")).with_abilities(&[AbilityDef::spell(
         "Sandstorm deals 1 damage to each attacking creature.",
         EffectDef::DealDamage {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::All(&[
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Attacking,
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             amount: ValueDef::Constant(1),
         },
     )]),
@@ -845,11 +845,7 @@ static BOTTLED: ObjectPredicateDef = ObjectPredicateDef::All(&[
 static FROM_THE_BOTTLE: ObjectPredicateDef = ObjectPredicateDef::DebutSet(CardSet::ArabianNights);
 
 static BOTTLED_PERMANENTS_EXIST: TriggerConditionDef = TriggerConditionDef::ObjectCount {
-    query: ObjectQueryDef {
-        object: BOTTLED,
-        zones: &[ZoneKind::Battlefield],
-        controller: PlayerRelation::Any,
-    },
+    query: ObjectQueryDef::matching(BOTTLED, &[ZoneKind::Battlefield], PlayerRelation::Any),
     comparison: ComparisonDef::GreaterOrEqual,
     amount: 1,
 };
@@ -960,11 +956,7 @@ pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new(
             TriggerEventDef::StateCondition,
             &BOTTLED_PERMANENTS_EXIST,
             EffectDef::Sacrifice {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: BOTTLED,
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                object: EffectRecipientDef::matching_objects(BOTTLED, &[ZoneKind::Battlefield], PlayerRelation::Any),
             },
         ),
         AbilityDef::static_ability(

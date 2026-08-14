@@ -44,11 +44,11 @@ static TEST_EXTERNAL_CONTEXT_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement
         controller: PlayerRelation::Opponent,
     },
     EffectDef::Replacement(ReplacementEffectDef::Conditional {
-        condition: ConditionDef::Exists(ObjectQueryDef {
-            object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
-            zones: &[ZoneKind::Battlefield],
-            controller: PlayerRelation::You,
-        }),
+        condition: ConditionDef::Exists(ObjectQueryDef::matching(
+            ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::You,
+        )),
         if_true: &TEST_EXTERNAL_PAYMENT,
         if_false: &TEST_EXTERNAL_ENTER_TAPPED,
     }),

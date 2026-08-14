@@ -593,11 +593,11 @@ fn static_ability_additions_and_removals_follow_source_timestamps() {
     static GRANT: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures have flying.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::GrantAbility(&FLYING),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
@@ -605,11 +605,11 @@ fn static_ability_additions_and_removals_follow_source_timestamps() {
     static REMOVE: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures lose all abilities.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Any),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
@@ -738,11 +738,11 @@ fn game_granting_flying(extra: Vec<CardDefinition>) -> Game {
     static GRANT_FLYING: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures have flying.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::GrantAbility(&FLYING),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
@@ -806,11 +806,11 @@ fn a_static_ability_grant_picks_recipients_from_the_layer_below_itself() {
     static GRANT_TRAMPLE: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures with flying have trample.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: FLIERS,
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                FLIERS,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::GrantAbility(&TRAMPLE),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
@@ -836,11 +836,11 @@ fn a_static_power_effect_keyed_on_a_keyword_sees_a_static_grant() {
     static SHRINK: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures with flying get -1/-0.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: FLIERS,
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                FLIERS,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(-1),
                 toughness: ValueDef::Constant(0),

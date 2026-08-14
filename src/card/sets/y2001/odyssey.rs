@@ -16,11 +16,11 @@ pub(in crate::card::sets) static UPHEAVAL: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{4}{U}{U}")).with_ability(AbilityDef::spell(
         "Return all permanents to their owners' hands.",
         EffectDef::MoveToZone {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::Any,
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             controller: None,

@@ -1,10 +1,10 @@
 use super::{
     AbilitySourceRef, AddManaEffectDef, BattlefieldArrival, CardPartId, CharacteristicSource,
     ColorSet, CopiableAbility, CostDef, CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger,
-    DiscardSelectionDef, DrawReplacement, EffectDef, EffectRecipientDef, FloatingTrigger, Game,
-    GameResult, Mana, ManaPool, ManaSelectionDef, ManaSource, Permanent, SacrificeFollowup,
-    ScopedEffect, StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason,
-    ZoneKind, ZoneMoveCause, public_cards,
+    DiscardSelectionDef, DrawReplacement, EffectDef, FloatingTrigger, Game, GameResult, Mana,
+    ManaPool, ManaSelectionDef, ManaSource, Permanent, SacrificeFollowup, ScopedEffect,
+    StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason, ZoneKind,
+    ZoneMoveCause, public_cards,
 };
 
 mod permanent_state;
@@ -120,10 +120,9 @@ impl Game {
                         .try_into()
                         .unwrap_or(u16::MAX)
                 };
-                let slot = match recipient {
-                    EffectRecipientDef::Target(target) => Some(scoped.target_slot(target)),
-                    _ => None,
-                };
+                let slot = recipient
+                    .legal_target()
+                    .map(|target| scoped.target_slot(target));
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     let amount = if divided {
                         slot.and_then(|slot| Self::divided_share(object, slot, target))

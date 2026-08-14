@@ -42,14 +42,14 @@ pub(in crate::card::sets) static ARCHANGEL_OF_THUNE: CardRecord = CardRecord::ne
             TriggerEventDef::LifeGained(PlayerRelation::You),
             EffectDef::AddCounters {
                 kind: CounterKind::PlusOnePlusOne,
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 // One counter however much life arrived, and one trigger for
                 // each separate gain.
                 amount: ValueDef::Constant(1),
@@ -104,14 +104,14 @@ pub(in crate::card::sets) static BONESCYTHE_SLIVER: CardRecord = CardRecord::new
         AbilityDef::static_ability(
             "Sliver creatures you control have double strike.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&abilities::double_strike()),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -222,11 +222,7 @@ pub(in crate::card::sets) static FORTIFY: CardRecord = CardRecord::new(
             AbilityDef::spell(
                 "Creatures you control get +2/+0 until end of turn.",
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                     effect: AppliedEffectDef::ModifyPowerToughness {
                         power: ValueDef::Constant(2),
                         toughness: ValueDef::Constant(0),
@@ -237,11 +233,7 @@ pub(in crate::card::sets) static FORTIFY: CardRecord = CardRecord::new(
             AbilityDef::spell(
                 "Creatures you control get +0/+2 until end of turn.",
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                     effect: AppliedEffectDef::ModifyPowerToughness {
                         power: ValueDef::Constant(0),
                         toughness: ValueDef::Constant(2),
@@ -347,14 +339,14 @@ pub(in crate::card::sets) static SENTINEL_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control have vigilance.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&abilities::vigilance()),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -432,14 +424,14 @@ pub(in crate::card::sets) static STEELFORM_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control get +0/+1.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(0),
                     toughness: ValueDef::Constant(1),
@@ -569,14 +561,14 @@ pub(in crate::card::sets) static GALERIDER_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control have flying.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&abilities::flying()),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -1271,11 +1263,11 @@ pub(in crate::card::sets) static SANGUINE_BOND: CardRecord = CardRecord::new(
 /// own graveyard, which the Demon feeds on and which is why it stops eating
 /// your board once the graveyard is full enough.
 static SHADOWBORN_DEMON_UPKEEP_CONDITION: TriggerConditionDef = TriggerConditionDef::ObjectCount {
-    query: ObjectQueryDef {
-        object: ObjectPredicateDef::HasType(CardType::Creature),
-        zones: &[ZoneKind::Graveyard],
-        controller: PlayerRelation::You,
-    },
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        &[ZoneKind::Graveyard],
+        PlayerRelation::You,
+    ),
     comparison: ComparisonDef::LessOrEqual,
     amount: 5,
 };
@@ -1333,11 +1325,11 @@ pub(in crate::card::sets) static SHRIVEL: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell(
         "All creatures get -1/-1 until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(-1),
                 toughness: ValueDef::Constant(-1),
@@ -1357,14 +1349,14 @@ pub(in crate::card::sets) static SYPHON_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control have lifelink.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&abilities::lifelink()),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -1523,14 +1515,14 @@ pub(in crate::card::sets) static BATTLE_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control get +2/+0.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(2),
                     toughness: ValueDef::Constant(0),
@@ -1551,14 +1543,14 @@ pub(in crate::card::sets) static BLUR_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control have haste.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&abilities::haste()),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -1698,11 +1690,11 @@ pub(in crate::card::sets) static GOBLIN_DIPLOMATS: CardRecord = CardRecord::new(
             "{T}: Each creature attacks this turn if able.",
             &[AbilityCostDef::TapSource],
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&abilities::attacks_each_combat_if_able(
                     "This creature attacks this turn if able.",
                 )),
@@ -1867,14 +1859,10 @@ pub(in crate::card::sets) static SCOURGE_OF_VALKAS: CardRecord = CardRecord::new
             &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)],
             EffectDef::DealDamage {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::CountMatchingObjects(&ObjectQueryDef {
-                    object: ObjectPredicateDef::All(&[
+                amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Dragon"),
-                    ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                }),
+                    ]), &[ZoneKind::Battlefield], PlayerRelation::You)),
             },
         ),
         AbilityDef::activated(
@@ -1926,14 +1914,14 @@ pub(in crate::card::sets) static STRIKING_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control have first strike.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&abilities::first_strike()),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -1963,14 +1951,10 @@ pub(in crate::card::sets) static THORNCASTER_SLIVER: CardRecord = CardRecord::ne
         AbilityDef::static_ability(
             "Sliver creatures you control have \"Whenever this creature attacks, it deals 1 damage to any target.\"",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
-                    ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                 effect: AppliedEffectDef::GrantAbility(&THORNCASTER_SLIVER_GRANTED_ABILITY),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -2115,14 +2099,14 @@ pub(in crate::card::sets) static GROUNDSHAKER_SLIVER: CardRecord = CardRecord::n
         AbilityDef::static_ability(
             "Sliver creatures you control have trample.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -2130,11 +2114,11 @@ pub(in crate::card::sets) static GROUNDSHAKER_SLIVER: CardRecord = CardRecord::n
     ),
 );
 
-static M14_FORESTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static M14_FORESTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M14 178 — Howl of the Night Pack
 pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord::new(
@@ -2212,14 +2196,14 @@ pub(in crate::card::sets) static MANAWEFT_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control have \"{T}: Add one mana of any color.\"",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&MANAWEFT_SLIVER_GRANTED_ABILITY),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -2237,14 +2221,14 @@ pub(in crate::card::sets) static MEGANTIC_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control get +3/+3.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(3),
                     toughness: ValueDef::Constant(3),
@@ -2297,14 +2281,14 @@ pub(in crate::card::sets) static PREDATORY_SLIVER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Sliver creatures you control get +1/+1.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(1),
                     toughness: ValueDef::Constant(1),
@@ -2506,14 +2490,14 @@ pub(in crate::card::sets) static WINDSTORM: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{X}{G}")).with_ability(AbilityDef::spell(
         "Windstorm deals X damage to each creature with flying.",
         EffectDef::DealDamage {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::All(&[
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             amount: ValueDef::ChosenX,
         },
     )),
@@ -2572,11 +2556,11 @@ pub(in crate::card::sets) static DARKSTEEL_FORGE: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{9}")).with_ability(AbilityDef::static_ability(
         "Artifacts you control have indestructible.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Artifact),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::GrantAbility(&abilities::indestructible()),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
@@ -2645,18 +2629,14 @@ pub(in crate::card::sets) static RATCHET_BOMB: CardRecord = CardRecord::new(
             "{T}, Sacrifice this artifact: Destroy each nonland permanent with mana value equal to the number of charge counters on this artifact.",
             &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
             EffectDef::Destroy {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                object: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
                         // The Bomb is already gone by the time this resolves,
                         // so the count comes from last-known information.
                         ObjectPredicateDef::ManaValueEqualTo(ValueDef::CountersOnSource(
                             CounterKind::Charge,
                         )),
-                    ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                    ]), &[ZoneKind::Battlefield], PlayerRelation::Any),
                 can_regenerate: true,
             },
         ),

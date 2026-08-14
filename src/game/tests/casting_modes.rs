@@ -391,12 +391,13 @@ fn counterflux_uses_not_you_for_both_casting_modes() {
     assert!(matches!(
         overload.effect.definition,
         EffectDef::Counter {
-            object: EffectRecipientDef::MatchingObjects {
-                controller: PlayerRelation::NotYou,
-                ..
-            },
+            object,
             ..
-        }
+        } if object.object_query().is_some_and(|query| {
+            query.related_player == Some(PlayerSetDef::Related(PlayerRelation::NotYou))
+                && query.controller.is_none()
+                && query.owner.is_none()
+        })
     ));
 }
 

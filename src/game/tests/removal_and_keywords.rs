@@ -32,21 +32,19 @@ fn wrath_and_supreme_verdict_use_equivalent_declarative_creature_sweepers() {
         );
         assert!(definition.rules.ability_clauses().iter().any(|ability| {
             let EffectDef::Destroy {
-                object:
-                    EffectRecipientDef::MatchingObjects {
-                        object,
-                        zones,
-                        controller,
-                    },
+                object,
                 can_regenerate: actual,
             } = ability.effect.definition
             else {
                 return false;
             };
-            object == ObjectPredicateDef::HasType(CardType::Creature)
-                && zones == [ZoneKind::Battlefield]
-                && controller == PlayerRelation::Any
-                && actual == can_regenerate
+            object.object_query().is_some_and(|query| {
+                query.object == ObjectPredicateDef::HasType(CardType::Creature)
+                    && query.zones == [ZoneKind::Battlefield]
+                    && query.related_player == Some(PlayerSetDef::Related(PlayerRelation::Any))
+                    && query.controller.is_none()
+                    && query.owner.is_none()
+            }) && actual == can_regenerate
         }));
         assert_eq!(
             definition.rules.ability_clauses().iter().any(|ability| {
@@ -92,27 +90,30 @@ fn nevinyrrals_disk_declares_shared_costs_and_a_global_destroy_effect() {
     );
 
     let EffectDef::Destroy {
-        object:
-            EffectRecipientDef::MatchingObjects {
-                object,
-                zones,
-                controller,
-            },
+        object,
         can_regenerate,
     } = ability.effect.definition
     else {
         panic!("the Disk uses the shared global destruction effect")
     };
+    let query = object
+        .object_query()
+        .expect("the Disk destruction is an object query");
     assert_eq!(
-        object,
+        query.object,
         ObjectPredicateDef::AnyOf(&[
             ObjectPredicateDef::HasType(CardType::Artifact),
             ObjectPredicateDef::HasType(CardType::Creature),
             ObjectPredicateDef::HasType(CardType::Enchantment),
         ])
     );
-    assert_eq!(zones, [ZoneKind::Battlefield]);
-    assert_eq!(controller, PlayerRelation::Any);
+    assert_eq!(query.zones, [ZoneKind::Battlefield]);
+    assert_eq!(
+        query.related_player,
+        Some(PlayerSetDef::Related(PlayerRelation::Any))
+    );
+    assert_eq!(query.controller, None);
+    assert_eq!(query.owner, None);
     assert!(can_regenerate);
 }
 
@@ -179,6 +180,203 @@ fn nevinyrrals_disk_uses_the_shared_stack_and_destroys_every_named_type() {
         .expect("the Troll regenerated");
     assert!(troll.tapped);
     assert_eq!(troll.regeneration_shields, 0);
+}
+
+#[test]
+fn object_queries_can_constrain_controller_and_owner_independently() {
+    let mut game = ready_game();
+    let mut stolen = creature(10_010, cards::SAVANNAH_LIONS, PlayerId::Two);
+    stolen.controller = PlayerId::One;
+    let stolen_id = stolen.card.id;
+    let yours = creature(10_011, cards::SAVANNAH_LIONS, PlayerId::One);
+    let yours_id = yours.card.id;
+    let theirs = creature(10_012, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let theirs_id = theirs.card.id;
+    game.battlefield.extend([stolen, yours, theirs]);
+
+    let object = spell(10_013, cards::WRATH_OF_GOD, PlayerId::One, 0);
+    game.resolve_effect_def(
+        ScopedEffect::primary(EffectDef::Destroy {
+            object: EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                related_player: None,
+                controller: Some(PlayerSetDef::One(PlayerRefDef::EffectController)),
+                owner: Some(PlayerSetDef::Related(PlayerRelation::Opponent)),
+            })),
+            can_regenerate: true,
+        }),
+        &object,
+        TriggerContext::empty(),
+    );
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != stolen_id),
+        "only the permanent you control but an opponent owns matches both constraints",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == yours_id)
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == theirs_id)
+    );
+}
+
+#[test]
+fn zone_relative_queries_span_battlefield_and_graveyard() {
+    let mut game = ready_game();
+    let permanent = creature(10_020, cards::SAVANNAH_LIONS, PlayerId::One);
+    let permanent_id = permanent.card.id;
+    game.battlefield.push(permanent);
+    let graveyard_card = card(10_021, cards::SAVANNAH_LIONS, PlayerId::One);
+    let graveyard_id = graveyard_card.id;
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(graveyard_card);
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        10_022,
+        cards::SAVANNAH_LIONS,
+        PlayerId::Two,
+    ));
+
+    let matches = game.objects_matching_query(
+        ObjectQueryDef::matching(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            &[ZoneKind::Battlefield, ZoneKind::Graveyard],
+            PlayerRelation::You,
+        ),
+        PlayerId::One,
+        permanent_id,
+        TriggerContext::empty(),
+    );
+
+    assert_eq!(
+        matches,
+        [Target::Permanent(permanent_id), Target::Card(graveyard_id)],
+    );
+}
+
+#[test]
+fn derived_choice_players_use_last_known_controller_and_owner() {
+    let mut game = ready_game();
+    let mut chosen = creature(10_030, cards::SAVANNAH_LIONS, PlayerId::Two);
+    chosen.controller = PlayerId::One;
+    let chosen_id = chosen.card.id;
+    game.battlefield.push(chosen);
+    let mut context = TriggerContext::empty();
+    context.bind_choice(ChoiceIndex::PRIMARY, Some(chosen_id));
+    game.move_target_to_zone(
+        Target::Permanent(chosen_id),
+        ZoneKind::Graveyard,
+        ZoneMoveCause::Effect {
+            controller: PlayerId::One,
+        },
+        None,
+        ZonePlacement::Top,
+    );
+    let resolving = spell(10_031, cards::WRATH_OF_GOD, PlayerId::One, 0);
+
+    let recipients = |game: &Game, reference| {
+        game.effect_recipients(
+            EffectRecipientDef::player(reference),
+            &resolving,
+            context,
+            ScopedEffect::primary(EffectDef::None),
+        )
+    };
+    assert_eq!(
+        recipients(
+            &game,
+            PlayerRefDef::ControllerOf(ObjectRefDef::Choice(ChoiceIndex::PRIMARY)),
+        ),
+        [Target::Player(PlayerId::One)],
+    );
+    assert_eq!(
+        recipients(
+            &game,
+            PlayerRefDef::OwnerOf(ObjectRefDef::Choice(ChoiceIndex::PRIMARY)),
+        ),
+        [Target::Player(PlayerId::Two)],
+    );
+}
+
+#[test]
+fn direct_object_target_references_recheck_legality() {
+    static BLACK: ObjectPredicateDef = ObjectPredicateDef::Color(ManaColor::Black);
+    static NONBLACK_CREATURE: ObjectPredicateDef = ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Not(&BLACK),
+    ]);
+    static TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Object {
+            object: NONBLACK_CREATURE,
+            zones: &[ZoneKind::Battlefield],
+            controller: None,
+            owner: None,
+        },
+    )];
+
+    let mut game = ready_game();
+    let target = creature(10_040, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let target_id = target.card.id;
+    game.battlefield.push(target);
+    let mut doom_blade = spell(10_041, cards::DOOM_BLADE, PlayerId::One, 0);
+    doom_blade.signature = Some(CastSignature::from_validated_choices(
+        SpellForm::Part(CardPartId::PRIMARY),
+        cast_choices(vec![Target::Permanent(target_id)], 0),
+    ));
+    doom_blade.ability = Some(StackAbilityPayload {
+        origin: primary_ability(cards::DOOM_BLADE),
+        definition: None,
+        presentation_definition: cards::DOOM_BLADE,
+        text: Some("Test direct object target reference"),
+        target_defs: TARGETS.to_vec(),
+        targets: vec![TargetSelection::single(
+            TargetSlotId(0),
+            Target::Permanent(target_id),
+        )],
+        context: TriggerContext::empty(),
+        resolver: StackAbilityResolver::Declarative(ScopedEffect::primary(EffectDef::None)),
+        condition: None,
+        mode_effects: Vec::new(),
+        x: 0,
+    });
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == target_id)
+        .expect("the target remains on the battlefield")
+        .card
+        .definition = cards::BLACK_KNIGHT;
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == target_id)
+        .expect("the target remains on the battlefield")
+        .card
+        .characteristics = CharacteristicSource::Card(cards::BLACK_KNIGHT);
+
+    game.resolve_effect_def(
+        ScopedEffect::primary(EffectDef::Tap {
+            object: EffectRecipientDef::object(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+        }),
+        &doom_blade,
+        TriggerContext::empty(),
+    );
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == target_id)
+            .expect("the now-black target remains")
+            .tapped,
+        "a target that became illegal is not affected through an object reference",
+    );
 }
 
 #[test]

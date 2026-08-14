@@ -1,6 +1,7 @@
 use crate::ids::TargetIndex;
 
 use super::super::{CounterKind, ObjectPredicateDef, PlayerRelation, ZoneKind};
+use super::PlayerSetDef;
 
 /// The two branches of a conditional value.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -27,13 +28,79 @@ pub struct TargetConditionDef {
     pub otherwise: ValueDef,
 }
 
-/// A set of objects described the way [`super::EffectRecipientDef::MatchingObjects`]
-/// describes one, so a count and a sweep name their subject identically.
+/// A set of objects with independent controller and owner constraints.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ObjectQueryDef {
     pub object: ObjectPredicateDef,
     pub zones: &'static [ZoneKind],
-    pub controller: PlayerRelation,
+    /// A zone-relative constraint: controller for battlefield and stack
+    /// objects, owner for cards in every other zone. This preserves the
+    /// ordinary "you control" / "in your graveyard" query vocabulary even
+    /// when one query spans both kinds of zone.
+    pub related_player: Option<PlayerSetDef>,
+    pub controller: Option<PlayerSetDef>,
+    pub owner: Option<PlayerSetDef>,
+}
+
+impl ObjectQueryDef {
+    #[must_use]
+    pub const fn new(object: ObjectPredicateDef, zones: &'static [ZoneKind]) -> Self {
+        Self {
+            object,
+            zones,
+            related_player: None,
+            controller: None,
+            owner: None,
+        }
+    }
+
+    #[must_use]
+    pub const fn controlled_by(
+        object: ObjectPredicateDef,
+        zones: &'static [ZoneKind],
+        controller: PlayerSetDef,
+    ) -> Self {
+        Self {
+            object,
+            zones,
+            related_player: None,
+            controller: Some(controller),
+            owner: None,
+        }
+    }
+
+    #[must_use]
+    pub const fn owned_by(
+        object: ObjectPredicateDef,
+        zones: &'static [ZoneKind],
+        owner: PlayerSetDef,
+    ) -> Self {
+        Self {
+            object,
+            zones,
+            related_player: None,
+            controller: None,
+            owner: Some(owner),
+        }
+    }
+
+    /// Compatibility constructor for the old zone-relative query spelling:
+    /// battlefield/stack objects are related by controller, while cards in
+    /// other zones are related by owner.
+    #[must_use]
+    pub const fn matching(
+        object: ObjectPredicateDef,
+        zones: &'static [ZoneKind],
+        controller_or_owner: PlayerRelation,
+    ) -> Self {
+        Self {
+            object,
+            zones,
+            related_player: Some(PlayerSetDef::Related(controller_or_owner)),
+            controller: None,
+            owner: None,
+        }
+    }
 }
 
 /// A value evaluated from the resolving spell or ability and its captured

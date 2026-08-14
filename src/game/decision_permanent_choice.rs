@@ -7,18 +7,13 @@ use super::{
 impl Game {
     fn effect_removes_chosen_permanent(effect: EffectDef, choice: ChoiceIndex) -> bool {
         match effect {
-            EffectDef::Destroy {
-                object: super::EffectRecipientDef::ChosenPermanent(candidate),
-                ..
-            }
-            | EffectDef::Sacrifice {
-                object: super::EffectRecipientDef::ChosenPermanent(candidate),
-            }
+            EffectDef::Destroy { object, .. }
+            | EffectDef::Sacrifice { object }
             | EffectDef::MoveToZone {
-                object: super::EffectRecipientDef::ChosenPermanent(candidate),
+                object,
                 zone: ZoneKind::Graveyard | ZoneKind::Exile,
                 ..
-            } => candidate == choice,
+            } => object.chosen_object() == Some(choice),
             EffectDef::Sequence(effects) => effects
                 .iter()
                 .copied()

@@ -154,11 +154,7 @@ pub(in crate::card::sets) static ENERGY_FLUX: CardRecord = CardRecord::new(
     .with_abilities(&[AbilityDef::static_ability(
         "All artifacts have \"At the beginning of your upkeep, sacrifice this artifact unless you pay {2}.\"",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Artifact),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Artifact), &[ZoneKind::Battlefield], PlayerRelation::Any),
             effect: AppliedEffectDef::GrantAbility(&ENERGY_FLUX_GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
@@ -177,10 +173,10 @@ pub(in crate::card::sets) static HURKYLS_RECALL: CardRecord = CardRecord::new(
             AbilityTargetPredicate::Player(PlayerRelation::Any),
         )],
         EffectDef::MoveToZone {
-            object: EffectRecipientDef::ObjectsOwnedByTarget {
-                object: ObjectPredicateDef::HasType(CardType::Artifact),
-                slot: TargetIndex::PRIMARY,
-            },
+            object: EffectRecipientDef::objects_owned_by_target(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                TargetIndex::PRIMARY,
+            ),
             zone: ZoneKind::Hand,
             controller: None,
             placement: ZonePlacement::Top,
@@ -469,11 +465,11 @@ pub(in crate::card::sets) static SHATTERSTORM: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{2}{R}{R}")).with_abilities(&[AbilityDef::spell(
         "Destroy all artifacts. They can't be regenerated.",
         EffectDef::Destroy {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Artifact),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             can_regenerate: false,
         },
     )]),
@@ -610,11 +606,11 @@ pub(in crate::card::sets) static GAEAS_AVENGER: CardRecord = CardRecord::new(
     ),
 );
 
-static ARTIFACTS_YOUR_OPPONENTS_CONTROL: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Artifact),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::Opponent,
-};
+static ARTIFACTS_YOUR_OPPONENTS_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Opponent,
+);
 
 // ATQ 34 — Powerleech
 // Audit: blocked — Needs opponent-artifact tap and non-tap activated-ability events, including inspection of activation costs.
@@ -793,11 +789,11 @@ pub(in crate::card::sets) static FELDONS_CANE: CardRecord = CardRecord::new(
 /// arrived in.
 static FELDONS_CANE_SHUFFLE: [EffectDef; 2] = [
     EffectDef::MoveToZone {
-        object: EffectRecipientDef::MatchingObjects {
-            object: ObjectPredicateDef::Any,
-            zones: &[ZoneKind::Graveyard],
-            controller: PlayerRelation::You,
-        },
+        object: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::Any,
+            &[ZoneKind::Graveyard],
+            PlayerRelation::You,
+        ),
         zone: ZoneKind::Library,
         controller: None,
         placement: ZonePlacement::Top,
@@ -821,11 +817,7 @@ pub(in crate::card::sets) static GOLGOTHIAN_SYLEX: CardRecord = CardRecord::new(
             AbilityCostDef::TapSource,
         ],
         EffectDef::Sacrifice {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::DebutSet(CardSet::Antiquities),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            object: EffectRecipientDef::matching_objects(ObjectPredicateDef::DebutSet(CardSet::Antiquities), &[ZoneKind::Battlefield], PlayerRelation::Any),
         },
     )
     .with_coverage(AbilityCoverageDef::partial(
@@ -921,14 +913,14 @@ pub(in crate::card::sets) static MIGHTSTONE: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[AbilityDef::static_ability(
         "Attacking creatures get +1/+0.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::All(&[
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Attacking,
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(1),
                 toughness: ValueDef::Constant(0),
@@ -1346,14 +1338,14 @@ pub(in crate::card::sets) static WEAKSTONE: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[AbilityDef::static_ability(
         "Attacking creatures get -1/-0.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::All(&[
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Attacking,
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(-1),
                 toughness: ValueDef::Constant(0),

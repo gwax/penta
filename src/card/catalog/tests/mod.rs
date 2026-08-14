@@ -6,11 +6,11 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivatedAbilityDef, AdditionalCostDef, AlternateSpellKind, AlternativeCastKindDef,
     AlternativeCostDef, AppliedEffectDef, CardBehavior, CardDefinition, CardEffectStatus, CardPart,
-    CardPrinting, CardPrintingId, CardSet, CardStructure, DeclarativeAbilityDef, DoubleFacedKind,
-    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaCost, ModeDef,
-    ModeSetDef, ObjectPredicateDef, PlayOptionDef, PlayerRelation, PrintedManaCost,
-    ReplacementEffectDef, SpellForm, TargetConditionDef, TargetPredicate, TargetSlotDef,
-    TurnStepDef, ValueDef, ZoneKind,
+    CardPrinting, CardPrintingId, CardSet, CardStructure, CardType, DeclarativeAbilityDef,
+    DoubleFacedKind, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
+    ManaCost, ModeDef, ModeSetDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayOptionDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, PrintedManaCost, ReplacementEffectDef, SpellForm,
+    TargetConditionDef, TargetPredicate, TargetSlotDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, ChoiceIndex,

@@ -274,11 +274,11 @@ pub(in crate::card::sets) static DUTIFUL_THRULL: CardRecord = CardRecord::new(
 // GTC 15 — Guildscorn Ward
 // Audit: blocked — Protection can currently be expressed only from a specific color, not from multicolored objects.
 
-static HOLD_THE_GATES_GATES: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::Subtype("Gate"),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static HOLD_THE_GATES_GATES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Gate"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // GTC 16 — Hold the Gates
 pub(in crate::card::sets) static HOLD_THE_GATES: CardRecord = CardRecord::new(
@@ -289,11 +289,11 @@ pub(in crate::card::sets) static HOLD_THE_GATES: CardRecord = CardRecord::new(
     CardRules::new_enchantment(mana_cost!("{2}{W}")).with_ability(AbilityDef::static_ability(
         "Creatures you control get +0/+1 for each Gate you control and have vigilance.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::Composite(&[
                 AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(0),
@@ -457,11 +457,11 @@ pub(in crate::card::sets) static RIGHTEOUS_CHARGE: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{1}{W}{W}")).with_ability(AbilityDef::spell(
         "Creatures you control get +2/+2 until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(2),
                 toughness: ValueDef::Constant(2),
@@ -741,11 +741,11 @@ pub(in crate::card::sets) static SAPPHIRE_DRAKE: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Each creature you control with a +1/+1 counter on it has flying.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&YOUR_COUNTERED_CREATURES),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&YOUR_COUNTERED_CREATURES),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&SAPPHIRE_DRAKE_FLYING),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -1161,14 +1161,14 @@ pub(in crate::card::sets) static SMOG_ELEMENTAL: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Creatures with flying your opponents control get -1/-1.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Opponent,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Opponent,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(-1),
                     toughness: ValueDef::Constant(-1),
@@ -1197,11 +1197,11 @@ pub(in crate::card::sets) static SYNDICATE_ENFORCER: CardRecord = CardRecord::ne
 // GTC 83 — Undercity Plague
 // Audit: blocked — Needs cipher plus a discard decision that resumes into a permanent-sacrifice choice before later effects resolve.
 
-static WIGHT_CREATURE_CARDS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zones: &[ZoneKind::Graveyard],
-    controller: PlayerRelation::Opponent,
-};
+static WIGHT_CREATURE_CARDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Graveyard],
+    PlayerRelation::Opponent,
+);
 
 // GTC 84 — Wight of Precinct Six
 pub(in crate::card::sets) static WIGHT_OF_PRECINCT_SIX: CardRecord = CardRecord::new(
@@ -1395,11 +1395,11 @@ pub(in crate::card::sets) static HELLRAISER_GOBLIN: CardRecord = CardRecord::new
         AbilityDef::static_ability(
             "Creatures you control have haste and attack each combat if able.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::Composite(&[
                     AppliedEffectDef::GrantAbility(&abilities::haste()),
                     AppliedEffectDef::GrantAbility(&HELLRAISER_ATTACKS),
@@ -1439,11 +1439,11 @@ pub(in crate::card::sets) static HOMING_LIGHTNING: CardRecord = CardRecord::new(
 // GTC 99 — Mark for Death
 // Audit: blocked — Needs turn-long must-block and cannot-block constraints scoped to one opponent's creatures.
 
-static MASSIVE_RAID_CREATURES: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static MASSIVE_RAID_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // GTC 100 — Massive Raid
 pub(in crate::card::sets) static MASSIVE_RAID: CardRecord = CardRecord::new(
@@ -1744,11 +1744,11 @@ pub(in crate::card::sets) static CROWNED_CERATOK: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Each creature you control with a +1/+1 counter on it has trample.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&YOUR_COUNTERED_CREATURES),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&YOUR_COUNTERED_CREATURES),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&CROWNED_CERATOK_TRAMPLE),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
@@ -2014,11 +2014,11 @@ pub(in crate::card::sets) static TOWER_DEFENSE: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
         "Creatures you control get +0/+5 and gain reach until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::Composite(&[
                 AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(0),
@@ -2147,11 +2147,7 @@ pub(in crate::card::sets) static AURELIA_THE_WARLEADER: CardRecord = CardRecord:
             TriggerEventDef::AttacksFirstTimeThisTurn(ObjectPredicateDef::Source),
             EffectDef::Sequence(&[
                 EffectDef::Untap {
-                    object: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    object: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                 },
                 EffectDef::AdditionalCombatPhase,
             ]),
@@ -2202,11 +2198,11 @@ pub(in crate::card::sets) static AURELIAS_FURY: CardRecord = CardRecord::new(
 // Audit: blocked — Needs face-down linked exile from hand, permission to look at those cards, and a non-target choice to return one.
 
 static FOUR_BIOVISIONARIES: TriggerConditionDef = TriggerConditionDef::ObjectCount {
-    query: ObjectQueryDef {
-        object: ObjectPredicateDef::SharesNameWithSource,
-        zones: &[ZoneKind::Battlefield],
-        controller: PlayerRelation::You,
-    },
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::SharesNameWithSource,
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
     comparison: ComparisonDef::GreaterOrEqual,
     amount: 4,
 };
@@ -2252,11 +2248,7 @@ pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
             AbilityDef::spell(
                 "Permanents you control gain indestructible until end of turn",
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::Any,
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::Any, &[ZoneKind::Battlefield], PlayerRelation::You),
                     effect: AppliedEffectDef::GrantAbility(&abilities::indestructible()),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
@@ -2508,11 +2500,11 @@ static FIREMANE_AVENGER_BATTALION: [EffectDef; 2] = [
 // GTC 164 — Fortress Cyclops
 // Audit: blocked — Attacks is available, but there is no trigger event for the source blocking.
 
-static FOUNDRY_CHAMPION_CREATURES: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static FOUNDRY_CHAMPION_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // GTC 165 — Foundry Champion
 pub(in crate::card::sets) static FOUNDRY_CHAMPION: CardRecord = CardRecord::new(
@@ -2610,11 +2602,11 @@ pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::ne
     ]),
 );
 
-static GROUND_ASSAULT_LANDS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Land),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static GROUND_ASSAULT_LANDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // GTC 168 — Ground Assault
 pub(in crate::card::sets) static GROUND_ASSAULT: CardRecord = CardRecord::new(
@@ -2966,11 +2958,7 @@ pub(in crate::card::sets) static SIMIC_CHARM: CardRecord = CardRecord::new(
             AbilityDef::spell(
                 "Permanents you control gain hexproof until end of turn",
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::Any,
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::Any, &[ZoneKind::Battlefield], PlayerRelation::You),
                     effect: AppliedEffectDef::GrantAbility(&abilities::hexproof()),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
@@ -3042,11 +3030,11 @@ pub(in crate::card::sets) static SUNHOME_GUILDMAGE: CardRecord = CardRecord::new
             "{1}{R}{W}: Creatures you control get +1/+0 until end of turn.",
             &[AbilityCostDef::Mana(mana_cost!("{1}{R}{W}"))],
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(1),
                     toughness: ValueDef::Constant(0),
@@ -3386,11 +3374,11 @@ pub(in crate::card::sets) static MERFOLK_OF_THE_DEPTHS: CardRecord = CardRecord:
 // GTC 223 — Pit Fight
 // Audit: blocked — Fight requires two simultaneous damage events and the target declaration cannot enforce “another” target creature.
 
-static RUBBLEBELT_ATTACKERS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::Attacking,
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static RUBBLEBELT_ATTACKERS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Attacking,
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // GTC 224 — Rubblebelt Raiders
 pub(in crate::card::sets) static RUBBLEBELT_RAIDERS: CardRecord = CardRecord::new(

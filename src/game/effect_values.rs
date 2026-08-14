@@ -66,18 +66,11 @@ impl Game {
                 )
                 .unwrap_or(i32::MAX)
             }
-            ValueDef::CountMatchingObjects(query) => {
-                let recipient = EffectRecipientDef::MatchingObjects {
-                    object: query.object,
-                    zones: query.zones,
-                    controller: query.controller,
-                };
-                i32::try_from(
-                    self.effect_recipients(recipient, object, context, scoped)
-                        .len(),
-                )
-                .unwrap_or(i32::MAX)
-            }
+            ValueDef::CountMatchingObjects(query) => i32::try_from(
+                self.objects_matching_effect_query(*query, object, context, scoped)
+                    .len(),
+            )
+            .unwrap_or(i32::MAX),
             ValueDef::AnyMatchingObject(query) => i32::from(self.any_battlefield_object_matches(
                 query,
                 object.source.unwrap_or(object.id),

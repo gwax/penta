@@ -77,11 +77,11 @@ pub(in crate::card::sets) static ELEMENTAL_TOKEN_GREEN_WHITE: CardRecord = CardR
         )),
 );
 
-static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 pub(in crate::card::sets) static SPIRIT_TOKEN_1_1_WHITE: CardRecord = CardRecord::new(
     cards::SPIRIT_TOKEN_1_1_WHITE,
@@ -414,11 +414,11 @@ pub(in crate::card::sets) static DOMRI_RADE_EMBLEM: CardRecord = CardRecord::new
     CardRules::new_emblem().with_ability(AbilityDef::static_ability(
         "Creatures you control have double strike, trample, hexproof, and haste.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::Composite(&DOMRI_EMBLEM_KEYWORDS),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },

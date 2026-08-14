@@ -24,6 +24,7 @@ pub(in super::super) fn shared_static_non_apply_effect(
             battlefield_only(source_zones)
                 && query.zones == [ZoneKind::Battlefield]
                 && shared_object_predicate(query.object)
+                && shared_static_query(*query)
         }
         // The prohibition is read off the battlefield while play options
         // are offered, and only against a card's printed shape.
@@ -63,25 +64,25 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
             effect,
             duration,
         } => {
-            let battlefield_recipient_is_supported = match recipient {
-                EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent => true,
-                EffectRecipientDef::MatchingObjects { object, zones, .. } => {
-                    zones == [ZoneKind::Battlefield] && shared_object_predicate(object)
+            let battlefield_recipient_is_supported = match recipient.0 {
+                EffectRecipientSetDef::Objects(ObjectSetDef::One(
+                    ObjectRefDef::Source | ObjectRefDef::AttachedToSource,
+                )) => true,
+                EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
+                    query.zones == [ZoneKind::Battlefield]
+                        && shared_object_predicate(query.object)
+                        && shared_static_query(query)
                 }
-                EffectRecipientDef::Controller
-                | EffectRecipientDef::Opponent
-                | EffectRecipientDef::EachPlayer
-                | EffectRecipientDef::ChosenPermanent(_)
-                | EffectRecipientDef::Target(_)
-                | EffectRecipientDef::ControllerOfTarget(_)
-                | EffectRecipientDef::ObjectsControlledByTarget { .. }
-                | EffectRecipientDef::ObjectsOwnedByTarget { .. }
-                | EffectRecipientDef::CardsOwnedByTarget { .. }
-                | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
-                | EffectRecipientDef::TriggeringObject
-                | EffectRecipientDef::ControllerOfTriggeringObject
-                | EffectRecipientDef::ControllerOfAttachedPermanent
-                | EffectRecipientDef::EventPlayer => false,
+                EffectRecipientSetDef::LegalTargets(_)
+                | EffectRecipientSetDef::Objects(
+                    ObjectSetDef::One(
+                        ObjectRefDef::Choice(_)
+                        | ObjectRefDef::Target(_)
+                        | ObjectRefDef::TriggeringObject,
+                    )
+                    | ObjectSetDef::SharingNameWith(_),
+                )
+                | EffectRecipientSetDef::Players(_) => false,
             };
             let battlefield_effect_is_supported = shared_static_applied_effect(recipient, effect);
             let battlefield_effect = battlefield_only(source_zones)
@@ -216,19 +217,18 @@ pub(in super::super) fn shared_static_applied_effect(
         // control rather than only itself. The other two keep the narrower
         // list because no card applies them to a group.
         AppliedEffectDef::CannotBeBlockedBy(predicate) => {
-            matches!(
-                recipient,
-                EffectRecipientDef::Source
-                    | EffectRecipientDef::AttachedPermanent
-                    | EffectRecipientDef::MatchingObjects { .. }
-            ) && shared_object_predicate(predicate)
+            (matches!(
+                recipient.object_reference(),
+                Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
+            ) || recipient.object_query().is_some())
+                && shared_object_predicate(predicate)
         }
         AppliedEffectDef::CanBlockOnly(predicate)
         | AppliedEffectDef::PreventDamageFrom(predicate)
         | AppliedEffectDef::PreventCombatDamageFrom(predicate) => {
             matches!(
-                recipient,
-                EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
+                recipient.object_reference(),
+                Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
             ) && shared_object_predicate(predicate)
         }
         // The redirection names a group rather than a predicate, and it can
@@ -241,8 +241,8 @@ pub(in super::super) fn shared_static_applied_effect(
         // recipient it is applied to has to be one the runtime understands.
         AppliedEffectDef::PreventCombatDamage | AppliedEffectDef::PreventCombatDamageDealtBy => {
             matches!(
-                recipient,
-                EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
+                recipient.object_reference(),
+                Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
             )
         }
         // Read only off the Aura whose attachment it is defending, which is
@@ -266,12 +266,12 @@ pub(in super::super) fn shared_static_applied_effect(
         // predicates that cannot read what it supplies.
         AppliedEffectDef::Animate(animation) => {
             Game::static_animation_is_additive(animation)
-                && match recipient {
-                    EffectRecipientDef::MatchingObjects { object, zones, .. } => {
-                        zones == [ZoneKind::Battlefield]
-                            && Game::static_animation_predicate_is_supported(object)
+                && match recipient.object_query() {
+                    Some(query) => {
+                        query.zones == [ZoneKind::Battlefield]
+                            && Game::static_animation_predicate_is_supported(query.object)
                     }
-                    _ => false,
+                    None => false,
                 }
         }
         AppliedEffectDef::Special(_) => false,

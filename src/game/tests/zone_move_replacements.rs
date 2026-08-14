@@ -268,11 +268,11 @@ fn activated_ability_resolves_only_after_ugins_nexus_replacement_choice() {
 #[test]
 fn custom_spell_followup_waits_for_ugins_nexus_replacement_choice() {
     const DESTROY_ARTIFACTS: EffectDef = EffectDef::Destroy {
-        object: EffectRecipientDef::MatchingObjects {
-            object: ObjectPredicateDef::HasType(CardType::Artifact),
-            zones: &[ZoneKind::Battlefield],
-            controller: PlayerRelation::Any,
-        },
+        object: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Any,
+        ),
         can_regenerate: true,
     };
 

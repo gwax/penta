@@ -1,7 +1,8 @@
 use super::{
     AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardType, ContinuousEffectTimestamp,
     ControlFlow, Cow, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
-    Game, LandTypeOperation, ObjectPredicateDef, Permanent, TriggerContext, ZoneKind,
+    EffectRecipientSetDef, Game, LandTypeOperation, ObjectPredicateDef, ObjectRefDef, ObjectSetDef,
+    Permanent, TriggerContext, ZoneKind,
 };
 
 /// Land subtype vocabulary from CR 205.3i. Type-setting effects must remove
@@ -362,37 +363,35 @@ impl Game {
         source: &Permanent,
         affected: &Permanent,
     ) -> bool {
-        match recipient {
-            EffectRecipientDef::Source => source.card.id == affected.card.id,
-            EffectRecipientDef::AttachedPermanent => source.attached_to == Some(affected.card.id),
-            EffectRecipientDef::MatchingObjects {
-                object,
-                zones,
-                controller,
-            } => {
-                zones.contains(&ZoneKind::Battlefield)
-                    && self.player_relation_matches(
-                        affected.controller,
-                        controller,
+        match recipient.0 {
+            EffectRecipientSetDef::Objects(ObjectSetDef::One(ObjectRefDef::Source)) => {
+                source.card.id == affected.card.id
+            }
+            EffectRecipientSetDef::Objects(ObjectSetDef::One(ObjectRefDef::AttachedToSource)) => {
+                source.attached_to == Some(affected.card.id)
+            }
+            EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
+                query.zones.contains(&ZoneKind::Battlefield)
+                    && self.query_player_constraints_match(
+                        Some(affected.controller),
+                        affected.card.owner,
+                        query,
                         source.controller,
                         TriggerContext::empty(),
+                        None,
                     )
-                    && self.land_type_object_predicate_matches(object, source, affected)
+                    && self.land_type_object_predicate_matches(query.object, source, affected)
             }
-            EffectRecipientDef::ChosenPermanent(_)
-            | EffectRecipientDef::ControllerOfTarget(_)
-            | EffectRecipientDef::ObjectsControlledByTarget { .. }
-            | EffectRecipientDef::ObjectsOwnedByTarget { .. }
-            | EffectRecipientDef::CardsOwnedByTarget { .. }
-            | EffectRecipientDef::Controller
-            | EffectRecipientDef::Opponent
-            | EffectRecipientDef::EachPlayer
-            | EffectRecipientDef::Target(_)
-            | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
-            | EffectRecipientDef::TriggeringObject
-            | EffectRecipientDef::ControllerOfTriggeringObject
-            | EffectRecipientDef::ControllerOfAttachedPermanent
-            | EffectRecipientDef::EventPlayer => false,
+            EffectRecipientSetDef::LegalTargets(_)
+            | EffectRecipientSetDef::Objects(
+                ObjectSetDef::One(
+                    ObjectRefDef::Choice(_)
+                    | ObjectRefDef::Target(_)
+                    | ObjectRefDef::TriggeringObject,
+                )
+                | ObjectSetDef::SharingNameWith(_),
+            )
+            | EffectRecipientSetDef::Players(_) => false,
         }
     }
 

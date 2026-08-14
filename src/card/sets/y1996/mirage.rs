@@ -45,14 +45,14 @@ pub(in crate::card::sets) static TRANQUIL_DOMAIN: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
         "Destroy all non-Aura enchantments.",
         EffectDef::Destroy {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::All(&[
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Enchantment),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Aura")),
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             can_regenerate: true,
         },
     )),

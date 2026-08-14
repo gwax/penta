@@ -83,22 +83,19 @@ impl Game {
         source: &Permanent,
         affected: &Permanent,
     ) -> bool {
-        let EffectRecipientDef::MatchingObjects {
-            object,
-            zones,
-            controller,
-        } = recipient
-        else {
+        let Some(query) = recipient.object_query() else {
             return false;
         };
-        zones.contains(&ZoneKind::Battlefield)
-            && self.player_relation_matches(
-                affected.controller,
-                controller,
+        query.zones.contains(&ZoneKind::Battlefield)
+            && self.query_player_constraints_match(
+                Some(affected.controller),
+                affected.card.owner,
+                query,
                 source.controller,
                 TriggerContext::empty(),
+                None,
             )
-            && self.static_animation_predicate_matches(object, affected)
+            && self.static_animation_predicate_matches(query.object, affected)
     }
 
     /// The narrow predicate vocabulary a static animation may be aimed with.

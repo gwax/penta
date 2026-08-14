@@ -1,8 +1,9 @@
 use crate::TargetIndex;
 use crate::card::catalog::GrantedAbilityValidationError;
 use crate::card::{
-    AbilityTargetDef, AppliedEffectDef, EffectDef, EffectRecipientDef, ReplacementEffectDef,
-    ValueDef,
+    AbilityTargetDef, AppliedEffectDef, ConditionDef, EffectDef, EffectRecipientDef,
+    EffectRecipientSetDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerSetDef,
+    ReplacementEffectDef, TriggerConditionDef, ValueDef,
 };
 
 pub(in crate::card::catalog) fn validate_ability_targets(
@@ -42,63 +43,154 @@ fn validate_target_index(
     }
 }
 
-fn validate_recipient_target_references(
-    recipient: EffectRecipientDef,
+fn validate_object_reference(
+    reference: ObjectRefDef,
     target_count: usize,
     choices_in_scope: u8,
 ) -> Result<(), GrantedAbilityValidationError> {
-    match recipient {
-        EffectRecipientDef::ObjectsSharingNameWithTarget(target)
-        | EffectRecipientDef::Target(target)
-        | EffectRecipientDef::ControllerOfTarget(target) => {
-            validate_target_index(target, target_count)
-        }
-        EffectRecipientDef::ObjectsControlledByTarget { slot, .. }
-        | EffectRecipientDef::ObjectsOwnedByTarget { slot, .. }
-        | EffectRecipientDef::CardsOwnedByTarget { slot, .. } => {
-            validate_target_index(slot, target_count)
-        }
-        EffectRecipientDef::ChosenPermanent(choice) => {
+    match reference {
+        ObjectRefDef::Target(target) => validate_target_index(target, target_count),
+        ObjectRefDef::Choice(choice) => {
             if choices_in_scope & (1 << choice.index()) != 0 {
                 Ok(())
             } else {
                 Err(GrantedAbilityValidationError::ChoiceReferenceOutOfScope { choice })
             }
         }
-        EffectRecipientDef::Source
-        | EffectRecipientDef::AttachedPermanent
-        | EffectRecipientDef::Controller
-        | EffectRecipientDef::Opponent
-        | EffectRecipientDef::TriggeringObject
-        | EffectRecipientDef::ControllerOfTriggeringObject
-        | EffectRecipientDef::ControllerOfAttachedPermanent
-        | EffectRecipientDef::EventPlayer
-        | EffectRecipientDef::MatchingObjects { .. }
-        | EffectRecipientDef::EachPlayer => Ok(()),
+        ObjectRefDef::Source | ObjectRefDef::AttachedToSource | ObjectRefDef::TriggeringObject => {
+            Ok(())
+        }
+    }
+}
+
+fn validate_player_reference(
+    reference: PlayerRefDef,
+    target_count: usize,
+    choices_in_scope: u8,
+) -> Result<(), GrantedAbilityValidationError> {
+    match reference {
+        PlayerRefDef::Target(target) => validate_target_index(target, target_count),
+        PlayerRefDef::ControllerOf(reference) | PlayerRefDef::OwnerOf(reference) => {
+            validate_object_reference(reference, target_count, choices_in_scope)
+        }
+        PlayerRefDef::EffectController | PlayerRefDef::EventPlayer => Ok(()),
+    }
+}
+
+fn validate_player_set(
+    players: PlayerSetDef,
+    target_count: usize,
+    choices_in_scope: u8,
+) -> Result<(), GrantedAbilityValidationError> {
+    match players {
+        PlayerSetDef::One(reference) => {
+            validate_player_reference(reference, target_count, choices_in_scope)
+        }
+        PlayerSetDef::All | PlayerSetDef::Related(_) => Ok(()),
+    }
+}
+
+fn validate_query(
+    query: ObjectQueryDef,
+    target_count: usize,
+    choices_in_scope: u8,
+) -> Result<(), GrantedAbilityValidationError> {
+    if let Some(controller) = query.controller {
+        validate_player_set(controller, target_count, choices_in_scope)?;
+    }
+    if let Some(owner) = query.owner {
+        validate_player_set(owner, target_count, choices_in_scope)?;
+    }
+    if let Some(related_player) = query.related_player {
+        validate_player_set(related_player, target_count, choices_in_scope)?;
+    }
+    Ok(())
+}
+
+fn validate_condition(
+    condition: ConditionDef,
+    target_count: usize,
+    choices_in_scope: u8,
+) -> Result<(), GrantedAbilityValidationError> {
+    match condition {
+        ConditionDef::Exists(query) => validate_query(query, target_count, choices_in_scope),
+    }
+}
+
+fn validate_trigger_condition(
+    condition: TriggerConditionDef,
+    target_count: usize,
+    choices_in_scope: u8,
+) -> Result<(), GrantedAbilityValidationError> {
+    match condition {
+        TriggerConditionDef::ObjectCount { query, .. } => {
+            validate_query(query, target_count, choices_in_scope)
+        }
+        TriggerConditionDef::TargetMatches { slot, .. } => {
+            validate_target_index(slot, target_count)
+        }
+        TriggerConditionDef::SourceOnBattlefield
+        | TriggerConditionDef::SourceUntapped
+        | TriggerConditionDef::ActivePlayer(_)
+        | TriggerConditionDef::SpellsCastLastTurn { .. }
+        | TriggerConditionDef::ControlsGreatestPowerCreature
+        | TriggerConditionDef::AttachedPermanentMatches { .. }
+        | TriggerConditionDef::SourceCounters { .. }
+        | TriggerConditionDef::SourceLoyalty { .. }
+        | TriggerConditionDef::SourceActivationsThisTurn { .. }
+        | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
+        | TriggerConditionDef::SourceIsTapped => Ok(()),
+    }
+}
+
+fn validate_recipient_target_references(
+    recipient: EffectRecipientDef,
+    target_count: usize,
+    choices_in_scope: u8,
+) -> Result<(), GrantedAbilityValidationError> {
+    match recipient.0 {
+        EffectRecipientSetDef::LegalTargets(target) => validate_target_index(target, target_count),
+        EffectRecipientSetDef::Objects(ObjectSetDef::One(reference))
+        | EffectRecipientSetDef::Objects(ObjectSetDef::SharingNameWith(reference)) => {
+            validate_object_reference(reference, target_count, choices_in_scope)
+        }
+        EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
+            validate_query(query, target_count, choices_in_scope)
+        }
+        EffectRecipientSetDef::Players(players) => {
+            validate_player_set(players, target_count, choices_in_scope)
+        }
     }
 }
 
 fn validate_value_target_references(
     value: ValueDef,
     target_count: usize,
+    choices_in_scope: u8,
 ) -> Result<(), GrantedAbilityValidationError> {
     match value {
-        ValueDef::Negate(value) => validate_value_target_references(*value, target_count),
+        ValueDef::Negate(value) => {
+            validate_value_target_references(*value, target_count, choices_in_scope)
+        }
         ValueDef::Scaled(scaled) => {
-            validate_value_target_references(scaled.value, target_count)
+            validate_value_target_references(scaled.value, target_count, choices_in_scope)
         }
         ValueDef::IfCreatureDiedThisTurn(condition) => {
-            validate_value_target_references(condition.then, target_count)?;
-            validate_value_target_references(condition.otherwise, target_count)
+            validate_value_target_references(condition.then, target_count, choices_in_scope)?;
+            validate_value_target_references(condition.otherwise, target_count, choices_in_scope)
         }
         ValueDef::IfTargetMatches(condition) => {
             validate_target_index(condition.slot, target_count)?;
-            validate_value_target_references(condition.then, target_count)?;
-            validate_value_target_references(condition.otherwise, target_count)
+            validate_value_target_references(condition.then, target_count, choices_in_scope)?;
+            validate_value_target_references(condition.otherwise, target_count, choices_in_scope)
         }
         ValueDef::IfMatchingObjectCount(condition) => {
-            validate_value_target_references(condition.then, target_count)?;
-            validate_value_target_references(condition.otherwise, target_count)
+            validate_query(condition.query, target_count, choices_in_scope)?;
+            validate_value_target_references(condition.then, target_count, choices_in_scope)?;
+            validate_value_target_references(condition.otherwise, target_count, choices_in_scope)
+        }
+        ValueDef::CountMatchingObjects(query) | ValueDef::AnyMatchingObject(query) => {
+            validate_query(*query, target_count, choices_in_scope)
         }
         ValueDef::TargetPower(target)
         | ValueDef::TargetManaValue(target) => validate_target_index(target, target_count),
@@ -109,8 +201,6 @@ fn validate_value_target_references(
         | ValueDef::SourceToughness
         | ValueDef::TriggerEventAmount
         | ValueDef::CardsInHandAbove { .. }
-        | ValueDef::CountMatchingObjects(_)
-        | ValueDef::AnyMatchingObject(_)
         | ValueDef::CountersOnSource(_)
         // This reads the share assigned to the target currently being
         // affected; the surrounding recipient carries the slot reference.
@@ -121,17 +211,18 @@ fn validate_value_target_references(
 fn validate_applied_effect_target_references(
     effect: AppliedEffectDef,
     target_count: usize,
+    choices_in_scope: u8,
 ) -> Result<(), GrantedAbilityValidationError> {
     match effect {
         AppliedEffectDef::Composite(effects) => {
             for effect in effects {
-                validate_applied_effect_target_references(*effect, target_count)?;
+                validate_applied_effect_target_references(*effect, target_count, choices_in_scope)?;
             }
             Ok(())
         }
         AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
-            validate_value_target_references(power, target_count)?;
-            validate_value_target_references(toughness, target_count)
+            validate_value_target_references(power, target_count, choices_in_scope)?;
+            validate_value_target_references(toughness, target_count, choices_in_scope)
         }
         // A granted ability introduces its own target scope and is validated
         // separately when the grant tree is traversed.
@@ -211,7 +302,7 @@ fn validate_effect_references(
         }
         | EffectDef::LoseLife { recipient, amount } => {
             validate_recipient_target_references(recipient, target_count, choices_in_scope)?;
-            validate_value_target_references(amount, target_count)
+            validate_value_target_references(amount, target_count, choices_in_scope)
         }
         EffectDef::LoseTheGame { player: object }
         | EffectDef::ShuffleLibrary { player: object }
@@ -259,7 +350,7 @@ fn validate_effect_references(
         EffectDef::RevealAndSplitIntoPiles { count, .. }
         | EffectDef::CreateToken { count, .. }
         | EffectDef::ReduceGenericCostBy(count) => {
-            validate_value_target_references(count, target_count)
+            validate_value_target_references(count, target_count, choices_in_scope)
         }
         EffectDef::SacrificeOfChoice { player, then, .. } => {
             validate_recipient_target_references(player, target_count, choices_in_scope)?;
@@ -280,7 +371,7 @@ fn validate_effect_references(
         }
         EffectDef::LookAtTopAndSelect { player, selection } => {
             validate_recipient_target_references(player, target_count, choices_in_scope)?;
-            validate_value_target_references(selection.count, target_count)?;
+            validate_value_target_references(selection.count, target_count, choices_in_scope)?;
             if let Some(effect) = selection.then {
                 validate_effect_references(*effect, target_count, choices_in_scope)?;
             }
@@ -293,12 +384,12 @@ fn validate_effect_references(
         }
         EffectDef::Mill { player, amount } => {
             validate_recipient_target_references(player, target_count, choices_in_scope)?;
-            validate_value_target_references(amount, target_count)
+            validate_value_target_references(amount, target_count, choices_in_scope)
         }
         EffectDef::CounterUnlessPaid { object, amount, .. }
         | EffectDef::AddCounters { object, amount, .. } => {
             validate_recipient_target_references(object, target_count, choices_in_scope)?;
-            validate_value_target_references(amount, target_count)
+            validate_value_target_references(amount, target_count, choices_in_scope)
         }
         EffectDef::OptionalPayment {
             if_paid: effect, ..
@@ -306,9 +397,12 @@ fn validate_effect_references(
         | EffectDef::UnlessPaid {
             otherwise: effect, ..
         }
-        | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. } => {
             validate_effect_references(*effect, target_count, choices_in_scope)
+        }
+        EffectDef::IfCondition { condition, then } => {
+            validate_trigger_condition(*condition, target_count, choices_in_scope)?;
+            validate_effect_references(*then, target_count, choices_in_scope)
         }
         EffectDef::IfFormat {
             then, otherwise, ..
@@ -320,7 +414,7 @@ fn validate_effect_references(
             recipient, effect, ..
         } => {
             validate_recipient_target_references(recipient, target_count, choices_in_scope)?;
-            validate_applied_effect_target_references(effect, target_count)
+            validate_applied_effect_target_references(effect, target_count, choices_in_scope)
         }
         // An installed ability chooses its own targets when it triggers, so
         // nothing in it can refer to this ability's target slots.
@@ -367,8 +461,11 @@ fn validate_replacement_effect_target_references(
             Ok(())
         }
         ReplacementEffectDef::Conditional {
-            if_true, if_false, ..
+            condition,
+            if_true,
+            if_false,
         } => {
+            validate_condition(condition, target_count, choices_in_scope)?;
             for effect in if_true.iter().chain(if_false.iter()) {
                 validate_replacement_effect_target_references(
                     *effect,

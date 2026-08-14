@@ -18,11 +18,11 @@ pub(in crate::card::sets) static URBORG_TOMB_OF_YAWGMOTH: CardRecord = CardRecor
         .with_ability(AbilityDef::static_ability(
             "Each land is a Swamp in addition to its other land types.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Land),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
                 effect: AppliedEffectDef::AddLandTypes(&[BasicLandType::Swamp]),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },

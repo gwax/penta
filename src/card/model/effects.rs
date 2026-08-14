@@ -17,69 +17,213 @@ use super::{
     TriggerConditionDef, ZoneKind, ZonePlacement,
 };
 
-/// An object or player affected by an effect. Targets are chosen when a spell
-/// or stack ability is formed; triggering subjects come from captured events.
+/// An object reference evaluated in the resolving effect's context.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum EffectRecipientDef {
+pub enum ObjectRefDef {
     Source,
-    /// The permanent selected by a resolving [`EffectDef::ChoosePermanent`].
-    /// This is a choice, not a target: hexproof and protection do not apply,
-    /// and no target-legality check is repeated when the inner effect runs.
-    ChosenPermanent(ChoiceIndex),
-    /// What this permanent is attached to, for an Aura's own static clauses.
-    AttachedPermanent,
-    /// Whoever controls what this permanent is attached to. "That player" in
-    /// an Aura's upkeep trigger names them rather than the Aura's controller.
-    ControllerOfAttachedPermanent,
-    /// Every battlefield permanent sharing a name with the chosen target,
-    /// including the target itself. "And each other one with the same name"
-    /// names the same set.
-    ObjectsSharingNameWithTarget(TargetIndex),
-    Controller,
-    Opponent,
-    /// Every player in turn order, starting with the ability's controller.
-    /// This keeps effects such as Liliana's +1 simultaneous rather than
-    /// resolving one player's discard before the other chooses.
-    EachPlayer,
+    Choice(ChoiceIndex),
+    AttachedToSource,
     Target(TargetIndex),
     TriggeringObject,
-    /// The triggering object's controller when this effect resolves, using
-    /// last-known information if that object is no longer live.
-    ControllerOfTriggeringObject,
-    /// Everything a query matches among the permanents controlled by whoever
-    /// controls a target slot, for "each creature that player controls".
-    ObjectsControlledByTarget {
-        object: ObjectPredicateDef,
-        slot: TargetIndex,
-    },
-    /// Everything a query matches among the permanents *owned* by the player
-    /// a target slot names. Ownership survives a control-changing effect, so
-    /// this is a different set from [`Self::ObjectsControlledByTarget`]
-    /// whenever anything has changed hands.
-    ObjectsOwnedByTarget {
-        object: ObjectPredicateDef,
-        slot: TargetIndex,
-    },
-    /// Every matching card owned by the player a target slot names in the
-    /// listed nonbattlefield zones, for effects such as "exile target
-    /// player's graveyard."
-    CardsOwnedByTarget {
-        object: ObjectPredicateDef,
-        zones: &'static [ZoneKind],
-        slot: TargetIndex,
-    },
-    /// The controller of what a target slot points at, for "its controller".
-    /// Read when the effect resolves, using last-known information if that
-    /// object has already left the battlefield.
-    ControllerOfTarget(TargetIndex),
-    /// The player named directly by the event, such as the player whose
-    /// upkeep began or who cast the triggering spell.
+}
+
+/// A player reference evaluated in the resolving effect's context.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PlayerRefDef {
+    /// The controller captured by the resolving spell or ability.
+    EffectController,
     EventPlayer,
-    MatchingObjects {
+    /// A target slot that directly names a player.
+    Target(TargetIndex),
+    /// The current controller of an object, falling back to last-known
+    /// information. A target that directly names a player resolves to that
+    /// player, preserving the ordinary meaning of "that player or its
+    /// controller" selectors.
+    ControllerOf(ObjectRefDef),
+    /// The owner of an object, using last-known information when necessary.
+    OwnerOf(ObjectRefDef),
+}
+
+/// A set of players. Relations are measured from the resolving effect's
+/// controller unless the relation itself names an event or chosen player.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PlayerSetDef {
+    All,
+    One(PlayerRefDef),
+    Related(PlayerRelation),
+}
+
+/// A set of objects selected without targeting.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ObjectSetDef {
+    One(ObjectRefDef),
+    Query(ObjectQueryDef),
+    /// Every battlefield permanent sharing the referenced object's effective
+    /// name, including the referenced object itself.
+    SharingNameWith(ObjectRefDef),
+}
+
+/// The typed subject of an effect. A target slot remains its own category
+/// because one slot can legally contain players and objects, and because its
+/// contents must be legality-checked again on resolution.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum EffectRecipientSetDef {
+    LegalTargets(TargetIndex),
+    Objects(ObjectSetDef),
+    Players(PlayerSetDef),
+}
+
+/// An object or player set affected by an effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct EffectRecipientDef(pub EffectRecipientSetDef);
+
+// These const-friendly spellings keep card declarations compact while the
+// runtime receives the compositional reference/query model above.
+#[allow(non_snake_case, non_upper_case_globals)]
+impl EffectRecipientDef {
+    pub const Source: Self = Self::object(ObjectRefDef::Source);
+    pub const AttachedPermanent: Self = Self::object(ObjectRefDef::AttachedToSource);
+    pub const Controller: Self = Self::player(PlayerRefDef::EffectController);
+    pub const Opponent: Self = Self::players(PlayerSetDef::Related(PlayerRelation::Opponent));
+    pub const EachPlayer: Self = Self::players(PlayerSetDef::All);
+    pub const TriggeringObject: Self = Self::object(ObjectRefDef::TriggeringObject);
+    pub const ControllerOfTriggeringObject: Self =
+        Self::player(PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject));
+    pub const EventPlayer: Self = Self::player(PlayerRefDef::EventPlayer);
+
+    #[must_use]
+    pub const fn object(object: ObjectRefDef) -> Self {
+        Self(EffectRecipientSetDef::Objects(ObjectSetDef::One(object)))
+    }
+
+    #[must_use]
+    pub const fn objects(objects: ObjectSetDef) -> Self {
+        Self(EffectRecipientSetDef::Objects(objects))
+    }
+
+    #[must_use]
+    pub const fn player(player: PlayerRefDef) -> Self {
+        Self::players(PlayerSetDef::One(player))
+    }
+
+    #[must_use]
+    pub const fn players(players: PlayerSetDef) -> Self {
+        Self(EffectRecipientSetDef::Players(players))
+    }
+
+    #[must_use]
+    pub const fn legal_target(self) -> Option<TargetIndex> {
+        match self.0 {
+            EffectRecipientSetDef::LegalTargets(target) => Some(target),
+            EffectRecipientSetDef::Objects(_) | EffectRecipientSetDef::Players(_) => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn object_reference(self) -> Option<ObjectRefDef> {
+        match self.0 {
+            EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)) => Some(reference),
+            EffectRecipientSetDef::LegalTargets(_)
+            | EffectRecipientSetDef::Objects(
+                ObjectSetDef::Query(_) | ObjectSetDef::SharingNameWith(_),
+            )
+            | EffectRecipientSetDef::Players(_) => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn object_query(self) -> Option<ObjectQueryDef> {
+        match self.0 {
+            EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => Some(query),
+            EffectRecipientSetDef::LegalTargets(_)
+            | EffectRecipientSetDef::Objects(
+                ObjectSetDef::One(_) | ObjectSetDef::SharingNameWith(_),
+            )
+            | EffectRecipientSetDef::Players(_) => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn chosen_object(self) -> Option<ChoiceIndex> {
+        match self.object_reference() {
+            Some(ObjectRefDef::Choice(choice)) => Some(choice),
+            Some(
+                ObjectRefDef::Source
+                | ObjectRefDef::AttachedToSource
+                | ObjectRefDef::Target(_)
+                | ObjectRefDef::TriggeringObject,
+            )
+            | None => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn Target(target: TargetIndex) -> Self {
+        Self(EffectRecipientSetDef::LegalTargets(target))
+    }
+
+    /// A non-targeting object choice made while an effect resolves.
+    #[must_use]
+    pub const fn ChosenPermanent(choice: ChoiceIndex) -> Self {
+        Self::object(ObjectRefDef::Choice(choice))
+    }
+
+    #[must_use]
+    pub const fn ControllerOfTarget(target: TargetIndex) -> Self {
+        Self::player(PlayerRefDef::ControllerOf(ObjectRefDef::Target(target)))
+    }
+
+    #[must_use]
+    pub const fn ObjectsSharingNameWithTarget(target: TargetIndex) -> Self {
+        Self::objects(ObjectSetDef::SharingNameWith(ObjectRefDef::Target(target)))
+    }
+
+    #[must_use]
+    pub const fn matching_objects(
         object: ObjectPredicateDef,
         zones: &'static [ZoneKind],
-        controller: PlayerRelation,
-    },
+        controller_or_owner: PlayerRelation,
+    ) -> Self {
+        Self::objects(ObjectSetDef::Query(ObjectQueryDef::matching(
+            object,
+            zones,
+            controller_or_owner,
+        )))
+    }
+
+    #[must_use]
+    pub const fn objects_controlled_by_target(
+        object: ObjectPredicateDef,
+        slot: TargetIndex,
+    ) -> Self {
+        Self::objects(ObjectSetDef::Query(ObjectQueryDef::controlled_by(
+            object,
+            &[ZoneKind::Battlefield],
+            PlayerSetDef::One(PlayerRefDef::ControllerOf(ObjectRefDef::Target(slot))),
+        )))
+    }
+
+    #[must_use]
+    pub const fn objects_owned_by_target(object: ObjectPredicateDef, slot: TargetIndex) -> Self {
+        Self::objects(ObjectSetDef::Query(ObjectQueryDef::owned_by(
+            object,
+            &[ZoneKind::Battlefield],
+            PlayerSetDef::One(PlayerRefDef::Target(slot)),
+        )))
+    }
+
+    #[must_use]
+    pub const fn cards_owned_by_target(
+        object: ObjectPredicateDef,
+        zones: &'static [ZoneKind],
+        slot: TargetIndex,
+    ) -> Self {
+        Self::objects(ObjectSetDef::Query(ObjectQueryDef::owned_by(
+            object,
+            zones,
+            PlayerSetDef::One(PlayerRefDef::Target(slot)),
+        )))
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

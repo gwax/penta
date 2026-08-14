@@ -59,8 +59,9 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
 }
 
 pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
-    match recipient {
-        EffectRecipientDef::MatchingObjects { object, zones, .. } => {
+    match recipient.0 {
+        EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
+            let ObjectQueryDef { object, zones, .. } = query;
             !zones.is_empty()
                 && zones.iter().all(|zone| {
                     matches!(
@@ -76,36 +77,26 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
                 })
                 && shared_object_predicate(object)
         }
-        // The sweep is over the battlefield, so only the predicate
-        // needs checking.
-        EffectRecipientDef::ObjectsControlledByTarget { object, .. }
-        | EffectRecipientDef::ObjectsOwnedByTarget { object, .. } => {
-            shared_object_predicate(object)
-        }
-        EffectRecipientDef::CardsOwnedByTarget { object, zones, .. } => {
-            !zones.is_empty()
-                && zones.iter().all(|zone| {
-                    matches!(
-                        zone,
-                        ZoneKind::Library | ZoneKind::Hand | ZoneKind::Graveyard | ZoneKind::Exile
-                    )
-                })
-                && shared_object_predicate(object)
-        }
-        EffectRecipientDef::ObjectsSharingNameWithTarget(_)
-        | EffectRecipientDef::Source
-        | EffectRecipientDef::ChosenPermanent(_)
-        | EffectRecipientDef::AttachedPermanent
-        | EffectRecipientDef::Controller
-        | EffectRecipientDef::Opponent
-        | EffectRecipientDef::EachPlayer
-        | EffectRecipientDef::Target(_)
-        | EffectRecipientDef::ControllerOfTarget(_)
-        | EffectRecipientDef::TriggeringObject
-        | EffectRecipientDef::ControllerOfTriggeringObject
-        | EffectRecipientDef::ControllerOfAttachedPermanent
-        | EffectRecipientDef::EventPlayer => true,
+        EffectRecipientSetDef::LegalTargets(_)
+        | EffectRecipientSetDef::Objects(ObjectSetDef::One(_) | ObjectSetDef::SharingNameWith(_))
+        | EffectRecipientSetDef::Players(_) => true,
     }
+}
+
+fn shared_static_player_set(players: PlayerSetDef) -> bool {
+    matches!(
+        players,
+        PlayerSetDef::All
+            | PlayerSetDef::Related(_)
+            | PlayerSetDef::One(PlayerRefDef::EffectController)
+    )
+}
+
+fn shared_static_query(query: ObjectQueryDef) -> bool {
+    [query.related_player, query.controller, query.owner]
+        .into_iter()
+        .flatten()
+        .all(shared_static_player_set)
 }
 
 pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {

@@ -750,6 +750,44 @@ mod circle_of_protection {
         assert_eq!(decision.observation.options.len(), 2);
     }
 
+    /// Object choices retain their actual zone kind. A spell chosen on the
+    /// stack must remain a spell reference when the nested shield consumes
+    /// the binding; treating every choice as a permanent silently drops it.
+    #[test]
+    fn a_stack_spell_can_be_the_chosen_damage_source() {
+        static SHIELD: EffectDef = EffectDef::PreventNextDamageFromSource {
+            object: EffectRecipientDef::Controller,
+            source: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+            coverage: ShieldCoverageDef::All,
+            gain_life: false,
+        };
+
+        let mut game = ready_game();
+        let bolt = spell(10_001, cards::LIGHTNING_BOLT, PlayerId::Two, 0);
+        let bolt_id = bolt.id;
+        game.stack.push(bolt);
+        let resolving = resolving_prevention_object(PlayerId::One);
+
+        game.resolve_effect_def(
+            ScopedEffect::primary(EffectDef::ChooseDamageSource {
+                choice: ChoiceIndex::PRIMARY,
+                chooser: EffectRecipientDef::Controller,
+                object: ObjectPredicateDef::Color(ManaColor::Red),
+                then: &SHIELD,
+            }),
+            &resolving,
+            TriggerContext::empty(),
+        );
+
+        assert!(game.pending_decisions.is_empty(), "there is one red source");
+        assert_eq!(game.prevention_shields.len(), 1);
+        assert_eq!(game.prevention_shields[0].source, Some(bolt_id));
+        assert_eq!(
+            game.damage_target_from(Some(bolt_id), Some(Target::Player(PlayerId::One)), 3),
+            0,
+        );
+    }
+
     #[test]
     fn the_cycle_reports_complete_coverage() {
         let catalog = poc::catalog().expect("catalog builds");

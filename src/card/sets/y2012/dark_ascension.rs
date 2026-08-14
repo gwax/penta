@@ -26,11 +26,11 @@ pub(in crate::card::sets) static BAR_THE_DOOR: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
         "Creatures you control get +0/+4 until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::ModifyPowerToughness {
                 power: ValueDef::Constant(0),
                 toughness: ValueDef::Constant(4),
@@ -580,14 +580,10 @@ pub(in crate::card::sets) static HAVENGUL_RUNEBINDER: CardRecord = CardRecord::n
                     tapped: false,
                 },
                 EffectDef::AddCounters {
-                    object: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::All(&[
+                    object: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
                             ObjectPredicateDef::Subtype("Zombie"),
-                        ]),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                        ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                     kind: CounterKind::PlusOnePlusOne,
                     amount: ValueDef::Constant(1),
                 },
@@ -1454,11 +1450,11 @@ pub(in crate::card::sets) static MOONVEIL_DRAGON: CardRecord = CardRecord::new(
             "{R}: Each creature you control gets +1/+0 until end of turn.",
             &[AbilityCostDef::Mana(mana_cost!("{R}"))],
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(1),
                     toughness: ValueDef::Constant(0),
@@ -1511,14 +1507,14 @@ pub(in crate::card::sets) static SCORCH_THE_FIELDS: CardRecord = CardRecord::new
                 can_regenerate: true,
             },
             EffectDef::DealDamage {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Human"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
                 amount: ValueDef::Constant(1),
             },
         ]),
@@ -1752,11 +1748,13 @@ pub(in crate::card::sets) static GHOULTREE: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{7}{G}"), &["Zombie", "Treefolk"], 10, 10).with_ability(
         AbilityDef::static_ability(
             "This spell costs {1} less to cast for each creature card in your graveyard.",
-            EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(&ObjectQueryDef {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Graveyard],
-                controller: PlayerRelation::You,
-            })),
+            EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(
+                &ObjectQueryDef::matching(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Graveyard],
+                    PlayerRelation::You,
+                ),
+            )),
         )
         .with_source_zones(&[ZoneKind::Hand]),
     ),
@@ -1775,11 +1773,11 @@ pub(in crate::card::sets) static GRIM_FLOWERING: CardRecord = CardRecord::new(
         "Draw a card for each creature card in your graveyard.",
         EffectDef::DrawCards {
             recipient: EffectRecipientDef::Controller,
-            amount: ValueDef::CountMatchingObjects(&ObjectQueryDef {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Graveyard],
-                controller: PlayerRelation::You,
-            }),
+            amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Graveyard],
+                PlayerRelation::You,
+            )),
         },
     )),
 );
@@ -1976,15 +1974,15 @@ pub(in crate::card::sets) static DIREGRAF_CAPTAIN: CardRecord = CardRecord::new(
             AbilityDef::static_ability(
                 "Other Zombie creatures you control get +1/+1.",
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::All(&[
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
                             ObjectPredicateDef::Subtype("Zombie"),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
                     effect: AppliedEffectDef::ModifyPowerToughness {
                         power: ValueDef::Constant(1),
                         toughness: ValueDef::Constant(1),
@@ -2029,15 +2027,11 @@ pub(in crate::card::sets) static DROGSKOL_CAPTAIN: CardRecord = CardRecord::new(
                 "Other Spirit creatures you control get +1/+1 and have hexproof. (They can't be the targets of spells or abilities your opponents control.)",
                 EffectDef::Sequence(&[
                     EffectDef::Apply {
-                        recipient: EffectRecipientDef::MatchingObjects {
-                            object: ObjectPredicateDef::All(&[
+                        recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
                                 ObjectPredicateDef::Subtype("Spirit"),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            ]),
-                            zones: &[ZoneKind::Battlefield],
-                            controller: PlayerRelation::You,
-                        },
+                            ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                         effect: AppliedEffectDef::ModifyPowerToughness {
                             power: ValueDef::Constant(1),
                             toughness: ValueDef::Constant(1),
@@ -2045,15 +2039,11 @@ pub(in crate::card::sets) static DROGSKOL_CAPTAIN: CardRecord = CardRecord::new(
                         duration: EffectDurationDef::WhileSourceRemainsInZone,
                     },
                     EffectDef::Apply {
-                        recipient: EffectRecipientDef::MatchingObjects {
-                            object: ObjectPredicateDef::All(&[
+                        recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
                                 ObjectPredicateDef::Subtype("Spirit"),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            ]),
-                            zones: &[ZoneKind::Battlefield],
-                            controller: PlayerRelation::You,
-                        },
+                            ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                         effect: AppliedEffectDef::GrantAbility(&abilities::hexproof()),
                         duration: EffectDurationDef::WhileSourceRemainsInZone,
                     },
@@ -2261,15 +2251,15 @@ pub(in crate::card::sets) static STROMKIRK_CAPTAIN: CardRecord = CardRecord::new
                 "Other Vampire creatures you control get +1/+1 and have first strike.",
                 EffectDef::Sequence(&[
                     EffectDef::Apply {
-                        recipient: EffectRecipientDef::MatchingObjects {
-                            object: ObjectPredicateDef::All(&[
+                        recipient: EffectRecipientDef::matching_objects(
+                            ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
                                 ObjectPredicateDef::Subtype("Vampire"),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
-                            zones: &[ZoneKind::Battlefield],
-                            controller: PlayerRelation::You,
-                        },
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        ),
                         effect: AppliedEffectDef::ModifyPowerToughness {
                             power: ValueDef::Constant(1),
                             toughness: ValueDef::Constant(1),
@@ -2277,15 +2267,15 @@ pub(in crate::card::sets) static STROMKIRK_CAPTAIN: CardRecord = CardRecord::new
                         duration: EffectDurationDef::WhileSourceRemainsInZone,
                     },
                     EffectDef::Apply {
-                        recipient: EffectRecipientDef::MatchingObjects {
-                            object: ObjectPredicateDef::All(&[
+                        recipient: EffectRecipientDef::matching_objects(
+                            ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
                                 ObjectPredicateDef::Subtype("Vampire"),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
-                            zones: &[ZoneKind::Battlefield],
-                            controller: PlayerRelation::You,
-                        },
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        ),
                         effect: AppliedEffectDef::GrantAbility(&abilities::first_strike()),
                         duration: EffectDurationDef::WhileSourceRemainsInZone,
                     },
@@ -2440,26 +2430,26 @@ pub(in crate::card::sets) static VAULT_OF_THE_ARCHANGEL: CardRecord = CardRecord
             ],
             EffectDef::Sequence(&[
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::All(&[
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
                             ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                         ]),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
                     effect: AppliedEffectDef::GrantAbility(&abilities::deathtouch()),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::All(&[
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
                             ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                         ]),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
                     effect: AppliedEffectDef::GrantAbility(&abilities::lifelink()),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },

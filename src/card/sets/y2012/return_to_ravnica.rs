@@ -398,11 +398,11 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
                 to: Some(ZoneKind::Battlefield),
             },
             EffectDef::MoveToZone {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::Any,
-                    zones: &[ZoneKind::Graveyard],
-                    controller: PlayerRelation::Any,
-                },
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Any,
+                    &[ZoneKind::Graveyard],
+                    PlayerRelation::Any,
+                ),
                 zone: ZoneKind::Exile,
                 controller: None,
                 placement: ZonePlacement::Top,
@@ -426,11 +426,11 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
 static ROOTBORN_DEFENSES_EFFECTS: [EffectDef; 2] = [
     abilities::populate(),
     EffectDef::Apply {
-        recipient: EffectRecipientDef::MatchingObjects {
-            object: ObjectPredicateDef::HasType(CardType::Creature),
-            zones: &[ZoneKind::Battlefield],
-            controller: PlayerRelation::You,
-        },
+        recipient: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::You,
+        ),
         effect: AppliedEffectDef::GrantAbility(&ROOTBORN_INDESTRUCTIBLE),
         duration: EffectDurationDef::UntilEndOfTurn,
     },
@@ -632,11 +632,11 @@ pub(in crate::card::sets) static BLUSTERSQUALL: CardRecord = CardRecord::new(
             mana_cost!("{3}{U}"),
             "Tap each creature you don't control.",
             EffectDef::Tap {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::NotYou,
-                },
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::NotYou,
+                ),
             },
         ),
     ]),
@@ -708,11 +708,11 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new(
             mana_cost!("{6}{U}"),
             "Return each nonland permanent you don't control to its owner's hand.",
             EffectDef::MoveToZone {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::NotYou,
-                },
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::NotYou,
+                ),
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
@@ -733,14 +733,14 @@ pub(in crate::card::sets) static DISPEL: CardRecord = CardRecord::new(
     )),
 );
 
-static DEFENDERS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::All(&[
+static DEFENDERS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
         ObjectPredicateDef::HasType(CardType::Creature),
         ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Defender),
     ]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // RTR 37 — Doorkeeper
 pub(in crate::card::sets) static DOORKEEPER: CardRecord = CardRecord::new(
@@ -797,11 +797,11 @@ pub(in crate::card::sets) static DOWNSIZE: CardRecord = CardRecord::new(
             mana_cost!("{2}{U}"),
             "Each creature you don't control gets -4/-0 until end of turn.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::NotYou,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::NotYou,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(-4),
                     toughness: ValueDef::Constant(0),
@@ -991,11 +991,11 @@ pub(in crate::card::sets) static MIZZIUM_SKIN: CardRecord = CardRecord::new(
             mana_cost!("{1}{U}"),
             "Each creature you control gets +0/+1 and gains hexproof until end of turn.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: MIZZIUM_SKIN_EFFECT,
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
@@ -1506,11 +1506,11 @@ pub(in crate::card::sets) static PERILOUS_SHADOW: CardRecord = CardRecord::new(
 // RTR 75 — Sewer Shambler
 // Audit: blocked — Swampwalk and scavenge's graveyard activation procedure are unavailable.
 
-static SHRIEKING_AFFLICTION_HAND: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::Any,
-    zones: &[ZoneKind::Hand],
-    controller: PlayerRelation::EventPlayer,
-};
+static SHRIEKING_AFFLICTION_HAND: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Any,
+    &[ZoneKind::Hand],
+    PlayerRelation::EventPlayer,
+);
 static SHRIEKING_AFFLICTION_CONDITION: TriggerConditionDef = TriggerConditionDef::ObjectCount {
     query: SHRIEKING_AFFLICTION_HAND,
     comparison: ComparisonDef::LessOrEqual,
@@ -1820,11 +1820,11 @@ pub(in crate::card::sets) static DYNACHARGE: CardRecord = CardRecord::new(
             mana_cost!("{2}{R}"),
             "Each creature you control gets +2/+0 until end of turn.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(2),
                     toughness: ValueDef::Constant(0),
@@ -1861,11 +1861,11 @@ pub(in crate::card::sets) static ELECTRICKERY: CardRecord = CardRecord::new(
             mana_cost!("{1}{R}"),
             "Electrickery deals 1 damage to each creature you don't control.",
             EffectDef::DealDamage {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::NotYou,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::NotYou,
+                ),
                 amount: ValueDef::Constant(1),
             },
         ),
@@ -2015,11 +2015,11 @@ pub(in crate::card::sets) static MIZZIUM_MORTARS: CardRecord = CardRecord::new(
             mana_cost!("{3}{R}{R}{R}"),
             "Mizzium Mortars deals 4 damage to each creature you don't control.",
             EffectDef::DealDamage {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::NotYou,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::NotYou,
+                ),
                 amount: ValueDef::Constant(4),
             },
         ),
@@ -2273,11 +2273,11 @@ pub(in crate::card::sets) static VANDALBLAST: CardRecord = CardRecord::new(
             mana_cost!("{4}{R}"),
             "Destroy each artifact you don't control.",
             EffectDef::Destroy {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Artifact),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::NotYou,
-                },
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Artifact),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::NotYou,
+                ),
                 can_regenerate: true,
             },
         ),
@@ -2386,11 +2386,11 @@ pub(in crate::card::sets) static CENTAURS_HERALD: CardRecord = CardRecord::new(
     ),
 );
 
-static CHORUS_OF_MIGHT_CREATURES: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static CHORUS_OF_MIGHT_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // RTR 119 — Chorus of Might
 pub(in crate::card::sets) static CHORUS_OF_MIGHT: CardRecord = CardRecord::new(
@@ -2796,11 +2796,7 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
             AbilityDef::spell(
                 "Creatures you control gain lifelink until end of turn",
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                     effect: AppliedEffectDef::GrantAbility(&abilities::lifelink()),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
@@ -2917,11 +2913,7 @@ pub(in crate::card::sets) static CHEMISTERS_TRICK: CardRecord = CardRecord::new(
             mana_cost!("{3}{U}{R}"),
             "Each creature you don't control gets -2/-0 until end of turn and attacks this turn if able.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::NotYou,
-                },
+                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::NotYou),
                 effect: AppliedEffectDef::Composite(&[
                     AppliedEffectDef::ModifyPowerToughness {
                         power: ValueDef::Constant(-2),
@@ -2945,11 +2937,11 @@ pub(in crate::card::sets) static COLLECTIVE_BLESSING: CardRecord = CardRecord::n
         AbilityDef::static_ability(
             "Creatures you control get +3/+3.",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(3),
                     toughness: ValueDef::Constant(3),
@@ -3021,11 +3013,11 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
             mana_cost!("{1}{U}{U}{R}"),
             "Counter each spell you don't control.",
             EffectDef::Counter {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::Spell,
-                    zones: &[ZoneKind::Stack],
-                    controller: PlayerRelation::NotYou,
-                },
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Spell,
+                    &[ZoneKind::Stack],
+                    PlayerRelation::NotYou,
+                ),
                 zone: ZoneKind::Graveyard,
             },
         ),
@@ -3227,11 +3219,7 @@ pub(in crate::card::sets) static GOLGARI_CHARM: CardRecord = CardRecord::new(
             AbilityDef::spell(
                 "All creatures get -1/-1 until end of turn",
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::Any,
-                    },
+                    recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Any),
                     effect: AppliedEffectDef::ModifyPowerToughness {
                         power: ValueDef::Constant(-1),
                         toughness: ValueDef::Constant(-1),
@@ -3249,11 +3237,7 @@ pub(in crate::card::sets) static GOLGARI_CHARM: CardRecord = CardRecord::new(
             AbilityDef::spell(
                 "Regenerate each creature you control",
                 EffectDef::Regenerate {
-                    object: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    object: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                 },
             ),
         ],
@@ -3826,11 +3810,11 @@ pub(in crate::card::sets) static SUPREME_VERDICT: CardRecord = CardRecord::new(
         AbilityDef::spell(
             "Destroy all creatures.",
             EffectDef::Destroy {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
                 can_regenerate: true,
             },
         ),
@@ -3873,11 +3857,7 @@ pub(in crate::card::sets) static TELEPORTAL: CardRecord = CardRecord::new(
             "Each creature you control gets +1/+0 until end of turn and can't be blocked this turn.",
             EffectDef::Sequence(&[
                 EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                     effect: AppliedEffectDef::ModifyPowerToughness {
                         power: ValueDef::Constant(1),
                         toughness: ValueDef::Constant(0),
@@ -3885,11 +3865,7 @@ pub(in crate::card::sets) static TELEPORTAL: CardRecord = CardRecord::new(
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::MakeUnblockableThisTurn {
-                    object: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                    object: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                 },
             ]),
         ),
@@ -4350,11 +4326,11 @@ pub(in crate::card::sets) static CHROMATIC_LANTERN: CardRecord = CardRecord::new
         AbilityDef::static_ability(
             "Lands you control have \"{T}: Add one mana of any color.\"",
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Land),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
                 effect: AppliedEffectDef::GrantAbility(&CHROMATIC_LANTERN_MANA),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },

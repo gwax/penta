@@ -483,6 +483,35 @@ fn non_targeting_choice_references_are_lexically_scoped() {
         },
     )
     .expect("the binding is visible only inside its continuation");
+
+    static CHOSEN_CONTROLLER_QUERY: ObjectQueryDef = ObjectQueryDef::controlled_by(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        &[ZoneKind::Battlefield],
+        PlayerSetDef::One(PlayerRefDef::ControllerOf(ObjectRefDef::Choice(
+            ChoiceIndex::PRIMARY,
+        ))),
+    );
+    static COUNT_CHOSEN_CONTROLLERS_CREATURES: EffectDef = EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::CountMatchingObjects(&CHOSEN_CONTROLLER_QUERY),
+    };
+
+    assert_eq!(
+        super::validate_ability_targets(&[], COUNT_CHOSEN_CONTROLLERS_CREATURES),
+        Err(GrantedAbilityValidationError::ChoiceReferenceOutOfScope { choice }),
+        "queries embedded in values participate in lexical binding validation",
+    );
+    super::validate_ability_targets(
+        &[],
+        EffectDef::ChoosePermanent {
+            choice,
+            chooser: EffectRecipientDef::Controller,
+            object: ObjectPredicateDef::Any,
+            controller: PlayerRelation::Any,
+            then: &COUNT_CHOSEN_CONTROLLERS_CREATURES,
+        },
+    )
+    .expect("a value query can consume a choice inside its continuation");
 }
 
 #[test]
@@ -516,10 +545,10 @@ fn merged_effect_vocabulary_preserves_local_target_bounds() {
     let recipient = EffectRecipientDef::ControllerOfTarget(out_of_range);
     let effects = [
         EffectDef::Tap {
-            object: EffectRecipientDef::ObjectsControlledByTarget {
-                object: ObjectPredicateDef::Any,
-                slot: out_of_range,
-            },
+            object: EffectRecipientDef::objects_controlled_by_target(
+                ObjectPredicateDef::Any,
+                out_of_range,
+            ),
         },
         EffectDef::SplitPermanentsAndSacrificeAPile { player: recipient },
         EffectDef::Mill {
@@ -540,17 +569,15 @@ fn merged_effect_vocabulary_preserves_local_target_bounds() {
         );
     }
 
-    super::validate_ability_targets(
-        &TARGETS,
-        EffectDef::Sequence(&[
-            EffectDef::DealDamage {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::DividedAmongTargets,
-            },
-            EffectDef::AdditionalCombatPhase,
-        ]),
-    )
-    .expect("implicit divided values and target-free combat effects add no slot reference");
+    static VALID_SEQUENCE: [EffectDef; 2] = [
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::DividedAmongTargets,
+        },
+        EffectDef::AdditionalCombatPhase,
+    ];
+    super::validate_ability_targets(&TARGETS, EffectDef::Sequence(&VALID_SEQUENCE))
+        .expect("implicit divided values and target-free combat effects add no slot reference");
 }
 
 #[test]

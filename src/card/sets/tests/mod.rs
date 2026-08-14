@@ -6,11 +6,12 @@ use crate::card::{
     AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardChoiceSourceDef, CardPrinting,
     CardPrintingId, CardStructure, CardSupertype, CardType, ComparisonDef, ConditionDef,
     DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectDurationDef, EffectExecutionDef,
-    EffectRecipientDef, ImplementationStatus, KeywordAbility, ManaColor, ManaRestrictionDef,
-    ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayActionKind,
-    PlayRestriction, PlayerRelation, ReplacementEffectDef, ReplacementEventDef, SpellForm,
-    TargetPredicate, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, cards,
+    EffectRecipientDef, EffectRecipientSetDef, ImplementationStatus, KeywordAbility, ManaColor,
+    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayActionKind, PlayRestriction, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, SpellForm, TargetPredicate,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZoneMoveCauseDef, ZonePlacement, cards,
 };
 use crate::{
     CardDefinitionId, CardPartId, CardSet, Format, ManaCost, ModeId, PlayOptionId, TargetSlotId,

@@ -27,14 +27,14 @@ pub(in crate::card::sets) static GOBLIN_PYROMANCER: CardRecord = CardRecord::new
                 to: Some(ZoneKind::Battlefield),
             },
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Goblin"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
                 effect: AppliedEffectDef::ModifyPowerToughness {
                     power: ValueDef::Constant(3),
                     toughness: ValueDef::Constant(0),
@@ -49,11 +49,11 @@ pub(in crate::card::sets) static GOBLIN_PYROMANCER: CardRecord = CardRecord::new
                 player: PlayerRelation::Any,
             },
             EffectDef::Destroy {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::Subtype("Goblin"),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Subtype("Goblin"),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
                 can_regenerate: true,
             },
         ),
