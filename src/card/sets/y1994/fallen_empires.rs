@@ -142,7 +142,57 @@ pub(in crate::card::sets) static ICATIAN_LIEUTENANT: CardRecord = CardRecord::ne
 );
 
 // FEM 10a — Icatian Moneychanger
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Sacrifice this creature: You gain 1 life for each credit counter on this creature. Activate only during your upkeep”.
+pub(in crate::card::sets) static ICATIAN_MONEYCHANGER: CardRecord = CardRecord::new(
+    cards::ICATIAN_MONEYCHANGER,
+    "Icatian Moneychanger",
+    CardArt::new("b3d502d4-4a96-47b3-ae26-8b2c9f36623d", "Drew Tucker"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{W}"), &["Human"], 0, 2).with_abilities(&[
+        AbilityDef::as_enters(
+            "This creature enters with three credit counters on it.",
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::Credit,
+                    amount: 3,
+                },
+            ),
+        ),
+        AbilityDef::triggered(
+            "When this creature enters, it deals 3 damage to you.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(3),
+            },
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, put a credit counter on this creature.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Credit,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated(
+            "Sacrifice this creature: You gain 1 life for each credit counter on this creature. \
+             Activate only during your upkeep.",
+            &[AbilityCostDef::SacrificeSource],
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::CountersOnSource(CounterKind::Credit),
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::YourUpkeep),
+    ]),
+);
 
 // FEM 11 — Icatian Phalanx
 // Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
@@ -256,8 +306,96 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
 // FEM 18a — High Tide
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Until end of turn, whenever a player taps an Island for mana, that player adds an additional {U}”.
 
+static HOMARID_ONE_TIDE: TriggerConditionDef = TriggerConditionDef::SourceCounters {
+    kind: CounterKind::Tide,
+    comparison: ComparisonDef::Equal,
+    amount: 1,
+};
+
+static HOMARID_THREE_TIDE: TriggerConditionDef = TriggerConditionDef::SourceCounters {
+    kind: CounterKind::Tide,
+    comparison: ComparisonDef::Equal,
+    amount: 3,
+};
+
+static HOMARID_FOUR_TIDE: TriggerConditionDef = TriggerConditionDef::SourceCounters {
+    kind: CounterKind::Tide,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 4,
+};
+
+static HOMARID_SHRINK: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::Constant(-1),
+        toughness: ValueDef::Constant(-1),
+    },
+    duration: EffectDurationDef::WhileSourceRemainsInZone,
+};
+
+static HOMARID_GROW: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::Constant(1),
+        toughness: ValueDef::Constant(1),
+    },
+    duration: EffectDurationDef::WhileSourceRemainsInZone,
+};
+
 // FEM 19a — Homarid
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “As long as there are exactly three tide counters on this creature, it gets +1/+1”.
+pub(in crate::card::sets) static HOMARID: CardRecord = CardRecord::new(
+    cards::HOMARID,
+    "Homarid",
+    CardArt::new("d6ffeab4-83b1-4414-ae72-e59a2354ea15", "Quinton Hoover"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Homarid"], 2, 2).with_abilities(&[
+        AbilityDef::as_enters(
+            "This creature enters with a tide counter on it.",
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::Tide,
+                    amount: 1,
+                },
+            ),
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, put a tide counter on this creature.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Tide,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::static_ability(
+            "As long as there is exactly one tide counter on this creature, it gets -1/-1.",
+            EffectDef::IfCondition {
+                condition: &HOMARID_ONE_TIDE,
+                then: &HOMARID_SHRINK,
+            },
+        ),
+        AbilityDef::static_ability(
+            "As long as there are exactly three tide counters on this creature, it gets +1/+1.",
+            EffectDef::IfCondition {
+                condition: &HOMARID_THREE_TIDE,
+                then: &HOMARID_GROW,
+            },
+        ),
+        AbilityDef::triggered_if(
+            "Whenever there are four or more tide counters on this creature, remove all tide \
+             counters from it.",
+            TriggerEventDef::StateCondition,
+            &HOMARID_FOUR_TIDE,
+            EffectDef::RemoveAllCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Tide,
+            },
+        ),
+    ]),
+);
 
 // FEM 20 — Homarid Shaman
 pub(in crate::card::sets) static HOMARID_SHAMAN: CardRecord = CardRecord::new(
@@ -1410,10 +1548,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COMBAT_MEDIC,
     &ICATIAN_JAVELINEERS,
     &ICATIAN_LIEUTENANT,
+    &ICATIAN_MONEYCHANGER,
     &ICATIAN_PRIEST,
     &ICATIAN_SCOUT,
     &ICATIAN_TOWN,
     &ORDER_OF_LEITBUR,
+    &HOMARID,
     &HOMARID_SHAMAN,
     &RIVER_MERFOLK,
     &SVYELUNITE_PRIEST,

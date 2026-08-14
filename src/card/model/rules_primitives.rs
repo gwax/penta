@@ -17,10 +17,12 @@ pub enum CounterKind {
     /// state-based action, so a permanent never carries both.
     MinusOneMinusOne,
     PlusOnePlusTwo,
+    Credit,
+    Tide,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 8;
+    pub const COUNT: usize = 10;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -31,6 +33,8 @@ impl CounterKind {
         Self::Spore,
         Self::MinusOneMinusOne,
         Self::PlusOnePlusTwo,
+        Self::Credit,
+        Self::Tide,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -42,7 +46,13 @@ impl CounterKind {
             Self::PlusOnePlusOne => (1, 1),
             Self::MinusOneMinusOne => (-1, -1),
             Self::PlusOnePlusTwo => (1, 2),
-            Self::Javelin | Self::Muster | Self::Charge | Self::Loyalty | Self::Spore => (0, 0),
+            Self::Javelin
+            | Self::Muster
+            | Self::Charge
+            | Self::Loyalty
+            | Self::Spore
+            | Self::Credit
+            | Self::Tide => (0, 0),
         }
     }
 
@@ -57,6 +67,8 @@ impl CounterKind {
             Self::Spore => 5,
             Self::MinusOneMinusOne => 6,
             Self::PlusOnePlusTwo => 7,
+            Self::Credit => 8,
+            Self::Tide => 9,
         }
     }
 
@@ -71,6 +83,8 @@ impl CounterKind {
             Self::Spore => "spore",
             Self::MinusOneMinusOne => "-1/-1",
             Self::PlusOnePlusTwo => "+1/+2",
+            Self::Credit => "credit",
+            Self::Tide => "tide",
         }
     }
 }

@@ -321,6 +321,7 @@ impl Game {
             | EffectDef::SetColor { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }
+            | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventAllCombatDamageThisTurn
             | EffectDef::PreventNextDamage { .. }

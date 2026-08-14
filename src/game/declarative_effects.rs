@@ -165,6 +165,24 @@ impl Game {
                     }
                 }
             }
+            EffectDef::RemoveAllCounters {
+                object: recipient,
+                kind,
+            } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    let Target::Permanent(id) = target else {
+                        continue;
+                    };
+                    if let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == id)
+                    {
+                        let held = permanent.counters(kind);
+                        permanent.remove_counters(kind, held);
+                    }
+                }
+            }
             EffectDef::SkipNextUntapSteps {
                 object: recipient,
                 count,

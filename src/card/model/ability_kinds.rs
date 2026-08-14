@@ -2,7 +2,7 @@ use crate::ids::{AbilityId, AlternativeCostId, ModeId, TargetIndex};
 
 use super::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AlternativeCostDef,
-    BasicLandType, CardBehavior, EffectDef, ImplementationStatus, ManaColor, ManaCost,
+    BasicLandType, CardBehavior, CounterKind, EffectDef, ImplementationStatus, ManaColor, ManaCost,
     ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementConditionDef,
     ReplacementEventDef, TriggerEventDef, ZoneKind,
 };
@@ -260,6 +260,14 @@ pub enum TriggerConditionDef {
     /// Whether the ability's own source is tapped, using last-known
     /// information if it has left the battlefield.
     SourceIsTapped,
+    /// How many counters of one kind the ability's own source carries. This
+    /// is what "as long as there are exactly three tide counters on this
+    /// creature" asks, and it is read live rather than captured.
+    SourceCounters {
+        kind: CounterKind,
+        comparison: ComparisonDef,
+        amount: u8,
+    },
     /// Whether what a target slot points at still matches. Read when the
     /// condition is checked, so a delayed effect can ask about the target as
     /// it is then rather than as it was.

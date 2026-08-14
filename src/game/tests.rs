@@ -388,6 +388,7 @@ mod continuous_and_zones;
 mod control_duration;
 mod copy_effects;
 mod counted_bodies;
+mod counter_conditions;
 mod countering_and_mana;
 mod damage_dealt_by;
 mod decisions_and_effects;

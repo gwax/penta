@@ -216,6 +216,7 @@ fn validate_effect_references(
         | EffectDef::SetColor { object, .. }
         | EffectDef::DestroyAtEndOfCombat { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }
+        | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
         | EffectDef::PreventNextDamage { object, .. }
         | EffectDef::PreventAllDamageThisTurn { object }

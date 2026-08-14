@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Clauses that read a counter count.** Conditions could count objects, spells
+  cast, loyalty, and activations, but not the counters on their own source, so
+  "as long as there are exactly three tide counters on this creature" had no
+  way to be written. Removing every counter of a kind at once came with it.
+  Homarid, Icatian Moneychanger, and Merchant Ship.
 - **Counters that change power and toughness**, rather than only +1/+1. The
   amounts now live on the counter kind, so a kind whose halves differ is
   ordinary rather than a special case, and CR 121.3 annihilation is a

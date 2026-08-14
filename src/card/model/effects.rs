@@ -401,6 +401,12 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// Removes every counter of one kind from the recipient, however many
+    /// there are.
+    RemoveAllCounters {
+        object: EffectRecipientDef,
+        kind: CounterKind,
+    },
     /// The object sits out that many of its controller's untap steps,
     /// starting with their next one. Unlike the continuous prohibition this
     /// is spent as those steps arrive.

@@ -249,7 +249,36 @@ pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord:
 );
 
 // ARN 17 — Merchant Ship
-// Audit: blocked — Needs an attacks-and-is-unblocked trigger and a state trigger for controlling no Islands. The attack restriction itself is available.
+pub(in crate::card::sets) static MERCHANT_SHIP: CardRecord = CardRecord::new(
+    cards::MERCHANT_SHIP,
+    "Merchant Ship",
+    CardArt::new("2b827094-fb2c-46db-b898-02e0c308601f", "Tom Wänerstrand"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{U}"), &["Human"], 0, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't attack unless defending player controls an Island.",
+            EffectDef::CannotAttackUnless(&DEFENDER_CONTROLS_AN_ISLAND),
+        ),
+        AbilityDef::triggered(
+            "Whenever this creature attacks and isn't blocked, you gain 2 life.",
+            TriggerEventDef::AttacksAndIsNotBlocked {
+                attacker: ObjectPredicateDef::Source,
+            },
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+        AbilityDef::triggered_if(
+            "When you control no Islands, sacrifice this creature.",
+            TriggerEventDef::StateCondition,
+            &YOU_CONTROL_NO_ISLANDS,
+            EffectDef::Sacrifice {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // ARN 18 — Old Man of the Sea
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: Gain control of target creature with power less than or equal to this creature's power for as long as this creature remains tapped and that creature's power remains less than or…”.
@@ -1173,6 +1202,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FISHLIVER_OIL,
     &FLYING_MEN,
     &ISLAND_FISH_JASCONIUS,
+    &MERCHANT_SHIP,
     &SERENDIB_EFREET,
     &UNSTABLE_MUTATION,
     &EL_HAJJAJ,

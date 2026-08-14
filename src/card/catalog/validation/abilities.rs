@@ -495,6 +495,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::SetColor { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
+        | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }
@@ -667,6 +668,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::SetColor { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
+        | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }

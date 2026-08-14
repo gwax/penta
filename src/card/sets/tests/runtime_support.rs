@@ -474,6 +474,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::SetColor { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
+        | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }
@@ -590,6 +591,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SourceLoyalty { .. }
+        | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
@@ -603,7 +605,11 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
 fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
     matches!(
         condition,
-        TriggerConditionDef::SourceOnBattlefield | TriggerConditionDef::SourceUntapped
+        // Counters live on the source, so a static clause can read them from
+        // exactly the input it has.
+        TriggerConditionDef::SourceOnBattlefield
+            | TriggerConditionDef::SourceUntapped
+            | TriggerConditionDef::SourceCounters { .. }
     )
 }
 
@@ -684,6 +690,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::SetColor { .. }
                     | EffectDef::DestroyAtEndOfCombat { .. }
                     | EffectDef::SkipNextUntapSteps { .. }
+                    | EffectDef::RemoveAllCounters { .. }
                     | EffectDef::Untap { .. }
                     | EffectDef::PreventAllCombatDamageThisTurn
                     | EffectDef::PreventNextDamage { .. }

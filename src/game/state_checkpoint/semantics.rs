@@ -487,6 +487,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::SetColor { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
+        | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }
