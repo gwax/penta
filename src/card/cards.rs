@@ -11,6 +11,7 @@ mod prevention;
 mod rampage;
 mod regeneration;
 mod spore;
+mod tapped_and_untap;
 mod targeted_regeneration;
 pub use attack_restrictions::*;
 pub use isd_rtr::*;
@@ -21,6 +22,7 @@ pub use prevention::*;
 pub use rampage::*;
 pub use regeneration::*;
 pub use spore::*;
+pub use tapped_and_untap::*;
 pub use targeted_regeneration::*;
 
 pub const ANKH_OF_MISHRA: CardDefinitionId = CardDefinitionId(1);

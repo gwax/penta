@@ -887,6 +887,7 @@ impl Game {
             | ObjectPredicateDef::DebutSet(_)
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
+            | ObjectPredicateDef::Tapped
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::HasKeyword(_)

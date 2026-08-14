@@ -418,6 +418,7 @@ impl Game {
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::HasKeyword(_)
+            | ObjectPredicateDef::Tapped
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::HasNonManaActivatedAbility

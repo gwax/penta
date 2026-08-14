@@ -43,6 +43,13 @@ static ZOMBIE_REGENERATION: AbilityDef = AbilityDef::activated(
     },
 );
 
+static TAPPED_CREATURE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Tapped,
+    ]),
+)];
+
 // LEA 1 — Animate Wall
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Enchanted Wall can attack as though it didn't have defender”.
 
@@ -1708,7 +1715,23 @@ pub(in crate::card::sets) static RAISE_DEAD: CardRecord = CardRecord::new(
 );
 
 // LEA 123 — Royal Assassin
-// Audit: blocked — Needs an object predicate for a permanent that is currently tapped.
+pub(in crate::card::sets) static ROYAL_ASSASSIN: CardRecord = CardRecord::new(
+    cards::ROYAL_ASSASSIN,
+    "Royal Assassin",
+    CardArt::new("59590768-fa96-4869-8763-9d5ab6ac22ad", "Tom Wänerstrand"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Human", "Assassin"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Destroy target tapped creature.",
+            &[AbilityCostDef::TapSource],
+            &TAPPED_CREATURE_TARGET,
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+        ),
+    ),
+);
 
 // LEA 124 — Sacrifice
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Add an amount of {B} equal to the sacrificed creature's mana value”.
@@ -4206,6 +4229,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MIND_TWIST,
     &PESTILENCE,
     &RAISE_DEAD,
+    &ROYAL_ASSASSIN,
     &SCATHE_ZOMBIES,
     &SENGIR_VAMPIRE,
     &SINKHOLE,

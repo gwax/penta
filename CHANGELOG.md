@@ -34,6 +34,12 @@ distinguishes snapshots of the covered source and build inputs.
   now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
+- **A tapped object predicate**, which was the whole of Royal Assassin's gap.
+  Island Fish Jasconius joins it from the same sweep with no engine change:
+  the untap restriction it needed already existed, and its other three clauses
+  are the attack restriction, the optional upkeep payment, and the
+  state-condition sacrifice, all of which were already there.
+
 - **A sweep for stale audit lines**, prompted by two turning up incidentally.
   Regeneration takes any recipient, so "regenerate target creature" and
   "regenerate enchanted creature" have been expressible since the effect

@@ -76,6 +76,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
@@ -111,6 +112,7 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
@@ -148,6 +150,7 @@ fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8> {
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
@@ -185,6 +188,7 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
@@ -226,6 +230,7 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
@@ -269,6 +274,7 @@ fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
         | ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
@@ -304,6 +310,7 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
@@ -341,6 +348,7 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
@@ -381,6 +389,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
+        | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)

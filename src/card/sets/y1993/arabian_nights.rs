@@ -202,7 +202,50 @@ pub(in crate::card::sets) static FLYING_MEN: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “This creature gets +0/+3 as long as it's untapped”.
 
 // ARN 16 — Island Fish Jasconius
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “This creature doesn't untap during your untap step”.
+pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord::new(
+    cards::ISLAND_FISH_JASCONIUS,
+    "Island Fish Jasconius",
+    CardArt::new("8537cb0f-4821-417b-80cc-ea57d51ee9b8", "Jesper Myrfors"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{4}{U}{U}{U}"), &["Fish"], 6, 8).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature doesn't untap during your untap step.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, you may pay {U}{U}{U}. If you do, untap this creature.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::OptionalPayment {
+                payment: PaymentDef::new(
+                    PlayerRelation::You,
+                    &[AbilityCostDef::Mana(mana_cost!("{U}{U}{U}"))],
+                ),
+                if_paid: &EffectDef::Untap {
+                    object: EffectRecipientDef::Source,
+                },
+            },
+        ),
+        AbilityDef::static_ability(
+            "This creature can't attack unless defending player controls an Island.",
+            EffectDef::CannotAttackUnless(&DEFENDER_CONTROLS_AN_ISLAND),
+        ),
+        AbilityDef::triggered_if(
+            "When you control no Islands, sacrifice this creature.",
+            TriggerEventDef::StateCondition,
+            &YOU_CONTROL_NO_ISLANDS,
+            EffectDef::Sacrifice {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // ARN 17 — Merchant Ship
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack unless defending player controls an Island”.
@@ -997,6 +1040,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DANDAN,
     &FISHLIVER_OIL,
     &FLYING_MEN,
+    &ISLAND_FISH_JASCONIUS,
     &SERENDIB_EFREET,
     &GUARDIAN_BEAST,
     &HASRAN_OGRESS,

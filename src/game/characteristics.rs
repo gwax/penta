@@ -97,6 +97,7 @@ impl Game {
                 supertypes
             },
             attacking: permanent.attacking,
+            tapped: permanent.tapped,
             attacked_this_turn: permanent.attacked_this_turn,
         }
     }
@@ -131,6 +132,7 @@ impl Game {
                 supertypes
             },
             attacking: permanent.attacking,
+            tapped: permanent.tapped,
             attacked_this_turn: permanent.attacked_this_turn,
         }
     }

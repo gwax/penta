@@ -13,6 +13,9 @@ pub enum ObjectPredicateDef {
     /// Whether the object is a token rather than a card represented by a
     /// physical printing. Negate this for the common "nontoken" qualifier.
     Token,
+    /// The permanent is currently tapped. Only a battlefield object can be,
+    /// so this never matches a card in another zone.
+    Tapped,
     HasType(CardType),
     /// A land with at least one of the listed effective basic land subtypes.
     ///

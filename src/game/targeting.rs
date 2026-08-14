@@ -125,6 +125,8 @@ impl Game {
             toughness,
             supertypes,
             attacking: false,
+            // A card outside the battlefield is not a tapped permanent.
+            tapped: false,
             attacked_this_turn: false,
         })
     }

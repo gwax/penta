@@ -85,6 +85,9 @@ pub(super) struct TriggerEventObject {
     /// Whether this creature is attacking, excluding a creature that is only
     /// blocking. Bloodrush and similar predicates need the narrower state.
     pub(super) attacking: bool,
+    /// Whether the object is a tapped permanent. Cheap to carry, and like
+    /// `attacking` it cannot feed back into a characteristic.
+    pub(super) tapped: bool,
     /// Whether this creature attacked at any point this turn, which outlives
     /// combat and so is not the same question as `attacking`.
     pub(super) attacked_this_turn: bool,

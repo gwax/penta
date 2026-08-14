@@ -757,6 +757,7 @@ impl Game {
             ObjectPredicateDef::Attacking | ObjectPredicateDef::AttackedThisTurn => {
                 object.types.contains(CardType::Creature) && object.attacking
             }
+            ObjectPredicateDef::Tapped => object.tapped,
             ObjectPredicateDef::All(predicates) => predicates
                 .iter()
                 .all(|predicate| self.trigger_object_matches(*predicate, object, source, is_spell)),

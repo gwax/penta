@@ -86,3 +86,52 @@ fn every_newly_unblocked_island_creature_reports_complete_coverage() {
         );
     }
 }
+
+/// The tapped predicate is read at target-legality time, so an untapped
+/// creature is not merely a bad choice: it is not offered at all.
+#[test]
+fn a_tapped_only_target_is_offered_only_for_tapped_creatures() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::ROYAL_ASSASSIN, PlayerId::One));
+    let mut victim = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
+    victim.tapped = false;
+    let victim_id = victim.card.id;
+    game.battlefield.push(victim);
+    game.turns_started[PlayerId::One.index()] = 1;
+
+    let targets_victim = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { targets, .. }
+                if targets.iter().flat_map(crate::TargetSelection::targets)
+                    .any(|target| *target == Target::Permanent(victim_id)))
+        })
+    };
+    assert!(
+        !targets_victim(&game),
+        "an untapped creature is not a target"
+    );
+
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == victim_id)
+    {
+        permanent.tapped = true;
+    }
+    assert!(targets_victim(&game), "a tapped creature is");
+}
+
+#[test]
+fn the_swept_tap_cards_report_complete_coverage() {
+    let catalog = poc::catalog().expect("catalog builds");
+    for definition in [cards::ROYAL_ASSASSIN, cards::ISLAND_FISH_JASCONIUS] {
+        let card = catalog.get(definition).expect("the card is cataloged");
+        assert_eq!(
+            card.rules.implementation_status(),
+            crate::ImplementationStatus::Complete,
+            "{} should be fully executable",
+            card.name,
+        );
+    }
+}
