@@ -1045,7 +1045,40 @@ pub(in crate::card::sets) static HELL_SWARM: CardRecord = CardRecord::new(
 );
 
 // LEG 104 — Hell's Caretaker
-// Audit: blocked — Needs a zone-object query and identity-preserving continuation for “{T}, Sacrifice a creature: Return target creature card from your graveyard to the battlefield. Activate only during your upkeep”.
+pub(in crate::card::sets) static HELLS_CARETAKER: CardRecord = CardRecord::new(
+    cards::HELLS_CARETAKER,
+    "Hell's Caretaker",
+    CardArt::new("336b3b8f-d104-4f06-ad4f-c92b8a9038ca", "Sandra Everingham"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Horror"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice a creature: Return target creature card from your graveyard to the \
+             battlefield. Activate only during your upkeep.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    controller: PlayerRelation::You,
+                },
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: Some(PlayerRelation::You),
+                },
+            )],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                controller: None,
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::YourUpkeep),
+    ),
+);
 
 // LEG 105 — Hellfire
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Destroy all nonblack creatures. Hellfire deals X plus 3 damage to you, where X is the number of creatures that died this way”.
@@ -3386,6 +3419,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GREED,
     &HEADLESS_HORSEMAN,
     &HELL_SWARM,
+    &HELLS_CARETAKER,
     &HORROR_OF_HORRORS,
     &LOST_SOUL,
     &NETHER_VOID,

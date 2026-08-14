@@ -42,6 +42,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Two identities the activation window unblocked on its own.** Colossus of
+  Sardia pairs a static untap restriction with an upkeep-only untap, and
+  Hell's Caretaker trades a creature for one in its graveyard during its own
+  upkeep. Neither needed anything beyond the window; both had audit lines
+  naming other clusters.
 - **Printed "only once each turn" caps.** An activated ability can carry a
   per-turn cap, and it needed no new state: the engine already counted every
   activation per ability and cleared the counts each turn, so the cap reads

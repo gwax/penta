@@ -261,3 +261,117 @@ mod once_each_turn {
         }
     }
 }
+
+/// Two identities the window unblocked without any further engine work. Both
+/// are worth driving because the window is doing real work in each: the
+/// Colossus is otherwise permanently tapped after it attacks, and the
+/// Caretaker's upkeep restriction is the whole reason it is fair.
+mod unblocked_by_the_window {
+    use super::*;
+
+    /// The Colossus does not untap on its own, so the upkeep ability is the
+    /// only way back. That makes it a check that a static untap restriction
+    /// and an upkeep-only untap coexist on one permanent.
+    #[test]
+    fn the_colossus_stays_tapped_until_its_upkeep_ability_pays() {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        let mut colossus = creature(10_000, cards::COLOSSUS_OF_SARDIA, PlayerId::One);
+        colossus.tapped = true;
+        let colossus_id = colossus.card.id;
+        game.battlefield.push(colossus);
+
+        // The untap step untaps everything eligible; the Colossus is not.
+        game.choose_untap(PlayerId::One, &[colossus_id]);
+        assert!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == colossus_id)
+                .expect("the Colossus is on the battlefield")
+                .tapped,
+            "the untap step passes it by"
+        );
+
+        game.step = Step::Upkeep;
+        game.players[PlayerId::One.index()].mana_pool.colorless = 9;
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == colossus_id)
+            })
+            .expect("nine mana in its own upkeep is the way back");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == colossus_id)
+                .expect("the Colossus is on the battlefield")
+                .tapped,
+        );
+    }
+
+    #[test]
+    fn hells_caretaker_trades_a_creature_for_one_in_the_graveyard() {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        game.step = Step::Upkeep;
+        let caretaker = creature(10_000, cards::HELLS_CARETAKER, PlayerId::One);
+        let caretaker_id = caretaker.card.id;
+        game.battlefield.push(caretaker);
+        let fodder = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One);
+        let fodder_id = fodder.card.id;
+        game.battlefield.push(fodder);
+        let buried = card(10_002, cards::SERRA_ANGEL, PlayerId::One);
+        let buried_id = buried.id;
+        game.players[PlayerId::One.index()].graveyard.push(buried);
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(
+                    action,
+                    Action::ActivateAbility { source, cost_object: Some(paid), .. }
+                        if *source == caretaker_id && *paid == fodder_id
+                )
+            })
+            .expect("the Caretaker offers the trade in its own upkeep");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.definition == cards::SERRA_ANGEL),
+            "the graveyard creature came back"
+        );
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == fodder_id),
+            "and the sacrificed one paid for it"
+        );
+        let _ = buried_id;
+    }
+
+    #[test]
+    fn both_identities_report_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [cards::COLOSSUS_OF_SARDIA, cards::HELLS_CARETAKER] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
+    }
+}

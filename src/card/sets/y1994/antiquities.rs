@@ -586,7 +586,31 @@ pub(in crate::card::sets) static CLAY_STATUE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{X}, {T}: Put up to X +1/+0 counters on this creature. This ability can't cause the total number of +1/+0 counters on this creature to be greater than four. Activate only during your upkeep”.
 
 // ATQ 46 — Colossus of Sardia
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “This creature doesn't untap during your untap step”.
+pub(in crate::card::sets) static COLOSSUS_OF_SARDIA: CardRecord = CardRecord::new(
+    cards::COLOSSUS_OF_SARDIA,
+    "Colossus of Sardia",
+    CardArt::new("067c44e9-1b23-42fd-9acb-daafb62c32a2", "Jesper Myrfors"),
+    CardSet::Antiquities,
+    CardRules::new_artifact_creature(mana_cost!("{9}"), &["Golem"], 9, 9).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::static_ability(
+            "This creature doesn't untap during your untap step.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::activated(
+            "{9}: Untap this creature. Activate only during your upkeep.",
+            &[AbilityCostDef::Mana(mana_cost!("{9}"))],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Source,
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::YourUpkeep),
+    ]),
+);
 
 // ATQ 47 — Coral Helm
 // Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “{3}, Discard a card at random: Target creature gets +2/+2 until end of turn”.
@@ -1255,6 +1279,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRUMBLE,
     &AMULET_OF_KROOG,
     &CLAY_STATUE,
+    &COLOSSUS_OF_SARDIA,
     &DRAGON_ENGINE,
     &GOLGOTHIAN_SYLEX,
     &GRAPESHOT_CATAPULT,
