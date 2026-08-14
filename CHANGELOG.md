@@ -78,6 +78,10 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **The M13 Rings.** All five were blocked on "Equipment attachment plus an
+  upkeep bonus conditioned on the attached creature's color", and both halves
+  had since been built -- equip, and the attached-permanent trigger condition.
+  Ring of Evos Isle, Kalonia, Thune, Valkas, and Xathrid.
 - **Bodyguards: damage aimed at a player that lands on a creature instead.**
   Redirection happens before anything else looks at the damage (CR 614.9), so
   the shields and preventions downstream all answer the creature that took it

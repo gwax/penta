@@ -3110,20 +3110,212 @@ pub(in crate::card::sets) static PHYREXIAN_HULK: CardRecord = CardRecord::new(
 // M13 210 — Primal Clay
 // Audit: blocked — Needs an as-enters modal choice that sets one of three characteristic and keyword packages.
 
+static EVOS_ISLE_HEXPROOF: AbilityDef = abilities::hexproof();
+
+static RING_OF_EVOS_ISLE_IS_BLUE: TriggerConditionDef =
+    TriggerConditionDef::AttachedPermanentMatches {
+        object: ObjectPredicateDef::Color(ManaColor::Blue),
+    };
+
 // M13 211 — Ring of Evos Isle
-// Audit: blocked — Needs Equipment attachment plus an upkeep bonus conditioned on the attached creature's color.
+pub(in crate::card::sets) static RING_OF_EVOS_ISLE: CardRecord = CardRecord::new(
+    cards::RING_OF_EVOS_ISLE,
+    "Ring of Evos Isle",
+    CardArt::new("a7c740a8-1bbc-4ec8-a72c-01aee9e48f3d", "Erica Yang"),
+    CardSet::Magic2013,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::activated(
+                "{2}: Equipped creature gains hexproof until end of turn.",
+                &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&EVOS_ISLE_HEXPROOF),
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::triggered_if(
+                "At the beginning of your upkeep, put a +1/+1 counter on equipped creature if \
+                 it's blue.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                &RING_OF_EVOS_ISLE_IS_BLUE,
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            abilities::equip(mana_cost!("{1}"), "Equip {1}"),
+        ]),
+);
+
+static KALONIA_TRAMPLE: AbilityDef = abilities::trample();
+
+static RING_OF_KALONIA_IS_GREEN: TriggerConditionDef =
+    TriggerConditionDef::AttachedPermanentMatches {
+        object: ObjectPredicateDef::Color(ManaColor::Green),
+    };
 
 // M13 212 — Ring of Kalonia
-// Audit: blocked — Needs Equipment attachment plus an upkeep bonus conditioned on the attached creature's color.
+pub(in crate::card::sets) static RING_OF_KALONIA: CardRecord = CardRecord::new(
+    cards::RING_OF_KALONIA,
+    "Ring of Kalonia",
+    CardArt::new("2082e04f-f972-424e-a724-7a5975215538", "Erica Yang"),
+    CardSet::Magic2013,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has trample.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&KALONIA_TRAMPLE),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::triggered_if(
+                "At the beginning of your upkeep, put a +1/+1 counter on equipped creature if \
+                 it's green.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                &RING_OF_KALONIA_IS_GREEN,
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            abilities::equip(mana_cost!("{1}"), "Equip {1}"),
+        ]),
+);
+
+static THUNE_VIGILANCE: AbilityDef = abilities::vigilance();
+
+static RING_OF_THUNE_IS_WHITE: TriggerConditionDef =
+    TriggerConditionDef::AttachedPermanentMatches {
+        object: ObjectPredicateDef::Color(ManaColor::White),
+    };
 
 // M13 213 — Ring of Thune
-// Audit: blocked — Needs Equipment attachment plus an upkeep bonus conditioned on the attached creature's color.
+pub(in crate::card::sets) static RING_OF_THUNE: CardRecord = CardRecord::new(
+    cards::RING_OF_THUNE,
+    "Ring of Thune",
+    CardArt::new("1ee2e94f-5b06-4df0-ba87-4499b1ee4dba", "Erica Yang"),
+    CardSet::Magic2013,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has vigilance.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&THUNE_VIGILANCE),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::triggered_if(
+                "At the beginning of your upkeep, put a +1/+1 counter on equipped creature if \
+                 it's white.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                &RING_OF_THUNE_IS_WHITE,
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            abilities::equip(mana_cost!("{1}"), "Equip {1}"),
+        ]),
+);
+
+static VALKAS_HASTE: AbilityDef = abilities::haste();
+
+static RING_OF_VALKAS_IS_RED: TriggerConditionDef = TriggerConditionDef::AttachedPermanentMatches {
+    object: ObjectPredicateDef::Color(ManaColor::Red),
+};
 
 // M13 214 — Ring of Valkas
-// Audit: blocked — Needs Equipment attachment plus an upkeep bonus conditioned on the attached creature's color.
+pub(in crate::card::sets) static RING_OF_VALKAS: CardRecord = CardRecord::new(
+    cards::RING_OF_VALKAS,
+    "Ring of Valkas",
+    CardArt::new("546e9fc1-03ff-4ae5-9488-51bf2e627486", "Erica Yang"),
+    CardSet::Magic2013,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has haste.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&VALKAS_HASTE),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::triggered_if(
+                "At the beginning of your upkeep, put a +1/+1 counter on equipped creature if \
+                 it's red.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                &RING_OF_VALKAS_IS_RED,
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            abilities::equip(mana_cost!("{1}"), "Equip {1}"),
+        ]),
+);
+
+static RING_OF_XATHRID_IS_BLACK: TriggerConditionDef =
+    TriggerConditionDef::AttachedPermanentMatches {
+        object: ObjectPredicateDef::Color(ManaColor::Black),
+    };
 
 // M13 215 — Ring of Xathrid
-// Audit: blocked — Needs Equipment attachment, a color-conditioned upkeep bonus, and regeneration.
+pub(in crate::card::sets) static RING_OF_XATHRID: CardRecord = CardRecord::new(
+    cards::RING_OF_XATHRID,
+    "Ring of Xathrid",
+    CardArt::new("47e2aa59-63dc-4e28-8cdc-2ca868ff8f59", "Erica Yang"),
+    CardSet::Magic2013,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::activated(
+                "{2}: Regenerate equipped creature.",
+                &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+                EffectDef::Regenerate {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+            AbilityDef::triggered_if(
+                "At the beginning of your upkeep, put a +1/+1 counter on equipped creature if \
+                 it's black.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                &RING_OF_XATHRID_IS_BLACK,
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            abilities::equip(mana_cost!("{1}"), "Equip {1}"),
+        ]),
+);
 
 // M13 216 — Sands of Delirium
 pub(in crate::card::sets) static SANDS_OF_DELIRIUM: CardRecord = CardRecord::new(
@@ -3445,6 +3637,11 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DOOR_TO_NOTHINGNESS,
     &GILDED_LOTUS,
     &PHYREXIAN_HULK,
+    &RING_OF_EVOS_ISLE,
+    &RING_OF_KALONIA,
+    &RING_OF_THUNE,
+    &RING_OF_VALKAS,
+    &RING_OF_XATHRID,
     &SANDS_OF_DELIRIUM,
     &STAFF_OF_NIN,
     &CATHEDRAL_OF_WAR,

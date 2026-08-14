@@ -442,6 +442,7 @@ mod regeneration;
 mod removal_and_keywords;
 mod replacements_and_presentation;
 mod ring_of_maruf;
+mod rings;
 mod scavenge;
 mod search_and_reveal;
 mod shroud_grants;
