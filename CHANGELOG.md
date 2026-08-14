@@ -42,6 +42,17 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Two more identities behind a landwalk line that was already false**, and
+  ten audit lines rewritten to name their real gap. Twelve identities cited
+  "the printed landwalk variant and its defending-player land/blocking
+  semantics" after landwalk landed; three of them -- Land's Edge, The Fallen,
+  and Eternal Flame -- print no landwalk text at all. Wormwood Treefolk is now
+  complete. Merfolk Assassin is declared `partial`: target legality reads the
+  keyword mask, which excludes live static effects, so a Merfolk wearing a Lord
+  of Atlantis grant is unblockable across an Island yet cannot be targeted by
+  "target creature with islandwalk". The blocking rules ask a different
+  question and do see the grant; the inconsistency is pinned by a test rather
+  than left to be rediscovered.
 - **Seven identities whose audit lines outlived their gap.** Regeneration and
   rampage both landed as primitives, but eleven audit lines still named them,
   and seven of those identities turned out to need no engine work at all:

@@ -485,7 +485,7 @@ pub(in crate::card::sets) static BIRD_MAIDEN: CardRecord = CardRecord::new(
 );
 
 // ARN 38 — Desert Nomads
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Desertwalk”, and no Desert is cataloged for it to read.
+// Audit: blocked — Desertwalk names a land type no cataloged card carries, so the keyword could never read a Desert to fire on.
 
 // ARN 39 — Hurr Jackal
 // Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “{T}: Target creature can't be regenerated this turn”.
@@ -928,7 +928,7 @@ pub(in crate::card::sets) static RING_OF_MARUF: CardRecord = CardRecord::new(
 );
 
 // ARN 69 — Sandals of Abdallah
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “{2}, {T}: Target creature gains islandwalk until end of turn. When that creature dies this turn, destroy this artifact”.
+// Audit: blocked — Needs a delayed trigger armed on the granted creature dying later this turn; granting islandwalk itself is available.
 
 // ARN 70 — Bazaar of Baghdad
 pub(in crate::card::sets) static BAZAAR_OF_BAGHDAD: CardRecord = CardRecord::new(

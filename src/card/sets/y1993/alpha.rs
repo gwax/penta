@@ -363,7 +363,7 @@ static KARMA_SWAMPS: ObjectQueryDef = ObjectQueryDef {
 };
 
 // LEA 25 — Island Sanctuary
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “If you would draw a card during your draw step, instead you may skip that draw. If you do, until your next turn, you can't be attacked except by creatures with flying and/or islandwalk”.
+// Audit: blocked — Needs an optional draw-step replacement and an attack restriction keyed to the attacking creature's abilities lasting until your next turn.
 
 // LEA 26 — Karma
 pub(in crate::card::sets) static KARMA: CardRecord = CardRecord::new(

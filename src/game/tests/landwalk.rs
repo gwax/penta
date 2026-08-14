@@ -286,3 +286,169 @@ fn every_newly_unblocked_walker_reports_complete_coverage() {
         );
     }
 }
+
+/// Two identities whose audit lines named landwalk long after the keyword
+/// landed. Neither needed engine work; what they needed was for someone to
+/// re-read the line. The tests below drive what each one actually asks of the
+/// keyword: reading it off another creature, and granting it for a turn.
+mod follow_up {
+    use super::*;
+
+    fn assassin_game() -> (Game, GameObjectId) {
+        let mut game = ready_game();
+        let assassin = creature(10_000, cards::MERFOLK_ASSASSIN, PlayerId::One);
+        let assassin_id = assassin.card.id;
+        game.battlefield.push(assassin);
+        (game, assassin_id)
+    }
+
+    fn destroy_targets(game: &Game, source: GameObjectId) -> Vec<GameObjectId> {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::ActivateAbility {
+                    source: actual,
+                    targets,
+                    ..
+                } if actual == source => targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .find_map(|target| match target {
+                        Target::Permanent(id) => Some(*id),
+                        _ => None,
+                    }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The predicate is "with islandwalk", not "is a Merfolk" and not "is
+    /// blue": a printed islandwalker is a legal target and a creature without
+    /// the keyword is never offered as one.
+    #[test]
+    fn merfolk_assassin_only_targets_creatures_that_have_islandwalk() {
+        let (mut game, assassin_id) = assassin_game();
+        let walker = creature(10_001, cards::DEVOURING_DEEP, PlayerId::Two);
+        let walker_id = walker.card.id;
+        game.battlefield.push(walker);
+        game.battlefield
+            .push(creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two));
+
+        assert_eq!(
+            destroy_targets(&game, assassin_id),
+            vec![walker_id],
+            "the Fish walks on islands; the Lions do not"
+        );
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == assassin_id)
+            })
+            .expect("the ability is offered");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == walker_id),
+            "the islandwalker was destroyed"
+        );
+    }
+
+    /// The declared limitation, pinned so it cannot drift silently: a Merfolk
+    /// wearing a Lord of Atlantis grant really is unblockable across an Island,
+    /// and Merfolk Assassin still cannot target it. Target legality reads the
+    /// keyword mask, which excludes live static effects to avoid re-entering
+    /// the static computation; the blocking rules ask a different question and
+    /// do see the grant. This is why the card is `partial`.
+    #[test]
+    fn merfolk_assassin_cannot_target_islandwalk_a_lord_handed_out() {
+        let (mut game, assassin_id) = assassin_game();
+        let merfolk = creature(10_001, cards::MERFOLK_ASSASSIN, PlayerId::Two);
+        let merfolk_id = merfolk.card.id;
+        game.battlefield.push(merfolk);
+        game.battlefield
+            .push(creature(10_002, cards::LORD_OF_ATLANTIS, PlayerId::Two));
+
+        let granted = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == merfolk_id)
+            .expect("the Merfolk is on the battlefield");
+        assert!(
+            game.permanent_has_executable_keyword(
+                granted,
+                KeywordAbility::Landwalk(BasicLandType::Island)
+            ),
+            "the blocking rules see the Lord's grant"
+        );
+        assert!(
+            destroy_targets(&game, assassin_id).is_empty(),
+            "and target legality does not, which is exactly the declared gap"
+        );
+        let _ = assassin_id;
+    }
+
+    /// Wormwood Treefolk grants itself a walk for the turn and pays two damage
+    /// on top of the mana. Both halves land in one resolution.
+    #[test]
+    fn wormwood_treefolk_buys_a_walk_and_takes_the_damage() {
+        let mut game = ready_game();
+        let treefolk = creature(10_000, cards::WORMWOOD_TREEFOLK, PlayerId::One);
+        let treefolk_id = treefolk.card.id;
+        game.battlefield.push(treefolk);
+        game.players[PlayerId::One.index()].mana_pool.green = 2;
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == treefolk_id)
+            })
+            .expect("the green clause is affordable");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        let walker = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == treefolk_id)
+            .expect("the Treefolk survived its own two damage");
+        assert!(
+            game.has_forestwalk(walker),
+            "the clause granted forestwalk for the turn"
+        );
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            i16::from(rules::STARTING_LIFE) - 2,
+            "and charged its controller two damage for it"
+        );
+    }
+
+    #[test]
+    fn the_swept_identities_report_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        let treefolk = catalog
+            .get(cards::WORMWOOD_TREEFOLK)
+            .expect("the card is cataloged");
+        assert_eq!(
+            treefolk.rules.implementation_status(),
+            ImplementationStatus::Complete,
+            "Wormwood Treefolk should be fully executable",
+        );
+        let assassin = catalog
+            .get(cards::MERFOLK_ASSASSIN)
+            .expect("the card is cataloged");
+        assert_eq!(
+            assassin.rules.implementation_status(),
+            ImplementationStatus::Partial,
+            "Merfolk Assassin is declared with its target-legality gap named",
+        );
+    }
+}

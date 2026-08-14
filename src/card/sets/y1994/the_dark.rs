@@ -328,7 +328,36 @@ pub(in crate::card::sets) static GHOST_SHIP: CardRecord = CardRecord::new(
 // Audit: blocked — Needs linked sacrifice/destruction accounting for “At the beginning of each player's upkeep, that player sacrifices a land of their choice”.
 
 // DRK 32 — Merfolk Assassin
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “{T}: Destroy target creature with islandwalk”.
+// Audit: partial — Its islandwalk predicate omits islandwalk granted by static continuous effects, so a Merfolk wearing a Lord of Atlantis grant is unblockable but untargetable.
+pub(in crate::card::sets) static MERFOLK_ASSASSIN: CardRecord = CardRecord::new(
+    cards::MERFOLK_ASSASSIN,
+    "Merfolk Assassin",
+    CardArt::new("36313dc7-6bf2-4d73-b696-969d984a7466", "Dennis Detwiller"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{U}{U}"), &["Merfolk", "Assassin"], 1, 2).with_abilities(
+        &[AbilityDef::activated_with_targets(
+            "{T}: Destroy target creature with islandwalk.",
+            &[AbilityCostDef::TapSource],
+            &ISLANDWALKER_TARGET,
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+        )
+        .with_coverage(AbilityCoverageDef::partial(
+            "Target legality reads printed and layer-resolved keywords, so islandwalk granted by \
+             a static continuous effect such as Lord of Atlantis is not seen here even though \
+             the blocking rules do see it.",
+        ))],
+    ),
+);
+
+static ISLANDWALKER_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::HasKeyword(KeywordAbility::Landwalk(BasicLandType::Island)),
+    ]),
+)];
 
 // DRK 33 — Mind Bomb
 // Audit: blocked — Needs an ordered choice for each player to discard up to three cards and damage derived from each actual discard count.
@@ -586,7 +615,7 @@ pub(in crate::card::sets) static MARSH_GAS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “At the beginning of the end step, destroy all untapped creatures that didn't attack this turn, except for creatures that couldn't attack”.
 
 // DRK 53 — The Fallen
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “At the beginning of your upkeep, this creature deals 1 damage to each opponent and planeswalker it has dealt damage to this game”.
+// Audit: blocked — Needs per-source damage history spanning the whole game for “each opponent and planeswalker it has dealt damage to this game”.
 
 // DRK 54 — Uncle Istvan
 // Audit: partial — Its prevention misses creature sources sacrificed before their damage resolves.
@@ -730,7 +759,7 @@ pub(in crate::card::sets) static CAVE_PEOPLE: CardRecord = CardRecord::new(
 );
 
 // DRK 61 — Eternal Flame
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Eternal Flame deals X damage to target opponent or planeswalker and half X damage, rounded up, to you, where X is the number of Mountains you control”.
+// Audit: blocked — Needs halving a computed value, rounded up; counting the Mountains that set X is available.
 
 // DRK 62 — Fire Drake
 // Audit: blocked — Needs a per-object, per-turn activation quota for “{R}: This creature gets +1/+0 until end of turn. Activate only once each turn”.
@@ -1106,7 +1135,50 @@ pub(in crate::card::sets) static TRACKER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “{G}{G}, {T}: Target creature can't be regenerated this turn. Damage that would be dealt to that creature this turn can't be prevented or dealt instead to another permanent or player.…”.
 
 // DRK 92 — Wormwood Treefolk
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “{G}{G}: This creature gains forestwalk until end of turn and deals 2 damage to you”.
+pub(in crate::card::sets) static WORMWOOD_TREEFOLK: CardRecord = CardRecord::new(
+    cards::WORMWOOD_TREEFOLK,
+    "Wormwood Treefolk",
+    CardArt::new("2fa20173-e88a-4b14-9c54-14567ca5571c", "Jesper Myrfors"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Treefolk"], 4, 4).with_abilities(&[
+        AbilityDef::activated(
+            "{G}{G}: This creature gains forestwalk until end of turn and deals 2 damage to you.",
+            &[AbilityCostDef::Mana(mana_cost!("{G}{G}"))],
+            EffectDef::Sequence(&WORMWOOD_FORESTWALK),
+        ),
+        AbilityDef::activated(
+            "{B}{B}: This creature gains swampwalk until end of turn and deals 2 damage to you.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}{B}"))],
+            EffectDef::Sequence(&WORMWOOD_SWAMPWALK),
+        ),
+    ]),
+);
+
+/// The two clauses differ only in the land type they name, so each is the
+/// same pair: grant the walk for the turn, then take the two damage that
+/// paying for it costs beyond the mana.
+static WORMWOOD_FORESTWALK: [EffectDef; 2] = wormwood_clause(BasicLandType::Forest);
+static WORMWOOD_SWAMPWALK: [EffectDef; 2] = wormwood_clause(BasicLandType::Swamp);
+
+const fn wormwood_clause(land_type: BasicLandType) -> [EffectDef; 2] {
+    [
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::GrantAbility(match land_type {
+                BasicLandType::Forest => &FORESTWALK,
+                _ => &SWAMPWALK,
+            }),
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(2),
+        },
+    ]
+}
+
+static FORESTWALK: AbilityDef = abilities::landwalk(BasicLandType::Forest);
+static SWAMPWALK: AbilityDef = abilities::landwalk(BasicLandType::Swamp);
 
 // DRK 93 — Marsh Goblins
 pub(in crate::card::sets) static MARSH_GOBLINS: CardRecord = CardRecord::new(
@@ -1449,6 +1521,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELECTRIC_EEL,
     &FLOOD,
     &GHOST_SHIP,
+    &MERFOLK_ASSASSIN,
     &RIPTIDE,
     &SUNKEN_CITY,
     &WATER_WURM,
@@ -1476,6 +1549,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCARWOOD_HAG,
     &SCAVENGER_FOLK,
     &TRACKER,
+    &WORMWOOD_TREEFOLK,
     &MARSH_GOBLINS,
     &SCARWOOD_GOBLINS,
     &DARK_HEART_OF_THE_WOOD,

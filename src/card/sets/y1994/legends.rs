@@ -682,7 +682,7 @@ pub(in crate::card::sets) static MANA_DRAIN: CardRecord = CardRecord::new(
 );
 
 // LEG 66 — Part Water
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “X target creatures gain islandwalk until end of turn”.
+// Audit: blocked — Needs a target slot whose count is the X paid for the spell; granting islandwalk itself is available.
 
 // LEG 67 — Psionic Entity
 pub(in crate::card::sets) static PSIONIC_ENTITY: CardRecord = CardRecord::new(
@@ -955,7 +955,7 @@ pub(in crate::card::sets) static GHOSTS_OF_THE_DAMNED: CardRecord = CardRecord::
 );
 
 // LEG 99 — Giant Slug
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “{5}: At the beginning of your next upkeep, choose a basic land type. This creature gains landwalk of the chosen type until the end of that turn”.
+// Audit: blocked — Needs a delayed upkeep trigger that makes a basic-land-type choice on resolution and grants the matching walk; granting a named walk is available.
 
 // LEG 100 — Glyph of Doom
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Choose target Wall creature. At this turn's next end of combat, destroy all creatures that were blocked by that creature this turn”.
@@ -1584,7 +1584,7 @@ pub(in crate::card::sets) static KOBOLDS_OF_KHER_KEEP: CardRecord = CardRecord::
 );
 
 // LEG 158 — Land's Edge
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Discard a card: If the discarded card was a land card, this enchantment deals 2 damage to target player or planeswalker. Any player may activate this ability”.
+// Audit: blocked — Needs an ability any player may activate and a conditional keyed to the type of the card the discard cost actually took.
 
 // LEG 159 — Mountain Yeti
 pub(in crate::card::sets) static MOUNTAIN_YETI: CardRecord = CardRecord::new(
@@ -3100,7 +3100,7 @@ pub(in crate::card::sets) static RELIC_BARRIER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 302 — Hammerheim
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “{T}: Target creature loses all landwalk abilities until end of turn”.
+// Audit: blocked — Needs removing every ability of a class from a target for a duration; the vocabulary grants named abilities but does not take them away.
 
 // LEG 303 — Karakas
 pub(in crate::card::sets) static KARAKAS: CardRecord = CardRecord::new(
@@ -3227,7 +3227,7 @@ pub(in crate::card::sets) static THE_TABERNACLE_AT_PENDRELL_VALE: CardRecord = C
 // Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 310 — Urborg
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “{T}: Target creature loses first strike or swampwalk until end of turn”.
+// Audit: blocked — Needs a modal choice between two named abilities and the removal of the chosen one; the vocabulary grants named abilities but does not take them away.
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AMROU_KITHKIN,
