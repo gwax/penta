@@ -324,6 +324,13 @@ pub(super) fn shared_static_non_apply_effect(source_zones: &[ZoneKind], effect: 
         EffectDef::CannotBeForcedToSacrifice | EffectDef::LandwalkCanBeBlocked(_) => {
             battlefield_only(source_zones)
         }
+        // Read while attackers are declared, over the battlefield, so only
+        // the object predicate is left to check.
+        EffectDef::CannotAttackUnless(query) => {
+            battlefield_only(source_zones)
+                && query.zones == [ZoneKind::Battlefield]
+                && shared_object_predicate(query.object)
+        }
         // The prohibition is read off the battlefield while play options
         // are offered, and only against a card's printed shape.
         EffectDef::PlayersCantPlay(predicate) => {
@@ -355,6 +362,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
+        | EffectDef::CannotAttackUnless(_)
         | EffectDef::Sequence(_) => shared_static_non_apply_effect(source_zones, effect),
         EffectDef::Apply {
             recipient,
@@ -652,6 +660,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ReduceGenericCostBy(_)
                     | EffectDef::PlayersCantPlay(_)
                     | EffectDef::LandwalkCanBeBlocked(_)
+                    | EffectDef::CannotAttackUnless(_)
                     | EffectDef::MultiplyEventAmount(_)
                     | EffectDef::Replacement(_)
                     | EffectDef::MoveToZone { .. }

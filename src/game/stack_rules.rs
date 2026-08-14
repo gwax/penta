@@ -121,6 +121,7 @@ impl Game {
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
+            | EffectDef::CannotAttackUnless(_)
             | EffectDef::MultiplyEventAmount(_)
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }

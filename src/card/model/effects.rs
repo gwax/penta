@@ -782,6 +782,11 @@ pub enum EffectDef {
     /// prohibition read while play options are being offered, so a card it
     /// matches is never a legal action rather than a spell that fizzles.
     PlayersCantPlay(&'static ObjectPredicateDef),
+    /// A static attack restriction: this creature cannot be declared as an
+    /// attacker unless the query matches. The query carries its own controller
+    /// relation, so "unless defending player controls an Island" is an
+    /// opponent-relative battlefield query rather than a special case.
+    CannotAttackUnless(&'static ObjectQueryDef),
     /// A static effect that turns off one landwalk for blocking purposes:
     /// creatures with it can be blocked as though they did not have it. The
     /// keyword is untouched -- anything else reading it still sees it -- so

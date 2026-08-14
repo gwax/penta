@@ -34,6 +34,15 @@ distinguishes snapshots of the covered source and build inputs.
   now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
+- **Attack restrictions.** `EffectDef::CannotAttackUnless` is a static clause
+  read while attackers are declared, carrying an ordinary object query rather
+  than a card-specific rule, so "unless defending player controls an Island" is
+  an opponent-relative battlefield query and reads effective land types. Four
+  Old School identities are now executable: Dandân, Vodalian Knights, Pirate
+  Ship, and Sea Serpent. Their "when you control no Islands, sacrifice this
+  creature" clause needed nothing new; the state-condition trigger and object
+  count already expressed it.
+
 - **Rampage, and the becomes-blocked event under it.** The engine had no
   trigger for a creature becoming blocked, so none of the nine printed rampage
   cards could be expressed. `TriggerEventDef::BecomesBlocked` fires once per

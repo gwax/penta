@@ -2,12 +2,29 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AnimationDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
-    CardBehavior, CardRules, CardSet, CardType, CounterKind, DiscardSelectionDef, EffectDef,
-    EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    ReplacementEffectDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, CounterKind, DiscardSelectionDef,
+    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, ReplacementEffectDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
+
+static DEFENDER_CONTROLS_AN_ISLAND: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::Opponent,
+};
+
+static YOU_CONTROL_NO_ISLANDS: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef {
+        object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+        zones: &[ZoneKind::Battlefield],
+        controller: PlayerRelation::You,
+    },
+    comparison: ComparisonDef::Equal,
+    amount: 0,
+};
 
 // FEM 1a — Combat Medic
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}{W}: Prevent the next 1 damage that would be dealt to any target this turn”.
@@ -276,7 +293,29 @@ pub(in crate::card::sets) static RIVER_MERFOLK: CardRecord = CardRecord::new(
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “As long as there are exactly three tide counters on this enchantment, all blue creatures get +2/+0”.
 
 // FEM 29 — Vodalian Knights
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack unless defending player controls an Island”.
+pub(in crate::card::sets) static VODALIAN_KNIGHTS: CardRecord = CardRecord::new(
+    cards::VODALIAN_KNIGHTS,
+    "Vodalian Knights",
+    CardArt::new("68d97e1b-2526-4740-b354-f158734d1f72", "Susan Van Camp"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Merfolk", "Knight"], 2, 2).with_abilities(
+        &[
+            abilities::first_strike(),
+            AbilityDef::static_ability(
+                "This creature can't attack unless defending player controls an Island.",
+                EffectDef::CannotAttackUnless(&DEFENDER_CONTROLS_AN_ISLAND),
+            ),
+            AbilityDef::triggered_if(
+                "When you control no Islands, sacrifice this creature.",
+                TriggerEventDef::StateCondition,
+                &YOU_CONTROL_NO_ISLANDS,
+                EffectDef::Sacrifice {
+                    object: EffectRecipientDef::Source,
+                },
+            ),
+        ],
+    ),
+);
 
 // FEM 30a — Vodalian Mage
 pub(in crate::card::sets) static VODALIAN_MAGE: CardRecord = CardRecord::new(
@@ -895,6 +934,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORDER_OF_LEITBUR,
     &HOMARID_SHAMAN,
     &RIVER_MERFOLK,
+    &VODALIAN_KNIGHTS,
     &VODALIAN_MAGE,
     &VODALIAN_SOLDIERS,
     &BASAL_THRULL,

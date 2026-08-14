@@ -11,6 +11,22 @@ use crate::card::{
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
+static DEFENDER_CONTROLS_AN_ISLAND: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::Opponent,
+};
+
+static YOU_CONTROL_NO_ISLANDS: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef {
+        object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+        zones: &[ZoneKind::Battlefield],
+        controller: PlayerRelation::You,
+    },
+    comparison: ComparisonDef::Equal,
+    amount: 0,
+};
+
 // ARN 1 — Abu Ja'far
 // Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “When this creature dies, destroy all creatures blocking or blocked by it. They can't be regenerated”.
 
@@ -124,7 +140,26 @@ pub(in crate::card::sets) static REPENTANT_BLACKSMITH: CardRecord = CardRecord::
 // Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
 
 // ARN 12 — Dandân
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack unless defending player controls an Island”.
+pub(in crate::card::sets) static DANDAN: CardRecord = CardRecord::new(
+    cards::DANDAN,
+    "Dandân",
+    CardArt::new("414d3cae-b8cf-4d53-bd6b-1aa83a828ba9", "Drew Tucker"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{U}{U}"), &["Fish"], 4, 1).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't attack unless defending player controls an Island.",
+            EffectDef::CannotAttackUnless(&DEFENDER_CONTROLS_AN_ISLAND),
+        ),
+        AbilityDef::triggered_if(
+            "When you control no Islands, sacrifice this creature.",
+            TriggerEventDef::StateCondition,
+            &YOU_CONTROL_NO_ISLANDS,
+            EffectDef::Sacrifice {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // ARN 13 — Fishliver Oil
 pub(in crate::card::sets) static FISHLIVER_OIL: CardRecord = CardRecord::new(
@@ -939,6 +974,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MOORISH_CAVALRY,
     &PIETY,
     &REPENTANT_BLACKSMITH,
+    &DANDAN,
     &FISHLIVER_OIL,
     &FLYING_MEN,
     &SERENDIB_EFREET,

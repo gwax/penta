@@ -14,6 +14,22 @@ use crate::mana_cost;
 
 use abilities::{ENCHANT_CREATURE_TARGET, ENCHANT_LAND_TARGET, aura_spell};
 
+static DEFENDER_CONTROLS_AN_ISLAND: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::Opponent,
+};
+
+static YOU_CONTROL_NO_ISLANDS: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef {
+        object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+        zones: &[ZoneKind::Battlefield],
+        controller: PlayerRelation::You,
+    },
+    comparison: ComparisonDef::Equal,
+    amount: 0,
+};
+
 // LEA 1 — Animate Wall
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Enchanted Wall can attack as though it didn't have defender”.
 
@@ -916,7 +932,37 @@ pub(in crate::card::sets) static PHANTOM_MONSTER: CardRecord = CardRecord::new(
 );
 
 // LEA 70 — Pirate Ship
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack unless defending player controls an Island”.
+pub(in crate::card::sets) static PIRATE_SHIP: CardRecord = CardRecord::new(
+    cards::PIRATE_SHIP,
+    "Pirate Ship",
+    CardArt::new("d0a7cb23-d229-43c5-addd-dcf423984b0c", "Tom Wänerstrand"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{4}{U}"), &["Human", "Pirate"], 4, 3).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't attack unless defending player controls an Island.",
+            EffectDef::CannotAttackUnless(&DEFENDER_CONTROLS_AN_ISLAND),
+        ),
+        AbilityDef::activated_with_targets(
+            "{T}: This creature deals 1 damage to any target.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::triggered_if(
+            "When you control no Islands, sacrifice this creature.",
+            TriggerEventDef::StateCondition,
+            &YOU_CONTROL_NO_ISLANDS,
+            EffectDef::Sacrifice {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // LEA 71 — Power Leak
 // Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller for “At the beginning of the upkeep of enchanted enchantment's controller, that player may pay any amount of mana. This Aura deals 2 damage to that player. Prevent X of that damage, where X…”.
@@ -972,7 +1018,26 @@ pub(in crate::card::sets) static PSIONIC_BLAST: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a trigger relation for the attached permanent becoming tapped and its controller/characteristics for “Whenever enchanted land becomes tapped, this Aura deals 2 damage to that land's controller”.
 
 // LEA 76 — Sea Serpent
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack unless defending player controls an Island”.
+pub(in crate::card::sets) static SEA_SERPENT: CardRecord = CardRecord::new(
+    cards::SEA_SERPENT,
+    "Sea Serpent",
+    CardArt::new("d0b333b7-db4d-4439-b0de-60414cbf8d7b", "Jeff A. Menges"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{5}{U}"), &["Serpent"], 5, 5).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't attack unless defending player controls an Island.",
+            EffectDef::CannotAttackUnless(&DEFENDER_CONTROLS_AN_ISLAND),
+        ),
+        AbilityDef::triggered_if(
+            "When you control no Islands, sacrifice this creature.",
+            TriggerEventDef::StateCondition,
+            &YOU_CONTROL_NO_ISLANDS,
+            EffectDef::Sacrifice {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // LEA 77 — Siren's Call
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “At the beginning of the next end step, destroy all non-Wall creatures that player controls that didn't attack this turn. Ignore this effect for each creature the player didn't control…”.
@@ -4010,8 +4075,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MERFOLK_OF_THE_PEARL_TRIDENT,
     &PHANTASMAL_FORCES,
     &PHANTOM_MONSTER,
+    &PIRATE_SHIP,
     &PRODIGAL_SORCERER,
     &PSIONIC_BLAST,
+    &SEA_SERPENT,
     &SPELL_BLAST,
     &STASIS,
     &TIME_WALK,

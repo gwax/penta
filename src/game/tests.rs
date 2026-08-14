@@ -364,6 +364,7 @@ fn choose_decision_by_label(game: &mut Game, player: PlayerId, label: &str) {
 mod ability_resolution;
 mod activation_costs_and_turns;
 mod alternative_costs;
+mod attack_restrictions;
 mod casting_and_targets;
 mod casting_modes;
 mod chaos_orb;

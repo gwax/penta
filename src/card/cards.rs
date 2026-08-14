@@ -2,11 +2,13 @@
 
 use crate::CardDefinitionId;
 
+mod attack_restrictions;
 mod isd_rtr;
 mod landwalk;
 mod landwalk_blocking;
 mod rampage;
 mod regeneration;
+pub use attack_restrictions::*;
 pub use isd_rtr::*;
 pub use landwalk::*;
 pub use landwalk_blocking::*;

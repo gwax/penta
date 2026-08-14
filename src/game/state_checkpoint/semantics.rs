@@ -513,6 +513,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
+        | EffectDef::CannotAttackUnless(_)
         | EffectDef::MultiplyEventAmount(_)
         | EffectDef::MoveToZone { .. }
         | EffectDef::ChooseCardName { .. }

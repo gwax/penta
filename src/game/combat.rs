@@ -1,7 +1,7 @@
 use super::{
-    Action, AppliedEffectDef, AttackDefender, CardBehavior, CardType, CombatDamageAssignment,
-    CombatDamageStage, CommittedTriggerEvent, ControlFlow, CounterKind, Game, GameEvent,
-    GameObjectId, KeywordAbility, Permanent, PlayerId, Target,
+    Action, AppliedEffectDef, AttackDefender, CardBehavior, CardRules, CardType,
+    CombatDamageAssignment, CombatDamageStage, CommittedTriggerEvent, ControlFlow, CounterKind,
+    EffectDef, Game, GameEvent, GameObjectId, KeywordAbility, Permanent, PlayerId, Target,
 };
 
 impl Game {
@@ -64,8 +64,29 @@ impl Game {
         if moat_active && !flying {
             return false;
         }
+        if !self.attack_restrictions_met(permanent) {
+            return false;
+        }
         self.permanent_has_executable_keyword(permanent, KeywordAbility::Haste)
             || self.turns_started[permanent.controller.index()] > permanent.entered_controller_turn
+    }
+
+    /// Whether every "can't attack unless ..." clause this creature prints is
+    /// currently satisfied. The query carries its own controller relation, so
+    /// "defending player" is read as the attacker's opponent -- which is the
+    /// only defending player there is in a two-player game.
+    fn attack_restrictions_met(&self, permanent: &Permanent) -> bool {
+        self.effective_rules(permanent)
+            .into_iter()
+            .flat_map(CardRules::ability_clauses)
+            .filter(|ability| ability.is_executable())
+            .filter_map(|ability| match ability.declarative_effect()? {
+                EffectDef::CannotAttackUnless(query) => Some(query),
+                _ => None,
+            })
+            .all(|query| {
+                self.any_battlefield_object_matches(query, permanent.card.id, permanent.controller)
+            })
     }
 
     pub(super) fn declare_attacker(&mut self, attacker: GameObjectId, defender: AttackDefender) {
