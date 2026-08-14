@@ -682,7 +682,48 @@ pub(in crate::card::sets) static ELVEN_FORTRESS: CardRecord = CardRecord::new(
 static THELONITE_DRUID_ANIMATION: AnimationDef = AnimationDef::new(2, 3);
 
 // FEM 66 — Elvish Farmer
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Remove three spore counters from this creature: Create a 1/1 green Saproling creature token”.
+pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new(
+    cards::ELVISH_FARMER,
+    "Elvish Farmer",
+    CardArt::new(
+        "40a9710e-b2f8-4746-8640-d450f58a6e49",
+        "Richard Kane Ferguson",
+    ),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf"], 0, 2).with_abilities(&[
+            AbilityDef::triggered(
+                "At the beginning of your upkeep, put a spore counter on this creature.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::Spore,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            AbilityDef::activated(
+                "Remove three spore counters from this creature: Create a 1/1 green Saproling creature token.",
+                &REMOVE_THREE_SPORES,
+                EffectDef::CreateToken {
+                    token: cards::SAPROLING_TOKEN_1_1_GREEN,
+                    count: ValueDef::Constant(1),
+                },
+            ),
+            AbilityDef::activated(
+                "Sacrifice a Saproling: You gain 2 life.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::Subtype("Saproling"),
+                controller: PlayerRelation::You,
+            }],
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(2),
+                },
+            ),
+    ]),
+);
 
 // FEM 67a — Elvish Hunter
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “{1}{G}, {T}: Target creature doesn't untap during its controller's next untap step”.
@@ -805,7 +846,49 @@ pub(in crate::card::sets) static THALLID: CardRecord = CardRecord::new(
 );
 
 // FEM 75 — Thallid Devourer
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Remove three spore counters from this creature: Create a 1/1 green Saproling creature token”.
+pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new(
+    cards::THALLID_DEVOURER,
+    "Thallid Devourer",
+    CardArt::new("aa533845-4c4b-4072-aa39-8e56ce7ec325", "Ron Spencer"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Fungus"], 2, 2).with_abilities(&[
+            AbilityDef::triggered(
+                "At the beginning of your upkeep, put a spore counter on this creature.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::Spore,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            AbilityDef::activated(
+                "Remove three spore counters from this creature: Create a 1/1 green Saproling creature token.",
+                &REMOVE_THREE_SPORES,
+                EffectDef::CreateToken {
+                    token: cards::SAPROLING_TOKEN_1_1_GREEN,
+                    count: ValueDef::Constant(1),
+                },
+            ),
+            AbilityDef::activated(
+                "Sacrifice a Saproling: This creature gets +1/+2 until end of turn.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::Subtype("Saproling"),
+                controller: PlayerRelation::You,
+            }],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(1),
+                        toughness: ValueDef::Constant(2),
+                    },
+                    duration: EffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+    ]),
+);
 
 // FEM 76 — Thelon's Chant
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Whenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage to that player unless the player puts a -1/-1 counter on a creature they control”.
@@ -1150,10 +1233,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_CHIRURGEON,
     &GOBLIN_GRENADE,
     &ELVEN_FORTRESS,
+    &ELVISH_FARMER,
     &FERAL_THALLID,
     &FUNGAL_BLOOM,
     &SPORE_FLOWER,
     &THALLID,
+    &THALLID_DEVOURER,
     &THELONITE_DRUID,
     &THORN_THALLID,
     &AEOLIPILE,

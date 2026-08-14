@@ -42,6 +42,12 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Two identities the spore pass left behind.** Elvish Farmer and Thallid
+  Devourer print the same two spore clauses the Thallid cycle already has, plus
+  a third that spends a Saproling as an activation cost -- a use for the token
+  those clauses make that the original cycle never had. The predicate-matched
+  sacrifice cost and both payoffs already existed, so neither needed engine
+  work.
 - **Shields that stop part of a hit, or pay a rider when they fire.** A shield
   now carries how much of a covered hit it stops and whether spending it gains
   its recipient that much life. Dark Sphere stops half, rounded down, so an odd
