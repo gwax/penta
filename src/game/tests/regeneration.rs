@@ -366,3 +366,180 @@ fn every_swept_regeneration_card_reports_complete_coverage() {
         );
     }
 }
+
+/// The follow-up sweep declared identities whose printed regeneration pays
+/// something other than mana or shields something other than the source. Each
+/// combination below is a cost or recipient the earlier tests never drove.
+mod follow_up {
+    use super::*;
+
+    fn shields(game: &Game, id: GameObjectId) -> u8 {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("the permanent is still on the battlefield")
+            .regeneration_shields
+    }
+
+    /// Goblin Chirurgeon pays by sacrificing a Goblin -- which may be any
+    /// Goblin, including itself -- and shields a chosen creature rather than
+    /// its own body. Both halves are new: a predicate-matched sacrifice cost
+    /// and a targeted recipient.
+    #[test]
+    fn goblin_chirurgeon_sacrifices_a_goblin_to_shield_the_creature_it_targets() {
+        let mut game = ready_game();
+        let chirurgeon = creature(10_000, cards::GOBLIN_CHIRURGEON, PlayerId::One);
+        let chirurgeon_id = chirurgeon.card.id;
+        game.battlefield.push(chirurgeon);
+        let fodder = creature(10_001, cards::GOBLIN_CHIRURGEON, PlayerId::One);
+        let fodder_id = fodder.card.id;
+        game.battlefield.push(fodder);
+        // Kobolds are not Goblins, so the sacrifice cost must refuse them even
+        // though they are creatures their controller could otherwise give up.
+        let kobolds = creature(10_002, cards::KOBOLDS_OF_KHER_KEEP, PlayerId::One);
+        let kobolds_id = kobolds.card.id;
+        game.battlefield.push(kobolds);
+        let patient = creature(10_003, cards::SEDGE_TROLL, PlayerId::One);
+        let patient_id = patient.card.id;
+        game.battlefield.push(patient);
+
+        assert!(
+            !game.legal_actions(PlayerId::One).iter().any(|action| {
+                matches!(
+                    action,
+                    Action::ActivateAbility { cost_object, .. } if *cost_object == Some(kobolds_id)
+                )
+            }),
+            "no offered activation pays with something that is not a Goblin"
+        );
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source,
+                    cost_object,
+                    targets,
+                    ..
+                } => {
+                    *source == chirurgeon_id
+                        && *cost_object == Some(fodder_id)
+                        && targets
+                            .iter()
+                            .flat_map(crate::casting::TargetSelection::targets)
+                            .copied()
+                            .eq(std::iter::once(Target::Permanent(patient_id)))
+                }
+                _ => false,
+            })
+            .expect("sacrificing the Kobolds to shield the Troll is one of the offered plays");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        assert_eq!(shields(&game, patient_id), 1, "the target took the shield");
+        assert_eq!(
+            shields(&game, chirurgeon_id),
+            0,
+            "and the source kept none for itself"
+        );
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == fodder_id),
+            "the sacrificed Goblin left the battlefield"
+        );
+    }
+
+    /// Marrow Bats pays life. Nothing taps, nothing is sacrificed, and the
+    /// payment is visible on the life total rather than on the board.
+    #[test]
+    fn marrow_bats_buys_its_shield_with_life() {
+        let mut game = ready_game();
+        let bats = creature(10_000, cards::MARROW_BATS, PlayerId::One);
+        let bats_id = bats.card.id;
+        game.battlefield.push(bats);
+
+        arm_shield(&mut game, bats_id);
+
+        assert_eq!(shields(&game, bats_id), 1);
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            i16::from(rules::STARTING_LIFE) - 4,
+            "four life is what the shield cost"
+        );
+    }
+
+    /// Necrobite is the first card whose single resolution both grants a
+    /// keyword and arms a shield, so it proves a sequenced effect keeps one
+    /// target across both halves.
+    #[test]
+    fn necrobite_grants_deathtouch_and_a_shield_to_the_same_target() {
+        let mut game = ready_game();
+        let troll = creature(10_000, cards::SEDGE_TROLL, PlayerId::One);
+        let troll_id = troll.card.id;
+        game.battlefield.push(troll);
+        let necrobite = card(10_001, cards::NECROBITE, PlayerId::One);
+        game.players[PlayerId::One.index()]
+            .hand
+            .push(necrobite.clone());
+        game.players[PlayerId::One.index()].mana_pool.black = 1;
+        game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == necrobite.id
+                        && choices
+                            .iter_targets()
+                            .copied()
+                            .eq(std::iter::once(Target::Permanent(troll_id)))
+                }
+                _ => false,
+            })
+            .expect("Necrobite can be cast at the Troll");
+        game.apply(PlayerId::One, action)
+            .expect("the spell is cast");
+        pass_priority_pair(&mut game);
+
+        let shielded = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == troll_id)
+            .expect("the Troll is still there");
+        assert_eq!(shielded.regeneration_shields, 1);
+        assert!(
+            game.permanent_has_executable_keyword(shielded, KeywordAbility::Deathtouch),
+            "the same resolution left deathtouch behind"
+        );
+    }
+
+    /// The identities this sweep unblocked all claim full coverage. Chromium
+    /// is here because rampage plus an Elder Dragon upkeep is the pairing its
+    /// stale audit line said was missing.
+    #[test]
+    fn the_swept_identities_report_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [
+            cards::HORROR_OF_HORRORS,
+            cards::CHROMIUM,
+            cards::GOBLIN_CHIRURGEON,
+            cards::MANOR_SKELETON,
+            cards::MARROW_BATS,
+            cards::NECROBITE,
+            cards::WOLFIR_AVENGER,
+        ] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
+    }
+}

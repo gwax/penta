@@ -332,7 +332,7 @@ pub(in crate::card::sets) static PRESENCE_OF_THE_MASTER: CardRecord = CardRecord
 );
 
 // LEG 32 — Rapid Fire
-// Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
+// Audit: blocked — Needs a conditional grant that checks whether the target already has rampage before granting rampage 2, and a cast restriction limiting the spell to before blockers are declared.
 
 // LEG 33 — Remove Enchantments
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Return to your hand all enchantments you both own and control, all Auras you own attached to permanents you control, and all Auras you own attached to attacking creatures your opponents…”.
@@ -1018,7 +1018,32 @@ pub(in crate::card::sets) static HELL_SWARM: CardRecord = CardRecord::new(
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Destroy all nonblack creatures. Hellfire deals X plus 3 damage to you, where X is the number of creatures that died this way”.
 
 // LEG 106 — Horror of Horrors
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “Sacrifice a Swamp: Regenerate target black creature”.
+pub(in crate::card::sets) static HORROR_OF_HORRORS: CardRecord = CardRecord::new(
+    cards::HORROR_OF_HORRORS,
+    "Horror of Horrors",
+    CardArt::new("b9f68dc2-c048-41ec-b237-c36fdd99c27d", "Mark Tedin"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{3}{B}{B}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "Sacrifice a Swamp: Regenerate target black creature.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::Subtype("Swamp"),
+                controller: PlayerRelation::You,
+            }],
+            &BLACK_CREATURE_TARGET,
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
+
+static BLACK_CREATURE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Color(ManaColor::Black),
+    ]),
+)];
 
 // LEG 107 — Imprison
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever enchanted creature attacks or blocks, you may pay {1}. If you do, tap the creature, remove it from combat, and creatures it was blocking that had become blocked by only that…”.
@@ -2259,13 +2284,45 @@ pub(in crate::card::sets) static BORIS_DEVILBOON: CardRecord = CardRecord::new(
 );
 
 // LEG 224 — Chromium
-// Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
+pub(in crate::card::sets) static CHROMIUM: CardRecord = CardRecord::new(
+    cards::CHROMIUM,
+    "Chromium",
+    CardArt::new(
+        "8cd7d7e1-f928-4429-9a59-ba0590a78e98",
+        "Edward P. Beard, Jr.",
+    ),
+    CardSet::Legends,
+    CardRules::new_creature(
+        mana_cost!("{2}{W}{W}{U}{U}{B}{B}"),
+        &["Elder", "Dragon"],
+        7,
+        7,
+    )
+    .with_supertype(CardSupertype::Legendary)
+    .with_abilities(&[
+        abilities::flying(),
+        abilities::rampage(2, "Rampage 2 (Whenever this creature becomes blocked, it gets +2/+2 until end of turn for each creature blocking it beyond the first.)"),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, sacrifice Chromium unless you pay {W}{U}{B}.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::UnlessPaid {
+                cost: mana_cost!("{W}{U}{B}"),
+                otherwise: &EffectDef::Sacrifice {
+                    object: EffectRecipientDef::Source,
+                },
+            },
+        ),
+    ]),
+);
 
 // LEG 225 — Dakkon Blackblade
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Dakkon Blackblade's power and toughness are each equal to the number of lands you control”.
 
 // LEG 226 — Gabriel Angelfire
-// Audit: blocked — Needs rampage to count blockers beyond the first and create the corresponding combat-duration modifier.
+// Audit: blocked — Needs a random choice among four named abilities and a grant of the chosen one; the randomized effect vocabulary selects between two branches, not among four.
 
 // LEG 227 — Gosta Dirk
 pub(in crate::card::sets) static GOSTA_DIRK: CardRecord = CardRecord::new(
@@ -2967,7 +3024,7 @@ pub(in crate::card::sets) static ARENA_OF_THE_ANCIENTS: CardRecord = CardRecord:
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Sacrifice a creature: You gain life equal to the sacrificed creature's toughness. Activate only during your upkeep”.
 
 // LEG 284 — Life Matrix
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{4}, {T}: Put a matrix counter on target creature and that creature gains "Remove a matrix counter from this creature: Regenerate this creature." Activate only during your upkeep”.
+// Audit: blocked — Needs granting a counter-consuming activated ability to a targeted creature and an activation window restricted to your upkeep for “{4}, {T}: Put a matrix counter on target creature and that creature gains "Remove a matrix counter from this creature: Regenerate this creature." Activate only during your upkeep”.
 
 // LEG 285 — Mana Matrix
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Instant and enchantment spells you cast cost {2} less to cast”.
@@ -3216,6 +3273,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GREED,
     &HEADLESS_HORSEMAN,
     &HELL_SWARM,
+    &HORROR_OF_HORRORS,
     &LOST_SOUL,
     &NETHER_VOID,
     &QUAGMIRE,
@@ -3268,6 +3326,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AXELROD_GUNNARSON,
     &BARKTOOTH_WARBEARD,
     &BORIS_DEVILBOON,
+    &CHROMIUM,
     &GOSTA_DIRK,
     &HUNDING_GJORNERSEN,
     &JACQUES_LE_VERT,

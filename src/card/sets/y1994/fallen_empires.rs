@@ -566,7 +566,27 @@ pub(in crate::card::sets) static DWARVEN_LIEUTENANT: CardRecord = CardRecord::ne
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked by one or more Orcs, this creature gets +0/+2 until end of turn”.
 
 // FEM 54a — Goblin Chirurgeon
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “Sacrifice a Goblin: Regenerate target creature”.
+pub(in crate::card::sets) static GOBLIN_CHIRURGEON: CardRecord = CardRecord::new(
+    cards::GOBLIN_CHIRURGEON,
+    "Goblin Chirurgeon",
+    CardArt::new("2b710c21-e9f5-4660-80f6-2104ec65f63f", "Daniel Gelon"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin", "Shaman"], 0, 2).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "Sacrifice a Goblin: Regenerate target creature.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::Subtype("Goblin"),
+                controller: PlayerRelation::You,
+            }],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
 
 // FEM 55 — Goblin Flotilla
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “At the beginning of each combat, unless you pay {R}, whenever this creature blocks or becomes blocked by a creature this combat, that creature gains first strike until end of turn”.
@@ -884,7 +904,7 @@ pub(in crate::card::sets) static AEOLIPILE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{2}, {T}: This turn, when target creature you control attacks and isn't blocked, it assigns no combat damage this turn and you put a cube counter on this artifact”.
 
 // FEM 86 — Draconian Cylix
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “{2}, {T}, Discard a card at random: Regenerate target creature”.
+// Audit: blocked — Needs a random discard as an activation cost; the discard cost lets its payer choose which cards leave hand.
 
 // FEM 87 — Elven Lyre
 pub(in crate::card::sets) static ELVEN_LYRE: CardRecord = CardRecord::new(
@@ -1106,6 +1126,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORDER_OF_THE_EBON_HAND,
     &THRULL_RETAINER,
     &DWARVEN_LIEUTENANT,
+    &GOBLIN_CHIRURGEON,
     &GOBLIN_GRENADE,
     &ELVEN_FORTRESS,
     &FERAL_THALLID,

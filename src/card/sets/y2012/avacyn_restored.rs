@@ -1360,13 +1360,48 @@ pub(in crate::card::sets) static MAALFELD_TWINS: CardRecord = CardRecord::new(
 );
 
 // AVR 113 — Marrow Bats
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure.
+pub(in crate::card::sets) static MARROW_BATS: CardRecord = CardRecord::new(
+    cards::MARROW_BATS,
+    "Marrow Bats",
+    CardArt::new("38dcbad0-267e-411f-8e99-5d90b537bf9b", "Jason A. Engle"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{4}{B}"), &["Bat", "Skeleton"], 4, 1).with_abilities(&[
+        abilities::flying(),
+        abilities::regenerate_self(
+            "Pay 4 life: Regenerate this creature.",
+            &[AbilityCostDef::PayLife(4)],
+        ),
+    ]),
+);
 
 // AVR 114 — Mental Agony
 // Audit: blocked — Needs a continuation that waits for the targeted player's discard choice before applying the printed life loss.
 
 // AVR 115 — Necrobite
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure.
+pub(in crate::card::sets) static NECROBITE: CardRecord = CardRecord::new(
+    cards::NECROBITE,
+    "Necrobite",
+    CardArt::new("52e59918-cf12-4d73-a4e0-31f38e792dc4", "Nils Hamm"),
+    CardSet::AvacynRestored,
+    CardRules::new_instant(mana_cost!("{2}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature gains deathtouch until end of turn. Regenerate it.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&NECROBITE_EFFECTS),
+    )),
+);
+
+static NECROBITE_EFFECTS: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::GrantAbility(&abilities::deathtouch()),
+        duration: EffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::Regenerate {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+];
 
 // AVR 116 — Polluted Dead
 pub(in crate::card::sets) static POLLUTED_DEAD: CardRecord = CardRecord::new(
@@ -2582,7 +2617,19 @@ pub(in crate::card::sets) static VORSTCLAW: CardRecord = CardRecord::new(
 // Audit: blocked — Needs an active-player condition usable by a continuous power/toughness effect.
 
 // AVR 205 — Wolfir Avenger
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure.
+pub(in crate::card::sets) static WOLFIR_AVENGER: CardRecord = CardRecord::new(
+    cards::WOLFIR_AVENGER,
+    "Wolfir Avenger",
+    CardArt::new("88cc00e5-9683-4ccc-a914-c422b76f6014", "Daniel Ljunggren"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Wolf", "Warrior"], 3, 3).with_abilities(&[
+        abilities::flash(),
+        abilities::regenerate_self(
+            "{1}{G}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{G}"))],
+        ),
+    ]),
+);
 
 // AVR 206 — Wolfir Silverheart
 // Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional +4/+4 bonus to both paired creatures.
@@ -2984,6 +3031,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GRISELBRAND,
     &HUMAN_FRAILTY,
     &MAALFELD_TWINS,
+    &MARROW_BATS,
+    &NECROBITE,
     &POLLUTED_DEAD,
     &RENEGADE_DEMON,
     &SEARCHLIGHT_GEIST,
@@ -3024,6 +3073,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SOMBERWALD_SAGE,
     &TIMBERLAND_GUIDE,
     &VORSTCLAW,
+    &WOLFIR_AVENGER,
     &YEW_SPIRIT,
     &SIGARDA_HOST_OF_HERONS,
     &HAUNTED_GUARDIAN,

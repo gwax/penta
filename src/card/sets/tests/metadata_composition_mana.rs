@@ -24,7 +24,7 @@ fn standard_records_have_complete_unique_scryfall_metadata() {
         );
     }
 
-    assert_eq!(scryfall_ids.len(), 855);
+    assert_eq!(scryfall_ids.len(), 859);
 }
 
 #[test]

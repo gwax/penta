@@ -42,6 +42,14 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Seven identities whose audit lines outlived their gap.** Regeneration and
+  rampage both landed as primitives, but eleven audit lines still named them,
+  and seven of those identities turned out to need no engine work at all:
+  Horror of Horrors, Chromium, Goblin Chirurgeon, Manor Skeleton, Marrow Bats,
+  Necrobite, and Wolfir Avenger are now executable. The four that stay blocked
+  have rewritten lines naming their real gap -- a random discard cost, a
+  conditional grant, a four-way random ability choice, and a granted
+  counter-consuming ability -- rather than a primitive that already exists.
 
 - **A tapped object predicate**, which was the whole of Royal Assassin's gap.
   Island Fish Jasconius joins it from the same sweep with no engine change:

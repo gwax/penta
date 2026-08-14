@@ -1852,7 +1852,19 @@ pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::n
 .with_ability_bindings(&LILIANA_ABILITY_BINDINGS);
 
 // ISD 106 — Manor Skeleton
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure.
+pub(in crate::card::sets) static MANOR_SKELETON: CardRecord = CardRecord::new(
+    cards::MANOR_SKELETON,
+    "Manor Skeleton",
+    CardArt::new("e7b45197-d5c2-48c8-b72e-00236552e338", "Eric Deschamps"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Skeleton"], 1, 1).with_abilities(&[
+        abilities::haste(),
+        abilities::regenerate_self(
+            "{1}{B}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{B}"))],
+        ),
+    ]),
+);
 
 // ISD 107 — Markov Patrician
 pub(in crate::card::sets) static MARKOV_PATRICIAN: CardRecord = CardRecord::new(
@@ -4578,6 +4590,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GHOULCALLERS_CHANT,
     &GRUESOME_DEFORMITY,
     &LILIANA_OF_THE_VEIL,
+    &MANOR_SKELETON,
     &MARKOV_PATRICIAN,
     &MAW_OF_THE_MIRE,
     &MOAN_OF_THE_UNHALLOWED,
