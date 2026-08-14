@@ -11,3 +11,4 @@ pub const KEI_TAKAHASHI: CardDefinitionId = CardDefinitionId(1441);
 pub const LADY_EVANGELA: CardDefinitionId = CardDefinitionId(1442);
 pub const HORN_OF_DEAFENING: CardDefinitionId = CardDefinitionId(1443);
 pub const COMBAT_MEDIC: CardDefinitionId = CardDefinitionId(1444);
+pub const GASEOUS_FORM: CardDefinitionId = CardDefinitionId(1445);

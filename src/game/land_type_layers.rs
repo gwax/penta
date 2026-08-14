@@ -167,6 +167,7 @@ impl Game {
             | AppliedEffectDef::CannotChangeController
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::PreventDamageFrom(_)
+            | AppliedEffectDef::PreventCombatDamage
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::GrantAbility(_)
             | AppliedEffectDef::RemoveAbilities(_)
@@ -328,6 +329,7 @@ impl Game {
             | AppliedEffectDef::CannotChangeController
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::PreventDamageFrom(_)
+            | AppliedEffectDef::PreventCombatDamage
             | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::GrantAbility(_)

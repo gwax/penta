@@ -581,7 +581,9 @@ impl Game {
             if self
                 .battlefield
                 .iter()
-                .any(|permanent| permanent.card.id == id && permanent.combat_damage_prevented))
+                .any(|permanent| permanent.card.id == id
+                    && (permanent.combat_damage_prevented
+                        || self.static_combat_damage_prevented(permanent))))
     }
 
     /// Whether combat damage from this permanent is prevented for the turn.
@@ -591,8 +593,25 @@ impl Game {
         }
         self.battlefield.iter().any(|permanent| {
             permanent.card.id == source
-                && (permanent.combat_damage_prevented || permanent.combat_damage_dealt_by_prevented)
+                && (permanent.combat_damage_prevented
+                    || permanent.combat_damage_dealt_by_prevented
+                    || self.static_combat_damage_prevented(permanent))
         })
+    }
+
+    /// Whether a continuous effect currently stops all combat damage to and
+    /// by this permanent. The turn-scoped flags above are set once and cleared
+    /// at cleanup; this is asked afresh, so an Aura leaving the battlefield
+    /// mid-combat stops applying immediately.
+    fn static_combat_damage_prevented(&self, permanent: &Permanent) -> bool {
+        self.visit_static_applied_effects(permanent, |applied| {
+            if matches!(applied.effect, AppliedEffectDef::PreventCombatDamage) {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
     }
 
     /// How much life a drain can take from a recipient: what it had before

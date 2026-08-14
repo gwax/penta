@@ -239,6 +239,7 @@ impl Game {
             | AppliedEffectDef::CannotChangeController
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::PreventDamageFrom(_)
+            | AppliedEffectDef::PreventCombatDamage
             | AppliedEffectDef::AddLandTypes(_)
             | AppliedEffectDef::SetLandTypes(_)
             | AppliedEffectDef::Special(_) => {}

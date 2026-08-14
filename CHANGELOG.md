@@ -42,6 +42,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **A continuous combat-damage prevention.** The two turn-scoped effects write
+  a flag on a permanent that cleanup clears, which is right for a Fog and wrong
+  for an Aura. `AppliedEffectDef::PreventCombatDamage` is asked afresh each time
+  combat damage is dealt, so it holds while the Aura is attached and stops the
+  moment it is not. Gaseous Form is now executable.
 - **Seven identities behind a prevention line that had already been built.**
   Sixty-six identities cited "a duration-scoped replacement/prevention effect"
   after the prevention shields landed. Conservator, Oasis, Argivian Blacksmith,

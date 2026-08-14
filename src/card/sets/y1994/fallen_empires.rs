@@ -71,7 +71,7 @@ pub(in crate::card::sets) static COMBAT_MEDIC: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “{T}, Tap three untapped white creatures you control: Destroy target creature”.
 
 // FEM 6 — Heroism
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Sacrifice a white creature: For each attacking red creature, prevent all combat damage that would be dealt by that creature this turn unless its controller pays {2}{R}”.
+// Audit: blocked — Needs a per-creature optional payment offered to the opposing controller, repeated for each attacking red creature; preventing one creature's combat damage is already expressible.
 
 // FEM 7a — Icatian Infantry
 // Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
@@ -743,7 +743,7 @@ pub(in crate::card::sets) static FUNGAL_BLOOM: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “{1}, Exile two creature cards from a single graveyard: Create a 1/1 green Saproling creature token”.
 
 // FEM 72a — Spore Cloud
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Tap all blocking creatures. Prevent all combat damage that would be dealt this turn. Each attacking creature and each blocking creature doesn't untap during its controller's next untap step”.
+// Audit: blocked — Needs a next-untap-step restriction applied to every creature in combat; tapping the blockers and preventing the turn's combat damage are both expressible.
 
 // FEM 73 — Spore Flower
 pub(in crate::card::sets) static SPORE_FLOWER: CardRecord = CardRecord::new(

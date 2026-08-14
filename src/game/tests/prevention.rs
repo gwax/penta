@@ -334,3 +334,76 @@ mod follow_up {
         }
     }
 }
+
+/// A continuous combat-damage prevention, which is what an Aura needs and
+/// what the turn-scoped effects could not give it. The flags those set are
+/// written once and cleared at cleanup; this is asked afresh every time
+/// combat damage is dealt, so the Aura leaving mid-combat stops applying.
+mod gaseous_form {
+    use super::*;
+
+    fn form_game() -> (Game, GameObjectId, GameObjectId) {
+        let mut game = ready_game();
+        game.step = Step::DeclareBlockers;
+        let mut attacker = creature(10_000, cards::SEDGE_TROLL, PlayerId::One);
+        attacker.attacking = true;
+        attacker.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+        let attacker_id = attacker.card.id;
+        game.battlefield.push(attacker);
+
+        let mut aura = creature(10_001, cards::GASEOUS_FORM, PlayerId::One);
+        aura.attached_to = Some(attacker_id);
+        let aura_id = aura.card.id;
+        game.battlefield.push(aura);
+        (game, attacker_id, aura_id)
+    }
+
+    #[test]
+    fn an_enchanted_attacker_deals_no_combat_damage() {
+        let (mut game, _attacker_id, _aura_id) = form_game();
+        game.finish_declaring_blockers();
+        game.deal_combat_damage();
+
+        assert_eq!(
+            game.players[PlayerId::Two.index()].life,
+            i16::from(rules::STARTING_LIFE),
+            "the enchanted creature's combat damage was prevented"
+        );
+    }
+
+    /// The same creature, once the Aura is gone, hits for its printed power.
+    /// This is the half a turn-scoped flag would get wrong.
+    #[test]
+    fn removing_the_aura_restores_the_damage_immediately() {
+        let (mut game, attacker_id, aura_id) = form_game();
+        game.battlefield
+            .retain(|permanent| permanent.card.id != aura_id);
+        let power = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker_id)
+            .and_then(|permanent| game.power(permanent))
+            .expect("the attacker has power");
+
+        game.finish_declaring_blockers();
+        game.deal_combat_damage();
+
+        assert_eq!(
+            game.players[PlayerId::Two.index()].life,
+            i16::from(rules::STARTING_LIFE) - power,
+            "with the Aura gone nothing is prevented"
+        );
+    }
+
+    #[test]
+    fn gaseous_form_reports_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        let card = catalog
+            .get(cards::GASEOUS_FORM)
+            .expect("the card is cataloged");
+        assert_eq!(
+            card.rules.implementation_status(),
+            crate::ImplementationStatus::Complete,
+        );
+    }
+}

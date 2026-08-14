@@ -575,6 +575,7 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
+        | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)
         | AppliedEffectDef::SetLandTypes(_)
         | AppliedEffectDef::RemoveAbilities(_)

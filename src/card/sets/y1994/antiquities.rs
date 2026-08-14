@@ -81,7 +81,7 @@ pub(in crate::card::sets) static ARGIVIAN_BLACKSMITH: CardRecord = CardRecord::n
 );
 
 // ATQ 3 — Artifact Ward
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to enchanted creature by artifact sources”.
+// Audit: blocked — Needs a targeting restriction keyed to the source's card type for “Enchanted creature can't be the target of abilities from artifact sources”; the artifact-source damage prevention and the artifact-creature blocking restriction both exist.
 
 // ATQ 4 — Circle of Protection: Artifacts
 // Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{2}: The next time an artifact source of your choice would deal damage to you this turn, prevent that damage”.

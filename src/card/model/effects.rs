@@ -110,6 +110,10 @@ pub enum AppliedEffectDef {
     CannotChangeController,
     /// A creature matching this predicate cannot block the affected creature.
     CannotBeBlockedBy(ObjectPredicateDef),
+    /// No combat damage is dealt to or by the affected permanent. Unlike the
+    /// turn-scoped [`EffectDef::PreventCombatDamageThisTurn`] this holds for
+    /// as long as the effect applies, which is what an Aura needs.
+    PreventCombatDamage,
     /// Damage from a source matching this predicate is prevented before it
     /// touches the affected permanent. Only a permanent can be the source
     /// today, which is all "damage from artifact creatures" needs.

@@ -645,7 +645,25 @@ static MANA_DRAIN_EFFECT: [EffectDef; 2] = [
 ];
 
 // LEG 59 — Gaseous Form
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt to and dealt by enchanted creature”.
+pub(in crate::card::sets) static GASEOUS_FORM: CardRecord = CardRecord::new(
+    cards::GASEOUS_FORM,
+    "Gaseous Form",
+    CardArt::new("d0266dd4-31da-480b-9a44-4e217f748f06", "Phil Foglio"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{2}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Prevent all combat damage that would be dealt to and dealt by enchanted creature.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::PreventCombatDamage,
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+        ]),
+);
 
 // LEG 60 — Glyph of Delusion
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Put X glyph counters on target creature that target Wall blocked this turn, where X is the power of that blocked creature. The creature gains "This creature doesn't untap during your…”.
@@ -3086,7 +3104,7 @@ pub(in crate::card::sets) static HORN_OF_DEAFENING: CardRecord = CardRecord::new
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Instant and enchantment spells you cast cost {2} less to cast”.
 
 // LEG 286 — Marble Priest
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt to this creature by Walls”.
+// Audit: blocked — Needs a must-block requirement for “All Walls able to block this creature do so”; preventing the damage those Walls deal is already expressible.
 
 // LEG 287 — Mirror Universe
 // Audit: blocked — Needs linked sacrifice/destruction accounting for “{T}, Sacrifice this artifact: Exchange life totals with target opponent. Activate only during your upkeep”.
@@ -3314,6 +3332,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FLASH_COUNTER,
     &FLASH_FLOOD,
     &FORCE_SPIKE,
+    &GASEOUS_FORM,
     &MANA_DRAIN,
     &PSIONIC_ENTITY,
     &RECALL,

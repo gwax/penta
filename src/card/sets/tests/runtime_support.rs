@@ -150,6 +150,7 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
+        | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)
         | AppliedEffectDef::SetLandTypes(_)
         | AppliedEffectDef::RemoveAbilities(_)
@@ -223,6 +224,7 @@ fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
+        | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)
         | AppliedEffectDef::SetLandTypes(_)
         | AppliedEffectDef::Animate(_)
@@ -268,6 +270,7 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::PreventDamageFrom(_)
+        | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)
         | AppliedEffectDef::SetLandTypes(_)
         | AppliedEffectDef::Special(_) => false,
@@ -514,6 +517,12 @@ pub(super) fn shared_static_applied_effect(
                 EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
             ) && shared_object_predicate(predicate)
         }
+        // A static combat-damage prevention carries no predicate, so only the
+        // recipient it is applied to has to be one the runtime understands.
+        AppliedEffectDef::PreventCombatDamage => matches!(
+            recipient,
+            EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
+        ),
         AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::RemoveAbilities(_)
         | AppliedEffectDef::CannotBeCountered
