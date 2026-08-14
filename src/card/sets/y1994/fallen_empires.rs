@@ -1171,7 +1171,7 @@ pub(in crate::card::sets) static AEOLIPILE: CardRecord = CardRecord::new(
 );
 
 // FEM 82 — Balm of Restoration
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “• Prevent the next 2 damage that would be dealt to any target this turn”.
+// Audit: blocked — Needs modal activated abilities: modes are chosen only while casting a spell, so an activated ability has no mode selection to freeze. Both of its modes are available.
 
 // FEM 83 — Conch Horn
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “{1}, {T}, Sacrifice this artifact: Draw two cards, then put a card from your hand on top of your library”.

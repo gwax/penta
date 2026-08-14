@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Three prevention identities with no engine change.** Healing Salve and
+  Alabaster Potion offer prevention as one mode of a choose-one spell, and
+  Rakalite pairs it with a delayed self-return; modes, "any target" shields,
+  and delayed end-step effects all already worked. Their audit lines named the
+  prevention effect, which five cards were already using.
 - **"Whenever this creature attacks and isn't blocked."** Not answerable when
   attackers are declared -- only once blocking is done -- so it is captured
   where the blocking relationships are, alongside the pair events. Mindstab

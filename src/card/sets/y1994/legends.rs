@@ -47,7 +47,38 @@ pub(in crate::card::sets) static AKRON_LEGIONNAIRE: CardRecord = CardRecord::new
 );
 
 // LEG 2 — Alabaster Potion
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “• Prevent the next X damage that would be dealt to any target this turn”.
+pub(in crate::card::sets) static ALABASTER_POTION: CardRecord = CardRecord::new(
+    cards::ALABASTER_POTION,
+    "Alabaster Potion",
+    CardArt::new("2806c7f6-8fdd-4e65-9c71-f2e8b0cdede2", "Harold McNeill"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{X}{W}{W}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one —\n• Target player gains X life.\n• Prevent the next X damage that would \
+         be dealt to any target this turn.",
+        &[
+            AbilityDef::spell_with_targets(
+                "Target player gains X life",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Player(PlayerRelation::Any),
+                )],
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::ChosenX,
+                },
+            ),
+            AbilityDef::spell_with_targets(
+                "Prevent the next X damage that would be dealt to any target this turn",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::AnyTarget,
+                )],
+                EffectDef::PreventNextDamage {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::ChosenX,
+                },
+            ),
+        ],
+    )),
+);
 
 // LEG 3 — Amrou Kithkin
 // Audit: partial — Its blocker power predicate omits modifiers from static continuous effects.
@@ -3020,7 +3051,7 @@ pub(in crate::card::sets) static RAMIREZ_DEPIETRO: CardRecord = CardRecord::new(
 // Audit: blocked — Needs linked sacrifice/destruction accounting for “{T}: Destroy target enchanted creature”.
 
 // LEG 253 — Rasputin Dreamweaver
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Remove a dream counter from Rasputin: Prevent the next 1 damage that would be dealt to Rasputin this turn”.
+// Audit: blocked — Needs dream counters that both pay for and restore themselves across several abilities. Each individual prevention and mana effect is available.
 
 // LEG 254 — Riven Turnbull
 pub(in crate::card::sets) static RIVEN_TURNBULL: CardRecord = CardRecord::new(
@@ -3666,6 +3697,7 @@ pub(in crate::card::sets) static THE_TABERNACLE_AT_PENDRELL_VALE: CardRecord = C
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AKRON_LEGIONNAIRE,
+    &ALABASTER_POTION,
     &AMROU_KITHKIN,
     &CLEANSE,
     &DAVENANT_ARCHER,

@@ -928,8 +928,39 @@ pub(in crate::card::sets) static ORNITHOPTER: CardRecord = CardRecord::new(
 // ATQ 61 — Primal Clay
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “As this creature enters, it becomes your choice of a 3/3 artifact creature, a 2/2 artifact creature with flying, or a 1/6 Wall artifact creature with defender in addition to its other types”.
 
+static RAKALITE_SHIELD: [EffectDef; 2] = [
+    EffectDef::PreventNextDamage {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::AtNextStep {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+        effect: &EffectDef::MoveToZone {
+            object: EffectRecipientDef::Source,
+            zone: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            controller: None,
+        },
+    },
+];
+
 // ATQ 62 — Rakalite
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{2}: Prevent the next 1 damage that would be dealt to any target this turn. Return this artifact to its owner's hand at the beginning of the next end step”.
+pub(in crate::card::sets) static RAKALITE: CardRecord = CardRecord::new(
+    cards::RAKALITE,
+    "Rakalite",
+    CardArt::new("0fd7c711-3ff4-4691-914f-242e6737066c", "Christopher Rush"),
+    CardSet::Antiquities,
+    CardRules::new_artifact(mana_cost!("{6}")).with_ability(AbilityDef::activated_with_targets(
+        "{2}: Prevent the next 1 damage that would be dealt to any target this turn. Return \
+         this artifact to its owner's hand at the beginning of the next end step.",
+        &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::Sequence(&RAKALITE_SHIELD),
+    )),
+);
 
 // ATQ 63 — Rocket Launcher
 // Audit: blocked — Needs continuous-control activation timing and a delayed self-destruction trigger created by activation.
@@ -1349,6 +1380,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &OBELISK_OF_UNDOING,
     &ONULET,
     &ORNITHOPTER,
+    &RAKALITE,
     &STAFF_OF_ZEGON,
     &SU_CHI,
     &TABLET_OF_EPITYR,

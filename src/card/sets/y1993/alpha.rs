@@ -376,10 +376,41 @@ pub(in crate::card::sets) static GREEN_WARD: CardRecord = CardRecord::new(
 );
 
 // LEA 21 — Guardian Angel
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent the next X damage that would be dealt to any target this turn. Until end of turn, you may pay {1} any time you could cast an instant. If you do, prevent the next 1 damage that…”.
+// Audit: blocked — Needs a repeatable optional payment window open until end of turn, each payment adding another prevention shield to the same recipient. The initial shield itself is available.
 
 // LEA 22 — Healing Salve
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “• Prevent the next 3 damage that would be dealt to any target this turn”.
+pub(in crate::card::sets) static HEALING_SALVE: CardRecord = CardRecord::new(
+    cards::HEALING_SALVE,
+    "Healing Salve",
+    CardArt::new("e28de37e-84d5-4dc7-b36c-e14da5924729", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one —\n• Target player gains 3 life.\n• Prevent the next 3 damage that would \
+         be dealt to any target this turn.",
+        &[
+            AbilityDef::spell_with_targets(
+                "Target player gains 3 life",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Player(PlayerRelation::Any),
+                )],
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(3),
+                },
+            ),
+            AbilityDef::spell_with_targets(
+                "Prevent the next 3 damage that would be dealt to any target this turn",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::AnyTarget,
+                )],
+                EffectDef::PreventNextDamage {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(3),
+                },
+            ),
+        ],
+    )),
+);
 
 // LEA 23 — Holy Armor
 pub(in crate::card::sets) static HOLY_ARMOR: CardRecord = CardRecord::new(
@@ -4588,6 +4619,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DISENCHANT,
     &FARMSTEAD,
     &GREEN_WARD,
+    &HEALING_SALVE,
     &HOLY_ARMOR,
     &HOLY_STRENGTH,
     &KARMA,
