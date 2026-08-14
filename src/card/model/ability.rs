@@ -459,11 +459,21 @@ impl AbilityDef {
     ///
     /// Panics if the clause is not an activated ability.
     #[must_use]
-    pub const fn once_each_turn(mut self) -> Self {
+    pub const fn once_each_turn(self) -> Self {
+        self.activations_each_turn(1)
+    }
+
+    /// The general form: "no more than twice each turn" and its relatives.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the clause is not an activated ability.
+    #[must_use]
+    pub const fn activations_each_turn(mut self, limit: u8) -> Self {
         let DeclarativeAbilityDef::Activated(definition) = self.definition else {
             panic!("only an activated ability can be capped per turn");
         };
-        self.definition = DeclarativeAbilityDef::Activated(definition.with_once_each_turn());
+        self.definition = DeclarativeAbilityDef::Activated(definition.with_activation_limit(limit));
         self
     }
 

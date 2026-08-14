@@ -202,6 +202,59 @@ mod once_each_turn {
         );
     }
 
+    /// "No more than twice each turn" is the same cap with a different
+    /// number, which is what shows the limit is counted rather than flagged.
+    #[test]
+    fn a_cap_of_two_allows_exactly_two() {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        let bats = creature(10_000, cards::VAMPIRE_BATS, PlayerId::One);
+        let bats_id = bats.card.id;
+        game.battlefield.push(bats);
+        game.players[PlayerId::One.index()].mana_pool.black = 5;
+
+        for expected in 1..=2 {
+            assert!(offers(&game, PlayerId::One, bats_id));
+            pump(&mut game, bats_id);
+            let bats = game
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == bats_id)
+                .expect("still there");
+            assert_eq!(game.power(bats), Some(expected));
+        }
+
+        assert!(
+            !offers(&game, PlayerId::One, bats_id),
+            "two is the whole allowance, and the mana is still there"
+        );
+    }
+
+    /// One activation, two riders: the cap applies to the ability rather than
+    /// to either half of what it does.
+    #[test]
+    fn a_capped_ability_still_applies_all_of_its_riders() {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        let mage = creature(10_000, cards::BEETLEFORM_MAGE, PlayerId::One);
+        let mage_id = mage.card.id;
+        game.battlefield.push(mage);
+        let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+        pool.green = 4;
+        pool.blue = 4;
+
+        pump(&mut game, mage_id);
+
+        let mage = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == mage_id)
+            .expect("still there");
+        assert_eq!((game.power(mage), game.toughness(mage)), (Some(4), Some(4)));
+        assert!(game.permanent_has_executable_keyword(mage, KeywordAbility::Flying));
+        assert!(!offers(&game, PlayerId::One, mage_id));
+    }
+
     /// Gate to Phyrexia carries both restrictions, so it is the check that
     /// they compose rather than one masking the other.
     #[test]
@@ -250,6 +303,8 @@ mod once_each_turn {
             cards::GATE_TO_PHYREXIA,
             cards::FIRE_DRAKE,
             cards::DARKTHICKET_WOLF,
+            cards::VAMPIRE_BATS,
+            cards::BEETLEFORM_MAGE,
         ] {
             let card = catalog.get(definition).expect("the card is cataloged");
             assert_eq!(

@@ -78,6 +78,11 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Per-turn activation caps count rather than flag.** "Activate only once
+  each turn" was a boolean, so "no more than twice each turn" had nowhere to
+  go. The engine was already counting every activation per ability and
+  clearing the counts each turn, so the cap is now a number read against those
+  counts. Vampire Bats and Beetleform Mage.
 - **Shroud granted for a while, and shroud granted on a condition.** Both
   shapes were already expressible and the audit lines saying otherwise had
   gone stale. Homarid Warrior buys its shroud with a tap and a skipped untap

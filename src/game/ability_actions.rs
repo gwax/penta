@@ -122,11 +122,11 @@ impl Game {
                     // The engine already counts every activation per ability
                     // and clears the counts each turn, so the printed cap is
                     // a read rather than new state.
-                    || (definition.once_each_turn
-                        && permanent
-                            .activations_this_turn
-                            .iter()
-                            .any(|(origin, count)| *origin == effective.origin && *count > 0))
+                    || definition.activation_limit.is_some_and(|limit| {
+                        permanent.activations_this_turn.iter().any(|(origin, count)| {
+                            *origin == effective.origin && *count >= limit
+                        })
+                    })
                 {
                     return;
                 }

@@ -31,3 +31,5 @@ pub const KORMUS_BELL: CardDefinitionId = CardDefinitionId(1656);
 pub const LIVING_PLANE: CardDefinitionId = CardDefinitionId(1657);
 pub const HOMARID_WARRIOR: CardDefinitionId = CardDefinitionId(1658);
 pub const SPECTRAL_CLOAK: CardDefinitionId = CardDefinitionId(1659);
+pub const VAMPIRE_BATS: CardDefinitionId = CardDefinitionId(1660);
+pub const BEETLEFORM_MAGE: CardDefinitionId = CardDefinitionId(1661);

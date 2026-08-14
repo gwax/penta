@@ -948,8 +948,40 @@ pub(in crate::card::sets) static ASCENDED_LAWMAGE: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::flying(), abilities::hexproof()]),
 );
 
+static BEETLE_WINGS: AbilityDef = abilities::flying();
+
 // DGM 54 — Beetleform Mage
-// Audit: blocked — Needs a per-object, per-turn activation quota for its temporary power, toughness, and flying effect.
+pub(in crate::card::sets) static BEETLEFORM_MAGE: CardRecord = CardRecord::new(
+    cards::BEETLEFORM_MAGE,
+    "Beetleform Mage",
+    CardArt::new("1e2f7d7f-4097-419b-8de0-b7bf28fc3a4b", "Marco Nelor"),
+    CardSet::DragonsMaze,
+    CardRules::new_creature(
+        mana_cost!("{1}{G}{U}"),
+        &["Human", "Insect", "Wizard"],
+        2,
+        2,
+    )
+    .with_ability(
+        AbilityDef::activated(
+            "{G}{U}: This creature gets +2/+2 and gains flying until end of turn. \
+                 Activate only once each turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{G}{U}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(2),
+                        toughness: ValueDef::Constant(2),
+                    },
+                    AppliedEffectDef::GrantAbility(&BEETLE_WINGS),
+                ]),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .once_each_turn(),
+    ),
+);
 
 // DGM 55 — Blast of Genius
 // Audit: blocked — Needs a discard choice whose chosen card's mana value feeds the later damage effect.
@@ -2584,6 +2616,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ADVENT_OF_THE_WURM,
     &ARMORED_WOLF_RIDER,
     &ASCENDED_LAWMAGE,
+    &BEETLEFORM_MAGE,
     &BLOOD_BARON_OF_VIZKOPA,
     &BRONZEBEAK_MOA,
     &DEPUTY_OF_ACQUITTALS,

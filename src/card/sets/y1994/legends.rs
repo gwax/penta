@@ -1482,7 +1482,29 @@ pub(in crate::card::sets) static THE_ABYSS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs an opponent-draw event trigger that deals damage to the exact player who drew.
 
 // LEG 125 — Vampire Bats
-// Audit: blocked — Needs a per-object, per-turn activation quota for “{B}: This creature gets +1/+0 until end of turn. Activate no more than twice each turn”.
+pub(in crate::card::sets) static VAMPIRE_BATS: CardRecord = CardRecord::new(
+    cards::VAMPIRE_BATS,
+    "Vampire Bats",
+    CardArt::new("6a6a6f50-7b86-461e-80a7-e35d0e7cf52f", "Anson Maddocks"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{B}"), &["Bat"], 0, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::activated(
+            "{B}: This creature gets +1/+0 until end of turn. Activate no more than twice \
+             each turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(1),
+                    toughness: ValueDef::Constant(0),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .activations_each_turn(2),
+    ]),
+);
 
 // LEG 126 — Walking Dead
 pub(in crate::card::sets) static WALKING_DEAD: CardRecord = CardRecord::new(
@@ -3925,6 +3947,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &QUAGMIRE,
     &SPIRIT_SHACKLE,
     &THE_ABYSS,
+    &VAMPIRE_BATS,
     &WALKING_DEAD,
     &WALL_OF_PUTRID_FLESH,
     &WALL_OF_SHADOWS,
