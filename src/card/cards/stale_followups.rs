@@ -39,3 +39,5 @@ pub const ASHNODS_BATTLE_GEAR: CardDefinitionId = CardDefinitionId(1664);
 pub const TAWNOSS_WEAPONRY: CardDefinitionId = CardDefinitionId(1665);
 pub const SPIRIT_SHIELD: CardDefinitionId = CardDefinitionId(1666);
 pub const ZELYON_SWORD: CardDefinitionId = CardDefinitionId(1667);
+pub const GIANT_TORTOISE: CardDefinitionId = CardDefinitionId(1668);
+pub const ELVISH_HUNTER: CardDefinitionId = CardDefinitionId(1669);

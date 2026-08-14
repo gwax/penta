@@ -200,7 +200,34 @@ pub(in crate::card::sets) static FLYING_MEN: CardRecord = CardRecord::new(
 );
 
 // ARN 15 — Giant Tortoise
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “This creature gets +0/+3 as long as it's untapped”.
+pub(in crate::card::sets) static GIANT_TORTOISE: CardRecord = CardRecord::new(
+    cards::GIANT_TORTOISE,
+    "Giant Tortoise",
+    CardArt::new("096f7ac8-c639-4347-9767-7305eaf490ba", "Kaja Foglio"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Turtle"], 1, 1).with_ability(
+        AbilityDef::static_ability(
+            "This creature gets +0/+3 as long as it's untapped.",
+            EffectDef::Apply {
+                // Its own condition: the recipient is the source, but only
+                // while untapped, so tapping to attack shrinks it.
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Source,
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(0),
+                    toughness: ValueDef::Constant(3),
+                },
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ),
+);
 
 // ARN 16 — Island Fish Jasconius
 pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord::new(
@@ -1230,6 +1257,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DANDAN,
     &FISHLIVER_OIL,
     &FLYING_MEN,
+    &GIANT_TORTOISE,
     &ISLAND_FISH_JASCONIUS,
     &MERCHANT_SHIP,
     &SERENDIB_EFREET,

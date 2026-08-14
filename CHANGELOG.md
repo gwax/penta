@@ -78,6 +78,9 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Two more identities from the tap/untap group.** Giant Tortoise reads its
+  own tapped state through the recipient condition, and Elvish Hunter spends
+  its tap to take one untap step away. Both audit lines had gone stale.
 - **"For as long as this artifact remains tapped."** Every other resolving
   duration has a deadline to file the effect under; this one has none, since
   the artifact that tapped to make the bonus decides when it ends by

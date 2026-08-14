@@ -1088,7 +1088,28 @@ pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new(
 );
 
 // FEM 67a — Elvish Hunter
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “{1}{G}, {T}: Target creature doesn't untap during its controller's next untap step”.
+pub(in crate::card::sets) static ELVISH_HUNTER: CardRecord = CardRecord::new(
+    cards::ELVISH_HUNTER,
+    "Elvish Hunter",
+    CardArt::new("e00455ac-c7ce-4916-98ed-cca9354e3f22", "Mark Poole"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Archer"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{1}{G}, {T}: Target creature doesn't untap during its controller's next untap step.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}{G}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::SkipNextUntapSteps {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                count: 1,
+            },
+        ),
+    ),
+);
 
 // FEM 68a — Elvish Scout
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{G}, {T}: Untap target attacking creature you control. Prevent all combat damage that would be dealt to and dealt by it this turn”.
@@ -1692,6 +1713,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORCISH_CAPTAIN,
     &ELVEN_FORTRESS,
     &ELVISH_FARMER,
+    &ELVISH_HUNTER,
     &FERAL_THALLID,
     &FUNGAL_BLOOM,
     &SPORE_FLOWER,

@@ -148,10 +148,79 @@ fn telekinesis_costs_two_untap_steps() {
     assert!(!is_tapped(&game, victim_id), "the third one untaps it");
 }
 
+/// Elvish Hunter spends its own tap to take one untap step away, which is
+/// the same skip Barl's Cage supplies from an artifact.
+#[test]
+fn elvish_hunter_takes_one_untap_step() {
+    let mut game = ready_game();
+    let hunter = creature(10_000, cards::ELVISH_HUNTER, PlayerId::One);
+    let hunter_id = hunter.card.id;
+    game.battlefield.push(hunter);
+    let victim = tapped_creature(&mut game, 10_001, PlayerId::Two);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.green = 1;
+    pool.colorless = 1;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == hunter_id
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(victim))
+            }
+            _ => false,
+        })
+        .expect("the Hunter can name that creature");
+    game.apply(PlayerId::One, action)
+        .expect("the ability activates");
+    drain_pending(&mut game);
+
+    take_turn(&mut game, PlayerId::Two);
+    assert!(is_tapped(&game, victim), "the skip was spent on this step");
+
+    take_turn(&mut game, PlayerId::One);
+    take_turn(&mut game, PlayerId::Two);
+    assert!(!is_tapped(&game, victim), "and only on that one");
+}
+
+/// Giant Tortoise is the other half of the same idea, read continuously:
+/// the bonus is on the creature only while it is untapped.
+#[test]
+fn giant_tortoise_shrinks_when_it_taps() {
+    let mut game = ready_game();
+    let tortoise = creature(10_000, cards::GIANT_TORTOISE, PlayerId::One);
+    let tortoise_id = tortoise.card.id;
+    game.battlefield.push(tortoise);
+
+    let stats = |game: &Game| {
+        let tortoise = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == tortoise_id)
+            .expect("still there");
+        (game.power(tortoise), game.toughness(tortoise))
+    };
+    assert_eq!(stats(&game), (Some(1), Some(4)), "untapped");
+
+    let _ = game.tap_permanent(tortoise_id);
+    assert_eq!(stats(&game), (Some(1), Some(1)), "tapped");
+}
+
 #[test]
 fn every_untap_skip_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::TELEKINESIS, cards::BARLS_CAGE] {
+    for definition in [
+        cards::TELEKINESIS,
+        cards::BARLS_CAGE,
+        cards::ELVISH_HUNTER,
+        cards::GIANT_TORTOISE,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),
