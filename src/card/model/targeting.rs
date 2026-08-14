@@ -105,6 +105,10 @@ pub enum ObjectPredicateDef {
     /// A permanent with an Aura attached to it. Nothing is said about whose
     /// Aura it is: "enchanted creatures" covers both players' Auras.
     Enchanted,
+    /// A permanent attached to something matching. This is the Aura's side of
+    /// [`Self::Enchanted`]: it asks what the object is attached *to*, which
+    /// is how "target Aura attached to a land" picks one out.
+    AttachedTo(&'static ObjectPredicateDef),
     /// A creature that was declared as an attacker at any point this turn,
     /// whether or not it is still attacking or even still in combat.
     AttackedThisTurn,

@@ -103,8 +103,36 @@ pub(in crate::card::sets) static HOLY_LIGHT: CardRecord = CardRecord::new(
 // DRK 12 — Martyr's Cry
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “Exile all white creatures. For each creature exiled this way, its controller draws a card”.
 
+/// "Attached to a creature you control": the Aura may be either player's, but
+/// the creature under it has to be one of yours.
+static MIRACLE_WORKER_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Subtype("Aura"),
+        ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ])),
+    ]),
+)];
+
 // DRK 13 — Miracle Worker
-// Audit: blocked — Needs linked sacrifice/destruction accounting for “{T}: Destroy target Aura attached to a creature you control”.
+pub(in crate::card::sets) static MIRACLE_WORKER: CardRecord = CardRecord::new(
+    cards::MIRACLE_WORKER,
+    "Miracle Worker",
+    CardArt::new("35d29bda-096c-44d4-b45e-c2c507f8efbe", "Ron Spencer"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Cleric"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Destroy target Aura attached to a creature you control.",
+            &[AbilityCostDef::TapSource],
+            &MIRACLE_WORKER_TARGET,
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+        ),
+    ),
+);
 
 // DRK 14 — Morale
 pub(in crate::card::sets) static MORALE: CardRecord = CardRecord::new(
@@ -1108,8 +1136,34 @@ static FORESTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
     controller: PlayerRelation::You,
 };
 
+static SAVAEN_ELVES_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Subtype("Aura"),
+        ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::HasType(CardType::Land)),
+    ]),
+)];
+
 // DRK 84 — Savaen Elves
-// Audit: blocked — Needs linked sacrifice/destruction accounting for “{G}{G}, {T}: Destroy target Aura attached to a land”.
+pub(in crate::card::sets) static SAVAEN_ELVES: CardRecord = CardRecord::new(
+    cards::SAVAEN_ELVES,
+    "Savaen Elves",
+    CardArt::new("38fb3014-f631-4a75-92cd-7e626b13a4c3", "Ron Spencer"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{G}"), &["Elf"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{G}{G}, {T}: Destroy target Aura attached to a land.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{G}{G}")),
+                AbilityCostDef::TapSource,
+            ],
+            &SAVAEN_ELVES_TARGET,
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+        ),
+    ),
+);
 
 // DRK 85 — Scarwood Bandits
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “{2}{G}, {T}: Unless an opponent pays {2}, gain control of target artifact for as long as this creature remains on the battlefield”.
@@ -1664,6 +1718,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DUST_TO_DUST,
     &EXORCIST,
     &HOLY_LIGHT,
+    &MIRACLE_WORKER,
     &MORALE,
     &SQUIRE,
     &TIVADARS_CRUSADE,
@@ -1702,6 +1757,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MARSH_VIPER,
     &NIALL_SILVAIN,
     &PEOPLE_OF_THE_WOODS,
+    &SAVAEN_ELVES,
     &SCARWOOD_HAG,
     &SCAVENGER_FOLK,
     &TRACKER,

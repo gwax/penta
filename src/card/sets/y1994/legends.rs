@@ -3326,8 +3326,34 @@ pub(in crate::card::sets) static RAMIREZ_DEPIETRO: CardRecord = CardRecord::new(
         .with_ability(abilities::first_strike()),
 );
 
+static RAMSES_OVERDARK_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Enchanted,
+    ]),
+)];
+
 // LEG 252 — Ramses Overdark
-// Audit: blocked — Needs linked sacrifice/destruction accounting for “{T}: Destroy target enchanted creature”.
+pub(in crate::card::sets) static RAMSES_OVERDARK: CardRecord = CardRecord::new(
+    cards::RAMSES_OVERDARK,
+    "Ramses Overdark",
+    CardArt::new(
+        "f079c74e-a39a-40f9-9c7e-9319c0c189c6",
+        "Richard Kane Ferguson",
+    ),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{U}{U}{B}{B}"), &["Human", "Assassin"], 4, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::activated_with_targets(
+            "{T}: Destroy target enchanted creature.",
+            &[AbilityCostDef::TapSource],
+            &RAMSES_OVERDARK_TARGET,
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+        )),
+);
 
 // LEG 253 — Rasputin Dreamweaver
 // Audit: blocked — Needs dream counters that both pay for and restore themselves across several abilities. Each individual prevention and mana effect is available.
@@ -4173,6 +4199,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PRINCESS_LUCREZIA,
     &RAGNAR,
     &RAMIREZ_DEPIETRO,
+    &RAMSES_OVERDARK,
     &RIVEN_TURNBULL,
     &RUBINIA_SOULSINGER,
     &SIR_SHANDLAR_OF_EBERYN,

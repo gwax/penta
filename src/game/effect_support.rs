@@ -875,6 +875,7 @@ impl Game {
             | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::BlockedBySource
             | ObjectPredicateDef::Enchanted
+            | ObjectPredicateDef::AttachedTo(_)
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::HasKeyword(_)

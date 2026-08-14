@@ -78,6 +78,11 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Targeting by what a permanent is attached to.** `Enchanted` asks the
+  host's question -- is anything on it? -- and the new `AttachedTo` asks the
+  Aura's: what is it on? Both are needed because an Aura and its host are
+  both permanents, so a predicate that confused the two would still find
+  something to destroy. Ramses Overdark, Miracle Worker, and Savaen Elves.
 - **Meekstone.** Its prohibition is aimed by a live power reading rather than
   a list frozen when the artifact entered, so a creature pumped past two stays
   tapped and one shrunk below three untaps as usual. Every piece was already

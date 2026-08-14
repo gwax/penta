@@ -372,6 +372,7 @@ mod activation_costs_and_turns;
 mod activation_timing;
 mod additional_costs;
 mod alternative_costs;
+mod attachment_targets;
 mod attack_restrictions;
 mod aura_death;
 mod aura_tap_triggers;

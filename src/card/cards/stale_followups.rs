@@ -49,3 +49,6 @@ pub const AL_ABARAS_CARPET: CardDefinitionId = CardDefinitionId(1674);
 pub const SUBDUE: CardDefinitionId = CardDefinitionId(1675);
 pub const KRY_SHIELD: CardDefinitionId = CardDefinitionId(1676);
 pub const MEEKSTONE: CardDefinitionId = CardDefinitionId(1677);
+pub const MIRACLE_WORKER: CardDefinitionId = CardDefinitionId(1678);
+pub const SAVAEN_ELVES: CardDefinitionId = CardDefinitionId(1679);
+pub const RAMSES_OVERDARK: CardDefinitionId = CardDefinitionId(1680);

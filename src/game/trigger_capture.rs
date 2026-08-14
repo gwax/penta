@@ -784,6 +784,25 @@ impl Game {
             ObjectPredicateDef::Enchanted => self.battlefield.iter().any(|candidate| {
                 candidate.attached_to == Some(object.id) && self.is_aura_permanent(candidate)
             }),
+            // The Aura's own side of the question: what is it on?
+            ObjectPredicateDef::AttachedTo(predicate) => self
+                .battlefield
+                .iter()
+                .find(|candidate| candidate.card.id == object.id)
+                .and_then(|candidate| candidate.attached_to)
+                .and_then(|host| {
+                    self.battlefield
+                        .iter()
+                        .find(|candidate| candidate.card.id == host)
+                })
+                .is_some_and(|host| {
+                    self.trigger_object_matches(
+                        *predicate,
+                        &self.trigger_event_object(host),
+                        source,
+                        false,
+                    )
+                }),
             _ => unreachable!("only the battlefield-reading predicates arrive here"),
         }
     }
@@ -882,7 +901,8 @@ impl Game {
             ObjectPredicateDef::HasNonManaActivatedAbility
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::BlockedBySource
-            | ObjectPredicateDef::Enchanted => {
+            | ObjectPredicateDef::Enchanted
+            | ObjectPredicateDef::AttachedTo(_) => {
                 self.battlefield_relationship_matches(predicate, object, source)
             }
             ObjectPredicateDef::Tapped => object.tapped,
