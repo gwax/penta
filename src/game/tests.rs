@@ -405,6 +405,7 @@ mod exalted;
 mod exile_source_costs;
 mod extra_turns;
 mod fetch_tapped;
+mod filtered_player_prevention;
 mod guardian_beast;
 mod identity_and_mana;
 mod laces;

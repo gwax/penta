@@ -43,3 +43,6 @@ pub const GIANT_TORTOISE: CardDefinitionId = CardDefinitionId(1668);
 pub const ELVISH_HUNTER: CardDefinitionId = CardDefinitionId(1669);
 pub const ENCHANTED_BEING: CardDefinitionId = CardDefinitionId(1670);
 pub const DEMONIC_TORMENT: CardDefinitionId = CardDefinitionId(1671);
+pub const ANGUS_MACKENZIE: CardDefinitionId = CardDefinitionId(1672);
+pub const SCARECROW: CardDefinitionId = CardDefinitionId(1673);
+pub const AL_ABARAS_CARPET: CardDefinitionId = CardDefinitionId(1674);

@@ -338,6 +338,7 @@ impl Game {
             | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
             | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
+            | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
             | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. } => {
                 self.resolve_prevention_effect(scoped, object, context);
             }

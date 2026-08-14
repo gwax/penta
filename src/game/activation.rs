@@ -2,7 +2,8 @@ use super::{
     AbilityCostDef, AbilityOrigin, AbilityProcedureDef, ActivationTimingDef,
     BattlefieldExitCompletion, CardBehavior, CardInstance, CharacteristicContext, CounterKind,
     DeclarativeAbilityDef, FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost,
-    ManaPaymentPurpose, PlayerId, Step, Target, TargetSelection, ZoneKind, remove_card,
+    ManaPaymentPurpose, PlayRestriction, PlayerId, Step, Target, TargetSelection, ZoneKind,
+    remove_card,
 };
 
 impl Game {
@@ -23,6 +24,12 @@ impl Game {
             }
             ActivationTimingDef::SorcerySpeed => {
                 self.active_player == player && self.step.is_main() && self.stack.is_empty()
+            }
+            // The same window Berserk uses, and read the same way: once
+            // combat damage has started it is gone for the rest of the turn,
+            // even in a later step.
+            ActivationTimingDef::BeforeCombatDamage => {
+                self.play_timing_allows(PlayRestriction::BeforeCombatDamage)
             }
         }
     }

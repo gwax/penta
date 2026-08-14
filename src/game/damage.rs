@@ -110,6 +110,36 @@ impl Game {
         (left > 0).then_some(left)
     }
 
+    /// Whether one source belongs to a named group. The groups are engine
+    /// vocabulary rather than card text, so this is where their meaning
+    /// lives.
+    fn damage_source_is_in_group(
+        &self,
+        source: GameObjectId,
+        group: super::RelationalSourceFilter,
+    ) -> bool {
+        let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+        else {
+            return false;
+        };
+        if !self
+            .permanent_types(permanent)
+            .is_some_and(|types| types.contains(CardType::Creature))
+        {
+            return false;
+        }
+        let flying = self.permanent_has_executable_keyword(permanent, KeywordAbility::Flying);
+        match group {
+            super::RelationalSourceFilter::CreaturesWithFlying => flying,
+            super::RelationalSourceFilter::AttackingCreaturesWithoutFlying => {
+                permanent.attacking && !flying
+            }
+        }
+    }
+
     fn relational_damage_is_prevented(
         &self,
         source: Option<GameObjectId>,
@@ -137,6 +167,14 @@ impl Game {
                 }
                 super::RelationalDamagePrevention::FromAllExcept(exception) => {
                     combat && source != Some(*exception)
+                }
+                super::RelationalDamagePrevention::ToPlayerFrom {
+                    player,
+                    source: group,
+                } => {
+                    target == Some(Target::Player(*player))
+                        && source
+                            .is_some_and(|source| self.damage_source_is_in_group(source, *group))
                 }
             })
     }

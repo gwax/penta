@@ -78,6 +78,14 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Turn-long prevention that names a group of sources, and a fog's window.**
+  A relational prevention could cover a player and their creatures, or every
+  source but one; it could not name a group. The group is a closed vocabulary
+  rather than a predicate, because the rule outlives the resolution that made
+  it and has to survive a checkpoint -- and it is re-read as each damage
+  arrives, so an attacker that gains flying afterwards walks straight through
+  Al-abara's Carpet. Also an activation window matching the one Berserk
+  already used for casting. Al-abara's Carpet, Scarecrow, Angus Mackenzie.
 - **Combat-damage prevention gains a direction and a source filter.** The
   static prevention covered damage to *and* by a permanent in one lump, and
   the source-filtered one covered all damage rather than combat damage. Both

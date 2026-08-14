@@ -180,6 +180,10 @@ pub enum ActivationTimingDef {
     /// with the stack empty. Unlike the windows above, this one does depend
     /// on the stack, because that is what "as a sorcery" means.
     SorcerySpeed,
+    /// "Activate only before the combat damage step." The window is open all
+    /// turn until damage is about to be dealt, on either player's turn, which
+    /// is what makes the ability something the attacker can be surprised by.
+    BeforeCombatDamage,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

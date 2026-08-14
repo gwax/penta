@@ -2,10 +2,10 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt,
-    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectDurationDef,
-    EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, ShieldCoverageDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, DamageSourceGroupDef, EffectDef,
+    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ShieldCoverageDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ChoiceIndex, TargetIndex};
 use crate::mana_cost;
@@ -1471,7 +1471,26 @@ pub(in crate::card::sets) static FOUNTAIN_OF_YOUTH: CardRecord = CardRecord::new
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{3}, {T}: Target attacking creature gets +2/+0 until end of turn. When that creature leaves the battlefield this turn, sacrifice this artifact. If the creature deals damage to a creature…”.
 
 // DRK 108 — Scarecrow
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{6}, {T}: Prevent all damage that would be dealt to you this turn by creatures with flying”.
+pub(in crate::card::sets) static SCARECROW: CardRecord = CardRecord::new(
+    cards::SCARECROW,
+    "Scarecrow",
+    CardArt::new("93850e74-744c-4261-a84e-01eaced6e49a", "Anson Maddocks"),
+    CardSet::TheDark,
+    CardRules::new_artifact_creature(mana_cost!("{5}"), &["Scarecrow"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "{6}, {T}: Prevent all damage that would be dealt to you this turn by creatures \
+             with flying.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{6}")),
+                AbilityCostDef::TapSource,
+            ],
+            EffectDef::PreventDamageToPlayerFromThisTurn {
+                player: EffectRecipientDef::Controller,
+                source: DamageSourceGroupDef::CreaturesWithFlying,
+            },
+        ),
+    ),
+);
 
 // DRK 109 — Skull of Orm
 pub(in crate::card::sets) static SKULL_OF_ORM: CardRecord = CardRecord::new(
@@ -1698,6 +1717,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DIABOLIC_MACHINE,
     &FELLWAR_STONE,
     &FOUNTAIN_OF_YOUTH,
+    &SCARECROW,
     &SKULL_OF_ORM,
     &TORMODS_CRYPT,
     &TOWER_OF_COIREALL,

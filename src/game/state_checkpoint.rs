@@ -8,11 +8,11 @@ use super::{
     CombatDamageStage, ContinuousEffectTimestamp, CopiableAbility, CopiableCharacteristics,
     CounterKind, EntryCompletion, Game, GameEvent, GameObjectId, GameStack, Mana, ManaSource,
     ObjectBacking, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent,
-    PlayerId, PlayerState, Pregame, PreventionShield, RelationalDamagePrevention, ReplaceableEvent,
-    ReplacementEffectContext, ReplayRng, RetiredObject, ScopedEffect, ShieldCoverageDef,
-    StackAbilityPayload, StackObject, StackObjectKind, Step, TappedSourceStatBonus,
-    TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerContext,
-    ZoneMoveCause,
+    PlayerId, PlayerState, Pregame, PreventionShield, RelationalDamagePrevention,
+    RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext, ReplayRng, RetiredObject,
+    ScopedEffect, ShieldCoverageDef, StackAbilityPayload, StackObject, StackObjectKind, Step,
+    TappedSourceStatBonus, TemporaryAbilityGrant, TemporaryGrantedAbility,
+    TemporaryRemovedAbilities, TriggerContext, ZoneMoveCause,
 };
 use crate::card::{
     AppliedEffectDef, BasicLandType, CardType, CardTypeSet, ColorSet, DeclarativeAbilityDef,
@@ -358,6 +358,20 @@ impl Game {
                     RelationalDamagePrevention::FromAllExcept(source) => {
                         RelationalDamagePreventionSnapshot::FromAllExcept { source: source.0 }
                     }
+                    RelationalDamagePrevention::ToPlayerFrom { player, source } => {
+                        RelationalDamagePreventionSnapshot::ToPlayerFrom {
+                            player: player.index(),
+                            source: match source {
+                                RelationalSourceFilter::CreaturesWithFlying => {
+                                    "creaturesWithFlying"
+                                }
+                                RelationalSourceFilter::AttackingCreaturesWithoutFlying => {
+                                    "attackingCreaturesWithoutFlying"
+                                }
+                            }
+                            .into(),
+                        }
+                    }
                 })
                 .collect(),
             pregame: self.pregame.map(|pregame| match pregame {
@@ -678,14 +692,31 @@ impl Game {
             relational_damage_preventions: checkpoint
                 .relational_damage_preventions
                 .iter()
-                .map(|effect| match *effect {
+                .map(|effect| match effect {
                     RelationalDamagePreventionSnapshot::ToPlayerAndControlledCreatures {
                         player,
                     } => Ok(RelationalDamagePrevention::ToPlayerAndControlledCreatures(
-                        player_from_index(player)?,
+                        player_from_index(*player)?,
                     )),
+                    RelationalDamagePreventionSnapshot::ToPlayerFrom { player, source } => {
+                        let source = match source.as_str() {
+                            "creaturesWithFlying" => RelationalSourceFilter::CreaturesWithFlying,
+                            "attackingCreaturesWithoutFlying" => {
+                                RelationalSourceFilter::AttackingCreaturesWithoutFlying
+                            }
+                            _ => {
+                                return Err(
+                                    "unknown relational prevention source group".to_string()
+                                );
+                            }
+                        };
+                        Ok(RelationalDamagePrevention::ToPlayerFrom {
+                            player: player_from_index(*player)?,
+                            source,
+                        })
+                    }
                     RelationalDamagePreventionSnapshot::FromAllExcept { source } => Ok(
-                        RelationalDamagePrevention::FromAllExcept(GameObjectId(source)),
+                        RelationalDamagePrevention::FromAllExcept(GameObjectId(*source)),
                     ),
                 })
                 .collect::<Result<Vec<_>, String>>()?,

@@ -3,11 +3,11 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
     BasicLandType, BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, ComparisonDef, CounterKind, DiscardSelectionDef, DividedTotal,
-    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEffectDef,
-    ReplacementEventDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    CardSupertype, CardType, ComparisonDef, CounterKind, DamageSourceGroupDef, DiscardSelectionDef,
+    DividedTotal, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -2709,7 +2709,26 @@ pub(in crate::card::sets) static ADUN_OAKENSHIELD: CardRecord = CardRecord::new(
 );
 
 // LEG 217 — Angus Mackenzie
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{G}{W}{U}, {T}: Prevent all combat damage that would be dealt this turn. Activate only before the combat damage step”.
+pub(in crate::card::sets) static ANGUS_MACKENZIE: CardRecord = CardRecord::new(
+    cards::ANGUS_MACKENZIE,
+    "Angus Mackenzie",
+    CardArt::new("57264bd9-94f6-4d4d-baff-2b2900585635", "Bryon Wackwitz"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{G}{W}{U}"), &["Human", "Cleric"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(
+            AbilityDef::activated(
+                "{G}{W}{U}, {T}: Prevent all combat damage that would be dealt this turn. \
+                 Activate only before the combat damage step.",
+                &[
+                    AbilityCostDef::Mana(mana_cost!("{G}{W}{U}")),
+                    AbilityCostDef::TapSource,
+                ],
+                EffectDef::PreventAllCombatDamageThisTurn,
+            )
+            .with_activation_timing(ActivationTimingDef::BeforeCombatDamage),
+        ),
+);
 
 // LEG 218 — Arcades Sabboth
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Each untapped creature you control gets +0/+2 as long as it's not attacking”.
@@ -3619,7 +3638,24 @@ pub(in crate::card::sets) static XIRA_ARIEN: CardRecord = CardRecord::new(
 );
 
 // LEG 271 — Al-abara's Carpet
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{5}, {T}: Prevent all damage that would be dealt to you this turn by attacking creatures without flying”.
+pub(in crate::card::sets) static AL_ABARAS_CARPET: CardRecord = CardRecord::new(
+    cards::AL_ABARAS_CARPET,
+    "Al-abara's Carpet",
+    CardArt::new("5d5aae6e-fe20-4363-9589-5a54bcbbb77e", "Kaja Foglio"),
+    CardSet::Legends,
+    CardRules::new_artifact(mana_cost!("{5}")).with_ability(AbilityDef::activated(
+        "{5}, {T}: Prevent all damage that would be dealt to you this turn by attacking \
+         creatures without flying.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{5}")),
+            AbilityCostDef::TapSource,
+        ],
+        EffectDef::PreventDamageToPlayerFromThisTurn {
+            player: EffectRecipientDef::Controller,
+            source: DamageSourceGroupDef::AttackingCreaturesWithoutFlying,
+        },
+    )),
+);
 
 // LEG 272 — Alchor's Tomb
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “{2}, {T}: Target permanent you control becomes the color of your choice”.
@@ -4046,6 +4082,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WILLOW_SATYR,
     &WOLVERINE_PACK,
     &ADUN_OAKENSHIELD,
+    &ANGUS_MACKENZIE,
     &AXELROD_GUNNARSON,
     &BARKTOOTH_WARBEARD,
     &BORIS_DEVILBOON,
@@ -4086,6 +4123,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &UR_DRAGO,
     &VAEVICTIS_ASMADI,
     &XIRA_ARIEN,
+    &AL_ABARAS_CARPET,
     &ARENA_OF_THE_ANCIENTS,
     &HORN_OF_DEAFENING,
     &RELIC_BARRIER,

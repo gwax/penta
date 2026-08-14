@@ -538,6 +538,14 @@ pub enum EffectDef {
     PreventDamageToPlayerAndControlledCreaturesThisTurn {
         player: EffectRecipientDef,
     },
+    /// Prevent damage a named group of sources would deal to one player for
+    /// the rest of the turn. The group is a closed vocabulary rather than a
+    /// predicate: the rule outlives the resolution that made it, so it has to
+    /// survive a checkpoint.
+    PreventDamageToPlayerFromThisTurn {
+        player: EffectRecipientDef,
+        source: DamageSourceGroupDef,
+    },
     /// Prevent all combat damage from every source other than the resolved
     /// object for the rest of the turn.
     PreventAllCombatDamageExceptSourceThisTurn {
@@ -937,6 +945,13 @@ impl EffectDef {
             can_regenerate,
         }
     }
+}
+
+/// A named group of damage sources a turn-long prevention can answer.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DamageSourceGroupDef {
+    CreaturesWithFlying,
+    AttackingCreaturesWithoutFlying,
 }
 
 /// Turn structure used by beginning/end-of-step trigger declarations.

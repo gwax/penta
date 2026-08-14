@@ -324,6 +324,7 @@ impl HandcraftedPolicy {
             | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
             | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
+            | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
             | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);
             }

@@ -1,9 +1,40 @@
 use super::super::{
-    EffectDef, Game, PreventionShield, RelationalDamagePrevention, ScopedEffect, ShieldCoverageDef,
+    DamageSourceGroupDef, EffectDef, EffectRecipientDef, Game, PreventionShield,
+    RelationalDamagePrevention, RelationalSourceFilter, ScopedEffect, ShieldCoverageDef,
     StackObject, Target, TriggerContext,
 };
 
 impl Game {
+    /// Records a turn-long prevention naming a group of sources. The group
+    /// crosses from card vocabulary to engine vocabulary here, since only the
+    /// engine's form has to survive a checkpoint.
+    fn prevent_player_damage_from_group(
+        &mut self,
+        player: EffectRecipientDef,
+        source: DamageSourceGroupDef,
+        object: &StackObject,
+        context: TriggerContext,
+        scoped: ScopedEffect,
+    ) {
+        let filter = match source {
+            DamageSourceGroupDef::CreaturesWithFlying => {
+                RelationalSourceFilter::CreaturesWithFlying
+            }
+            DamageSourceGroupDef::AttackingCreaturesWithoutFlying => {
+                RelationalSourceFilter::AttackingCreaturesWithoutFlying
+            }
+        };
+        for target in self.effect_recipients(player, object, context, scoped) {
+            if let Target::Player(player) = target {
+                self.relational_damage_preventions
+                    .push(RelationalDamagePrevention::ToPlayerFrom {
+                        player,
+                        source: filter,
+                    });
+            }
+        }
+    }
+
     pub(super) fn resolve_prevention_effect(
         &mut self,
         scoped: ScopedEffect,
@@ -82,6 +113,9 @@ impl Game {
                         );
                     }
                 }
+            }
+            EffectDef::PreventDamageToPlayerFromThisTurn { player, source } => {
+                self.prevent_player_damage_from_group(player, source, object, context, scoped);
             }
             EffectDef::PreventAllCombatDamageExceptSourceThisTurn { source } => {
                 let source = self

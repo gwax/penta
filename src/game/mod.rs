@@ -15,14 +15,14 @@ use crate::card::{
     BattlefieldEntryModificationDef, CREATURE_TYPES, CardBehavior, CardCatalog,
     CardChoiceSourceDef, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
     CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext, ColorSet,
-    ComparisonDef, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, DiscardSelectionDef,
-    DividedTotal, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair,
-    KeywordAbility, ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
-    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction,
-    PlayerRelation, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
-    ReplacementEventDef, ShieldCoverageDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
+    ComparisonDef, ConditionDef, CostDef, CounterKind, DamageSourceGroupDef, DeclarativeAbilityDef,
+    DiscardSelectionDef, DividedTotal, DoubleFacedKind, EffectDef, EffectDurationDef,
+    EffectRecipientDef, HybridPair, KeywordAbility, ManaCost, ManaRestrictionDef, ManaSelectionDef,
+    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind,
+    PlayOptionDef, PlayRestriction, PlayerRelation, QuantifierDef, ReplacementConditionDef,
+    ReplacementEffectDef, ReplacementEventDef, ShieldCoverageDef, TargetPredicate, TargetSlotDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;
@@ -93,7 +93,7 @@ mod trigger_state;
 mod turn;
 mod zones;
 
-use prevention_state::RelationalDamagePrevention;
+use prevention_state::{RelationalDamagePrevention, RelationalSourceFilter};
 
 pub use decision::{
     DecisionKind, DecisionObservation, DecisionOption, DecisionOrderSemantics, DecisionPreference,

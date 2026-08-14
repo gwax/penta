@@ -21,13 +21,23 @@ pub(super) struct PreventionShieldSnapshot {
     pub(super) gain_life: bool,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(
     tag = "kind",
     rename_all = "camelCase",
     rename_all_fields = "camelCase"
 )]
 pub(super) enum RelationalDamagePreventionSnapshot {
-    ToPlayerAndControlledCreatures { player: usize },
-    FromAllExcept { source: u32 },
+    ToPlayerAndControlledCreatures {
+        player: usize,
+    },
+    FromAllExcept {
+        source: u32,
+    },
+    /// The source group is a name rather than a predicate: the rule outlives
+    /// the resolution that made it, and a predicate has no serialised form.
+    ToPlayerFrom {
+        player: usize,
+        source: String,
+    },
 }
