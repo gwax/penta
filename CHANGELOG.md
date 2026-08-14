@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **A group-wide "can't attack".** The printed "can't attack unless ..." is
+  something a creature says about itself and was read only from its own
+  clauses; this one is applied from elsewhere, so one permanent can hold back
+  whatever a query matches and stop doing so when it leaves. Akron Legionnaire
+  and Evil Eye of Orms-by-Gore.
 - **"Whenever this creature blocks or becomes blocked by ..."**, which is one
   printed clause covering both sides of a block rather than two. The event
   fires once per ordered pair, so a card reads the creature opposite it as the

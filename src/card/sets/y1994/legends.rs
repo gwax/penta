@@ -18,7 +18,33 @@ static INDESTRUCTIBLE_AURA_TARGET: [AbilityTargetDef; 1] =
     )];
 
 // LEG 1 — Akron Legionnaire
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Except for creatures named Akron Legionnaire and artifact creatures, creatures you control can't attack”.
+pub(in crate::card::sets) static AKRON_LEGIONNAIRE: CardRecord = CardRecord::new(
+    cards::AKRON_LEGIONNAIRE,
+    "Akron Legionnaire",
+    CardArt::new("5d074af2-8dbd-42d3-87eb-30f6e7d171ff", "Mark Poole"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{6}{W}{W}"), &["Giant", "Soldier"], 8, 4).with_ability(
+        AbilityDef::static_ability(
+            "Except for creatures named Akron Legionnaire and artifact creatures, creatures \
+             you control can't attack.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
+                            ObjectPredicateDef::SharesNameWithSource,
+                            ObjectPredicateDef::HasType(CardType::Artifact),
+                        ])),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::You,
+                },
+                effect: AppliedEffectDef::CannotAttack,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ),
+);
 
 // LEG 2 — Alabaster Potion
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “• Prevent the next X damage that would be dealt to any target this turn”.
@@ -587,7 +613,7 @@ pub(in crate::card::sets) static DEVOURING_DEEP: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a per-object, per-turn activation quota for “{0}: Enchanted creature becomes the color or colors of your choice. Activate only once each turn”.
 
 // LEG 52 — Elder Spawn
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't be blocked by red creatures”.
+// Audit: blocked — Needs an unless-paid upkeep whose cost is sacrificing an Island. The blocking restriction itself is available.
 
 // LEG 53 — Enchantment Alteration
 // Audit: blocked — Needs Aura reattachment targeting, enchant-legality validation, and attachment movement for “Attach target Aura attached to a creature or land to another permanent of that type”.
@@ -995,7 +1021,39 @@ pub(in crate::card::sets) static DARKNESS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all combat damage that would be dealt by enchanted creature”.
 
 // LEG 96 — Evil Eye of Orms-by-Gore
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't be blocked except by Walls”.
+pub(in crate::card::sets) static EVIL_EYE_OF_ORMS_BY_GORE: CardRecord = CardRecord::new(
+    cards::EVIL_EYE_OF_ORMS_BY_GORE,
+    "Evil Eye of Orms-by-Gore",
+    CardArt::new("b060f747-f65c-4ee0-923a-76298cb51a03", "Jesper Myrfors"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{4}{B}"), &["Eye"], 3, 6).with_abilities(&[
+        AbilityDef::static_ability(
+            "Non-Eye creatures you control can't attack.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Eye")),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::You,
+                },
+                effect: AppliedEffectDef::CannotAttack,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::static_ability(
+            "This creature can't be blocked except by Walls.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
+                    &ObjectPredicateDef::Subtype("Wall"),
+                )),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // LEG 97 — Fallen Angel
 pub(in crate::card::sets) static FALLEN_ANGEL: CardRecord = CardRecord::new(
@@ -3607,6 +3665,7 @@ pub(in crate::card::sets) static THE_TABERNACLE_AT_PENDRELL_VALE: CardRecord = C
 // Audit: blocked — Needs a modal choice between two named abilities and the removal of the chosen one; the vocabulary grants named abilities but does not take them away.
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AKRON_LEGIONNAIRE,
     &AMROU_KITHKIN,
     &CLEANSE,
     &DAVENANT_ARCHER,
@@ -3650,6 +3709,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CARRION_ANTS,
     &CYCLOPEAN_MUMMY,
     &DARKNESS,
+    &EVIL_EYE_OF_ORMS_BY_GORE,
     &FALLEN_ANGEL,
     &GHOSTS_OF_THE_DAMNED,
     &GREED,

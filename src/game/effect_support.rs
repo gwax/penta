@@ -257,9 +257,11 @@ impl Game {
                     permanent.toughness_bonus = permanent.toughness_bonus.saturating_add(toughness);
                 }
             }
-            // Only the printed static form of "can't be blocked" exists; a
-            // resolving one already has its own effect.
-            AppliedEffectDef::CannotBeBlocked
+            // Only the printed static forms of these exist. "Can't attack"
+            // is applied from elsewhere and read off the continuous layer;
+            // nothing resolves one onto a permanent for the turn.
+            AppliedEffectDef::CannotAttack
+            | AppliedEffectDef::CannotBeBlocked
             | AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::DoesNotUntapDuringUntapStep
             | AppliedEffectDef::MayChooseNotToUntap

@@ -248,7 +248,7 @@ pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord:
 );
 
 // ARN 17 — Merchant Ship
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack unless defending player controls an Island”.
+// Audit: blocked — Needs an attacks-and-is-unblocked trigger and a state trigger for controlling no Islands. The attack restriction itself is available.
 
 // ARN 18 — Old Man of the Sea
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: Gain control of target creature with power less than or equal to this creature's power for as long as this creature remains tapped and that creature's power remains less than or…”.

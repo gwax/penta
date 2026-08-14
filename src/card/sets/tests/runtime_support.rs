@@ -154,6 +154,7 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotAttack
         | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
@@ -231,6 +232,7 @@ fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotAttack
         | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
@@ -281,7 +283,8 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         },
         // The rest are continuous, not an until-end-of-turn rider a spell
         // hands out.
-        AppliedEffectDef::CannotBeCountered
+        AppliedEffectDef::CannotAttack
+        | AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBeEnchanted
@@ -566,6 +569,7 @@ pub(super) fn shared_static_applied_effect(
         AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotAttack
         | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::RemoveAbilities(_)
         | AppliedEffectDef::CannotBeCountered

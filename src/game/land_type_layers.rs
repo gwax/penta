@@ -164,6 +164,7 @@ impl Game {
             | AppliedEffectDef::DoesNotUntapDuringUntapStep
             | AppliedEffectDef::MayChooseNotToUntap
             | AppliedEffectDef::CannotBlock
+            | AppliedEffectDef::CannotAttack
             | AppliedEffectDef::CannotBeBlocked
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBecomeEnchanted
@@ -330,6 +331,7 @@ impl Game {
             | AppliedEffectDef::DoesNotUntapDuringUntapStep
             | AppliedEffectDef::MayChooseNotToUntap
             | AppliedEffectDef::CannotBlock
+            | AppliedEffectDef::CannotAttack
             | AppliedEffectDef::CannotBeBlocked
             | AppliedEffectDef::CannotBeEnchanted
             | AppliedEffectDef::CannotBecomeEnchanted

@@ -133,6 +133,10 @@ pub enum AppliedEffectDef {
     /// prohibition, the other side of [`Self::CannotBeBlockedBy`], and it is
     /// what "can't block" and "can't block this turn" both say.
     CannotBlock,
+    /// The affected creature cannot be declared as an attacker. Unlike
+    /// [`EffectDef::CannotAttackUnless`], which a creature prints about
+    /// itself, this is applied from elsewhere and so can cover a whole group.
+    CannotAttack,
     /// Nothing can block the affected creature. The turn-scoped form of this
     /// is a resolving effect; this is the printed static one, so it holds for
     /// as long as its source does.

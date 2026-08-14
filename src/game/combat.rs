@@ -65,7 +65,7 @@ impl Game {
         if moat_active && !flying {
             return false;
         }
-        if !self.attack_restrictions_met(permanent) {
+        if !self.attack_restrictions_met(permanent) || self.cannot_attack(permanent) {
             return false;
         }
         self.permanent_has_executable_keyword(permanent, KeywordAbility::Haste)
@@ -194,6 +194,20 @@ impl Game {
     fn cannot_be_blocked(&self, permanent: &Permanent) -> bool {
         self.visit_static_applied_effects(permanent, |applied| {
             if matches!(applied.effect, AppliedEffectDef::CannotBeBlocked) {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+
+    /// Whether a continuous effect from anywhere forbids this creature from
+    /// attacking. The printed "can't attack unless ..." clause is a separate
+    /// question a creature asks about itself.
+    pub(super) fn cannot_attack(&self, permanent: &Permanent) -> bool {
+        self.visit_static_applied_effects(permanent, |applied| {
+            if matches!(applied.effect, AppliedEffectDef::CannotAttack) {
                 ControlFlow::Break(())
             } else {
                 ControlFlow::Continue(())
