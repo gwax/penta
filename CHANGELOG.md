@@ -71,6 +71,13 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Counters that change power and toughness**, rather than only +1/+1. The
+  amounts now live on the counter kind, so a kind whose halves differ is
+  ordinary rather than a special case, and CR 121.3 annihilation is a
+  state-based action so a permanent never carries both +1/+1 and -1/-1. New
+  kinds are appended, leaving the serialized counter positions of the existing
+  ones alone, and a checkpoint written before a kind existed reconstructs with
+  none of it. Unstable Mutation and Armor Thrull.
 - **Three prevention identities with no engine change.** Healing Salve and
   Alabaster Potion offer prevention as one mode of a choose-one spell, and
   Rakalite pairs it with a delayed self-return; modes, "any target" shields,

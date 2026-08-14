@@ -505,11 +505,13 @@ fn parse_permanent(
                 .into(),
         );
     }
-    if state.counters.len() != CounterKind::COUNT {
+    // Counter kinds are appended rather than inserted, so a checkpoint
+    // written before a kind existed simply carries none of it.
+    if state.counters.len() > CounterKind::COUNT {
         return Err("counter vector has the wrong length".into());
     }
     let mut counters = [0; CounterKind::COUNT];
-    counters.copy_from_slice(&state.counters);
+    counters[..state.counters.len()].copy_from_slice(&state.counters);
     let owner = player_from_index(state.owner)?;
     let mut permanent = Permanent::entering(
         card(

@@ -409,7 +409,26 @@ pub(in crate::card::sets) static VODALIAN_SOLDIERS: CardRecord = CardRecord::new
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Tap an untapped Merfolk you control: This creature can attack this turn as though it didn't have defender”.
 
 // FEM 33a — Armor Thrull
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{T}, Sacrifice this creature: Put a +1/+2 counter on target creature”.
+pub(in crate::card::sets) static ARMOR_THRULL: CardRecord = CardRecord::new(
+    cards::ARMOR_THRULL,
+    "Armor Thrull",
+    CardArt::new("a98384d1-8e7d-4c41-9f23-47bc2ae2ad6a", "Pete Venters"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Thrull"], 1, 3).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice this creature: Put a +1/+2 counter on target creature.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                kind: CounterKind::PlusOnePlusTwo,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
+);
 
 // FEM 34a — Basal Thrull
 pub(in crate::card::sets) static BASAL_THRULL: CardRecord = CardRecord::new(
@@ -1401,6 +1420,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &VODALIAN_KNIGHTS,
     &VODALIAN_MAGE,
     &VODALIAN_SOLDIERS,
+    &ARMOR_THRULL,
     &BASAL_THRULL,
     &BREEDING_PIT,
     &HYMN_TO_TOURACH,

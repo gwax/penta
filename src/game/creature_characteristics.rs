@@ -29,8 +29,21 @@ impl Game {
         })
     }
 
-    pub(super) fn plus_one_counter_bonus(permanent: &Permanent) -> i16 {
-        i16::try_from(permanent.counters(CounterKind::PlusOnePlusOne)).unwrap_or(i16::MAX)
+    /// What every counter on this permanent adds to its power and toughness.
+    /// Most kinds are markers and add nothing; the ones that do carry their
+    /// own amounts rather than being special-cased here.
+    pub(super) fn counter_stat_bonus(permanent: &Permanent) -> (i16, i16) {
+        CounterKind::ALL.into_iter().fold((0, 0), |total, kind| {
+            let (power, toughness) = kind.power_toughness_bonus();
+            if power == 0 && toughness == 0 {
+                return total;
+            }
+            let count = i16::try_from(permanent.counters(kind)).unwrap_or(i16::MAX);
+            (
+                total.0.saturating_add(power.saturating_mul(count)),
+                total.1.saturating_add(toughness.saturating_mul(count)),
+            )
+        })
     }
 
     /// Whether any permanent on the battlefield matches, which is what an "as
@@ -169,20 +182,20 @@ impl Game {
         } else {
             0
         };
-        let counter_bonus = Self::plus_one_counter_bonus(permanent);
+        let counter_bonus = Self::counter_stat_bonus(permanent);
         crate::CreatureStats {
             power: base.power
                 + ascended
                 + permanent.power_bonus
                 + static_bonus.0
                 + conditional_bonus.0
-                + counter_bonus,
+                + counter_bonus.0,
             toughness: base.toughness
                 + ascended
                 + permanent.toughness_bonus
                 + static_bonus.1
                 + conditional_bonus.1
-                + counter_bonus,
+                + counter_bonus.1,
         }
     }
 

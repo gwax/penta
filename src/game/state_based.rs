@@ -14,6 +14,7 @@ impl Game {
         if self.check_player_loss_conditions() {
             return;
         }
+        self.annihilate_opposing_counters();
         loop {
             let battlefield_len = self.battlefield.len();
             let mut regenerate = Vec::new();
@@ -72,6 +73,20 @@ impl Game {
             }
         }
         self.capture_state_triggers();
+    }
+
+    /// CR 121.3: a permanent with both +1/+1 and -1/-1 counters loses an
+    /// equal number of each, so it never carries both at once.
+    fn annihilate_opposing_counters(&mut self) {
+        for permanent in &mut self.battlefield {
+            let paired = permanent
+                .counters(CounterKind::PlusOnePlusOne)
+                .min(permanent.counters(CounterKind::MinusOneMinusOne));
+            if paired > 0 {
+                permanent.remove_counters(CounterKind::PlusOnePlusOne, paired);
+                permanent.remove_counters(CounterKind::MinusOneMinusOne, paired);
+            }
+        }
     }
 
     /// CR 704.5a-b: zero life and trying to draw from an empty library are

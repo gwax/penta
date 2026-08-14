@@ -11,10 +11,16 @@ pub enum CounterKind {
     Charge,
     Loyalty,
     Spore,
+    // Appended rather than inserted: `index` positions counters in a
+    // serialized array, so the existing kinds keep theirs.
+    /// CR 121.3: this and [`Self::PlusOnePlusOne`] annihilate in pairs as a
+    /// state-based action, so a permanent never carries both.
+    MinusOneMinusOne,
+    PlusOnePlusTwo,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 6;
+    pub const COUNT: usize = 8;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -23,7 +29,22 @@ impl CounterKind {
         Self::Charge,
         Self::Loyalty,
         Self::Spore,
+        Self::MinusOneMinusOne,
+        Self::PlusOnePlusTwo,
     ];
+
+    /// What one counter of this kind adds to power and toughness. The kinds
+    /// that are only markers add nothing; the card putting them there gives
+    /// them whatever meaning they have.
+    #[must_use]
+    pub const fn power_toughness_bonus(self) -> (i16, i16) {
+        match self {
+            Self::PlusOnePlusOne => (1, 1),
+            Self::MinusOneMinusOne => (-1, -1),
+            Self::PlusOnePlusTwo => (1, 2),
+            Self::Javelin | Self::Muster | Self::Charge | Self::Loyalty | Self::Spore => (0, 0),
+        }
+    }
 
     #[must_use]
     pub const fn index(self) -> usize {
@@ -34,6 +55,8 @@ impl CounterKind {
             Self::Charge => 3,
             Self::Loyalty => 4,
             Self::Spore => 5,
+            Self::MinusOneMinusOne => 6,
+            Self::PlusOnePlusTwo => 7,
         }
     }
 
@@ -46,6 +69,8 @@ impl CounterKind {
             Self::Charge => "charge",
             Self::Loyalty => "loyalty",
             Self::Spore => "spore",
+            Self::MinusOneMinusOne => "-1/-1",
+            Self::PlusOnePlusTwo => "+1/+2",
         }
     }
 }

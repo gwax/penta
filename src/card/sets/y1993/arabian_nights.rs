@@ -3,10 +3,11 @@ use crate::Format;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior,
-    CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef, DiscardSelectionDef,
-    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, LikelihoodDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef, CounterKind,
+    DiscardSelectionDef, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
+    LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -282,7 +283,37 @@ pub(in crate::card::sets) static SERENDIB_EFREET: CardRecord = CardRecord::new(
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “{T}: Draw a card and reveal it. If it isn't a land card, discard it”.
 
 // ARN 22 — Unstable Mutation
-// Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller for “At the beginning of the upkeep of enchanted creature's controller, put a -1/-1 counter on that creature”.
+pub(in crate::card::sets) static UNSTABLE_MUTATION: CardRecord = CardRecord::new(
+    cards::UNSTABLE_MUTATION,
+    "Unstable Mutation",
+    CardArt::new("a79e9236-a39e-471a-b18a-2c2ba16e7774", "Douglas Shuler"),
+    CardSet::ArabianNights,
+    CardRules::new_enchantment(mana_cost!("{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +3/+3.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(3),
+                        toughness: ValueDef::Constant(3),
+                    },
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            abilities::enchanted_controller_upkeep(
+                "At the beginning of the upkeep of enchanted creature's controller, put a \
+                 -1/-1 counter on that creature.",
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    kind: CounterKind::MinusOneMinusOne,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // ARN 23 — Cuombajj Witches
 // Audit: blocked — Needs resolution to pause for an opponent-controlled second target choice after the controller's target is fixed.
@@ -1143,6 +1174,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FLYING_MEN,
     &ISLAND_FISH_JASCONIUS,
     &SERENDIB_EFREET,
+    &UNSTABLE_MUTATION,
     &EL_HAJJAJ,
     &GUARDIAN_BEAST,
     &HASRAN_OGRESS,

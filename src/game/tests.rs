@@ -428,6 +428,7 @@ mod ring_of_maruf;
 mod scavenge;
 mod search_and_reveal;
 mod spore;
+mod stat_counters;
 mod state_triggers_and_life;
 mod targeted_answers;
 mod targeting_characteristics;
