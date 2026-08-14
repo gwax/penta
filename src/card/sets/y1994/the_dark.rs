@@ -1044,7 +1044,38 @@ pub(in crate::card::sets) static NIALL_SILVAIN: CardRecord = CardRecord::new(
 );
 
 // DRK 83 — People of the Woods
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “People of the Woods's toughness is equal to the number of Forests you control”.
+// Audit: partial — Its toughness is a battlefield-only continuous effect rather than a characteristic-defining ability, so it reads as printed in every other zone.
+pub(in crate::card::sets) static PEOPLE_OF_THE_WOODS: CardRecord = CardRecord::new(
+    cards::PEOPLE_OF_THE_WOODS,
+    "People of the Woods",
+    CardArt::new("2fb5926f-9988-4bc0-b2b7-e286db208310", "Drew Tucker"),
+    CardSet::TheDark,
+    // Only the toughness is counted, so the printed power stays on the body.
+    CardRules::new_creature(mana_cost!("{G}{G}"), &["Human"], 1, 0).with_ability(
+        AbilityDef::static_ability(
+            "People of the Woods's toughness is equal to the number of Forests you control.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(0),
+                    toughness: ValueDef::CountMatchingObjects(&FORESTS_YOU_CONTROL),
+                },
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        )
+        .with_coverage(AbilityCoverageDef::partial(
+            "A characteristic-defining ability sets toughness in every zone. This is a \
+             battlefield-only continuous effect, so the value is right wherever the card is \
+             played and absent for anything reading it in another zone.",
+        )),
+    ),
+);
+
+static FORESTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::You,
+};
 
 // DRK 84 — Savaen Elves
 // Audit: blocked — Needs linked sacrifice/destruction accounting for “{G}{G}, {T}: Destroy target Aura attached to a land”.
@@ -1586,6 +1617,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HIDDEN_PATH,
     &LAND_LEECHES,
     &NIALL_SILVAIN,
+    &PEOPLE_OF_THE_WOODS,
     &SCARWOOD_HAG,
     &SCAVENGER_FOLK,
     &TRACKER,

@@ -71,6 +71,10 @@ pub enum ObjectPredicateDef {
     HasNonManaActivatedAbility,
     /// A creature currently declared as an attacker in combat.
     Attacking,
+    /// A creature currently blocking one. This is the other half of
+    /// [`Self::AttackingOrBlocking`], which neither of the single-sided
+    /// predicates could express on its own.
+    Blocking,
     /// A creature that was declared as an attacker at any point this turn,
     /// whether or not it is still attacking or even still in combat.
     AttackedThisTurn,

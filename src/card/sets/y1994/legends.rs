@@ -2910,7 +2910,44 @@ pub(in crate::card::sets) static SUNASTIAN_FALCONER: CardRecord = CardRecord::ne
 );
 
 // LEG 262 — Tetsuo Umezawa
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{U}{B}{B}{R}, {T}: Destroy target tapped or blocking creature”.
+pub(in crate::card::sets) static TETSUO_UMEZAWA: CardRecord = CardRecord::new(
+    cards::TETSUO_UMEZAWA,
+    "Tetsuo Umezawa",
+    CardArt::new("8384f87b-26c2-45b7-98ef-352c384f205e", "Julie Baroh"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{U}{B}{R}"), &["Human", "Archer"], 3, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Tetsuo Umezawa can't be the target of Aura spells.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::CannotBeEnchanted,
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "{U}{B}{B}{R}, {T}: Destroy target tapped or blocking creature.",
+                &[
+                    AbilityCostDef::Mana(mana_cost!("{U}{B}{B}{R}")),
+                    AbilityCostDef::TapSource,
+                ],
+                &TAPPED_OR_BLOCKING_CREATURE,
+                EffectDef::Destroy {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    can_regenerate: true,
+                },
+            ),
+        ]),
+);
+
+static TAPPED_OR_BLOCKING_CREATURE: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::Tapped, ObjectPredicateDef::Blocking]),
+        ]),
+    )];
 
 // LEG 263 — The Lady of the Mountain
 pub(in crate::card::sets) static THE_LADY_OF_THE_MOUNTAIN: CardRecord = CardRecord::new(
@@ -3534,6 +3571,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SIR_SHANDLAR_OF_EBERYN,
     &SIVITRI_SCARZAM,
     &SUNASTIAN_FALCONER,
+    &TETSUO_UMEZAWA,
     &THE_LADY_OF_THE_MOUNTAIN,
     &TOBIAS_ANDRION,
     &TOR_WAUKI,

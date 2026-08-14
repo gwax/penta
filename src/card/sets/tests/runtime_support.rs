@@ -41,6 +41,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::AttackedThisTurn => true,
     }
 }

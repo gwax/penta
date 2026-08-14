@@ -422,6 +422,7 @@ impl Game {
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::Tapped
             | ObjectPredicateDef::Attacking
+            | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::HasNonManaActivatedAbility
             | ObjectPredicateDef::Special(_) => false,

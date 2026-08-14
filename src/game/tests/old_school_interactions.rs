@@ -780,6 +780,55 @@ fn berserk_doubles_any_creature_and_only_kills_one_that_attacked() {
     );
 }
 
+/// The existing coverage leaves the creature flagged as attacking all the way
+/// into the end step, which no real game does: end of combat clears that flag
+/// before the end step arrives. Berserk's delayed trigger asks whether the
+/// creature attacked *this turn*, so it has to survive that clearing.
+#[test]
+fn berserk_collects_a_creature_that_has_already_left_combat() {
+    let mut game = ready_game();
+    let mut lions = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    lions.attacking = true;
+    lions.attacked_this_turn = true;
+    game.battlefield.push(lions);
+
+    let berserk = card(10_001, cards::BERSERK, PlayerId::One);
+    game.players[0].hand.push(berserk.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    let action = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        berserk.id,
+        Target::Permanent(GameObjectId(10_000)),
+    );
+    game.apply(PlayerId::One, action).unwrap();
+    drain_pending(&mut game);
+
+    // What end of combat does, and what the earlier tests skip.
+    game.clear_combat();
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == GameObjectId(10_000))
+            .expect("still there after combat")
+            .attacking,
+        "end of combat took the attacking flag"
+    );
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == GameObjectId(10_000)),
+        "it attacked this turn, which is what Berserk asks"
+    );
+}
+
 #[test]
 fn berserk_cannot_be_cast_once_combat_damage_arrives() {
     // The restriction is the whole reason Berserk is a decision the defender

@@ -23,6 +23,15 @@ the bot-wire epoch.
 This release reports engine 0.7.0 and protocol 22. The simulation fingerprint
 distinguishes snapshots of the covered source and build inputs.
 
+### Fixed
+
+- **Berserk never destroyed the creature it pumped.** Its delayed trigger asks
+  whether the creature attacked this turn, and that predicate was reading
+  whether the creature is *still* attacking. End of combat clears that flag
+  before the end step arrives, so the check was always false in a real game.
+  The existing coverage left the creature flagged as attacking into the end
+  step, which no game does, and so passed either way.
+
 ### Added
 
 - **Protocol 22 establishes the durable compatibility model.** JSON objects are
@@ -42,6 +51,10 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **A `Blocking` object predicate**, the other half of "attacking or
+  blocking", which neither single-sided predicate could express. Tetsuo
+  Umezawa needs it and is now executable; People of the Woods joins the
+  counted bodies with its toughness alone.
 - **Creatures whose printed body is a battlefield count**, declared the way the
   token vocabulary already declared them: a zero-or-one body plus a static
   counted bonus. Plague Rats, Keldon Warlord, Gaea's Avenger, and Dakkon
@@ -630,6 +643,7 @@ the new methods sit beside the protocol rather than in it.
 ## 0.4.0 — protocol 2
 
 ### Fixed
+
 
 - A library search may now fail to find. Searching a hidden zone never obliges
   the searcher to find anything (CR 701.19c), but Demonic Tutor demanded

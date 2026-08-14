@@ -38,6 +38,7 @@ use crate::{AttackDefender, Format};
 
 mod ability_actions;
 mod ability_layers;
+mod ability_targeting;
 mod activation;
 mod activation_state;
 mod api;

@@ -144,3 +144,99 @@ fn every_counted_body_reports_its_declared_coverage() {
         );
     }
 }
+
+/// The other half of "attacking or blocking", which neither single-sided
+/// predicate could express. Tetsuo Umezawa is the card that needs it, and the
+/// distinction it draws is the whole point: an attacker is not a blocker.
+mod blocking_predicate {
+    use super::*;
+
+    fn tetsuo_game() -> (Game, GameObjectId) {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        let tetsuo = creature(10_000, cards::TETSUO_UMEZAWA, PlayerId::One);
+        let tetsuo_id = tetsuo.card.id;
+        game.battlefield.push(tetsuo);
+        game.players[PlayerId::One.index()].mana_pool.blue = 1;
+        game.players[PlayerId::One.index()].mana_pool.black = 2;
+        game.players[PlayerId::One.index()].mana_pool.red = 1;
+        (game, tetsuo_id)
+    }
+
+    fn targets(game: &Game, source: GameObjectId) -> Vec<GameObjectId> {
+        let mut found = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::ActivateAbility {
+                    source: actual,
+                    targets,
+                    ..
+                } if actual == source => targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .find_map(|target| match target {
+                        Target::Permanent(id) => Some(*id),
+                        _ => None,
+                    }),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        found.sort_unstable();
+        found
+    }
+
+    #[test]
+    fn tetsuo_reaches_a_blocker_but_not_an_untapped_attacker() {
+        let (mut game, tetsuo_id) = tetsuo_game();
+
+        // Attacking, and untapped because it has vigilance-like state here.
+        let mut attacker = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
+        attacker.attacking = true;
+        let attacker_id = attacker.card.id;
+        game.battlefield.push(attacker);
+
+        // Blocking that attacker, and untapped: blockers do not tap.
+        let mut blocker = creature(10_002, cards::SAVANNAH_LIONS, PlayerId::One);
+        blocker.blocking = Some(attacker_id);
+        let blocker_id = blocker.card.id;
+        game.battlefield.push(blocker);
+
+        assert_eq!(
+            targets(&game, tetsuo_id),
+            vec![blocker_id],
+            "a blocker qualifies and an untapped attacker does not"
+        );
+    }
+
+    #[test]
+    fn tetsuo_also_reaches_anything_tapped() {
+        let (mut game, tetsuo_id) = tetsuo_game();
+        let mut tapped = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
+        tapped.tapped = true;
+        let tapped_id = tapped.card.id;
+        game.battlefield.push(tapped);
+        game.battlefield
+            .push(creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two));
+
+        assert_eq!(targets(&game, tetsuo_id), vec![tapped_id]);
+    }
+
+    #[test]
+    fn people_of_the_woods_counts_only_its_toughness() {
+        let mut game = ready_game();
+        let people = creature(10_000, cards::PEOPLE_OF_THE_WOODS, PlayerId::One);
+        let people_id = people.card.id;
+        game.battlefield.push(people);
+        game.battlefield
+            .push(creature(10_001, cards::FOREST, PlayerId::One));
+        game.battlefield
+            .push(creature(10_002, cards::FOREST, PlayerId::One));
+
+        assert_eq!(
+            body(&game, people_id),
+            (1, 2),
+            "the printed power stays put while the toughness counts Forests"
+        );
+    }
+}
