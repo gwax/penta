@@ -92,6 +92,36 @@ impl Game {
         })
     }
 
+    /// One value inside a static power/toughness bonus. A scale multiplies
+    /// another such value, which is how "+2/+2 for each Aura attached to it"
+    /// is expressed; everything outside this vocabulary stays a seam, and the
+    /// boundary test rejects a card that reaches for one.
+    fn static_stat_value(
+        &self,
+        value: ValueDef,
+        source: GameObjectId,
+        controller: PlayerId,
+    ) -> i32 {
+        match value {
+            ValueDef::Constant(amount) => amount,
+            ValueDef::AnyMatchingObject(query) => {
+                i32::from(self.any_battlefield_object_matches(query, source, controller))
+            }
+            // A bonus that counts is how a token whose printed power and
+            // toughness are defined by the board is expressed: a zero-power
+            // body plus the count.
+            ValueDef::CountMatchingObjects(query) => i32::try_from(
+                self.objects_matching_query(*query, controller, source, TriggerContext::empty())
+                    .len(),
+            )
+            .unwrap_or(i32::MAX),
+            ValueDef::Scaled(scaled) => self
+                .static_stat_value(scaled.value, source, controller)
+                .saturating_mul(scaled.factor),
+            _ => 0,
+        }
+    }
+
     pub(super) fn static_power_toughness_bonus(&self, permanent: &Permanent) -> (i16, i16) {
         let mut total = (0_i16, 0_i16);
         let result = self.visit_static_applied_effects(permanent, |applied| {
@@ -102,28 +132,7 @@ impl Game {
                     .controller_of_object(applied.source)
                     .unwrap_or(permanent.controller);
                 let bonus = |value: ValueDef| -> i16 {
-                    let amount = match value {
-                        ValueDef::Constant(amount) => amount,
-                        ValueDef::AnyMatchingObject(query) => i32::from(
-                            self.any_battlefield_object_matches(query, applied.source, controller),
-                        ),
-                        // A bonus that counts is how a token whose printed
-                        // power and toughness are defined by the board is
-                        // expressed: a zero-power body plus the count.
-                        ValueDef::CountMatchingObjects(query) => i32::try_from(
-                            self.objects_matching_query(
-                                *query,
-                                controller,
-                                applied.source,
-                                TriggerContext::empty(),
-                            )
-                            .len(),
-                        )
-                        .unwrap_or(i32::MAX),
-                        // Everything else stays a seam; the boundary test
-                        // rejects a card that reaches for one.
-                        _ => 0,
-                    };
+                    let amount = self.static_stat_value(value, applied.source, controller);
                     i16::try_from(amount.clamp(i32::from(i16::MIN), i32::from(i16::MAX)))
                         .expect("the static bonus was clamped to i16")
                 };

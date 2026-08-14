@@ -6,8 +6,8 @@ use crate::card::{
     CardSupertype, CardType, ComparisonDef, CounterKind, DamageSourceGroupDef, DiscardSelectionDef,
     DividedTotal, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
     KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ReplacementEffectDef, ReplacementEventDef, ScaledValueDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -2480,8 +2480,42 @@ pub(in crate::card::sets) static PRADESH_GYPSIES: CardRecord = CardRecord::new(
     ),
 );
 
+/// Every Aura on it counts, whoever controls them.
+static AURAS_ON_THE_WOMBAT: ObjectQueryDef = ObjectQueryDef {
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Subtype("Aura"),
+        ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source),
+    ]),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::Any,
+};
+
+static WOMBAT_BONUS: ValueDef = ValueDef::Scaled(&ScaledValueDef::new(
+    ValueDef::CountMatchingObjects(&AURAS_ON_THE_WOMBAT),
+    2,
+));
+
 // LEG 198 — Rabid Wombat
-// Audit: blocked — Needs a dynamic value that counts attached Auras for “This creature gets +2/+2 for each Aura attached to it”.
+pub(in crate::card::sets) static RABID_WOMBAT: CardRecord = CardRecord::new(
+    cards::RABID_WOMBAT,
+    "Rabid Wombat",
+    CardArt::new("9d9b9eb8-6367-4ab5-8e00-a9c9e1d69032", "Kaja Foglio"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Wombat"], 0, 1).with_abilities(&[
+        abilities::vigilance(),
+        AbilityDef::static_ability(
+            "This creature gets +2/+2 for each Aura attached to it.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: WOMBAT_BONUS,
+                    toughness: WOMBAT_BONUS,
+                },
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // LEG 199 — Radjan Spirit
 pub(in crate::card::sets) static RADJAN_SPIRIT: CardRecord = CardRecord::new(
@@ -4163,6 +4197,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MOSS_MONSTER,
     &PIXIE_QUEEN,
     &PRADESH_GYPSIES,
+    &RABID_WOMBAT,
     &RADJAN_SPIRIT,
     &SUBDUE,
     &SYLVAN_LIBRARY,

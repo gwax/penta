@@ -78,6 +78,11 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **A static bonus that counts, and then scales.** Static power/toughness
+  could count matching objects but not multiply the count, so "+2/+2 for each
+  Aura attached to it" had no form. The value walk now handles a scale over
+  any value it already understood, and the runtime boundary allows exactly
+  that. Rabid Wombat.
 - **Targeting by what a permanent is attached to.** `Enchanted` asks the
   host's question -- is anything on it? -- and the new `AttachedTo` asks the
   Aura's: what is it on? Both are needed because an Aura and its host are

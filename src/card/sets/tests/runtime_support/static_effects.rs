@@ -202,15 +202,7 @@ pub(in super::super) fn shared_static_applied_effect(
                     .all(|effect| shared_static_applied_effect(recipient, effect))
         }
         AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
-            let supported = |value| {
-                matches!(
-                    value,
-                    crate::card::ValueDef::Constant(_)
-                        | crate::card::ValueDef::AnyMatchingObject(_)
-                        | crate::card::ValueDef::CountMatchingObjects(_)
-                )
-            };
-            supported(power) && supported(toughness)
+            static_stat_value(power) && static_stat_value(toughness)
         }
         AppliedEffectDef::AddLandTypes(land_types) | AppliedEffectDef::SetLandTypes(land_types) => {
             !land_types.is_empty()
@@ -275,5 +267,18 @@ pub(in super::super) fn shared_static_applied_effect(
                 }
         }
         AppliedEffectDef::Special(_) => false,
+    }
+}
+
+/// The values a static power/toughness bonus may be built from. They are the
+/// ones the layer walk can evaluate without reading a resolving spell, and a
+/// scale is allowed only over another such value.
+fn static_stat_value(value: crate::card::ValueDef) -> bool {
+    match value {
+        crate::card::ValueDef::Constant(_)
+        | crate::card::ValueDef::AnyMatchingObject(_)
+        | crate::card::ValueDef::CountMatchingObjects(_) => true,
+        crate::card::ValueDef::Scaled(scaled) => static_stat_value(scaled.value),
+        _ => false,
     }
 }

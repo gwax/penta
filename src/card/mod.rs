@@ -41,11 +41,11 @@ pub use model::{
     ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef, MeldResultDef, ModalSpellDef, ModeDef,
     ModeSetDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind, PlayOptionDef,
     PlayRestriction, PlayerRelation, PrintedManaCost, QuantifierDef, ReplacementAbilityDef,
-    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ShieldCoverageDef,
-    SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, SpellForm, StaticAbilityDef,
-    TargetConditionDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TriggeredAbilityDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, ZonePlacement,
+    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ScaledValueDef,
+    ShieldCoverageDef, SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, SpellForm,
+    StaticAbilityDef, TargetConditionDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnKindDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef, ZonePlacement,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

@@ -434,6 +434,7 @@ mod premodern_split_and_lock;
 mod premodern_zone_and_denial;
 mod prevention;
 mod prevention_modes;
+mod rabid_wombat;
 mod rampage;
 mod regeneration;
 mod removal_and_keywords;
