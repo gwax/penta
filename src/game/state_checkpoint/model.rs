@@ -182,6 +182,8 @@ pub(super) struct PermanentSnapshot {
     pub(super) power_bonus: i16,
     pub(super) toughness_bonus: i16,
     pub(super) unblockable_this_turn: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) cannot_block_this_turn: bool,
     pub(super) combat_damage_prevented: bool,
     pub(super) combat_damage_dealt_by_prevented: bool,
     pub(super) control_reverts_to: Option<usize>,

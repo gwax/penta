@@ -117,6 +117,10 @@ pub enum AppliedEffectDef {
     CannotChangeController,
     /// A creature matching this predicate cannot block the affected creature.
     CannotBeBlockedBy(ObjectPredicateDef),
+    /// The affected creature cannot block at all. This is the blocker's own
+    /// prohibition, the other side of [`Self::CannotBeBlockedBy`], and it is
+    /// what "can't block" and "can't block this turn" both say.
+    CannotBlock,
     /// No combat damage is dealt to or by the affected permanent. Unlike the
     /// turn-scoped [`EffectDef::PreventCombatDamageThisTurn`] this holds for
     /// as long as the effect applies, which is what an Aura needs.

@@ -149,6 +149,7 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
         AppliedEffectDef::ModifyPowerToughness { .. }
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
+        | AppliedEffectDef::CannotBlock
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::CannotBeBlockedBy(_)
@@ -223,6 +224,7 @@ fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
         AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
+        | AppliedEffectDef::CannotBlock
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
@@ -244,8 +246,11 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         }
         // These operations are executed directly by the shared apply
         // path; animation reads the whole creature off the definition.
+        // "Can't block this turn" joins these: several cards print it as a
+        // resolving rider, so the shared apply path has to place it.
         AppliedEffectDef::Animate(_)
         | AppliedEffectDef::ModifyPowerToughness { .. }
+        | AppliedEffectDef::CannotBlock
         | AppliedEffectDef::RemoveAbilities(_) => true,
         AppliedEffectDef::GrantAbility(ability) => match ability.definition {
             DeclarativeAbilityDef::ActivatedMana(definition)
@@ -265,8 +270,8 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
             | DeclarativeAbilityDef::SpecialAction(_)
             | DeclarativeAbilityDef::Legacy => false,
         },
-        // A blocking restriction is continuous, not an until-end-of-turn
-        // rider a spell hands out.
+        // The rest are continuous, not an until-end-of-turn rider a spell
+        // hands out.
         AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
@@ -536,6 +541,7 @@ pub(super) fn shared_static_applied_effect(
         ),
         AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
+        | AppliedEffectDef::CannotBlock
         | AppliedEffectDef::RemoveAbilities(_)
         | AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::CannotBeEnchanted

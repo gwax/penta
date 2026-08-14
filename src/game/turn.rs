@@ -474,6 +474,7 @@ impl Game {
                 permanent.controller = owner;
             }
             permanent.unblockable_this_turn = false;
+            permanent.cannot_block_this_turn = false;
             permanent.combat_damage_prevented = false;
             permanent.combat_damage_dealt_by_prevented = false;
             permanent.destroy_at_end = false;

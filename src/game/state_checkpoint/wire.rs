@@ -497,6 +497,7 @@ fn parse_permanent(
     permanent.blocking = shown.blocking;
     permanent.activated_loyalty_this_turn = shown.activated_loyalty_this_turn;
     permanent.unblockable_this_turn = state.unblockable_this_turn;
+    permanent.cannot_block_this_turn = state.cannot_block_this_turn;
     permanent.combat_damage_prevented = state.combat_damage_prevented;
     permanent.combat_damage_dealt_by_prevented = state.combat_damage_dealt_by_prevented;
     permanent.control_reverts_to = state

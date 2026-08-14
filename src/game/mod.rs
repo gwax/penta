@@ -215,6 +215,10 @@ struct Permanent {
     /// Whether nothing may block this creature for the rest of the turn.
     /// Cleared in cleanup with the other until-end-of-turn state.
     unblockable_this_turn: bool,
+    /// Whether a resolved effect has taken this permanent's blocking away for
+    /// the rest of the turn. The printed static form is read from the
+    /// continuous layer instead.
+    cannot_block_this_turn: bool,
     /// Whether combat damage to and from this permanent is prevented for the
     /// rest of the turn. Maze of Ith sets it; the creature stays an attacker
     /// so its attack triggers and its blockers are unaffected.
@@ -333,6 +337,7 @@ impl Permanent {
             emblem_source: None,
             activated_loyalty_this_turn: false,
             unblockable_this_turn: false,
+            cannot_block_this_turn: false,
             combat_damage_prevented: false,
             combat_damage_dealt_by_prevented: false,
             control_reverts_to: None,

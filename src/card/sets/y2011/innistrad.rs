@@ -2149,7 +2149,23 @@ static EVERY_CREATURE: ObjectQueryDef = ObjectQueryDef {
 };
 
 // ISD 123 — Vampire Interloper
-// Audit: blocked — Needs an executable “this creature can't block” combat restriction.
+pub(in crate::card::sets) static VAMPIRE_INTERLOPER: CardRecord = CardRecord::new(
+    cards::VAMPIRE_INTERLOPER,
+    "Vampire Interloper",
+    CardArt::new("48105c2e-ee36-4117-b56b-3440298da995", "James Ryman"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Vampire", "Scout"], 2, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "This creature can't block.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBlock,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // ISD 124 — Victim of Night
 pub(in crate::card::sets) static VICTIM_OF_NIGHT: CardRecord = CardRecord::new(
@@ -2331,7 +2347,30 @@ pub(in crate::card::sets) static BRIMSTONE_VOLLEY: CardRecord = CardRecord::new(
 // Audit: blocked — Needs deterministic random selection of an instant or sorcery card from your graveyard.
 
 // ISD 135 — Crossway Vampire
-// Audit: blocked — Needs a temporary “target creature can't block this turn” effect.
+pub(in crate::card::sets) static CROSSWAY_VAMPIRE: CardRecord = CardRecord::new(
+    cards::CROSSWAY_VAMPIRE,
+    "Crossway Vampire",
+    CardArt::new("3e7a137f-e19e-43a6-aab8-02b175c9d626", "Mark Evans"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Vampire"], 3, 2).with_ability(
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, target creature can't block this turn.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::CannotBlock,
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 // ISD 136 — Curse of Stalked Prey
 // Audit: blocked — Needs a player Aura and a combat-damage trigger derived from the enchanted player.
@@ -2679,7 +2718,34 @@ pub(in crate::card::sets) static KESSIG_WOLF: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a continuous condition that grants haste only while an opponent controls a Human.
 
 // ISD 154 — Nightbird's Clutches
-// Audit: blocked — Needs a temporary “can't block this turn” effect for up to two targeted creatures.
+pub(in crate::card::sets) static NIGHTBIRDS_CLUTCHES: CardRecord = CardRecord::new(
+    cards::NIGHTBIRDS_CLUTCHES,
+    "Nightbird's Clutches",
+    CardArt::new("b5c7410d-b69b-41a3-b469-e12c6ffc7578", "Jason A. Engle"),
+    CardSet::Innistrad,
+    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Up to two target creatures can't block this turn.",
+            &CLUTCHES_TARGETS,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::CannotBlock,
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        abilities::flashback(mana_cost!("{3}{R}")),
+    ]),
+);
+
+static CLUTCHES_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    2,
+)];
 
 // ISD 155 — Past in Flames
 pub(in crate::card::sets) static PAST_IN_FLAMES: CardRecord = CardRecord::new(
@@ -4726,6 +4792,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STROMKIRK_PATROL,
     &TYPHOID_RATS,
     &UNBURIAL_RITES,
+    &VAMPIRE_INTERLOPER,
     &VICTIM_OF_NIGHT,
     &VILLAGE_CANNIBALS,
     &WALKING_CORPSE,
@@ -4734,6 +4801,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLASPHEMOUS_ACT,
     &BLOODCRAZED_NEONATE,
     &BRIMSTONE_VOLLEY,
+    &CROSSWAY_VAMPIRE,
     &DESPERATE_RAVINGS,
     &DEVILS_PLAY,
     &FALKENRATH_MARAUDERS,
@@ -4744,6 +4812,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &INSTIGATOR_GANG,
     &INTO_THE_MAW_OF_HELL,
     &KESSIG_WOLF,
+    &NIGHTBIRDS_CLUTCHES,
     &PAST_IN_FLAMES,
     &PITCHBURN_DEVILS,
     &RAGE_THROWER,

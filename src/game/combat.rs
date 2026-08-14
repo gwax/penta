@@ -185,6 +185,23 @@ impl Game {
         prevented
     }
 
+    /// Whether a continuous effect currently forbids this permanent from
+    /// blocking. Asked afresh, so a turn-scoped prohibition stops applying
+    /// when it expires and a static one when its source leaves.
+    pub(super) fn cannot_block(&self, permanent: &Permanent) -> bool {
+        if permanent.cannot_block_this_turn {
+            return true;
+        }
+        self.visit_static_applied_effects(permanent, |applied| {
+            if matches!(applied.effect, AppliedEffectDef::CannotBlock) {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+
     pub(super) fn blocker_actions(&self, player: PlayerId) -> Vec<Action> {
         let blockers: Vec<_> = self
             .battlefield
@@ -194,6 +211,7 @@ impl Game {
                     && !permanent.tapped
                     && permanent.blocking.is_none()
                     && self.power(permanent).is_some()
+                    && !self.cannot_block(permanent)
             })
             .map(|permanent| permanent.card.id)
             .collect();

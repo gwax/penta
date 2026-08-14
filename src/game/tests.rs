@@ -373,6 +373,7 @@ mod activation_timing;
 mod alternative_costs;
 mod attack_restrictions;
 mod banding;
+mod cannot_block;
 mod casting_and_targets;
 mod casting_modes;
 mod chaos_orb;

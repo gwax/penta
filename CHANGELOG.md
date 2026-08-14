@@ -71,6 +71,13 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **A blocker-side "can't block" prohibition.** The vocabulary had only the
+  attacker's side, so "this creature can't block" and "target creature can't
+  block this turn" had no shape at all. It exists in both forms: a printed
+  static read from the continuous layer, and a resolving rider recorded on the
+  permanent until cleanup. Sightless Ghoul, Markov Warlord, Vampire Interloper,
+  Crossway Vampire, Nightbird's Clutches, and Firefist Striker are now
+  executable, the last completing battalion.
 - **Battalion**, sharing exalted's event. The attack-declaration event now
   carries how many creatures attacked, and each keyword states the range it
   wants: exactly one for exalted, three or more for battalion. Eight Gatecrash

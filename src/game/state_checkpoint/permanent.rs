@@ -76,6 +76,7 @@ pub(super) fn permanent_snapshot(
         power_bonus: permanent.power_bonus,
         toughness_bonus: permanent.toughness_bonus,
         unblockable_this_turn: permanent.unblockable_this_turn,
+        cannot_block_this_turn: permanent.cannot_block_this_turn,
         combat_damage_prevented: permanent.combat_damage_prevented,
         combat_damage_dealt_by_prevented: permanent.combat_damage_dealt_by_prevented,
         control_reverts_to: permanent.control_reverts_to.map(PlayerId::index),

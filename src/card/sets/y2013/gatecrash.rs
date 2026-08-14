@@ -1132,7 +1132,27 @@ pub(in crate::card::sets) static CINDER_ELEMENTAL: CardRecord = CardRecord::new(
 // Audit: blocked — Combat constraints cannot require another creature to attack or block alongside the source.
 
 // GTC 90 — Firefist Striker
-// Audit: blocked — Battalion is a trigger-time restriction, and no resolving effect can make a creature unable to block for the turn.
+pub(in crate::card::sets) static FIREFIST_STRIKER: CardRecord = CardRecord::new(
+    cards::FIREFIST_STRIKER,
+    "Firefist Striker",
+    CardArt::new("ccbc2f22-4500-4c74-a1a2-51d8238c1d16", "Tyler Jacobson"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Soldier"], 2, 1).with_ability(
+        AbilityDef::triggered_with_targets(
+            "Battalion — Whenever this creature and at least two other creatures attack, target \
+             creature can't block this turn.",
+            abilities::BATTALION_EVENT,
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::CannotBlock,
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 // GTC 91 — Five-Alarm Fire
 // Audit: blocked — Needs a trigger for any creature you control dealing combat damage and an executable blaze-counter removal cost.
@@ -3369,6 +3389,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ACT_OF_TREASON,
     &BOMBER_CORPS,
     &CINDER_ELEMENTAL,
+    &FIREFIST_STRIKER,
     &FOUNDRY_STREET_DENIZEN,
     &HELLRAISER_GOBLIN,
     &HOMING_LIGHTNING,

@@ -954,7 +954,23 @@ pub(in crate::card::sets) static REAP_THE_SEAGRAF: CardRecord = CardRecord::new(
 );
 
 // DKA 73 — Sightless Ghoul
-// Audit: blocked — Needs a static combat declaration prohibition for “This creature can't block.”
+pub(in crate::card::sets) static SIGHTLESS_GHOUL: CardRecord = CardRecord::new(
+    cards::SIGHTLESS_GHOUL,
+    "Sightless Ghoul",
+    CardArt::new("018bd4ae-cdea-410d-9ce6-6a70f12de966", "Svetlin Velinov"),
+    CardSet::DarkAscension,
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Zombie", "Soldier"], 2, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't block.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBlock,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        abilities::undying(),
+    ]),
+);
 
 // DKA 74 — Skirsdag Flayer
 pub(in crate::card::sets) static SKIRSDAG_FLAYER: CardRecord = CardRecord::new(
@@ -1322,7 +1338,39 @@ pub(in crate::card::sets) static MARKOV_BLADEMASTER: CardRecord = CardRecord::ne
 );
 
 // DKA 97 — Markov Warlord
-// Audit: blocked — Needs a temporary “can't block” combat declaration restriction for up to two targets.
+pub(in crate::card::sets) static MARKOV_WARLORD: CardRecord = CardRecord::new(
+    cards::MARKOV_WARLORD,
+    "Markov Warlord",
+    CardArt::new("5035276f-31b9-4dd3-9ec8-42a664bdbd5c", "Cynthia Sheppard"),
+    CardSet::DarkAscension,
+    CardRules::new_creature(mana_cost!("{5}{R}"), &["Vampire", "Warrior"], 4, 4).with_abilities(&[
+        abilities::haste(),
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, up to two target creatures can't block this turn.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            &UP_TO_TWO_CREATURES,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::CannotBlock,
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
+
+static UP_TO_TWO_CREATURES: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    2,
+)];
 
 // DKA 98 — Mondronen Shaman
 // Audit: blocked — Needs a complete transforming Werewolf composition plus a back-face trigger that damages an opponent whenever they cast a spell.
@@ -2342,6 +2390,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HARROWING_JOURNEY,
     &HIGHBORN_GHOUL,
     &REAP_THE_SEAGRAF,
+    &SIGHTLESS_GHOUL,
     &SKIRSDAG_FLAYER,
     &TRAGIC_SLIP,
     &UNDYING_EVIL,
@@ -2355,6 +2404,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HECKLING_FIENDS,
     &HELLRIDER,
     &MARKOV_BLADEMASTER,
+    &MARKOV_WARLORD,
     &MOONVEIL_DRAGON,
     &NEARHEATH_STALKER,
     &RUSSET_WOLVES,

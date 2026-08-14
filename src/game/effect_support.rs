@@ -138,6 +138,43 @@ impl Game {
         }
     }
 
+    /// The removal half of a resolved ability-layer operation, kept beside
+    /// the dispatch rather than inside it.
+    fn apply_removed_abilities(
+        &mut self,
+        target: Target,
+        predicate: crate::card::AbilityPredicateDef,
+        resolution: ResolvedAppliedEffect<'_>,
+    ) {
+        let Target::Permanent(target) = target else {
+            return;
+        };
+        let expiration = Self::ability_effect_expiration(
+            resolution.duration,
+            resolution.object.controller,
+            self.turns_started[resolution.object.controller.index()],
+        );
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == target)
+        {
+            let order = u16::try_from(
+                permanent.temporary_granted_abilities.len()
+                    + permanent.temporary_removed_abilities.len(),
+            )
+            .expect("one resolved effect creates at most 65,536 ability operations");
+            permanent
+                .temporary_removed_abilities
+                .push(TemporaryRemovedAbilities {
+                    predicate,
+                    timestamp: resolution.timestamp,
+                    order,
+                    expiration,
+                });
+        }
+    }
+
     fn apply_applied_effect_component(
         &mut self,
         target: Target,
@@ -160,31 +197,19 @@ impl Game {
                 );
             }
             AppliedEffectDef::RemoveAbilities(predicate) => {
-                if let Target::Permanent(target) = target {
-                    let expiration = Self::ability_effect_expiration(
-                        resolution.duration,
-                        resolution.object.controller,
-                        self.turns_started[resolution.object.controller.index()],
-                    );
-                    if let Some(permanent) = self
+                self.apply_removed_abilities(target, predicate, resolution);
+            }
+            // A resolved prohibition is recorded on the permanent, the way
+            // the other until-end-of-turn combat riders are; the printed
+            // static form is read from the continuous layer instead.
+            AppliedEffectDef::CannotBlock => {
+                if let Target::Permanent(target) = target
+                    && let Some(permanent) = self
                         .battlefield
                         .iter_mut()
                         .find(|permanent| permanent.card.id == target)
-                    {
-                        let order = u16::try_from(
-                            permanent.temporary_granted_abilities.len()
-                                + permanent.temporary_removed_abilities.len(),
-                        )
-                        .expect("one resolved effect creates at most 65,536 ability operations");
-                        permanent
-                            .temporary_removed_abilities
-                            .push(TemporaryRemovedAbilities {
-                                predicate,
-                                timestamp: resolution.timestamp,
-                                order,
-                                expiration,
-                            });
-                    }
+                {
+                    permanent.cannot_block_this_turn = true;
                 }
             }
             AppliedEffectDef::Animate(animation) => {
