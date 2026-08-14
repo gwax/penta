@@ -1,8 +1,8 @@
 use crate::ids::TargetIndex;
 
 use super::{
-    BasicLandType, CardSet, CardSupertype, CardType, KeywordAbility, ManaColor, PlayerRelation,
-    ValueDef, ZoneKind,
+    BasicLandType, CardSet, CardSupertype, CardType, CounterKind, KeywordAbility, ManaColor,
+    PlayerRelation, ValueDef, ZoneKind,
 };
 
 /// A composable predicate over a card or game object.
@@ -59,6 +59,10 @@ pub enum ObjectPredicateDef {
     /// Power strictly below a computed value, for "creatures with power less
     /// than this creature's power". The mirror of [`Self::PowerGreaterThan`].
     PowerLessThan(ValueDef),
+    /// Carries at least one counter of this kind, for "each creature you
+    /// control with a +1/+1 counter on it". Read live, so a creature that
+    /// loses its last counter stops matching.
+    HasCounter(CounterKind),
     /// Controlled by a player in this relation to the ability's controller,
     /// for "a creature you control" and "whenever you cast".
     ControlledBy(PlayerRelation),

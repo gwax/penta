@@ -76,7 +76,14 @@ distinguishes snapshots of the covered source and build inputs.
   regeneration, a counter-conditional trample grant, and a sacrifice ability
   reading its own last-known power. Two are Equipment whose lines still said
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
-  Accorder's Shield, and Fireshrieker.
+  Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
+  them.
+- **"With a +1/+1 counter on it" as a predicate.** Counters could be counted
+  and compared but not asked about while selecting which objects a continuous
+  effect covers, so "each creature you control with a +1/+1 counter on it"
+  could not be written. Read live, and safe to read live because a counter is
+  permanent state rather than a characteristic that could feed back into the
+  layer being computed. Sapphire Drake, Crowned Ceratok, and Exava.
 - **Populate.** Choosing a permanent already existed; copying one did not, and
   populate only ever copies a token, whose copiable values are the definition
   it was made from -- so this is a narrow copy rather than the general one. A

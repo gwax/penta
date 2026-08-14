@@ -104,6 +104,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::Not(_)
         | ObjectPredicateDef::Special(_) => false,
@@ -144,6 +145,7 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::AnyOf(_)
         | ObjectPredicateDef::Not(_)
@@ -187,6 +189,7 @@ fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::AnyOf(_)
         | ObjectPredicateDef::Not(_)
@@ -230,6 +233,7 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::AnyOf(_)
         | ObjectPredicateDef::Not(_)
@@ -278,6 +282,7 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::AnyOf(_)
         | ObjectPredicateDef::Special(_) => None,
@@ -323,6 +328,7 @@ fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::AnyOf(_)
         | ObjectPredicateDef::Not(_)
@@ -367,6 +373,7 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::AnyOf(_)
         | ObjectPredicateDef::Not(_)
@@ -410,6 +417,7 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::AnyOf(_)
         | ObjectPredicateDef::Not(_)
@@ -457,6 +465,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
+        | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::AnyOf(_)
         | ObjectPredicateDef::Special(_) => false,

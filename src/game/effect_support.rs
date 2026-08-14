@@ -853,6 +853,7 @@ impl Game {
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::HasKeyword(_)
+            | ObjectPredicateDef::HasCounter(_)
             | ObjectPredicateDef::HasNonManaActivatedAbility => false,
         }
     }

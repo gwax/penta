@@ -811,6 +811,12 @@ impl Game {
             ObjectPredicateDef::HasKeyword(keyword) => keyword
                 .simple_index()
                 .is_some_and(|index| object.keywords & (1 << index) != 0),
+            // Counters are permanent state rather than a characteristic, so
+            // reading them live cannot feed back into the layer being
+            // computed the way a keyword or a stat could.
+            ObjectPredicateDef::HasCounter(kind) => {
+                self.current_or_last_known_counters(object.id, kind) > 0
+            }
             ObjectPredicateDef::HasNonManaActivatedAbility => self
                 .battlefield
                 .iter()

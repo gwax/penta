@@ -4523,8 +4523,36 @@ pub(in crate::card::sets) static GHOULCALLERS_BELL: CardRecord = CardRecord::new
 // ISD 228 — Manor Gargoyle
 // Audit: blocked — Needs indestructible to depend continuously on retaining defender while an activation temporarily removes defender.
 
+static MASK_OF_AVACYN_HEXPROOF: AbilityDef = abilities::hexproof();
+
+static MASK_OF_AVACYN_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::Constant(1),
+        toughness: ValueDef::Constant(2),
+    },
+    AppliedEffectDef::GrantAbility(&MASK_OF_AVACYN_HEXPROOF),
+];
+
 // ISD 229 — Mask of Avacyn
-// Audit: blocked — Needs the equip procedure and static attachment bonuses.
+pub(in crate::card::sets) static MASK_OF_AVACYN: CardRecord = CardRecord::new(
+    cards::MASK_OF_AVACYN,
+    "Mask of Avacyn",
+    CardArt::new("4ff1acce-bed4-452c-8416-06726004f2e8", "James Paick"),
+    CardSet::Innistrad,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/+2 and has hexproof.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&MASK_OF_AVACYN_BONUS),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            abilities::equip(mana_cost!("{3}"), "Equip {3}"),
+        ]),
+);
 
 // ISD 230 — One-Eyed Scarecrow
 pub(in crate::card::sets) static ONE_EYED_SCARECROW: CardRecord = CardRecord::new(
@@ -5088,6 +5116,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GALVANIC_JUGGERNAUT,
     &GEISTCATCHERS_RIG,
     &GHOULCALLERS_BELL,
+    &MASK_OF_AVACYN,
     &ONE_EYED_SCARECROW,
     &SHARPENED_PITCHFORK,
     &SILVER_INLAID_DAGGER,

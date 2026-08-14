@@ -492,7 +492,17 @@ pub(in crate::card::sets) static MAZE_ABOMINATION: CardRecord = CardRecord::new(
 // Audit: blocked — Needs extort's per-spell optional hybrid-mana payment, opponent life loss, matched life gain, and external ability grant.
 
 // DGM 28 — Rakdos Drake
-// Audit: blocked — Needs unleash's optional entry counter and the continuous inability to block while the counter remains.
+pub(in crate::card::sets) static RAKDOS_DRAKE: CardRecord = CardRecord::new(
+    cards::RAKDOS_DRAKE,
+    "Rakdos Drake",
+    CardArt::new("b9c1bfd7-b8b2-4db7-9ea7-a2d643a83589", "Karl Kopinski"),
+    CardSet::DragonsMaze,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Drake"], 1, 2).with_abilities(&[
+        abilities::flying(),
+        abilities::unleash(),
+        abilities::unleash_counter(),
+    ]),
+);
 
 // DGM 29 — Sinister Possession
 // Audit: blocked — Needs an Aura to observe both attack and block events from its attached creature and make that creature's controller lose life.
@@ -1100,8 +1110,41 @@ pub(in crate::card::sets) static DROWN_IN_FILTH: CardRecord = CardRecord::new(
 // DGM 68 — Emmara Tandris
 // Audit: blocked — Needs a damage-prevention replacement for every creature token you control.
 
+static EXAVA_OTHER_COUNTERED_CREATURES: [ObjectPredicateDef; 3] = [
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasCounter(CounterKind::PlusOnePlusOne),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+];
+
+static EXAVA_HASTE: AbilityDef = abilities::haste();
+
 // DGM 69 — Exava, Rakdos Blood Witch
-// Audit: blocked — Needs unleash's optional entry counter and a counter-sensitive haste grant to other creatures.
+pub(in crate::card::sets) static EXAVA_RAKDOS_BLOOD_WITCH: CardRecord = CardRecord::new(
+    cards::EXAVA_RAKDOS_BLOOD_WITCH,
+    "Exava, Rakdos Blood Witch",
+    CardArt::new("6cb72a64-89e7-4b0e-a3d3-1309829071d2", "Aleksi Briclot"),
+    CardSet::DragonsMaze,
+    CardRules::new_creature(mana_cost!("{2}{B}{R}"), &["Human", "Cleric"], 3, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::first_strike(),
+            abilities::haste(),
+            abilities::unleash(),
+            abilities::unleash_counter(),
+            AbilityDef::static_ability(
+                "Each other creature you control with a +1/+1 counter on it has haste.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::MatchingObjects {
+                        object: ObjectPredicateDef::All(&EXAVA_OTHER_COUNTERED_CREATURES),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: PlayerRelation::You,
+                    },
+                    effect: AppliedEffectDef::GrantAbility(&EXAVA_HASTE),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+        ]),
+);
 
 // DGM 70 — Feral Animist
 pub(in crate::card::sets) static FERAL_ANIMIST: CardRecord = CardRecord::new(
@@ -2516,6 +2559,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BANE_ALLEY_BLACKGUARD,
     &FATAL_FUMES,
     &MAZE_ABOMINATION,
+    &RAKDOS_DRAKE,
     &UBUL_SAR_GATEKEEPERS,
     &CLEAR_A_PATH,
     &MAZE_RUSHER,
@@ -2538,6 +2582,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BRONZEBEAK_MOA,
     &DEPUTY_OF_ACQUITTALS,
     &DROWN_IN_FILTH,
+    &EXAVA_RAKDOS_BLOOD_WITCH,
     &FERAL_ANIMIST,
     &GAZE_OF_GRANITE,
     &GLEAM_OF_BATTLE,

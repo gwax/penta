@@ -436,6 +436,7 @@ impl Game {
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::HasKeyword(_)
+            | ObjectPredicateDef::HasCounter(_)
             | ObjectPredicateDef::Tapped
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::Blocking

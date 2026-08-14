@@ -719,8 +719,36 @@ pub(in crate::card::sets) static SAGES_ROW_DENIZEN: CardRecord = CardRecord::new
     ),
 );
 
+/// "Each creature you control with a +1/+1 counter on it."
+static YOUR_COUNTERED_CREATURES: [ObjectPredicateDef; 2] = [
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasCounter(CounterKind::PlusOnePlusOne),
+];
+
+static SAPPHIRE_DRAKE_FLYING: AbilityDef = abilities::flying();
+
 // GTC 47 — Sapphire Drake
-// Audit: blocked — Continuous recipient predicates cannot test whether a creature currently has a +1/+1 counter.
+pub(in crate::card::sets) static SAPPHIRE_DRAKE: CardRecord = CardRecord::new(
+    cards::SAPPHIRE_DRAKE,
+    "Sapphire Drake",
+    CardArt::new("d0fe14cf-5d34-47d1-9071-4a532819719b", "Steve Prescott"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{5}{U}"), &["Drake"], 4, 4).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "Each creature you control with a +1/+1 counter on it has flying.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&YOUR_COUNTERED_CREATURES),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::You,
+                },
+                effect: AppliedEffectDef::GrantAbility(&SAPPHIRE_DRAKE_FLYING),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // GTC 48 — Scatter Arc
 pub(in crate::card::sets) static SCATTER_ARC: CardRecord = CardRecord::new(
@@ -1624,8 +1652,30 @@ pub(in crate::card::sets) static CROCANURA: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::reach(), abilities::evolve()]),
 );
 
+static CROWNED_CERATOK_TRAMPLE: AbilityDef = abilities::trample();
+
 // GTC 117 — Crowned Ceratok
-// Audit: blocked — Continuous recipient predicates cannot test whether a creature currently has a +1/+1 counter.
+pub(in crate::card::sets) static CROWNED_CERATOK: CardRecord = CardRecord::new(
+    cards::CROWNED_CERATOK,
+    "Crowned Ceratok",
+    CardArt::new("a7eacc64-f418-4df0-bd8a-6b0036d0d2a1", "Steve Prescott"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Rhino"], 4, 3).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::static_ability(
+            "Each creature you control with a +1/+1 counter on it has trample.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&YOUR_COUNTERED_CREATURES),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::You,
+                },
+                effect: AppliedEffectDef::GrantAbility(&CROWNED_CERATOK_TRAMPLE),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // GTC 118 — Disciple of the Old Ways
 pub(in crate::card::sets) static DISCIPLE_OF_THE_OLD_WAYS: CardRecord = CardRecord::new(
@@ -3517,6 +3567,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &METROPOLIS_SPRITE,
     &MINDEYE_DRAKE,
     &SAGES_ROW_DENIZEN,
+    &SAPPHIRE_DRAKE,
     &SCATTER_ARC,
     &TOTALLY_LOST,
     &BASILICA_SCREECHER,
@@ -3549,6 +3600,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ADAPTIVE_SNAPJAW,
     &BURST_OF_STRENGTH,
     &CROCANURA,
+    &CROWNED_CERATOK,
     &DISCIPLE_OF_THE_OLD_WAYS,
     &FORCED_ADAPTATION,
     &GREENSIDE_WATCHER,

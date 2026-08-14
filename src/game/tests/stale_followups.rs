@@ -98,6 +98,53 @@ fn hellhole_flailer_deals_its_power_after_sacrificing_itself() {
     );
 }
 
+/// "Each creature you control with a +1/+1 counter on it" is read live, so a
+/// creature that gains a counter picks the grant up and one that never had
+/// one never does.
+#[test]
+fn a_counter_is_what_earns_the_granted_keyword() {
+    let mut game = ready_game();
+    let drake = creature(10_000, cards::SAPPHIRE_DRAKE, PlayerId::One);
+    game.battlefield.push(drake);
+    let grounded = creature(10_001, cards::SEDGE_TROLL, PlayerId::One);
+    let grounded_id = grounded.card.id;
+    game.battlefield.push(grounded);
+    let theirs = creature(10_002, cards::SEDGE_TROLL, PlayerId::Two);
+    let theirs_id = theirs.card.id;
+    game.battlefield.push(theirs);
+    for id in [grounded_id, theirs_id] {
+        game.battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == id)
+            .expect("there")
+            .add_counters(CounterKind::PlusOnePlusOne, 1);
+    }
+
+    let flies = |game: &Game, id| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("there");
+        game.permanent_has_executable_keyword(permanent, KeywordAbility::Flying)
+    };
+    assert!(flies(&game, grounded_id), "a counter earns it flying");
+    assert!(
+        !flies(&game, theirs_id),
+        "but only among creatures you control"
+    );
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == grounded_id)
+        .expect("there")
+        .remove_counters(CounterKind::PlusOnePlusOne, 1);
+    assert!(
+        !flies(&game, grounded_id),
+        "and losing the counter loses the grant"
+    );
+}
+
 #[test]
 fn every_unblocked_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -107,6 +154,11 @@ fn every_unblocked_identity_reports_complete_coverage() {
         cards::HELLHOLE_FLAILER,
         cards::ACCORDERS_SHIELD,
         cards::FIRESHRIEKER,
+        cards::MASK_OF_AVACYN,
+        cards::RAKDOS_DRAKE,
+        cards::SAPPHIRE_DRAKE,
+        cards::CROWNED_CERATOK,
+        cards::EXAVA_RAKDOS_BLOOD_WITCH,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
