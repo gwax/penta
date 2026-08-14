@@ -97,6 +97,11 @@ pub enum AppliedEffectDef {
     /// continuous effect.
     Composite(&'static [AppliedEffectDef]),
     CannotBeCountered,
+    /// The affected permanent's controller may choose to leave it tapped
+    /// during their untap step. Unlike
+    /// [`Self::DoesNotUntapDuringUntapStep`] this is a choice rather than a
+    /// prohibition, so declining is what the printed cards are paying for.
+    MayChooseNotToUntap,
     /// The affected permanent is skipped by its controller's ordinary
     /// turn-based untap procedure. Other spells and abilities can still
     /// untap it.
@@ -721,6 +726,9 @@ pub enum EffectDef {
     /// that several printed cards use.
     GainControlWhileSourceRemains {
         object: EffectRecipientDef,
+        /// Whether the source also has to stay tapped, for the cards that
+        /// pair this with an optional untap so the choice is a real cost.
+        while_tapped: bool,
     },
     GainControlThisTurn {
         object: EffectRecipientDef,

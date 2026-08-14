@@ -147,6 +147,7 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
         AppliedEffectDef::CannotBeCountered | AppliedEffectDef::CannotBeEnchanted => true,
         AppliedEffectDef::ModifyPowerToughness { .. }
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
+        | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::CannotBeBlockedBy(_)
@@ -220,6 +221,7 @@ fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
         AppliedEffectDef::GrantAbility(_) | AppliedEffectDef::RemoveAbilities(_) => true,
         AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
+        | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
@@ -266,6 +268,7 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         // rider a spell hands out.
         AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
+        | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
@@ -528,6 +531,7 @@ pub(super) fn shared_static_applied_effect(
             EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
         ),
         AppliedEffectDef::DoesNotUntapDuringUntapStep
+        | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::RemoveAbilities(_)
         | AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::CannotBeEnchanted

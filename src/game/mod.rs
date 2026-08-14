@@ -226,6 +226,8 @@ struct Permanent {
     /// change. When it leaves the battlefield or changes hands, control goes
     /// back to `control_reverts_to`.
     control_source: Option<GameObjectId>,
+    /// Whether that holder also has to stay tapped to keep the change.
+    control_requires_source_tapped: bool,
     /// Whether this attacker was blocked. A blocked creature stays blocked
     /// even if every blocker leaves, so this cannot be recomputed from the
     /// blockers still on the battlefield.
@@ -329,6 +331,7 @@ impl Permanent {
             combat_damage_dealt_by_prevented: false,
             control_reverts_to: None,
             control_source: None,
+            control_requires_source_tapped: false,
             blocked: false,
             blocking: None,
             chosen_player: None,

@@ -467,6 +467,7 @@ pub(in crate::card::sets) static ALADDIN: CardRecord = CardRecord::new(
             )],
             EffectDef::GainControlWhileSourceRemains {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                while_tapped: false,
             },
         ),
     ),

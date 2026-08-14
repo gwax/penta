@@ -504,6 +504,7 @@ fn parse_permanent(
         .map(player_from_index)
         .transpose()?;
     permanent.control_source = state.control_source.map(GameObjectId);
+    permanent.control_requires_source_tapped = state.control_requires_source_tapped;
     permanent.chosen_player = state.chosen_player.map(player_from_index).transpose()?;
     permanent.chosen_creature_type = shown.chosen_creature_type;
     permanent.chosen_card_name = shown.chosen_card_name;

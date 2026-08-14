@@ -562,6 +562,7 @@ pub(in crate::card::sets) static THRULL_CHAMPION: CardRecord = CardRecord::new(
             )],
             EffectDef::GainControlWhileSourceRemains {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                while_tapped: false,
             },
         ),
     ]),

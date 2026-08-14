@@ -701,9 +701,18 @@ impl Game {
                     self.return_exiled_card(card, zone, grant);
                 }
             }
-            EffectDef::GainControlWhileSourceRemains { object: recipient } => {
+            EffectDef::GainControlWhileSourceRemains {
+                object: recipient,
+                while_tapped,
+            } => {
                 let source = object.source.unwrap_or(object.id);
-                self.take_control_of(recipient, object, context, scoped, Some(source));
+                self.take_control_of(
+                    recipient,
+                    object,
+                    context,
+                    scoped,
+                    Some((source, while_tapped)),
+                );
             }
             EffectDef::GainControlThisTurn { object: recipient } => {
                 self.take_control_of(recipient, object, context, scoped, None);

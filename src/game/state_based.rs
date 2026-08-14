@@ -200,7 +200,10 @@ impl Game {
                     .battlefield
                     .iter()
                     .find(|candidate| candidate.card.id == holder)
-                    .is_some_and(|candidate| candidate.controller == permanent.controller);
+                    .is_some_and(|candidate| {
+                        candidate.controller == permanent.controller
+                            && (!permanent.control_requires_source_tapped || candidate.tapped)
+                    });
                 (!held).then_some(permanent.card.id)
             })
             .collect::<Vec<_>>();
@@ -213,6 +216,7 @@ impl Game {
                 continue;
             };
             permanent.control_source = None;
+            permanent.control_requires_source_tapped = false;
             if let Some(owner) = permanent.control_reverts_to.take() {
                 permanent.controller = owner;
                 permanent.entered_controller_turn = self.turns_started[owner.index()];

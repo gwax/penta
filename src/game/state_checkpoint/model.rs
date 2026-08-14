@@ -184,6 +184,9 @@ pub(super) struct PermanentSnapshot {
     /// the turn-scoped form and for everything untouched.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) control_source: Option<u32>,
+    /// Whether that holder also has to stay tapped.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) control_requires_source_tapped: bool,
     pub(super) chosen_player: Option<usize>,
     pub(super) destroy_at_end: bool,
     pub(super) counters: Vec<u16>,

@@ -49,6 +49,19 @@ impl Game {
         } else {
             vec![creatures]
         };
+        // A permanent that may choose not to untap turns its own untap into
+        // an independent yes/no, so each combination of those choices is a
+        // separate declaration.
+        let optional = self
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == player
+                    && permanent.tapped
+                    && self.may_choose_not_to_untap(permanent)
+            })
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>();
         let mut actions = Vec::new();
         for land in &land_choices {
             for creature in &creature_choices {
@@ -56,10 +69,38 @@ impl Game {
                 permanents.extend(creature);
                 permanents.sort_unstable();
                 permanents.dedup();
-                actions.push(Action::ChooseUntap { permanents });
+                for skipped in Self::subsets_of(&optional) {
+                    let mut choice = permanents.clone();
+                    choice.retain(|id| !skipped.contains(id));
+                    if !actions.contains(&Action::ChooseUntap {
+                        permanents: choice.clone(),
+                    }) {
+                        actions.push(Action::ChooseUntap { permanents: choice });
+                    }
+                }
             }
         }
         actions
+    }
+
+    /// Every subset of a small set, for the independent untap choices above.
+    /// The printed cards put one such permanent on the battlefield at a time;
+    /// the bound keeps a pathological board from exploding the action list,
+    /// and beyond it every optional permanent simply untaps.
+    fn subsets_of(ids: &[GameObjectId]) -> Vec<Vec<GameObjectId>> {
+        const MAXIMUM_INDEPENDENT_CHOICES: usize = 4;
+        if ids.len() > MAXIMUM_INDEPENDENT_CHOICES {
+            return vec![Vec::new()];
+        }
+        (0..1usize << ids.len())
+            .map(|mask| {
+                ids.iter()
+                    .enumerate()
+                    .filter(|(index, _)| mask & (1 << index) != 0)
+                    .map(|(_, id)| *id)
+                    .collect()
+            })
+            .collect()
     }
 
     pub(super) fn choose_untap(&mut self, player: PlayerId, selected: &[GameObjectId]) {

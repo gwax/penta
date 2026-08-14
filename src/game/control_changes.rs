@@ -11,15 +11,15 @@ use super::{
 
 impl Game {
     /// The shared body of both control-change effects. `holder` is the
-    /// permanent whose presence sustains the change, or `None` for the
-    /// turn-scoped form that cleanup ends.
+    /// permanent whose presence sustains the change and whether it also has
+    /// to stay tapped, or `None` for the turn-scoped form cleanup ends.
     pub(super) fn take_control_of(
         &mut self,
         recipient: EffectRecipientDef,
         object: &StackObject,
         context: TriggerContext,
         scoped: ScopedEffect,
-        holder: Option<GameObjectId>,
+        holder: Option<(GameObjectId, bool)>,
     ) {
         let controller = object.controller;
         for target in self.effect_recipients(recipient, object, context, scoped) {
@@ -46,7 +46,8 @@ impl Game {
                 .control_reverts_to
                 .get_or_insert(permanent.controller);
             permanent.controller = controller;
-            permanent.control_source = holder;
+            permanent.control_source = holder.map(|(id, _)| id);
+            permanent.control_requires_source_tapped = holder.is_some_and(|(_, tapped)| tapped);
             // It has not been under its new controller's control since their
             // turn began, so it is summoning sick unless something grants
             // haste. This is why the cards that steal a creature almost always

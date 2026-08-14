@@ -60,6 +60,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **An optional untap, and a control change held by staying tapped.** Rubinia
+  Soulsinger and Willow Satyr pair the two, and each half is useless alone:
+  untapping would hand the creature straight back, and without the choice the
+  untap step would do it every turn. Untapping stays mandatory for everything
+  that does not print otherwise.
 - **Control changes that outlive the turn.** The engine could only take control
   until cleanup. `EffectDef::GainControlWhileSourceRemains` lasts as long as the
   permanent holding it stays on the battlefield under the same controller, and

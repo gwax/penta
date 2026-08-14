@@ -2213,7 +2213,37 @@ pub(in crate::card::sets) static WHIRLING_DERVISH: CardRecord = CardRecord::new(
 );
 
 // LEG 212 — Willow Satyr
-// Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: Gain control of target legendary creature for as long as you control this creature and this creature remains tapped”.
+pub(in crate::card::sets) static WILLOW_SATYR: CardRecord = CardRecord::new(
+    cards::WILLOW_SATYR,
+    "Willow Satyr",
+    CardArt::new("0c8b1f49-550e-405f-b17c-1d94589494ad", "Jeff A. Menges"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Satyr"], 1, 1).with_abilities(&[
+        AbilityDef::static_ability(
+            "You may choose not to untap this creature during your untap step.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::MayChooseNotToUntap,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{T}: Gain control of target legendary creature for as long as you control this \
+                 creature and this creature remains tapped.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+                ]),
+            )],
+            EffectDef::GainControlWhileSourceRemains {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                while_tapped: true,
+            },
+        ),
+    ]),
+);
 
 // LEG 213 — Winter Blast
 // Audit: blocked — Needs one chosen-X target set with a flying-dependent damage follow-up linked to the creatures it tapped.
@@ -2862,7 +2892,36 @@ pub(in crate::card::sets) static RIVEN_TURNBULL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “At the beginning of your upkeep, you may pay {R}{R}{R}. If you don't, tap Rohgahh and all creatures named Kobolds of Kher Keep, then an opponent gains control of them”.
 
 // LEG 256 — Rubinia Soulsinger
-// Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: Gain control of target creature for as long as you control Rubinia Soulsinger and Rubinia Soulsinger remains tapped”.
+pub(in crate::card::sets) static RUBINIA_SOULSINGER: CardRecord = CardRecord::new(
+    cards::RUBINIA_SOULSINGER,
+    "Rubinia Soulsinger",
+    CardArt::new("f13e8dc9-8d0f-4a2c-8c0e-be70a3a7dc8e", "Rob Alexander"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{G}{W}{U}"), &["Faerie"], 2, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "You may choose not to untap Rubinia Soulsinger during your untap step.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::MayChooseNotToUntap,
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "{T}: Gain control of target creature for as long as you control Rubinia \
+                 Soulsinger and Rubinia Soulsinger remains tapped.",
+                &[AbilityCostDef::TapSource],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )],
+                EffectDef::GainControlWhileSourceRemains {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    while_tapped: true,
+                },
+            ),
+        ]),
+);
 
 // LEG 257 — Sir Shandlar of Eberyn
 pub(in crate::card::sets) static SIR_SHANDLAR_OF_EBERYN: CardRecord = CardRecord::new(
@@ -3535,6 +3594,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TYPHOON,
     &UNTAMED_WILDS,
     &WHIRLING_DERVISH,
+    &WILLOW_SATYR,
     &WOLVERINE_PACK,
     &ADUN_OAKENSHIELD,
     &AXELROD_GUNNARSON,
@@ -3564,6 +3624,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RAGNAR,
     &RAMIREZ_DEPIETRO,
     &RIVEN_TURNBULL,
+    &RUBINIA_SOULSINGER,
     &SIR_SHANDLAR_OF_EBERYN,
     &SIVITRI_SCARZAM,
     &SUNASTIAN_FALCONER,

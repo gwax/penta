@@ -153,3 +153,100 @@ fn both_identities_report_complete_coverage() {
         );
     }
 }
+
+/// Rubinia Soulsinger and Willow Satyr pair a control change that lasts while
+/// they stay tapped with a choice not to untap. Each half is useless without
+/// the other: untapping would hand the creature straight back, and without the
+/// choice the untap step would do it every turn.
+mod held_while_tapped {
+    use super::*;
+
+    fn rubinia_game() -> (Game, GameObjectId, GameObjectId) {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        let rubinia = creature(10_000, cards::RUBINIA_SOULSINGER, PlayerId::One);
+        let rubinia_id = rubinia.card.id;
+        game.battlefield.push(rubinia);
+        let victim = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
+        let victim_id = victim.card.id;
+        game.battlefield.push(victim);
+        (game, rubinia_id, victim_id)
+    }
+
+    #[test]
+    fn untapping_the_holder_hands_the_creature_back() {
+        let (mut game, rubinia_id, victim_id) = rubinia_game();
+        steal(&mut game, rubinia_id, victim_id);
+        assert_eq!(controller(&game, victim_id), PlayerId::One);
+
+        if let Some(rubinia) = game
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == rubinia_id)
+        {
+            rubinia.tapped = false;
+        }
+        game.check_state_based_actions();
+
+        assert_eq!(
+            controller(&game, victim_id),
+            PlayerId::Two,
+            "the hold is on the tap, so untapping ends it"
+        );
+    }
+
+    /// The choice is what makes keeping the creature possible, so the untap
+    /// step has to offer leaving the holder tapped as well as untapping it.
+    #[test]
+    fn the_untap_step_offers_leaving_the_holder_tapped() {
+        let (mut game, rubinia_id, victim_id) = rubinia_game();
+        steal(&mut game, rubinia_id, victim_id);
+
+        let choices = game.untap_actions(PlayerId::One);
+        let untaps_rubinia = |action: &Action| matches!(action, Action::ChooseUntap { permanents } if permanents.contains(&rubinia_id));
+        assert!(
+            choices.iter().any(untaps_rubinia),
+            "untapping is still allowed"
+        );
+        assert!(
+            choices.iter().any(|action| !untaps_rubinia(action)),
+            "and so is leaving it tapped, which is the whole point"
+        );
+    }
+
+    /// An ordinary permanent gets no such choice: every untap declaration the
+    /// step offers includes it.
+    #[test]
+    fn an_ordinary_permanent_is_not_given_the_choice() {
+        let mut game = ready_game();
+        let mut troll = creature(10_000, cards::SEDGE_TROLL, PlayerId::One);
+        troll.tapped = true;
+        let troll_id = troll.card.id;
+        game.battlefield.push(troll);
+        game.turns_started[PlayerId::One.index()] = 1;
+
+        let choices = game.untap_actions(PlayerId::One);
+        assert!(!choices.is_empty());
+        assert!(
+            choices.iter().all(|action| matches!(
+                action,
+                Action::ChooseUntap { permanents } if permanents.contains(&troll_id)
+            )),
+            "untapping is mandatory without a card saying otherwise"
+        );
+    }
+
+    #[test]
+    fn both_identities_report_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [cards::RUBINIA_SOULSINGER, cards::WILLOW_SATYR] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
+    }
+}

@@ -136,6 +136,7 @@ fn validate_applied_effect_target_references(
         AppliedEffectDef::GrantAbility(_)
         | AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
+        | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
@@ -219,7 +220,7 @@ fn validate_effect_references(
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ExileLinkedToSource { object }
         | EffectDef::MakeUnblockableThisTurn { object }
-        | EffectDef::GainControlWhileSourceRemains { object }
+        | EffectDef::GainControlWhileSourceRemains { object, .. }
         | EffectDef::GainControlThisTurn { object }
         | EffectDef::Transform { object }
         | EffectDef::MoveToZone { object, .. }

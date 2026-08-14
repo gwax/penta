@@ -80,6 +80,7 @@ pub(super) fn permanent_snapshot(
         combat_damage_dealt_by_prevented: permanent.combat_damage_dealt_by_prevented,
         control_reverts_to: permanent.control_reverts_to.map(PlayerId::index),
         control_source: permanent.control_source.map(|id| id.0),
+        control_requires_source_tapped: permanent.control_requires_source_tapped,
         chosen_player: permanent.chosen_player.map(PlayerId::index),
         destroy_at_end: permanent.destroy_at_end,
         counters: permanent.counters.to_vec(),
