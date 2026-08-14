@@ -466,7 +466,7 @@ pub(in crate::card::sets) static TUNDRA_WOLVES: CardRecord = CardRecord::new(
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Look at the top five cards of target player's library. You may then have that player shuffle that library”.
 
 // LEG 42 — Wall of Caltrops
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 43 — Wall of Light
 pub(in crate::card::sets) static WALL_OF_LIGHT: CardRecord = CardRecord::new(
@@ -1914,7 +1914,7 @@ pub(in crate::card::sets) static KILLER_BEES: CardRecord = CardRecord::new(
 // Audit: blocked — Needs static animation to continuously turn the matching lands into creatures for “All lands are 1/1 creatures that are still lands”.
 
 // LEG 194 — Master of the Hunt
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 195 — Moss Monster
 pub(in crate::card::sets) static MOSS_MONSTER: CardRecord = CardRecord::new(
@@ -2019,7 +2019,7 @@ pub(in crate::card::sets) static RADJAN_SPIRIT: CardRecord = CardRecord::new(
 // Audit: blocked — Needs stack targeting and countering of ability objects for “Counter target activated ability from an artifact source”.
 
 // LEG 204 — Shelkin Brownie
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 205 — Storm Seeker
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Storm Seeker deals damage to target player equal to the number of cards in that player's hand”.
@@ -3037,10 +3037,10 @@ pub(in crate::card::sets) static RELIC_BARRIER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{T}, Remove any number of charge counters from this artifact: Add {W}, then add an additional {W} for each charge counter removed this way”.
 
 // LEG 300 — Adventurers' Guildhouse
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 301 — Cathedral of Serra
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 302 — Hammerheim
 // Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “{T}: Target creature loses all landwalk abilities until end of turn”.
@@ -3091,7 +3091,7 @@ static PENDELHAVEN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_on
 )];
 
 // LEG 304 — Mountain Stronghold
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 305 — Pendelhaven
 // Audit: partial — The target's power and toughness omit modifiers from static continuous effects.
@@ -3139,7 +3139,7 @@ static TABERNACLE_UPKEEP_ABILITY: AbilityDef = AbilityDef::triggered(
 );
 
 // LEG 306 — Seafarer's Quay
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 307 — The Tabernacle at Pendrell Vale
 pub(in crate::card::sets) static THE_TABERNACLE_AT_PENDRELL_VALE: CardRecord = CardRecord::new(
@@ -3164,10 +3164,10 @@ pub(in crate::card::sets) static THE_TABERNACLE_AT_PENDRELL_VALE: CardRecord = C
 );
 
 // LEG 308 — Tolaria
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 309 — Unholy Citadel
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEG 310 — Urborg
 // Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “{T}: Target creature loses first strike or swampwalk until end of turn”.

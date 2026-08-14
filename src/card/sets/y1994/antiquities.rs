@@ -695,7 +695,7 @@ pub(in crate::card::sets) static MILLSTONE: CardRecord = CardRecord::new(
 );
 
 // ATQ 57 — Mishra's War Machine
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // ATQ 58 — Obelisk of Undoing
 pub(in crate::card::sets) static OBELISK_OF_UNDOING: CardRecord = CardRecord::new(
@@ -967,7 +967,7 @@ pub(in crate::card::sets) static TRISKELION: CardRecord = CardRecord::new(
 );
 
 // ATQ 74 — Urza's Avenger
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // ATQ 75 — Urza's Chalice
 pub(in crate::card::sets) static URZAS_CHALICE: CardRecord = CardRecord::new(

@@ -399,6 +399,20 @@ impl Game {
         }
     }
 
+    /// Who assigns this attacker's combat damage. CR 702.22: banding moves
+    /// that choice to the defending player, so a creature with banding
+    /// blocking an attacker takes the decision away from the attacker's
+    /// controller. Any one banding blocker is enough.
+    pub(super) fn combat_damage_assigner(&self, attacker: GameObjectId) -> PlayerId {
+        self.battlefield
+            .iter()
+            .find(|permanent| {
+                permanent.blocking == Some(attacker)
+                    && self.permanent_has_executable_keyword(permanent, KeywordAbility::Banding)
+            })
+            .map_or(self.active_player, |blocker| blocker.controller)
+    }
+
     pub(super) fn combat_assignment_actions(&self, attacker_id: GameObjectId) -> Vec<Action> {
         let Some(attacker) = self
             .battlefield

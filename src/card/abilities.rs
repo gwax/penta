@@ -59,14 +59,6 @@ const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
     AbilityDef::keyword(text, keyword)
 }
 
-const fn unsupported_keyword(
-    text: &'static str,
-    ability: KeywordAbility,
-    explanation: &'static str,
-) -> AbilityDef {
-    keyword(text, ability).with_coverage(AbilityCoverageDef::metadata_only(explanation))
-}
-
 #[must_use]
 pub const fn flying() -> AbilityDef {
     keyword("Flying", KeywordAbility::Flying)
@@ -99,11 +91,11 @@ pub const fn double_strike() -> AbilityDef {
 
 #[must_use]
 pub const fn banding() -> AbilityDef {
-    unsupported_keyword(
-        "Banding",
-        KeywordAbility::Banding,
-        "Band formation and combat damage assignment are not implemented.",
-    )
+    keyword("Banding", KeywordAbility::Banding).with_coverage(AbilityCoverageDef::partial(
+        "Blocking with banding moves the attacker's combat damage assignment to the \
+         defending player, which is implemented. Attacking in a band is not: bands are \
+         neither declared nor blocked as a group.",
+    ))
 }
 
 #[must_use]
@@ -518,16 +510,35 @@ mod tests {
         ));
     }
 
+    /// A card can print a keyword the engine only records. The distinction is
+    /// a property of the coverage model rather than of any particular keyword,
+    /// so the metadata-only case is built here instead of borrowing whichever
+    /// keyword happens to be unimplemented today.
     #[test]
     fn keyword_presence_is_distinct_from_executable_keyword_support() {
-        static KEYWORDS: [AbilityDef; 2] = [flying(), banding()];
+        static RECORDED_ONLY: AbilityDef = AbilityDef::keyword("Shroud", KeywordAbility::Shroud)
+            .with_coverage(AbilityCoverageDef::metadata_only(
+                "Recorded for this test, not executed.",
+            ));
+        static KEYWORDS: [AbilityDef; 2] = [flying(), RECORDED_ONLY];
         let rules =
             CardRules::new_creature(ManaCost::default(), &[], 1, 1).with_abilities(&KEYWORDS);
 
         assert!(rules.has_keyword(KeywordAbility::Flying));
         assert!(rules.has_executable_keyword(KeywordAbility::Flying));
-        assert!(rules.has_keyword(KeywordAbility::Banding));
-        assert!(!rules.has_executable_keyword(KeywordAbility::Banding));
+        assert!(rules.has_keyword(KeywordAbility::Shroud));
+        assert!(!rules.has_executable_keyword(KeywordAbility::Shroud));
+    }
+
+    /// Banding is the one keyword the engine implements in part: blocking
+    /// with it works, attacking in a band does not.
+    #[test]
+    fn banding_is_executable_but_only_partially_covered() {
+        assert!(banding().is_executable());
+        assert_eq!(
+            banding().coverage.status,
+            crate::card::ImplementationStatus::Partial
+        );
     }
 
     #[test]

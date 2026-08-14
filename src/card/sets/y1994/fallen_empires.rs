@@ -54,7 +54,7 @@ static FUNGUS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_per
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Sacrifice a white creature: For each attacking red creature, prevent all combat damage that would be dealt by that creature this turn unless its controller pays {2}{R}”.
 
 // FEM 7a — Icatian Infantry
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // FEM 8a — Icatian Javelineers
 pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::new(
@@ -124,7 +124,7 @@ pub(in crate::card::sets) static ICATIAN_LIEUTENANT: CardRecord = CardRecord::ne
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Sacrifice this creature: You gain 1 life for each credit counter on this creature. Activate only during your upkeep”.
 
 // FEM 11 — Icatian Phalanx
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // FEM 12 — Icatian Priest
 pub(in crate::card::sets) static ICATIAN_PRIEST: CardRecord = CardRecord::new(
@@ -179,7 +179,7 @@ pub(in crate::card::sets) static ICATIAN_SCOUT: CardRecord = CardRecord::new(
 );
 
 // FEM 14 — Icatian Skirmishers
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // FEM 15 — Icatian Town
 pub(in crate::card::sets) static ICATIAN_TOWN: CardRecord = CardRecord::new(

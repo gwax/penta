@@ -87,7 +87,7 @@ pub(in crate::card::sets) static BALANCE: CardRecord = CardRecord::new(
 );
 
 // LEA 4 — Benalish Hero
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEA 5 — Black Ward
 // Audit: blocked — Needs the named-color protection rules and Aura self-retention exception for “Enchanted creature has protection from black. This effect doesn't remove this Aura”.
@@ -411,7 +411,7 @@ pub(in crate::card::sets) static LANCE: CardRecord = CardRecord::new(
 );
 
 // LEA 28 — Mesa Pegasus
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEA 29 — Northern Paladin
 pub(in crate::card::sets) static NORTHERN_PALADIN: CardRecord = CardRecord::new(
@@ -3164,7 +3164,7 @@ pub(in crate::card::sets) static STREAM_OF_LIFE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked by a non-Wall creature, destroy that creature at end of combat”.
 
 // LEA 219 — Timber Wolves
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEA 220 — Tranquility
 pub(in crate::card::sets) static TRANQUILITY: CardRecord = CardRecord::new(
@@ -3559,7 +3559,7 @@ pub(in crate::card::sets) static GLASSES_OF_URZA: CardRecord = CardRecord::new(
 );
 
 // LEA 246 — Helm of Chatzuk
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // LEA 247 — Howling Mine
 // Audit: blocked — Needs a hidden-zone decision and continuation for “At the beginning of each player's draw step, if this artifact is untapped, that player draws an additional card”.

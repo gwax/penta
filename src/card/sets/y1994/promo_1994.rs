@@ -11,7 +11,7 @@ use super::{CardRecord, PrintingRecord};
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Choose target creature. If it's attacking, it can't be blocked this turn. If it's blocking, prevent all combat damage that would be dealt this combat by it and each creature it's blocking”.
 
 // P94 3 — Nalathni Dragon
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[];
 

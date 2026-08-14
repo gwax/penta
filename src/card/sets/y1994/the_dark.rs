@@ -130,7 +130,7 @@ pub(in crate::card::sets) static MORALE: CardRecord = CardRecord::new(
 );
 
 // DRK 15 — Pikemen
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // DRK 16 — Preacher
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: For as long as this creature remains tapped, gain control of target creature of an opponent's choice they control”.

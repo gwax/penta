@@ -39,8 +39,8 @@ impl Game {
         if let Some(decision) = self.pending_decisions.first() {
             return Some(decision.observation.player);
         }
-        if !self.pending_combat_attackers.is_empty() {
-            return Some(self.active_player);
+        if let Some(attacker) = self.pending_combat_attackers.first().copied() {
+            return Some(self.combat_damage_assigner(attacker));
         }
         if let Some(pregame) = self.pregame {
             return Some(match pregame {
@@ -149,7 +149,7 @@ impl Game {
             return actions;
         }
         if let Some(attacker) = self.pending_combat_attackers.first().copied() {
-            if player == self.active_player {
+            if player == self.combat_damage_assigner(attacker) {
                 actions.extend(self.combat_assignment_actions(attacker));
             }
             return actions;

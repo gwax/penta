@@ -34,6 +34,15 @@ distinguishes snapshots of the covered source and build inputs.
   now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
+- **Banding, in part.** CR 702.22 gives banding two separate jobs, and the
+  engine now does one: a creature with banding blocking an attacker moves the
+  choice of how that attacker assigns its combat damage to the defending
+  player. Attacking in a band is still absent -- bands are neither declared nor
+  blocked as a group -- so the keyword reports itself `Partial` rather than
+  complete, and the twenty-one identities that print it keep an audit line
+  naming only what is left. No card is claimed as executable on the strength
+  of half a keyword.
+
 - **A tapped object predicate**, which was the whole of Royal Assassin's gap.
   Island Fish Jasconius joins it from the same sweep with no engine change:
   the untap restriction it needed already existed, and its other three clauses

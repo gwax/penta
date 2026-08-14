@@ -141,7 +141,7 @@ pub(in crate::card::sets) static REPENTANT_BLACKSMITH: CardRecord = CardRecord::
 // Audit: blocked — Needs nested-game setup, execution, and result propagation for Shahrazad's library-backed subgame.
 
 // ARN 11 — War Elephant
-// Audit: blocked — Needs full banding group declaration, blocking, and combat-damage assignment semantics.
+// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
 
 // ARN 12 — Dandân
 pub(in crate::card::sets) static DANDAN: CardRecord = CardRecord::new(
