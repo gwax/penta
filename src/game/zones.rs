@@ -1,9 +1,9 @@
 use super::{
     BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId, CharacteristicContext,
-    CharacteristicSource, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId,
-    KeywordAbility, ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId, PublicCard,
-    ReplacementEffectDef, ReplacementEventDef, Target, TriggerContext, ZoneCard, ZoneError,
-    ZoneKind, ZoneMoveCause, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
+    CharacteristicSource, CounterKind, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent,
+    GameObjectId, KeywordAbility, ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId,
+    PublicCard, ReplacementEffectDef, ReplacementEventDef, Target, TriggerContext, ZoneCard,
+    ZoneError, ZoneKind, ZoneMoveCause, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
 };
 
 impl Game {
@@ -233,6 +233,7 @@ impl Game {
                     // provenance, which only meld and copy effects consult.
                     backing: ObjectBacking::None,
                     characteristics: CharacteristicSource::Card(*definition),
+                    counters: [0; CounterKind::COUNT],
                 })
             })
             .collect()

@@ -84,6 +84,7 @@ pub(super) fn card(
         owner,
         backing: ObjectBacking::None,
         characteristics: CharacteristicSource::Card(definition),
+        counters: [0; CounterKind::COUNT],
     })
 }
 

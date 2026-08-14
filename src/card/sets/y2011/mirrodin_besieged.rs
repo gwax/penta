@@ -1,11 +1,31 @@
-//! Mirrodin Besieged cards cataloged as attachment edge cases.
+//! Mirrodin Besieged cards cataloged as cross-format rules-engine test cases.
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ValueDef, abilities, cards,
+    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, SpellResolutionDestinationDef,
+    ValueDef, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+// MBS 19 — White Sun's Zenith
+pub(in crate::card::sets) static WHITE_SUNS_ZENITH: CardRecord = CardRecord::new(
+    cards::WHITE_SUNS_ZENITH,
+    "White Sun's Zenith",
+    CardArt::new("a879940e-6632-47c5-a30e-d29a82d16e9d", "Mike Bierek"),
+    CardSet::MirrodinBesieged,
+    CardRules::new_instant(mana_cost!("{X}{W}{W}")).with_ability(
+        AbilityDef::spell(
+            "Create X 2/2 white Cat creature tokens. Shuffle White Sun's Zenith into its owner's library.",
+            EffectDef::CreateToken {
+                token: cards::CAT_TOKEN_2_2_WHITE,
+                count: ValueDef::ChosenX,
+                tapped: false,
+            },
+        )
+        .with_resolution_destination(SpellResolutionDestinationDef::LibraryShuffled),
+    ),
+);
 
 // MBS 115 — Mortarpod
 pub(in crate::card::sets) static MORTARPOD: CardRecord = CardRecord::new(
@@ -42,6 +62,6 @@ pub(in crate::card::sets) static MORTARPOD: CardRecord = CardRecord::new(
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MORTARPOD];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&WHITE_SUNS_ZENITH, &MORTARPOD];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

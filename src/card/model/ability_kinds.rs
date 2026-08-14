@@ -15,8 +15,31 @@ pub enum SpellAbilityDef {
         /// it names. Unlike a target this is spent rather than pointed at, so
         /// it is not checked again on resolution.
         additional_cost: Option<SpellAdditionalCostDef>,
+        /// Where the card goes after a successful resolution. This is part of
+        /// a spell's shared stack procedure rather than an instruction that
+        /// can move the resolving object while it is off the stack.
+        resolution_destination: SpellResolutionDestinationDef,
     },
     Modal(ModalSpellDef),
+}
+
+/// The card's normal post-resolution destination after it has successfully
+/// completed its instructions. Countered spells never use this: they follow
+/// the countering effect's destination instead. A destination can also carry
+/// an instruction that remains meaningful when the spell is a copy, such as
+/// shuffling its owner's library.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum SpellResolutionDestinationDef {
+    Graveyard,
+    Exile,
+    /// Exile the card and put these counters on its new object. A zone change
+    /// happens before the counters are added, so prior-zone counters cannot
+    /// leak into exile.
+    ExileWithCounters(&'static [(CounterKind, u16)]),
+    /// Move the card to its owner's library, then shuffle it. The shuffle is
+    /// still part of the resolution when another effect replaces the move, or
+    /// when this resolving spell is a copy with no card to move.
+    LibraryShuffled,
 }
 
 /// An additional cost that selects objects to spend. The zone decides what
@@ -68,6 +91,7 @@ impl SpellAbilityDef {
         Self::Nonmodal {
             targets: &[],
             additional_cost: None,
+            resolution_destination: SpellResolutionDestinationDef::Graveyard,
         }
     }
 
@@ -84,6 +108,7 @@ impl SpellAbilityDef {
             } => Self::Nonmodal {
                 targets,
                 additional_cost,
+                resolution_destination: self.resolution_destination(),
             },
             Self::Modal(_) => panic!("targets belong on modal spell branches"),
         }
@@ -95,9 +120,14 @@ impl SpellAbilityDef {
     #[must_use]
     pub const fn with_additional_cost(self, cost: SpellAdditionalCostDef) -> Self {
         match self {
-            Self::Nonmodal { targets, .. } => Self::Nonmodal {
+            Self::Nonmodal {
+                targets,
+                resolution_destination,
+                ..
+            } => Self::Nonmodal {
                 targets,
                 additional_cost: Some(cost),
+                resolution_destination,
             },
             Self::Modal(_) => panic!("an additional cost belongs to a whole spell"),
         }
@@ -110,6 +140,38 @@ impl SpellAbilityDef {
                 additional_cost, ..
             } => additional_cost,
             Self::Modal(_) => None,
+        }
+    }
+
+    /// Changes the ordinary destination used after this spell resolves. Modal
+    /// wrappers share one spell object and therefore one destination.
+    #[must_use]
+    pub const fn with_resolution_destination(
+        self,
+        destination: SpellResolutionDestinationDef,
+    ) -> Self {
+        match self {
+            Self::Nonmodal {
+                targets,
+                additional_cost,
+                ..
+            } => Self::Nonmodal {
+                targets,
+                additional_cost,
+                resolution_destination: destination,
+            },
+            Self::Modal(modal) => Self::Modal(modal),
+        }
+    }
+
+    #[must_use]
+    pub const fn resolution_destination(self) -> SpellResolutionDestinationDef {
+        match self {
+            Self::Nonmodal {
+                resolution_destination,
+                ..
+            } => resolution_destination,
+            Self::Modal(_) => SpellResolutionDestinationDef::Graveyard,
         }
     }
 

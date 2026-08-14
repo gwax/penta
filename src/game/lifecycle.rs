@@ -82,6 +82,7 @@ impl Game {
                         owner: player,
                         backing: ObjectBacking::Cards(vec![physical_id]),
                         characteristics: CharacteristicSource::Card(definition),
+                        counters: [0; CounterKind::COUNT],
                     });
                 }
                 rng.shuffle(&mut library);
@@ -143,6 +144,7 @@ impl Game {
                     owner: player,
                     backing: ObjectBacking::Cards(vec![physical_id]),
                     characteristics: CharacteristicSource::Card(definition),
+                    counters: [0; CounterKind::COUNT],
                 });
             }
         }
@@ -289,6 +291,7 @@ impl Game {
             .entry(previous)
             .or_insert_with(|| RetiredObject::Card(card.clone()));
         card.id = self.allocate_object_id();
+        card.counters = [0; CounterKind::COUNT];
         let created = vec![card.id];
         (card, ZoneChangeOutcome { previous, created })
     }
@@ -489,6 +492,7 @@ impl Game {
             owner,
             backing: ObjectBacking::None,
             characteristics,
+            counters: [0; CounterKind::COUNT],
         }
     }
 

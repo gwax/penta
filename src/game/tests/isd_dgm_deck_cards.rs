@@ -359,7 +359,7 @@ fn increasing_ambition_stays_hand_only_when_flashback_is_granted() {
 }
 
 #[test]
-fn temporal_mastery_schedules_an_extra_turn_but_still_goes_to_the_graveyard() {
+fn temporal_mastery_schedules_an_extra_turn_and_exiles_itself() {
     let mut game = isd_dgm_game();
     let mastery = card(24_300, cards::TEMPORAL_MASTERY, PlayerId::One);
     game.players[0].hand.push(mastery.clone());
@@ -378,10 +378,10 @@ fn temporal_mastery_schedules_an_extra_turn_but_still_goes_to_the_graveyard() {
     assert_eq!(game.extra_turns, vec![PlayerId::One]);
     assert!(
         game.players[0]
-            .graveyard
+            .exile
             .iter()
             .any(|card| card.definition == cards::TEMPORAL_MASTERY),
-        "self-exile remains the explicitly partial clause"
+        "the post-resolution destination is exile"
     );
 }
 

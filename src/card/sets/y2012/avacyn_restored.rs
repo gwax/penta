@@ -1057,7 +1057,6 @@ pub(in crate::card::sets) static SCRAPSKIN_DRAKE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs soulbond pairing state, paired-object identity, and a damage trigger granted to both paired creatures.
 
 // AVR 81 — Temporal Mastery
-// Audit: partial — The extra turn and miracle cost are executable, but the resolving source spell cannot move itself from the stack to exile.
 pub(in crate::card::sets) static TEMPORAL_MASTERY: CardRecord = CardRecord::new(
     cards::TEMPORAL_MASTERY,
     "Temporal Mastery",
@@ -1070,9 +1069,7 @@ pub(in crate::card::sets) static TEMPORAL_MASTERY: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::Controller,
             },
         )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The extra turn is executable, but MoveToZone cannot move the resolving source spell from the stack to exile.",
-        )),
+        .with_resolution_destination(crate::SpellResolutionDestinationDef::Exile),
         abilities::miracle(mana_cost!("{1}{U}")),
     ]),
 );
