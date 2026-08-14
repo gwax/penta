@@ -155,7 +155,32 @@ pub(in crate::card::sets) static BLUE_WARD: CardRecord = CardRecord::new(
 );
 
 // LEA 9 — Castle
-// Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “Untapped creatures you control get +0/+2”.
+pub(in crate::card::sets) static CASTLE: CardRecord = CardRecord::new(
+    cards::CASTLE,
+    "Castle",
+    CardArt::new("b0da8d56-3178-44c2-9344-95d2346d326f", "Dameon Willich"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{3}{W}")).with_ability(AbilityDef::static_ability(
+        "Untapped creatures you control get +0/+2.",
+        EffectDef::Apply {
+            // The condition rides on the recipient, so a creature tapping
+            // loses the bonus without the enchantment being touched.
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::You,
+            },
+            effect: AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(0),
+                toughness: ValueDef::Constant(2),
+            },
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )),
+);
 
 // LEA 10 — Circle of Protection: Blue
 pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_BLUE: CardRecord = CardRecord::new(
@@ -4673,6 +4698,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLACK_WARD,
     &BLESSING,
     &BLUE_WARD,
+    &CASTLE,
     &CIRCLE_OF_PROTECTION_BLUE,
     &CIRCLE_OF_PROTECTION_GREEN,
     &CIRCLE_OF_PROTECTION_RED,

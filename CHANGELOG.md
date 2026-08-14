@@ -78,6 +78,15 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **"For as long as this artifact remains tapped."** Every other resolving
+  duration has a deadline to file the effect under; this one has none, since
+  the artifact that tapped to make the bonus decides when it ends by
+  untapping. So the source is recorded instead of a deadline and the bonus is
+  read against it, which is what lets cleanup leave it alone while still
+  dropping a bonus whose source has untapped. Ashnod's Battle Gear, Tawnos's
+  Weaponry, Spirit Shield, and Zelyon Sword -- and Castle, which asks the same
+  question from the other side, with the condition on the creature receiving
+  the bonus.
 - **Removing a creature from combat.** Regeneration already did exactly this
   as part of its shield, so the step is now shared rather than reimplemented:
   the permanent stops attacking or blocking and anything blocking it stops.

@@ -3,9 +3,9 @@ use super::{
     AppliedEffectDef, CardPartId, CastSignature, ComparisonDef, ContinuousEffectTimestamp,
     ControlFlow, CounterKind, EffectDurationDef, EffectRecipientDef, Game, GameObjectId, GrantId,
     ObjectPredicateDef, ObjectQueryDef, Permanent, PlayerId, QuantifierDef, ScopedEffect,
-    StackObject, StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId,
-    TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerConditionDef,
-    TriggerContext, ZoneKind,
+    StackObject, StackObjectKind, TappedSourceStatBonus, Target, TargetIndex, TargetSelection,
+    TargetSlotId, TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities,
+    TriggerConditionDef, TriggerContext, ZoneKind,
 };
 
 #[derive(Clone, Copy)]
@@ -49,6 +49,7 @@ impl Game {
                 | EffectDurationDef::Permanent
                 | EffectDurationDef::UntilYourNextUpkeep
                 | EffectDurationDef::UntilYourNextTurn
+                | EffectDurationDef::WhileSourceTapped
         ));
     }
 
@@ -134,7 +135,10 @@ impl Game {
             },
             EffectDurationDef::Permanent => AbilityEffectExpiration::Never,
             EffectDurationDef::WhileSourceRemainsInZone
-            | EffectDurationDef::UntilSourceLeavesZone => {
+            | EffectDurationDef::UntilSourceLeavesZone
+            // Only a stat modification may last while its source stays
+            // tapped, and that one never becomes a granted ability.
+            | EffectDurationDef::WhileSourceTapped => {
                 unreachable!("a resolving effect cannot have a static duration")
             }
         }
@@ -250,13 +254,27 @@ impl Game {
                     .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
                 )
                 .expect("the effect value was clamped to i16");
+                // "For as long as this artifact remains tapped" has no
+                // deadline to record, so the source is recorded instead and
+                // the bonus is read against it.
+                let while_tapped = (resolution.duration == EffectDurationDef::WhileSourceTapped)
+                    .then(|| resolution.object.source.unwrap_or(resolution.object.id));
                 if let Some(permanent) = self
                     .battlefield
                     .iter_mut()
                     .find(|permanent| permanent.card.id == target)
                 {
-                    permanent.power_bonus = permanent.power_bonus.saturating_add(power);
-                    permanent.toughness_bonus = permanent.toughness_bonus.saturating_add(toughness);
+                    if let Some(source) = while_tapped {
+                        permanent.while_source_tapped.push(TappedSourceStatBonus {
+                            source,
+                            power,
+                            toughness,
+                        });
+                    } else {
+                        permanent.power_bonus = permanent.power_bonus.saturating_add(power);
+                        permanent.toughness_bonus =
+                            permanent.toughness_bonus.saturating_add(toughness);
+                    }
                 }
             }
             // Only the printed static forms of these exist. "Can't attack"

@@ -212,12 +212,16 @@ pub(super) fn shared_resolving_apply(
     // Resolved ability additions and removals share one duration-aware
     // operation path. Other applied effects still end with the turn.
     let ability_change = resolving_effect_is_only_ability_changes(effect);
+    // "For as long as this artifact remains tapped" is recorded against its
+    // source rather than a deadline, which only the stat modification does.
+    let stat_change = matches!(effect, AppliedEffectDef::ModifyPowerToughness { .. });
     let duration_is_supported = duration == EffectDurationDef::UntilEndOfTurn
         || duration == EffectDurationDef::UntilYourNextUpkeep && ability_change
         || matches!(
             duration,
             EffectDurationDef::UntilYourNextTurn | EffectDurationDef::Permanent
-        ) && ability_change;
+        ) && ability_change
+        || duration == EffectDurationDef::WhileSourceTapped && stat_change;
     if !duration_is_supported || !shared_effect_recipient(recipient) {
         return false;
     }

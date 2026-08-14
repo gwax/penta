@@ -192,6 +192,16 @@ struct CardInstance {
     characteristics: CharacteristicSource,
 }
 
+/// A power/toughness modification that lasts while a named permanent
+/// remains tapped. The source is recorded rather than the deadline, since
+/// there is no deadline to record.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct TappedSourceStatBonus {
+    source: GameObjectId,
+    power: i16,
+    toughness: i16,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 struct Permanent {
@@ -207,6 +217,9 @@ struct Permanent {
     /// Loyalty counters are distinct from marked creature damage and persist
     power_bonus: i16,
     toughness_bonus: i16,
+    /// Modifications that end when the permanent that made them untaps,
+    /// rather than at cleanup with `power_bonus`.
+    while_source_tapped: Vec<TappedSourceStatBonus>,
     attacking: bool,
     attack_defender: Option<crate::AttackDefender>,
     emblem_source: Option<AbilityOrigin>,
@@ -345,6 +358,7 @@ impl Permanent {
             damage: 0,
             power_bonus: 0,
             toughness_bonus: 0,
+            while_source_tapped: Vec::new(),
             attacking: false,
             attack_defender: None,
             emblem_source: None,

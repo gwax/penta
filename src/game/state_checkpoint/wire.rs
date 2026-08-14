@@ -529,6 +529,15 @@ fn parse_permanent(
     permanent.damage = shown.damage;
     permanent.power_bonus = state.power_bonus;
     permanent.toughness_bonus = state.toughness_bonus;
+    permanent.while_source_tapped = state
+        .while_source_tapped
+        .iter()
+        .map(|(source, power, toughness)| TappedSourceStatBonus {
+            source: GameObjectId(*source),
+            power: *power,
+            toughness: *toughness,
+        })
+        .collect();
     permanent.attacking = shown.attacking;
     permanent.attack_defender = shown.attack_defender;
     permanent.blocked = shown.blocked;

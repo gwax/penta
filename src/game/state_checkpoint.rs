@@ -10,8 +10,9 @@ use super::{
     ObjectBacking, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent,
     PlayerId, PlayerState, Pregame, PreventionShield, RelationalDamagePrevention, ReplaceableEvent,
     ReplacementEffectContext, ReplayRng, RetiredObject, ScopedEffect, ShieldCoverageDef,
-    StackAbilityPayload, StackObject, StackObjectKind, Step, TemporaryAbilityGrant,
-    TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerContext, ZoneMoveCause,
+    StackAbilityPayload, StackObject, StackObjectKind, Step, TappedSourceStatBonus,
+    TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerContext,
+    ZoneMoveCause,
 };
 use crate::card::{
     AppliedEffectDef, BasicLandType, CardType, CardTypeSet, ColorSet, DeclarativeAbilityDef,

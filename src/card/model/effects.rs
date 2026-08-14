@@ -95,6 +95,10 @@ pub enum EffectDurationDef {
     UntilYourNextTurn,
     WhileSourceRemainsInZone,
     UntilSourceLeavesZone,
+    /// For as long as the effect's own source stays tapped. Unlike every
+    /// other resolving duration this one has no deadline: the artifact that
+    /// tapped to make it decides when it ends by untapping.
+    WhileSourceTapped,
 }
 
 /// A continuous or rules-modifying effect applied to a game object.

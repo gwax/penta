@@ -22,6 +22,28 @@ impl Game {
         }
     }
 
+    /// What the "for as long as this artifact remains tapped" bonuses on this
+    /// permanent currently add. A bonus whose source has untapped or left the
+    /// battlefield contributes nothing; cleanup drops it.
+    fn while_source_tapped_bonus(&self, permanent: &Permanent) -> (i16, i16) {
+        permanent
+            .while_source_tapped
+            .iter()
+            .filter(|bonus| self.permanent_is_tapped(bonus.source))
+            .fold((0, 0), |total, bonus| {
+                (
+                    total.0.saturating_add(bonus.power),
+                    total.1.saturating_add(bonus.toughness),
+                )
+            })
+    }
+
+    pub(super) fn permanent_is_tapped(&self, id: GameObjectId) -> bool {
+        self.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == id && permanent.tapped)
+    }
+
     pub(super) fn controls_land_type(&self, player: PlayerId, land_type: BasicLandType) -> bool {
         self.battlefield.iter().any(|permanent| {
             permanent.controller == player
@@ -183,15 +205,18 @@ impl Game {
             0
         };
         let counter_bonus = Self::counter_stat_bonus(permanent);
+        let while_tapped = self.while_source_tapped_bonus(permanent);
         crate::CreatureStats {
             power: base.power
                 + ascended
+                + while_tapped.0
                 + permanent.power_bonus
                 + static_bonus.0
                 + conditional_bonus.0
                 + counter_bonus.0,
             toughness: base.toughness
                 + ascended
+                + while_tapped.1
                 + permanent.toughness_bonus
                 + static_bonus.1
                 + conditional_bonus.1

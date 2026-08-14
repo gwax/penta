@@ -189,6 +189,11 @@ pub(super) struct PermanentSnapshot {
     pub(super) entered_controller_turn: u32,
     pub(super) power_bonus: i16,
     pub(super) toughness_bonus: i16,
+    /// Modifications that end when the permanent that made them untaps, as
+    /// (source object, power, toughness). Absent from checkpoints that
+    /// predate them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) while_source_tapped: Vec<(u32, i16, i16)>,
     pub(super) unblockable_this_turn: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) cannot_block_this_turn: bool,

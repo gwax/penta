@@ -510,6 +510,19 @@ impl Game {
         for replacements in &mut self.draw_replacements {
             replacements.clear();
         }
+        // A bonus whose source has untapped or left is spent; dropping it at
+        // cleanup keeps the list from growing without bound.
+        let still_tapped: Vec<_> = self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.tapped)
+            .map(|permanent| permanent.card.id)
+            .collect();
+        for permanent in &mut self.battlefield {
+            permanent
+                .while_source_tapped
+                .retain(|bonus| still_tapped.contains(&bonus.source));
+        }
         for permanent in &mut self.battlefield {
             permanent.damage = 0;
             permanent.exile_instead_of_dying = false;

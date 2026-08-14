@@ -455,6 +455,7 @@ mod unblocked_attackers;
 mod unleash;
 mod untap_skips;
 mod wards;
+mod while_source_tapped;
 mod zone_effects;
 mod zone_move_replacements;
 

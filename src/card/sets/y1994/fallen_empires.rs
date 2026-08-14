@@ -1449,10 +1449,78 @@ pub(in crate::card::sets) static RING_OF_RENEWAL: CardRecord = CardRecord::new(
 );
 
 // FEM 90 — Spirit Shield
-// Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “{2}, {T}: Target creature gets +0/+2 for as long as this artifact remains tapped”.
+pub(in crate::card::sets) static SPIRIT_SHIELD: CardRecord = CardRecord::new(
+    cards::SPIRIT_SHIELD,
+    "Spirit Shield",
+    CardArt::new("213d6e0d-5ec9-441e-a38d-50ce44583e4b", "Scott Kirschner"),
+    CardSet::FallenEmpires,
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "You may choose not to untap this artifact during your untap step.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::MayChooseNotToUntap,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{2}, {T}: Target creature gets +0/+2 for as long as this artifact remains \
+             tapped.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(0),
+                    toughness: ValueDef::Constant(2),
+                },
+                duration: EffectDurationDef::WhileSourceTapped,
+            },
+        ),
+    ]),
+);
 
 // FEM 91 — Zelyon Sword
-// Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “{3}, {T}: Target creature gets +2/+0 for as long as this artifact remains tapped”.
+pub(in crate::card::sets) static ZELYON_SWORD: CardRecord = CardRecord::new(
+    cards::ZELYON_SWORD,
+    "Zelyon Sword",
+    CardArt::new("4137160b-5248-4fbd-8ae8-25e9afd8fb5c", "Scott Kirschner"),
+    CardSet::FallenEmpires,
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "You may choose not to untap this artifact during your untap step.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::MayChooseNotToUntap,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{3}, {T}: Target creature gets +2/+0 for as long as this artifact remains \
+             tapped.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{3}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(2),
+                    toughness: ValueDef::Constant(0),
+                },
+                duration: EffectDurationDef::WhileSourceTapped,
+            },
+        ),
+    ]),
+);
 
 // FEM 92 — Bottomless Vault
 // Audit: blocked — Needs storage counters plus an arbitrary remove-any-number counter cost whose chosen count determines the mana produced.
@@ -1635,6 +1703,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELVEN_LYRE,
     &IMPLEMENTS_OF_SACRIFICE,
     &RING_OF_RENEWAL,
+    &SPIRIT_SHIELD,
+    &ZELYON_SWORD,
     &DWARVEN_RUINS,
     &EBON_STRONGHOLD,
     &HAVENWOOD_BATTLEGROUND,

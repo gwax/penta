@@ -587,7 +587,41 @@ pub(in crate::card::sets) static AMULET_OF_KROOG: CardRecord = CardRecord::new(
 // Audit: blocked — Needs mana-ability activation to select and sacrifice a different creature; the mana runtime can currently sacrifice only the source.
 
 // ATQ 39 — Ashnod's Battle Gear
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “{2}, {T}: Target creature you control gets +2/-2 for as long as this artifact remains tapped”.
+pub(in crate::card::sets) static ASHNODS_BATTLE_GEAR: CardRecord = CardRecord::new(
+    cards::ASHNODS_BATTLE_GEAR,
+    "Ashnod's Battle Gear",
+    CardArt::new("aeeec853-dd3f-4ac3-8b20-c07fada8888f", "Mark Poole"),
+    CardSet::Antiquities,
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "You may choose not to untap this artifact during your untap step.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::MayChooseNotToUntap,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{2}, {T}: Target creature you control gets +2/-2 for as long as this artifact \
+             remains tapped.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(2),
+                    toughness: ValueDef::Constant(-2),
+                },
+                duration: EffectDurationDef::WhileSourceTapped,
+            },
+        ),
+    ]),
+);
 
 // ATQ 40 — Ashnod's Transmogrant
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{T}, Sacrifice this artifact: Put a +1/+1 counter on target nonartifact creature. That creature becomes an artifact in addition to its other types”.
@@ -1085,7 +1119,41 @@ const UPKEEP: TriggerEventDef = TriggerEventDef::StepBegins {
 };
 
 // ATQ 70 — Tawnos's Weaponry
-// Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “{2}, {T}: Target creature gets +1/+1 for as long as this artifact remains tapped”.
+pub(in crate::card::sets) static TAWNOSS_WEAPONRY: CardRecord = CardRecord::new(
+    cards::TAWNOSS_WEAPONRY,
+    "Tawnos's Weaponry",
+    CardArt::new("3035cead-a501-4204-9154-5fd648577d32", "Dan Frazier"),
+    CardSet::Antiquities,
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "You may choose not to untap this artifact during your untap step.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::MayChooseNotToUntap,
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{2}, {T}: Target creature gets +1/+1 for as long as this artifact remains \
+             tapped.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(1),
+                    toughness: ValueDef::Constant(1),
+                },
+                duration: EffectDurationDef::WhileSourceTapped,
+            },
+        ),
+    ]),
+);
 
 // ATQ 71 — Tetravus
 pub(in crate::card::sets) static TETRAVUS: CardRecord = CardRecord::new(
@@ -1367,6 +1435,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRUMBLE,
     &GAEAS_AVENGER,
     &AMULET_OF_KROOG,
+    &ASHNODS_BATTLE_GEAR,
     &CLAY_STATUE,
     &COLOSSUS_OF_SARDIA,
     &DRAGON_ENGINE,
@@ -1385,6 +1454,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SU_CHI,
     &TABLET_OF_EPITYR,
     &TAWNOSS_WAND,
+    &TAWNOSS_WEAPONRY,
     &TETRAVUS,
     &TRISKELION,
     &URZAS_CHALICE,

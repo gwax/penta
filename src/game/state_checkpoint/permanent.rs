@@ -75,6 +75,11 @@ pub(super) fn permanent_snapshot(
         entered_controller_turn: permanent.entered_controller_turn,
         power_bonus: permanent.power_bonus,
         toughness_bonus: permanent.toughness_bonus,
+        while_source_tapped: permanent
+            .while_source_tapped
+            .iter()
+            .map(|bonus| (bonus.source.0, bonus.power, bonus.toughness))
+            .collect(),
         unblockable_this_turn: permanent.unblockable_this_turn,
         cannot_block_this_turn: permanent.cannot_block_this_turn,
         detained_until_turn_of: permanent
