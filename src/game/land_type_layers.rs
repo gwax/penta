@@ -381,6 +381,7 @@ impl Game {
             | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
             | EffectRecipientDef::TriggeringObject
             | EffectRecipientDef::ControllerOfTriggeringObject
+            | EffectRecipientDef::ControllerOfAttachedPermanent
             | EffectRecipientDef::EventPlayer => false,
         }
     }

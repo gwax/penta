@@ -153,6 +153,9 @@ const fn player_relation_snapshot(relation: PlayerRelation) -> PlayerRelationSna
         PlayerRelation::NonactivePlayer => PlayerRelationSnapshot::NonactivePlayer,
         PlayerRelation::EventPlayer => PlayerRelationSnapshot::EventPlayer,
         PlayerRelation::ChosenPlayer => PlayerRelationSnapshot::ChosenPlayer,
+        PlayerRelation::ControllerOfAttachedPermanent => {
+            PlayerRelationSnapshot::ControllerOfAttachedPermanent
+        }
     }
 }
 
@@ -166,6 +169,9 @@ const fn parse_player_relation(relation: PlayerRelationSnapshot) -> PlayerRelati
         PlayerRelationSnapshot::NonactivePlayer => PlayerRelation::NonactivePlayer,
         PlayerRelationSnapshot::EventPlayer => PlayerRelation::EventPlayer,
         PlayerRelationSnapshot::ChosenPlayer => PlayerRelation::ChosenPlayer,
+        PlayerRelationSnapshot::ControllerOfAttachedPermanent => {
+            PlayerRelation::ControllerOfAttachedPermanent
+        }
     }
 }
 

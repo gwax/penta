@@ -10,7 +10,7 @@ use super::model::{
     CounterKind, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
     KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, ObjectQueryDef, PaymentDef,
     PlayerRelation, ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef,
-    ScaledValueDef, ShieldCoverageDef, TriggerEventDef, ValueDef, ZoneKind,
+    ScaledValueDef, ShieldCoverageDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ChoiceIndex, TargetIndex};
 
@@ -19,6 +19,33 @@ pub static ENCHANT_CREATURE_TARGET: [AbilityTargetDef; 1] =
     [AbilityTargetDef::exactly_one_permanent(
         ObjectPredicateDef::HasType(CardType::Creature),
     )];
+
+/// The target an "Enchant artifact" Aura spell chooses.
+pub static ENCHANT_ARTIFACT_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::HasType(CardType::Artifact),
+    )];
+
+/// The target an "Enchant enchantment" Aura spell chooses.
+pub static ENCHANT_ENCHANTMENT_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::HasType(CardType::Enchantment),
+    )];
+
+/// An Aura's "at the beginning of the upkeep of enchanted <thing>'s
+/// controller" trigger. The host's controller is the one whose upkeep this
+/// watches, which is not the Aura's controller once a host changes hands.
+#[must_use]
+pub const fn enchanted_controller_upkeep(text: &'static str, effect: EffectDef) -> AbilityDef {
+    AbilityDef::triggered(
+        text,
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::ControllerOfAttachedPermanent,
+        },
+        effect,
+    )
+}
 
 /// The target an "Enchant land" Aura spell chooses.
 pub static ENCHANT_LAND_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(

@@ -321,4 +321,8 @@ pub enum PlayerRelation {
     /// The player the ability's own source chose as it entered. Only a
     /// permanent that made such a choice matches anyone at all.
     ChosenPlayer,
+    /// Whoever controls the permanent the ability's source is attached to.
+    /// An Aura's own upkeep trigger fires on its host's turn, not its
+    /// controller's, and the two differ the moment a host changes hands.
+    ControllerOfAttachedPermanent,
 }

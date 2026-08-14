@@ -71,6 +71,13 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Auras that trigger on their host's controller's upkeep.** "The upkeep of
+  enchanted land's controller" is not the Aura's controller's upkeep, and the
+  two come apart the moment the Aura sits on something an opponent controls --
+  which is how every card in this family is played. Both the trigger's player
+  relation and the effect's recipient now read the host, following the same
+  resolve-at-the-source route the chosen-player relation already took.
+  Feedback, Cursed Land, Warp Artifact, and Wanderlust.
 - **Skipped untap steps**, the spent-as-they-arrive counterpart to the
   continuous "doesn't untap" prohibition. It is a count rather than a flag
   because Telekinesis names two, and the count is spent by its controller's

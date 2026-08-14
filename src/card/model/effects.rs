@@ -26,6 +26,9 @@ pub enum EffectRecipientDef {
     ChosenPermanent(ChoiceIndex),
     /// What this permanent is attached to, for an Aura's own static clauses.
     AttachedPermanent,
+    /// Whoever controls what this permanent is attached to. "That player" in
+    /// an Aura's upkeep trigger names them rather than the Aura's controller.
+    ControllerOfAttachedPermanent,
     /// Every battlefield permanent sharing a name with the chosen target,
     /// including the target itself. "And each other one with the same name"
     /// names the same set.

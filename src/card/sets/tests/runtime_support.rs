@@ -94,6 +94,7 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
         | EffectRecipientDef::ControllerOfTarget(_)
         | EffectRecipientDef::TriggeringObject
         | EffectRecipientDef::ControllerOfTriggeringObject
+        | EffectRecipientDef::ControllerOfAttachedPermanent
         | EffectRecipientDef::EventPlayer => true,
     }
 }
@@ -413,6 +414,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
                 | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
                 | EffectRecipientDef::TriggeringObject
                 | EffectRecipientDef::ControllerOfTriggeringObject
+                | EffectRecipientDef::ControllerOfAttachedPermanent
                 | EffectRecipientDef::EventPlayer => false,
             };
             let battlefield_effect_is_supported = shared_static_applied_effect(recipient, effect);

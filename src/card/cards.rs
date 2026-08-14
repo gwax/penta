@@ -4,6 +4,7 @@ use crate::CardDefinitionId;
 
 mod activation_timing;
 mod attack_restrictions;
+mod aura_upkeep;
 mod battalion;
 mod cannot_block;
 mod coin_flips;
@@ -39,6 +40,7 @@ mod untap_skips;
 mod wards;
 pub use activation_timing::*;
 pub use attack_restrictions::*;
+pub use aura_upkeep::*;
 pub use battalion::*;
 pub use cannot_block::*;
 pub use coin_flips::*;

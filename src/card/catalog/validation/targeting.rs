@@ -71,6 +71,7 @@ fn validate_recipient_target_references(
         | EffectRecipientDef::Opponent
         | EffectRecipientDef::TriggeringObject
         | EffectRecipientDef::ControllerOfTriggeringObject
+        | EffectRecipientDef::ControllerOfAttachedPermanent
         | EffectRecipientDef::EventPlayer
         | EffectRecipientDef::MatchingObjects { .. }
         | EffectRecipientDef::EachPlayer => Ok(()),

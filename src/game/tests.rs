@@ -372,6 +372,7 @@ mod activation_costs_and_turns;
 mod activation_timing;
 mod alternative_costs;
 mod attack_restrictions;
+mod aura_upkeep;
 mod banding;
 mod cannot_block;
 mod casting_and_targets;

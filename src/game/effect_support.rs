@@ -376,6 +376,51 @@ impl Game {
             .collect()
     }
 
+    /// Every recipient that names at most one thing, which is all of them
+    /// except the query-shaped ones the caller handles.
+    fn single_effect_recipient(
+        &self,
+        recipient: EffectRecipientDef,
+        object: &StackObject,
+        context: TriggerContext,
+    ) -> Option<Target> {
+        match recipient {
+            EffectRecipientDef::Source => object.source.map(Target::Permanent),
+            EffectRecipientDef::ChosenPermanent(_) => {
+                unreachable!("chosen permanent returned above")
+            }
+            EffectRecipientDef::AttachedPermanent => object
+                .source
+                .and_then(|source| self.current_or_last_known_attached_host(source))
+                .map(Target::Permanent),
+            EffectRecipientDef::ControllerOfAttachedPermanent => object
+                .source
+                .and_then(|source| self.attached_host_controller_of(source))
+                .map(Target::Player),
+            EffectRecipientDef::Controller => Some(Target::Player(object.controller)),
+            EffectRecipientDef::Opponent => Some(Target::Player(object.controller.opponent())),
+            EffectRecipientDef::EachPlayer => unreachable!("each player returned above"),
+            EffectRecipientDef::TriggeringObject => context
+                .object
+                .and_then(|object| self.live_object_target(object)),
+            EffectRecipientDef::ControllerOfTriggeringObject => context
+                .object
+                .and_then(|object| self.current_or_last_known_controller(object))
+                .or(context.object_controller)
+                .map(Target::Player),
+            EffectRecipientDef::EventPlayer => context.event_player.map(Target::Player),
+            EffectRecipientDef::Target(_)
+            | EffectRecipientDef::ControllerOfTarget(_)
+            | EffectRecipientDef::ObjectsControlledByTarget { .. }
+            | EffectRecipientDef::ObjectsOwnedByTarget { .. }
+            | EffectRecipientDef::CardsOwnedByTarget { .. }
+            | EffectRecipientDef::MatchingObjects { .. }
+            | EffectRecipientDef::ObjectsSharingNameWithTarget(_) => {
+                unreachable!("target, matching, and shared-name recipients returned above")
+            }
+        }
+    }
+
     pub(super) fn effect_recipients(
         &self,
         recipient: EffectRecipientDef,
@@ -455,39 +500,10 @@ impl Game {
             controller,
         } = recipient
         else {
-            return match recipient {
-                EffectRecipientDef::Source => object.source.map(Target::Permanent),
-                EffectRecipientDef::ChosenPermanent(_) => {
-                    unreachable!("chosen permanent returned above")
-                }
-                EffectRecipientDef::AttachedPermanent => object
-                    .source
-                    .and_then(|source| self.current_or_last_known_attached_host(source))
-                    .map(Target::Permanent),
-                EffectRecipientDef::Controller => Some(Target::Player(object.controller)),
-                EffectRecipientDef::Opponent => Some(Target::Player(object.controller.opponent())),
-                EffectRecipientDef::EachPlayer => unreachable!("each player returned above"),
-                EffectRecipientDef::TriggeringObject => context
-                    .object
-                    .and_then(|object| self.live_object_target(object)),
-                EffectRecipientDef::ControllerOfTriggeringObject => context
-                    .object
-                    .and_then(|object| self.current_or_last_known_controller(object))
-                    .or(context.object_controller)
-                    .map(Target::Player),
-                EffectRecipientDef::EventPlayer => context.event_player.map(Target::Player),
-                EffectRecipientDef::Target(_)
-                | EffectRecipientDef::ControllerOfTarget(_)
-                | EffectRecipientDef::ObjectsControlledByTarget { .. }
-                | EffectRecipientDef::ObjectsOwnedByTarget { .. }
-                | EffectRecipientDef::CardsOwnedByTarget { .. }
-                | EffectRecipientDef::MatchingObjects { .. }
-                | EffectRecipientDef::ObjectsSharingNameWithTarget(_) => {
-                    unreachable!("target, matching, and shared-name recipients returned above")
-                }
-            }
-            .into_iter()
-            .collect();
+            return self
+                .single_effect_recipient(recipient, object, context)
+                .into_iter()
+                .collect();
         };
 
         self.objects_matching_query(

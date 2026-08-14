@@ -641,6 +641,9 @@ impl Game {
                 if player == PlayerRelation::ChosenPlayer {
                     return self.chosen_player_of(source) == Some(*actual_player);
                 }
+                if player == PlayerRelation::ControllerOfAttachedPermanent {
+                    return self.attached_host_controller_of(source) == Some(*actual_player);
+                }
                 let controller = self
                     .current_or_last_known_controller(source)
                     .unwrap_or(*actual_player);
@@ -854,11 +857,18 @@ impl Game {
             PlayerRelation::ActivePlayer => player == self.active_player,
             PlayerRelation::NonactivePlayer => player == self.active_player.opponent(),
             PlayerRelation::EventPlayer => context.event_player == Some(player),
-            // The chosen player lives on the ability's source, which this
-            // does not have. The one trigger that names it resolves the
-            // relation where the source is known.
-            PlayerRelation::ChosenPlayer => false,
+            // Both of these live on the ability's source, which this does not
+            // have. The triggers that name them resolve the relation where
+            // the source is known.
+            PlayerRelation::ChosenPlayer | PlayerRelation::ControllerOfAttachedPermanent => false,
         }
+    }
+
+    /// Whoever controls what this permanent is attached to. An Aura that has
+    /// come loose is attached to nothing and so matches nobody.
+    pub(super) fn attached_host_controller_of(&self, source: GameObjectId) -> Option<PlayerId> {
+        self.current_or_last_known_attached_host(source)
+            .and_then(|host| self.current_or_last_known_controller(host))
     }
 
     /// The player a permanent chose as it entered.

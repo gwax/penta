@@ -57,4 +57,5 @@ pub(super) enum PlayerRelationSnapshot {
     NonactivePlayer,
     EventPlayer,
     ChosenPlayer,
+    ControllerOfAttachedPermanent,
 }

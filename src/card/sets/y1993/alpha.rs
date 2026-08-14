@@ -918,7 +918,28 @@ pub(in crate::card::sets) static COUNTERSPELL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Target player activates a mana ability of each land they control. Then that player loses all unspent mana and you add the mana lost this way”.
 
 // LEA 57 — Feedback
-// Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller for “At the beginning of the upkeep of enchanted enchantment's controller, this Aura deals 1 damage to that player”.
+pub(in crate::card::sets) static FEEDBACK: CardRecord = CardRecord::new(
+    cards::FEEDBACK,
+    "Feedback",
+    CardArt::new("0eb8f591-d763-49bf-8ef9-86265aaa72f7", "Quinton Hoover"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{2}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell(
+                "Enchant enchantment",
+                &abilities::ENCHANT_ENCHANTMENT_TARGET,
+            ),
+            abilities::enchanted_controller_upkeep(
+                "At the beginning of the upkeep of enchanted enchantment's controller, this Aura \
+                 deals 1 damage to that player.",
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::ControllerOfAttachedPermanent,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // LEA 58 — Flight
 pub(in crate::card::sets) static FLIGHT: CardRecord = CardRecord::new(
@@ -1531,7 +1552,25 @@ pub(in crate::card::sets) static BOG_WRAITH: CardRecord = CardRecord::new(
 // Audit: blocked — Needs ante-zone and deck-construction handling for “Discard your hand, ante the top card of your library, then draw seven cards”.
 
 // LEA 97 — Cursed Land
-// Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller for “At the beginning of the upkeep of enchanted land's controller, this Aura deals 1 damage to that player”.
+pub(in crate::card::sets) static CURSED_LAND: CardRecord = CardRecord::new(
+    cards::CURSED_LAND,
+    "Cursed Land",
+    CardArt::new("cf5f3c61-1e54-4eea-bf82-311cfa988e6a", "Jesper Myrfors"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{2}{B}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant land", &abilities::ENCHANT_LAND_TARGET),
+            abilities::enchanted_controller_upkeep(
+                "At the beginning of the upkeep of enchanted land's controller, this Aura \
+                 deals 1 damage to that player.",
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::ControllerOfAttachedPermanent,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // LEA 98 — Dark Ritual
 pub(in crate::card::sets) static DARK_RITUAL: CardRecord = CardRecord::new(
@@ -2084,7 +2123,25 @@ pub(in crate::card::sets) static WALL_OF_BONE: CardRecord = CardRecord::new(
 );
 
 // LEA 133 — Warp Artifact
-// Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller for “At the beginning of the upkeep of enchanted artifact's controller, this Aura deals 1 damage to that player”.
+pub(in crate::card::sets) static WARP_ARTIFACT: CardRecord = CardRecord::new(
+    cards::WARP_ARTIFACT,
+    "Warp Artifact",
+    CardArt::new("9e5e07a2-fbdf-4c4c-996a-fce40bab5de5", "Amy Weber"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{B}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant artifact", &abilities::ENCHANT_ARTIFACT_TARGET),
+            abilities::enchanted_controller_upkeep(
+                "At the beginning of the upkeep of enchanted artifact's controller, this Aura \
+                 deals 1 damage to that player.",
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::ControllerOfAttachedPermanent,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // LEA 134 — Weakness
 pub(in crate::card::sets) static WEAKNESS: CardRecord = CardRecord::new(
@@ -3529,7 +3586,25 @@ pub(in crate::card::sets) static WALL_OF_WOOD: CardRecord = CardRecord::new(
 );
 
 // LEA 226 — Wanderlust
-// Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller for “At the beginning of the upkeep of enchanted creature's controller, this Aura deals 1 damage to that player”.
+pub(in crate::card::sets) static WANDERLUST: CardRecord = CardRecord::new(
+    cards::WANDERLUST,
+    "Wanderlust",
+    CardArt::new("220a03ca-8c9b-4acb-821d-f6577fbb20fb", "Cornelius Brudi"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{2}{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            abilities::enchanted_controller_upkeep(
+                "At the beginning of the upkeep of enchanted creature's controller, this Aura \
+                 deals 1 damage to that player.",
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::ControllerOfAttachedPermanent,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // LEA 227 — War Mammoth
 pub(in crate::card::sets) static WAR_MAMMOTH: CardRecord = CardRecord::new(
@@ -4504,6 +4579,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CLONE,
     &COPY_ARTIFACT,
     &COUNTERSPELL,
+    &FEEDBACK,
     &FLIGHT,
     &INVISIBILITY,
     &JUMP,
@@ -4532,6 +4608,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BAD_MOON,
     &BLACK_KNIGHT,
     &BOG_WRAITH,
+    &CURSED_LAND,
     &DARK_RITUAL,
     &DEATHGRIP,
     &DEATHLACE,
@@ -4554,6 +4631,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TERROR,
     &UNHOLY_STRENGTH,
     &WALL_OF_BONE,
+    &WARP_ARTIFACT,
     &WEAKNESS,
     &WILL_O_THE_WISP,
     &ZOMBIE_MASTER,
@@ -4624,6 +4702,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WALL_OF_BRAMBLES,
     &WALL_OF_ICE,
     &WALL_OF_WOOD,
+    &WANDERLUST,
     &WAR_MAMMOTH,
     &WEB,
     &ANKH_OF_MISHRA,
