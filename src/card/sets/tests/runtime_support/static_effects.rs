@@ -215,7 +215,8 @@ pub(in super::super) fn shared_static_applied_effect(
                 SetOperationDef::Add(_) | SetOperationDef::Remove(_),
             )
             | CharacteristicOperationDef::CreatureTypes(_),
-        ) => false,
+        )
+        | AppliedEffectDef::Rule(AppliedRuleDef::RedirectDamageFromTo { .. }) => false,
         // A blocking restriction is read off the ordinary static-effect walk
         // over the attacker, so a group recipient works exactly as a
         // self-applied one does: Bower Passage names every creature you
@@ -269,9 +270,8 @@ pub(in super::super) fn shared_static_applied_effect(
         }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
             AbilityOperationDef::Remove(_),
-        )) => true,
-        AppliedEffectDef::Rule(AppliedRuleDef::RedirectDamageFromTo { .. }) => false,
-        AppliedEffectDef::Rule(_) => true,
+        ))
+        | AppliedEffectDef::Rule(_) => true,
     }
 }
 
