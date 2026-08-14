@@ -220,6 +220,7 @@ pub(in crate::card::sets) static DOOMED_TRAVELER: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ),
@@ -402,6 +403,7 @@ pub(in crate::card::sets) static GEIST_HONORED_MONK: CardRecord = CardRecord::ne
                 EffectDef::CreateToken {
                     token: cards::SPIRIT_TOKEN_1_1_WHITE,
                     count: ValueDef::Constant(2),
+                    tapped: false,
                 },
             ),
         ]),
@@ -430,6 +432,7 @@ pub(in crate::card::sets) static MAUSOLEUM_GUARD: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(2),
+                tapped: false,
             },
         ),
     ),
@@ -449,6 +452,7 @@ pub(in crate::card::sets) static MIDNIGHT_HAUNTING: CardRecord = CardRecord::new
         EffectDef::CreateToken {
             token: cards::SPIRIT_TOKEN_1_1_WHITE,
             count: ValueDef::Constant(2),
+            tapped: false,
         },
     )),
 );
@@ -1495,6 +1499,7 @@ pub(in crate::card::sets) static STITCHERS_APPRENTICE: CardRecord = CardRecord::
                 EffectDef::CreateToken {
                     token: cards::HOMUNCULUS_TOKEN_2_2_BLUE,
                     count: ValueDef::Constant(1),
+                    tapped: false,
                 },
                 EffectDef::SacrificeOfChoice {
                     player: EffectRecipientDef::Controller,
@@ -1975,6 +1980,7 @@ pub(in crate::card::sets) static MOAN_OF_THE_UNHALLOWED: CardRecord = CardRecord
             EffectDef::CreateToken {
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
                 count: ValueDef::Constant(2),
+                tapped: false,
             },
         ),
         abilities::flashback(mana_cost!("{5}{B}{B}")),
@@ -3577,6 +3583,7 @@ static GARRUK_FRONT_ABILITIES: [AbilityDef; 3] = [
         EffectDef::CreateToken {
             token: cards::WOLF_TOKEN_2_2_GREEN,
             count: ValueDef::Constant(1),
+            tapped: false,
         },
     ),
 ];
@@ -3621,6 +3628,7 @@ static GARRUK_BACK_ABILITIES: [AbilityDef; 3] = [
         EffectDef::CreateToken {
             token: cards::WOLF_TOKEN_1_1_BLACK,
             count: ValueDef::Constant(1),
+            tapped: false,
         },
     ),
     AbilityDef::activated(
@@ -3906,6 +3914,7 @@ static HOWLPACK_ALPHA_ABILITIES: [AbilityDef; 3] = [
         EffectDef::CreateToken {
             token: cards::WOLF_TOKEN_2_2_GREEN,
             count: ValueDef::Constant(1),
+            tapped: false,
         },
     ),
     WEREWOLF_BACK_TRANSFORM,
@@ -4088,6 +4097,7 @@ pub(in crate::card::sets) static SPIDER_SPAWNING: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::SPIDER_TOKEN_1_2_GREEN,
                 count: ValueDef::CountMatchingObjects(&CREATURE_CARDS_IN_YOUR_GRAVEYARD),
+                tapped: false,
             },
         ),
         abilities::flashback(mana_cost!("{6}{B}")),
@@ -4877,6 +4887,7 @@ pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ]),

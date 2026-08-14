@@ -13,11 +13,11 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, ComparisonDef, CounterKind, EffectDef, EffectDurationDef, EffectExecutionDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, TargetConditionDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    CardType, ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef, EffectDurationDef,
+    EffectExecutionDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, ReplacementEffectDef, ReplacementEventDef, TargetConditionDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -274,6 +274,7 @@ pub(in crate::card::sets) static HIVE_STIRRINGS: CardRecord = CardRecord::new(
         EffectDef::CreateToken {
             token: cards::SLIVER_TOKEN_1_1_COLORLESS,
             count: ValueDef::Constant(2),
+            tapped: false,
         },
     )),
 );
@@ -1123,8 +1124,39 @@ pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
     ]),
 );
 
+static TAPPED_ZOMBIE: EffectDef = EffectDef::CreateToken {
+    token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+    count: ValueDef::Constant(1),
+    tapped: true,
+};
+
+static LILIANAS_REAVER_STRIKE: [EffectDef; 2] = [
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::EventPlayer,
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+    },
+    TAPPED_ZOMBIE,
+];
+
 // M14 103 — Liliana's Reaver
-// Audit: blocked — CreateToken cannot make the created Zombie enter tapped.
+pub(in crate::card::sets) static LILIANAS_REAVER: CardRecord = CardRecord::new(
+    cards::LILIANAS_REAVER,
+    "Liliana's Reaver",
+    CardArt::new("a734c33c-4fa0-4f7a-943c-14a8aecea1a6", "Karl Kopinski"),
+    CardSet::Magic2014,
+    CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Zombie"], 4, 3).with_abilities(&[
+        abilities::deathtouch(),
+        AbilityDef::triggered(
+            "Whenever this creature deals combat damage to a player, that player discards a \
+             card and you create a tapped 2/2 black Zombie creature token.",
+            TriggerEventDef::CombatDamageDealtToPlayer {
+                source: ObjectPredicateDef::Source,
+            },
+            EffectDef::Sequence(&LILIANAS_REAVER_STRIKE),
+        ),
+    ]),
+);
 
 // M14 104 — Liturgy of Blood
 pub(in crate::card::sets) static LITURGY_OF_BLOOD: CardRecord = CardRecord::new(
@@ -1396,8 +1428,33 @@ pub(in crate::card::sets) static WRING_FLESH: CardRecord = CardRecord::new(
     )),
 );
 
+/// "This creature or another Human creature you control" is every Human
+/// creature its controller controls, since the Necromancer is one itself.
+static YOUR_HUMAN_CREATURES: [ObjectPredicateDef; 3] = [
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Subtype("Human"),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+];
+
 // M14 123 — Xathrid Necromancer
-// Audit: blocked — CreateToken cannot make the created Zombie enter tapped.
+pub(in crate::card::sets) static XATHRID_NECROMANCER: CardRecord = CardRecord::new(
+    cards::XATHRID_NECROMANCER,
+    "Xathrid Necromancer",
+    CardArt::new("26494f96-1d97-4435-a116-3ade1becaab4", "Maciej Kuciara"),
+    CardSet::Magic2014,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Human", "Wizard"], 2, 2).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature or another Human creature you control dies, create a \
+             tapped 2/2 black Zombie creature token.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::All(&YOUR_HUMAN_CREATURES),
+                from: Some(ZoneKind::Battlefield),
+                to: Some(ZoneKind::Graveyard),
+            },
+            TAPPED_ZOMBIE,
+        ),
+    ),
+);
 
 // M14 124 — Academy Raider
 // Audit: blocked — The optional discard cost needs a continuation that draws only when a card was actually discarded.
@@ -1588,6 +1645,7 @@ pub(in crate::card::sets) static DRAGON_EGG: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::DRAGON_TOKEN_2_2_RED,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ]),
@@ -1967,6 +2025,7 @@ pub(in crate::card::sets) static YOUNG_PYROMANCER: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::ELEMENTAL_TOKEN_1_1_RED,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ),
@@ -2088,6 +2147,7 @@ pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord
         EffectDef::CreateToken {
             token: cards::WOLF_TOKEN_2_2_GREEN,
             count: ValueDef::CountMatchingObjects(&M14_FORESTS_YOU_CONTROL),
+            tapped: false,
         },
     )),
 );
@@ -2271,6 +2331,7 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::BEAST_TOKEN_3_3_GREEN,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
         AbilityDef::triggered_with_targets("Whenever you cast a noncreature spell, put three +1/+1 counters on target creature you control.", TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
@@ -2390,6 +2451,7 @@ pub(in crate::card::sets) static SPOREMOUND: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::SAPROLING_TOKEN_1_1_GREEN,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ),
@@ -2925,6 +2987,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DOOM_BLADE,
     &GNAWING_ZOMBIE,
     &LIFEBANE_ZOMBIE,
+    &LILIANAS_REAVER,
     &LITURGY_OF_BLOOD,
     &MINOTAUR_ABOMINATION,
     &NIGHTWING_SHADE,
@@ -2936,6 +2999,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &UNDEAD_MINOTAUR,
     &VAMPIRE_WARLORD,
     &WRING_FLESH,
+    &XATHRID_NECROMANCER,
     &AWAKEN_THE_ANCIENT,
     &BARRAGE_OF_EXPENDABLES,
     &BATTLE_SLIVER,

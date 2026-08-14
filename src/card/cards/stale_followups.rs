@@ -12,3 +12,5 @@ pub const RAKDOS_DRAKE: CardDefinitionId = CardDefinitionId(1627);
 pub const SAPPHIRE_DRAKE: CardDefinitionId = CardDefinitionId(1628);
 pub const CROWNED_CERATOK: CardDefinitionId = CardDefinitionId(1629);
 pub const EXAVA_RAKDOS_BLOOD_WITCH: CardDefinitionId = CardDefinitionId(1630);
+pub const LILIANAS_REAVER: CardDefinitionId = CardDefinitionId(1631);
+pub const XATHRID_NECROMANCER: CardDefinitionId = CardDefinitionId(1632);

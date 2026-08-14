@@ -330,6 +330,7 @@ pub(in crate::card::sets) static KNIGHT_WATCH: CardRecord = CardRecord::new(
         EffectDef::CreateToken {
             token: cards::KNIGHT_TOKEN_2_2_WHITE,
             count: ValueDef::Constant(2),
+            tapped: false,
         },
     )),
 );
@@ -412,6 +413,7 @@ pub(in crate::card::sets) static MURDER_INVESTIGATION: CardRecord = CardRecord::
                 EffectDef::CreateToken {
                     token: cards::SOLDIER_TOKEN_1_1_WHITE,
                     count: ValueDef::TriggeringObjectPower,
+                    tapped: false,
                 },
             ),
         ]),
@@ -516,6 +518,7 @@ pub(in crate::card::sets) static URBIS_PROTECTOR: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::ANGEL_TOKEN_4_4_WHITE,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ),
@@ -2016,6 +2019,7 @@ pub(in crate::card::sets) static ASSEMBLE_THE_LEGION: CardRecord = CardRecord::n
                 EffectDef::CreateToken {
                     token: cards::SOLDIER_TOKEN_1_1_RED_WHITE,
                     count: ValueDef::CountersOnSource(CounterKind::Muster),
+                    tapped: false,
                 },
             ]),
         ),
@@ -2906,6 +2910,7 @@ pub(in crate::card::sets) static SUNHOME_GUILDMAGE: CardRecord = CardRecord::new
             EffectDef::CreateToken {
                 token: cards::SOLDIER_TOKEN_1_1_RED_WHITE,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ]),
@@ -3084,6 +3089,7 @@ pub(in crate::card::sets) static BECKON_APPARITION: CardRecord = CardRecord::new
                 EffectDef::CreateToken {
                     token: cards::SPIRIT_TOKEN_1_1_WHITE_BLACK,
                     count: ValueDef::Constant(1),
+                    tapped: false,
                 },
             ]),
         ),

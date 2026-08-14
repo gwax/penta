@@ -2551,6 +2551,7 @@ pub(in crate::card::sets) static BORIS_DEVILBOON: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::MINOR_DEMON_TOKEN_1_1_BLACK_RED,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         )),
 );
@@ -3544,6 +3545,7 @@ pub(in crate::card::sets) static SERPENT_GENERATOR: CardRecord = CardRecord::new
         EffectDef::CreateToken {
             token: cards::SNAKE_TOKEN_1_1_POISONOUS,
             count: ValueDef::Constant(1),
+            tapped: false,
         },
     )),
 );

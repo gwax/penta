@@ -263,6 +263,7 @@ pub(in crate::card::sets) static ICATIAN_TOWN: CardRecord = CardRecord::new(
         EffectDef::CreateToken {
             token: cards::CITIZEN_TOKEN_1_1_WHITE,
             count: ValueDef::Constant(4),
+            tapped: false,
         },
     )]),
 );
@@ -612,6 +613,7 @@ pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::THRULL_TOKEN_0_1_BLACK,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ]),
@@ -1042,6 +1044,7 @@ pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new(
                 EffectDef::CreateToken {
                     token: cards::SAPROLING_TOKEN_1_1_GREEN,
                     count: ValueDef::Constant(1),
+                    tapped: false,
                 },
             ),
             AbilityDef::activated(
@@ -1173,6 +1176,7 @@ pub(in crate::card::sets) static THALLID: CardRecord = CardRecord::new(
                 EffectDef::CreateToken {
                     token: cards::SAPROLING_TOKEN_1_1_GREEN,
                     count: ValueDef::Constant(1),
+                    tapped: false,
                 },
             ),
         ]),
@@ -1203,6 +1207,7 @@ pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new(
                 EffectDef::CreateToken {
                     token: cards::SAPROLING_TOKEN_1_1_GREEN,
                     count: ValueDef::Constant(1),
+                    tapped: false,
                 },
             ),
             AbilityDef::activated(

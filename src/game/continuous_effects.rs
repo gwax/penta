@@ -686,6 +686,17 @@ impl Game {
         token: CardDefinitionId,
         creator: Option<GameObjectId>,
     ) {
+        self.create_token_arriving(controller, token, creator, false);
+    }
+
+    /// The same, for a token whose card says it arrives tapped.
+    pub(super) fn create_token_arriving(
+        &mut self,
+        controller: PlayerId,
+        token: CardDefinitionId,
+        creator: Option<GameObjectId>,
+        tapped: bool,
+    ) {
         let Some(definition) = self.catalog.get(token) else {
             return;
         };
@@ -700,6 +711,9 @@ impl Game {
             self.turns_started[controller.index()],
         );
         permanent.created_by = creator;
+        // Set before entry replacements run, the same point an as-enters
+        // clause would set it.
+        permanent.tapped = tapped;
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Stack,

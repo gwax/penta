@@ -175,6 +175,7 @@ static COMMANDERS_AUTHORITY_UPKEEP: AbilityDef = AbilityDef::triggered(
     EffectDef::CreateToken {
         token: cards::HUMAN_TOKEN_1_1_WHITE,
         count: ValueDef::Constant(1),
+        tapped: false,
     },
 );
 
@@ -258,6 +259,7 @@ pub(in crate::card::sets) static ENTREAT_THE_ANGELS: CardRecord = CardRecord::ne
             EffectDef::CreateToken {
                 token: cards::ANGEL_TOKEN_4_4_WHITE,
                 count: ValueDef::ChosenX,
+                tapped: false,
             },
         ),
         abilities::miracle(mana_cost!("{X}{W}{W}")),
@@ -573,6 +575,7 @@ pub(in crate::card::sets) static VOICE_OF_THE_PROVINCES: CardRecord = CardRecord
             EffectDef::CreateToken {
                 token: cards::HUMAN_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ]),
@@ -722,6 +725,7 @@ pub(in crate::card::sets) static GEIST_SNATCH: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_BLUE,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ]),
     )),
@@ -1218,6 +1222,7 @@ pub(in crate::card::sets) static DEMONIC_RISING: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::DEMON_TOKEN_5_5_BLACK,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ),
@@ -1397,6 +1402,7 @@ pub(in crate::card::sets) static MAALFELD_TWINS: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
                 count: ValueDef::Constant(2),
+                tapped: false,
             },
         ),
     ),

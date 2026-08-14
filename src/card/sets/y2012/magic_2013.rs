@@ -77,6 +77,7 @@ pub(in crate::card::sets) static ATTENDED_KNIGHT: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::SOLDIER_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ]),
@@ -166,6 +167,7 @@ pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::
                 EffectDef::CreateToken {
                     token: cards::SOLDIER_TOKEN_1_1_WHITE,
                     count: ValueDef::Constant(3),
+                    tapped: false,
                 },
             ),
         ],
@@ -183,6 +185,7 @@ pub(in crate::card::sets) static CAPTAINS_CALL: CardRecord = CardRecord::new(
         EffectDef::CreateToken {
             token: cards::SOLDIER_TOKEN_1_1_WHITE,
             count: ValueDef::Constant(3),
+            tapped: false,
         },
     )),
 );
@@ -1087,6 +1090,7 @@ pub(in crate::card::sets) static TALRAND_SKY_SUMMONER: CardRecord = CardRecord::
         EffectDef::CreateToken {
             token: cards::DRAKE_TOKEN_2_2_BLUE,
             count: ValueDef::Constant(1),
+            tapped: false,
         },
     )),
 );
@@ -1102,6 +1106,7 @@ pub(in crate::card::sets) static TALRANDS_INVOCATION: CardRecord = CardRecord::n
         EffectDef::CreateToken {
             token: cards::DRAKE_TOKEN_2_2_BLUE,
             count: ValueDef::Constant(2),
+            tapped: false,
         },
     )),
 );
@@ -1790,6 +1795,7 @@ pub(in crate::card::sets) static VILE_REBIRTH: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ]),
     )),
@@ -2156,6 +2162,7 @@ pub(in crate::card::sets) static KRENKO_MOB_BOSS: CardRecord = CardRecord::new(
         EffectDef::CreateToken {
             token: cards::GOBLIN_TOKEN_1_1_RED,
             count: ValueDef::CountMatchingObjects(&KRENKO_GOBLINS),
+            tapped: false,
         },
     )),
 );
@@ -2171,6 +2178,7 @@ pub(in crate::card::sets) static KRENKOS_COMMAND: CardRecord = CardRecord::new(
         EffectDef::CreateToken {
             token: cards::GOBLIN_TOKEN_1_1_RED,
             count: ValueDef::Constant(2),
+            tapped: false,
         },
     )),
 );
@@ -2780,6 +2788,7 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
             EffectDef::CreateToken {
                 token: cards::BEAST_TOKEN_3_3_GREEN,
                 count: ValueDef::Constant(1),
+                tapped: false,
             },
         ),
     ]),

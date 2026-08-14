@@ -145,6 +145,29 @@ fn a_counter_is_what_earns_the_granted_keyword() {
     );
 }
 
+/// "Create a tapped ... token" has to arrive tapped, and an ordinary token
+/// still arrives untapped.
+#[test]
+fn a_tapped_token_arrives_tapped() {
+    let mut game = ready_game();
+    let necromancer = creature(10_000, cards::XATHRID_NECROMANCER, PlayerId::One);
+    let necromancer_id = necromancer.card.id;
+    game.battlefield.push(necromancer);
+
+    game.destroy_permanent(necromancer_id);
+    game.check_state_based_actions();
+    game.priority = PlayerId::One;
+    drain_pending(&mut game);
+
+    let zombies: Vec<_> = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == cards::ZOMBIE_TOKEN_2_2_BLACK)
+        .collect();
+    assert_eq!(zombies.len(), 1, "its own death triggers it");
+    assert!(zombies[0].tapped, "and the token arrives tapped");
+}
+
 #[test]
 fn every_unblocked_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -159,6 +182,8 @@ fn every_unblocked_identity_reports_complete_coverage() {
         cards::SAPPHIRE_DRAKE,
         cards::CROWNED_CERATOK,
         cards::EXAVA_RAKDOS_BLOOD_WITCH,
+        cards::LILIANAS_REAVER,
+        cards::XATHRID_NECROMANCER,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

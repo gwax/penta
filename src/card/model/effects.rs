@@ -521,6 +521,9 @@ pub enum EffectDef {
     CreateToken {
         token: CardDefinitionId,
         count: ValueDef,
+        /// Whether the created token arrives tapped, as "create a tapped 2/2
+        /// black Zombie creature token" asks.
+        tapped: bool,
     },
     /// Creates a token copying the recipient's copiable values, which for a
     /// token is the definition it was created from. This is populate, whose

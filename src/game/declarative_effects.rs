@@ -279,9 +279,13 @@ impl Game {
                     }
                 }
             }
-            EffectDef::CreateToken { token, count } => {
+            EffectDef::CreateToken {
+                token,
+                count,
+                tapped,
+            } => {
                 for _ in 0..self.effect_value(count, object, context, scoped).max(0) {
-                    self.create_token(object.controller, token);
+                    self.create_token_arriving(object.controller, token, None, tapped);
                 }
             }
             EffectDef::CreateTokenCopyOf { object: recipient } => {
