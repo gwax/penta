@@ -7,11 +7,11 @@ use super::{
     AppliedPlayRestriction, AppliedRuleDef, AppliedRuleEffect, CardDefinitionId, CardRules,
     CardSet, CardType, CardTypeSet, CharacteristicOperationDef, ColorSet,
     ContinuousEffectExpiration, ControlFlow, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
-    EffectRecipientSetDef, Game, GameObjectId, GrantId, KeywordAbility, ManaColor, ObjectRefDef,
-    ObjectSetDef, Permanent, PlayerId, PlayerRefDef, PlayerSetDef, ResolvedContinuousEffect,
-    ResolvedContinuousEffectKind, RetiredObject, SetOperationDef, StackAbilityResolver,
-    StackObject, StaticAppliedEffect, StaticEffectTraversal, Target, TargetIndex, TriggerContext,
-    ZoneKind,
+    EffectRecipientSetDef, Game, GameObjectId, GrantId, KeywordAbility, ManaColor,
+    ObjectPredicateDef, ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRefDef,
+    PlayerSetDef, ResolvedContinuousEffect, ResolvedContinuousEffectKind, RetiredObject,
+    SetOperationDef, StackAbilityResolver, StackObject, StaticAppliedEffect, StaticEffectTraversal,
+    Target, TargetIndex, TriggerContext, ZoneKind,
 };
 
 thread_local! {
@@ -955,16 +955,11 @@ impl Game {
                         TriggerContext::empty(),
                         None,
                     )
-                    && self.trigger_object_matches(
+                    && self.static_object_predicate_matches(
                         query.object,
-                        &prospective.map_or_else(
-                            || self.trigger_event_object(affected),
-                            |prospective| {
-                                self.trigger_event_object_with_prospective(affected, prospective)
-                            },
-                        ),
-                        source.card.id,
-                        false,
+                        source,
+                        affected,
+                        prospective,
                     )
             }
             // None of these name a permanent a static effect could apply to;
@@ -987,3 +982,4 @@ impl Game {
 }
 
 include!("continuous_effects/characteristics.rs");
+include!("continuous_effects/static_predicates.rs");
