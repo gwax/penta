@@ -440,6 +440,8 @@ impl Game {
             | ObjectPredicateDef::Tapped
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::Blocking
+            | ObjectPredicateDef::BlockedBySource
+            | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::HasNonManaActivatedAbility

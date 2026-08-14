@@ -933,7 +933,23 @@ pub(in crate::card::sets) static UNDERTOW: CardRecord = CardRecord::new(
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Enchanted creature doesn't untap during its controller's untap step if it has a sleep counter on it”.
 
 // LEG 84 — Wall of Vapor
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to this creature by creatures it's blocking”.
+pub(in crate::card::sets) static WALL_OF_VAPOR: CardRecord = CardRecord::new(
+    cards::WALL_OF_VAPOR,
+    "Wall of Vapor",
+    CardArt::new("6a6c0a27-d410-4ded-a842-70e1656ea21e", "Richard Thomas"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Wall"], 0, 1).with_abilities(&[
+        abilities::defender(),
+        AbilityDef::static_ability(
+            "Prevent all damage that would be dealt to this creature by creatures it's blocking.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::PreventDamageFrom(ObjectPredicateDef::BlockedBySource),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // LEG 85 — Wall of Wonder
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{2}{U}{U}: This creature gets +4/-4 until end of turn and can attack this turn as though it didn't have defender”.
@@ -1413,10 +1429,51 @@ pub(in crate::card::sets) static WALKING_DEAD: CardRecord = CardRecord::new(
 );
 
 // LEG 127 — Wall of Putrid Flesh
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to this creature by enchanted creatures”.
+pub(in crate::card::sets) static WALL_OF_PUTRID_FLESH: CardRecord = CardRecord::new(
+    cards::WALL_OF_PUTRID_FLESH,
+    "Wall of Putrid Flesh",
+    CardArt::new("07a17b74-a9c9-419a-8369-9ab4fec213f2", "Richard Thomas"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Wall"], 2, 4).with_abilities(&[
+        abilities::defender(),
+        abilities::protection_from(ManaColor::White),
+        AbilityDef::static_ability(
+            "Prevent all damage that would be dealt to this creature by enchanted creatures.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::PreventDamageFrom(ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Enchanted,
+                ])),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // LEG 128 — Wall of Shadows
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to this creature by creatures it's blocking”.
+// Audit: partial — Targeting restrictions cannot be conditioned on how narrow the targeting spell or ability is.
+pub(in crate::card::sets) static WALL_OF_SHADOWS: CardRecord = CardRecord::new(
+    cards::WALL_OF_SHADOWS,
+    "Wall of Shadows",
+    CardArt::new("eb351900-cffd-4d23-b82f-5fb12a4874d9", "Pete Venters"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Wall"], 0, 1).with_abilities(&[
+        abilities::defender(),
+        AbilityDef::static_ability(
+            "Prevent all damage that would be dealt to this creature by creatures it's blocking.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::PreventDamageFrom(ObjectPredicateDef::BlockedBySource),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::not_implemented(
+            "This creature can't be the target of spells that can target only Walls or of abilities that can target only Walls.",
+            "Targeting restrictions cannot be conditioned on how narrow the targeting spell or ability is.",
+        ),
+    ]),
+);
 
 // LEG 129 — Wall of Tombstones
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “At the beginning of your upkeep, change this creature's base toughness to 1 plus the number of creature cards in your graveyard”.
@@ -3755,6 +3812,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SEGOVIAN_LEVIATHAN,
     &TELEKINESIS,
     &UNDERTOW,
+    &WALL_OF_VAPOR,
     &ZEPHYR_FALCON,
     &ABOMINATION,
     &CARRION_ANTS,
@@ -3774,6 +3832,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &QUAGMIRE,
     &THE_ABYSS,
     &WALKING_DEAD,
+    &WALL_OF_PUTRID_FLESH,
+    &WALL_OF_SHADOWS,
     &ACTIVE_VOLCANO,
     &AERATHI_BERSERKER,
     &CHAIN_LIGHTNING,

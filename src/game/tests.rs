@@ -376,6 +376,7 @@ mod attack_restrictions;
 mod aura_death;
 mod aura_upkeep;
 mod banding;
+mod blocking_prevention;
 mod blocking_relationship;
 mod cannot_attack;
 mod cannot_block;

@@ -750,6 +750,41 @@ impl Game {
             })
     }
 
+    /// The predicates answered by looking at the battlefield rather than at
+    /// the object's own recorded characteristics.
+    fn battlefield_relationship_matches(
+        &self,
+        predicate: ObjectPredicateDef,
+        object: &TriggerEventObject,
+        source: GameObjectId,
+    ) -> bool {
+        match predicate {
+            ObjectPredicateDef::HasNonManaActivatedAbility => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == object.id)
+                .is_some_and(|permanent| self.has_nonmana_activated_ability(permanent)),
+            ObjectPredicateDef::AttachedToSource => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+                .and_then(|permanent| permanent.attached_to)
+                .is_some_and(|host| host == object.id),
+            // Read from the source: the Wall knows what it blocked, and the
+            // attacker's own record does not name its blockers.
+            ObjectPredicateDef::BlockedBySource => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+                .and_then(|permanent| permanent.blocking)
+                .is_some_and(|attacker| attacker == object.id),
+            ObjectPredicateDef::Enchanted => self.battlefield.iter().any(|candidate| {
+                candidate.attached_to == Some(object.id) && self.is_aura_permanent(candidate)
+            }),
+            _ => unreachable!("only the battlefield-reading predicates arrive here"),
+        }
+    }
+
     pub(super) fn trigger_object_matches(
         &self,
         predicate: ObjectPredicateDef,
@@ -817,11 +852,6 @@ impl Game {
             ObjectPredicateDef::HasCounter(kind) => {
                 self.current_or_last_known_counters(object.id, kind) > 0
             }
-            ObjectPredicateDef::HasNonManaActivatedAbility => self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == object.id)
-                .is_some_and(|permanent| self.has_nonmana_activated_ability(permanent)),
             ObjectPredicateDef::ControlledBy(relation) => {
                 self.controller_of_object(source).is_some_and(|controller| {
                     self.player_relation_matches(
@@ -841,16 +871,16 @@ impl Game {
             ObjectPredicateDef::AttackedThisTurn => {
                 object.types.contains(CardType::Creature) && object.attacked_this_turn
             }
-            ObjectPredicateDef::AttachedToSource => self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == source)
-                .and_then(|permanent| permanent.attached_to)
-                .is_some_and(|host| host == object.id),
             ObjectPredicateDef::Blocking => {
                 object.types.contains(CardType::Creature)
                     && object.attacking_or_blocking
                     && !object.attacking
+            }
+            ObjectPredicateDef::HasNonManaActivatedAbility
+            | ObjectPredicateDef::AttachedToSource
+            | ObjectPredicateDef::BlockedBySource
+            | ObjectPredicateDef::Enchanted => {
+                self.battlefield_relationship_matches(predicate, object, source)
             }
             ObjectPredicateDef::Tapped => object.tapped,
             ObjectPredicateDef::All(predicates) => predicates

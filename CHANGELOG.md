@@ -78,6 +78,12 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Prevention that names its source by relationship.** Damage prevention
+  could name the source by its characteristics, but not by what it is to the
+  permanent being protected. Two predicates fill that in: the attacker a
+  permanent is blocking, read from the blocker because the attacker's own
+  record does not name who stopped it, and a permanent with an Aura attached.
+  Wall of Vapor, Wall of Shadows, and Wall of Putrid Flesh.
 - **Mana abilities that cost mana.** A mana ability could tap, sacrifice, or
   exile its source, but not spend mana, so filters had nothing to filter with.
   The cost comes out of the pool and nowhere else: the ability is offered only

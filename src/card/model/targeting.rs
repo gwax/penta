@@ -98,6 +98,13 @@ pub enum ObjectPredicateDef {
     /// [`Self::AttackingOrBlocking`], which neither of the single-sided
     /// predicates could express on its own.
     Blocking,
+    /// The attacker the ability's source is blocking. Unlike [`Self::Blocking`]
+    /// the relationship is read from the source, which is what a Wall printing
+    /// "creatures it's blocking" asks about.
+    BlockedBySource,
+    /// A permanent with an Aura attached to it. Nothing is said about whose
+    /// Aura it is: "enchanted creatures" covers both players' Auras.
+    Enchanted,
     /// A creature that was declared as an attacker at any point this turn,
     /// whether or not it is still attacking or even still in combat.
     AttackedThisTurn,
