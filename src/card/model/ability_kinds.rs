@@ -11,8 +11,22 @@ use super::{
 pub enum SpellAbilityDef {
     Nonmodal {
         targets: &'static [AbilityTargetDef],
+        /// A nonmana cost paid as the spell is cast, chosen from the objects
+        /// it names. Unlike a target this is spent rather than pointed at, so
+        /// it is not checked again on resolution.
+        additional_cost: Option<SpellAdditionalCostDef>,
     },
     Modal(ModalSpellDef),
+}
+
+/// An additional cost that selects objects to spend. The zone decides what
+/// spending means: a permanent on the battlefield is sacrificed, and a card
+/// in a graveyard is exiled.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SpellAdditionalCostDef {
+    pub object: ObjectPredicateDef,
+    pub zone: ZoneKind,
+    pub count: u8,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -51,7 +65,10 @@ impl ModalSpellDef {
 impl SpellAbilityDef {
     #[must_use]
     pub const fn new() -> Self {
-        Self::Nonmodal { targets: &[] }
+        Self::Nonmodal {
+            targets: &[],
+            additional_cost: None,
+        }
     }
 
     /// Adds targets to an ordinary, nonmodal spell definition.
@@ -62,8 +79,37 @@ impl SpellAbilityDef {
     #[must_use]
     pub const fn with_targets(self, targets: &'static [AbilityTargetDef]) -> Self {
         match self {
-            Self::Nonmodal { .. } => Self::Nonmodal { targets },
+            Self::Nonmodal {
+                additional_cost, ..
+            } => Self::Nonmodal {
+                targets,
+                additional_cost,
+            },
             Self::Modal(_) => panic!("targets belong on modal spell branches"),
+        }
+    }
+
+    /// # Panics
+    ///
+    /// Panics for a modal wrapper, which has no single cost to attach.
+    #[must_use]
+    pub const fn with_additional_cost(self, cost: SpellAdditionalCostDef) -> Self {
+        match self {
+            Self::Nonmodal { targets, .. } => Self::Nonmodal {
+                targets,
+                additional_cost: Some(cost),
+            },
+            Self::Modal(_) => panic!("an additional cost belongs to a whole spell"),
+        }
+    }
+
+    #[must_use]
+    pub const fn additional_cost(self) -> Option<SpellAdditionalCostDef> {
+        match self {
+            Self::Nonmodal {
+                additional_cost, ..
+            } => additional_cost,
+            Self::Modal(_) => None,
         }
     }
 
@@ -82,7 +128,7 @@ impl SpellAbilityDef {
     #[must_use]
     pub const fn targets(self) -> &'static [AbilityTargetDef] {
         match self {
-            Self::Nonmodal { targets } => targets,
+            Self::Nonmodal { targets, .. } => targets,
             Self::Modal(_) => &[],
         }
     }

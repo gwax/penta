@@ -8,8 +8,8 @@ use super::{
     AlternativeCastKindDef, AlternativeCastManaCostDef, CardBehavior, DeclarativeAbilityDef,
     EffectDef, EffectExecutionDef, ImplementationStatus, KeywordAbility, ManaCost,
     ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, SpecialActionDef,
-    SpellAbilityDef, StaticAbilityDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef,
-    ZoneKind,
+    SpellAbilityDef, SpellAdditionalCostDef, StaticAbilityDef, TriggerConditionDef,
+    TriggerEventDef, TriggeredAbilityDef, ZoneKind,
 };
 
 /// One printed rules clause and its implementation.
@@ -31,6 +31,25 @@ impl AbilityDef {
     #[must_use]
     pub const fn spell(text: &'static str, effect: EffectDef) -> Self {
         Self::spell_with_targets(text, &[], effect)
+    }
+
+    /// A spell that spends objects as it is cast, in addition to its mana.
+    #[must_use]
+    pub const fn spell_with_additional_cost(
+        text: &'static str,
+        targets: &'static [AbilityTargetDef],
+        cost: SpellAdditionalCostDef,
+        effect: EffectDef,
+    ) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::Spell(
+                SpellAbilityDef::new()
+                    .with_targets(targets)
+                    .with_additional_cost(cost),
+            ),
+            effect,
+        )
     }
 
     #[must_use]

@@ -3,11 +3,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
-    CardStructure, CardSupertype, CardType, ComparisonDef, ConditionalValueDef, CounterKind,
-    DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef,
-    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
-    QuantifierDef, SpellForm, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardComposition, CardEffectStatus,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef,
+    ConditionalValueDef, CounterKind, DiscardSelectionDef, DoubleFacedKind, EffectDef,
+    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayOptionDef, PlayerRelation, QuantifierDef, ReplacementEffectDef,
+    SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
     TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
@@ -591,8 +592,34 @@ pub(in crate::card::sets) static HAVENGUL_RUNEBINDER: CardRecord = CardRecord::n
     ),
 );
 
+/// "As an additional cost to cast this spell, exile a creature card from your
+/// graveyard."
+static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    zone: ZoneKind::Graveyard,
+    count: 1,
+};
+
 // DKA 40 — Headless Skaab
-// Audit: blocked — Needs a nonmana additional casting cost that selects and exiles a creature card from your graveyard.
+pub(in crate::card::sets) static HEADLESS_SKAAB: CardRecord = CardRecord::new(
+    cards::HEADLESS_SKAAB,
+    "Headless Skaab",
+    CardArt::new("ca63f9a2-381e-4c84-b0bb-3acd9445b4db", "Johann Bodin"),
+    CardSet::DarkAscension,
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Zombie", "Warrior"], 3, 6).with_abilities(&[
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, exile a creature card from your \
+             graveyard.",
+            &[],
+            EXILE_A_CREATURE_CARD,
+            EffectDef::None,
+        ),
+        AbilityDef::as_enters(
+            "This creature enters tapped.",
+            ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
+        ),
+    ]),
+);
 
 // DKA 41 — Increasing Confusion
 // Audit: blocked — Needs a cast-from-graveyard condition that doubles the chosen X mill amount without producing a second mill event.
@@ -642,7 +669,22 @@ pub(in crate::card::sets) static NEPHALIA_SEAKITE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a modal activated ability so tap versus untap is one activation choice rather than two separately identified abilities.
 
 // DKA 45 — Relentless Skaabs
-// Audit: blocked — Needs a nonmana additional casting cost that selects and exiles a creature card from your graveyard.
+pub(in crate::card::sets) static RELENTLESS_SKAABS: CardRecord = CardRecord::new(
+    cards::RELENTLESS_SKAABS,
+    "Relentless Skaabs",
+    CardArt::new("b3304cab-0dc9-47e4-ac68-00974b64f5a0", "Karl Kopinski"),
+    CardSet::DarkAscension,
+    CardRules::new_creature(mana_cost!("{3}{U}{U}"), &["Zombie"], 4, 4).with_abilities(&[
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, exile a creature card from your \
+             graveyard.",
+            &[],
+            EXILE_A_CREATURE_CARD,
+            EffectDef::None,
+        ),
+        abilities::undying(),
+    ]),
+);
 
 // DKA 46 — Saving Grasp
 pub(in crate::card::sets) static SAVING_GRASP: CardRecord = CardRecord::new(
@@ -2442,8 +2484,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GERALFS_MINDCRUSHER,
     &GRIPTIDE,
     &HAVENGUL_RUNEBINDER,
+    &HEADLESS_SKAAB,
     &MYSTIC_RETRIEVAL,
     &NEPHALIA_SEAKITE,
+    &RELENTLESS_SKAABS,
     &SAVING_GRASP,
     &SCREECHING_SKAAB,
     &SHRIEKGEIST,

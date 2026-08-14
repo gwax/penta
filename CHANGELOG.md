@@ -71,6 +71,12 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Additional casting costs that spend an object.** The only one in the
+  corpus was Goblin Grenade's, hardcoded into the casting enumeration by card
+  behavior. It is a declaration now: what may be spent, from which zone, and
+  how many. A spell with nothing to spend is not offered at all, and each
+  payable object is its own action rather than one blanket choice. Makeshift
+  Mauler, Stitched Drake, Headless Skaab, and Relentless Skaabs.
 - **Searching a permanent onto the battlefield tapped.** A search could put a
   permanent into play but always untapped, so a fetch land had no way to be
   written. The flag is set on the prospective permanent before entry

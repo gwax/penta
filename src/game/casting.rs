@@ -620,6 +620,24 @@ impl Game {
         targets: Vec<Target>,
         mut remaining_sacrifices: Vec<GameObjectId>,
     ) {
+        // The same list carries every object an additional cost spends. A
+        // card in a graveyard is exiled outright; only a permanent needs the
+        // battlefield-exit machinery, which can suspend.
+        while let Some(&spent) = remaining_sacrifices.first() {
+            if self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == spent)
+            {
+                break;
+            }
+            remaining_sacrifices.remove(0);
+            let owner = stack_object.controller;
+            if let Some(card) = remove_card(&mut self.players[owner.index()].graveyard, spent) {
+                let (card, _zone_change) = self.zone_change_card(card);
+                self.players[owner.index()].exile.push(card);
+            }
+        }
         if !remaining_sacrifices.is_empty() {
             let sacrificed = remaining_sacrifices.remove(0);
             self.move_permanents_to_graveyard_then(

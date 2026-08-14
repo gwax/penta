@@ -6,12 +6,67 @@ use super::{
     DeclarativeAbilityDef, DividedTotal, Game, GameObjectId, KeywordAbility, ManaCost,
     ManaPaymentPurpose, ModeId, PlayActionKind, PlayOptionDef, PlayOptionId, PlayRestriction,
     PlayerId, ScopedEffect, SelectedSpellPlan, StackAbilityPayload, StackAbilityResolver, Target,
-    TargetSelection, TargetSlotDef, TargetSlotId, TriggerContext, add_generic, add_mana_cost,
-    configured_mana_cost, extra_target_cost, mode_id_selections, positive_compositions,
-    reduce_generic, target_combinations,
+    TargetSelection, TargetSlotDef, TargetSlotId, TriggerContext, ZoneKind, add_generic,
+    add_mana_cost, configured_mana_cost, extra_target_cost, mode_id_selections,
+    positive_compositions, reduce_generic, target_combinations,
 };
 
 impl Game {
+    /// Every way to pay a spell's declarative additional cost. A spell with
+    /// none has exactly one way to pay it: spend nothing. A spell with one it
+    /// cannot afford has none at all, which is what stops it being offered.
+    fn additional_cost_choices(
+        &self,
+        definition: &CardDefinition,
+        player: PlayerId,
+    ) -> Vec<Vec<GameObjectId>> {
+        let Some(cost) =
+            definition
+                .rules
+                .ability_clauses()
+                .iter()
+                .find_map(|ability| match ability.definition {
+                    DeclarativeAbilityDef::Spell(spell) if ability.is_executable() => {
+                        spell.additional_cost()
+                    }
+                    _ => None,
+                })
+        else {
+            return vec![Vec::new()];
+        };
+        let candidates: Vec<GameObjectId> = match cost.zone {
+            ZoneKind::Battlefield => self
+                .battlefield
+                .iter()
+                .filter(|permanent| {
+                    permanent.controller == player
+                        && self.trigger_object_matches(
+                            cost.object,
+                            &self.trigger_event_object(permanent),
+                            permanent.card.id,
+                            false,
+                        )
+                })
+                .map(|permanent| permanent.card.id)
+                .collect(),
+            ZoneKind::Graveyard => self.players[player.index()]
+                .graveyard
+                .iter()
+                .filter(|card| {
+                    self.card_object_matches(cost.object, card, ZoneKind::Graveyard, card.id)
+                })
+                .map(|card| card.id)
+                .collect(),
+            _ => Vec::new(),
+        };
+        if usize::from(cost.count) != 1 {
+            // Only one object is chosen today; a cost naming more would need
+            // every combination rather than every candidate.
+            return Vec::new();
+        }
+        candidates.into_iter().map(|id| vec![id]).collect()
+    }
+
     pub(super) fn add_land_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
         let state = &self.players[player.index()];
         if player != self.active_player
@@ -218,7 +273,7 @@ impl Game {
                                             .map(|permanent| vec![permanent.card.id])
                                             .collect()
                                     } else {
-                                        vec![Vec::new()]
+                                        self.additional_cost_choices(definition, player)
                                     };
                                     for sacrifices in sacrifice_choices {
                                         actions.push(Action::CastSpell {

@@ -3,6 +3,7 @@
 use crate::CardDefinitionId;
 
 mod activation_timing;
+mod additional_costs;
 mod attack_restrictions;
 mod aura_upkeep;
 mod battalion;
@@ -51,6 +52,7 @@ mod unleash;
 mod untap_skips;
 mod wards;
 pub use activation_timing::*;
+pub use additional_costs::*;
 pub use attack_restrictions::*;
 pub use aura_upkeep::*;
 pub use battalion::*;

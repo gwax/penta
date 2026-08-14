@@ -9,9 +9,9 @@ use crate::card::{
     CardStructure, CardSupertype, CardType, ComparisonDef, ConditionalValueDef, CostDef,
     CounterKind, DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectDurationDef,
     EffectExecutionDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PaymentDef, PlayOptionDef, PlayerRelation, QuantifierDef, SpellForm, TargetConditionDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    PaymentDef, PlayOptionDef, PlayerRelation, QuantifierDef, SpellAdditionalCostDef, SpellForm,
+    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -1210,8 +1210,30 @@ pub(in crate::card::sets) static LOST_IN_THE_MIST: CardRecord = CardRecord::new(
 // ISD 64 — Ludevic's Test Subject
 // Audit: blocked — Needs hatchling counters and an activation continuation that removes all five before transforming.
 
+/// "As an additional cost to cast this spell, exile a creature card from your
+/// graveyard."
+static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    zone: ZoneKind::Graveyard,
+    count: 1,
+};
+
 // ISD 65 — Makeshift Mauler
-// Audit: blocked — Needs exiling a chosen creature card from your graveyard as an additional casting cost.
+pub(in crate::card::sets) static MAKESHIFT_MAULER: CardRecord = CardRecord::new(
+    cards::MAKESHIFT_MAULER,
+    "Makeshift Mauler",
+    CardArt::new("d869de57-9454-47ff-af14-eaefd387047a", "James Ryman"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Zombie", "Horror"], 4, 5).with_abilities(&[
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, exile a creature card from your \
+             graveyard.",
+            &[],
+            EXILE_A_CREATURE_CARD,
+            EffectDef::None,
+        ),
+    ]),
+);
 
 // ISD 66 — Memory's Journey
 // Audit: blocked — Needs a linked target-player relation for up to three cards in that player's graveyard, then shuffling that library.
@@ -1438,7 +1460,22 @@ pub(in crate::card::sets) static SPECTRAL_FLIGHT: CardRecord = CardRecord::new(
 );
 
 // ISD 80 — Stitched Drake
-// Audit: blocked — Needs exiling a chosen creature card from your graveyard as an additional casting cost.
+pub(in crate::card::sets) static STITCHED_DRAKE: CardRecord = CardRecord::new(
+    cards::STITCHED_DRAKE,
+    "Stitched Drake",
+    CardArt::new("ad81266a-488f-449a-9daf-637727564865", "Chris Rahn"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Zombie", "Drake"], 3, 4).with_abilities(&[
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, exile a creature card from your \
+             graveyard.",
+            &[],
+            EXILE_A_CREATURE_CARD,
+            EffectDef::None,
+        ),
+        abilities::flying(),
+    ]),
+);
 
 // ISD 81 — Stitcher's Apprentice
 pub(in crate::card::sets) static STITCHERS_APPRENTICE: CardRecord = CardRecord::new(
@@ -4905,6 +4942,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &INVISIBLE_STALKER,
     &LANTERN_SPIRIT,
     &LOST_IN_THE_MIST,
+    &MAKESHIFT_MAULER,
     &MOON_HERON,
     &MURDER_OF_CROWS,
     &SELHOFF_OCCULTIST,
@@ -4912,6 +4950,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SILENT_DEPARTURE,
     &SNAPCASTER_MAGE,
     &SPECTRAL_FLIGHT,
+    &STITCHED_DRAKE,
     &STITCHERS_APPRENTICE,
     &THINK_TWICE,
     &BLOODGIFT_DEMON,

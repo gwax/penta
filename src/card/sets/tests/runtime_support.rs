@@ -4,7 +4,7 @@ mod stack_effects;
 pub(super) use nested_definitions::*;
 pub(super) use stack_effects::shared_stack_effect;
 
-use crate::card::ReplacementConditionDef;
+use crate::card::{ReplacementConditionDef, SpellAdditionalCostDef};
 
 use super::*;
 
@@ -624,6 +624,17 @@ fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
     )
 }
 
+/// Only one object is chosen, and only from the two places the casting
+/// enumeration looks: the caster's own battlefield and graveyard.
+fn shared_spell_additional_cost(cost: Option<SpellAdditionalCostDef>) -> bool {
+    let Some(cost) = cost else {
+        return true;
+    };
+    cost.count == 1
+        && matches!(cost.zone, ZoneKind::Battlefield | ZoneKind::Graveyard)
+        && shared_object_predicate(cost.object)
+}
+
 pub(super) fn battlefield_only(zones: &[ZoneKind]) -> bool {
     zones == [ZoneKind::Battlefield]
 }
@@ -640,7 +651,13 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     mode.declarative_effect().is_none() || shared_definition_ability(mode)
                 })
             } else {
-                shared_stack_effect(effect)
+                // A clause that exists only to carry an additional cost has
+                // nothing to do on resolution, which is why None is allowed
+                // here and nowhere else.
+                let cost = definition.additional_cost();
+                shared_spell_additional_cost(cost)
+                    && (shared_stack_effect(effect)
+                        || (cost.is_some() && effect == EffectDef::None))
             }
         }
         DeclarativeAbilityDef::ActivatedMana(definition) => {
