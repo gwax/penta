@@ -6,9 +6,9 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
     CardType, ComparisonDef, CounterKind, DiscardSelectionDef, DividedTotal, EffectDef,
-    EffectDurationDef, EffectRecipientDef, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
+    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -986,8 +986,27 @@ pub(in crate::card::sets) static ROTCROWN_GHOUL: CardRecord = CardRecord::new(
     ),
 );
 
+/// "This creature can block only creatures with flying."
+static BLOCKS_ONLY_FLYERS: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::CanBlockOnly(ObjectPredicateDef::HasKeyword(KeywordAbility::Flying)),
+    duration: EffectDurationDef::WhileSourceRemainsInZone,
+};
+
 // AVR 73 — Scrapskin Drake
-// Audit: blocked — Needs a combat declaration restriction allowing this creature to block only creatures with flying.
+pub(in crate::card::sets) static SCRAPSKIN_DRAKE: CardRecord = CardRecord::new(
+    cards::SCRAPSKIN_DRAKE,
+    "Scrapskin Drake",
+    CardArt::new("c9f03bae-1d23-43ea-9079-4b09d61bbadd", "Kev Walker"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Zombie", "Drake"], 2, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "This creature can block only creatures with flying.",
+            BLOCKS_ONLY_FLYERS,
+        ),
+    ]),
+);
 
 // AVR 74 — Second Guess
 // Audit: blocked — Needs a target predicate or casting-history relation for the second spell cast during the current turn.
@@ -2389,7 +2408,19 @@ pub(in crate::card::sets) static DRUIDS_REPOSITORY: CardRecord = CardRecord::new
 // Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional reach grant to both paired creatures.
 
 // AVR 180 — Gloomwidow
-// Audit: blocked — Needs a combat declaration restriction allowing this creature to block only creatures with flying.
+pub(in crate::card::sets) static GLOOMWIDOW: CardRecord = CardRecord::new(
+    cards::GLOOMWIDOW,
+    "Gloomwidow",
+    CardArt::new("a016c872-09bd-42e1-94da-f587e8252492", "Svetlin Velinov"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Spider"], 3, 3).with_abilities(&[
+        abilities::reach(),
+        AbilityDef::static_ability(
+            "This creature can block only creatures with flying.",
+            BLOCKS_ONLY_FLYERS,
+        ),
+    ]),
+);
 
 // AVR 181 — Grounded
 pub(in crate::card::sets) static GROUNDED: CardRecord = CardRecord::new(
@@ -3094,6 +3125,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MIST_RAVEN,
     &PEEL_FROM_REALITY,
     &ROTCROWN_GHOUL,
+    &SCRAPSKIN_DRAKE,
     &VANISHMENT,
     &BLOOD_ARTIST,
     &BLOODFLOW_CONNOISSEUR,
@@ -3141,6 +3173,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BORDERLAND_RANGER,
     &CRATERHOOF_BEHEMOTH,
     &DRUIDS_REPOSITORY,
+    &GLOOMWIDOW,
     &GROUNDED,
     &HOWLGEIST,
     &NATURAL_END,

@@ -374,6 +374,7 @@ pub(in super::super) fn assert_nested_definition_applied_effect(
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
+        | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)

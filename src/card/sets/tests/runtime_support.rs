@@ -161,6 +161,7 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
+        | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)
@@ -240,6 +241,7 @@ fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
+        | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)
@@ -293,6 +295,7 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
+        | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)
@@ -551,6 +554,7 @@ pub(super) fn shared_static_applied_effect(
         }
         AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
         AppliedEffectDef::CannotBeBlockedBy(predicate)
+        | AppliedEffectDef::CanBlockOnly(predicate)
         | AppliedEffectDef::PreventDamageFrom(predicate) => {
             matches!(
                 recipient,

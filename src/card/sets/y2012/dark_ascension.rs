@@ -6,9 +6,9 @@ use crate::card::{
     AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
     CardStructure, CardSupertype, CardType, ComparisonDef, ConditionalValueDef, CounterKind,
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation, QuantifierDef,
-    SpellForm, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
+    QuantifierDef, SpellForm, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -721,8 +721,28 @@ pub(in crate::card::sets) static SHRIEKGEIST: CardRecord = CardRecord::new(
 // DKA 50 — Soul Seizer
 // Audit: blocked — Needs transforming a creature into an Aura, attaching the transformed permanent to the damaged player, and granting permanent control of that player's creature.
 
+/// "This creature can block only creatures with flying."
+static BLOCKS_ONLY_FLYERS: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::CanBlockOnly(ObjectPredicateDef::HasKeyword(KeywordAbility::Flying)),
+    duration: EffectDurationDef::WhileSourceRemainsInZone,
+};
+
 // DKA 51 — Stormbound Geist
-// Audit: blocked — Needs a combat declaration restriction that permits this creature to block only creatures with flying.
+pub(in crate::card::sets) static STORMBOUND_GEIST: CardRecord = CardRecord::new(
+    cards::STORMBOUND_GEIST,
+    "Stormbound Geist",
+    CardArt::new("040eddb0-fca2-41eb-ab07-c48d49385973", "Dan Murayama Scott"),
+    CardSet::DarkAscension,
+    CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Spirit"], 2, 2).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "This creature can block only creatures with flying.",
+            BLOCKS_ONLY_FLYERS,
+        ),
+        abilities::undying(),
+    ]),
+);
 
 // DKA 52 — Thought Scour
 pub(in crate::card::sets) static THOUGHT_SCOUR: CardRecord = CardRecord::new(
@@ -2382,6 +2402,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SAVING_GRASP,
     &SCREECHING_SKAAB,
     &SHRIEKGEIST,
+    &STORMBOUND_GEIST,
     &THOUGHT_SCOUR,
     &TOWER_GEIST,
     &BLACK_CAT,

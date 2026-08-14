@@ -71,6 +71,10 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **"Can block only ..."**, the blocker's own restriction on what it may
+  block. The engine had the attacker's side of this and the blocker's flat
+  prohibition, but nothing that narrowed a blocker to a subset. Stormbound
+  Geist, Scrapskin Drake, and Gloomwidow.
 - **"Power less than this creature's power"** as a blocking restriction. The
   mirror predicate for greater power already existed for evolve; this is the
   other direction, read live against the source so pumping the attacker widens

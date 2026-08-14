@@ -70,10 +70,60 @@ fn pumping_the_attacker_widens_the_restriction() {
     );
 }
 
+/// The other direction: a restriction on what the blocker may block, rather
+/// than on who may block the attacker.
+#[test]
+fn a_block_only_creature_refuses_ground_attackers() {
+    let mut game = ready_game();
+    // Gloomwidow can block only creatures with flying.
+    let widow = creature(10_000, cards::GLOOMWIDOW, PlayerId::Two);
+    let widow_id = widow.card.id;
+    game.battlefield.push(widow);
+    let ground = creature(10_001, cards::SEDGE_TROLL, PlayerId::One);
+    let ground_id = ground.card.id;
+    game.battlefield.push(ground);
+    let flyer = creature(10_002, cards::SCRAPSKIN_DRAKE, PlayerId::One);
+    let flyer_id = flyer.card.id;
+    game.battlefield.push(flyer);
+
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.active_player = PlayerId::One;
+    game.priority = PlayerId::Two;
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == ground_id || permanent.card.id == flyer_id {
+            permanent.attacking = true;
+            permanent.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+        }
+    }
+
+    let blocks: Vec<_> = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::DeclareBlocker {
+                blocker, attacker, ..
+            } if blocker == widow_id => Some(attacker),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        blocks.contains(&flyer_id),
+        "a flyer is what it is allowed to block"
+    );
+    assert!(!blocks.contains(&ground_id), "and a ground creature is not");
+}
+
 #[test]
 fn every_power_blocking_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::HOWLGEIST, cards::WANDERING_WOLF] {
+    for definition in [
+        cards::HOWLGEIST,
+        cards::WANDERING_WOLF,
+        cards::STORMBOUND_GEIST,
+        cards::SCRAPSKIN_DRAKE,
+        cards::GLOOMWIDOW,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

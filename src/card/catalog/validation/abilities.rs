@@ -601,6 +601,7 @@ fn collect_applied_ability_grants(effect: AppliedEffectDef, grants: &mut Vec<&Ab
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
+        | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)
@@ -772,6 +773,7 @@ fn applied_ability_grant_sites(effect: AppliedEffectDef) -> usize {
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
+        | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)

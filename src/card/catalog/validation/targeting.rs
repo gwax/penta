@@ -146,6 +146,7 @@ fn validate_applied_effect_target_references(
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
+        | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::AddLandTypes(_)

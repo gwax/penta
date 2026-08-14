@@ -4,6 +4,8 @@ use super::{
     EffectDef, Game, GameEvent, GameObjectId, KeywordAbility, Permanent, PlayerId, Target,
 };
 
+mod damage_delivery;
+
 impl Game {
     pub(super) fn attacker_actions(&self, player: PlayerId, moat_active: bool) -> Vec<Action> {
         let mut defenders = vec![AttackDefender::Player(player.opponent())];
@@ -168,6 +170,24 @@ impl Game {
         }
     }
 
+    /// Whether a static effect on `blocker` narrows what it may block, and
+    /// this attacker is outside that. The other direction -- an attacker
+    /// forbidding a blocker -- is `blocking_is_prevented`.
+    pub(super) fn blocker_may_only_block(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
+        let characteristics = self.trigger_event_object(attacker);
+        let mut restricted = false;
+        let _ = self.visit_static_applied_effects(blocker, |applied| {
+            if let AppliedEffectDef::CanBlockOnly(predicate) = applied.effect
+                && !self.trigger_object_matches(predicate, &characteristics, blocker.card.id, false)
+            {
+                restricted = true;
+                return ControlFlow::Break(());
+            }
+            ControlFlow::Continue(())
+        });
+        restricted
+    }
+
     /// Whether a static effect on `attacker` forbids `blocker` from blocking
     /// it, as Juggernaut forbids Walls.
     pub(super) fn blocking_is_prevented(&self, attacker: &Permanent, blocker: &Permanent) -> bool {
@@ -298,6 +318,7 @@ impl Game {
                             || attacker_permanent.unblockable_this_turn
                             || self.cannot_be_blocked(attacker_permanent)
                             || self.blocking_is_prevented(attacker_permanent, blocker_permanent)
+                            || self.blocker_may_only_block(blocker_permanent, attacker_permanent)
                             || *flying && !blocker_can_block_flying
                             || intimidate
                                 && !self.is_artifact_permanent(blocker_permanent)
@@ -726,194 +747,6 @@ impl Game {
             }
         })
         .is_break()
-    }
-
-    /// How much life a drain can take from a recipient: what it had before
-    /// the damage, which is all it can give however much is dealt.
-    pub(super) fn drainable_from(&self, target: Target) -> u16 {
-        match target {
-            Target::Player(player) => self.players[player.index()].life.max(0).cast_unsigned(),
-            Target::Permanent(id) => self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == id)
-                .and_then(|permanent| {
-                    if self
-                        .permanent_types(permanent)
-                        .is_some_and(|types| types.contains(CardType::Planeswalker))
-                    {
-                        return Some(permanent.counters(CounterKind::Loyalty));
-                    }
-                    self.toughness(permanent)
-                        .map(|value| value.max(0).cast_unsigned())
-                })
-                .unwrap_or(0),
-            Target::Card(_) | Target::Spell(_) => 0,
-        }
-    }
-
-    /// Raises the event for damage a player took, whatever dealt it. Only a
-    /// battlefield source can be recognised, which is what every trigger that
-    /// reads this needs.
-    pub(super) fn publish_damage_to_player(
-        &mut self,
-        source: Option<GameObjectId>,
-        player: PlayerId,
-        amount: u16,
-    ) {
-        if amount == 0 {
-            return;
-        }
-        let Some(source) = source.and_then(|source| {
-            self.battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == source)
-        }) else {
-            return;
-        };
-        let event = CommittedTriggerEvent::DamageDealtToPlayer {
-            object: self.trigger_event_object(source),
-            player,
-            amount,
-        };
-        self.capture_battlefield_triggers(&event);
-    }
-
-    /// Combat damage from an attacker to a player, which is the one kind of
-    /// damage the "whenever this deals combat damage to a player" triggers
-    /// listen for. Ordinary damage to a player carries no such event.
-    /// Combat damage from an attacker to whatever it is attacking. A player
-    /// also gets the "deals combat damage to a player" event; a planeswalker
-    /// takes the damage as a permanent, which its loyalty counters absorb.
-    pub(super) fn deal_combat_damage_to(
-        &mut self,
-        attacker: GameObjectId,
-        defender: Target,
-        amount: u16,
-    ) {
-        match defender {
-            Target::Player(player) => self.deal_combat_damage_to_player(attacker, player, amount),
-            Target::Permanent(_) | Target::Card(_) | Target::Spell(_) => {
-                // Flagged as combat damage so a trigger that listens for it
-                // arriving here, as Vraska's does, can tell it apart from an
-                // ability's damage.
-                self.damage_target_from_kind(Some(attacker), Some(defender), amount, true);
-            }
-        }
-    }
-
-    pub(super) fn deal_combat_damage_to_player(
-        &mut self,
-        attacker: GameObjectId,
-        player: PlayerId,
-        amount: u16,
-    ) {
-        let dealt = self.damage_target_from_kind(
-            Some(attacker),
-            Some(Target::Player(player)),
-            amount,
-            true,
-        );
-        if dealt == 0 {
-            return;
-        }
-        let Some(source) = self
-            .battlefield
-            .iter()
-            .find(|permanent| permanent.card.id == attacker)
-        else {
-            return;
-        };
-        let event = CommittedTriggerEvent::CombatDamageDealtToPlayer {
-            object: self.trigger_event_object(source),
-            player,
-            amount: dealt,
-        };
-        self.capture_battlefield_triggers(&event);
-    }
-
-    /// Combat damage between one blocked attacker and everything blocking it,
-    /// in both directions.
-    pub(super) fn exchange_blocked_combat_damage(
-        &mut self,
-        attacker_id: GameObjectId,
-        attacker_index: usize,
-        blockers: &[GameObjectId],
-        attacker_deals_damage: bool,
-    ) {
-        let assignments = self.battlefield[attacker_index]
-            .combat_damage_assignment
-            .clone();
-        if attacker_deals_damage {
-            let split = if assignments.is_empty() {
-                self.default_damage_split(attacker_id, blockers)
-            } else {
-                assignments
-                    .into_iter()
-                    .map(|assignment| (assignment.recipient, assignment.amount))
-                    .collect()
-            };
-            for (recipient, amount) in split {
-                if self.combat_damage_is_prevented_for(recipient) {
-                    continue;
-                }
-                // Trample past a blocker is still combat damage to a player,
-                // so it goes through the same path as an unblocked hit.
-                if let Target::Player(player) = recipient {
-                    self.deal_combat_damage_to_player(attacker_id, player, amount);
-                } else {
-                    self.damage_target_from_kind(Some(attacker_id), Some(recipient), amount, true);
-                }
-            }
-        }
-        if self.combat_damage_is_prevented_for(Target::Permanent(attacker_id)) {
-            return;
-        }
-        let return_damage = blockers
-            .iter()
-            .filter_map(|id| {
-                self.battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == *id)
-                    .filter(|permanent| {
-                        self.deals_damage_in_current_combat_step(permanent)
-                            && !self.combat_damage_is_prevented_from(permanent.card.id)
-                    })
-                    .and_then(|permanent| self.power(permanent))
-                    .map(|power| (*id, power.max(0).cast_unsigned()))
-            })
-            .collect::<Vec<_>>();
-        for (blocker, amount) in return_damage {
-            self.damage_target_from_kind(
-                Some(blocker),
-                Some(Target::Permanent(attacker_id)),
-                amount,
-                true,
-            );
-        }
-    }
-
-    pub(super) fn combat_defender(attacker: &Permanent) -> AttackDefender {
-        attacker
-            .attack_defender
-            .unwrap_or(AttackDefender::Player(attacker.controller.opponent()))
-    }
-
-    pub(super) fn combat_defender_target(&self, attacker: &Permanent) -> Option<Target> {
-        match Self::combat_defender(attacker) {
-            AttackDefender::Player(player) => Some(Target::Player(player)),
-            AttackDefender::Planeswalker(id) => self
-                .battlefield
-                .iter()
-                .find(|permanent| {
-                    permanent.card.id == id
-                        && permanent.controller != attacker.controller
-                        && self
-                            .permanent_types(permanent)
-                            .is_some_and(|types| types.contains(CardType::Planeswalker))
-                })
-                .map(|permanent| Target::Permanent(permanent.card.id)),
-        }
     }
 
     pub(super) fn deal_combat_damage(&mut self) {
