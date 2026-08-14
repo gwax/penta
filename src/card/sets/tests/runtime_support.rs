@@ -469,6 +469,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
         | EffectDef::SetColor { .. }
+        | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
@@ -677,6 +678,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Regenerate { .. }
                     | EffectDef::Tap { .. }
                     | EffectDef::SetColor { .. }
+                    | EffectDef::DestroyAtEndOfCombat { .. }
                     | EffectDef::SkipNextUntapSteps { .. }
                     | EffectDef::Untap { .. }
                     | EffectDef::PreventAllCombatDamageThisTurn

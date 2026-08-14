@@ -374,6 +374,7 @@ mod alternative_costs;
 mod attack_restrictions;
 mod aura_upkeep;
 mod banding;
+mod blocking_relationship;
 mod cannot_block;
 mod casting_and_targets;
 mod casting_modes;

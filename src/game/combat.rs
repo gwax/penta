@@ -340,6 +340,44 @@ impl Game {
             });
         }
         self.capture_becomes_blocked_triggers(&blocked);
+        self.capture_blocking_relationship_triggers();
+    }
+
+    /// One event per ordered pair of a blocker and what it blocks, so a
+    /// clause printed on either creature reads the other as the triggering
+    /// object. "Blocks or becomes blocked by" is one clause, not two.
+    fn capture_blocking_relationship_triggers(&mut self) {
+        let pairs = self
+            .battlefield
+            .iter()
+            .filter_map(|permanent| {
+                permanent
+                    .blocking
+                    .map(|attacker| (permanent.card.id, attacker))
+            })
+            .collect::<Vec<_>>();
+        for (blocker, attacker) in pairs {
+            let Some((blocker, attacker)) = self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == blocker)
+                .map(|permanent| self.trigger_event_object(permanent))
+                .zip(
+                    self.battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == attacker)
+                        .map(|permanent| self.trigger_event_object(permanent)),
+                )
+            else {
+                continue;
+            };
+            for (creature, other) in [(blocker.clone(), attacker.clone()), (attacker, blocker)] {
+                self.capture_battlefield_triggers(&CommittedTriggerEvent::BlocksOrBecomesBlocked {
+                    creature,
+                    other,
+                });
+            }
+        }
     }
 
     /// CR 509.1h. Each attacker becomes blocked once, however many creatures

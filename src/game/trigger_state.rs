@@ -121,6 +121,13 @@ pub(super) enum CommittedTriggerEvent {
         /// gets the quantity it is printed against without recounting.
         blockers_beyond_first: u16,
     },
+    /// One side of one blocking relationship. Emitted once per ordered pair,
+    /// so a clause on either creature sees the other as the triggering
+    /// object without having to know which of them attacked.
+    BlocksOrBecomesBlocked {
+        creature: TriggerEventObject,
+        other: TriggerEventObject,
+    },
     TappedForMana {
         object: TriggerEventObject,
     },
@@ -200,6 +207,13 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
+                chosen_objects: [None; ChoiceIndex::COUNT],
+            },
+            Self::BlocksOrBecomesBlocked { other, .. } => TriggerContext {
+                object: Some(other.id),
+                object_controller: Some(other.controller),
+                event_player: None,
+                amount: None,
                 chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::BecomesBlocked {

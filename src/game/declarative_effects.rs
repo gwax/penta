@@ -151,6 +151,20 @@ impl Game {
                     }
                 }
             }
+            EffectDef::DestroyAtEndOfCombat { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    let Target::Permanent(id) = target else {
+                        continue;
+                    };
+                    if let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == id)
+                    {
+                        permanent.destroy_at_end_of_combat = true;
+                    }
+                }
+            }
             EffectDef::SkipNextUntapSteps {
                 object: recipient,
                 count,

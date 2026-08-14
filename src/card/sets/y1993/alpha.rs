@@ -3125,7 +3125,25 @@ pub(in crate::card::sets) static CHANNEL: CardRecord = CardRecord::new(
 );
 
 // LEA 189 — Cockatrice
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked by a non-Wall creature, destroy that creature at end of combat”.
+pub(in crate::card::sets) static COCKATRICE: CardRecord = CardRecord::new(
+    cards::COCKATRICE,
+    "Cockatrice",
+    CardArt::new("9cd91814-6177-4a3d-a1c1-a3be7d7c7957", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Cockatrice"], 2, 4).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "Whenever this creature blocks or becomes blocked by a non-Wall creature, \
+                 destroy that creature at end of combat.",
+            TriggerEventDef::BlocksOrBecomesBlockedBy {
+                object: ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Wall")),
+            },
+            EffectDef::DestroyAtEndOfCombat {
+                object: EffectRecipientDef::TriggeringObject,
+            },
+        ),
+    ]),
+);
 
 // LEA 190 — Craw Wurm
 pub(in crate::card::sets) static CRAW_WURM: CardRecord = CardRecord::new(
@@ -3483,7 +3501,24 @@ pub(in crate::card::sets) static STREAM_OF_LIFE: CardRecord = CardRecord::new(
 );
 
 // LEA 218 — Thicket Basilisk
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked by a non-Wall creature, destroy that creature at end of combat”.
+pub(in crate::card::sets) static THICKET_BASILISK: CardRecord = CardRecord::new(
+    cards::THICKET_BASILISK,
+    "Thicket Basilisk",
+    CardArt::new("e92cce01-b3bd-4307-aae5-9a7c8fa386ab", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Basilisk"], 2, 4).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever this creature blocks or becomes blocked by a non-Wall creature, \
+                 destroy that creature at end of combat.",
+            TriggerEventDef::BlocksOrBecomesBlockedBy {
+                object: ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Wall")),
+            },
+            EffectDef::DestroyAtEndOfCombat {
+                object: EffectRecipientDef::TriggeringObject,
+            },
+        ),
+    ]),
+);
 
 // LEA 219 — Timber Wolves
 // Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
@@ -4676,6 +4711,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BERSERK,
     &BIRDS_OF_PARADISE,
     &CHANNEL,
+    &COCKATRICE,
     &CRAW_WURM,
     &ELVISH_ARCHERS,
     &FOG,
@@ -4696,6 +4732,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCRYB_SPRITES,
     &SHANODIN_DRYADS,
     &STREAM_OF_LIFE,
+    &THICKET_BASILISK,
     &TRANQUILITY,
     &TSUNAMI,
     &VERDURAN_ENCHANTRESS,

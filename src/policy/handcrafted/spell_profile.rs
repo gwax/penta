@@ -312,6 +312,7 @@ impl HandcraftedPolicy {
             }
             EffectDef::Tap { .. }
             | EffectDef::SetColor { .. }
+            | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventAllCombatDamageThisTurn

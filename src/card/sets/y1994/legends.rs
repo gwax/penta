@@ -892,7 +892,27 @@ pub(in crate::card::sets) static ZEPHYR_FALCON: CardRecord = CardRecord::new(
 );
 
 // LEG 87 — Abomination
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked by a green or white creature, destroy that creature at end of combat”.
+pub(in crate::card::sets) static ABOMINATION: CardRecord = CardRecord::new(
+    cards::ABOMINATION,
+    "Abomination",
+    CardArt::new("a69e2cf8-5ecb-485a-92a2-b4e0a7959f1f", "Mark Tedin"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Horror"], 2, 6).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature blocks or becomes blocked by a green or white creature, \
+             destroy that creature at end of combat.",
+            TriggerEventDef::BlocksOrBecomesBlockedBy {
+                object: ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::Color(ManaColor::Green),
+                    ObjectPredicateDef::Color(ManaColor::White),
+                ]),
+            },
+            EffectDef::DestroyAtEndOfCombat {
+                object: EffectRecipientDef::TriggeringObject,
+            },
+        ),
+    ),
+);
 
 // LEG 88 — All Hallow's Eve
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your upkeep, if this card is exiled with a scream counter on it, remove a scream counter from it. If there are no more scream counters on it, put it into your…”.
@@ -1870,7 +1890,25 @@ pub(in crate::card::sets) static WALL_OF_OPPOSITION: CardRecord = CardRecord::ne
 // Audit: blocked — Needs a hidden-zone decision and continuation for “Each player shuffles the cards from their hand into their library, then draws that many cards”.
 
 // LEG 173 — Aisling Leprechaun
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked by a creature, that creature becomes green”.
+pub(in crate::card::sets) static AISLING_LEPRECHAUN: CardRecord = CardRecord::new(
+    cards::AISLING_LEPRECHAUN,
+    "Aisling Leprechaun",
+    CardArt::new("640a161d-ad7b-4e5b-8f2d-d3753cb9daa3", "Quinton Hoover"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{G}"), &["Faerie"], 1, 1).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature blocks or becomes blocked by a creature, that creature \
+             becomes green. (This effect lasts indefinitely.)",
+            TriggerEventDef::BlocksOrBecomesBlockedBy {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+            },
+            EffectDef::SetColor {
+                object: EffectRecipientDef::TriggeringObject,
+                color: ManaColor::Green,
+            },
+        ),
+    ),
+);
 
 // LEG 174 — Arboria
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Creatures can't attack a player unless that player cast a spell or put a nontoken permanent onto the battlefield during their last turn”.
@@ -3608,6 +3646,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TELEKINESIS,
     &UNDERTOW,
     &ZEPHYR_FALCON,
+    &ABOMINATION,
     &CARRION_ANTS,
     &CYCLOPEAN_MUMMY,
     &DARKNESS,
@@ -3648,6 +3687,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WALL_OF_EARTH,
     &WALL_OF_HEAT,
     &WALL_OF_OPPOSITION,
+    &AISLING_LEPRECHAUN,
     &BARBARY_APES,
     &CAT_WARRIORS,
     &CONCORDANT_CROSSROADS,

@@ -71,6 +71,14 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **"Whenever this creature blocks or becomes blocked by ..."**, which is one
+  printed clause covering both sides of a block rather than two. The event
+  fires once per ordered pair, so a card reads the creature opposite it as the
+  triggering object without knowing which of them attacked. "Destroy that
+  creature at end of combat" came with it: end of combat is earlier than the
+  end step an ordinary delayed destruction waits for. Cockatrice, Thicket
+  Basilisk, Abomination, and Aisling Leprechaun -- who repaints instead of
+  destroying, using the colour change added alongside the Laces.
 - **Auras that trigger on their host's controller's upkeep.** "The upkeep of
   enchanted land's controller" is not the Aura's controller's upkeep, and the
   two come apart the moment the Aura sits on something an opponent controls --

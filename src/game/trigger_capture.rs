@@ -248,6 +248,7 @@ impl Game {
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
             | EffectDef::SetColor { .. }
+            | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventAllCombatDamageThisTurn
@@ -573,6 +574,13 @@ impl Game {
                 TriggerEventDef::DamageDealtBy { source: predicate },
                 CommittedTriggerEvent::DamageDealt { source: object, .. },
             ) => self.trigger_object_matches(predicate, object, source, false),
+            (
+                TriggerEventDef::BlocksOrBecomesBlockedBy { object: predicate },
+                CommittedTriggerEvent::BlocksOrBecomesBlocked { creature, other },
+            ) => {
+                creature.id == source
+                    && self.trigger_object_matches(predicate, other, source, false)
+            }
             (
                 TriggerEventDef::AttacksInGroup {
                     attacker: predicate,

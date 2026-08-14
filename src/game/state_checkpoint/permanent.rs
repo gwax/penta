@@ -80,6 +80,7 @@ pub(super) fn permanent_snapshot(
         detained_until_turn_of: permanent
             .detained_until_turn_of
             .map(|(player, turns)| (player.index(), turns)),
+        destroy_at_end_of_combat: permanent.destroy_at_end_of_combat,
         skipped_untap_steps: permanent.skipped_untap_steps,
         color_override: permanent.color_override.map(ColorSet::to_flags),
         combat_damage_prevented: permanent.combat_damage_prevented,

@@ -40,7 +40,10 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         | TriggerEventDef::AttacksInGroup {
             attacker: source, ..
         }
-        | TriggerEventDef::DamageDealtToPlayer { source, .. } => shared_object_predicate(source),
+        | TriggerEventDef::DamageDealtToPlayer { source, .. }
+        | TriggerEventDef::BlocksOrBecomesBlockedBy { object: source } => {
+            shared_object_predicate(source)
+        }
         TriggerEventDef::AbilityActivated(_)
         | TriggerEventDef::ManaAdded(_)
         | TriggerEventDef::Special(_) => false,
@@ -243,6 +246,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
         | EffectDef::SetColor { .. }
+        | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn

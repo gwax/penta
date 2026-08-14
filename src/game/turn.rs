@@ -272,6 +272,7 @@ impl Game {
             }
             Step::CombatDamage => self.advance_combat_damage_step(),
             Step::EndOfCombat => {
+                self.destroy_end_of_combat_permanents();
                 self.clear_combat();
                 // An extra combat phase replaces the move to the second main,
                 // which still happens once the extra combats are spent.
@@ -452,6 +453,24 @@ impl Game {
             player,
         });
         self.fire_delayed_triggers(TurnStepDef::Upkeep);
+    }
+
+    /// CR 510.4-adjacent: "destroy that creature at end of combat" resolves
+    /// while combat is still the current phase, which is earlier than the
+    /// end step an ordinary delayed destruction waits for.
+    fn destroy_end_of_combat_permanents(&mut self) {
+        let doomed: Vec<_> = self
+            .battlefield
+            .iter()
+            .filter(|permanent| permanent.destroy_at_end_of_combat)
+            .map(|permanent| permanent.card.id)
+            .collect();
+        for id in &doomed {
+            self.destroy_permanent(*id);
+        }
+        for permanent in &mut self.battlefield {
+            permanent.destroy_at_end_of_combat = false;
+        }
     }
 
     pub(super) fn handle_end_step(&mut self) {

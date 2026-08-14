@@ -6,7 +6,9 @@ fn is_zero_u8(value: &u8) -> bool {
     *value == 0
 }
 
+mod stack;
 mod triggers;
+pub(in crate::game::state_checkpoint) use stack::*;
 pub(in crate::game::state_checkpoint) use triggers::*;
 
 use super::model_keyword::KeywordSnapshot;
@@ -193,6 +195,9 @@ pub(super) struct PermanentSnapshot {
     /// Detained until this seat's next turn, with the turn count it landed on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) detained_until_turn_of: Option<(usize, u32)>,
+    /// Whether this permanent is destroyed as the current combat phase ends.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) destroy_at_end_of_combat: bool,
     /// Untap steps this permanent still owes before it untaps normally.
     #[serde(default, skip_serializing_if = "is_zero_u8")]
     pub(super) skipped_untap_steps: u8,
@@ -373,119 +378,6 @@ pub(super) struct EmblemSnapshot {
     pub(super) presented_part_id: u8,
     pub(super) timestamp: u64,
     pub(super) entered_controller_turn: u32,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-#[allow(clippy::struct_excessive_bools)]
-pub(super) struct StackSnapshot {
-    pub(super) object_id: u32,
-    pub(super) owner: usize,
-    pub(super) ability_payload: Option<StackAbilitySnapshot>,
-    pub(super) requires_retired_object: bool,
-    pub(super) has_runtime_overrides: bool,
-    pub(super) applied_effects: Vec<AppliedStackEffectSnapshot>,
-    pub(super) text_changes: Vec<BasicLandTypeChangeSnapshot>,
-    pub(super) colors: Option<[bool; 5]>,
-    pub(super) cast_via_flashback: bool,
-    pub(super) is_copy: bool,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct BasicLandTypeChangeSnapshot {
-    pub(super) from: BasicLandTypeSnapshot,
-    pub(super) to: BasicLandTypeSnapshot,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct StackAbilitySnapshot {
-    pub(super) ability_locator: Option<AbilityLocator>,
-    pub(super) origin: AbilityOriginSnapshot,
-    pub(super) target_selections: Vec<TargetSelectionSnapshot>,
-    pub(super) context: TriggerContextSnapshot,
-    pub(super) mode_effects: Vec<ScopedEffectSnapshot>,
-    pub(super) x: u16,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct DetachedStackSnapshot {
-    pub(super) object_id: u32,
-    pub(super) kind: StackObjectKindSnapshot,
-    pub(super) definition: u16,
-    pub(super) owner: usize,
-    pub(super) source: Option<u32>,
-    pub(super) ability_payload: Option<StackAbilitySnapshot>,
-    pub(super) controller: usize,
-    pub(super) signature: Option<CastSignatureSnapshot>,
-    pub(super) chosen_permanents: Vec<u32>,
-    pub(super) has_runtime_overrides: bool,
-    pub(super) applied_effects: Vec<AppliedStackEffectSnapshot>,
-    pub(super) text_changes: Vec<BasicLandTypeChangeSnapshot>,
-    pub(super) colors: Option<[bool; 5]>,
-    pub(super) cast_via_flashback: bool,
-    pub(super) is_copy: bool,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct AppliedStackEffectSnapshot {
-    pub(super) source: Option<ManaSourceSnapshot>,
-    pub(super) effect: AppliedEffectLocator,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) enum StackObjectKindSnapshot {
-    Spell,
-    ActivatedAbility,
-    TriggeredAbility,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct CastSignatureSnapshot {
-    pub(super) play_option: u8,
-    pub(super) form: SpellFormSnapshot,
-    pub(super) modes: Vec<u8>,
-    pub(super) alternative_cost: Option<u8>,
-    pub(super) additional_costs: Vec<u8>,
-    pub(super) x: u16,
-    pub(super) targets: Vec<TargetSelectionSnapshot>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(
-    tag = "kind",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase"
-)]
-pub(super) enum SpellFormSnapshot {
-    Part { part_id: u8 },
-    Combined { part_ids: Vec<u8> },
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct ManaCostSnapshot {
-    pub(super) generic: u16,
-    pub(super) white: u16,
-    pub(super) blue: u16,
-    pub(super) black: u16,
-    pub(super) red: u16,
-    pub(super) green: u16,
-    pub(super) hybrid: Vec<u16>,
-    pub(super) variable_x: bool,
-    pub(super) x_multiplier: u16,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct ScopedEffectSnapshot {
-    pub(super) path: Vec<usize>,
-    pub(super) target_base: usize,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

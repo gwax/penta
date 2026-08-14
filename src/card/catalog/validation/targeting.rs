@@ -213,6 +213,7 @@ fn validate_effect_references(
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
         | EffectDef::SetColor { object, .. }
+        | EffectDef::DestroyAtEndOfCombat { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }
         | EffectDef::Untap { object }
         | EffectDef::PreventNextDamage { object, .. }
