@@ -131,16 +131,16 @@ pub(in crate::card::sets) static BLESSING: CardRecord = CardRecord::new(
 // Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “Untapped creatures you control get +0/+2”.
 
 // LEA 10 — Circle of Protection: Blue
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}: The next time a blue source of your choice would deal damage to you this turn, prevent that damage”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a blue source of your choice would deal damage to you this turn, prevent that damage”.
 
 // LEA 11 — Circle of Protection: Green
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}: The next time a green source of your choice would deal damage to you this turn, prevent that damage”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a green source of your choice would deal damage to you this turn, prevent that damage”.
 
 // LEA 12 — Circle of Protection: Red
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}: The next time a red source of your choice would deal damage to you this turn, prevent that damage”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a red source of your choice would deal damage to you this turn, prevent that damage”.
 
 // LEA 13 — Circle of Protection: White
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}: The next time a white source of your choice would deal damage to you this turn, prevent that damage”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a white source of your choice would deal damage to you this turn, prevent that damage”.
 
 // LEA 14 — Consecrate Land
 // Audit: blocked — Needs this compound indestructibility and attachment-legality effect for “Enchanted land has indestructible and can't be enchanted by other Auras”.
@@ -483,7 +483,7 @@ pub(in crate::card::sets) static RESURRECTION: CardRecord = CardRecord::new(
 );
 
 // LEA 35 — Reverse Damage
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “The next time a source of your choice would deal damage to you this turn, prevent that damage. You gain life equal to the damage prevented this way”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “The next time a source of your choice would deal damage to you this turn, prevent that damage. You gain life equal to the damage prevented this way”.
 
 // LEA 36 — Righteousness
 pub(in crate::card::sets) static RIGHTEOUSNESS: CardRecord = CardRecord::new(
@@ -3466,7 +3466,23 @@ pub(in crate::card::sets) static CHAOS_ORB: CardRecord = CardRecord::new(
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{X}, {T}: Put up to X +1/+0 counters on this creature. This ability can't cause the total number of +1/+0 counters on this creature to be greater than seven. Activate only during your upkeep”.
 
 // LEA 237 — Conservator
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{3}, {T}: Prevent the next 2 damage that would be dealt to you this turn”.
+pub(in crate::card::sets) static CONSERVATOR: CardRecord = CardRecord::new(
+    cards::CONSERVATOR,
+    "Conservator",
+    CardArt::new("c7824e2a-4eff-4f72-9216-0db30a4f4252", "Amy Weber"),
+    CardSet::Alpha,
+    CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::activated(
+        "{3}, {T}: Prevent the next 2 damage that would be dealt to you this turn.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{3}")),
+            AbilityCostDef::TapSource,
+        ],
+        EffectDef::PreventNextDamage {
+            object: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(2),
+        },
+    )),
+);
 
 // LEA 238 — Copper Tablet
 pub(in crate::card::sets) static COPPER_TABLET: CardRecord = CardRecord::new(
@@ -3638,7 +3654,7 @@ pub(in crate::card::sets) static IVORY_CUP: CardRecord = CardRecord::new(
 );
 
 // LEA 252 — Jade Monolith
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}: The next time a source of your choice would deal damage to target creature this turn, that source deals that damage to you instead”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a source of your choice would deal damage to target creature this turn, that source deals that damage to you instead”.
 
 // LEA 253 — Jade Statue
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{2}: This artifact becomes a 3/6 Golem artifact creature until end of combat. Activate only during combat”.
@@ -4311,6 +4327,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLACK_VISE,
     &CELESTIAL_PRISM,
     &CHAOS_ORB,
+    &CONSERVATOR,
     &COPPER_TABLET,
     &CRYSTAL_ROD,
     &DINGUS_EGG,

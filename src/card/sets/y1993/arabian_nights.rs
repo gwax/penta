@@ -61,7 +61,7 @@ pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “As long as this creature is attacking, prevent all damage Deserts would deal to this creature and to creatures banded with this creature”.
 
 // ARN 4 — Eye for an Eye
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “The next time a source of your choice would deal damage to you this turn, instead that source deals that much damage to you and Eye for an Eye deals that much damage to that source's…”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “The next time a source of your choice would deal damage to you this turn, instead that source deals that much damage to you and Eye for an Eye deals that much damage to that source's…”.
 
 // ARN 5 — Jihad
 // Audit: blocked — Needs a persistent dynamic characteristic choice and predicates that consume it for “White creatures get +2/+1 as long as the chosen player controls a nontoken permanent of the chosen color”.
@@ -1029,7 +1029,23 @@ pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord:
 );
 
 // ARN 78 — Oasis
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{T}: Prevent the next 1 damage that would be dealt to target creature this turn”.
+pub(in crate::card::sets) static OASIS: CardRecord = CardRecord::new(
+    cards::OASIS,
+    "Oasis",
+    CardArt::new("6f38565e-88b9-433d-b0e9-a3b9734f183f", "Brian Snõddy"),
+    CardSet::ArabianNights,
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated_with_targets(
+        "{T}: Prevent the next 1 damage that would be dealt to target creature this turn.",
+        &[AbilityCostDef::TapSource],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::PreventNextDamage {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(1),
+        },
+    )),
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARMY_OF_ALLAH,
@@ -1068,6 +1084,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CITY_OF_BRASS,
     &ELEPHANT_GRAVEYARD,
     &LIBRARY_OF_ALEXANDRIA,
+    &OASIS,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

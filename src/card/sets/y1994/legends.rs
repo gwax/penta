@@ -205,7 +205,7 @@ pub(in crate::card::sets) static GREAT_WALL: CardRecord = CardRecord::new(
 );
 
 // LEG 18 — Greater Realm of Preservation
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}{W}: The next time a black or red source of your choice would deal damage to you this turn, prevent that damage”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}{W}: The next time a black or red source of your choice would deal damage to you this turn, prevent that damage”.
 
 // LEG 19 — Heaven's Gate
 // Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become white until end of turn”.
@@ -2440,7 +2440,25 @@ pub(in crate::card::sets) static KASIMIR_THE_LONE_WOLF: CardRecord = CardRecord:
 );
 
 // LEG 238 — Kei Takahashi
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{T}: Prevent the next 2 damage that would be dealt to target creature this turn”.
+pub(in crate::card::sets) static KEI_TAKAHASHI: CardRecord = CardRecord::new(
+    cards::KEI_TAKAHASHI,
+    "Kei Takahashi",
+    CardArt::new("6a4a524a-fdc7-432d-994b-953808528349", "Scott Kirschner"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{G}{W}"), &["Human", "Cleric"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::activated_with_targets(
+            "{T}: Prevent the next 2 damage that would be dealt to target creature this turn.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::PreventNextDamage {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+            },
+        )),
+);
 
 // LEG 239 — Lady Caleria
 pub(in crate::card::sets) static LADY_CALERIA: CardRecord = CardRecord::new(
@@ -2467,7 +2485,27 @@ pub(in crate::card::sets) static LADY_CALERIA: CardRecord = CardRecord::new(
 );
 
 // LEG 240 — Lady Evangela
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{W}{B}, {T}: Prevent all combat damage that would be dealt by target creature this turn”.
+pub(in crate::card::sets) static LADY_EVANGELA: CardRecord = CardRecord::new(
+    cards::LADY_EVANGELA,
+    "Lady Evangela",
+    CardArt::new("f3e122e9-ffa3-48dd-94d6-8f2886668e59", "Mark Poole"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{W}{U}{B}"), &["Human", "Cleric"], 1, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::activated_with_targets(
+            "{W}{B}, {T}: Prevent all combat damage that would be dealt by target creature this turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{W}{B}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::PreventCombatDamageDealtByThisTurn {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        )),
+);
 
 // LEG 241 — Lady Orca
 pub(in crate::card::sets) static LADY_ORCA: CardRecord = CardRecord::new(
@@ -3012,7 +3050,25 @@ pub(in crate::card::sets) static ARENA_OF_THE_ANCIENTS: CardRecord = CardRecord:
 // Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{T}, Remove any number of charge counters from this artifact: Add {G}, then add an additional {G} for each charge counter removed this way”.
 
 // LEG 280 — Horn of Deafening
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{2}, {T}: Prevent all combat damage that would be dealt by target creature this turn”.
+pub(in crate::card::sets) static HORN_OF_DEAFENING: CardRecord = CardRecord::new(
+    cards::HORN_OF_DEAFENING,
+    "Horn of Deafening",
+    CardArt::new("17eff8d9-86de-4f19-bf00-5f20dc1373d4", "Dan Frazier"),
+    CardSet::Legends,
+    CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::activated_with_targets(
+        "{2}, {T}: Prevent all combat damage that would be dealt by target creature this turn.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{2}")),
+            AbilityCostDef::TapSource,
+        ],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::PreventCombatDamageDealtByThisTurn {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )),
+);
 
 // LEG 281 — Knowledge Vault
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “{2}, {T}: Exile the top card of your library face down”.
@@ -3039,7 +3095,7 @@ pub(in crate::card::sets) static ARENA_OF_THE_ANCIENTS: CardRecord = CardRecord:
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “{4}, {T}: For one spell this turn, you may spend mana as though it were mana of any type to pay that spell's mana cost”.
 
 // LEG 289 — Nova Pentacle
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{3}, {T}: The next time a source of your choice would deal damage to you this turn, that damage is dealt to target creature of an opponent's choice instead”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{3}, {T}: The next time a source of your choice would deal damage to you this turn, that damage is dealt to target creature of an opponent's choice instead”.
 
 // LEG 290 — Planar Gate
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Creature spells you cast cost {2} less to cast”.
@@ -3334,7 +3390,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JEDIT_OJANEN,
     &JERRARD_OF_THE_CLOSED_FIST,
     &KASIMIR_THE_LONE_WOLF,
+    &KEI_TAKAHASHI,
     &LADY_CALERIA,
+    &LADY_EVANGELA,
     &LADY_ORCA,
     &LIVONYA_SILONE,
     &LORD_MAGNUS,
@@ -3358,6 +3416,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &VAEVICTIS_ASMADI,
     &XIRA_ARIEN,
     &ARENA_OF_THE_ANCIENTS,
+    &HORN_OF_DEAFENING,
     &RELIC_BARRIER,
     &KARAKAS,
     &PENDELHAVEN,

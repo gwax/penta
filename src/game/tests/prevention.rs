@@ -225,3 +225,112 @@ fn every_newly_unblocked_prevention_card_reports_complete_coverage() {
         );
     }
 }
+
+/// A second sweep, prompted by the shields having outlived their audit lines.
+/// Seven identities were blocked on "a duration-scoped replacement/prevention
+/// effect" that had already been built; the two shapes below are the ones the
+/// first sweep never drove -- a shield aimed at a player, and prevention of
+/// only the combat damage a creature deals.
+mod follow_up {
+    use super::*;
+
+    /// Conservator shields its controller, not a permanent. The shield has to
+    /// find a player recipient and spend itself on damage aimed there.
+    #[test]
+    fn conservator_shields_its_controller_and_spends_the_shield() {
+        let mut game = ready_game();
+        let conservator = creature(10_000, cards::CONSERVATOR, PlayerId::One);
+        let conservator_id = conservator.card.id;
+        game.battlefield.push(conservator);
+        game.players[PlayerId::One.index()].mana_pool.colorless = 3;
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == conservator_id)
+            })
+            .expect("the ability is affordable");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        assert_eq!(
+            game.prevention_shields.len(),
+            1,
+            "one shield, aimed at a player"
+        );
+        game.damage_target(Some(Target::Player(PlayerId::One)), 3);
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            i16::from(rules::STARTING_LIFE) - 1,
+            "two of the three damage was prevented"
+        );
+        assert!(
+            game.prevention_shields.is_empty(),
+            "and the shield was spent doing it"
+        );
+    }
+
+    /// Horn of Deafening stops what the creature deals without touching what
+    /// is dealt to it, which is the distinction between the two combat-damage
+    /// prevention effects.
+    #[test]
+    fn horn_of_deafening_silences_one_attacker_in_one_direction() {
+        let mut game = ready_game();
+        let horn = creature(10_000, cards::HORN_OF_DEAFENING, PlayerId::One);
+        let horn_id = horn.card.id;
+        game.battlefield.push(horn);
+        game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+        let ogre = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
+        let ogre_id = ogre.card.id;
+        game.battlefield.push(ogre);
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == horn_id)
+            })
+            .expect("the ability is affordable");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        let silenced = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == ogre_id)
+            .expect("the creature is still on the battlefield");
+        assert!(
+            silenced.combat_damage_dealt_by_prevented,
+            "the creature deals no combat damage this turn"
+        );
+        assert!(
+            !silenced.combat_damage_prevented,
+            "but damage dealt to it is untouched"
+        );
+    }
+
+    #[test]
+    fn the_swept_identities_report_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [
+            cards::CONSERVATOR,
+            cards::OASIS,
+            cards::ARGIVIAN_BLACKSMITH,
+            cards::KEI_TAKAHASHI,
+            cards::LADY_EVANGELA,
+            cards::HORN_OF_DEAFENING,
+            cards::COMBAT_MEDIC,
+        ] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                crate::ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
+    }
+}

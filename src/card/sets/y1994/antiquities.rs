@@ -57,13 +57,34 @@ pub(in crate::card::sets) static ARGIVIAN_ARCHAEOLOGIST: CardRecord = CardRecord
 );
 
 // ATQ 2 — Argivian Blacksmith
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{T}: Prevent the next 2 damage that would be dealt to target artifact creature this turn”.
+pub(in crate::card::sets) static ARGIVIAN_BLACKSMITH: CardRecord = CardRecord::new(
+    cards::ARGIVIAN_BLACKSMITH,
+    "Argivian Blacksmith",
+    CardArt::new("5f604338-5ee4-4c47-ad5a-5c805c96c8de", "Kerstin Kaman"),
+    CardSet::Antiquities,
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human", "Artificer"], 2, 2).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Prevent the next 2 damage that would be dealt to target artifact creature this turn.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Artifact),
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                ]),
+            )],
+            EffectDef::PreventNextDamage {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ),
+);
 
 // ATQ 3 — Artifact Ward
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to enchanted creature by artifact sources”.
 
 // ATQ 4 — Circle of Protection: Artifacts
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{2}: The next time an artifact source of your choice would deal damage to you this turn, prevent that damage”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{2}: The next time an artifact source of your choice would deal damage to you this turn, prevent that damage”.
 
 // ATQ 5 — Damping Field
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “Players can't untap more than one artifact during their untap steps”.
@@ -1152,6 +1173,7 @@ pub(in crate::card::sets) static STRIP_MINE: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGIVIAN_ARCHAEOLOGIST,
+    &ARGIVIAN_BLACKSMITH,
     &ENERGY_FLUX,
     &HURKYLS_RECALL,
     &RECONSTRUCTION,

@@ -42,6 +42,15 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Seven identities behind a prevention line that had already been built.**
+  Sixty-six identities cited "a duration-scoped replacement/prevention effect"
+  after the prevention shields landed. Conservator, Oasis, Argivian Blacksmith,
+  Kei Takahashi, Lady Evangela, Horn of Deafening, and Combat Medic needed no
+  engine work: a shield aimed at a player and prevention of only the combat
+  damage a creature deals were both already there. Twelve more -- the Circles
+  of Protection and their relatives -- keep an audit line rewritten to name the
+  gap that is real, a shield keyed to a source chosen as the ability resolves
+  rather than to a recipient.
 - **Two more identities behind a landwalk line that was already false**, and
   ten audit lines rewritten to name their real gap. Twelve identities cited
   "the printed landwalk variant and its defending-player land/blocking

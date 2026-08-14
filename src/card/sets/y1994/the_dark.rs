@@ -1273,7 +1273,7 @@ pub(in crate::card::sets) static BOOK_OF_RASS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{3}, Sacrifice this creature: Add {R}{R}{R}”.
 
 // DRK 100 — Dark Sphere
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{T}, Sacrifice this artifact: The next time a source of your choice would deal damage to you this turn, prevent half that damage, rounded down”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{T}, Sacrifice this artifact: The next time a source of your choice would deal damage to you this turn, prevent half that damage, rounded down”.
 
 // DRK 101 — Diabolic Machine
 pub(in crate::card::sets) static DIABOLIC_MACHINE: CardRecord = CardRecord::new(

@@ -4,7 +4,7 @@ use super::{CardRecord, PrintingRecord, alpha};
 use crate::card::{CardArt, CardRules, CardSet, cards};
 
 // LEB 10 — Circle of Protection: Black
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}: The next time a black source of your choice would deal damage to you this turn, prevent that damage”.
+// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a black source of your choice would deal damage to you this turn, prevent that damage”.
 
 // LEB 287 — Volcanic Island
 pub(in crate::card::sets) static VOLCANIC_ISLAND: CardRecord = CardRecord::new(

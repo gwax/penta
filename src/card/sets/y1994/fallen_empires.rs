@@ -36,7 +36,27 @@ static FUNGUS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_per
 )];
 
 // FEM 1a — Combat Medic
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}{W}: Prevent the next 1 damage that would be dealt to any target this turn”.
+pub(in crate::card::sets) static COMBAT_MEDIC: CardRecord = CardRecord::new(
+    cards::COMBAT_MEDIC,
+    "Combat Medic",
+    CardArt::new(
+        "9cfd96cb-03d6-4845-8595-50bf17b35726",
+        "Edward P. Beard, Jr.",
+    ),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Cleric", "Soldier"], 0, 2)
+        .with_ability(AbilityDef::activated_with_targets(
+            "{1}{W}: Prevent the next 1 damage that would be dealt to any target this turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{W}"))],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::PreventNextDamage {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        )),
+);
 
 // FEM 2 — Farrel's Mantle
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever enchanted creature attacks and isn't blocked, its controller may have it deal damage equal to its power plus 2 to another target creature. If that player does, the attacking…”.
@@ -1109,6 +1129,7 @@ pub(in crate::card::sets) static SVYELUNITE_TEMPLE: CardRecord = CardRecord::new
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &COMBAT_MEDIC,
     &ICATIAN_JAVELINEERS,
     &ICATIAN_LIEUTENANT,
     &ICATIAN_PRIEST,
