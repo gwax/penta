@@ -225,6 +225,9 @@ struct Permanent {
     /// The permanent whose continued presence is holding this one's control
     /// change. When it leaves the battlefield or changes hands, control goes
     /// back to `control_reverts_to`.
+    /// Whether a "can't be regenerated" effect is covering this permanent
+    /// for the rest of the turn.
+    cannot_regenerate_this_turn: bool,
     control_source: Option<GameObjectId>,
     /// Whether that holder also has to stay tapped to keep the change.
     control_requires_source_tapped: bool,
@@ -330,6 +333,7 @@ impl Permanent {
             combat_damage_prevented: false,
             combat_damage_dealt_by_prevented: false,
             control_reverts_to: None,
+            cannot_regenerate_this_turn: false,
             control_source: None,
             control_requires_source_tapped: false,
             blocked: false,

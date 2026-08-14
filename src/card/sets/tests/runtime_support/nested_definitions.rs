@@ -271,6 +271,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
+        | EffectDef::CannotRegenerateThisTurn { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
         | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }

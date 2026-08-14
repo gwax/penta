@@ -717,6 +717,18 @@ impl Game {
             EffectDef::GainControlThisTurn { object: recipient } => {
                 self.take_control_of(recipient, object, context, scoped, None);
             }
+            EffectDef::CannotRegenerateThisTurn { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Permanent(id) = target
+                        && let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == id)
+                    {
+                        permanent.cannot_regenerate_this_turn = true;
+                    }
+                }
+            }
             EffectDef::MakeUnblockableThisTurn { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Permanent(id) = target

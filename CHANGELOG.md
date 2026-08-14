@@ -60,6 +60,13 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **"Can't be regenerated" as a standalone effect**, rather than only a
+  property of a destroy. CR 701.15 draws a distinction the implementation
+  keeps: a shield already armed is not removed, it stops applying, and no new
+  one can be armed while the prohibition holds. Hurr Jackal is now executable.
+  Elves of Deep Shadow joins it with no engine change -- its audit line blamed
+  the mana runtime for an ability whose cost has no mana in it, and Ancient
+  Tomb has printed the same damage-to-controller mana clause for a while.
 - **An optional untap, and a control change held by staying tapped.** Rubinia
   Soulsinger and Willow Satyr pair the two, and each half is useless alone:
   untapping would hand the creature straight back, and without the choice the

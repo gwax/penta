@@ -964,7 +964,21 @@ pub(in crate::card::sets) static CARNIVOROUS_PLANT: CardRecord = CardRecord::new
 );
 
 // DRK 76 — Elves of Deep Shadow
-// Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{T}: Add {B}. This creature deals 1 damage to you”.
+pub(in crate::card::sets) static ELVES_OF_DEEP_SHADOW: CardRecord = CardRecord::new(
+    cards::ELVES_OF_DEEP_SHADOW,
+    "Elves of Deep Shadow",
+    CardArt::new("f395278e-6d74-4f35-af9d-21bad7b19763", "Jesper Myrfors"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Druid"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add {B}. This creature deals 1 damage to you.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(
+                AddManaEffectDef::one(ManaColor::Black).with_damage_to_controller(1),
+            ),
+        ),
+    ),
+);
 
 // DRK 77 — Gaea's Touch
 // Audit: blocked — Needs a hidden-zone decision and continuation for “{0}: You may put a basic Forest card from your hand onto the battlefield. Activate only as a sorcery and only once each turn”.
@@ -1604,6 +1618,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORC_GENERAL,
     &SISTERS_OF_THE_FLAME,
     &CARNIVOROUS_PLANT,
+    &ELVES_OF_DEEP_SHADOW,
     &HIDDEN_PATH,
     &LAND_LEECHES,
     &NIALL_SILVAIN,

@@ -724,6 +724,12 @@ pub enum EffectDef {
     /// [`Self::GainControlThisTurn`] this outlives the turn and ends when the
     /// source does, which is the "for as long as you control this creature"
     /// that several printed cards use.
+    /// The recipient cannot be regenerated for the rest of the turn. CR
+    /// 701.15: shields already armed are not removed, they simply stop
+    /// applying, and no new one can be armed either.
+    CannotRegenerateThisTurn {
+        object: EffectRecipientDef,
+    },
     GainControlWhileSourceRemains {
         object: EffectRecipientDef,
         /// Whether the source also has to stay tapped, for the cards that

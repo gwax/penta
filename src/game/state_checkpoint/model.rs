@@ -182,6 +182,10 @@ pub(super) struct PermanentSnapshot {
     pub(super) control_reverts_to: Option<usize>,
     /// The permanent sustaining a duration-scoped control change, absent for
     /// the turn-scoped form and for everything untouched.
+    /// Whether a "can't be regenerated" effect covers this permanent for the
+    /// rest of the turn.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) cannot_regenerate_this_turn: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) control_source: Option<u32>,
     /// Whether that holder also has to stay tapped.

@@ -480,6 +480,7 @@ impl Game {
             permanent.activations_this_turn.clear();
             permanent.dealt_damage_to_opponent_this_turn = false;
             permanent.regeneration_shields = 0;
+            permanent.cannot_regenerate_this_turn = false;
             permanent.attacked_this_turn = false;
             permanent.attacks_this_turn = 0;
         }

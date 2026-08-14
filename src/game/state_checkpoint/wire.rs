@@ -503,6 +503,7 @@ fn parse_permanent(
         .control_reverts_to
         .map(player_from_index)
         .transpose()?;
+    permanent.cannot_regenerate_this_turn = state.cannot_regenerate_this_turn;
     permanent.control_source = state.control_source.map(GameObjectId);
     permanent.control_requires_source_tapped = state.control_requires_source_tapped;
     permanent.chosen_player = state.chosen_player.map(player_from_index).transpose()?;

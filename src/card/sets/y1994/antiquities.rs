@@ -1279,13 +1279,13 @@ pub(in crate::card::sets) static STRIP_MINE: CardRecord = CardRecord::new(
 );
 
 // ATQ 83a — Urza's Mine
-// Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead”.
+// Audit: blocked — Needs a mana amount conditioned on other permanents you control for “{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead”; this ability's cost has no mana in it.
 
 // ATQ 84a — Urza's Power Plant
-// Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{T}: Add {C}. If you control an Urza's Mine and an Urza's Tower, add {C}{C} instead”.
+// Audit: blocked — Needs a mana amount conditioned on other permanents you control for “{T}: Add {C}. If you control an Urza's Mine and an Urza's Tower, add {C}{C} instead”; this ability's cost has no mana in it.
 
 // ATQ 85a — Urza's Tower
-// Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{T}: Add {C}. If you control an Urza's Mine and an Urza's Power-Plant, add {C}{C}{C} instead”.
+// Audit: blocked — Needs a mana amount conditioned on other permanents you control for “{T}: Add {C}. If you control an Urza's Mine and an Urza's Power-Plant, add {C}{C}{C} instead”; this ability's cost has no mana in it.
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGIVIAN_ARCHAEOLOGIST,

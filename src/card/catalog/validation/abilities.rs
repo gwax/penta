@@ -525,6 +525,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
+        | EffectDef::CannotRegenerateThisTurn { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
         | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }
@@ -682,6 +683,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
+        | EffectDef::CannotRegenerateThisTurn { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
         | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }

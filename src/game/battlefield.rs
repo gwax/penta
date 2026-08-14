@@ -137,7 +137,10 @@ impl Game {
             if self.has_indestructible(permanent) {
                 continue;
             }
-            if can_regenerate && permanent.regeneration_shields > 0 {
+            if can_regenerate
+                && permanent.regeneration_shields > 0
+                && !permanent.cannot_regenerate_this_turn
+            {
                 self.regenerate_permanent(id);
             } else {
                 doomed.push(id);
@@ -156,7 +159,11 @@ impl Game {
             .iter_mut()
             .find(|permanent| permanent.card.id == id)
         {
-            permanent.regeneration_shields = permanent.regeneration_shields.saturating_add(1);
+            // CR 701.15: an effect saying the permanent cannot be
+            // regenerated stops a shield being armed at all.
+            if !permanent.cannot_regenerate_this_turn {
+                permanent.regeneration_shields = permanent.regeneration_shields.saturating_add(1);
+            }
         }
     }
 

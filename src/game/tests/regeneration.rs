@@ -543,3 +543,131 @@ mod follow_up {
         }
     }
 }
+
+/// "Can't be regenerated" as a standalone effect rather than a property of a
+/// destroy. CR 701.15: shields already armed are not removed, they stop
+/// applying, and no new one can be armed while it holds.
+mod cannot_be_regenerated {
+    use super::*;
+
+    fn jackal_game() -> (Game, GameObjectId, GameObjectId) {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        let jackal = creature(10_000, cards::HURR_JACKAL, PlayerId::One);
+        let jackal_id = jackal.card.id;
+        game.battlefield.push(jackal);
+        let troll = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
+        let troll_id = troll.card.id;
+        game.battlefield.push(troll);
+        game.players[PlayerId::Two.index()].mana_pool.black = 4;
+        (game, jackal_id, troll_id)
+    }
+
+    fn point_at(game: &mut Game, jackal: GameObjectId, victim: GameObjectId) {
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == jackal
+                        && targets
+                            .iter()
+                            .flat_map(crate::casting::TargetSelection::targets)
+                            .any(|target| *target == Target::Permanent(victim))
+                }
+                _ => false,
+            })
+            .expect("the Jackal can point at that creature");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(game);
+    }
+
+    #[test]
+    fn a_shield_armed_afterwards_does_not_save_the_creature() {
+        let (mut game, jackal_id, troll_id) = jackal_game();
+        point_at(&mut game, jackal_id, troll_id);
+
+        game.add_regeneration_shield(troll_id);
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == troll_id)
+                .expect("still there")
+                .regeneration_shields,
+            0,
+            "no shield can be armed while the prohibition holds"
+        );
+
+        game.destroy_permanent(troll_id);
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == troll_id),
+        );
+    }
+
+    /// A shield armed *before* the prohibition is not removed by it -- it
+    /// simply stops applying, which is the distinction CR 701.15 draws.
+    #[test]
+    fn a_shield_armed_beforehand_is_kept_but_does_not_apply() {
+        let (mut game, jackal_id, troll_id) = jackal_game();
+        game.add_regeneration_shield(troll_id);
+        point_at(&mut game, jackal_id, troll_id);
+
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == troll_id)
+                .expect("still there")
+                .regeneration_shields,
+            1,
+            "the shield is still there"
+        );
+
+        game.destroy_permanent(troll_id);
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == troll_id),
+            "and it did not save the creature"
+        );
+    }
+
+    /// The prohibition is for the turn, so a creature pointed at survives the
+    /// next turn's destruction on a fresh shield.
+    #[test]
+    fn the_prohibition_ends_with_the_turn() {
+        let (mut game, jackal_id, troll_id) = jackal_game();
+        point_at(&mut game, jackal_id, troll_id);
+        game.finish_cleanup();
+
+        game.add_regeneration_shield(troll_id);
+        game.destroy_permanent(troll_id);
+
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == troll_id),
+            "a new turn is a new shield"
+        );
+    }
+
+    #[test]
+    fn both_identities_report_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [cards::HURR_JACKAL, cards::ELVES_OF_DEEP_SHADOW] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
+    }
+}

@@ -426,6 +426,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::May { .. }
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
+        | EffectDef::CannotRegenerateThisTurn { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
         | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }
@@ -679,6 +680,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::GrantFlashToNextSorcery
                     | EffectDef::ExileLinkedToSource { .. }
                     | EffectDef::ReturnLinkedExiles { .. }
+                    | EffectDef::CannotRegenerateThisTurn { .. }
                     | EffectDef::MakeUnblockableThisTurn { .. }
                     | EffectDef::GainControlWhileSourceRemains { .. }
                     | EffectDef::GainControlThisTurn { .. }

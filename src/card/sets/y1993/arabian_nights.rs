@@ -510,7 +510,24 @@ pub(in crate::card::sets) static BIRD_MAIDEN: CardRecord = CardRecord::new(
 // Audit: blocked — Desertwalk names a land type no cataloged card carries, so the keyword could never read a Desert to fire on.
 
 // ARN 39 — Hurr Jackal
-// Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “{T}: Target creature can't be regenerated this turn”.
+pub(in crate::card::sets) static HURR_JACKAL: CardRecord = CardRecord::new(
+    cards::HURR_JACKAL,
+    "Hurr Jackal",
+    CardArt::new("f4aadda8-8577-480d-8186-532d2b173c15", "Drew Tucker"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{R}"), &["Jackal"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Target creature can't be regenerated this turn.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::CannotRegenerateThisTurn {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ),
+);
 
 // ARN 40 — Kird Ape
 pub(in crate::card::sets) static KIRD_APE: CardRecord = CardRecord::new(
@@ -1089,6 +1106,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ALADDIN,
     &ALI_BABA,
     &BIRD_MAIDEN,
+    &HURR_JACKAL,
     &KIRD_APE,
     &RUKH_EGG,
     &DESERT_TWISTER,
