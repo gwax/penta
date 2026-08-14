@@ -71,7 +71,7 @@ impl Game {
                 else {
                     return;
                 };
-                let Some(EffectDef::Replacement(effect)) = ability.declarative_effect() else {
+                let Some(effect) = ability.declarative_replacement() else {
                     return;
                 };
                 let source = AbilitySourceRef {
@@ -223,11 +223,13 @@ impl Game {
                 }
                 true
             }
-            ReplacementEffectDef::None
-            | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+            ReplacementEffectDef::ModifyBattlefieldEntry(_)
             | ReplacementEffectDef::MoveToZone(_)
             | ReplacementEffectDef::Conditional { .. }
-            | ReplacementEffectDef::OptionalPayment { .. } => false,
+            | ReplacementEffectDef::PayOr { .. }
+            | ReplacementEffectDef::MultiplyEventAmount(_)
+            | ReplacementEffectDef::Choose(_)
+            | ReplacementEffectDef::CopyEntering { .. } => false,
         }
     }
 
@@ -260,11 +262,13 @@ impl Game {
                 });
                 false
             }
-            ReplacementEffectDef::None
-            | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+            ReplacementEffectDef::ModifyBattlefieldEntry(_)
             | ReplacementEffectDef::MoveToZone(_)
             | ReplacementEffectDef::Conditional { .. }
-            | ReplacementEffectDef::OptionalPayment { .. } => false,
+            | ReplacementEffectDef::PayOr { .. }
+            | ReplacementEffectDef::MultiplyEventAmount(_)
+            | ReplacementEffectDef::Choose(_)
+            | ReplacementEffectDef::CopyEntering { .. } => false,
         }
     }
 
@@ -310,7 +314,8 @@ impl Game {
                 context: TriggerContext {
                     event_player: Some(player),
                     ..TriggerContext::empty()
-                },
+                }
+                .into(),
                 resolver: StackAbilityResolver::Declarative(ScopedEffect::primary(effect)),
                 condition: None,
                 mode_effects: Vec::new(),

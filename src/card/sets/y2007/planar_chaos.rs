@@ -3,8 +3,7 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    ZoneKind, cards,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ZoneKind, cards,
 };
 
 // PLC 165 — Urborg, Tomb of Yawgmoth
@@ -17,14 +16,13 @@ pub(in crate::card::sets) static URBORG_TOMB_OF_YAWGMOTH: CardRecord = CardRecor
         .with_supertype(CardSupertype::Legendary)
         .with_ability(AbilityDef::static_ability(
             "Each land is a Swamp in addition to its other land types.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::HasType(CardType::Land),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
                 effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Swamp]),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )),
 );

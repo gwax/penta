@@ -698,8 +698,8 @@ fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {
 fn aura_sequence_attaches_to_its_indexed_semantic_target() {
     use penta::{
         AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardComposition,
-        CardRules, CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ManaCost,
-        ObjectPredicateDef, TargetIndex, ZoneKind,
+        CardRules, CardType, EffectDef, EffectRecipientDef, ManaCost, ObjectPredicateDef,
+        ResolvedEffectDurationDef, TargetIndex, ZoneKind,
     };
 
     const MOUNTAIN: CardDefinitionId = CardDefinitionId(1);
@@ -730,10 +730,9 @@ fn aura_sequence_attaches_to_its_indexed_semantic_target() {
         ),
         AbilityDef::static_ability(
             "Enchanted creature has flying.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::AttachedPermanent,
                 effect: AppliedEffectDef::add_ability(&FLYING),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ];

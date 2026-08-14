@@ -2,11 +2,12 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt,
-    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, DamageSourceGroupDef, EffectDef,
-    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, ShieldCoverageDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, DamageCoverageDef,
+    DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
+    EffectDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -93,7 +94,7 @@ pub(in crate::card::sets) static HOLY_LIGHT: CardRecord = CardRecord::new(
                 ValueDef::Constant(-1),
                 ValueDef::Constant(-1),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -153,7 +154,7 @@ pub(in crate::card::sets) static MORALE: CardRecord = CardRecord::new(
                 ValueDef::Constant(1),
                 ValueDef::Constant(1),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -304,7 +305,7 @@ pub(in crate::card::sets) static ELECTRIC_EEL: CardRecord = CardRecord::new(
                         ValueDef::Constant(2),
                         ValueDef::Constant(0),
                     ),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::DealDamage {
                     recipient: EffectRecipientDef::Controller,
@@ -445,7 +446,7 @@ pub(in crate::card::sets) static SUNKEN_CITY: CardRecord = CardRecord::new(
         ),
         AbilityDef::static_ability(
             "Blue creatures get +1/+1.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -458,7 +459,6 @@ pub(in crate::card::sets) static SUNKEN_CITY: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ]),
@@ -482,13 +482,12 @@ pub(in crate::card::sets) static WATER_WURM: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{U}"), &["Wurm"], 1, 1).with_abilities(&[
         AbilityDef::static_ability(
             "This creature gets +0/+1 as long as an opponent controls an Island.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(
                     ValueDef::Constant(0),
                     ValueDef::AnyMatchingObject(&WATER_WURM_OPPONENT_ISLAND),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ]),
@@ -555,10 +554,9 @@ pub(in crate::card::sets) static BOG_RATS: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{B}"), &["Rat"], 1, 1).with_abilities(&[
         AbilityDef::static_ability(
             "This creature can't be blocked by Walls.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Subtype("Wall")),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ]),
@@ -631,7 +629,7 @@ pub(in crate::card::sets) static MARSH_GAS: CardRecord = CardRecord::new(
                 ValueDef::Constant(-2),
                 ValueDef::Constant(0),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -652,7 +650,6 @@ pub(in crate::card::sets) static MARSH_GAS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs per-source damage history spanning the whole game for “each opponent and planeswalker it has dealt damage to this game”.
 
 // DRK 54 — Uncle Istvan
-// Audit: partial — Its prevention misses creature sources sacrificed before their damage resolves.
 pub(in crate::card::sets) static UNCLE_ISTVAN: CardRecord = CardRecord::new(
     cards::UNCLE_ISTVAN,
     "Uncle Istvan",
@@ -661,17 +658,13 @@ pub(in crate::card::sets) static UNCLE_ISTVAN: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{B}{B}{B}"), &["Human"], 1, 3).with_abilities(&[
         AbilityDef::static_ability(
             "Prevent all damage that would be dealt to this creature by creatures.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::PreventDamageFrom(ObjectPredicateDef::HasType(
+                effect: AppliedEffectDef::prevent_damage_from(ObjectPredicateDef::HasType(
                     CardType::Creature,
                 )),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "Damage prevention recognizes live creature permanents, but not a creature source sacrificed before its damage resolves.",
-        )),
+        ),
     ]),
 );
 
@@ -711,7 +704,7 @@ pub(in crate::card::sets) static BLOOD_MOON: CardRecord = CardRecord::new(
     CardSet::TheDark,
     CardRules::new_enchantment(mana_cost!("{2}{R}")).with_abilities(&[AbilityDef::static_ability(
         "Nonbasic lands are Mountains.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Land),
@@ -723,7 +716,6 @@ pub(in crate::card::sets) static BLOOD_MOON: CardRecord = CardRecord::new(
                 PlayerRelation::Any,
             ),
             effect: AppliedEffectDef::set_basic_land_types(&[crate::card::BasicLandType::Mountain]),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )]),
 );
@@ -771,7 +763,7 @@ pub(in crate::card::sets) static CAVE_PEOPLE: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(-2),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::activated_with_targets(
@@ -786,7 +778,7 @@ pub(in crate::card::sets) static CAVE_PEOPLE: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::add_ability(&abilities::mountainwalk()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -812,7 +804,7 @@ pub(in crate::card::sets) static FIRE_DRAKE: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )
         .once_each_turn(),
@@ -973,7 +965,7 @@ pub(in crate::card::sets) static ORC_GENERAL: CardRecord = CardRecord::new(
                 PlayerRelation::Any,
             ),
             effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -1032,7 +1024,7 @@ pub(in crate::card::sets) static HIDDEN_PATH: CardRecord = CardRecord::new(
     CardRules::new_enchantment(mana_cost!("{2}{G}{G}{G}{G}")).with_abilities(&[
         AbilityDef::static_ability(
             "Green creatures have forestwalk.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -1042,7 +1034,6 @@ pub(in crate::card::sets) static HIDDEN_PATH: CardRecord = CardRecord::new(
                     PlayerRelation::Any,
                 ),
                 effect: AppliedEffectDef::add_ability(&abilities::forestwalk()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ]),
@@ -1110,13 +1101,12 @@ pub(in crate::card::sets) static PEOPLE_OF_THE_WOODS: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{G}{G}"), &["Human"], 1, 0).with_ability(
         AbilityDef::static_ability(
             "People of the Woods's toughness is equal to the number of Forests you control.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(
                     ValueDef::Constant(0),
                     ValueDef::CountMatchingObjects(&FORESTS_YOU_CONTROL),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -1184,7 +1174,7 @@ pub(in crate::card::sets) static SCARWOOD_HAG: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::add_ability(&abilities::forestwalk()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::activated_with_targets(
@@ -1198,7 +1188,7 @@ pub(in crate::card::sets) static SCARWOOD_HAG: CardRecord = CardRecord::new(
                 effect: AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(
                     KeywordAbility::Landwalk(BasicLandType::Forest),
                 )),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1302,7 +1292,7 @@ const fn wormwood_clause(land_type: BasicLandType) -> [EffectDef; 2] {
                 BasicLandType::Forest => &FORESTWALK,
                 _ => &SWAMPWALK,
             }),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
         EffectDef::DealDamage {
             recipient: EffectRecipientDef::Controller,
@@ -1393,7 +1383,7 @@ pub(in crate::card::sets) static BONE_FLUTE: CardRecord = CardRecord::new(
                 ValueDef::Constant(-1),
                 ValueDef::Constant(0),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -1451,11 +1441,16 @@ pub(in crate::card::sets) static DARK_SPHERE: CardRecord = CardRecord::new(
     )),
 );
 
-static DARK_SPHERE_SHIELD: EffectDef = EffectDef::PreventNextDamageFromSource {
-    object: EffectRecipientDef::Controller,
-    source: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
-    coverage: ShieldCoverageDef::HalfRoundedDown,
-    gain_life: false,
+static DARK_SPHERE_SHIELD: EffectDef = EffectDef::PreventDamage {
+    prevention: DamagePreventionDef::events(
+        DamageEventMatcherDef {
+            recipient: DamageRecipientMatcherDef::Recipients(EffectRecipientDef::Controller),
+            ..DamageEventMatcherDef::from(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY))
+        },
+        1,
+    )
+    .with_coverage(DamageCoverageDef::HalfRoundedDown),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
 };
 
 // DRK 101 — Diabolic Machine
@@ -1535,9 +1530,12 @@ pub(in crate::card::sets) static SCARECROW: CardRecord = CardRecord::new(
                 AbilityCostDef::Mana(mana_cost!("{6}")),
                 AbilityCostDef::TapSource,
             ],
-            EffectDef::PreventDamageToPlayerFromThisTurn {
-                player: EffectRecipientDef::Controller,
-                source: DamageSourceGroupDef::CreaturesWithFlying,
+            EffectDef::PreventDamage {
+                prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::from_group_to(
+                    DamageSourceGroupDef::CreaturesWithFlying,
+                    EffectRecipientDef::Controller,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1650,9 +1648,20 @@ static MAZE_OF_ITH_EFFECT: [EffectDef; 2] = [
     EffectDef::Untap {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     },
-    EffectDef::PreventCombatDamageThisTurn {
-        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-    },
+    EffectDef::Sequence(&[
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::combat_to(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            )),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::combat_from(
+                ObjectRefDef::Target(TargetIndex::PRIMARY),
+            )),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    ]),
 ];
 
 // DRK 114 — Wand of Ith

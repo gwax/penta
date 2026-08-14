@@ -295,7 +295,7 @@ fn custom_spell_followup_waits_for_ugins_nexus_replacement_choice() {
             TargetSlotId(0),
             Target::Player(PlayerId::Two),
         )],
-        context: TriggerContext::empty(),
+        context: TriggerContext::empty().into(),
         resolver: StackAbilityResolver::DeclarativeWithCustomFollowup {
             effect: ScopedEffect::primary(DESTROY_ARTIFACTS),
             behavior: CardBehavior::ChainLightning,

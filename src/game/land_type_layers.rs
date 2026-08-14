@@ -1,9 +1,9 @@
 use super::{
     AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardType, CharacteristicOperationDef,
     ContinuousEffectTimestamp, ControlFlow, Cow, CreatureTypeSetDef, DeclarativeAbilityDef,
-    EffectDef, EffectDurationDef, EffectRecipientDef, EffectRecipientSetDef, Game,
-    LandTypeOperation, ObjectPredicateDef, ObjectRefDef, ObjectSetDef, Permanent,
-    ResolvedContinuousEffectKind, SetOperationDef, TriggerContext, ZoneKind,
+    EffectDef, EffectRecipientDef, EffectRecipientSetDef, Game, LandTypeOperation,
+    ObjectPredicateDef, ObjectRefDef, ObjectSetDef, Permanent, ResolvedContinuousEffectKind,
+    SetOperationDef, TriggerContext, ZoneKind,
 };
 
 #[derive(Clone, Copy)]
@@ -188,13 +188,9 @@ impl Game {
                 .copied()
                 .any(Self::effect_contains_land_type_operation),
             EffectDef::IfCondition { then, .. } => Self::effect_contains_land_type_operation(*then),
-            EffectDef::Apply {
-                effect,
-                duration:
-                    EffectDurationDef::WhileSourceRemainsInZone
-                    | EffectDurationDef::UntilSourceLeavesZone,
-                ..
-            } => Self::applied_effect_contains_land_type_operation(effect),
+            EffectDef::StaticApply { effect, .. } => {
+                Self::applied_effect_contains_land_type_operation(effect)
+            }
             _ => false,
         }
     }
@@ -219,11 +215,8 @@ impl Game {
             | AppliedEffectDef::RemainsAttachedThroughProtection
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::PreventDamageFrom(_)
-            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventCombatDamage
-            | AppliedEffectDef::PreventCombatDamageDealtBy
+            | AppliedEffectDef::PreventDamage(_)
             | AppliedEffectDef::Special(_) => false,
         }
     }
@@ -372,13 +365,9 @@ impl Game {
                     operations,
                 );
             }
-            EffectDef::Apply {
-                recipient,
-                effect,
-                duration:
-                    EffectDurationDef::WhileSourceRemainsInZone
-                    | EffectDurationDef::UntilSourceLeavesZone,
-            } if self.land_type_recipient_matches(recipient, source, affected) => {
+            EffectDef::StaticApply { recipient, effect }
+                if self.land_type_recipient_matches(recipient, source, affected) =>
+            {
                 Self::collect_applied_land_type_operations(
                     effect,
                     source_timestamp,
@@ -429,11 +418,8 @@ impl Game {
             | AppliedEffectDef::RemainsAttachedThroughProtection
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::PreventDamageFrom(_)
-            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventCombatDamage
-            | AppliedEffectDef::PreventCombatDamageDealtBy
+            | AppliedEffectDef::PreventDamage(_)
             | AppliedEffectDef::Special(_) => {}
         }
     }

@@ -706,57 +706,6 @@ impl Game {
         }
     }
 
-    /// Whether combat damage to this recipient is prevented for the turn.
-    /// Only a permanent can carry the prevention; a player never does.
-    pub(super) fn combat_damage_is_prevented_for(&self, recipient: Target) -> bool {
-        if self.all_combat_damage_prevented {
-            return true;
-        }
-        matches!(recipient, Target::Permanent(id)
-            if self
-                .battlefield
-                .iter()
-                .any(|permanent| permanent.card.id == id
-                    && (permanent.combat_damage_prevented
-                        || self.static_combat_damage_prevented(permanent, false))))
-    }
-
-    /// Whether combat damage from this permanent is prevented for the turn.
-    pub(super) fn combat_damage_is_prevented_from(&self, source: GameObjectId) -> bool {
-        if self.all_combat_damage_prevented {
-            return true;
-        }
-        self.battlefield.iter().any(|permanent| {
-            permanent.card.id == source
-                && (permanent.combat_damage_prevented
-                    || permanent.combat_damage_dealt_by_prevented
-                    || permanent.damage_dealt_by_prevented
-                    || self.static_combat_damage_prevented(permanent, true))
-        })
-    }
-
-    /// Whether a continuous effect currently stops this permanent's combat
-    /// damage in the given direction. The turn-scoped flags above are set
-    /// once and cleared at cleanup; this is asked afresh, so an Aura leaving
-    /// the battlefield mid-combat stops applying immediately.
-    fn static_combat_damage_prevented(&self, permanent: &Permanent, dealt_by: bool) -> bool {
-        self.visit_static_applied_effects(permanent, |applied| {
-            let prevented = match applied.effect {
-                AppliedEffectDef::PreventCombatDamage => true,
-                // One direction only: the permanent still takes what its
-                // blockers deal it.
-                AppliedEffectDef::PreventCombatDamageDealtBy => dealt_by,
-                _ => false,
-            };
-            if prevented {
-                ControlFlow::Break(())
-            } else {
-                ControlFlow::Continue(())
-            }
-        })
-        .is_break()
-    }
-
     pub(super) fn deal_combat_damage(&mut self) {
         let attackers: Vec<_> = self
             .battlefield
@@ -777,9 +726,8 @@ impl Game {
                 .unwrap_or(0)
                 .max(0)
                 .cast_unsigned();
-            let attacker_deals_damage = self
-                .deals_damage_in_current_combat_step(&self.battlefield[attacker_index])
-                && !self.combat_damage_is_prevented_from(attacker_id);
+            let attacker_deals_damage =
+                self.deals_damage_in_current_combat_step(&self.battlefield[attacker_index]);
             let blockers: Vec<_> = self
                 .battlefield
                 .iter()

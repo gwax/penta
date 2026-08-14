@@ -467,12 +467,11 @@ fn a_card_owned_pile_program_reconstructs_at_both_of_its_boundaries() {
     assert_reconstructs(&game, "a card-owned pile choice");
 }
 
-/// A floating trigger belongs to no object: its source has already resolved,
+/// An installed trigger belongs to no object: its source has already resolved,
 /// and it watches the game until a named player's next turn. Sampled play
-/// never installed one, and it is the clearest case of executable state with
-/// nowhere obvious to live in a snapshot.
+/// rarely leaves one at a decision boundary, so cover it explicitly.
 #[test]
-fn a_floating_trigger_installed_by_a_resolved_ability_reconstructs() {
+fn an_effect_installed_trigger_reconstructs() {
     let mut game = staged_modern_game();
     let walker_id = GameObjectId(10_000);
     let mut walker = creature(
@@ -496,11 +495,11 @@ fn a_floating_trigger_installed_by_a_resolved_ability_reconstructs() {
     resolve_top_of_stack(&mut game);
 
     assert_eq!(
-        game.floating_triggers.len(),
+        game.installed_triggers.len(),
         1,
-        "the resolved ability must leave a floating trigger behind"
+        "the resolved ability must leave an installed trigger behind"
     );
-    assert_reconstructs(&game, "a floating trigger watching the game");
+    assert_reconstructs(&game, "an installed trigger watching the game");
 }
 
 /// The opposing seat splits public cards that remain in the effect controller's

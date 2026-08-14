@@ -1,12 +1,12 @@
 use super::{
-    AbilitySourceRef, AddManaEffectDef, BattlefieldArrival, CardPartId, CharacteristicSource,
-    ColorSet, CopiableAbility, CostDef, CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger,
-    DiscardSelectionDef, DrawReplacement, EffectDef, EffectResolutionContext, FloatingTrigger,
-    Game, GameResult, Mana, ManaPool, ManaSelectionDef, ManaSource, Permanent, SacrificeFollowup,
-    ScopedEffect, StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason,
-    ZoneKind, ZoneMoveCause, public_cards,
+    AbilityProcedureDef, AbilitySourceRef, AddManaEffectDef, BattlefieldArrival, CardPartId,
+    CharacteristicSource, CopiableAbility, CostDef, CounteredSpellZone, DeclarativeAbilityDef,
+    DiscardSelectionDef, DrawReplacement, EffectDef, EffectResolutionContext, Game, GameResult,
+    InstalledTrigger, InstalledTriggerLifetime, Mana, ManaPool, ManaSelectionDef, ManaSource,
+    Permanent, SacrificeFollowup, ScopedEffect, StackAbilityResolver, StackObject, Target,
+    TriggerCapture, ValueDef, WinReason, ZoneKind, ZoneMoveCause, public_cards,
 };
-use crate::card::EffectPaymentDef;
+use crate::card::{EffectPaymentDef, InstalledTriggerLifetimeDef};
 
 mod permanent_state;
 mod prevention;
@@ -349,18 +349,11 @@ impl Game {
                     self.create_token(object.controller, definition);
                 }
             }
-            EffectDef::PreventNextDamage { .. }
-            | EffectDef::PreventNextDamageFromSource { .. }
-            | EffectDef::PreventAllDamageThisTurn { .. }
-            | EffectDef::PreventAllCombatDamageThisTurn
-            | EffectDef::PreventCombatDamageThisTurn { .. }
-            | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-            | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
-            | EffectDef::RedirectTargetDamageToSourceThisTurn { .. } => {
+            EffectDef::PreventDamage { .. } => {
                 self.resolve_prevention_effect(scoped, object, &context);
+            }
+            EffectDef::RedirectTargetDamageToSourceThisTurn { .. } => {
+                self.resolve_damage_redirect(scoped, object, &context);
             }
             EffectDef::Destroy {
                 object: recipient,
@@ -715,34 +708,6 @@ impl Game {
                     }
                 }
             }
-            EffectDef::TriggerUntilYourNextTurn { ability } => {
-                let DeclarativeAbilityDef::Triggered(definition) = ability.definition else {
-                    return;
-                };
-                let Some(frozen) = object.ability.as_ref() else {
-                    return;
-                };
-                self.floating_triggers.push(FloatingTrigger {
-                    event: definition.event,
-                    capture: TriggerCapture {
-                        source: AbilitySourceRef {
-                            object: object.source.unwrap_or(object.id),
-                            ability: frozen.origin,
-                        },
-                        definition: frozen.presentation_definition,
-                        owner: object.card.owner,
-                        controller: object.controller,
-                        text: ability.text,
-                        target_defs: definition.targets,
-                        effect: ability.effect.definition,
-                        resolver: Self::ability_resolver(frozen.origin, ability),
-                        context: TriggerContext::empty(),
-                        condition: definition.condition,
-                    },
-                    until_turn_of: object.controller,
-                    created_after_turns: self.turns_started[object.controller.index()],
-                });
-            }
             EffectDef::IfCondition { condition, then } => {
                 if self.trigger_condition_holds(
                     condition,
@@ -755,17 +720,67 @@ impl Game {
                     self.resolve_effect_def(scoped.with_effect(*then), object, context);
                 }
             }
-            EffectDef::AtNextStep {
-                step,
-                player,
-                effect,
-            } => {
-                self.delayed_triggers.push(DelayedTrigger {
-                    object: Box::new(object.clone()),
-                    context,
-                    step,
-                    player,
-                    effect: scoped.with_effect(*effect),
+            EffectDef::InstallTrigger(installed) => {
+                let DeclarativeAbilityDef::Triggered(definition) = installed.ability.definition
+                else {
+                    return;
+                };
+                // Installed triggers use the ordinary pending-trigger and
+                // stack paths. Declaring fresh targets would require a second
+                // target namespace; until that exists they may only retain
+                // the installing object's already-chosen target slots.
+                if definition.procedure != AbilityProcedureDef::Shared
+                    || !definition.targets.is_empty()
+                {
+                    return;
+                }
+                let Some(effect) = installed.ability.declarative_effect() else {
+                    return;
+                };
+                let Some(frozen) = object.ability.as_ref() else {
+                    return;
+                };
+                let lifetime = match installed.lifetime {
+                    InstalledTriggerLifetimeDef::Once => InstalledTriggerLifetime::Once,
+                    InstalledTriggerLifetimeDef::UntilNextTurn(player) => {
+                        let Some(player) =
+                            self.effect_player_reference(player, object, &context, scoped)
+                        else {
+                            return;
+                        };
+                        InstalledTriggerLifetime::UntilTurn {
+                            player,
+                            turn: self.turns_started[player.index()].saturating_add(1),
+                        }
+                    }
+                };
+                let id = self.next_installed_trigger_id;
+                self.next_installed_trigger_id = self.next_installed_trigger_id.saturating_add(1);
+                self.installed_triggers.push(InstalledTrigger {
+                    id,
+                    event: definition.event,
+                    capture: TriggerCapture {
+                        source: AbilitySourceRef {
+                            object: object.source.unwrap_or(object.id),
+                            ability: frozen.origin,
+                        },
+                        definition: frozen.presentation_definition,
+                        owner: object.card.owner,
+                        controller: object.controller,
+                        text: installed.ability.text,
+                        // The selections belong to the installing ability's
+                        // lexical target namespace. They remain readable by
+                        // the nested effect, but the installed ability does
+                        // not target them again when it triggers.
+                        target_defs: Vec::new(),
+                        targets: frozen.targets.clone(),
+                        effect,
+                        resolver: StackAbilityResolver::Declarative(scoped.with_effect(effect)),
+                        context,
+                        condition: definition.condition,
+                        x: frozen.x,
+                    },
+                    lifetime,
                 });
             }
             EffectDef::AddManaEqualTo { color, amount } => {
@@ -893,8 +908,6 @@ impl Game {
                     );
                 }
             }
-            // An Aura attaches as its spell becomes a permanent, which is
-            // handled where the permanent enters rather than here.
             // An Aura attaches as its spell becomes a permanent, so its own
             // clause has nothing left to do. Equip resolves this instead.
             EffectDef::Attach { object: recipient } => {
@@ -920,7 +933,6 @@ impl Game {
                 }
             }
             EffectDef::None
-            | EffectDef::Replacement(_)
             | EffectDef::AddMana(AddManaEffectDef {
                 mana: ManaSelectionDef::Choice(_),
                 ..
@@ -930,11 +942,7 @@ impl Game {
             | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
-            | EffectDef::MultiplyEventAmount(_)
-            | EffectDef::ChooseCardName { .. }
-            | EffectDef::ChoosePlayer { .. }
-            | EffectDef::CopyPermanentAsItEnters { .. }
-            | EffectDef::ChooseCreatureType { .. }
+            | EffectDef::StaticApply { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing mana and the remaining declarative effect
                 // families are execution seams until a supported card needs

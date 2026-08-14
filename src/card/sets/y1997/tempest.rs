@@ -115,9 +115,7 @@ pub(in crate::card::sets) static ROOT_MAZE: CardRecord = CardRecord::new(
             ]),
             controller: PlayerRelation::Any,
         },
-        EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
-            BattlefieldEntryModificationDef::Tapped,
-        )),
+        ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
     )),
 );
 

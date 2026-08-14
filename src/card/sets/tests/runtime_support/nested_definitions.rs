@@ -53,7 +53,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
 
 pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> bool {
     match effect {
-        ReplacementEffectDef::None | ReplacementEffectDef::ModifyBattlefieldEntry(_) => true,
+        ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::Choose(_)
+        | ReplacementEffectDef::CopyEntering { .. } => true,
         ReplacementEffectDef::Sequence(effects) => {
             !effects.is_empty() && effects.iter().copied().all(shared_entry_replacement_effect)
         }
@@ -74,13 +76,16 @@ pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> b
                     .copied()
                     .all(shared_entry_replacement_effect)
         }
-        ReplacementEffectDef::OptionalPayment {
+        ReplacementEffectDef::PayOr {
             payment,
             if_paid,
             if_declined,
         } => {
+            let EffectPaymentDef::Costs(payment) = payment else {
+                return false;
+            };
             let payable_life = payment.costs.iter().try_fold(0_u32, |total, cost| {
-                let AbilityCostDef::PayLife(amount) = cost else {
+                let CostDef::PayLife(amount) = cost else {
                     return None;
                 };
                 total.checked_add(u32::from(*amount))
@@ -96,7 +101,8 @@ pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> b
         }
         ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
-        | ReplacementEffectDef::Perform(_) => false,
+        | ReplacementEffectDef::Perform(_)
+        | ReplacementEffectDef::MultiplyEventAmount(_) => false,
     }
 }
 
@@ -119,11 +125,13 @@ pub(in super::super) fn shared_begin_turn_replacement_effect(effect: Replacement
                     .iter()
                     .any(|effect| matches!(effect, ReplacementEffectDef::ReplaceEventWithNothing))
         }
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::MoveToZone(_)
+        ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::Choose(_)
+        | ReplacementEffectDef::CopyEntering { .. }
         | ReplacementEffectDef::Conditional { .. }
-        | ReplacementEffectDef::OptionalPayment { .. } => false,
+        | ReplacementEffectDef::PayOr { .. } => false,
     }
 }
 
@@ -148,11 +156,13 @@ pub(in super::super) fn shared_battlefield_exit_replacement_effect(
                     .iter()
                     .any(|effect| matches!(effect, ReplacementEffectDef::MoveToZone(_)))
         }
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
+        ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::Choose(_)
+        | ReplacementEffectDef::CopyEntering { .. }
         | ReplacementEffectDef::Conditional { .. }
-        | ReplacementEffectDef::OptionalPayment { .. } => false,
+        | ReplacementEffectDef::PayOr { .. } => false,
     }
 }
 
@@ -160,8 +170,7 @@ pub(super) fn shared_replacement_event(event: ReplacementEventDef) -> bool {
     match event {
         ReplacementEventDef::SourceEntersBattlefield
         | ReplacementEventDef::WouldGainLife(_)
-        | ReplacementEventDef::WouldBeginTurn { .. }
-        | ReplacementEventDef::EntersBattlefield => true,
+        | ReplacementEventDef::WouldBeginTurn { .. } => true,
         ReplacementEventDef::ObjectEntersBattlefield { object, .. } => {
             shared_object_predicate(object)
         }
@@ -178,7 +187,19 @@ fn assert_nested_installed_ability(card_name: &str, ability: &AbilityDef) {
         shared_definition_ability(ability),
         "{card_name} installs a triggered ability outside the shared runtime boundary: {ability:?}",
     );
-    assert_nested_definition_abilities(card_name, ability.effect.definition);
+    assert_nested_program_abilities(card_name, ability.effect.definition);
+}
+
+pub(in super::super) fn assert_nested_program_abilities(
+    card_name: &str,
+    program: AbilityProgramDef,
+) {
+    match program {
+        AbilityProgramDef::Effects(effect) => assert_nested_definition_abilities(card_name, effect),
+        AbilityProgramDef::Replacement(effect) => {
+            assert_nested_replacement_definition_abilities(card_name, effect);
+        }
+    }
 }
 
 // Long because the effect vocabulary is wide, not because the function
@@ -212,7 +233,6 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         }
         EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
-        | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. } => {
             assert_nested_definition_abilities(card_name, *effect);
         }
@@ -222,14 +242,11 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
             assert_nested_definition_abilities(card_name, *then);
             assert_nested_definition_abilities(card_name, *otherwise);
         }
-        EffectDef::TriggerUntilYourNextTurn { ability } => {
-            assert_nested_installed_ability(card_name, ability);
+        EffectDef::InstallTrigger(trigger) => {
+            assert_nested_installed_ability(card_name, trigger.ability);
         }
-        EffectDef::Apply { effect, .. } => {
+        EffectDef::StaticApply { effect, .. } | EffectDef::Apply { effect, .. } => {
             assert_nested_definition_applied_effect(card_name, effect);
-        }
-        EffectDef::Replacement(effect) => {
-            assert_nested_replacement_definition_abilities(card_name, effect);
         }
         EffectDef::LookAtTopAndSelect { selection, .. } => {
             assert_nested_selection_abilities(card_name, *selection);
@@ -250,22 +267,12 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
         | EffectDef::RemoveFromCombat { .. }
-        | EffectDef::SetColor { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
         | EffectDef::DoesNotUntapWhileSourceTapped { .. }
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
-        | EffectDef::PreventAllCombatDamageThisTurn
-        | EffectDef::PreventNextDamage { .. }
-        | EffectDef::PreventAllDamageThisTurn { .. }
-        | EffectDef::PreventNextDamageFromSource { .. }
-        | EffectDef::PreventCombatDamageThisTurn { .. }
-        | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-        | EffectDef::PreventDamageDealtByThisTurn { .. }
-        | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-        | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-        | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
+        | EffectDef::PreventDamage { .. }
         | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
         | EffectDef::Attach { .. }
         | EffectDef::CreateToken { .. }
@@ -300,12 +307,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
-        | EffectDef::MultiplyEventAmount(_)
         | EffectDef::MoveToZone { .. }
-        | EffectDef::ChooseCardName { .. }
-        | EffectDef::ChoosePlayer { .. }
-        | EffectDef::CopyPermanentAsItEnters { .. }
-        | EffectDef::ChooseCreatureType { .. }
         | EffectDef::Special(_) => {}
     }
 }
@@ -316,7 +318,10 @@ fn assert_nested_selection_abilities(card_name: &str, selection: TopCardSelectio
     }
 }
 
-fn assert_nested_replacement_definition_abilities(card_name: &str, effect: ReplacementEffectDef) {
+pub(in super::super) fn assert_nested_replacement_definition_abilities(
+    card_name: &str,
+    effect: ReplacementEffectDef,
+) {
     match effect {
         ReplacementEffectDef::Sequence(effects) => {
             for effect in effects {
@@ -333,7 +338,7 @@ fn assert_nested_replacement_definition_abilities(card_name: &str, effect: Repla
                 assert_nested_replacement_definition_abilities(card_name, *effect);
             }
         }
-        ReplacementEffectDef::OptionalPayment {
+        ReplacementEffectDef::PayOr {
             if_paid,
             if_declined,
             ..
@@ -342,10 +347,12 @@ fn assert_nested_replacement_definition_abilities(card_name: &str, effect: Repla
                 assert_nested_replacement_definition_abilities(card_name, *effect);
             }
         }
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
+        ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => {}
+        | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::Choose(_)
+        | ReplacementEffectDef::CopyEntering { .. } => {}
     }
 }
 
@@ -368,7 +375,7 @@ pub(in super::super) fn assert_nested_definition_applied_effect(
                     "{card_name} contains a nested shared declarative ability outside the shared runtime boundary: {ability:?}",
                 );
             }
-            assert_nested_definition_abilities(card_name, ability.effect.definition);
+            assert_nested_program_abilities(card_name, ability.effect.definition);
         }
         AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
@@ -382,11 +389,8 @@ pub(in super::super) fn assert_nested_definition_applied_effect(
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::PreventDamageFrom(_)
-        | AppliedEffectDef::PreventCombatDamageFrom(_)
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventCombatDamage
-        | AppliedEffectDef::PreventCombatDamageDealtBy
+        | AppliedEffectDef::PreventDamage(_)
         | AppliedEffectDef::Characteristic(_)
         | AppliedEffectDef::Special(_) => {}
     }

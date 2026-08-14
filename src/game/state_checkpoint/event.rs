@@ -60,7 +60,7 @@ fn pending_replacement_effect_snapshot(
 ) -> Option<PendingReplacementEffectSnapshot> {
     Some(PendingReplacementEffectSnapshot {
         context: replacement_context_snapshot(pending.context),
-        effect: entry_replacement_locator(catalog, pending.effect)?,
+        effect: replacement_effect_locator(catalog, pending.effect)?,
     })
 }
 
@@ -70,7 +70,7 @@ pub(super) fn applicable_replacement_snapshot(
 ) -> Option<ApplicableReplacementSnapshot> {
     Some(ApplicableReplacementSnapshot {
         context: replacement_context_snapshot(replacement.context),
-        effect: entry_replacement_locator(catalog, replacement.effect)?,
+        effect: replacement_effect_locator(catalog, replacement.effect)?,
         definition: replacement.definition.0,
     })
 }
@@ -85,63 +85,34 @@ pub(super) fn parse_applicable_replacement(
         context: parse_replacement_context_snapshot(snapshot.context)?,
         definition: CardDefinitionId(snapshot.definition),
         text: ability.text,
-        effect: entry_replacement_effect(&ability)
+        effect: catalog_replacement_effect(catalog, &snapshot.effect)
+            .filter(|_| is_entry_replacement_ability(&ability))
             .ok_or("entry replacement locator does not identify an entry replacement")?,
     })
 }
 
-pub(super) fn entry_replacement_locator(
-    catalog: &CardCatalog,
-    expected: BattlefieldEntryReplacementEffect,
-) -> Option<EntryReplacementLocator> {
-    Some(EntryReplacementLocator {
-        ability: ability_locator(catalog, |ability| {
-            entry_replacement_effect(ability) == Some(expected)
-        })?,
-    })
+fn is_entry_replacement_ability(ability: &crate::card::AbilityDef) -> bool {
+    let DeclarativeAbilityDef::Replacement(definition) = ability.definition else {
+        return false;
+    };
+    matches!(
+        definition.event,
+        ReplacementEventDef::SourceEntersBattlefield
+            | ReplacementEventDef::ObjectEntersBattlefield { .. }
+    ) && ability.declarative_replacement().is_some()
 }
 
-pub(super) fn entry_replacement_effect(
-    ability: &crate::card::AbilityDef,
-) -> Option<BattlefieldEntryReplacementEffect> {
-    let DeclarativeAbilityDef::Replacement(definition) = ability.definition else {
-        return None;
-    };
-    match (definition.event, ability.declarative_effect()?) {
-        (_, EffectDef::Replacement(effect)) => {
-            Some(BattlefieldEntryReplacementEffect::Declarative(effect))
-        }
-        (
-            ReplacementEventDef::EntersBattlefield,
-            EffectDef::ChooseCreatureType {
-                object: EffectRecipientDef::Source,
-            },
-        ) => Some(BattlefieldEntryReplacementEffect::ChooseCreatureType),
-        (
-            ReplacementEventDef::EntersBattlefield,
-            EffectDef::ChooseCardName {
-                object: EffectRecipientDef::Source,
-            },
-        ) => Some(BattlefieldEntryReplacementEffect::ChooseCardName),
-        (
-            ReplacementEventDef::EntersBattlefield,
-            EffectDef::ChoosePlayer {
-                object: EffectRecipientDef::Source,
-                relation,
-            },
-        ) => Some(BattlefieldEntryReplacementEffect::ChoosePlayer(relation)),
-        (
-            ReplacementEventDef::EntersBattlefield,
-            EffectDef::CopyPermanentAsItEnters {
-                object,
-                added_types,
-            },
-        ) => Some(BattlefieldEntryReplacementEffect::CopyAsItEnters {
-            object,
-            added_types,
-        }),
-        _ => None,
+pub(super) fn catalog_entry_replacement_effect(
+    catalog: &CardCatalog,
+    locator: &ReplacementEffectLocator,
+) -> Result<ReplacementEffectDef, String> {
+    let ability = catalog_ability(catalog, &locator.ability)
+        .ok_or("entry replacement ability locator is absent from this catalog")?;
+    if !is_entry_replacement_ability(&ability) {
+        return Err("locator does not identify an entry replacement ability".into());
     }
+    catalog_replacement_effect(catalog, locator)
+        .ok_or_else(|| "locator does not identify an entry replacement effect".into())
 }
 
 pub(super) const fn replacement_context_snapshot(

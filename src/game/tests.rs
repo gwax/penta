@@ -32,17 +32,18 @@ static TEST_OPPONENT_LANDS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::
         object: ObjectPredicateDef::HasType(CardType::Land),
         controller: PlayerRelation::Opponent,
     },
-    EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
-        BattlefieldEntryModificationDef::Tapped,
-    )),
+    ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
 )];
 static TEST_EXTERNAL_PAYMENT_COST: [CostDef; 1] = [CostDef::PayLife(2)];
 static TEST_EXTERNAL_ENTER_TAPPED: [ReplacementEffectDef; 1] =
     [ReplacementEffectDef::ModifyBattlefieldEntry(
         BattlefieldEntryModificationDef::Tapped,
     )];
-static TEST_EXTERNAL_PAYMENT: [ReplacementEffectDef; 1] = [ReplacementEffectDef::OptionalPayment {
-    payment: PaymentDef::new(PlayerRelation::You, &TEST_EXTERNAL_PAYMENT_COST),
+static TEST_EXTERNAL_PAYMENT: [ReplacementEffectDef; 1] = [ReplacementEffectDef::PayOr {
+    payment: EffectPaymentDef::Costs(PaymentDef::new(
+        PlayerRelation::You,
+        &TEST_EXTERNAL_PAYMENT_COST,
+    )),
     if_paid: &[],
     if_declined: &TEST_EXTERNAL_ENTER_TAPPED,
 }];
@@ -52,7 +53,7 @@ static TEST_EXTERNAL_CONTEXT_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement
         object: ObjectPredicateDef::HasType(CardType::Land),
         controller: PlayerRelation::Opponent,
     },
-    EffectDef::Replacement(ReplacementEffectDef::Conditional {
+    ReplacementEffectDef::Conditional {
         condition: ConditionDef::Exists(ObjectQueryDef::matching(
             ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
             &[ZoneKind::Battlefield],
@@ -60,24 +61,22 @@ static TEST_EXTERNAL_CONTEXT_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement
         )),
         if_true: &TEST_EXTERNAL_PAYMENT,
         if_false: &TEST_EXTERNAL_ENTER_TAPPED,
-    }),
+    },
 )];
 static TEST_GRANTED_ENTRY_REPLACEMENT: AbilityDef =
     abilities::enters_tapped("This permanent enters tapped.");
 static TEST_SELF_GRANTED_ENTRY_ABILITY: [AbilityDef; 1] = [AbilityDef::static_ability(
     "This permanent has \"This permanent enters tapped.\"",
-    EffectDef::Apply {
+    EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::add_ability(&TEST_GRANTED_ENTRY_REPLACEMENT),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     },
 )];
 static TEST_SELF_PLAINS_ABILITY: [AbilityDef; 1] = [AbilityDef::static_ability(
     "This land is a Plains in addition to its other types.",
-    EffectDef::Apply {
+    EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Plains]),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     },
 )];
 static TEST_PLAINS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement_for(
@@ -86,9 +85,7 @@ static TEST_PLAINS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::replacem
         object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
         controller: PlayerRelation::Opponent,
     },
-    EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
-        BattlefieldEntryModificationDef::Tapped,
-    )),
+    ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
 )];
 static TEST_OPPONENT_ENCHANTMENTS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] =
     [AbilityDef::replacement_for(
@@ -97,9 +94,7 @@ static TEST_OPPONENT_ENCHANTMENTS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] =
             object: ObjectPredicateDef::HasType(CardType::Enchantment),
             controller: PlayerRelation::Opponent,
         },
-        EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
-            BattlefieldEntryModificationDef::Tapped,
-        )),
+        ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
     )];
 
 pub(super) fn ready_game() -> Game {
@@ -608,7 +603,7 @@ use copy_effects::{
     copied_grant_origin, copied_grant_source_game, resolve_copy_artifact, sole_granted_origin,
 };
 use countering_and_mana::{acceptance_attempt_counterspell, acceptance_cast_action_targeting};
-use delayed_triggers::drain_pending;
+use delayed_triggers::{drain_pending, installing_object};
 use modal_effects::cast_mode;
 use old_school_spells::game_with_test_fused_split;
 use removal_and_keywords::dust_to_dust_targets;

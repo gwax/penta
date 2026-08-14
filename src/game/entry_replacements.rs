@@ -1,13 +1,12 @@
 use super::{
     AbilityDef, AbilityOperationDef, AbilitySourceRef, ApplicableReplacement, AppliedEffectDef,
-    BasicLandType, BattlefieldEntryModificationDef, BattlefieldEntryReplacementEffect, CardTypeSet,
-    CharacteristicOperationDef, CommittedTriggerEvent, ConditionDef, ControlFlow, CostDef,
-    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef, EntryCompletion, Game,
-    GameEvent, GameObjectId, ObjectPredicateDef, PaymentDef, PendingBattlefieldEntry, PendingEvent,
-    PendingReplacementEffect, Permanent, PlayerId, PlayerRelation, ReplaceableEvent,
-    ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef,
-    Target, TriggerContext, ZoneKind,
+    BasicLandType, BattlefieldEntryModificationDef, CardTypeSet, CharacteristicOperationDef,
+    CommittedTriggerEvent, ConditionDef, ControlFlow, CostDef, DecisionContinuation,
+    DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
+    EffectDef, EffectPaymentDef, EntryCompletion, Game, GameEvent, ObjectPredicateDef, PaymentDef,
+    PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent, PlayerId,
+    PlayerRelation, ReplaceableEvent, ReplacementChoiceDef, ReplacementEffectContext,
+    ReplacementEffectDef, ReplacementEventDef, Target, TriggerContext, ZoneKind,
 };
 
 impl Game {
@@ -123,88 +122,6 @@ impl Game {
         None
     }
 
-    /// Asks whether to take an optional entry replacement. Declining lets the
-    /// entry continue untouched; accepting queues the replacement the way a
-    /// mandatory one would have been.
-    /// Re-reads the replacement an accepted optional entry offer names. The
-    /// ability is located rather than carried, so the pending decision stays
-    /// checkpointable without teaching the snapshot about effect bodies.
-    /// Resumes a suspended entry after its controller answered the optional
-    /// offer. Declining simply lets the entry continue; the rediscovery pass
-    /// has already recorded the ability as applied, so it is not asked twice.
-    pub(super) fn resume_optional_entry_replacement(
-        &mut self,
-        context: ReplacementEffectContext,
-        options: &[u32],
-    ) {
-        let accepted = options.first().is_some_and(|option| *option == 1);
-        if let Some(mut pending) = self.pending_events.pop_front() {
-            if accepted
-                && let Some(effect) = self.optional_entry_replacement_effect(&pending, context)
-            {
-                pending.effects.push(PendingReplacementEffect {
-                    context,
-                    effect: BattlefieldEntryReplacementEffect::Declarative(effect),
-                });
-            }
-            self.pending_events.push_front(pending);
-        }
-        self.continue_pending_events();
-    }
-
-    pub(super) fn optional_entry_replacement_effect(
-        &self,
-        pending: &PendingEvent,
-        context: ReplacementEffectContext,
-    ) -> Option<ReplacementEffectDef> {
-        // A self-entry replacement belongs to the permanent that is still
-        // entering, so it is not on the battlefield to be found there.
-        let ReplaceableEvent::BattlefieldEntry(entry) = &pending.event;
-        let permanent = if entry.permanent.card.id == context.source.object {
-            &entry.permanent
-        } else {
-            self.battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == context.source.object)?
-        };
-        let effective = self.find_effective_ability(permanent, |effective| {
-            effective.origin == context.source.ability
-        })?;
-        match effective.ability.declarative_effect() {
-            Some(EffectDef::Replacement(effect)) => Some(effect),
-            _ => None,
-        }
-    }
-
-    fn queue_optional_entry_replacement(
-        &mut self,
-        player: PlayerId,
-        name: &str,
-        context: ReplacementEffectContext,
-    ) {
-        let options = [(0, "Decline"), (1, "Accept")]
-            .into_iter()
-            .map(|(id, label)| DecisionOption {
-                id,
-                label: label.into(),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::None,
-            })
-            .collect();
-        self.queue_decision(
-            player,
-            format!("Apply the optional replacement for {name}?"),
-            DecisionVisibility::Public,
-            DecisionPreference::Neutral,
-            1..=1,
-            false,
-            options,
-            DecisionContinuation::BattlefieldEntryOptional { context },
-        );
-    }
-
     pub(super) fn apply_pending_replacement_effect(
         &mut self,
         mut pending: PendingEvent,
@@ -212,34 +129,25 @@ impl Game {
     ) -> Option<PendingEvent> {
         let PendingReplacementEffect { context, effect } = pending_effect;
         match effect {
-            BattlefieldEntryReplacementEffect::ChooseCardName => {
+            ReplacementEffectDef::Choose(ReplacementChoiceDef::CardName) => {
                 let player = Self::pending_event_controller(&pending);
                 self.pending_events.push_front(pending);
                 self.queue_card_name_choice(player);
                 None
             }
-            BattlefieldEntryReplacementEffect::ChooseCreatureType => {
+            ReplacementEffectDef::Choose(ReplacementChoiceDef::CreatureType) => {
                 let player = Self::pending_event_controller(&pending);
                 self.pending_events.push_front(pending);
                 self.queue_creature_type_choice(player);
                 None
             }
-            BattlefieldEntryReplacementEffect::CopyAsItEnters {
+            ReplacementEffectDef::CopyEntering {
                 object,
                 added_types,
             } => self.offer_entry_copy(pending, object, added_types),
-            // "You may have this enter with ..." is a real choice, so it is
-            // asked rather than assumed either way.
-            BattlefieldEntryReplacementEffect::OptionalDeclarative(_) => {
-                let player = Self::pending_event_controller(&pending);
-                let name = self.pending_entry_name(&pending);
-                self.pending_events.push_front(pending);
-                self.queue_optional_entry_replacement(player, &name, context);
-                None
-            }
             // With two players every relation this appears on names exactly
             // one candidate, so the choice is recorded rather than asked.
-            BattlefieldEntryReplacementEffect::ChoosePlayer(relation) => {
+            ReplacementEffectDef::Choose(ReplacementChoiceDef::Player(relation)) => {
                 let controller = Self::pending_event_controller(&pending);
                 let chosen = [PlayerId::One, PlayerId::Two].into_iter().find(|player| {
                     self.player_relation_matches(
@@ -253,60 +161,58 @@ impl Game {
                 entry.permanent.chosen_player = chosen;
                 Some(pending)
             }
-            BattlefieldEntryReplacementEffect::Declarative(effect) => match effect {
-                ReplacementEffectDef::None
-                // These primitives belong to other prospective-event
-                // procedures and cannot alter a battlefield-entry event.
-                | ReplacementEffectDef::ReplaceEventWithNothing
-                | ReplacementEffectDef::MoveToZone(_)
-                | ReplacementEffectDef::Perform(_) => Some(pending),
-                ReplacementEffectDef::Sequence(effects) => {
-                    Self::push_replacement_effects(&mut pending, context, effects);
+            ReplacementEffectDef::Sequence(effects) => {
+                Self::push_replacement_effects(&mut pending, context, effects);
+                Some(pending)
+            }
+            ReplacementEffectDef::ModifyBattlefieldEntry(modification) => {
+                Self::modify_pending_battlefield_entry(&mut pending, modification);
+                Some(pending)
+            }
+            ReplacementEffectDef::Conditional {
+                condition,
+                if_true,
+                if_false,
+            } => {
+                let branch = if self.condition_holds(&pending, context, condition) {
+                    if_true
+                } else {
+                    if_false
+                };
+                Self::push_replacement_effects(&mut pending, context, branch);
+                Some(pending)
+            }
+            ReplacementEffectDef::PayOr {
+                payment,
+                if_paid,
+                if_declined,
+            } => {
+                let payer = self
+                    .pending_payment_player(&pending, context, payment)
+                    .filter(|player| self.can_pay_payment(*player, payment));
+                if let Some(player) = payer {
+                    let name = self.pending_entry_name(&pending);
+                    self.pending_events.push_front(pending);
+                    self.queue_battlefield_entry_payment(
+                        player,
+                        &name,
+                        context,
+                        payment,
+                        if_paid,
+                        if_declined,
+                    );
+                    None
+                } else {
+                    Self::push_replacement_effects(&mut pending, context, if_declined);
                     Some(pending)
                 }
-                ReplacementEffectDef::ModifyBattlefieldEntry(modification) => {
-                    Self::modify_pending_battlefield_entry(&mut pending, modification);
-                    Some(pending)
-                }
-                ReplacementEffectDef::Conditional {
-                    condition,
-                    if_true,
-                    if_false,
-                } => {
-                    let branch = if self.condition_holds(&pending, context, condition) {
-                        if_true
-                    } else {
-                        if_false
-                    };
-                    Self::push_replacement_effects(&mut pending, context, branch);
-                    Some(pending)
-                }
-                ReplacementEffectDef::OptionalPayment {
-                    payment,
-                    if_paid,
-                    if_declined,
-                } => {
-                    let payer = self
-                        .pending_payment_player(&pending, context, payment)
-                        .filter(|player| self.can_pay_payment(*player, payment));
-                    if let Some(player) = payer {
-                        let name = self.pending_entry_name(&pending);
-                        self.pending_events.push_front(pending);
-                        self.queue_battlefield_entry_payment(
-                            player,
-                            &name,
-                            context,
-                            payment,
-                            if_paid,
-                            if_declined,
-                        );
-                        None
-                    } else {
-                        Self::push_replacement_effects(&mut pending, context, if_declined);
-                        Some(pending)
-                    }
-                }
-            },
+            }
+            // These primitives belong to other prospective-event procedures
+            // and cannot alter a battlefield-entry event.
+            ReplacementEffectDef::ReplaceEventWithNothing
+            | ReplacementEffectDef::MoveToZone(_)
+            | ReplacementEffectDef::Perform(_)
+            | ReplacementEffectDef::MultiplyEventAmount(_) => Some(pending),
         }
     }
 
@@ -315,18 +221,13 @@ impl Game {
         context: ReplacementEffectContext,
         effects: &'static [ReplacementEffectDef],
     ) {
-        pending
-            .effects
-            .extend(
-                effects
-                    .iter()
-                    .rev()
-                    .copied()
-                    .map(|effect| PendingReplacementEffect {
-                        context,
-                        effect: BattlefieldEntryReplacementEffect::Declarative(effect),
-                    }),
-            );
+        pending.effects.extend(
+            effects
+                .iter()
+                .rev()
+                .copied()
+                .map(|effect| PendingReplacementEffect { context, effect }),
+        );
     }
 
     pub(super) const fn pending_event_controller(pending: &PendingEvent) -> PlayerId {
@@ -357,10 +258,25 @@ impl Game {
         &self,
         pending: &PendingEvent,
         context: ReplacementEffectContext,
-        payment: PaymentDef,
+        payment: EffectPaymentDef,
     ) -> Option<PlayerId> {
-        let event_context = Self::pending_event_context(pending);
-        self.payment_player(context.controller, event_context, payment)
+        match payment {
+            EffectPaymentDef::Costs(payment) => {
+                let event_context = Self::pending_event_context(pending);
+                self.payment_player(context.controller, event_context, payment)
+            }
+            EffectPaymentDef::Mana { payer, .. } | EffectPaymentDef::GenericMana { payer, .. } => {
+                match payer {
+                    super::PlayerRefDef::EffectController => Some(context.controller),
+                    super::PlayerRefDef::EventPlayer => {
+                        Self::pending_event_context(pending).event_player
+                    }
+                    super::PlayerRefDef::Target(_)
+                    | super::PlayerRefDef::ControllerOf(_)
+                    | super::PlayerRefDef::OwnerOf(_) => None,
+                }
+            }
+        }
     }
 
     pub(super) fn payment_player(
@@ -380,7 +296,10 @@ impl Game {
     /// Normalizes the replacement-payment costs the runtime can currently
     /// execute. Other cost atoms remain available to ability definitions but
     /// need their own atomic planning before they can be offered here.
-    pub(super) fn replacement_life_payment(payment: PaymentDef) -> Option<u16> {
+    pub(super) fn replacement_life_payment(payment: EffectPaymentDef) -> Option<u16> {
+        let EffectPaymentDef::Costs(payment) = payment else {
+            return None;
+        };
         if payment.costs.is_empty() {
             return None;
         }
@@ -394,13 +313,13 @@ impl Game {
         (amount > 0 && i16::try_from(amount).is_ok()).then_some(amount)
     }
 
-    pub(super) fn can_pay_payment(&self, player: PlayerId, payment: PaymentDef) -> bool {
+    pub(super) fn can_pay_payment(&self, player: PlayerId, payment: EffectPaymentDef) -> bool {
         Self::replacement_life_payment(payment)
             .and_then(|amount| i16::try_from(amount).ok())
             .is_some_and(|amount| self.players[player.index()].life >= amount)
     }
 
-    pub(super) fn pay_payment(&mut self, player: PlayerId, payment: PaymentDef) -> bool {
+    pub(super) fn pay_payment(&mut self, player: PlayerId, payment: EffectPaymentDef) -> bool {
         let Some(amount) = Self::replacement_life_payment(payment) else {
             return false;
         };
@@ -413,7 +332,7 @@ impl Game {
         true
     }
 
-    pub(super) fn payment_label(payment: PaymentDef) -> String {
+    pub(super) fn payment_label(payment: EffectPaymentDef) -> String {
         Self::replacement_life_payment(payment).map_or_else(
             || "Pay the stated cost".to_string(),
             |amount| format!("Pay {amount} life"),
@@ -425,7 +344,7 @@ impl Game {
         player: PlayerId,
         name: &str,
         context: ReplacementEffectContext,
-        payment: PaymentDef,
+        payment: EffectPaymentDef,
         if_paid: &'static [ReplacementEffectDef],
         if_declined: &'static [ReplacementEffectDef],
     ) {
@@ -464,23 +383,6 @@ impl Game {
         );
     }
 
-    /// A replacement ability's own "if ..." clause, read where the source is
-    /// known.
-    pub(super) fn replacement_condition_holds(
-        &self,
-        condition: ReplacementConditionDef,
-        source: GameObjectId,
-    ) -> bool {
-        match condition {
-            ReplacementConditionDef::SourceTapped => self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == source)
-                .is_some_and(|permanent| permanent.tapped),
-            ReplacementConditionDef::CreatureDiedThisTurn => self.creature_died_this_turn,
-        }
-    }
-
     pub(super) fn condition_holds(
         &self,
         pending: &PendingEvent,
@@ -515,30 +417,12 @@ impl Game {
     pub(super) fn is_source_entry_replacement(ability: &AbilityDef) -> bool {
         ability.is_executable()
             && matches!(
-                (ability.definition, ability.declarative_effect()),
+                (ability.definition, ability.declarative_replacement()),
                 (
                     DeclarativeAbilityDef::Replacement(definition),
-                    Some(EffectDef::Replacement(_)),
+                    Some(_),
                 ) if definition.event == ReplacementEventDef::SourceEntersBattlefield
             )
-            || ability.is_executable()
-                && matches!(
-                    (ability.definition, ability.declarative_effect()),
-                    (
-                        DeclarativeAbilityDef::Replacement(definition),
-                        Some(
-                            EffectDef::ChooseCreatureType {
-                                object: EffectRecipientDef::Source,
-                            } | EffectDef::ChooseCardName {
-                                object: EffectRecipientDef::Source,
-                            } | EffectDef::ChoosePlayer {
-                                object: EffectRecipientDef::Source,
-                                ..
-                            }
-                            | EffectDef::CopyPermanentAsItEnters { .. },
-                        ),
-                    ) if definition.event == ReplacementEventDef::EntersBattlefield
-                )
     }
 
     pub(super) fn is_external_entry_replacement(ability: &AbilityDef) -> bool {
@@ -552,10 +436,7 @@ impl Game {
                             ReplacementEventDef::ObjectEntersBattlefield { .. }
                         )
             )
-            && matches!(
-                ability.declarative_effect(),
-                Some(EffectDef::Replacement(_))
-            )
+            && ability.declarative_replacement().is_some()
     }
 
     pub(super) fn applied_grant_entry_replacement_possibilities(
@@ -589,11 +470,8 @@ impl Game {
             | AppliedEffectDef::RemainsAttachedThroughProtection
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::PreventDamageFrom(_)
-            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventCombatDamage
-            | AppliedEffectDef::PreventCombatDamageDealtBy
+            | AppliedEffectDef::PreventDamage(_)
             | AppliedEffectDef::Special(_) => (false, false),
         }
     }
@@ -610,13 +488,9 @@ impl Game {
                         (source || found.0, external || found.1)
                     })
             }
-            EffectDef::Apply {
-                effect,
-                duration:
-                    EffectDurationDef::WhileSourceRemainsInZone
-                    | EffectDurationDef::UntilSourceLeavesZone,
-                ..
-            } => Self::applied_grant_entry_replacement_possibilities(effect),
+            EffectDef::StaticApply { effect, .. } => {
+                Self::applied_grant_entry_replacement_possibilities(effect)
+            }
             _ => (false, false),
         }
     }
@@ -681,8 +555,7 @@ impl Game {
         (source, external)
     }
 
-    /// Entry replacements the prospective permanent carries itself, including
-    /// compatibility procedures retained for older card definitions.
+    /// Entry replacements the prospective permanent carries itself.
     pub(super) fn prospective_source_replacements(
         &self,
         pending: &PendingEvent,
@@ -700,59 +573,12 @@ impl Game {
                 if !ability.is_executable() {
                     return ControlFlow::Continue(());
                 }
-                let Some(declarative_effect) = ability.declarative_effect() else {
+                let Some(effect) = ability.declarative_replacement() else {
                     return ControlFlow::Continue(());
                 };
-                // Read as the entry is being replaced rather than when the
-                // spell was cast, so morbid sees a creature that died in
-                // response.
-                if let Some(condition) = definition.condition
-                    && !self.replacement_condition_holds(condition, entry.permanent.card.id)
-                {
+                if definition.event != ReplacementEventDef::SourceEntersBattlefield {
                     return ControlFlow::Continue(());
                 }
-                let effect = match (definition.event, declarative_effect) {
-                    (
-                        ReplacementEventDef::SourceEntersBattlefield,
-                        EffectDef::Replacement(effect),
-                    ) if definition.optional => {
-                        BattlefieldEntryReplacementEffect::OptionalDeclarative(effect)
-                    }
-                    (
-                        ReplacementEventDef::SourceEntersBattlefield,
-                        EffectDef::Replacement(effect),
-                    ) => BattlefieldEntryReplacementEffect::Declarative(effect),
-                    (
-                        ReplacementEventDef::EntersBattlefield,
-                        EffectDef::ChooseCreatureType {
-                            object: EffectRecipientDef::Source,
-                        },
-                    ) => BattlefieldEntryReplacementEffect::ChooseCreatureType,
-                    (
-                        ReplacementEventDef::EntersBattlefield,
-                        EffectDef::ChooseCardName {
-                            object: EffectRecipientDef::Source,
-                        },
-                    ) => BattlefieldEntryReplacementEffect::ChooseCardName,
-                    (
-                        ReplacementEventDef::EntersBattlefield,
-                        EffectDef::ChoosePlayer {
-                            object: EffectRecipientDef::Source,
-                            relation,
-                        },
-                    ) => BattlefieldEntryReplacementEffect::ChoosePlayer(relation),
-                    (
-                        ReplacementEventDef::EntersBattlefield,
-                        EffectDef::CopyPermanentAsItEnters {
-                            object,
-                            added_types,
-                        },
-                    ) => BattlefieldEntryReplacementEffect::CopyAsItEnters {
-                        object,
-                        added_types,
-                    },
-                    _ => return ControlFlow::Continue(()),
-                };
                 let source = AbilitySourceRef {
                     object: entry.permanent.card.id,
                     ability: effective.origin,
@@ -837,7 +663,7 @@ impl Game {
                     ) {
                         return ControlFlow::Continue(());
                     }
-                    let Some(EffectDef::Replacement(effect)) = ability.declarative_effect() else {
+                    let Some(effect) = ability.declarative_replacement() else {
                         return ControlFlow::Continue(());
                     };
                     let source = AbilitySourceRef {
@@ -855,7 +681,7 @@ impl Game {
                                 source_permanent.card.definition,
                             ),
                             text: ability.text,
-                            effect: BattlefieldEntryReplacementEffect::Declarative(effect),
+                            effect,
                         });
                     }
                     ControlFlow::Continue(())

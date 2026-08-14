@@ -463,7 +463,7 @@ impl Game {
             let context = spell
                 .ability
                 .as_ref()
-                .map_or_else(TriggerContext::empty, |ability| ability.context);
+                .map_or_else(TriggerContext::empty, |ability| ability.context.trigger);
             let mut choices = vec![Vec::new()];
             for original in signature.targets() {
                 let Some(slot) = slots.get(original.slot().index()) else {

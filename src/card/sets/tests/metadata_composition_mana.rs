@@ -148,8 +148,8 @@ fn cavern_records_both_mana_abilities_and_the_colored_mana_riders() {
         DeclarativeAbilityDef::ActivatedMana(_)
     ));
     assert!(matches!(
-        abilities[1].effect.definition,
-        EffectDef::AddMana(mana)
+        abilities[1].declarative_effect(),
+        Some(EffectDef::AddMana(mana))
             if mana.mana == ManaSelectionDef::One(ManaColor::Colorless)
                 && mana.amount == 1
                 && mana.restrictions.is_empty()
@@ -160,8 +160,8 @@ fn cavern_records_both_mana_abilities_and_the_colored_mana_riders() {
         DeclarativeAbilityDef::ActivatedMana(_)
     ));
     assert!(matches!(
-        abilities[2].effect.definition,
-        EffectDef::AddMana(mana)
+        abilities[2].declarative_effect(),
+        Some(EffectDef::AddMana(mana))
             if mana.mana == ManaSelectionDef::Choice(&ManaColor::COLORS)
                 && mana.amount == 1
                 && mana.restrictions
@@ -196,13 +196,12 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
                         && matches!(ability.definition, DeclarativeAbilityDef::Static(_))
                         && matches!(
                             ability.declarative_effect(),
-                            Some(EffectDef::Apply {
+                            Some(EffectDef::StaticApply {
                                 effect: AppliedEffectDef::Characteristic(
                                     CharacteristicOperationDef::BasicLandTypes(
                                         SetOperationDef::Add(types)
                                     )
                                 ),
-                                duration: EffectDurationDef::WhileSourceRemainsInZone,
                                 ..
                             }) if !types.is_empty()
                         )

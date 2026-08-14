@@ -173,6 +173,16 @@ fn delayed_combat_damage_effect_queued_between_strike_waves_fires_once() {
         recipient: EffectRecipientDef::Controller,
         amount: ValueDef::Constant(1),
     };
+    static COMBAT_DAMAGE_TRIGGER: AbilityDef = AbilityDef::triggered(
+        "At the beginning of the next combat damage step, you lose 1 life.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::CombatDamage,
+            player: PlayerRelation::Any,
+        },
+        LOSE_ONE,
+    );
+    const INSTALL: EffectDef =
+        EffectDef::InstallTrigger(crate::InstalledTriggerDef::once(&COMBAT_DAMAGE_TRIGGER));
 
     let mut game = ready_game();
     game.step = Step::DeclareBlockers;
@@ -186,13 +196,12 @@ fn delayed_combat_damage_effect_queued_between_strike_waves_fires_once() {
     );
 
     let life_before = game.players[0].life;
-    game.delayed_triggers.push(DelayedTrigger {
-        object: Box::new(spell(10_001, cards::LIGHTNING_BOLT, PlayerId::One, 0)),
-        context: TriggerContext::empty().into(),
-        step: TurnStepDef::CombatDamage,
-        player: PlayerRelation::Any,
-        effect: ScopedEffect::primary(LOSE_ONE),
-    });
+    let object = installing_object(10_001, PlayerId::One, Vec::new(), Vec::new(), 0);
+    game.resolve_effect_def(
+        ScopedEffect::primary(INSTALL),
+        &object,
+        TriggerContext::empty(),
+    );
 
     pass_priority_pair(&mut game);
 
@@ -201,8 +210,14 @@ fn delayed_combat_damage_effect_queued_between_strike_waves_fires_once() {
         !game.regular_combat_damage_pending(),
         "the regular combat-damage step has begun",
     );
+    assert_eq!(
+        game.players[0].life, life_before,
+        "the trigger uses the stack"
+    );
+    assert_eq!(game.stack.len(), 1);
+    drain_pending(&mut game);
     assert_eq!(game.players[0].life, life_before - 1);
-    assert!(game.delayed_triggers.is_empty());
+    assert!(game.installed_triggers.is_empty());
 }
 
 #[test]

@@ -32,7 +32,7 @@ fn answer_shock_land_choice(game: &mut Game, decision: u32, pay: bool) {
 #[test]
 fn replacement_life_payments_are_preflighted_and_paid_atomically() {
     static SPLIT_LIFE_COST: [CostDef; 2] = [CostDef::PayLife(2), CostDef::PayLife(2)];
-    let payment = PaymentDef::new(PlayerRelation::You, &SPLIT_LIFE_COST);
+    let payment = EffectPaymentDef::Costs(PaymentDef::new(PlayerRelation::You, &SPLIT_LIFE_COST));
     let mut game = ready_game();
 
     game.players[0].life = 3;

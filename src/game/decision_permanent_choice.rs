@@ -392,10 +392,13 @@ fn effect_removes_binding(effect: EffectDef, binding: ObjectChoiceBindingDef) ->
         EffectDef::SplitIntoPiles(definition) => effect_removes_binding(*definition.then, binding),
         EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
-        | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. } => {
             effect_removes_binding(*effect, binding)
         }
+        EffectDef::InstallTrigger(installed) => installed
+            .ability
+            .declarative_effect()
+            .is_some_and(|effect| effect_removes_binding(effect, binding)),
         EffectDef::IfFormat {
             then, otherwise, ..
         } => effect_removes_binding(*then, binding) || effect_removes_binding(*otherwise, binding),
@@ -465,10 +468,13 @@ fn effect_matches_group_operation(
         }
         EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
-        | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. } => {
             effect_matches_group_operation(*effect, binding, operation)
         }
+        EffectDef::InstallTrigger(installed) => installed
+            .ability
+            .declarative_effect()
+            .is_some_and(|effect| effect_matches_group_operation(effect, binding, operation)),
         EffectDef::IfFormat {
             then, otherwise, ..
         } => {

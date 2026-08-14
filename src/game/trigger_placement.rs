@@ -72,7 +72,7 @@ impl Game {
             target.predicate,
             trigger.controller,
             trigger.source.object,
-            trigger.context,
+            trigger.context.trigger,
         );
         if candidates.len() < usize::from(target.minimum) {
             // A triggered ability with no legal choice for a required target
@@ -272,13 +272,13 @@ impl Game {
                 definition: None,
                 presentation_definition: trigger.definition,
                 text: Some(trigger.text),
-                target_defs: trigger.target_defs.to_vec(),
+                target_defs: trigger.target_defs,
                 targets: trigger.targets,
                 context: trigger.context,
                 resolver: trigger.resolver,
                 condition: trigger.condition,
                 mode_effects: Vec::new(),
-                x: 0,
+                x: trigger.x,
             }),
             controller: trigger.controller,
             signature: None,

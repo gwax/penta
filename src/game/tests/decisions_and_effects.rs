@@ -9,8 +9,8 @@ fn resolve_demonic_tutor(game: &mut Game, tutor: &StackObject) {
         .expect("Demonic Tutor is cataloged")
         .rules
         .ability_clauses()[0]
-        .effect
-        .definition;
+        .declarative_effect()
+        .expect("Demonic Tutor uses a resolving effect program");
     game.resolve_effect_def(
         ScopedEffect::primary(effect),
         tutor,
@@ -605,8 +605,8 @@ fn armageddon_destroys_every_land_but_not_creatures() {
         .expect("Armageddon is in the catalog")
         .rules
         .ability_clauses()[0]
-        .effect
-        .definition;
+        .declarative_effect()
+        .expect("Armageddon uses a resolving effect program");
     game.resolve_effect_def(
         ScopedEffect::primary(effect),
         &armageddon,

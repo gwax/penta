@@ -4,7 +4,7 @@ use std::fmt;
 
 use crate::card::{
     CardEffectStatus, CardPrintingId, ManaCost, ObjectChoiceBindingDef, PlayActionKind,
-    PlayerSetDef, SpellForm, TargetSlotDef,
+    PlayerSetDef, ReplacementEventDef, SpellForm, TargetSlotDef,
 };
 use crate::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, GrantId, ModeId,
@@ -21,6 +21,23 @@ pub enum GrantedAbilityValidationError {
     LegacyProcedureRequiresCustomExecution,
     HasNoSourceZone,
     ManaAbilityHasTargets,
+    /// Replacement abilities mutate prospective events and therefore require
+    /// the replacement-program vocabulary rather than an ordinary resolving
+    /// effect program.
+    ReplacementAbilityRequiresReplacementProgram,
+    /// Only replacement abilities have a prospective event whose state a
+    /// replacement program can mutate.
+    ReplacementProgramRequiresReplacementAbility,
+    /// The replacement program contains an operation that the prospective
+    /// event's shared procedure cannot execute.
+    UnsupportedReplacementProgram {
+        event: ReplacementEventDef,
+        operation: &'static str,
+    },
+    /// Installed triggers currently reuse their installer's target namespace
+    /// and the ordinary shared trigger runtime. Reject any nested ability the
+    /// runtime would otherwise silently decline to install.
+    UnsupportedInstalledTriggerAbility,
     TooManyTargets {
         count: usize,
     },
@@ -77,6 +94,19 @@ impl fmt::Display for GrantedAbilityValidationError {
             ),
             Self::HasNoSourceZone => formatter.write_str("has no source zone"),
             Self::ManaAbilityHasTargets => formatter.write_str("is a mana ability that declares targets"),
+            Self::ReplacementAbilityRequiresReplacementProgram => formatter.write_str(
+                "is a replacement ability but does not define a replacement program",
+            ),
+            Self::ReplacementProgramRequiresReplacementAbility => formatter.write_str(
+                "defines a replacement program but is not a replacement ability",
+            ),
+            Self::UnsupportedReplacementProgram { event, operation } => write!(
+                formatter,
+                "uses unsupported replacement operation {operation} for event {event:?}",
+            ),
+            Self::UnsupportedInstalledTriggerAbility => formatter.write_str(
+                "installs an ability that is not a targetless shared declarative triggered ability",
+            ),
             Self::TooManyTargets { count } => write!(
                 formatter,
                 "defines {count} targets, but positional target indices support at most 256"
@@ -242,6 +272,28 @@ pub enum CatalogError {
         ability: AbilityId,
     },
     ManaAbilityHasTargets {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+    },
+    ReplacementAbilityRequiresReplacementProgram {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+    },
+    ReplacementProgramRequiresReplacementAbility {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+    },
+    UnsupportedReplacementProgram {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        event: ReplacementEventDef,
+        operation: &'static str,
+    },
+    UnsupportedInstalledTriggerAbility {
         definition: CardDefinitionId,
         part: CardPartId,
         ability: AbilityId,

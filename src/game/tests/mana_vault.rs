@@ -223,10 +223,9 @@ fn uses_declarative_ability_constructs() {
     );
     assert!(matches!(
         abilities[0].declarative_effect(),
-        Some(EffectDef::Apply {
+        Some(EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
             effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         })
     ));
     assert!(matches!(

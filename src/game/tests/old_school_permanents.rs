@@ -535,7 +535,7 @@ fn jaces_first_ability_taxes_attackers_until_his_controller_comes_back_around() 
     game.start_next_turn();
     assert_eq!(game.active_player, PlayerId::One);
     assert!(
-        game.floating_triggers.is_empty(),
+        game.installed_triggers.is_empty(),
         "his next turn began, so the ability stopped listening"
     );
 }
@@ -726,7 +726,7 @@ fn dragon_whelp_only_burns_itself_out_on_the_fourth_activation() {
         .expect("still here");
     assert_eq!(game.power(whelp), Some(5), "2/3 pumped three times");
     assert!(
-        game.delayed_triggers.is_empty(),
+        game.installed_triggers.is_empty(),
         "three activations schedule nothing"
     );
 
@@ -735,7 +735,7 @@ fn dragon_whelp_only_burns_itself_out_on_the_fourth_activation() {
     game.apply(PlayerId::One, action).unwrap();
     drain_pending(&mut game);
     assert_eq!(
-        game.delayed_triggers.len(),
+        game.installed_triggers.len(),
         1,
         "the fourth one signs its own death warrant"
     );
@@ -796,7 +796,7 @@ fn dragon_whelps_activation_count_resets_with_the_turn() {
     drain_pending(&mut game);
 
     assert!(
-        game.delayed_triggers.is_empty(),
+        game.installed_triggers.is_empty(),
         "a new turn makes it the first activation again, not the fourth"
     );
 }
@@ -853,6 +853,14 @@ fn stone_giant_throws_only_what_it_can_lift_and_the_landing_kills_it() {
         "it is in the air"
     );
 
+    let lions = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still the same permanent");
+    lions.controller = PlayerId::Two;
+    lions.temporary_keywords.push(KeywordAbility::Hexproof);
+
     game.step = Step::End;
     game.begin_step_triggers();
     drain_pending(&mut game);
@@ -861,7 +869,7 @@ fn stone_giant_throws_only_what_it_can_lift_and_the_landing_kills_it() {
             .battlefield
             .iter()
             .any(|permanent| permanent.card.id == GameObjectId(10_001)),
-        "and the end step is where it lands"
+        "the delayed reference is not a new target, so later control and hexproof do not save it"
     );
     assert!(
         game.battlefield

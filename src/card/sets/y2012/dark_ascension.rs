@@ -6,8 +6,8 @@ use crate::card::{
     AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardComposition, CardEffectStatus,
     CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef,
     ConditionalValueDef, CounterKind, DiscardSelectionDef, DoubleFacedKind, EffectDef,
-    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayOptionDef, PlayerRelation, QuantifierDef, ReplacementEffectDef,
+    EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayOptionDef, PlayerRelation, QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef,
     SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
     TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
@@ -35,7 +35,7 @@ pub(in crate::card::sets) static BAR_THE_DOOR: CardRecord = CardRecord::new(
                 ValueDef::Constant(0),
                 ValueDef::Constant(4),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -308,12 +308,12 @@ pub(in crate::card::sets) static SKILLFUL_LUNGE: CardRecord = CardRecord::new(
                     ValueDef::Constant(2),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ]),
     )),
@@ -426,13 +426,12 @@ pub(in crate::card::sets) static CHANT_OF_THE_SKIFSANG: CardRecord = CardRecord:
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets -13/-0.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::Constant(-13),
                         ValueDef::Constant(0),
                     ),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -764,10 +763,9 @@ pub(in crate::card::sets) static SHRIEKGEIST: CardRecord = CardRecord::new(
 // Audit: blocked — Needs transforming a creature into an Aura, attaching the transformed permanent to the damaged player, and granting permanent control of that player's creature.
 
 /// "This creature can block only creatures with flying."
-static BLOCKS_ONLY_FLYERS: EffectDef = EffectDef::Apply {
+static BLOCKS_ONLY_FLYERS: EffectDef = EffectDef::StaticApply {
     recipient: EffectRecipientDef::Source,
     effect: AppliedEffectDef::CanBlockOnly(ObjectPredicateDef::HasKeyword(KeywordAbility::Flying)),
-    duration: EffectDurationDef::WhileSourceRemainsInZone,
 };
 
 // DKA 51 — Stormbound Geist
@@ -909,7 +907,7 @@ pub(in crate::card::sets) static FARBOG_BONEFLINGER: CardRecord = CardRecord::ne
                     ValueDef::Constant(-2),
                     ValueDef::Constant(-2),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1025,10 +1023,9 @@ pub(in crate::card::sets) static SIGHTLESS_GHOUL: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Zombie", "Soldier"], 2, 2).with_abilities(&[
         AbilityDef::static_ability(
             "This creature can't block.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::CannotBlock,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         abilities::undying(),
@@ -1093,7 +1090,7 @@ pub(in crate::card::sets) static TRAGIC_SLIP: CardRecord = CardRecord::new(
         )], EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::modify_power_toughness(TRAGIC_SLIP_AMOUNT, TRAGIC_SLIP_AMOUNT),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             }),
         AbilityDef::static_ability(
             "Morbid — That creature gets -13/-13 until end of turn instead if a creature died this turn.",
@@ -1121,7 +1118,7 @@ pub(in crate::card::sets) static UNDYING_EVIL: CardRecord = CardRecord::new(
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             effect: AppliedEffectDef::add_ability(&abilities::undying()),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1329,7 +1326,7 @@ pub(in crate::card::sets) static HECKLING_FIENDS: CardRecord = CardRecord::new(
                 effect: AppliedEffectDef::add_ability(&abilities::attacks_each_combat_if_able(
                     "This creature attacks each combat if able.",
                 )),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1416,7 +1413,7 @@ pub(in crate::card::sets) static MARKOV_WARLORD: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::CannotBlock,
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1456,7 +1453,7 @@ pub(in crate::card::sets) static MOONVEIL_DRAGON: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1530,7 +1527,7 @@ static TALONS_OF_FALKENRATH_PUMP: AbilityDef = AbilityDef::activated(
             ValueDef::Constant(2),
             ValueDef::Constant(0),
         ),
-        duration: EffectDurationDef::UntilEndOfTurn,
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     },
 );
 
@@ -1555,10 +1552,9 @@ pub(in crate::card::sets) static TALONS_OF_FALKENRATH: CardRecord = CardRecord::
             ),
             AbilityDef::static_ability(
                 "Enchanted creature has \"{1}{R}: This creature gets +2/+0 until end of turn.\"",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::add_ability(&TALONS_OF_FALKENRATH_PUMP),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1615,7 +1611,7 @@ pub(in crate::card::sets) static BRIARPACK_ALPHA: CardRecord = CardRecord::new(
                     ValueDef::Constant(2),
                     ValueDef::Constant(2),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1934,12 +1930,12 @@ pub(in crate::card::sets) static WILD_HUNGER: CardRecord = CardRecord::new(
                         ValueDef::Constant(3),
                         ValueDef::Constant(1),
                     ),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     effect: AppliedEffectDef::add_ability(&abilities::trample()),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ]),
         ),
@@ -1970,7 +1966,7 @@ pub(in crate::card::sets) static DIREGRAF_CAPTAIN: CardRecord = CardRecord::new(
             abilities::deathtouch(),
             AbilityDef::static_ability(
                 "Other Zombie creatures you control get +1/+1.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
@@ -1984,7 +1980,6 @@ pub(in crate::card::sets) static DIREGRAF_CAPTAIN: CardRecord = CardRecord::new(
                         ValueDef::Constant(1),
                         ValueDef::Constant(1),
                     ),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             AbilityDef::triggered_with_targets(
@@ -2023,23 +2018,21 @@ pub(in crate::card::sets) static DROGSKOL_CAPTAIN: CardRecord = CardRecord::new(
             AbilityDef::static_ability(
                 "Other Spirit creatures you control get +1/+1 and have hexproof. (They can't be the targets of spells or abilities your opponents control.)",
                 EffectDef::Sequence(&[
-                    EffectDef::Apply {
+                    EffectDef::StaticApply {
                         recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
                                 ObjectPredicateDef::Subtype("Spirit"),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                         effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
-                        duration: EffectDurationDef::WhileSourceRemainsInZone,
                     },
-                    EffectDef::Apply {
+                    EffectDef::StaticApply {
                         recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
                                 ObjectPredicateDef::Subtype("Spirit"),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                         effect: AppliedEffectDef::add_ability(&abilities::hexproof()),
-                        duration: EffectDurationDef::WhileSourceRemainsInZone,
                     },
                 ]),
             ),
@@ -2244,7 +2237,7 @@ pub(in crate::card::sets) static STROMKIRK_CAPTAIN: CardRecord = CardRecord::new
             AbilityDef::static_ability(
                 "Other Vampire creatures you control get +1/+1 and have first strike.",
                 EffectDef::Sequence(&[
-                    EffectDef::Apply {
+                    EffectDef::StaticApply {
                         recipient: EffectRecipientDef::matching_objects(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
@@ -2258,9 +2251,8 @@ pub(in crate::card::sets) static STROMKIRK_CAPTAIN: CardRecord = CardRecord::new
                             ValueDef::Constant(1),
                             ValueDef::Constant(1),
                         ),
-                        duration: EffectDurationDef::WhileSourceRemainsInZone,
                     },
-                    EffectDef::Apply {
+                    EffectDef::StaticApply {
                         recipient: EffectRecipientDef::matching_objects(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
@@ -2271,7 +2263,6 @@ pub(in crate::card::sets) static STROMKIRK_CAPTAIN: CardRecord = CardRecord::new
                             PlayerRelation::You,
                         ),
                         effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
-                        duration: EffectDurationDef::WhileSourceRemainsInZone,
                     },
                 ]),
             ),
@@ -2433,7 +2424,7 @@ pub(in crate::card::sets) static VAULT_OF_THE_ARCHANGEL: CardRecord = CardRecord
                         PlayerRelation::You,
                     ),
                     effect: AppliedEffectDef::add_ability(&abilities::deathtouch()),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::matching_objects(
@@ -2445,7 +2436,7 @@ pub(in crate::card::sets) static VAULT_OF_THE_ARCHANGEL: CardRecord = CardRecord
                         PlayerRelation::You,
                     ),
                     effect: AppliedEffectDef::add_ability(&abilities::lifelink()),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ]),
         ),

@@ -59,11 +59,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::Sequence(_) => shared_static_non_apply_effect(source_zones, effect),
-        EffectDef::Apply {
-            recipient,
-            effect,
-            duration,
-        } => {
+        EffectDef::StaticApply { recipient, effect } => {
             let battlefield_recipient_is_supported = match recipient.0 {
                 EffectRecipientSetDef::Objects(ObjectSetDef::One(
                     ObjectRefDef::Source | ObjectRefDef::AttachedToSource,
@@ -76,10 +72,12 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                 EffectRecipientSetDef::LegalTargets(_)
                 | EffectRecipientSetDef::Objects(
                     ObjectSetDef::One(
-                        ObjectRefDef::Choice(_)
+                        ObjectRefDef::ResolvingObject
+                        | ObjectRefDef::Binding(_)
                         | ObjectRefDef::Target(_)
                         | ObjectRefDef::TriggeringObject,
                     )
+                    | ObjectSetDef::Binding(_)
                     | ObjectSetDef::SharingNameWith(_),
                 )
                 | EffectRecipientSetDef::Players(_) => false,
@@ -87,16 +85,10 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
             let battlefield_effect_is_supported = shared_static_applied_effect(recipient, effect);
             let battlefield_effect = battlefield_only(source_zones)
                 && battlefield_recipient_is_supported
-                && battlefield_effect_is_supported
-                && matches!(
-                    duration,
-                    EffectDurationDef::WhileSourceRemainsInZone
-                        | EffectDurationDef::UntilSourceLeavesZone
-                );
+                && battlefield_effect_is_supported;
             let stack_source_effect = source_zones == [ZoneKind::Stack]
                 && recipient == EffectRecipientDef::Source
-                && shared_cannot_be_countered_effect(effect)
-                && duration == EffectDurationDef::WhileSourceRemainsInZone;
+                && shared_cannot_be_countered_effect(effect);
             battlefield_effect || stack_source_effect
         }
         EffectDef::IfCondition { condition, then } => {
@@ -110,9 +102,8 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Choose(_)
         | EffectDef::PayOr(_)
         | EffectDef::SplitIntoPiles(_)
-        | EffectDef::ChoosePermanent { .. }
-        | EffectDef::ChooseDamageSource { .. }
-        | EffectDef::PreventNextDamageFromSource { .. }
+        | EffectDef::PreventDamage { .. }
+        | EffectDef::Apply { .. }
         | EffectDef::May { .. }
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
@@ -121,8 +112,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::MakeUnblockableThisTurn { .. }
         | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }
-        | EffectDef::AtNextStep { .. }
-        | EffectDef::TriggerUntilYourNextTurn { .. }
+        | EffectDef::InstallTrigger(_)
         | EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }
@@ -139,21 +129,11 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
         | EffectDef::RemoveFromCombat { .. }
-        | EffectDef::SetColor { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
         | EffectDef::DoesNotUntapWhileSourceTapped { .. }
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
-        | EffectDef::PreventAllCombatDamageThisTurn
-        | EffectDef::PreventNextDamage { .. }
-        | EffectDef::PreventAllDamageThisTurn { .. }
-        | EffectDef::PreventCombatDamageThisTurn { .. }
-        | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-        | EffectDef::PreventDamageDealtByThisTurn { .. }
-        | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-        | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-        | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
         | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
         | EffectDef::Attach { .. }
         | EffectDef::CreateToken { .. }
@@ -161,9 +141,6 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { .. }
-        | EffectDef::DestroyOfChoice { .. }
-        | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-        | EffectDef::RevealAndSplitIntoPiles { .. }
         | EffectDef::Mill { .. }
         | EffectDef::LookAtTopAndMayTake { .. }
         | EffectDef::LookAtTopAndSelect { .. }
@@ -173,19 +150,10 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::ReplaceNextDrawThisTurn { .. }
         | EffectDef::IfFormat { .. }
         | EffectDef::Counter { .. }
-        | EffectDef::CounterUnlessPaid { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
         | EffectDef::BecomeCopyOf { .. }
-        | EffectDef::OptionalPayment { .. }
-        | EffectDef::UnlessPaid { .. }
-        | EffectDef::MultiplyEventAmount(_)
-        | EffectDef::Replacement(_)
         | EffectDef::MoveToZone { .. }
-        | EffectDef::ChooseCardName { .. }
-        | EffectDef::ChoosePlayer { .. }
-        | EffectDef::CopyPermanentAsItEnters { .. }
-        | EffectDef::ChooseCreatureType { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
         | EffectDef::AdditionalCombatPhase
@@ -251,8 +219,8 @@ pub(in super::super) fn shared_static_applied_effect(
         // A blocking restriction is read off the ordinary static-effect walk
         // over the attacker, so a group recipient works exactly as a
         // self-applied one does: Bower Passage names every creature you
-        // control rather than only itself. The other two keep the narrower
-        // list because no card applies them to a group.
+        // control rather than only itself. The other restriction keeps the
+        // narrower list because no card applies it to a group.
         AppliedEffectDef::CannotBeBlockedBy(predicate) => {
             (matches!(
                 recipient.object_reference(),
@@ -260,9 +228,7 @@ pub(in super::super) fn shared_static_applied_effect(
             ) || recipient.object_query().is_some())
                 && shared_object_predicate(predicate)
         }
-        AppliedEffectDef::CanBlockOnly(predicate)
-        | AppliedEffectDef::PreventDamageFrom(predicate)
-        | AppliedEffectDef::PreventCombatDamageFrom(predicate) => {
+        AppliedEffectDef::CanBlockOnly(predicate) => {
             matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
@@ -270,17 +236,27 @@ pub(in super::super) fn shared_static_applied_effect(
         }
         // The redirection names a group rather than a predicate, and it can
         // only be aimed at a permanent whose controller it protects.
-        AppliedEffectDef::RedirectPlayerDamageToThis(_) => matches!(
-            recipient,
-            EffectRecipientDef::Source | EffectRecipientDef::MatchingObjects { .. }
-        ),
-        // A static combat-damage prevention carries no predicate, so only the
-        // recipient it is applied to has to be one the runtime understands.
-        AppliedEffectDef::PreventCombatDamage | AppliedEffectDef::PreventCombatDamageDealtBy => {
+        AppliedEffectDef::RedirectPlayerDamageToThis(_) => {
             matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
-            )
+            ) || recipient.object_query().is_some()
+        }
+        AppliedEffectDef::PreventDamage(matcher) => {
+            let recipient_is_supported = matches!(
+                recipient.object_reference(),
+                Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
+            );
+            let matcher_is_supported = match (matcher.source, matcher.recipient) {
+                (
+                    DamageSourceMatcherDef::Matching(source),
+                    DamageRecipientMatcherDef::AffectedObject,
+                ) => shared_object_predicate(source),
+                (DamageSourceMatcherDef::AffectedObject, DamageRecipientMatcherDef::Any)
+                | (DamageSourceMatcherDef::Any, DamageRecipientMatcherDef::AffectedObject) => true,
+                _ => false,
+            };
+            recipient_is_supported && matcher_is_supported
         }
         // Read only off the Aura whose attachment it is defending, which is
         // the source of the ability granting the protection.

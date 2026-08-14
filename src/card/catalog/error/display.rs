@@ -178,6 +178,40 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "mana ability {ability:?} on part {part:?} of card definition {definition:?} declares targets"
             ),
+            Self::ReplacementAbilityRequiresReplacementProgram {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "replacement ability {ability:?} on part {part:?} of card definition {definition:?} does not define a replacement program"
+            ),
+            Self::ReplacementProgramRequiresReplacementAbility {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} defines a replacement program but is not a replacement ability"
+            ),
+            Self::UnsupportedReplacementProgram {
+                definition,
+                part,
+                ability,
+                event,
+                operation,
+            } => write!(
+                formatter,
+                "replacement ability {ability:?} on part {part:?} of card definition {definition:?} uses unsupported operation {operation} for event {event:?}"
+            ),
+            Self::UnsupportedInstalledTriggerAbility {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} installs an ability that is not a targetless shared declarative triggered ability"
+            ),
             Self::TooManyAbilityTargets {
                 definition,
                 part,

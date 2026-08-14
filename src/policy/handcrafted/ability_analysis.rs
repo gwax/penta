@@ -133,8 +133,7 @@ impl HandcraftedPolicy {
             | AppliedEffectDef::CanBlockOnly(_)
             | AppliedEffectDef::CannotAttack
             | AppliedEffectDef::CannotBeBlocked
-            | AppliedEffectDef::PreventCombatDamage
-            | AppliedEffectDef::PreventDamageFrom(_)
+            | AppliedEffectDef::PreventDamage(_)
             | AppliedEffectDef::Special(_) => false,
         }
     }
@@ -204,7 +203,7 @@ impl HandcraftedPolicy {
                         ..
                     },
                 )),
-            duration: crate::card::EffectDurationDef::UntilEndOfTurn,
+            duration: crate::card::ResolvedEffectDurationDef::UntilEndOfTurn,
         }) = ability.declarative_effect()
         else {
             return None;
@@ -449,9 +448,20 @@ impl HandcraftedPolicy {
                 };
                 item_condition.or_else(|| Self::target_condition_in(*partition.then))
             }
-            EffectDef::May { effect, .. }
-            | EffectDef::IfCondition { then: effect, .. }
-            | EffectDef::AtNextStep { effect, .. } => Self::target_condition_in(*effect),
+            EffectDef::May { effect, .. } | EffectDef::IfCondition { then: effect, .. } => {
+                Self::target_condition_in(*effect)
+            }
+            EffectDef::InstallTrigger(trigger) => trigger
+                .ability
+                .declarative_effect()
+                .and_then(Self::target_condition_in),
+            EffectDef::PreventDamage { prevention, .. } => match prevention.capacity {
+                crate::card::DamagePreventionCapacityDef::Amount(amount) => {
+                    Self::target_condition_in_value(amount)
+                }
+                crate::card::DamagePreventionCapacityDef::Events(_)
+                | crate::card::DamagePreventionCapacityDef::Unlimited => None,
+            },
             EffectDef::AddCounters { amount, .. } | EffectDef::GainLife { amount, .. } => {
                 Self::target_condition_in_value(amount)
             }

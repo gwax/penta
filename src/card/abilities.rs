@@ -7,12 +7,13 @@ use super::model::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef,
     AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardType,
-    ChoiceVisibilityDef, ChooseDef, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef,
-    EffectDef, EffectDurationDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PartitionItemsDef, PayOrDef, PaymentDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, ScaledValueDef,
-    ShieldCoverageDef, SplitIntoPilesDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ChoiceVisibilityDef, ChooseDef, ConditionDef, CostDef, CounterKind, DamageEventMatcherDef,
+    DamagePreventionDef, DamageRecipientMatcherDef, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef,
+    PaymentDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
+    SplitIntoPilesDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -204,7 +205,7 @@ pub const fn rampage(amount: usize, text: &'static str) -> AbilityDef {
                 ValueDef::Scaled(scale),
                 ValueDef::Scaled(scale),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )
 }
@@ -291,18 +292,16 @@ static WARD_CLAUSES: [[EffectDef; 2]; 5] = [
 
 const fn ward_clauses(color: usize) -> [EffectDef; 2] {
     [
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::AttachedPermanent,
             effect: AppliedEffectDef::add_ability(&WARD_PROTECTIONS[color]),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
         // Without this the Aura would be an illegal attachment the moment it
         // granted protection from its own colour, which is exactly what the
         // printed exception exists to stop.
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
             effect: AppliedEffectDef::RemainsAttachedThroughProtection,
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     ]
 }
@@ -484,10 +483,9 @@ static SCAVENGE_TARGET: &[AbilityTargetDef] = &[AbilityTargetDef::exactly_one_pe
 pub const fn cannot_be_countered() -> AbilityDef {
     AbilityDef::static_ability(
         "This spell can't be countered.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
             effect: AppliedEffectDef::CannotBeCountered,
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )
     .with_source_zones(&[ZoneKind::Stack])
@@ -532,8 +530,8 @@ pub const fn pain_land(
 pub const fn shock_land_enters() -> AbilityDef {
     AbilityDef::as_enters(
         "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
-        ReplacementEffectDef::OptionalPayment {
-            payment: PaymentDef::new(PlayerRelation::You, &PAY_TWO_LIFE),
+        ReplacementEffectDef::PayOr {
+            payment: EffectPaymentDef::Costs(PaymentDef::new(PlayerRelation::You, &PAY_TWO_LIFE)),
             if_paid: &[],
             if_declined: &ENTER_TAPPED,
         },
@@ -591,11 +589,15 @@ pub const fn circle_of_protection(
     )
 }
 
-static SHIELD_AGAINST_THE_CHOSEN_SOURCE: EffectDef = EffectDef::PreventNextDamageFromSource {
-    object: EffectRecipientDef::Controller,
-    source: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
-    coverage: ShieldCoverageDef::All,
-    gain_life: false,
+static SHIELD_AGAINST_THE_CHOSEN_SOURCE: EffectDef = EffectDef::PreventDamage {
+    prevention: DamagePreventionDef::events(
+        DamageEventMatcherDef {
+            recipient: DamageRecipientMatcherDef::Recipients(EffectRecipientDef::Controller),
+            ..DamageEventMatcherDef::from(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY))
+        },
+        1,
+    ),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
 };
 
 /// The same shape as a Circle of Protection, for the printed cards that
@@ -728,7 +730,7 @@ pub const fn exalted() -> AbilityDef {
                 ValueDef::Constant(1),
                 ValueDef::Constant(1),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )
 }
@@ -764,19 +766,17 @@ pub const fn unleash() -> AbilityDef {
 /// ability because the keyword itself carries no effect body.
 #[must_use]
 pub const fn unleash_counter() -> AbilityDef {
-    AbilityDef::defined(
+    AbilityDef::defined_replacement(
         "You may have this creature enter with a +1/+1 counter on it.",
-        DeclarativeAbilityDef::Replacement(
-            ReplacementAbilityDef::new()
-                .with_event(ReplacementEventDef::SourceEntersBattlefield)
-                .optional(),
-        ),
-        EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
+        ReplacementAbilityDef::new()
+            .with_event(ReplacementEventDef::SourceEntersBattlefield)
+            .optional(),
+        ReplacementEffectDef::ModifyBattlefieldEntry(
             BattlefieldEntryModificationDef::AddCounters {
                 kind: CounterKind::PlusOnePlusOne,
                 amount: 1,
             },
-        )),
+        ),
     )
 }
 
@@ -823,10 +823,9 @@ static EVOLVE_BIGGER: [ObjectPredicateDef; 2] = [
 pub const fn cannot_be_blocked(text: &'static str) -> AbilityDef {
     AbilityDef::static_ability(
         text,
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
             effect: AppliedEffectDef::CannotBeBlocked,
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )
 }
@@ -872,8 +871,8 @@ mod tests {
     use crate::card::{
         AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AddManaEffectDef,
         AlternativeCastKindDef, AlternativeCastManaCostDef, BasicLandType, CardRules, ConditionDef,
-        CostDef, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaCost,
-        ObjectPredicateDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ZoneKind,
+        CostDef, DeclarativeAbilityDef, EffectDef, EffectPaymentDef, KeywordAbility, ManaColor,
+        ManaCost, ObjectPredicateDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ZoneKind,
     };
     use crate::mana_cost;
 
@@ -931,13 +930,14 @@ mod tests {
     fn common_land_entry_abilities_use_shared_conditions_and_costs() {
         let shock = shock_land_enters();
         assert!(matches!(
-            shock.declarative_effect(),
-            Some(EffectDef::Replacement(ReplacementEffectDef::OptionalPayment {
+            shock.declarative_replacement(),
+            Some(ReplacementEffectDef::PayOr {
                 payment,
                 if_declined: [_],
                 ..
-            })) if payment.payer == PlayerRelation::You
-                && payment.costs == [CostDef::PayLife(2)]
+            }) if matches!(payment, EffectPaymentDef::Costs(payment)
+                if payment.payer == PlayerRelation::You
+                    && payment.costs == [CostDef::PayLife(2)])
         ));
 
         let check = check_land_enters(
@@ -945,11 +945,11 @@ mod tests {
             &[BasicLandType::Mountain, BasicLandType::Plains],
         );
         assert!(matches!(
-            check.declarative_effect(),
-            Some(EffectDef::Replacement(ReplacementEffectDef::Conditional {
+            check.declarative_replacement(),
+            Some(ReplacementEffectDef::Conditional {
                 condition: ConditionDef::Exists(query),
                 ..
-            })) if query.related_player
+            }) if query.related_player
                 == Some(PlayerSetDef::Related(PlayerRelation::You))
                 && matches!(
                     query.object,

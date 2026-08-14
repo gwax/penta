@@ -1,7 +1,11 @@
 use super::*;
-use crate::ManaColor;
-use crate::card::{AbilityDef, KeywordAbility, ValueDef};
+use crate::card::{
+    AbilityDef, CardComposition, CardDefinition, CardRules, CardSet, DamageEventMatcherDef,
+    DamagePreventionDef, DamageSourceMatcherDef, EffectDef, KeywordAbility, ObjectPredicateDef,
+    PlayerRelation, ResolvedEffectDurationDef, ValueDef,
+};
 use crate::game::DecisionContinuation;
+use crate::{Action, ManaColor, ObjectBindingIndex};
 use serde_json::json;
 
 mod adversarial;
@@ -735,7 +739,7 @@ fn checkpoint_encodes_draw_replacement_and_procedure_state() {
 }
 
 #[test]
-fn relational_prevention_and_regeneration_prohibition_survive_checkpoint_round_trip() {
+fn resolved_prevention_and_regeneration_prohibition_survive_checkpoint_round_trip() {
     let mut game = crate::game::tests::ready_game();
     let source = game
         .put_onto_battlefield(PlayerId::One, crate::card::cards::SAVANNAH_LIONS)
@@ -748,9 +752,35 @@ fn relational_prevention_and_regeneration_prohibition_survive_checkpoint_round_t
         .find(|permanent| permanent.card.id == prohibited)
         .expect("the prohibited creature is present")
         .cannot_regenerate_this_turn = true;
-    game.relational_damage_preventions = vec![
-        RelationalDamagePrevention::ToPlayerAndControlledCreatures(PlayerId::One),
-        RelationalDamagePrevention::FromAllExcept(source),
+    let source_ability = AbilitySourceRef {
+        object: source,
+        ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Plains),
+    };
+    game.damage_preventions = vec![
+        ResolvedDamagePrevention {
+            source: ResolvedDamageSourceMatcher::Any,
+            recipient: ResolvedDamageRecipientMatcher::PlayerAndCreaturesControlledBy(
+                PlayerId::One,
+            ),
+            combat_only: false,
+            capacity: ResolvedDamagePreventionCapacity::Unlimited,
+            coverage: ResolvedDamagePreventionCoverage::All,
+            gain_life: None,
+            source_ability,
+            timestamp: ContinuousEffectTimestamp(17),
+            expiration: ContinuousEffectExpiration::EndOfTurn,
+        },
+        ResolvedDamagePrevention {
+            source: ResolvedDamageSourceMatcher::Except(source),
+            recipient: ResolvedDamageRecipientMatcher::Exact(Target::Player(PlayerId::Two)),
+            combat_only: true,
+            capacity: ResolvedDamagePreventionCapacity::Events(1),
+            coverage: ResolvedDamagePreventionCoverage::HalfRoundedDown,
+            gain_life: Some(PlayerId::One),
+            source_ability,
+            timestamp: ContinuousEffectTimestamp(18),
+            expiration: ContinuousEffectExpiration::EndOfTurn,
+        },
     ];
 
     let viewer = game.decision_player().expect("the game awaits an action");
@@ -771,10 +801,7 @@ fn relational_prevention_and_regeneration_prohibition_survive_checkpoint_round_t
         4_244,
     )
     .expect("duration-scoped prevention state reconstructs");
-    assert_eq!(
-        rebuilt.relational_damage_preventions,
-        game.relational_damage_preventions
-    );
+    assert_eq!(rebuilt.damage_preventions, game.damage_preventions);
     assert!(
         rebuilt
             .battlefield
@@ -784,7 +811,7 @@ fn relational_prevention_and_regeneration_prohibition_survive_checkpoint_round_t
             .cannot_regenerate_this_turn
     );
     rebuilt.finish_cleanup();
-    assert!(rebuilt.relational_damage_preventions.is_empty());
+    assert!(rebuilt.damage_preventions.is_empty());
     assert!(
         !rebuilt
             .battlefield
@@ -793,35 +820,120 @@ fn relational_prevention_and_regeneration_prohibition_survive_checkpoint_round_t
             .expect("the creature survives cleanup")
             .cannot_regenerate_this_turn
     );
+}
 
-    let mut prior_v2 = wire;
-    let checkpoint = prior_v2["checkpoint"]
-        .as_object_mut()
-        .expect("checkpoint is an object");
-    checkpoint.remove("relationalDamagePreventions");
-    for permanent in checkpoint["battlefield"]
-        .as_array_mut()
-        .expect("battlefield is an array")
-    {
-        permanent
-            .as_object_mut()
-            .expect("permanent is an object")
-            .remove("cannotRegenerateThisTurn");
-    }
-    let rebuilt_prior = Game::from_observation_checkpoint(
+#[test]
+fn resolved_prevention_retains_controller_lki_and_rejects_spliced_provenance() {
+    static MATCHING_PREVENTION_ABILITY: AbilityDef = AbilityDef::activated(
+        "Prevent damage from sources you control this turn.",
+        &[],
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef {
+                source: DamageSourceMatcherDef::Matching(ObjectPredicateDef::ControlledBy(
+                    PlayerRelation::You,
+                )),
+                ..DamageEventMatcherDef::ANY
+            }),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    );
+
+    let definition_id = CardDefinitionId(10_064);
+    let mut definition = CardDefinition::new(
+        definition_id,
+        "Checkpoint Prevention Source",
+        CardSet::Magic2014,
+        false,
+        crate::CardBehavior::Unsupported,
+    );
+    definition.rules = CardRules::new_artifact(crate::ManaCost::new(0, 0))
+        .with_ability(MATCHING_PREVENTION_ABILITY);
+    let composition = CardComposition::single(definition.name.clone(), definition.rules);
+    definition.parts = composition.parts;
+    definition.structure = composition.structure;
+    definition.play_options = composition.play_options;
+
+    let mut game = crate::game::tests::ready_game();
+    let mut definitions = game
+        .catalog
+        .definitions()
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    definitions.push(definition);
+    game.catalog = CardCatalog::new(definitions).expect("the synthetic prevention is cataloged");
+    let source = game
+        .put_onto_battlefield(PlayerId::One, definition_id)
+        .expect("the prevention source enters");
+    let damage_source = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::SAVANNAH_LIONS)
+        .expect("the matching damage source enters");
+    let source_ability = AbilitySourceRef {
+        object: source,
+        ability: AbilityOrigin::Printed {
+            definition: definition_id,
+            part: CardPartId::PRIMARY,
+            ability: AbilityId::PRIMARY,
+        },
+    };
+    game.damage_preventions.push(ResolvedDamagePrevention {
+        source: ResolvedDamageSourceMatcher::Matching {
+            predicate: ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            relative_to: source,
+        },
+        recipient: ResolvedDamageRecipientMatcher::Any,
+        combat_only: false,
+        capacity: ResolvedDamagePreventionCapacity::Unlimited,
+        coverage: ResolvedDamagePreventionCoverage::All,
+        gain_life: None,
+        source_ability,
+        timestamp: ContinuousEffectTimestamp(19),
+        expiration: ContinuousEffectExpiration::EndOfTurn,
+    });
+    game.sacrifice_permanent(source);
+    assert!(game.retired_objects.contains_key(&source));
+
+    let (viewer, wire) = checkpoint_wire(&game);
+    assert_eq!(wire["checkpoint"]["hasDeferredState"], false);
+    assert!(
+        wire["checkpoint"]["retiredObjects"]
+            .as_array()
+            .expect("retired objects are serialized")
+            .iter()
+            .any(|retired| retired["permanent"]["state"]["objectId"] == source.0)
+    );
+    let hidden = true_hidden_hypothesis(&game, viewer);
+
+    let mut malformed = wire.clone();
+    malformed["checkpoint"]["damagePreventions"][0]["sourceAbility"]["ability"]["definition"] =
+        json!(crate::card::cards::LIGHTNING_BOLT.0);
+    let error = Game::from_observation_checkpoint(
         game.catalog.clone(),
         game.format,
-        &prior_v2,
-        &true_hidden_hypothesis(&game, viewer),
+        &malformed,
+        &hidden,
         4_245,
     )
-    .expect("an earlier additive checkpoint-v2 payload still reconstructs");
-    assert!(rebuilt_prior.relational_damage_preventions.is_empty());
+    .expect_err("a prevention matcher cannot be spliced onto another source ability");
     assert!(
-        rebuilt_prior
-            .battlefield
-            .iter()
-            .all(|permanent| !permanent.cannot_regenerate_this_turn)
+        error.contains("source ability"),
+        "unexpected error: {error}"
+    );
+
+    let mut rebuilt =
+        Game::from_observation_checkpoint(game.catalog.clone(), game.format, &wire, &hidden, 4_246)
+            .expect("the retired prevention source reconstructs");
+    assert_eq!(rebuilt.controller_of_object(source), Some(PlayerId::One));
+    assert_eq!(
+        rebuilt.damage_target_from(Some(damage_source), Some(Target::Player(PlayerId::Two)), 3,),
+        0,
+        "the retained source LKI supplies the relative controller",
+    );
+    rebuilt.retired_objects.remove(&source);
+    assert_eq!(
+        rebuilt.damage_target_from(Some(damage_source), Some(Target::Player(PlayerId::Two)), 3,),
+        3,
+        "without that LKI the same relative predicate no longer matches",
     );
 }
 
@@ -1186,7 +1298,207 @@ fn an_emblem_rebuilds_with_identity_and_source_provenance() {
 }
 
 #[test]
-fn a_spell_created_delayed_trigger_reconstructs_at_an_action_boundary() {
+fn installed_trigger_round_trip_preserves_targets_bindings_and_x() {
+    let mut game = crate::game::tests::ready_game();
+    let first_target = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::SAVANNAH_LIONS)
+        .expect("the first captured target enters");
+    let second_target = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::SERRA_ANGEL)
+        .expect("the second captured target enters");
+    let installed_locator = ability_locator(&game.catalog, |ability| {
+        ability.text
+            == "At the beginning of the next end step, destroy that creature if it attacked this turn."
+    })
+    .expect("Berserk's installed ability has a semantic locator");
+    let ability = catalog_ability(&game.catalog, &installed_locator)
+        .expect("the installed ability rehydrates");
+    let DeclarativeAbilityDef::Triggered(triggered) = ability.definition else {
+        panic!("Berserk's nested ability is triggered");
+    };
+    let source = AbilitySourceRef {
+        object: first_target,
+        ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Forest),
+    };
+    let mut context = EffectResolutionContext::empty();
+    context.bind_single_object(
+        ObjectBindingIndex::PRIMARY,
+        Some(Target::Permanent(first_target)),
+    );
+    let selections = vec![
+        TargetSelection::single(TargetSlotId(0), Target::Permanent(first_target)),
+        TargetSelection::single(TargetSlotId(1), Target::Permanent(second_target)),
+    ];
+    let effect = ability
+        .declarative_effect()
+        .expect("the installed trigger is declarative");
+    let capture = |target_base, x| TriggerCapture {
+        source,
+        definition: crate::card::cards::BERSERK,
+        owner: PlayerId::One,
+        controller: PlayerId::One,
+        text: ability.text,
+        target_defs: Vec::new(),
+        // Repeated/modal occurrences share a semantic ability locator but
+        // address distinct ranges in the flattened lexical selections.
+        targets: selections.clone(),
+        effect,
+        resolver: StackAbilityResolver::Declarative(ScopedEffect {
+            effect,
+            target_base,
+        }),
+        context: context.clone(),
+        condition: triggered.condition,
+        x,
+    };
+    game.installed_triggers.push(InstalledTrigger {
+        id: 40,
+        event: triggered.event,
+        capture: capture(0, 6),
+        lifetime: InstalledTriggerLifetime::Once,
+    });
+    game.installed_triggers.push(InstalledTrigger {
+        id: 41,
+        event: triggered.event,
+        capture: capture(1, 7),
+        lifetime: InstalledTriggerLifetime::Once,
+    });
+    game.next_installed_trigger_id = 42;
+
+    let viewer = game.decision_player().expect("the game awaits an action");
+    let observation = game.observe(viewer);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
+    );
+    assert_eq!(wire["checkpoint"]["hasDeferredState"], false);
+    let hidden = true_hidden_hypothesis(&game, viewer);
+    let rebuilt =
+        Game::from_observation_checkpoint(game.catalog.clone(), game.format, &wire, &hidden, 1_010)
+            .expect("the installed trigger reconstructs");
+    assert_eq!(rebuilt.installed_triggers, game.installed_triggers);
+    assert_eq!(rebuilt.next_installed_trigger_id, 42);
+
+    let mut malformed = wire.clone();
+    malformed["checkpoint"]["nextInstalledTriggerId"] = json!(41);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &malformed,
+        &hidden,
+        1_010,
+    )
+    .expect_err("an installed trigger id must precede the next installed trigger id");
+    assert!(
+        error.contains("does not follow"),
+        "unexpected error: {error}"
+    );
+
+    let mut missing_definition = wire;
+    missing_definition["checkpoint"]["installedTriggers"][0]["definition"] = json!(u16::MAX);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &missing_definition,
+        &hidden,
+        1_010,
+    )
+    .expect_err("an installed trigger must name a cataloged presentation definition");
+    assert!(
+        error.contains("presentation definition is absent"),
+        "unexpected error: {error}",
+    );
+}
+
+#[test]
+fn installed_trigger_retains_a_retired_lexical_target_and_resumes_from_lki() {
+    fn pass_priority_pair(game: &mut Game) {
+        let first = game.priority;
+        game.apply(first, Action::PassPriority)
+            .expect("the first seat passes");
+        game.apply(first.opponent(), Action::PassPriority)
+            .expect("the second seat passes");
+    }
+
+    fn reach_mana_drain_payout(game: &mut Game) {
+        game.finish_cleanup();
+        game.start_next_turn();
+        assert_eq!(game.active_player, PlayerId::Two);
+        game.step = Step::Draw;
+        game.advance_step();
+        game.finish_rules_procedure();
+        for _ in 0..4 {
+            if game.stack.is_empty() {
+                break;
+            }
+            let player = game.priority;
+            game.apply(player, Action::PassPriority)
+                .expect("priority passes to resolve the installed trigger");
+        }
+    }
+
+    let mut game = crate::game::tests::ready_game();
+    let angel = crate::game::tests::card(95_000, crate::card::cards::SERRA_ANGEL, PlayerId::One);
+    let drain = crate::game::tests::card(95_001, crate::card::cards::MANA_DRAIN, PlayerId::Two);
+    game.players[PlayerId::One.index()].hand.push(angel.clone());
+    game.players[PlayerId::Two.index()].hand.push(drain.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 5);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    game.apply(
+        PlayerId::One,
+        Action::CastSpell {
+            card: angel.id,
+            choices: crate::CastChoices::default(),
+            sacrifices: Vec::new(),
+        },
+    )
+    .expect("Serra Angel is castable");
+    let retired_target = game.stack.last().expect("the Angel is on the stack").id;
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("the caster passes");
+    game.apply(
+        PlayerId::Two,
+        Action::CastSpell {
+            card: drain.id,
+            choices: crate::CastChoices::default().with_targets(vec![TargetSelection::single(
+                TargetSlotId(0),
+                Target::Spell(retired_target),
+            )]),
+            sacrifices: Vec::new(),
+        },
+    )
+    .expect("Mana Drain is castable");
+    pass_priority_pair(&mut game);
+
+    assert!(game.stack.is_empty(), "the Angel was countered");
+    assert_eq!(game.installed_triggers.len(), 1);
+    assert!(game.retired_objects.contains_key(&retired_target));
+    let viewer = game.decision_player().expect("the game awaits priority");
+    let (wire, mut rebuilt) = rebuild_current_checkpoint(&game, viewer, 1_010_001);
+    assert!(
+        wire["checkpoint"]["retiredObjects"]
+            .as_array()
+            .is_some_and(|objects| !objects.is_empty()),
+        "the lexical target's last-known stack object must be checkpointed",
+    );
+    assert!(rebuilt.retired_objects.contains_key(&retired_target));
+
+    reach_mana_drain_payout(&mut game);
+    reach_mana_drain_payout(&mut rebuilt);
+    assert_eq!(game.players[PlayerId::Two.index()].mana_pool.colorless, 5);
+    assert_eq!(
+        rebuilt.players[PlayerId::Two.index()].mana_pool.colorless,
+        5
+    );
+}
+
+#[test]
+fn a_spell_created_installed_trigger_reconstructs_at_an_action_boundary() {
     let mut game = crate::game::tests::ready_game();
     let player = PlayerId::One;
     let whelp_id = GameObjectId(10_000);
@@ -1226,7 +1538,7 @@ fn a_spell_created_delayed_trigger_reconstructs_at_an_action_boundary() {
                 .expect("priority passes while resolving the activation");
         }
     }
-    assert_eq!(game.delayed_triggers.len(), 1);
+    assert_eq!(game.installed_triggers.len(), 1);
     game.sacrifice_permanent(whelp_id);
     assert!(game.retired_objects.contains_key(&whelp_id));
 
@@ -1248,8 +1560,8 @@ fn a_spell_created_delayed_trigger_reconstructs_at_an_action_boundary() {
         &true_hidden_hypothesis(&game, viewer),
         1_011,
     )
-    .expect("the delayed trigger reconstructs");
-    assert_eq!(rebuilt.delayed_triggers.len(), 1);
+    .expect("the installed trigger reconstructs");
+    assert_eq!(rebuilt.installed_triggers.len(), 1);
     assert!(rebuilt.retired_objects.contains_key(&whelp_id));
     let rebuilt_observation = rebuilt.observe(viewer);
     let rebuilt_actions = crate::protocol::protocol_actions(&rebuilt_observation);

@@ -5,12 +5,11 @@ use super::{AbilityId, AbilityOrigin};
 use super::{
     AbilityOperationDef, AbilityTargetPredicate, AppliedEffectDef, CardDefinitionId, CardRules,
     CardSet, CardType, CardTypeSet, CharacteristicOperationDef, ColorSet,
-    ContinuousEffectExpiration, ControlFlow, DeclarativeAbilityDef, EffectDef, EffectDurationDef,
-    EffectRecipientDef, EffectRecipientSetDef, Game, GameObjectId, GrantId, KeywordAbility,
-    ManaColor, ObjectRefDef, ObjectSetDef, Permanent, PlayerId, ResolvedContinuousEffect,
-    ResolvedContinuousEffectKind, RetiredObject, SetOperationDef, StackAbilityResolver,
-    StackObject, StaticAppliedEffect, StaticEffectTraversal, Target, TargetIndex, TriggerContext,
-    ZoneKind,
+    ContinuousEffectExpiration, ControlFlow, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
+    EffectRecipientSetDef, Game, GameObjectId, GrantId, KeywordAbility, ManaColor, ObjectRefDef,
+    ObjectSetDef, Permanent, PlayerId, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
+    RetiredObject, SetOperationDef, StackAbilityResolver, StackObject, StaticAppliedEffect,
+    StaticEffectTraversal, Target, TargetIndex, TriggerContext, ZoneKind,
 };
 
 thread_local! {
@@ -218,21 +217,12 @@ impl Game {
                     );
                 self.visit_static_effect_if(*then, traversal, condition_holds, visitor)
             }
-            EffectDef::Apply {
-                recipient,
-                effect,
-                duration,
-            } => {
+            EffectDef::StaticApply { recipient, effect } => {
                 // Traverse the whole applied-effect structure even when this
                 // recipient does not match. Grant IDs identify structural
                 // grant sites, so later grants must not be renumbered by
                 // which permanent happens to be queried.
                 let include_effect = enabled
-                    && matches!(
-                        duration,
-                        EffectDurationDef::WhileSourceRemainsInZone
-                            | EffectDurationDef::UntilSourceLeavesZone
-                    )
                     && self.static_recipient_matches(
                         recipient,
                         traversal.source,
@@ -285,11 +275,8 @@ impl Game {
             | AppliedEffectDef::RemainsAttachedThroughProtection
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::PreventDamageFrom(_)
-            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventCombatDamage
-            | AppliedEffectDef::PreventCombatDamageDealtBy
+            | AppliedEffectDef::PreventDamage(_)
             | AppliedEffectDef::Special(_) => {
                 let component_order = traversal.next_component_order;
                 traversal.next_component_order = traversal
@@ -381,7 +368,7 @@ impl Game {
                 | EffectDef::Choose(_)
                 | EffectDef::PayOr(_)
                 | EffectDef::SplitIntoPiles(_)
-                | EffectDef::PreventNextDamageFromSource { .. }
+                | EffectDef::PreventDamage { .. }
                 | EffectDef::AddMana(_)
                 | EffectDef::AddManaEqualTo { .. }
                 | EffectDef::DealDamage { .. }
@@ -397,21 +384,11 @@ impl Game {
                 | EffectDef::Regenerate { .. }
                 | EffectDef::Tap { .. }
                 | EffectDef::RemoveFromCombat { .. }
-                | EffectDef::SetColor { .. }
                 | EffectDef::DestroyAtEndOfCombat { .. }
                 | EffectDef::SkipNextUntapSteps { .. }
                 | EffectDef::DoesNotUntapWhileSourceTapped { .. }
                 | EffectDef::RemoveAllCounters { .. }
                 | EffectDef::Untap { .. }
-                | EffectDef::PreventAllCombatDamageThisTurn
-                | EffectDef::PreventNextDamage { .. }
-                | EffectDef::PreventAllDamageThisTurn { .. }
-                | EffectDef::PreventCombatDamageThisTurn { .. }
-                | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-                | EffectDef::PreventDamageDealtByThisTurn { .. }
-                | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-                | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-                | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
                 | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
@@ -441,24 +418,18 @@ impl Game {
                 | EffectDef::MakeUnblockableThisTurn { .. }
                 | EffectDef::GainControlWhileSourceRemains { .. }
                 | EffectDef::GainControlThisTurn { .. }
-                | EffectDef::AtNextStep { .. }
                 | EffectDef::IfCondition { .. }
-                | EffectDef::TriggerUntilYourNextTurn { .. }
+                | EffectDef::InstallTrigger(_)
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::PlayersCantPlay(_)
                 | EffectDef::LandwalkCanBeBlocked(_)
                 | EffectDef::CannotAttackUnless(_)
-                | EffectDef::MultiplyEventAmount(_)
-                | EffectDef::Replacement(_)
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::Attach { .. }
                 | EffectDef::CreateToken { .. }
                 | EffectDef::CreateTokenCopyOf { .. }
-                | EffectDef::ChooseCardName { .. }
-                | EffectDef::ChoosePlayer { .. }
-                | EffectDef::CopyPermanentAsItEnters { .. }
-                | EffectDef::ChooseCreatureType { .. }
+                | EffectDef::StaticApply { .. }
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_)
         )
@@ -582,12 +553,9 @@ impl Game {
                 .iter()
                 .copied()
                 .any(|effect| Self::static_effect_contains_applied_effect(effect, expected)),
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect,
-                duration:
-                    EffectDurationDef::WhileSourceRemainsInZone
-                    | EffectDurationDef::UntilSourceLeavesZone,
             } => Self::applied_effect_contains(effect, expected),
             _ => false,
         }

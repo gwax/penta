@@ -231,8 +231,12 @@ impl EffectRecipientDef {
     }
 }
 
+/// The lifetime of a continuous effect created by a resolving spell or
+/// ability. Static effects use [`EffectDef::StaticApply`] instead: they are
+/// derived live from the ability that creates them and have no stored
+/// expiration.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum EffectDurationDef {
+pub enum ResolvedEffectDurationDef {
     Permanent,
     UntilEndOfTurn,
     /// Until the beginning of the resolving ability's controller's next
@@ -242,12 +246,222 @@ pub enum EffectDurationDef {
     /// Until the next turn of the effect's controller begins. The affected
     /// turn is captured when the resolving effect is created.
     UntilYourNextTurn,
-    WhileSourceRemainsInZone,
-    UntilSourceLeavesZone,
     /// For as long as the effect's own source stays tapped. Unlike every
     /// other resolving duration this one has no deadline: the artifact that
     /// tapped to make it decides when it ends by untapping.
     WhileSourceTapped,
+}
+
+/// Whether a damage-prevention rule matches combat damage, or damage of any
+/// kind.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DamageKindDef {
+    Any,
+    Combat,
+}
+
+/// The source side of a prospective damage event.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DamageSourceMatcherDef {
+    Any,
+    /// A checkpoint-stable relational source group named by the card text.
+    Group(DamageSourceGroupDef),
+    /// The object receiving a static applied effect.
+    AffectedObject,
+    Object(ObjectRefDef),
+    Except(ObjectRefDef),
+    Matching(ObjectPredicateDef),
+}
+
+/// The recipient side of a prospective damage event.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DamageRecipientMatcherDef {
+    Any,
+    /// The object receiving a static applied effect.
+    AffectedObject,
+    Recipients(EffectRecipientDef),
+    /// A player resolved when the prevention is created, plus creatures that
+    /// player controls when damage would be dealt.
+    PlayerAndCreaturesControlledBy(PlayerRefDef),
+}
+
+/// A conjunctive matcher over a prospective damage event.
+///
+/// Preventing damage both to and by one object is represented by two rules in
+/// an [`EffectDef::Sequence`] or [`AppliedEffectDef::Composite`]. Keeping each
+/// leaf conjunctive makes resolution and spending order explicit.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct DamageEventMatcherDef {
+    pub kind: DamageKindDef,
+    pub source: DamageSourceMatcherDef,
+    pub recipient: DamageRecipientMatcherDef,
+}
+
+impl DamageEventMatcherDef {
+    pub const ANY: Self = Self {
+        kind: DamageKindDef::Any,
+        source: DamageSourceMatcherDef::Any,
+        recipient: DamageRecipientMatcherDef::Any,
+    };
+
+    pub const COMBAT: Self = Self {
+        kind: DamageKindDef::Combat,
+        source: DamageSourceMatcherDef::Any,
+        recipient: DamageRecipientMatcherDef::Any,
+    };
+
+    #[must_use]
+    pub const fn to(recipients: EffectRecipientDef) -> Self {
+        Self {
+            recipient: DamageRecipientMatcherDef::Recipients(recipients),
+            ..Self::ANY
+        }
+    }
+
+    #[must_use]
+    pub const fn from(source: ObjectRefDef) -> Self {
+        Self {
+            source: DamageSourceMatcherDef::Object(source),
+            ..Self::ANY
+        }
+    }
+
+    #[must_use]
+    pub const fn from_group_to(
+        source: DamageSourceGroupDef,
+        recipients: EffectRecipientDef,
+    ) -> Self {
+        Self {
+            source: DamageSourceMatcherDef::Group(source),
+            recipient: DamageRecipientMatcherDef::Recipients(recipients),
+            ..Self::ANY
+        }
+    }
+
+    #[must_use]
+    pub const fn combat_to(recipients: EffectRecipientDef) -> Self {
+        Self {
+            recipient: DamageRecipientMatcherDef::Recipients(recipients),
+            ..Self::COMBAT
+        }
+    }
+
+    #[must_use]
+    pub const fn combat_from(source: ObjectRefDef) -> Self {
+        Self {
+            source: DamageSourceMatcherDef::Object(source),
+            ..Self::COMBAT
+        }
+    }
+
+    #[must_use]
+    pub const fn combat_except(source: ObjectRefDef) -> Self {
+        Self {
+            source: DamageSourceMatcherDef::Except(source),
+            ..Self::COMBAT
+        }
+    }
+
+    #[must_use]
+    pub const fn to_player_and_creatures_controlled_by(player: PlayerRefDef) -> Self {
+        Self {
+            recipient: DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player),
+            ..Self::ANY
+        }
+    }
+
+    #[must_use]
+    pub const fn from_matching_to_affected(source: ObjectPredicateDef) -> Self {
+        Self {
+            kind: DamageKindDef::Any,
+            source: DamageSourceMatcherDef::Matching(source),
+            recipient: DamageRecipientMatcherDef::AffectedObject,
+        }
+    }
+
+    pub const COMBAT_FROM_AFFECTED: Self = Self {
+        kind: DamageKindDef::Combat,
+        source: DamageSourceMatcherDef::AffectedObject,
+        recipient: DamageRecipientMatcherDef::Any,
+    };
+
+    pub const COMBAT_TO_AFFECTED: Self = Self {
+        kind: DamageKindDef::Combat,
+        source: DamageSourceMatcherDef::Any,
+        recipient: DamageRecipientMatcherDef::AffectedObject,
+    };
+}
+
+/// How long or how often a resolving prevention rule can be spent.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DamagePreventionCapacityDef {
+    Amount(ValueDef),
+    Events(u8),
+    Unlimited,
+}
+
+/// How much of each matched damage event is prevented.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DamageCoverageDef {
+    All,
+    HalfRoundedDown,
+}
+
+/// A synchronous consequence of damage prevented by one rule.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DamagePreventionFollowUpDef {
+    GainLife(PlayerRefDef),
+}
+
+/// One damage-prevention rule installed by a resolving effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct DamagePreventionDef {
+    pub matcher: DamageEventMatcherDef,
+    pub capacity: DamagePreventionCapacityDef,
+    pub coverage: DamageCoverageDef,
+    pub follow_up: Option<DamagePreventionFollowUpDef>,
+}
+
+impl DamagePreventionDef {
+    #[must_use]
+    pub const fn amount(matcher: DamageEventMatcherDef, amount: ValueDef) -> Self {
+        Self::new(matcher, DamagePreventionCapacityDef::Amount(amount))
+    }
+
+    #[must_use]
+    pub const fn events(matcher: DamageEventMatcherDef, events: u8) -> Self {
+        Self::new(matcher, DamagePreventionCapacityDef::Events(events))
+    }
+
+    #[must_use]
+    pub const fn unlimited(matcher: DamageEventMatcherDef) -> Self {
+        Self::new(matcher, DamagePreventionCapacityDef::Unlimited)
+    }
+
+    #[must_use]
+    pub const fn new(
+        matcher: DamageEventMatcherDef,
+        capacity: DamagePreventionCapacityDef,
+    ) -> Self {
+        Self {
+            matcher,
+            capacity,
+            coverage: DamageCoverageDef::All,
+            follow_up: None,
+        }
+    }
+
+    #[must_use]
+    pub const fn with_coverage(mut self, coverage: DamageCoverageDef) -> Self {
+        self.coverage = coverage;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_follow_up(mut self, follow_up: DamagePreventionFollowUpDef) -> Self {
+        self.follow_up = Some(follow_up);
+        self
+    }
 }
 
 /// An add, remove, or set operation over one set-valued characteristic.
@@ -367,27 +581,15 @@ pub enum AppliedEffectDef {
     /// is a resolving effect; this is the printed static one, so it holds for
     /// as long as its source does.
     CannotBeBlocked,
-    /// No combat damage is dealt to or by the affected permanent. Unlike the
-    /// turn-scoped [`EffectDef::PreventCombatDamageThisTurn`] this holds for
-    /// as long as the effect applies, which is what an Aura needs.
-    PreventCombatDamage,
-    /// Only the combat damage the affected permanent would deal is
-    /// prevented. Unlike [`Self::PreventCombatDamage`] this is one direction,
-    /// so the permanent still takes what its blockers deal it.
-    PreventCombatDamageDealtBy,
     /// Damage a matching source would deal to the affected permanent's
     /// controller is dealt to that permanent instead. The redirection is read
     /// live, so a condition on the recipient -- "as long as this creature is
     /// untapped" -- turns it off without the permanent being touched.
     RedirectPlayerDamageToThis(DamageSourceGroupDef),
-    /// Damage from a source matching this predicate is prevented before it
-    /// touches the affected permanent. Only a permanent can be the source
-    /// today, which is all "damage from artifact creatures" needs.
-    PreventDamageFrom(ObjectPredicateDef),
-    /// As [`Self::PreventDamageFrom`], but only for combat damage. A card
-    /// that names combat means combat: a burn spell from the same source
-    /// still lands.
-    PreventCombatDamageFrom(ObjectPredicateDef),
+    /// An unlimited prevention rule derived live while this static applied
+    /// effect exists. Two-sided prevention is a [`Self::Composite`] of source
+    /// and recipient matchers.
+    PreventDamage(DamageEventMatcherDef),
     Special(&'static str),
 }
 
@@ -460,6 +662,20 @@ impl AppliedEffectDef {
         Self::Characteristic(CharacteristicOperationDef::PowerToughness(
             PowerToughnessOperationDef::Modify { power, toughness },
         ))
+    }
+
+    #[must_use]
+    pub const fn prevent_damage_from(source: ObjectPredicateDef) -> Self {
+        Self::PreventDamage(DamageEventMatcherDef::from_matching_to_affected(source))
+    }
+
+    #[must_use]
+    pub const fn prevent_combat_damage_from(source: ObjectPredicateDef) -> Self {
+        Self::PreventDamage(DamageEventMatcherDef {
+            kind: DamageKindDef::Combat,
+            source: DamageSourceMatcherDef::Matching(source),
+            recipient: DamageRecipientMatcherDef::AffectedObject,
+        })
     }
 }
 /// A reusable selector for ability-removing continuous effects.
@@ -557,16 +773,6 @@ pub struct TopCardSelectionDef {
     pub rest_zone: ZoneKind,
     pub rest_placement: ZonePlacement,
     pub then: Option<&'static EffectDef>,
-}
-
-/// How much of a covered hit a prevention shield stops. Most shields stop the
-/// whole thing; a few printed cards stop a computed part of it and let the
-/// rest through.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ShieldCoverageDef {
-    All,
-    /// Half the damage, rounded down, which lets an odd point through.
-    HalfRoundedDown,
 }
 
 /// Who may observe a pending choice and its available options.
@@ -672,6 +878,39 @@ pub struct SplitIntoPilesDef {
     pub then: &'static EffectDef,
 }
 
+/// How long an effect-created triggered ability listens from outside every
+/// zone.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum InstalledTriggerLifetimeDef {
+    Once,
+    UntilNextTurn(PlayerRefDef),
+}
+
+/// A triggered ability installed by a resolving effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct InstalledTriggerDef {
+    pub ability: &'static AbilityDef,
+    pub lifetime: InstalledTriggerLifetimeDef,
+}
+
+impl InstalledTriggerDef {
+    #[must_use]
+    pub const fn once(ability: &'static AbilityDef) -> Self {
+        Self {
+            ability,
+            lifetime: InstalledTriggerLifetimeDef::Once,
+        }
+    }
+
+    #[must_use]
+    pub const fn until_next_turn(ability: &'static AbilityDef, player: PlayerRefDef) -> Self {
+        Self {
+            ability,
+            lifetime: InstalledTriggerLifetimeDef::UntilNextTurn(player),
+        }
+    }
+}
+
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
@@ -686,16 +925,10 @@ pub enum EffectDef {
     Choose(ChooseDef),
     PayOr(PayOrDef),
     SplitIntoPiles(SplitIntoPilesDef),
-    /// Prevent the next damage one named source would deal to the recipient
-    /// this turn. The shield answers that source only, and the first damage it
-    /// covers spends it however much that damage was.
-    PreventNextDamageFromSource {
-        object: EffectRecipientDef,
-        source: EffectRecipientDef,
-        coverage: ShieldCoverageDef,
-        /// Whether the recipient's controller gains life equal to the damage
-        /// this shield actually prevented.
-        gain_life: bool,
+    /// Install a resolved damage-prevention rule for the named duration.
+    PreventDamage {
+        prevention: DamagePreventionDef,
+        duration: ResolvedEffectDurationDef,
     },
     AddMana(AddManaEffectDef),
     DealDamage {
@@ -724,13 +957,6 @@ pub enum EffectDef {
     /// still the current phase.
     DestroyAtEndOfCombat {
         object: EffectRecipientDef,
-    },
-    /// Repaint an object's colours, replacing whatever it was. The Lace cycle
-    /// says "becomes", not "in addition to", and prints no duration: the
-    /// change lasts as long as the object does.
-    SetColor {
-        object: EffectRecipientDef,
-        color: ManaColor,
     },
     /// Poison counters given to a player. Ten of them is a state-based loss,
     /// which is why this is not expressible as life loss.
@@ -789,66 +1015,11 @@ pub enum EffectDef {
     Untap {
         object: EffectRecipientDef,
     },
-    /// Prevent the next `amount` damage that would be dealt to the recipient
-    /// this turn. The shield waits for damage rather than acting now, and is
-    /// spent as the damage it covers arrives.
-    PreventNextDamage {
-        object: EffectRecipientDef,
-        amount: ValueDef,
-    },
-    /// Prevent all damage that would be dealt to the recipient this turn.
-    /// Unlike [`Self::PreventNextDamage`] nothing spends it; it simply lasts.
-    PreventAllDamageThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// No combat damage is dealt at all for the rest of the turn, by anything,
-    /// to anything. Unlike [`Self::PreventCombatDamageThisTurn`] this is not a
-    /// property of any permanent, so it survives the creatures involved
-    /// leaving the battlefield -- which is what a Fog has to do.
-    PreventAllCombatDamageThisTurn,
-    /// No combat damage is dealt to or by the affected permanent for the rest
-    /// of the turn. This is prevention rather than removal from combat: the
-    /// creature is still attacking, and everything that reads that still
-    /// sees it.
-    PreventCombatDamageThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// No combat damage is dealt by the affected permanent for the rest of
-    /// the turn. Unlike [`Self::PreventCombatDamageThisTurn`], damage that
-    /// blockers deal to it is unaffected.
-    PreventCombatDamageDealtByThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// Prevent every kind of damage the recipient would deal for the rest of
-    /// the turn. Unlike [`Self::PreventCombatDamageDealtByThisTurn`] this
-    /// also stops the damage its abilities would deal.
-    PreventDamageDealtByThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// Prevent all damage to one player and to creatures they control for the
-    /// rest of the turn. This modifies the rules rather than a fixed object
-    /// set, so it also covers creatures that enter later (CR 611.2c).
-    PreventDamageToPlayerAndControlledCreaturesThisTurn {
-        player: EffectRecipientDef,
-    },
-    /// Prevent damage a named group of sources would deal to one player for
-    /// the rest of the turn. The group is a closed vocabulary rather than a
-    /// predicate: the rule outlives the resolution that made it, so it has to
-    /// survive a checkpoint.
-    PreventDamageToPlayerFromThisTurn {
-        player: EffectRecipientDef,
-        source: DamageSourceGroupDef,
-    },
     /// For the rest of the turn, damage the target would deal to the
     /// recipient player is dealt to this effect's own source instead.
     RedirectTargetDamageToSourceThisTurn {
         player: EffectRecipientDef,
         from: TargetIndex,
-    },
-    /// Prevent all combat damage from every source other than the resolved
-    /// object for the rest of the turn.
-    PreventAllCombatDamageExceptSourceThisTurn {
-        source: EffectRecipientDef,
     },
     /// Puts token copies of `token` onto the battlefield under the resolving
     /// object's controller.
@@ -1072,7 +1243,6 @@ pub enum EffectDef {
     GainControlThisTurn {
         object: EffectRecipientDef,
     },
-    /// Queues an effect for the next time that step begins.
     /// Runs `then` only if the condition holds where this effect resolves.
     /// A condition on a triggered ability is an intervening-if and is checked
     /// twice; this one is part of the effect and is checked once.
@@ -1080,18 +1250,8 @@ pub enum EffectDef {
         condition: &'static TriggerConditionDef,
         then: &'static EffectDef,
     },
-    AtNextStep {
-        step: TurnStepDef,
-        player: PlayerRelation,
-        effect: &'static EffectDef,
-    },
-    /// Installs a triggered ability that listens from nowhere until its
-    /// controller's next turn begins. The ability outlives the resolution
-    /// that created it and does not belong to any permanent, which is what
-    /// separates it from an ability a source grants.
-    TriggerUntilYourNextTurn {
-        ability: &'static AbilityDef,
-    },
+    /// Installs a triggered ability that listens from outside every zone.
+    InstallTrigger(InstalledTriggerDef),
     /// A static prohibition: no spell or ability an opponent controls can
     /// make this ability's controller sacrifice a permanent.
     CannotBeForcedToSacrifice,
@@ -1129,12 +1289,6 @@ pub enum EffectDef {
     Transform {
         object: EffectRecipientDef,
     },
-    /// Multiplies the amount of the event a replacement ability is replacing.
-    /// This means nothing outside a replacement whose event carries an amount.
-    MultiplyEventAmount(u8),
-    /// An effect interpreted while replacing a prospective event, rather than
-    /// when a spell or ability resolves from the stack.
-    Replacement(ReplacementEffectDef),
     MoveToZone {
         object: EffectRecipientDef,
         zone: ZoneKind,
@@ -1147,34 +1301,17 @@ pub enum EffectDef {
         /// relation instead.
         controller: Option<PlayerRelation>,
     },
-    /// Choose and store a card name for an object as it enters, the same
-    /// replacement procedure as choosing a creature type.
-    ChooseCardName {
-        object: EffectRecipientDef,
-    },
-    /// "As this permanent enters, choose a player." The choice is recorded on
-    /// the permanent, where [`PlayerRelation::ChosenPlayer`] reads it.
-    ChoosePlayer {
-        object: EffectRecipientDef,
-        relation: PlayerRelation,
-    },
-    /// "You may have this permanent enter as a copy of ...". The copy is
-    /// chosen as the permanent enters rather than targeted by the spell, so
-    /// nothing about it can be responded to and declining is always allowed.
-    /// `added_types` are kept on top of what is copied.
-    CopyPermanentAsItEnters {
-        object: ObjectPredicateDef,
-        added_types: CardTypeSet,
-    },
-    /// Choose and store a creature type for an object as it enters. This is a
-    /// replacement procedure rather than a resolving stack effect.
-    ChooseCreatureType {
-        object: EffectRecipientDef,
+    /// A continuous or rules-modifying effect derived live from a static
+    /// ability. Its lifetime is the ability's own applicability rather than a
+    /// stored duration.
+    StaticApply {
+        recipient: EffectRecipientDef,
+        effect: AppliedEffectDef,
     },
     Apply {
         recipient: EffectRecipientDef,
         effect: AppliedEffectDef,
-        duration: EffectDurationDef,
+        duration: ResolvedEffectDurationDef,
     },
     /// A descriptive marker for an effect portion the shared vocabulary does
     /// not yet represent. The surrounding costs, targets, and timing can still

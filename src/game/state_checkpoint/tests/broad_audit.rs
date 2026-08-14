@@ -192,8 +192,7 @@ fn categories(game: &Game, wire: &Value) -> Vec<&'static str> {
             found.push(name);
         }
     };
-    note(!game.delayed_triggers.is_empty(), "delayed-triggers");
-    note(!game.floating_triggers.is_empty(), "floating-triggers");
+    note(!game.installed_triggers.is_empty(), "installed-triggers");
     note(!game.pending_events.is_empty(), "pending-events");
     note(!game.emblems.is_empty(), "emblems");
     note(
@@ -284,15 +283,14 @@ fn context(
 ) -> String {
     format!(
         "{format:?} seed {seed} action {action_number} with {kind} (turn {} {:?} decision={:?} \
-         stack={} delayed={} floating={} events={} retired={})",
+         stack={} installed={} events={} retired={})",
         game.turn,
         game.step,
         game.pending_decisions
             .first()
             .map(|pending| &pending.continuation),
         game.stack.len(),
-        game.delayed_triggers.len(),
-        game.floating_triggers.len(),
+        game.installed_triggers.len(),
         game.pending_events.len(),
         game.retired_objects.len(),
     )

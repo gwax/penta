@@ -1,4 +1,5 @@
 use super::*;
+use crate::AbilityProgramDef;
 
 pub(super) fn dust_to_dust_targets(game: &mut Game, mut spell: StackObject) {
     spell.signature = Some(CastSignature::from_validated_choices(
@@ -31,10 +32,10 @@ fn wrath_and_supreme_verdict_use_equivalent_declarative_creature_sweepers() {
                 .all(|ability| ability.declarative_effect().is_some())
         );
         assert!(definition.rules.ability_clauses().iter().any(|ability| {
-            let EffectDef::Destroy {
+            let AbilityProgramDef::Effects(EffectDef::Destroy {
                 object,
                 can_regenerate: actual,
-            } = ability.effect.definition
+            }) = ability.effect.definition
             else {
                 return false;
             };
@@ -50,11 +51,10 @@ fn wrath_and_supreme_verdict_use_equivalent_declarative_creature_sweepers() {
             definition.rules.ability_clauses().iter().any(|ability| {
                 matches!(
                     ability.effect.definition,
-                    EffectDef::Apply {
+                    AbilityProgramDef::Effects(EffectDef::StaticApply {
                         recipient: EffectRecipientDef::Source,
                         effect: AppliedEffectDef::CannotBeCountered,
-                        ..
-                    }
+                    })
                 )
             }),
             cannot_be_countered,
@@ -89,10 +89,10 @@ fn nevinyrrals_disk_declares_shared_costs_and_a_global_destroy_effect() {
         ]
     );
 
-    let EffectDef::Destroy {
+    let AbilityProgramDef::Effects(EffectDef::Destroy {
         object,
         can_regenerate,
-    } = ability.effect.definition
+    }) = ability.effect.definition
     else {
         panic!("the Disk uses the shared global destruction effect")
     };
@@ -366,7 +366,7 @@ fn direct_object_target_references_recheck_legality() {
             TargetSlotId(0),
             Target::Permanent(target_id),
         )],
-        context: TriggerContext::empty(),
+        context: TriggerContext::empty().into(),
         resolver: StackAbilityResolver::Declarative(ScopedEffect::primary(EffectDef::None)),
         condition: None,
         mode_effects: Vec::new(),
@@ -424,8 +424,8 @@ fn regeneration_shields_stop_destroy_but_not_wrath() {
         .expect("Wrath of God is in the catalog")
         .rules
         .ability_clauses()[0]
-        .effect
-        .definition;
+        .declarative_effect()
+        .expect("Wrath uses a resolving effect program");
     game.resolve_effect_def(
         ScopedEffect::primary(effect),
         &wrath,

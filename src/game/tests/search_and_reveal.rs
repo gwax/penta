@@ -650,5 +650,8 @@ fn simultaneous_exits_keep_pre_exit_characteristics_for_trigger_matching() {
     game.move_permanents_to_graveyard(&[moon_id, taiga_id]);
 
     assert_eq!(game.pending_triggers.len(), 1);
-    assert_eq!(game.pending_triggers[0].context.object, Some(taiga_id));
+    assert_eq!(
+        game.pending_triggers[0].context.trigger.object,
+        Some(taiga_id)
+    );
 }

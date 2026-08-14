@@ -15,7 +15,7 @@ use super::model_keyword::{KeywordSnapshot, UpkeepKeywordSnapshot};
 pub(super) use super::model_prevention::*;
 
 use super::model_procedure::{DrawReplacementSnapshot, PendingProcedureSnapshot};
-use super::model_trigger::{DelayedTriggerSnapshot, FloatingTriggerSnapshot};
+use super::model_trigger::InstalledTriggerSnapshot;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -53,19 +53,12 @@ pub(super) struct GameSnapshot {
     pub(super) extra_turns: Vec<usize>,
     pub(super) next_regular_player: usize,
     pub(super) channel_active: [bool; 2],
-    /// A Fog resolved this turn. Defaulted so a checkpoint written before
-    /// this field existed still decodes, which is what the open-world
-    /// contract asks of an additive member.
-    #[serde(default)]
-    pub(super) all_combat_damage_prevented: bool,
-    /// Prevention shields still waiting for damage. Additive for the same
-    /// reason the Fog flag is.
-    #[serde(default)]
-    pub(super) prevention_shields: Vec<PreventionShieldSnapshot>,
-    /// Turn-scoped prevention rules whose covered objects are determined when
-    /// damage would be dealt instead of when the effect resolves.
-    #[serde(default)]
-    pub(super) relational_damage_preventions: Vec<RelationalDamagePreventionSnapshot>,
+    /// Resolved damage-prevention rules in creation order. Static prevention
+    /// remains source-derived and therefore is not checkpointed here.
+    pub(super) damage_preventions: Vec<ResolvedDamagePreventionSnapshot>,
+    /// Resolved damage redirections in creation order. Static group
+    /// redirection remains source-derived and is not checkpointed here.
+    pub(super) damage_redirects: Vec<ResolvedDamageRedirectSnapshot>,
     pub(super) pregame: Option<PregameSnapshot>,
     pub(super) combat_damage_stage: CombatDamageStageSnapshot,
     pub(super) battlefield: Vec<PermanentSnapshot>,
@@ -74,8 +67,8 @@ pub(super) struct GameSnapshot {
     pub(super) retired_objects: Vec<RetiredObjectSnapshot>,
     pub(super) pending_events: Vec<PendingEventSnapshot>,
     pub(super) temporary_ability_grants: Vec<TemporaryAbilityGrantSnapshot>,
-    pub(super) delayed_triggers: Vec<DelayedTriggerSnapshot>,
-    pub(super) floating_triggers: Vec<FloatingTriggerSnapshot>,
+    pub(super) next_installed_trigger_id: u32,
+    pub(super) installed_triggers: Vec<InstalledTriggerSnapshot>,
     pub(super) pending_triggers: Vec<PendingTriggerSnapshot>,
     pub(super) pending_procedures: Vec<PendingProcedureSnapshot>,
     pub(super) decision_state: Option<DecisionStateSnapshot>,
@@ -206,11 +199,6 @@ pub(super) struct PermanentSnapshot {
     /// has resolved onto this permanent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) color_override: Option<[bool; 5]>,
-    pub(super) combat_damage_prevented: bool,
-    pub(super) combat_damage_dealt_by_prevented: bool,
-    /// Absent from checkpoints that predate the all-damage form.
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub(super) damage_dealt_by_prevented: bool,
     pub(super) control_reverts_to: Option<usize>,
     /// Whether a "can't be regenerated" effect covers this permanent for the
     /// rest of the turn.
@@ -424,20 +412,14 @@ pub(super) struct PendingEventSnapshot {
 #[serde(rename_all = "camelCase")]
 pub(super) struct PendingReplacementEffectSnapshot {
     pub(super) context: ReplacementEffectContextSnapshot,
-    pub(super) effect: EntryReplacementLocator,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct EntryReplacementLocator {
-    pub(super) ability: AbilityLocator,
+    pub(super) effect: ReplacementEffectLocator,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct ApplicableReplacementSnapshot {
     pub(super) context: ReplacementEffectContextSnapshot,
-    pub(super) effect: EntryReplacementLocator,
+    pub(super) effect: ReplacementEffectLocator,
     pub(super) definition: u16,
 }
 
@@ -741,9 +723,6 @@ pub(super) enum DecisionContinuationSnapshot {
     },
     BattlefieldEntryCardName {
         choices: Vec<String>,
-    },
-    BattlefieldEntryOptional {
-        context: ReplacementEffectContextSnapshot,
     },
     BattlefieldEntryCreatureType {
         choices: Vec<String>,

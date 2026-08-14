@@ -546,7 +546,7 @@ impl Game {
                 text: alternative_cast.stack_text.or(Some(ability.text)),
                 target_defs: Vec::new(),
                 targets: signature.targets().to_vec(),
-                context: TriggerContext::empty(),
+                context: TriggerContext::empty().into(),
                 resolver: Self::ability_resolver(origin, &ability),
                 condition: None,
                 mode_effects: Vec::new(),
@@ -574,7 +574,7 @@ impl Game {
             text: Some(ability.text),
             target_defs: plan.target_defs,
             targets: signature.targets().to_vec(),
-            context: TriggerContext::empty(),
+            context: TriggerContext::empty().into(),
             condition: None,
             resolver: match (ability.declarative_effect(), followup) {
                 (Some(effect), Some(behavior)) => {

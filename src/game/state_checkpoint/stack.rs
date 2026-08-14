@@ -11,32 +11,55 @@ use super::{
     AbilityId, AbilityOrigin, AdditionalCostId, AlternativeCostId, AppliedStackEffect,
     BasicLandType, BasicLandTypeChange, CardDefinitionId, CardPartId, CastChoices, CastSignature,
     CharacteristicSource, CostConfiguration, DeclarativeAbilityDef, EffectResolutionContext, Game,
-    GameObjectId, GameStack, GrantId, ManaSource, ModeId, PlayOptionId, PlayerId, SpellForm,
-    StackAbilityPayload, StackObject, StackObjectKind, Target, TargetSelection, TriggerContext,
-    Value, ability_locator, ability_origin_from_snapshot, ability_origin_snapshot, array, card,
-    catalog_ability, field, optional_id, parse_basic_land_type, parse_cast_signature, parse_ids,
-    seat_value, str_field, u8_field, u32_field, usize_field,
+    GameObjectId, GameStack, GrantId, ManaSource, ModeId, PlayOptionId, PlayerId, RetiredObject,
+    SpellForm, StackAbilityPayload, StackObject, StackObjectKind, Target, TargetSelection,
+    TriggerContext, Value, ability_locator, ability_origin_from_snapshot, ability_origin_snapshot,
+    ability_target_defs, array, card, catalog_ability, field, optional_id, parse_basic_land_type,
+    parse_cast_signature, parse_ids, seat_value, str_field, u8_field, u32_field, usize_field,
 };
 use crate::card::{ColorSet, ManaColor};
 
 pub(super) fn stack_ability_snapshot(
     game: &Game,
+    viewer: PlayerId,
     object: &StackObject,
 ) -> Option<StackAbilitySnapshot> {
+    stack_ability_snapshot_allowing(game, viewer, object, &[])
+}
+
+pub(super) fn stack_ability_snapshot_allowing(
+    game: &Game,
+    viewer: PlayerId,
+    object: &StackObject,
+    visible_rebindings: &[GameObjectId],
+) -> Option<StackAbilitySnapshot> {
     let payload = object.ability.as_ref()?;
+    if trigger_capture_has_unrebindable_hidden_reference_except(
+        game,
+        viewer,
+        &payload.targets,
+        &payload.context,
+        visible_rebindings,
+    ) {
+        return None;
+    }
     let locator = ability_locator(&game.catalog, |candidate| {
         stack_payload_matches(payload, candidate)
+    })?;
+    let target_definition_locator = ability_locator(&game.catalog, |candidate| {
+        ability_target_defs(candidate) == payload.target_defs
     })?;
     let ability = catalog_ability(&game.catalog, &locator)?;
     Some(StackAbilitySnapshot {
         ability_locator: Some(locator),
+        target_definition_locator: Some(target_definition_locator),
         origin: ability_origin_snapshot(payload.origin),
         target_selections: payload
             .targets
             .iter()
             .map(target_selection_snapshot)
             .collect(),
-        context: trigger_context_snapshot(payload.context),
+        context: effect_resolution_context_snapshot(&payload.context),
         mode_effects: payload
             .mode_effects
             .iter()
@@ -49,10 +72,25 @@ pub(super) fn stack_ability_snapshot(
 
 pub(super) fn detached_stack_snapshot(
     game: &Game,
+    viewer: PlayerId,
     object: &StackObject,
 ) -> Option<DetachedStackSnapshot> {
+    detached_stack_snapshot_allowing(game, viewer, object, &[])
+}
+
+pub(super) fn detached_stack_snapshot_allowing(
+    game: &Game,
+    viewer: PlayerId,
+    object: &StackObject,
+    visible_rebindings: &[GameObjectId],
+) -> Option<DetachedStackSnapshot> {
     let ability_payload = if object.kind != StackObjectKind::Spell && object.ability.is_some() {
-        Some(stack_ability_snapshot(game, object)?)
+        Some(stack_ability_snapshot_allowing(
+            game,
+            viewer,
+            object,
+            visible_rebindings,
+        )?)
     } else {
         None
     };
@@ -167,6 +205,21 @@ pub(super) fn stack_object_requires_retired(game: &Game, object: &StackObject) -
     referenced_object_ids(object).any(|id| game.retired_objects.contains_key(&id))
 }
 
+pub(super) fn stack_object_has_unrebindable_hidden_reference(
+    game: &Game,
+    viewer: PlayerId,
+    object: &StackObject,
+) -> bool {
+    object.ability.as_ref().is_some_and(|payload| {
+        trigger_capture_has_unrebindable_hidden_reference(
+            game,
+            viewer,
+            &payload.targets,
+            &payload.context,
+        )
+    })
+}
+
 pub(super) fn referenced_object_ids(object: &StackObject) -> impl Iterator<Item = GameObjectId> {
     let mut ids = Vec::new();
     ids.extend(object.source);
@@ -178,29 +231,73 @@ pub(super) fn referenced_object_ids(object: &StackObject) -> impl Iterator<Item 
             .filter_map(|effect| effect.source.map(|source| source.object)),
     );
     if let Some(payload) = &object.ability {
-        ids.extend(payload.context.object);
-        ids.extend(payload.targets.iter().flat_map(|selection| {
-            selection
-                .targets()
-                .iter()
-                .filter_map(|target| match target {
-                    Target::Player(_) => None,
-                    Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
-                })
-        }));
+        ids.extend(resolution_context_referenced_object_ids(&payload.context));
+        ids.extend(target_selections_referenced_object_ids(&payload.targets));
     }
     if let Some(signature) = &object.signature {
-        ids.extend(signature.targets().iter().flat_map(|selection| {
-            selection
-                .targets()
-                .iter()
-                .filter_map(|target| match target {
-                    Target::Player(_) => None,
-                    Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
-                })
-        }));
+        ids.extend(target_selections_referenced_object_ids(signature.targets()));
     }
     ids.into_iter()
+}
+
+pub(super) fn target_selections_referenced_object_ids(
+    selections: &[TargetSelection],
+) -> Vec<GameObjectId> {
+    selections
+        .iter()
+        .flat_map(|selection| selection.targets())
+        .filter_map(|target| match target {
+            Target::Player(_) => None,
+            Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
+        })
+        .collect()
+}
+
+/// Captured trigger state has no hidden-zone rebinding table of its own.
+/// References to the viewer's hand keep their public observation ids, but
+/// libraries, outside-game cards, and the opposing hand are reconstructed
+/// from a hypothesis with freshly minted ids. Serializing one of those host
+/// ids would both disclose hidden identity and leave a dangling reference in
+/// the reconstructed game, so the containing checkpoint must fail closed.
+pub(super) fn trigger_capture_has_unrebindable_hidden_reference(
+    game: &Game,
+    viewer: PlayerId,
+    targets: &[TargetSelection],
+    context: &EffectResolutionContext,
+) -> bool {
+    trigger_capture_has_unrebindable_hidden_reference_except(game, viewer, targets, context, &[])
+}
+
+pub(super) fn trigger_capture_has_unrebindable_hidden_reference_except(
+    game: &Game,
+    viewer: PlayerId,
+    targets: &[TargetSelection],
+    context: &EffectResolutionContext,
+    visible_rebindings: &[GameObjectId],
+) -> bool {
+    target_selections_referenced_object_ids(targets)
+        .into_iter()
+        .chain(resolution_context_referenced_object_ids(context))
+        .any(|object| {
+            object_reference_requires_hidden_rebinding(game, viewer, object)
+                && !visible_rebindings.contains(&object)
+        })
+}
+
+pub(super) fn object_reference_requires_hidden_rebinding(
+    game: &Game,
+    viewer: PlayerId,
+    object: GameObjectId,
+) -> bool {
+    matches!(
+        game.retired_objects.get(&object),
+        Some(RetiredObject::Card(_))
+    ) || [PlayerId::One, PlayerId::Two].into_iter().any(|player| {
+        let state = &game.players[player.index()];
+        state.library.iter().any(|card| card.id == object)
+            || state.outside_game.iter().any(|card| card.id == object)
+            || (player != viewer && state.hand.iter().any(|card| card.id == object))
+    })
 }
 
 pub(super) fn resolution_context_referenced_object_ids(
@@ -233,7 +330,6 @@ fn stack_payload_matches(
         return false;
     };
     payload.text == Some(candidate.text)
-        && payload.target_defs == triggered.targets
         && payload.condition == triggered.condition
         && payload.resolver == Game::ability_resolver(payload.origin, candidate)
 }
@@ -361,34 +457,40 @@ pub(super) fn parse_stack(
                     .ok_or_else(|| {
                         "stack ability locator is absent from this catalog".to_owned()
                     })?;
-                let (target_defs, condition) = match (kind, definition_snapshot.definition) {
-                    (
-                        StackObjectKind::ActivatedAbility,
-                        DeclarativeAbilityDef::Activated(activated),
-                    ) => (activated.targets, None),
+                let condition = match (kind, definition_snapshot.definition) {
+                    (StackObjectKind::ActivatedAbility, DeclarativeAbilityDef::Activated(_)) => {
+                        None
+                    }
                     (
                         StackObjectKind::TriggeredAbility,
                         DeclarativeAbilityDef::Triggered(triggered),
-                    ) => (triggered.targets, triggered.condition),
+                    ) => triggered.condition,
                     _ => {
                         return Err(
                             "stack ability locator does not match the observed ability kind".into(),
                         );
                     }
                 };
+                let target_definition = payload_state
+                    .target_definition_locator
+                    .as_ref()
+                    .and_then(|locator| catalog_ability(&game.catalog, locator))
+                    .ok_or_else(|| {
+                        "stack target-definition locator is absent from this catalog".to_owned()
+                    })?;
                 let targets = payload_state
                     .target_selections
                     .iter()
                     .map(parse_target_selection)
                     .collect::<Result<Vec<_>, _>>()?;
-                let context = parse_trigger_context(payload_state.context)?;
+                let context = parse_effect_resolution_context(payload_state.context.clone())?;
                 let ability = StackAbilityPayload {
                     origin,
                     definition: (kind == StackObjectKind::ActivatedAbility)
                         .then(|| Box::new(definition_snapshot)),
                     presentation_definition: definition,
                     text: Some(definition_snapshot.text),
-                    target_defs: target_defs.to_vec(),
+                    target_defs: ability_target_defs(&target_definition).to_vec(),
                     targets,
                     context,
                     resolver: Game::ability_resolver(origin, &definition_snapshot),
@@ -537,28 +639,31 @@ fn parse_ability_payload(
         .ok_or("stack ability lacks a catalog locator")?;
     let definition = catalog_ability(&game.catalog, locator)
         .ok_or_else(|| "stack ability locator is absent from this catalog".to_owned())?;
-    let (target_defs, condition) = match (kind, definition.definition) {
-        (StackObjectKind::ActivatedAbility, DeclarativeAbilityDef::Activated(activated)) => {
-            (activated.targets, None)
-        }
+    let condition = match (kind, definition.definition) {
+        (StackObjectKind::ActivatedAbility, DeclarativeAbilityDef::Activated(_)) => None,
         (StackObjectKind::TriggeredAbility, DeclarativeAbilityDef::Triggered(triggered)) => {
-            (triggered.targets, triggered.condition)
+            triggered.condition
         }
         _ => return Err("stack ability locator does not match its ability kind".into()),
     };
+    let target_definition = state
+        .target_definition_locator
+        .as_ref()
+        .and_then(|locator| catalog_ability(&game.catalog, locator))
+        .ok_or("stack target-definition locator is absent from this catalog")?;
     let origin = ability_origin_from_snapshot(state.origin);
     Ok(StackAbilityPayload {
         origin,
         definition: (kind == StackObjectKind::ActivatedAbility).then(|| Box::new(definition)),
         presentation_definition,
         text: Some(definition.text),
-        target_defs: target_defs.to_vec(),
+        target_defs: ability_target_defs(&target_definition).to_vec(),
         targets: state
             .target_selections
             .iter()
             .map(parse_target_selection)
             .collect::<Result<Vec<_>, _>>()?,
-        context: parse_trigger_context(state.context)?,
+        context: parse_effect_resolution_context(state.context.clone())?,
         resolver: Game::ability_resolver(origin, &definition),
         condition,
         mode_effects: state

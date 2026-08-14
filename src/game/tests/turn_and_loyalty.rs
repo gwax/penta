@@ -305,7 +305,7 @@ fn turn_strips_a_creature_and_burn_finishes_it() {
         ScopedEffect::primary(EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             effect: AppliedEffectDef::Composite(&TURN_TEST_CHARACTERISTICS),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         }),
         &turn,
         TriggerContext::empty(),

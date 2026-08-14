@@ -20,8 +20,9 @@ mod tests {
     use super::HandcraftedPolicy;
     use crate::TargetIndex;
     use crate::card::{
-        CostDef, EffectDef, EffectRecipientDef, ManaCost, ObjectPredicateDef, PayOrDef, PaymentDef,
-        PlayerRelation, TargetConditionDef, TurnStepDef, ValueDef,
+        AbilityDef, CostDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaCost,
+        ObjectPredicateDef, PayOrDef, PaymentDef, PlayerRelation, TargetConditionDef,
+        TriggerEventDef, TurnStepDef, ValueDef,
     };
 
     static TARGET_CONDITION: TargetConditionDef = TargetConditionDef {
@@ -34,6 +35,14 @@ mod tests {
         recipient: EffectRecipientDef::Controller,
         amount: ValueDef::IfTargetMatches(&TARGET_CONDITION),
     };
+    static DELAYED_CONDITIONAL: AbilityDef = AbilityDef::triggered(
+        "At the beginning of your next end step, apply the conditional effect.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::You,
+        },
+        CONDITIONAL_EFFECT,
+    );
     static OPTIONAL_PAYMENT_COST: [CostDef; 1] = [CostDef::Mana(ManaCost::new(1, 0))];
 
     #[test]
@@ -46,11 +55,7 @@ mod tests {
             PaymentDef::new(PlayerRelation::You, &OPTIONAL_PAYMENT_COST),
             &CONDITIONAL_EFFECT,
         ));
-        let delayed = EffectDef::AtNextStep {
-            step: TurnStepDef::End,
-            player: PlayerRelation::You,
-            effect: &CONDITIONAL_EFFECT,
-        };
+        let delayed = EffectDef::InstallTrigger(InstalledTriggerDef::once(&DELAYED_CONDITIONAL));
 
         assert_eq!(
             HandcraftedPolicy::target_condition_in(may),

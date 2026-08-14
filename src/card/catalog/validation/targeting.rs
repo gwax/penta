@@ -1,12 +1,15 @@
 use crate::card::catalog::GrantedAbilityValidationError;
 use crate::card::{
-    AbilityTargetDef, AppliedEffectDef, CharacteristicOperationDef, ConditionDef, EffectDef,
-    EffectRecipientDef, EffectRecipientSetDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, ReplacementEffectDef,
-    TriggerConditionDef, ValueDef,
+    AbilityProcedureDef, AbilityProgramDef, AbilityTargetDef, AppliedEffectDef,
+    CharacteristicOperationDef, ConditionDef, DamageEventMatcherDef, DamagePreventionCapacityDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef,
+    EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef,
+    ReplacementEffectDef, TriggerConditionDef, ValueDef,
 };
 use crate::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
+#[cfg(test)]
 pub(in crate::card::catalog) fn validate_ability_targets(
     targets: &[AbilityTargetDef],
     effect: EffectDef,
@@ -28,6 +31,60 @@ pub(in crate::card::catalog) fn validate_ability_targets(
         }
     }
     validate_effect_references(effect, targets.len(), BindingScope::EMPTY)
+}
+
+#[cfg(test)]
+pub(in crate::card::catalog) fn validate_replacement_ability_targets(
+    targets: &[AbilityTargetDef],
+    effect: ReplacementEffectDef,
+) -> Result<(), GrantedAbilityValidationError> {
+    validate_target_definitions(targets)?;
+    validate_replacement_effect_target_references(effect, targets.len(), BindingScope::EMPTY)
+}
+
+pub(super) fn validate_ability_program_targets(
+    targets: &[AbilityTargetDef],
+    program: AbilityProgramDef,
+) -> Result<(), GrantedAbilityValidationError> {
+    validate_target_definitions(targets)?;
+    validate_program_references(program, targets.len(), BindingScope::EMPTY)
+}
+
+fn validate_program_references(
+    program: AbilityProgramDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    match program {
+        AbilityProgramDef::Effects(effect) => {
+            validate_effect_references(effect, target_count, scope)
+        }
+        AbilityProgramDef::Replacement(effect) => {
+            validate_replacement_effect_target_references(effect, target_count, scope)
+        }
+    }
+}
+
+fn validate_target_definitions(
+    targets: &[AbilityTargetDef],
+) -> Result<(), GrantedAbilityValidationError> {
+    if targets.len() > usize::from(u8::MAX) + 1 {
+        return Err(GrantedAbilityValidationError::TooManyTargets {
+            count: targets.len(),
+        });
+    }
+    for (position, definition) in targets.iter().enumerate() {
+        let target = TargetIndex::from_index(position)
+            .expect("the target count was validated before assigning positional indices");
+        if definition.minimum > definition.maximum {
+            return Err(GrantedAbilityValidationError::InvalidTargetBounds {
+                target,
+                minimum: definition.minimum,
+                maximum: definition.maximum,
+            });
+        }
+    }
+    Ok(())
 }
 
 #[derive(Clone, Copy)]
@@ -119,6 +176,48 @@ fn validate_player_reference(
             validate_object_reference(reference, target_count, scope)
         }
         PlayerRefDef::EffectController | PlayerRefDef::EventPlayer => Ok(()),
+    }
+}
+
+fn validate_payment_references(
+    payment: EffectPaymentDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    match payment {
+        EffectPaymentDef::Costs(_) => Ok(()),
+        EffectPaymentDef::Mana { payer, .. } => {
+            validate_player_reference(payer, target_count, scope)
+        }
+        EffectPaymentDef::GenericMana { payer, amount } => {
+            validate_player_reference(payer, target_count, scope)?;
+            validate_value_target_references(amount, target_count, scope)
+        }
+    }
+}
+
+fn validate_damage_matcher_references(
+    matcher: DamageEventMatcherDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    match matcher.source {
+        DamageSourceMatcherDef::Object(reference) | DamageSourceMatcherDef::Except(reference) => {
+            validate_object_reference(reference, target_count, scope)?;
+        }
+        DamageSourceMatcherDef::Any
+        | DamageSourceMatcherDef::Group(_)
+        | DamageSourceMatcherDef::AffectedObject
+        | DamageSourceMatcherDef::Matching(_) => {}
+    }
+    match matcher.recipient {
+        DamageRecipientMatcherDef::Recipients(recipient) => {
+            validate_recipient_target_references(recipient, target_count, scope)
+        }
+        DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
+            validate_player_reference(player, target_count, scope)
+        }
+        DamageRecipientMatcherDef::Any | DamageRecipientMatcherDef::AffectedObject => Ok(()),
     }
 }
 
@@ -291,6 +390,9 @@ fn validate_applied_effect_target_references(
             validate_value_target_references(power, target_count, scope)?;
             validate_value_target_references(toughness, target_count, scope)
         }
+        AppliedEffectDef::PreventDamage(matcher) => {
+            validate_damage_matcher_references(matcher, target_count, scope)
+        }
         // A granted ability introduces its own target scope and is validated
         // separately when the grant tree is traversed.
         AppliedEffectDef::CannotBeCountered
@@ -305,11 +407,7 @@ fn validate_applied_effect_target_references(
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::PreventDamageFrom(_)
-        | AppliedEffectDef::PreventCombatDamageFrom(_)
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventCombatDamage
-        | AppliedEffectDef::PreventCombatDamageDealtBy
         | AppliedEffectDef::Characteristic(_)
         | AppliedEffectDef::Special(_) => Ok(()),
     }
@@ -369,18 +467,16 @@ fn validate_effect_references(
             validate_effect_references(*choice.then, target_count, nested)
         }
         EffectDef::PayOr(payment) => {
-            match payment.payment {
-                crate::card::EffectPaymentDef::Costs(_) => {}
-                crate::card::EffectPaymentDef::Mana { payer, .. } => {
-                    validate_player_reference(payer, target_count, scope)?;
-                }
-                crate::card::EffectPaymentDef::GenericMana { payer, amount } => {
-                    validate_player_reference(payer, target_count, scope)?;
-                    validate_value_target_references(amount, target_count, scope)?;
-                }
-            }
+            validate_payment_references(payment.payment, target_count, scope)?;
             for branch in payment.if_paid.iter().chain(payment.otherwise.iter()) {
                 validate_effect_references(**branch, target_count, scope)?;
+            }
+            Ok(())
+        }
+        EffectDef::PreventDamage { prevention, .. } => {
+            validate_damage_matcher_references(prevention.matcher, target_count, scope)?;
+            if let DamagePreventionCapacityDef::Amount(amount) = prevention.capacity {
+                validate_value_target_references(amount, target_count, scope)?;
             }
             Ok(())
         }
@@ -425,21 +521,11 @@ fn validate_effect_references(
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
         | EffectDef::RemoveFromCombat { object }
-        | EffectDef::SetColor { object, .. }
         | EffectDef::DestroyAtEndOfCombat { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }
         | EffectDef::DoesNotUntapWhileSourceTapped { object }
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
-        | EffectDef::PreventNextDamage { object, .. }
-        | EffectDef::PreventAllDamageThisTurn { object }
-        | EffectDef::PreventNextDamageFromSource { object, .. }
-        | EffectDef::PreventCombatDamageThisTurn { object }
-        | EffectDef::PreventCombatDamageDealtByThisTurn { object }
-        | EffectDef::PreventDamageDealtByThisTurn { object }
-        | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { player: object }
-        | EffectDef::PreventDamageToPlayerFromThisTurn { player: object, .. }
-        | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { source: object }
         | EffectDef::RedirectTargetDamageToSourceThisTurn { player: object, .. }
         | EffectDef::Attach { object }
         | EffectDef::Destroy { object, .. }
@@ -455,8 +541,6 @@ fn validate_effect_references(
         | EffectDef::Transform { object }
         | EffectDef::MoveToZone { object, .. }
         | EffectDef::Counter { object, .. }
-        | EffectDef::ChooseCardName { object }
-        | EffectDef::ChooseCreatureType { object }
         | EffectDef::CreateTokenCopyOf { object } => {
             validate_recipient_target_references(object, target_count, scope)
         }
@@ -499,8 +583,25 @@ fn validate_effect_references(
             validate_recipient_target_references(object, target_count, scope)?;
             validate_value_target_references(amount, target_count, scope)
         }
-        EffectDef::AtNextStep { effect, .. } => {
-            validate_effect_references(*effect, target_count, scope)
+        EffectDef::InstallTrigger(trigger) => {
+            let DeclarativeAbilityDef::Triggered(definition) = trigger.ability.definition else {
+                return Err(GrantedAbilityValidationError::UnsupportedInstalledTriggerAbility);
+            };
+            if definition.procedure != AbilityProcedureDef::Shared
+                || !definition.targets.is_empty()
+                || trigger.ability.declarative_effect().is_none()
+            {
+                return Err(GrantedAbilityValidationError::UnsupportedInstalledTriggerAbility);
+            }
+            if let Some(condition) = definition.condition {
+                validate_trigger_condition(*condition, target_count, scope)?;
+            }
+            if let crate::card::InstalledTriggerLifetimeDef::UntilNextTurn(player) =
+                trigger.lifetime
+            {
+                validate_player_reference(player, target_count, scope)?;
+            }
+            validate_program_references(trigger.ability.effect.definition, target_count, scope)
         }
         EffectDef::IfCondition { condition, then } => {
             validate_trigger_condition(*condition, target_count, scope)?;
@@ -512,23 +613,21 @@ fn validate_effect_references(
             validate_effect_references(*then, target_count, scope)?;
             validate_effect_references(*otherwise, target_count, scope)
         }
-        EffectDef::Apply {
+        EffectDef::StaticApply {
+            recipient, effect, ..
+        }
+        | EffectDef::Apply {
             recipient, effect, ..
         } => {
             validate_recipient_target_references(recipient, target_count, scope)?;
             validate_applied_effect_target_references(effect, target_count, scope)
         }
-        // An installed ability chooses its own targets when it triggers, so
-        // nothing in it can refer to this ability's target slots.
         // The chosen player is recorded on the permanent, not read from a
         // target slot.
         // A prohibition names a card shape, never a target.
         EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
-        | EffectDef::ChoosePlayer { .. }
-        | EffectDef::CopyPermanentAsItEnters { .. }
-        | EffectDef::TriggerUntilYourNextTurn { .. }
         | EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }
@@ -537,12 +636,7 @@ fn validate_effect_references(
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::AdditionalCombatPhase
-        | EffectDef::PreventAllCombatDamageThisTurn
-        | EffectDef::MultiplyEventAmount(_)
         | EffectDef::Special(_) => Ok(()),
-        EffectDef::Replacement(effect) => {
-            validate_replacement_effect_target_references(effect, target_count, scope)
-        }
     }
 }
 
@@ -569,11 +663,12 @@ fn validate_replacement_effect_target_references(
             }
             Ok(())
         }
-        ReplacementEffectDef::OptionalPayment {
+        ReplacementEffectDef::PayOr {
+            payment,
             if_paid,
             if_declined,
-            ..
         } => {
+            validate_payment_references(payment, target_count, scope)?;
             for effect in if_paid.iter().chain(if_declined.iter()) {
                 validate_replacement_effect_target_references(*effect, target_count, scope)?;
             }
@@ -582,9 +677,11 @@ fn validate_replacement_effect_target_references(
         ReplacementEffectDef::Perform(effect) => {
             validate_effect_references(*effect, target_count, scope)
         }
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
+        ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => Ok(()),
+        | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::Choose(_)
+        | ReplacementEffectDef::CopyEntering { .. } => Ok(()),
     }
 }

@@ -63,10 +63,9 @@ fn grant_ids_reject_more_than_their_structural_address_space() {
     );
     let effects = Box::leak(
         vec![
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::add_ability(&GRANTED),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             };
             257
         ]
@@ -100,16 +99,19 @@ fn delayed_grants_count_toward_the_structural_address_space() {
         "A granted ability.",
         "The test only needs a reusable definition.",
     );
-    static GRANT: EffectDef = EffectDef::Apply {
+    static GRANT: EffectDef = EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::add_ability(&GRANTED),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
-    static DELAYED_GRANT: EffectDef = EffectDef::AtNextStep {
-        step: TurnStepDef::End,
-        player: PlayerRelation::You,
-        effect: &GRANT,
-    };
+    static DELAYED_GRANT: EffectDef =
+        EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+            "At the beginning of your next end step, grant an ability.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::You,
+            },
+            GRANT,
+        )));
     let effects = Box::leak(vec![DELAYED_GRANT; 257].into_boxed_slice());
     let abilities = Box::leak(
         vec![AbilityDef::static_ability(
@@ -139,18 +141,23 @@ fn replacement_program_grants_count_toward_the_structural_address_space() {
         "A granted ability.",
         "The test only needs a reusable definition.",
     );
-    static GRANT: EffectDef = EffectDef::Apply {
+    static GRANT: EffectDef = EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::add_ability(&GRANTED),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
     let replacement_effects =
         Box::leak(vec![ReplacementEffectDef::Perform(&GRANT); 257].into_boxed_slice());
     let abilities = Box::leak(
-        vec![AbilityDef::replacement(
-            "This replacement performs many ability grants.",
-            EffectDef::Replacement(ReplacementEffectDef::Sequence(replacement_effects)),
-        )]
+        vec![
+            AbilityDef::replacement(
+                "This replacement performs many ability grants.",
+                ReplacementEffectDef::Sequence(replacement_effects),
+            )
+            .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::Unsupported))
+            .with_coverage(AbilityCoverageDef::explained_complete(
+                "This structural-capacity test does not execute the replacement program.",
+            )),
+        ]
         .into_boxed_slice(),
     );
     let mut card = definition(1, "Test Card", CardSet::Alpha);
@@ -194,7 +201,7 @@ fn granted_ability_validation_reports_nested_structural_paths() {
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
             effect: AppliedEffectDef::add_ability(&INVALID),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     );
 
@@ -216,7 +223,7 @@ fn granted_ability_validation_follows_sacrifice_continuations() {
     static THEN: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::add_ability(&INVALID),
-        duration: EffectDurationDef::UntilEndOfTurn,
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     };
     static CHILD: AbilityDef = AbilityDef::activated(
         "Sacrifice a permanent, then grant an ability.",
@@ -247,7 +254,7 @@ fn granted_ability_validation_follows_replacement_programs() {
     static GRANT: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::add_ability(&INVALID),
-        duration: EffectDurationDef::UntilEndOfTurn,
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     };
     static PROGRAM: [ReplacementEffectDef; 2] = [
         ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
@@ -255,8 +262,12 @@ fn granted_ability_validation_follows_replacement_programs() {
     ];
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::replacement(
         "Replace an event, then grant an ability.",
-        EffectDef::Replacement(ReplacementEffectDef::Sequence(&PROGRAM)),
-    )];
+        ReplacementEffectDef::Sequence(&PROGRAM),
+    )
+    .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::Unsupported))
+    .with_coverage(AbilityCoverageDef::explained_complete(
+        "This structural grant-validation test does not execute the replacement program.",
+    ))];
     let mut card = definition(1, "Test Card", CardSet::Alpha);
     let rules = card.rules.with_abilities(&ABILITIES);
     set_primary_rules(&mut card, &rules);
@@ -286,7 +297,7 @@ fn granted_modal_branches_validate_nested_grants_in_printed_order() {
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::add_ability(&VALID),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::spell(
@@ -294,7 +305,7 @@ fn granted_modal_branches_validate_nested_grants_in_printed_order() {
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::add_ability(&INVALID),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ];
@@ -324,7 +335,7 @@ fn granted_modal_capacity_counts_grants_across_all_modes() {
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::add_ability(&TERMINAL),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 };
                 count
             ]
@@ -629,14 +640,274 @@ fn target_references_are_validated_through_replacement_programs() {
     static PROGRAM: [ReplacementEffectDef; 1] = [ReplacementEffectDef::Perform(&TARGET_EFFECT)];
 
     assert_eq!(
-        super::validate_ability_targets(
+        super::validate_replacement_ability_targets(
             &TARGETS,
-            EffectDef::Replacement(ReplacementEffectDef::Sequence(&PROGRAM)),
+            ReplacementEffectDef::Sequence(&PROGRAM),
         ),
         Err(GrantedAbilityValidationError::TargetReferenceOutOfBounds {
             target: TargetIndex(1),
             target_count: 1,
         })
+    );
+}
+
+#[test]
+fn ability_and_program_kinds_must_agree() {
+    let mut replacement = AbilityDef::replacement(
+        "This permanent enters tapped.",
+        ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
+    );
+    replacement.effect = AbilityEffectDef::declarative(EffectDef::None);
+    let mut card = definition(1, "Test Card", CardSet::Alpha);
+    let rules = card.rules.with_ability(replacement);
+    set_primary_rules(&mut card, &rules);
+    assert_eq!(
+        error(card),
+        CatalogError::ReplacementAbilityRequiresReplacementProgram {
+            definition: CardDefinitionId(1),
+            part: CardPartId::PRIMARY,
+            ability: AbilityId::PRIMARY,
+        },
+    );
+
+    let mut spell = AbilityDef::spell("Do nothing.", EffectDef::None);
+    spell.effect =
+        AbilityEffectDef::replacement_program(ReplacementEffectDef::ReplaceEventWithNothing);
+    let mut card = definition(1, "Test Card", CardSet::Alpha);
+    let rules = card.rules.with_ability(spell);
+    set_primary_rules(&mut card, &rules);
+    assert_eq!(
+        error(card),
+        CatalogError::ReplacementProgramRequiresReplacementAbility {
+            definition: CardDefinitionId(1),
+            part: CardPartId::PRIMARY,
+            ability: AbilityId::PRIMARY,
+        },
+    );
+}
+
+#[test]
+fn replacement_events_reject_programs_their_runtime_would_ignore() {
+    static NO_EFFECT: EffectDef = EffectDef::None;
+    static NESTED_INVALID: [ReplacementEffectDef; 1] =
+        [ReplacementEffectDef::MultiplyEventAmount(2)];
+    static INVALID_SEQUENCE: [ReplacementEffectDef; 1] =
+        [ReplacementEffectDef::Sequence(&NESTED_INVALID)];
+
+    let cases = [
+        (
+            ReplacementEventDef::SourceEntersBattlefield,
+            ReplacementEffectDef::ReplaceEventWithNothing,
+            "ReplaceEventWithNothing",
+        ),
+        (
+            ReplacementEventDef::SourceEntersBattlefield,
+            ReplacementEffectDef::Sequence(&INVALID_SEQUENCE),
+            "MultiplyEventAmount",
+        ),
+        (
+            ReplacementEventDef::WouldGainLife(PlayerRelation::You),
+            ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
+            "ModifyBattlefieldEntry",
+        ),
+        (
+            ReplacementEventDef::WouldBeginTurn {
+                player: PlayerRelation::You,
+                kind: TurnKindDef::Any,
+            },
+            ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
+            "MoveToZone",
+        ),
+        (
+            ReplacementEventDef::WouldMove {
+                from: ZoneKind::Hand,
+                to: ZoneKind::Graveyard,
+                cause: ZoneMoveCauseDef::Any,
+            },
+            ReplacementEffectDef::Perform(&NO_EFFECT),
+            "Perform",
+        ),
+        (
+            ReplacementEventDef::AnyObjectWouldMove {
+                to: ZoneKind::Graveyard,
+            },
+            ReplacementEffectDef::MultiplyEventAmount(2),
+            "MultiplyEventAmount",
+        ),
+    ];
+
+    for (event, effect, operation) in cases {
+        let ability = AbilityDef::defined_replacement(
+            "Replace an event.",
+            ReplacementAbilityDef::new().with_event(event),
+            effect,
+        );
+        let mut card = definition(1, "Test Card", CardSet::Alpha);
+        let rules = card.rules.with_ability(ability);
+        set_primary_rules(&mut card, &rules);
+        assert_eq!(
+            error(card),
+            CatalogError::UnsupportedReplacementProgram {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                event,
+                operation,
+            },
+        );
+    }
+}
+
+#[test]
+fn replacement_event_validation_accepts_each_supported_program_family() {
+    static UNTAP_SOURCE: EffectDef = EffectDef::Untap {
+        object: EffectRecipientDef::Source,
+    };
+    static BEGIN_TURN: [ReplacementEffectDef; 2] = [
+        ReplacementEffectDef::ReplaceEventWithNothing,
+        ReplacementEffectDef::Perform(&UNTAP_SOURCE),
+    ];
+    static TAKE_EXTRA_TURN: EffectDef = EffectDef::TakeExtraTurn {
+        player: EffectRecipientDef::Controller,
+    };
+    static BATTLEFIELD_EXIT: [ReplacementEffectDef; 2] = [
+        ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
+        ReplacementEffectDef::Perform(&TAKE_EXTRA_TURN),
+    ];
+
+    let cases = [
+        (
+            ReplacementEventDef::SourceEntersBattlefield,
+            ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
+        ),
+        (
+            ReplacementEventDef::WouldGainLife(PlayerRelation::You),
+            ReplacementEffectDef::MultiplyEventAmount(2),
+        ),
+        (
+            ReplacementEventDef::WouldBeginTurn {
+                player: PlayerRelation::You,
+                kind: TurnKindDef::Any,
+            },
+            ReplacementEffectDef::Sequence(&BEGIN_TURN),
+        ),
+        (
+            ReplacementEventDef::WouldMove {
+                from: ZoneKind::Hand,
+                to: ZoneKind::Graveyard,
+                cause: ZoneMoveCauseDef::Any,
+            },
+            ReplacementEffectDef::MoveToZone(ZoneKind::Battlefield),
+        ),
+        (
+            ReplacementEventDef::WouldMove {
+                from: ZoneKind::Battlefield,
+                to: ZoneKind::Graveyard,
+                cause: ZoneMoveCauseDef::Any,
+            },
+            ReplacementEffectDef::Sequence(&BATTLEFIELD_EXIT),
+        ),
+        (
+            ReplacementEventDef::AnyObjectWouldMove {
+                to: ZoneKind::Graveyard,
+            },
+            ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
+        ),
+    ];
+
+    for (event, effect) in cases {
+        let ability = AbilityDef::defined_replacement(
+            "Replace an event.",
+            ReplacementAbilityDef::new().with_event(event),
+            effect,
+        );
+        let mut card = definition(1, "Test Card", CardSet::Alpha);
+        let rules = card.rules.with_ability(ability);
+        set_primary_rules(&mut card, &rules);
+        CardCatalog::new([card]).expect("the event's shared runtime supports this program");
+    }
+}
+
+#[test]
+fn installed_triggers_retain_installer_targets_and_reject_fresh_target_scopes() {
+    static INSTALLER_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Any,
+            zones: &[ZoneKind::Battlefield],
+            controller: None,
+            owner: None,
+        },
+    )];
+    static FRESH_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Any,
+            zones: &[ZoneKind::Battlefield],
+            controller: None,
+            owner: None,
+        },
+    )];
+    static LEXICAL_EFFECT: EffectDef = EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+    };
+    static LEXICAL_TRIGGER: AbilityDef = AbilityDef::triggered(
+        "At the beginning of the next end step, destroy that permanent.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        LEXICAL_EFFECT,
+    );
+    static FRESH_TARGET_TRIGGER: AbilityDef = AbilityDef::triggered_with_targets(
+        "At the beginning of the next end step, destroy target permanent.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        &FRESH_TARGETS,
+        LEXICAL_EFFECT,
+    );
+    static LEGACY_TRIGGER: AbilityDef = AbilityDef::triggered(
+        "At the beginning of the next end step, destroy that permanent.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        LEXICAL_EFFECT,
+    )
+    .with_legacy_procedure();
+
+    super::validate_ability_targets(
+        &INSTALLER_TARGETS,
+        EffectDef::InstallTrigger(InstalledTriggerDef::once(&LEXICAL_TRIGGER)),
+    )
+    .expect("a targetless installed trigger may retain its installer's target slots");
+
+    for ability in [&FRESH_TARGET_TRIGGER, &LEGACY_TRIGGER] {
+        assert_eq!(
+            super::validate_ability_targets(
+                &INSTALLER_TARGETS,
+                EffectDef::InstallTrigger(InstalledTriggerDef::once(ability)),
+            ),
+            Err(GrantedAbilityValidationError::UnsupportedInstalledTriggerAbility),
+        );
+    }
+
+    static INVALID_SPELL: AbilityDef = AbilityDef::spell_with_targets(
+        "Install an unsupported delayed trigger.",
+        &INSTALLER_TARGETS,
+        EffectDef::InstallTrigger(InstalledTriggerDef::once(&FRESH_TARGET_TRIGGER)),
+    );
+    let mut card = definition(1, "Test Card", CardSet::Alpha);
+    let rules = card.rules.with_ability(INVALID_SPELL);
+    set_primary_rules(&mut card, &rules);
+    assert_eq!(
+        error(card),
+        CatalogError::UnsupportedInstalledTriggerAbility {
+            definition: CardDefinitionId(1),
+            part: CardPartId::PRIMARY,
+            ability: AbilityId::PRIMARY,
+        },
     );
 }
 
@@ -672,7 +943,6 @@ fn merged_effect_vocabulary_preserves_local_target_bounds() {
             amount: ValueDef::DividedAmongTargets,
         },
         EffectDef::CannotCastNoncreatureSpellsThisTurn { player: recipient },
-        EffectDef::ChooseCardName { object: recipient },
     ];
 
     for effect in effects {
@@ -792,7 +1062,7 @@ fn nested_grant_capacity_is_validated_per_granted_definition() {
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::add_ability(&TERMINAL),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             };
             257
         ]

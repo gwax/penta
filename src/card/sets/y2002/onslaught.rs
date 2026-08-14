@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef, EffectDurationDef,
-    EffectRecipientDef, ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    cards,
+    BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, cards,
 };
 use crate::{PlayerRelation, TargetIndex, TurnStepDef, mana_cost};
 
@@ -39,7 +39,7 @@ pub(in crate::card::sets) static GOBLIN_PYROMANCER: CardRecord = CardRecord::new
                     ValueDef::Constant(3),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::triggered(
@@ -69,10 +69,9 @@ pub(in crate::card::sets) static GOBLIN_SHARPSHOOTER: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin"], 1, 1).with_abilities(&[
         AbilityDef::static_ability(
             "This creature doesn't untap during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         AbilityDef::triggered(

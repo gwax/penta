@@ -1,6 +1,6 @@
 use super::runtime_support::*;
 use super::*;
-use crate::card::{PartitionItemsDef, SplitIntoPilesDef};
+use crate::card::{InstalledTriggerDef, PartitionItemsDef, SplitIntoPilesDef};
 use crate::{CostDef, ObjectSetBindingIndex, PaymentDef};
 
 #[test]
@@ -58,7 +58,9 @@ fn triggered_mana_conditions_stay_outside_the_shared_runtime_boundary() {
     let conditional = AbilityDef::defined(
         "Whenever this becomes tapped, if you control a permanent, add {C}.",
         DeclarativeAbilityDef::TriggeredMana(definition.with_condition(&CONDITION)),
-        ordinary.effect.definition,
+        ordinary
+            .declarative_effect()
+            .expect("ordinary triggered mana has a resolving effect"),
     );
 
     assert!(shared_definition_ability(&ordinary));
@@ -72,10 +74,9 @@ fn static_queries_reject_resolution_only_player_references() {
         &[ZoneKind::Battlefield],
         PlayerSetDef::One(PlayerRefDef::EventPlayer),
     );
-    let effect = EffectDef::Apply {
+    let effect = EffectDef::StaticApply {
         recipient: EffectRecipientDef::objects(ObjectSetDef::Query(EVENT_PLAYERS_PERMANENTS)),
         effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Plains]),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
 
     assert!(!shared_static_effect(&[ZoneKind::Battlefield], effect));
@@ -151,11 +152,15 @@ fn decision_effects_suspend_inside_shared_stack_sequences() {
         condition: &SOURCE_PRESENT,
         then: &MAY_TAP,
     };
-    static DELAYED_MAY: EffectDef = EffectDef::AtNextStep {
-        step: TurnStepDef::End,
-        player: PlayerRelation::You,
-        effect: &MAY_TAP,
-    };
+    static DELAYED_MAY: EffectDef =
+        EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+            "At the beginning of your next end step, you may tap this permanent.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::You,
+            },
+            MAY_TAP,
+        )));
     static SEQUENCE_WITH_MAY: [EffectDef; 2] = [MAY_TAP, UNTAP];
     static SEQUENCE_WITH_CONDITIONAL_MAY: [EffectDef; 2] = [CONDITIONAL_MAY, UNTAP];
     static SEQUENCE_WITH_PAYMENT: [EffectDef; 2] = [OPTIONAL_TAP, UNTAP];
@@ -279,10 +284,9 @@ fn zone_search_boundary_rejects_ambiguous_or_incoherent_shapes() {
 
 #[test]
 fn static_conditions_require_only_source_battlefield_state() {
-    static APPLIED: EffectDef = EffectDef::Apply {
+    static APPLIED: EffectDef = EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::CannotBeEnchanted,
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
     static SOURCE_UNTAPPED: TriggerConditionDef = TriggerConditionDef::SourceUntapped;
     static TARGET_MATCHES: TriggerConditionDef = TriggerConditionDef::TargetMatches {
@@ -331,16 +335,15 @@ fn nested_definition_assertions_descend_replacement_programs() {
         "This nested ability is intentionally outside the boundary.",
         EffectDef::Special("unsupported nested effect"),
     );
-    static GRANT: EffectDef = EffectDef::Apply {
+    static GRANT: EffectDef = EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::add_ability(&UNSUPPORTED),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
     static PROGRAM: [ReplacementEffectDef; 1] = [ReplacementEffectDef::Perform(&GRANT)];
 
-    assert_nested_definition_abilities(
+    assert_nested_replacement_definition_abilities(
         "Replacement fixture",
-        EffectDef::Replacement(ReplacementEffectDef::Sequence(&PROGRAM)),
+        ReplacementEffectDef::Sequence(&PROGRAM),
     );
 }
 
@@ -358,10 +361,9 @@ fn composite_uncounterability_stays_within_the_shared_runtime_boundary() {
         AppliedEffectDef::Composite(&MIXED),
     )];
 
-    let stack_effect = |effect| EffectDef::Apply {
+    let stack_effect = |effect| EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
         effect,
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
     assert!(shared_static_effect(
         &[ZoneKind::Stack],
@@ -452,7 +454,9 @@ fn fully_declarative_clauses_stay_within_the_shared_runtime_boundary() {
                     part.id,
                     ability_id,
                 );
-                if ability.declarative_effect().is_some() {
+                if ability.declarative_effect().is_some()
+                    || ability.declarative_replacement().is_some()
+                {
                     assert!(
                         shared_definition_ability(&ability),
                         "{} {:?} ability {:?} claims shared declarative execution outside the shared runtime boundary: {ability:?}",
@@ -461,12 +465,14 @@ fn fully_declarative_clauses_stay_within_the_shared_runtime_boundary() {
                         ability_id,
                     );
                 }
-                assert_nested_definition_abilities(&definition.name, ability.effect.definition);
+                assert_nested_program_abilities(&definition.name, ability.effect.definition);
                 if let DeclarativeAbilityDef::Spell(spell) = ability.definition
                     && let Some(modal) = spell.modal()
                 {
                     for mode in modal.modes {
-                        if mode.declarative_effect().is_some() {
+                        if mode.declarative_effect().is_some()
+                            || mode.declarative_replacement().is_some()
+                        {
                             assert!(
                                 shared_definition_ability(mode),
                                 "{} {:?} ability {:?} contains a shared declarative modal branch outside the shared runtime boundary: {mode:?}",
@@ -475,10 +481,7 @@ fn fully_declarative_clauses_stay_within_the_shared_runtime_boundary() {
                                 ability_id,
                             );
                         }
-                        assert_nested_definition_abilities(
-                            &definition.name,
-                            mode.effect.definition,
-                        );
+                        assert_nested_program_abilities(&definition.name, mode.effect.definition);
                     }
                 }
             }
@@ -509,6 +512,6 @@ fn long_lived_composite_ability_changes_accept_shared_activated_grants() {
     assert!(shared_resolving_apply(
         recipient,
         AppliedEffectDef::Composite(&CHANGES),
-        EffectDurationDef::Permanent,
+        ResolvedEffectDurationDef::Permanent,
     ));
 }

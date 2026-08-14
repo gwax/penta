@@ -13,9 +13,9 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
     CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef,
-    CounterKind, CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectDurationDef,
-    EffectExecutionDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, ReplacementEffectDef, ReplacementEventDef, TargetConditionDef,
+    CounterKind, CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectExecutionDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, TargetConditionDef,
     TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
     ZonePlacement, abilities, cards,
 };
@@ -103,7 +103,7 @@ pub(in crate::card::sets) static BONESCYTHE_SLIVER: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have double strike.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -113,7 +113,6 @@ pub(in crate::card::sets) static BONESCYTHE_SLIVER: CardRecord = CardRecord::new
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::add_ability(&abilities::double_strike()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -139,7 +138,7 @@ pub(in crate::card::sets) static CAPASHEN_KNIGHT: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -185,7 +184,7 @@ pub(in crate::card::sets) static CHARGING_GRIFFIN: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -224,7 +223,7 @@ pub(in crate::card::sets) static FORTIFY: CardRecord = CardRecord::new(
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                     effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(0)),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ),
             AbilityDef::spell(
@@ -232,7 +231,7 @@ pub(in crate::card::sets) static FORTIFY: CardRecord = CardRecord::new(
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                     effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(0), ValueDef::Constant(2)),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ),
         ],
@@ -278,9 +277,7 @@ pub(in crate::card::sets) static IMPOSING_SOVEREIGN: CardRecord = CardRecord::ne
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 controller: PlayerRelation::Opponent,
             },
-            EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
-                BattlefieldEntryModificationDef::Tapped,
-            )),
+            ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
         ),
     ),
 );
@@ -305,10 +302,9 @@ pub(in crate::card::sets) static INDESTRUCTIBILITY: CardRecord = CardRecord::new
             ),
             AbilityDef::static_ability(
                 "Enchanted permanent has indestructible.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::add_ability(&abilities::indestructible()),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -332,7 +328,7 @@ pub(in crate::card::sets) static SENTINEL_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have vigilance.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -342,7 +338,6 @@ pub(in crate::card::sets) static SENTINEL_SLIVER: CardRecord = CardRecord::new(
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::add_ability(&abilities::vigilance()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -417,7 +412,7 @@ pub(in crate::card::sets) static STEELFORM_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control get +0/+1.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -430,7 +425,6 @@ pub(in crate::card::sets) static STEELFORM_SLIVER: CardRecord = CardRecord::new(
                     ValueDef::Constant(0),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -452,7 +446,7 @@ pub(in crate::card::sets) static STONEHORN_CHANTER: CardRecord = CardRecord::new
                     AppliedEffectDef::add_ability(&abilities::vigilance()),
                     AppliedEffectDef::add_ability(&abilities::lifelink()),
                 ]),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -554,7 +548,7 @@ pub(in crate::card::sets) static GALERIDER_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{U}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have flying.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -564,7 +558,6 @@ pub(in crate::card::sets) static GALERIDER_SLIVER: CardRecord = CardRecord::new(
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::add_ability(&abilities::flying()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -653,10 +646,9 @@ pub(in crate::card::sets) static PHANTOM_WARRIOR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Illusion", "Warrior"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "This creature can't be blocked.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Any),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -752,7 +744,7 @@ pub(in crate::card::sets) static TRAINED_CONDOR: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::add_ability(&abilities::flying()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -783,7 +775,7 @@ pub(in crate::card::sets) static WATER_SERVANT: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(-1),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::activated(
@@ -795,7 +787,7 @@ pub(in crate::card::sets) static WATER_SERVANT: CardRecord = CardRecord::new(
                     ValueDef::Constant(-1),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -842,7 +834,7 @@ pub(in crate::card::sets) static ZEPHYR_CHARGE: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::add_ability(&abilities::flying()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -882,7 +874,7 @@ pub(in crate::card::sets) static BLIGHTCASTER: CardRecord = CardRecord::new(
                 effect: &EffectDef::Apply {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(-2), ValueDef::Constant(-2)),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             },
         ),
@@ -911,7 +903,7 @@ pub(in crate::card::sets) static BLOOD_BAIRN: CardRecord = CardRecord::new(
                     ValueDef::Constant(2),
                     ValueDef::Constant(2),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1191,7 +1183,7 @@ pub(in crate::card::sets) static NIGHTWING_SHADE: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1325,7 +1317,7 @@ pub(in crate::card::sets) static SHRIVEL: CardRecord = CardRecord::new(
                 ValueDef::Constant(-1),
                 ValueDef::Constant(-1),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1339,7 +1331,7 @@ pub(in crate::card::sets) static SYPHON_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have lifelink.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -1349,7 +1341,6 @@ pub(in crate::card::sets) static SYPHON_SLIVER: CardRecord = CardRecord::new(
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::add_ability(&abilities::lifelink()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -1406,7 +1397,7 @@ pub(in crate::card::sets) static WRING_FLESH: CardRecord = CardRecord::new(
                 ValueDef::Constant(-3),
                 ValueDef::Constant(-1),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1505,7 +1496,7 @@ pub(in crate::card::sets) static BATTLE_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{4}{R}"), &["Sliver"], 3, 3).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control get +2/+0.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -1518,7 +1509,6 @@ pub(in crate::card::sets) static BATTLE_SLIVER: CardRecord = CardRecord::new(
                     ValueDef::Constant(2),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -1533,7 +1523,7 @@ pub(in crate::card::sets) static BLUR_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have haste.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -1543,7 +1533,6 @@ pub(in crate::card::sets) static BLUR_SLIVER: CardRecord = CardRecord::new(
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::add_ability(&abilities::haste()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -1689,7 +1678,7 @@ pub(in crate::card::sets) static GOBLIN_DIPLOMATS: CardRecord = CardRecord::new(
                 effect: AppliedEffectDef::add_ability(&abilities::attacks_each_combat_if_able(
                     "This creature attacks this turn if able.",
                 )),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1736,7 +1725,7 @@ pub(in crate::card::sets) static LIGHTNING_TALONS: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +3/+0 and has first strike.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&[
                         AppliedEffectDef::modify_power_toughness(
@@ -1745,7 +1734,6 @@ pub(in crate::card::sets) static LIGHTNING_TALONS: CardRecord = CardRecord::new(
                         ),
                         AppliedEffectDef::add_ability(&abilities::first_strike()),
                     ]),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1810,7 +1798,7 @@ pub(in crate::card::sets) static OGRE_BATTLEDRIVER: CardRecord = CardRecord::new
                     AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(0)),
                     AppliedEffectDef::add_ability(&abilities::haste()),
                 ]),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1859,7 +1847,7 @@ pub(in crate::card::sets) static SCOURGE_OF_VALKAS: CardRecord = CardRecord::new
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1898,7 +1886,7 @@ pub(in crate::card::sets) static STRIKING_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{R}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have first strike.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -1908,7 +1896,6 @@ pub(in crate::card::sets) static STRIKING_SLIVER: CardRecord = CardRecord::new(
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -1935,13 +1922,12 @@ pub(in crate::card::sets) static THORNCASTER_SLIVER: CardRecord = CardRecord::ne
     CardRules::new_creature(mana_cost!("{4}{R}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have \"Whenever this creature attacks, it deals 1 damage to any target.\"",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Sliver"),
                     ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                 effect: AppliedEffectDef::add_ability(&THORNCASTER_SLIVER_GRANTED_ABILITY),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -1967,7 +1953,7 @@ pub(in crate::card::sets) static THUNDER_STRIKE: CardRecord = CardRecord::new(
                 ),
                 AppliedEffectDef::add_ability(&abilities::first_strike()),
             ]),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -2083,7 +2069,7 @@ pub(in crate::card::sets) static GROUNDSHAKER_SLIVER: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{6}{G}"), &["Sliver"], 5, 5).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have trample.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -2093,7 +2079,6 @@ pub(in crate::card::sets) static GROUNDSHAKER_SLIVER: CardRecord = CardRecord::n
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::add_ability(&abilities::trample()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -2180,7 +2165,7 @@ pub(in crate::card::sets) static MANAWEFT_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have \"{T}: Add one mana of any color.\"",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -2190,7 +2175,6 @@ pub(in crate::card::sets) static MANAWEFT_SLIVER: CardRecord = CardRecord::new(
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::add_ability(&MANAWEFT_SLIVER_GRANTED_ABILITY),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -2205,7 +2189,7 @@ pub(in crate::card::sets) static MEGANTIC_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{5}{G}"), &["Sliver"], 3, 3).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control get +3/+3.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -2218,7 +2202,6 @@ pub(in crate::card::sets) static MEGANTIC_SLIVER: CardRecord = CardRecord::new(
                     ValueDef::Constant(3),
                     ValueDef::Constant(3),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -2265,7 +2248,7 @@ pub(in crate::card::sets) static PREDATORY_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control get +1/+1.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -2278,7 +2261,6 @@ pub(in crate::card::sets) static PREDATORY_SLIVER: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -2438,10 +2420,9 @@ pub(in crate::card::sets) static TROLLHIDE: CardRecord = CardRecord::new(
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/+2 and has \"{1}{G}: Regenerate this creature.\"",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&TROLLHIDE_GRANT),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -2509,10 +2490,9 @@ pub(in crate::card::sets) static ACCORDERS_SHIELD: CardRecord = CardRecord::new(
         .with_abilities(&[
             AbilityDef::static_ability(
                 "Equipped creature gets +0/+3 and has vigilance.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&ACCORDERS_SHIELD_BONUS),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             abilities::equip(
@@ -2534,14 +2514,13 @@ pub(in crate::card::sets) static DARKSTEEL_FORGE: CardRecord = CardRecord::new(
     CardSet::Magic2014,
     CardRules::new_artifact(mana_cost!("{9}")).with_ability(AbilityDef::static_ability(
         "Artifacts you control have indestructible.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::HasType(CardType::Artifact),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             ),
             effect: AppliedEffectDef::add_ability(&abilities::indestructible()),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )),
 );
@@ -2565,10 +2544,9 @@ pub(in crate::card::sets) static FIRESHRIEKER: CardRecord = CardRecord::new(
         .with_abilities(&[
             AbilityDef::static_ability(
                 "Equipped creature has double strike.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::add_ability(&FIRESHRIEKER_DOUBLE_STRIKE),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             abilities::equip(
@@ -2840,7 +2818,7 @@ pub(in crate::card::sets) static VIAL_OF_POISON: CardRecord = CardRecord::new(
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             effect: AppliedEffectDef::add_ability(&abilities::deathtouch()),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -2896,7 +2874,7 @@ pub(in crate::card::sets) static MUTAVAULT: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::Composite(&MUTAVAULT_ANIMATION),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),

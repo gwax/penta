@@ -295,7 +295,8 @@ fn targeted_trigger_chooses_public_targets_while_being_put_on_stack() {
         owner: PlayerId::One,
         controller: PlayerId::One,
         text: "Deal 2 damage to target creature an opponent controls.",
-        target_defs: &TARGETS,
+        target_defs: TARGETS.to_vec(),
+        targets: Vec::new(),
         effect: EffectDef::DealDamage {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Constant(2),
@@ -309,8 +310,10 @@ fn targeted_trigger_chooses_public_targets_while_being_put_on_stack() {
             object_controller: None,
             event_player: None,
             amount: None,
-        },
+        }
+        .into(),
         condition: None,
+        x: 0,
     });
     game.finish_rules_procedure();
 
@@ -420,7 +423,8 @@ fn su_chi_mana_and_source_power_use_ordinary_stack_and_lki() {
         owner: PlayerId::One,
         controller: PlayerId::One,
         text: "Deal damage equal to this creature's power.",
-        target_defs: &[],
+        target_defs: Vec::new(),
+        targets: Vec::new(),
         effect: EffectDef::DealDamage {
             recipient: EffectRecipientDef::Opponent,
             amount: ValueDef::SourcePower,
@@ -434,8 +438,10 @@ fn su_chi_mana_and_source_power_use_ordinary_stack_and_lki() {
             object_controller: Some(PlayerId::One),
             event_player: Some(PlayerId::One),
             amount: None,
-        },
+        }
+        .into(),
         condition: None,
+        x: 0,
     });
     game.destroy_permanent(CardInstanceId(10_010));
     game.finish_rules_procedure();

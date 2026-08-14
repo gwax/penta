@@ -58,6 +58,37 @@ fn shared_partition(partition: SplitIntoPilesDef) -> bool {
         && shared_effect_recipient(EffectRecipientDef::players(partition.chooser))
 }
 
+fn shared_damage_prevention(prevention: crate::card::DamagePreventionDef) -> bool {
+    let source_is_shared = match prevention.matcher.source {
+        DamageSourceMatcherDef::Any | DamageSourceMatcherDef::Group(_) => true,
+        DamageSourceMatcherDef::Object(source) | DamageSourceMatcherDef::Except(source) => {
+            shared_effect_recipient(EffectRecipientDef::object(source))
+        }
+        DamageSourceMatcherDef::Matching(source) => shared_object_predicate(source),
+        DamageSourceMatcherDef::AffectedObject => false,
+    };
+    let recipient_is_shared = match prevention.matcher.recipient {
+        DamageRecipientMatcherDef::Any => true,
+        DamageRecipientMatcherDef::Recipients(recipient) => shared_effect_recipient(recipient),
+        DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
+            shared_effect_recipient(EffectRecipientDef::player(player))
+        }
+        DamageRecipientMatcherDef::AffectedObject => false,
+    };
+    let capacity_is_shared = match prevention.capacity {
+        DamagePreventionCapacityDef::Amount(_) | DamagePreventionCapacityDef::Unlimited => true,
+        DamagePreventionCapacityDef::Events(events) => events > 0,
+    };
+    let follow_up_is_shared = prevention
+        .follow_up
+        .is_none_or(|follow_up| match follow_up {
+            DamagePreventionFollowUpDef::GainLife(player) => {
+                shared_effect_recipient(EffectRecipientDef::player(player))
+            }
+        });
+    source_is_shared && recipient_is_shared && capacity_is_shared && follow_up_is_shared
+}
+
 /// Resolving sequences preserve their unprocessed tail, so a queued decision
 /// may suspend at any sequence component. Other callers still pass false when
 /// their own continuation cannot be suspended.
@@ -128,17 +159,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             };
             branch_is_shared(*on_success) && branch_is_shared(*on_failure)
         }
-        EffectDef::PreventNextDamageFromSource { object, source, .. } => {
-            shared_effect_recipient(object) && shared_effect_recipient(source)
-        }
-        EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { player }
-        | EffectDef::PreventDamageToPlayerFromThisTurn { player, .. }
-        | EffectDef::RedirectTargetDamageToSourceThisTurn { player, .. } => {
+        EffectDef::RedirectTargetDamageToSourceThisTurn { player, .. } => {
             shared_effect_recipient(player)
         }
-        EffectDef::PreventAllCombatDamageExceptSourceThisTurn { source } => {
-            shared_effect_recipient(source)
-        }
+        EffectDef::PreventDamage { prevention, .. } => shared_damage_prevention(prevention),
         EffectDef::Choose(choice) => {
             deferred_decision_allowed
                 && shared_choose(choice)
@@ -252,17 +276,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
         | EffectDef::RemoveFromCombat { object }
-        | EffectDef::SetColor { object, .. }
         | EffectDef::DestroyAtEndOfCombat { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }
         | EffectDef::DoesNotUntapWhileSourceTapped { object }
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
-        | EffectDef::PreventNextDamage { object, .. }
-        | EffectDef::PreventAllDamageThisTurn { object }
-        | EffectDef::PreventCombatDamageThisTurn { object }
-        | EffectDef::PreventCombatDamageDealtByThisTurn { object }
-        | EffectDef::PreventDamageDealtByThisTurn { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
         | EffectDef::ExileLinkedToSource { object }
@@ -286,7 +304,6 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
         | EffectDef::AdditionalCombatPhase
-        | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::GrantFlashToNextSorcery => true,
         // Each of these asks a question and then runs an inner effect,
         // so the question has to be allowed here and the answer has to be
@@ -302,10 +319,9 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         EffectDef::IfCondition { then: effect, .. } => {
             shared_stack_effect_at_position(*effect, deferred_decision_allowed)
         }
-        EffectDef::AtNextStep { effect, .. } => shared_stack_effect_at_position(*effect, true),
         // Installing an ability is a resolution like any other; what it
         // installs has to be an ability the shared runtime can fire.
-        EffectDef::TriggerUntilYourNextTurn { ability } => shared_definition_ability(ability),
+        EffectDef::InstallTrigger(trigger) => shared_definition_ability(trigger.ability),
         EffectDef::Apply {
             recipient,
             effect,
@@ -324,17 +340,12 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             ) && shared_effect_recipient(object)
         }
         EffectDef::None
+        | EffectDef::StaticApply { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
-        | EffectDef::MultiplyEventAmount(_)
-        | EffectDef::Replacement(_)
-        | EffectDef::ChooseCardName { .. }
-        | EffectDef::ChoosePlayer { .. }
-        | EffectDef::CopyPermanentAsItEnters { .. }
-        | EffectDef::ChooseCreatureType { .. }
         | EffectDef::Special(_) => false,
     }
 }

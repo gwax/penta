@@ -268,23 +268,40 @@ impl AbilityDef {
     }
 
     #[must_use]
-    pub const fn replacement(text: &'static str, effect: EffectDef) -> Self {
-        Self::defined(
+    pub const fn replacement(text: &'static str, effect: ReplacementEffectDef) -> Self {
+        Self::replacement_for(text, ReplacementEventDef::SourceEntersBattlefield, effect)
+    }
+
+    /// Defines a replacement ability with a prospective-event program rather
+    /// than a resolving stack effect.
+    #[must_use]
+    pub const fn replacement_for(
+        text: &'static str,
+        event: ReplacementEventDef,
+        effect: ReplacementEffectDef,
+    ) -> Self {
+        Self::defined_replacement(text, ReplacementAbilityDef::new().with_event(event), effect)
+    }
+
+    #[must_use]
+    pub const fn defined_replacement(
+        text: &'static str,
+        definition: ReplacementAbilityDef,
+        effect: ReplacementEffectDef,
+    ) -> Self {
+        Self {
             text,
-            DeclarativeAbilityDef::Replacement(ReplacementAbilityDef::new()),
-            effect,
-        )
+            definition: DeclarativeAbilityDef::Replacement(definition),
+            effect: AbilityEffectDef::replacement_program(effect),
+            coverage: AbilityCoverageDef::complete(),
+        }
     }
 
     /// Defines a replacement ability that modifies how its own source enters
     /// the battlefield.
     #[must_use]
     pub const fn as_enters(text: &'static str, effect: ReplacementEffectDef) -> Self {
-        Self::replacement_for(
-            text,
-            ReplacementEventDef::SourceEntersBattlefield,
-            EffectDef::Replacement(effect),
-        )
+        Self::replacement(text, effect)
     }
 
     /// The same, gated on a condition read as the permanent enters.
@@ -294,26 +311,11 @@ impl AbilityDef {
         condition: ReplacementConditionDef,
         effect: ReplacementEffectDef,
     ) -> Self {
-        Self::defined(
+        Self::defined_replacement(
             text,
-            DeclarativeAbilityDef::Replacement(
-                ReplacementAbilityDef::new()
-                    .with_event(ReplacementEventDef::SourceEntersBattlefield)
-                    .with_condition(condition),
-            ),
-            EffectDef::Replacement(effect),
-        )
-    }
-
-    #[must_use]
-    pub const fn replacement_for(
-        text: &'static str,
-        event: ReplacementEventDef,
-        effect: EffectDef,
-    ) -> Self {
-        Self::defined(
-            text,
-            DeclarativeAbilityDef::Replacement(ReplacementAbilityDef::new().with_event(event)),
+            ReplacementAbilityDef::new()
+                .with_event(ReplacementEventDef::SourceEntersBattlefield)
+                .with_condition(condition),
             effect,
         )
     }
@@ -529,6 +531,15 @@ impl AbilityDef {
         }
     }
 
+    #[must_use]
+    pub const fn declarative_replacement(self) -> Option<ReplacementEffectDef> {
+        if self.is_executable() {
+            self.effect.declarative_replacement()
+        } else {
+            None
+        }
+    }
+
     /// Renders the complete printed clause. Most abilities borrow their
     /// canonical static text; structured alternative-casting keywords insert
     /// their owned mana cost into canonical reminder text.
@@ -603,9 +614,7 @@ impl AbilityDef {
         let modes = statuses.next().map_or(own, |first| {
             statuses.fold(first, ImplementationStatus::combine)
         });
-        if self.effect.execution == EffectExecutionDef::Declarative
-            && self.effect.definition == EffectDef::None
-        {
+        if self.effect.declarative_definition() == Some(EffectDef::None) {
             modes
         } else {
             own.combine(modes)

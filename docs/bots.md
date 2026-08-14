@@ -216,7 +216,7 @@ A clone forks the *true* state, hidden zones included. That is right for
 self-play but wrong for a search bot in a hosted match: its rollouts must use
 worlds consistent with its observation, not cards only the host knows.
 
-The optional `reconstruction.checkpoint.v4` capability advertises a hidden-safe
+The optional `reconstruction.checkpoint.v5` capability advertises a hidden-safe
 current-state checkpoint in each observation. The checkpoint was introduced in
 protocol 19, expanded in protocol 21 into the complete typed snapshot described
 below, and given its own nested format version in protocol 22. Supply a
@@ -295,18 +295,21 @@ A private pending decision is reconstructible only from its choosing seat's
 observation. Other seats receive neither the decision nor its continuation in
 their checkpoint; `hasDeferredState` is true, so importing that checkpoint
 fails closed instead of exposing private candidates or effect-local bindings.
+An installed or pending trigger likewise fails closed when its retained
+lexical targets or bindings name a card in a hidden zone that has no stable
+public object ID; the checkpoint omits that trigger rather than serializing a
+host-only identity.
 
-Checkpoint format 3 covers every ordinary action boundary emitted by the
+Checkpoint format 5 covers every ordinary action boundary emitted by the
 hosted formats: pregame and turn/combat progression; complete permanent,
 emblem, stack, and combat state; restricted/source-specific mana; copied and
 temporarily modified characteristics; retired-object last-known information;
-pending battlefield-entry replacement programs; delayed, floating, and
-pending triggers; and every pending decision continuation emitted by the hosted
-formats, including prospective begin-turn replacement choices. Active
-turn-scoped relational damage prevention remains an optional snapshot member
-and defaults to empty when omitted. Stack payloads
-retain target-slot groupings, divided amounts, modes, X, trigger context,
-flashback/copy state, text and color changes, and mana-carried effects.
+pending battlefield-entry replacement programs; installed and pending
+triggers; ordered resolved damage-prevention rules; and every pending decision
+continuation emitted by the hosted formats, including prospective begin-turn
+replacement choices. Stack payloads retain target-slot groupings, divided
+amounts, modes, X, complete lexical resolution context, flashback/copy state,
+text and color changes, and mana-carried effects.
 Card-owned pile callbacks use stable registry keys rather than serialized
 function pointers. Public object IDs remain unchanged, including those needed
 by suspended continuations, while hypothesized private cards are rebound to
@@ -349,7 +352,7 @@ world it can search.
 | field | meaning |
 | --- | --- |
 | `protocolVersion` | the breaking bot-wire epoch; protocol 22 objects are open-world, but an epoch mismatch requires migration |
-| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v4`; ignore unknown entries |
+| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v5`; ignore unknown entries |
 | `simulationFingerprint` | a conservative identity of simulation source and build requirements; pin it for training and require it for reconstruction |
 | `engineVersion` | package-release provenance; it is not an exact simulation identity |
 | `format` | the rules/deck profile slug, such as `"old-school-93-94"` or `"isd-rtr-standard"` |
@@ -735,6 +738,27 @@ new state. Current consumers of reconstruction should require
 `reconstruction.checkpoint.v4` and regenerate checkpoints with the current
 engine.
 
+### Migrating checkpoint format 4 to 5
+
+This rules change leaves protocol 22 in place. Checkpoint format 5 replaces
+the separate Fog flag, prevention shields, relational prevention rules, and
+permanent combat-prevention flags with one ordered collection of resolved
+damage-prevention rules. Each entry retains concrete source and recipient
+matchers, remaining point or event capacity, coverage, any frozen life-gain
+recipient, source-ability provenance, timestamp, and expiration.
+
+Effect-scheduled step instructions and floating listeners are likewise one
+installed-trigger collection. A listener retains the installing effect's
+typed object bindings and target selections while receiving fresh event
+context each time it triggers; pending and stacked triggered abilities now
+carry that complete resolution context. Entry-replacement continuations use
+typed replacement-effect locators, including nested branches.
+
+Format-4 checkpoints cannot recover this ordering, trigger identity, or
+lexical context from their fragmented fields. Current reconstruction consumers
+should require `reconstruction.checkpoint.v5` and regenerate checkpoints with
+the current engine.
+
 ### Migrating from protocol 21
 
 Protocol 22 splits wire compatibility from conservative source identity:
@@ -762,7 +786,7 @@ Protocol 22 splits wire compatibility from conservative source identity:
   `requiredSimulationFingerprint` to refuse a different simulation before it
   is listed or assigned.
 
-The current optional capability is `reconstruction.checkpoint.v4`. An ordinary
+The current optional capability is `reconstruction.checkpoint.v5`. An ordinary
 hosted bot that only reads `legalActions` should declare an empty capability
 list; do not copy the server's advertised capabilities without implementing
 them.

@@ -332,20 +332,13 @@ impl HandcraftedPolicy {
             | EffectDef::DoesNotUntapWhileSourceTapped { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
-            | EffectDef::PreventAllCombatDamageThisTurn
-            | EffectDef::PreventNextDamage { .. }
-            | EffectDef::PreventAllDamageThisTurn { .. }
-            | EffectDef::PreventNextDamageFromSource { .. }
-            | EffectDef::PreventCombatDamageThisTurn { .. }
-            | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-            | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
+            | EffectDef::PreventDamage { .. }
             | EffectDef::RedirectTargetDamageToSourceThisTurn { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);
             }
-            EffectDef::Apply { .. } => profile.mark(DeclarativeSpellProfile::APPLIES),
+            EffectDef::StaticApply { .. } | EffectDef::Apply { .. } => {
+                profile.mark(DeclarativeSpellProfile::APPLIES);
+            }
             EffectDef::TakeExtraTurn {
                 player: EffectRecipientDef::Controller,
             } => profile.mark(DeclarativeSpellProfile::EXTRA_TURN),
@@ -387,23 +380,16 @@ impl HandcraftedPolicy {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlWhileSourceRemains { .. }
             | EffectDef::GainControlThisTurn { .. }
-            | EffectDef::AtNextStep { .. }
+            | EffectDef::InstallTrigger(_)
             | EffectDef::IfCondition { .. }
-            | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
-            | EffectDef::MultiplyEventAmount(_)
-            | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateTokenCopyOf { .. }
-            | EffectDef::ChooseCardName { .. }
-            | EffectDef::ChoosePlayer { .. }
-            | EffectDef::CopyPermanentAsItEnters { .. }
-            | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
         }
     }

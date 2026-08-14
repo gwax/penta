@@ -7,11 +7,12 @@ use crate::card::sets::{
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, ComparisonDef, CounterKind, DiscardSelectionDef, DividedTotal,
-    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEventDef,
-    SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    CardSupertype, CardType, ComparisonDef, CounterKind, DamageEventMatcherDef,
+    DamagePreventionDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectExecutionDef,
+    EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRefDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -117,7 +118,7 @@ pub(in crate::card::sets) static BATTLEFLIGHT_EAGLE: CardRecord = CardRecord::ne
                     AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
                     AppliedEffectDef::add_ability(&abilities::flying()),
                 ]),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -134,7 +135,7 @@ pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::
             abilities::vigilance(),
             AbilityDef::static_ability(
                 "Other Soldier creatures you control get +1/+1 and have vigilance.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
@@ -151,7 +152,6 @@ pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::
                         ),
                         AppliedEffectDef::add_ability(&abilities::vigilance()),
                     ]),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             AbilityDef::triggered(
@@ -202,10 +202,9 @@ pub(in crate::card::sets) static CRUSADER_OF_ODRIC: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 0, 0).with_ability(
         AbilityDef::static_ability(
             "Crusader of Odric's power and toughness are each equal to the number of creatures you control.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(ValueDef::CountMatchingObjects(&CRUSADER_CREATURES), ValueDef::CountMatchingObjects(&CRUSADER_CREATURES)),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -243,13 +242,12 @@ pub(in crate::card::sets) static DIVINE_FAVOR: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +1/+3.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::Constant(1),
                         ValueDef::Constant(3),
                     ),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -312,7 +310,7 @@ pub(in crate::card::sets) static GLORIOUS_CHARGE: CardRecord = CardRecord::new(
                 ValueDef::Constant(1),
                 ValueDef::Constant(1),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -339,7 +337,7 @@ pub(in crate::card::sets) static GRIFFIN_PROTECTOR: CardRecord = CardRecord::new
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -497,13 +495,12 @@ pub(in crate::card::sets) static PRIZED_ELEPHANT: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Elephant"], 3, 3).with_abilities(&[
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control a Forest.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(
                     ValueDef::AnyMatchingObject(&PRIZED_ELEPHANT_FORESTS),
                     ValueDef::AnyMatchingObject(&PRIZED_ELEPHANT_FORESTS),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         AbilityDef::activated(
@@ -512,7 +509,7 @@ pub(in crate::card::sets) static PRIZED_ELEPHANT: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::add_ability(&abilities::trample()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -548,7 +545,7 @@ pub(in crate::card::sets) static RHOX_FAITHMENDER: CardRecord = CardRecord::new(
         AbilityDef::replacement_for(
             "If you would gain life, you gain twice that much life instead.",
             ReplacementEventDef::WouldGainLife(PlayerRelation::You),
-            EffectDef::MultiplyEventAmount(2),
+            ReplacementEffectDef::MultiplyEventAmount(2),
         ),
     ]),
 );
@@ -564,8 +561,13 @@ pub(in crate::card::sets) static SAFE_PASSAGE: CardRecord = CardRecord::new(
     CardSet::Magic2013,
     CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
         "Prevent all damage that would be dealt to you and creatures you control this turn.",
-        EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn {
-            player: EffectRecipientDef::Controller,
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(
+                DamageEventMatcherDef::to_player_and_creatures_controlled_by(
+                    PlayerRefDef::EffectController,
+                ),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -593,7 +595,7 @@ pub(in crate::card::sets) static SHOW_OF_VALOR: CardRecord = CardRecord::new(
                 ValueDef::Constant(2),
                 ValueDef::Constant(4),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -709,13 +711,12 @@ pub(in crate::card::sets) static ARCTIC_AVEN: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control a Plains.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(
                     ValueDef::AnyMatchingObject(&PLAINS_YOU_CONTROL),
                     ValueDef::AnyMatchingObject(&PLAINS_YOU_CONTROL),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         AbilityDef::activated(
@@ -724,7 +725,7 @@ pub(in crate::card::sets) static ARCTIC_AVEN: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::add_ability(&abilities::lifelink()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -865,7 +866,7 @@ pub(in crate::card::sets) static HYDROSURGE: CardRecord = CardRecord::new(
                 ValueDef::Constant(-5),
                 ValueDef::Constant(0),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1136,7 +1137,7 @@ pub(in crate::card::sets) static TRICKS_OF_THE_TRADE: CardRecord = CardRecord::n
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/+0 and can't be blocked.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&[
                         AppliedEffectDef::modify_power_toughness(
@@ -1145,7 +1146,6 @@ pub(in crate::card::sets) static TRICKS_OF_THE_TRADE: CardRecord = CardRecord::n
                         ),
                         AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Any),
                     ]),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1194,7 +1194,7 @@ pub(in crate::card::sets) static WATERCOURSER: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(-1),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1280,7 +1280,7 @@ pub(in crate::card::sets) static BLOODTHRONE_VAMPIRE: CardRecord = CardRecord::n
                     ValueDef::Constant(2),
                     ValueDef::Constant(2),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1304,7 +1304,7 @@ pub(in crate::card::sets) static COWER_IN_FEAR: CardRecord = CardRecord::new(
                 ValueDef::Constant(-1),
                 ValueDef::Constant(-1),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1344,13 +1344,12 @@ pub(in crate::card::sets) static DARK_FAVOR: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +3/+1.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::Constant(3),
                         ValueDef::Constant(1),
                     ),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1503,13 +1502,12 @@ pub(in crate::card::sets) static HARBOR_BANDIT: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Human", "Rogue"], 2, 2).with_abilities(&[
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control an Island.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(
                     ValueDef::AnyMatchingObject(&HARBOR_BANDIT_ISLANDS),
                     ValueDef::AnyMatchingObject(&HARBOR_BANDIT_ISLANDS),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         AbilityDef::activated(
@@ -1576,7 +1574,7 @@ pub(in crate::card::sets) static LILIANAS_SHADE: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1602,7 +1600,7 @@ pub(in crate::card::sets) static MARK_OF_THE_VAMPIRE: CardRecord = CardRecord::n
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/+2 and has lifelink.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&[
                         AppliedEffectDef::modify_power_toughness(
@@ -1611,7 +1609,6 @@ pub(in crate::card::sets) static MARK_OF_THE_VAMPIRE: CardRecord = CardRecord::n
                         ),
                         AppliedEffectDef::add_ability(&abilities::lifelink()),
                     ]),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1667,7 +1664,7 @@ pub(in crate::card::sets) static MUTILATE: CardRecord = CardRecord::new(
                 ValueDef::Negate(&SWAMPS_YOU_CONTROL),
                 ValueDef::Negate(&SWAMPS_YOU_CONTROL),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -1924,7 +1921,7 @@ pub(in crate::card::sets) static CLEAVER_RIOT: CardRecord = CardRecord::new(
                 PlayerRelation::You,
             ),
             effect: AppliedEffectDef::add_ability(&abilities::double_strike()),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1957,13 +1954,12 @@ pub(in crate::card::sets) static CRIMSON_MUCKWADER: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Lizard"], 2, 1).with_abilities(&[
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control a Swamp.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(
                     ValueDef::AnyMatchingObject(&CRIMSON_MUCKWADER_SWAMPS),
                     ValueDef::AnyMatchingObject(&CRIMSON_MUCKWADER_SWAMPS),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         abilities::regenerate_self(
@@ -1990,7 +1986,7 @@ pub(in crate::card::sets) static DRAGON_HATCHLING: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -2004,14 +2000,13 @@ pub(in crate::card::sets) static FERVOR: CardRecord = CardRecord::new(
     CardSet::Magic2013,
     CardRules::new_enchantment(mana_cost!("{2}{R}")).with_ability(AbilityDef::static_ability(
         "Creatures you control have haste.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::HasType(CardType::Creature),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             ),
             effect: AppliedEffectDef::add_ability(&abilities::haste()),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )),
 );
@@ -2068,7 +2063,7 @@ pub(in crate::card::sets) static FURNACE_WHELP: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -2128,7 +2123,7 @@ pub(in crate::card::sets) static KINDLED_FURY: CardRecord = CardRecord::new(
                 ),
                 AppliedEffectDef::add_ability(&abilities::first_strike()),
             ]),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -2237,7 +2232,7 @@ pub(in crate::card::sets) static MARK_OF_MUTINY: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::add_ability(&abilities::haste()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ]),
     )),
@@ -2366,7 +2361,7 @@ pub(in crate::card::sets) static TRUMPET_BLAST: CardRecord = CardRecord::new(
                 ValueDef::Constant(2),
                 ValueDef::Constant(0),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -2414,15 +2409,13 @@ pub(in crate::card::sets) static VOLCANIC_STRENGTH: CardRecord = CardRecord::new
         AbilityDef::static_ability(
             "Enchanted creature gets +2/+2 and has mountainwalk. (It can't be blocked as long as defending player controls a Mountain.)",
             EffectDef::Sequence(&[
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::add_ability(&abilities::mountainwalk()),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ]),
         ),
@@ -2642,13 +2635,12 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Boar"], 2, 2).with_abilities(&[
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control a Mountain.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(
                     ValueDef::AnyMatchingObject(&MOUNTAIN_YOU_CONTROL),
                     ValueDef::AnyMatchingObject(&MOUNTAIN_YOU_CONTROL),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         AbilityDef::activated(
@@ -2657,7 +2649,7 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::add_ability(&abilities::haste()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -2808,7 +2800,7 @@ pub(in crate::card::sets) static SERPENTS_GIFT: CardRecord = CardRecord::new(
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             effect: AppliedEffectDef::add_ability(&abilities::deathtouch()),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -2903,13 +2895,12 @@ pub(in crate::card::sets) static TIMBERPACK_WOLF: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Wolf"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "This creature gets +1/+1 for each other creature you control named Timberpack Wolf.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(
                     ValueDef::CountMatchingObjects(&OTHER_TIMBERPACK_WOLVES),
                     ValueDef::CountMatchingObjects(&OTHER_TIMBERPACK_WOLVES),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -2932,7 +2923,7 @@ pub(in crate::card::sets) static TITANIC_GROWTH: CardRecord = CardRecord::new(
                 ValueDef::Constant(4),
                 ValueDef::Constant(4),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -2972,7 +2963,7 @@ pub(in crate::card::sets) static YEVAS_FORCEMAGE: CardRecord = CardRecord::new(
                     ValueDef::Constant(2),
                     ValueDef::Constant(2),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -2994,7 +2985,7 @@ pub(in crate::card::sets) static AKROMAS_MEMORIAL: CardRecord = CardRecord::new(
         .with_supertype(CardSupertype::Legendary)
         .with_ability(AbilityDef::static_ability(
             "Creatures you control have flying, first strike, vigilance, trample, haste, and protection from black and from red.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                 effect: AppliedEffectDef::Composite(&[
                     AppliedEffectDef::add_ability(&abilities::flying()),
@@ -3005,7 +2996,6 @@ pub(in crate::card::sets) static AKROMAS_MEMORIAL: CardRecord = CardRecord::new(
                     AppliedEffectDef::add_ability(&abilities::protection_from(ManaColor::Black)),
                     AppliedEffectDef::add_ability(&abilities::protection_from(ManaColor::Red)),
                 ]),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )),
 );

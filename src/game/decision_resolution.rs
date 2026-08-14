@@ -197,9 +197,6 @@ impl Game {
                     self.continue_pending_events();
                 }
             }
-            DecisionContinuation::BattlefieldEntryOptional { context } => {
-                self.resume_optional_entry_replacement(context, options);
-            }
             DecisionContinuation::BattlefieldEntryCopy {
                 choices,
                 added_types,

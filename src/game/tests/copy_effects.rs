@@ -476,14 +476,13 @@ fn granted_activation_freezes_payload_before_sacrificing_grant_source() {
     );
     static GRANTOR_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures you control have the test ability.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::HasType(CardType::Creature),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             ),
             effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
     let grantor_definition_id = CardDefinitionId(10_062);
@@ -569,15 +568,13 @@ fn granted_activation_freezes_payload_before_sacrificing_grant_source() {
 fn separate_grant_sites_receive_distinct_structural_origins() {
     static GRANTED_ABILITY: AbilityDef = abilities::flying();
     static EFFECTS: [EffectDef; 2] = [
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
             effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
             effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     ];
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
@@ -642,19 +639,17 @@ fn separate_grant_sites_receive_distinct_structural_origins() {
 fn a_nonmatching_grant_site_still_advances_the_structural_origin() {
     static GRANTED_ABILITY: AbilityDef = abilities::flying();
     static EFFECTS: [EffectDef; 2] = [
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
             effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::HasType(CardType::Creature),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             ),
             effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     ];
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
@@ -715,15 +710,13 @@ fn nonmatching_composite_grant_sites_still_advance_structural_origins() {
     static MISSED_COMPONENTS: [AppliedEffectDef; 1] =
         [AppliedEffectDef::add_ability(&GRANTED_ABILITY)];
     static EFFECTS: [EffectDef; 2] = [
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::AttachedPermanent,
             effect: AppliedEffectDef::Composite(&MISSED_COMPONENTS),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
             effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     ];
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
@@ -793,26 +786,24 @@ static COPY_GRANT_B: AbilityDef = AbilityDef::activated(
 );
 static COPY_GRANT_SOURCE_A_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
     "Creatures you control have the first test ability.",
-    EffectDef::Apply {
+    EffectDef::StaticApply {
         recipient: EffectRecipientDef::matching_objects(
             ObjectPredicateDef::HasType(CardType::Creature),
             &[ZoneKind::Battlefield],
             PlayerRelation::You,
         ),
         effect: AppliedEffectDef::add_ability(&COPY_GRANT_A),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     },
 )];
 static COPY_GRANT_SOURCE_B_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
     "Creatures you control have the second test ability.",
-    EffectDef::Apply {
+    EffectDef::StaticApply {
         recipient: EffectRecipientDef::matching_objects(
             ObjectPredicateDef::HasType(CardType::Creature),
             &[ZoneKind::Battlefield],
             PlayerRelation::You,
         ),
         effect: AppliedEffectDef::add_ability(&COPY_GRANT_B),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
     },
 )];
 

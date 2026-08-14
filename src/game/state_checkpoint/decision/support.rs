@@ -76,8 +76,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             followup: Some(followup),
             ..
         } => extend_stack_continuation_ids(&mut ids, &followup.object, &followup.context),
-        DecisionContinuation::BattlefieldEntryOptional { context }
-        | DecisionContinuation::BattlefieldEntryPayment { context, .. } => {
+        DecisionContinuation::BattlefieldEntryPayment { context, .. } => {
             ids.push(context.source.object);
         }
         DecisionContinuation::BattlefieldEntryReplacement { candidates } => {
@@ -207,7 +206,8 @@ fn extend_stack_continuation_ids(
 
 fn extend_pending_trigger_ids(ids: &mut Vec<GameObjectId>, trigger: &PendingTrigger) {
     ids.push(trigger.source.object);
-    ids.extend(trigger.context.object);
+    ids.extend(target_selections_referenced_object_ids(&trigger.targets));
+    ids.extend(resolution_context_referenced_object_ids(&trigger.context));
 }
 
 fn target_object_id(target: &Target) -> Option<GameObjectId> {
@@ -225,13 +225,25 @@ fn extend_trigger_batch_ids(ids: &mut Vec<GameObjectId>, batch: &TriggerPlacemen
 
 pub(super) fn effect_continuation_snapshot(
     game: &Game,
+    viewer: PlayerId,
     object: &super::super::StackObject,
     context: &super::super::EffectResolutionContext,
     effect: super::super::ScopedEffect,
+    visible_rebindings: &[GameObjectId],
 ) -> Option<EffectContinuationSnapshot> {
-    let ability = stack_ability_snapshot(game, object)?.ability_locator?;
+    if trigger_capture_has_unrebindable_hidden_reference_except(
+        game,
+        viewer,
+        &[],
+        context,
+        visible_rebindings,
+    ) {
+        return None;
+    }
+    let ability = stack_ability_snapshot_allowing(game, viewer, object, visible_rebindings)?
+        .ability_locator?;
     let definition = catalog_ability(&game.catalog, &ability)?;
-    let object = detached_stack_snapshot(game, object)?;
+    let object = detached_stack_snapshot_allowing(game, viewer, object, visible_rebindings)?;
     Some(EffectContinuationSnapshot {
         object,
         ability,
@@ -254,17 +266,28 @@ pub(super) fn parse_effect_continuation(
 
 pub(in crate::game::state_checkpoint) fn pending_trigger_snapshot(
     game: &Game,
+    viewer: PlayerId,
     trigger: &PendingTrigger,
 ) -> Option<PendingTriggerSnapshot> {
+    if trigger_capture_has_unrebindable_hidden_reference(
+        game,
+        viewer,
+        &trigger.targets,
+        &trigger.context,
+    ) {
+        return None;
+    }
     let ability = ability_locator(&game.catalog, |ability| {
         let DeclarativeAbilityDef::Triggered(definition) = ability.definition else {
             return false;
         };
         ability.text == trigger.text
-            && definition.targets == trigger.target_defs
-            && ability.effect.definition == trigger.effect
+            && ability.declarative_effect() == Some(trigger.effect)
             && definition.condition == trigger.condition
             && Game::ability_resolver(trigger.source.ability, ability) == trigger.resolver
+    })?;
+    let target_definition = ability_locator(&game.catalog, |ability| {
+        ability_target_defs(ability) == trigger.target_defs
     })?;
     Some(PendingTriggerSnapshot {
         id: trigger.id,
@@ -273,6 +296,7 @@ pub(in crate::game::state_checkpoint) fn pending_trigger_snapshot(
             ability: ability_origin_snapshot(trigger.source.ability),
         },
         ability,
+        target_definition,
         definition: trigger.definition.0,
         owner: trigger.owner.index(),
         controller: trigger.controller.index(),
@@ -281,12 +305,14 @@ pub(in crate::game::state_checkpoint) fn pending_trigger_snapshot(
             .iter()
             .map(target_selection_snapshot)
             .collect(),
-        context: trigger_context_snapshot(trigger.context),
+        context: effect_resolution_context_snapshot(&trigger.context),
+        x: trigger.x,
     })
 }
 
 pub(super) fn trigger_batch_snapshot(
     game: &Game,
+    viewer: PlayerId,
     batch: &TriggerPlacementBatch,
 ) -> Option<TriggerPlacementBatchSnapshot> {
     Some(TriggerPlacementBatchSnapshot {
@@ -294,7 +320,7 @@ pub(super) fn trigger_batch_snapshot(
         triggers: batch
             .triggers
             .iter()
-            .map(|trigger| pending_trigger_snapshot(game, trigger))
+            .map(|trigger| pending_trigger_snapshot(game, viewer, trigger))
             .collect::<Option<Vec<_>>>()?,
     })
 }
@@ -312,6 +338,8 @@ pub(in crate::game::state_checkpoint) fn parse_pending_trigger(
         object: GameObjectId(snapshot.source.object),
         ability: ability_origin_from_snapshot(snapshot.source.ability),
     };
+    let target_definition = catalog_ability(&game.catalog, &snapshot.target_definition)
+        .ok_or("pending trigger target-definition locator is absent from this catalog")?;
     Ok(PendingTrigger {
         id: snapshot.id,
         source,
@@ -319,16 +347,19 @@ pub(in crate::game::state_checkpoint) fn parse_pending_trigger(
         owner: player(snapshot.owner)?,
         controller: player(snapshot.controller)?,
         text: ability.text,
-        target_defs: triggered.targets,
+        target_defs: ability_target_defs(&target_definition).to_vec(),
         targets: snapshot
             .targets
             .iter()
             .map(parse_target_selection)
             .collect::<Result<Vec<_>, _>>()?,
-        effect: ability.effect.definition,
+        effect: ability
+            .declarative_effect()
+            .ok_or("pending trigger does not identify an ordinary declarative program")?,
         resolver: Game::ability_resolver(source.ability, &ability),
-        context: parse_trigger_context(snapshot.context)?,
+        context: parse_effect_resolution_context(snapshot.context.clone())?,
         condition: triggered.condition,
+        x: snapshot.x,
     })
 }
 

@@ -1,9 +1,9 @@
 use super::{
     BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId, CharacteristicContext,
-    CharacteristicSource, DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EntryCompletion,
-    Game, GameEvent, GameObjectId, KeywordAbility, ObjectBacking, PendingBattlefieldEntry,
-    Permanent, PlayerId, PublicCard, ReplacementEventDef, Target, TriggerContext, ZoneCard,
-    ZoneError, ZoneKind, ZoneMoveCause, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
+    CharacteristicSource, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId,
+    KeywordAbility, ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId, PublicCard,
+    ReplacementEffectDef, ReplacementEventDef, Target, TriggerContext, ZoneCard, ZoneError,
+    ZoneKind, ZoneMoveCause, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
 };
 
 impl Game {
@@ -261,11 +261,8 @@ impl Game {
                 if definition.event != (ReplacementEventDef::AnyObjectWouldMove { to }) {
                     return;
                 }
-                if let Some(EffectDef::MoveToZone {
-                    object: EffectRecipientDef::Source,
-                    zone,
-                    ..
-                }) = ability.declarative_effect()
+                if let Some(ReplacementEffectDef::MoveToZone(zone)) =
+                    ability.declarative_replacement()
                 {
                     replacement = Some(zone);
                 }
@@ -339,11 +336,8 @@ impl Game {
                     && cause_matches
                     && ability.is_executable()
                     && replacement.source_zones.contains(&from)
-                    && let Some(EffectDef::MoveToZone {
-                        object: EffectRecipientDef::Source,
-                        zone,
-                        ..
-                    }) = ability.declarative_effect()
+                    && let Some(ReplacementEffectDef::MoveToZone(zone)) =
+                        ability.declarative_replacement()
                 {
                     return Some(zone);
                 }

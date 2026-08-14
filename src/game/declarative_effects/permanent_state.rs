@@ -6,6 +6,7 @@
 #![allow(clippy::wildcard_imports)]
 
 use super::*;
+use crate::card::ColorSet;
 
 impl Game {
     pub(super) fn resolve_permanent_state_effect(

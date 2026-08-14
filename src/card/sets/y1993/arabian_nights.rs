@@ -3,10 +3,12 @@ use crate::Format;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardChoiceSourceDef,
-    CardRules, CardSet, CardType, ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef,
-    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, LikelihoodDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef, PlayerRelation, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardRules, CardSet, CardType, ComparisonDef, CounterKind, DamageEventMatcherDef,
+    DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectRecipientDef,
+    InstalledTriggerDef, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, PayOrDef, PaymentDef, PlayerRelation, ResolvedEffectDurationDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -52,7 +54,7 @@ pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new(
                 ValueDef::Constant(2),
                 ValueDef::Constant(0),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -122,7 +124,7 @@ pub(in crate::card::sets) static PIETY: CardRecord = CardRecord::new(
                 ValueDef::Constant(0),
                 ValueDef::Constant(3),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -177,12 +179,11 @@ pub(in crate::card::sets) static FISHLIVER_OIL: CardRecord = CardRecord::new(
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::static_ability(
                 "Enchanted creature has islandwalk.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::add_ability(&abilities::landwalk(
                         BasicLandType::Island,
                     )),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -237,10 +238,9 @@ pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord:
     CardRules::new_creature(mana_cost!("{4}{U}{U}{U}"), &["Fish"], 6, 8).with_abilities(&[
         AbilityDef::static_ability(
             "This creature doesn't untap during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         AbilityDef::triggered(
@@ -349,13 +349,12 @@ pub(in crate::card::sets) static UNSTABLE_MUTATION: CardRecord = CardRecord::new
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::static_ability(
                 "Enchanted creature gets +3/+3.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::Constant(3),
                         ValueDef::Constant(3),
                     ),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             abilities::enchanted_controller_upkeep(
@@ -401,7 +400,7 @@ static GUARDIAN_BEAST_ARTIFACTS: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
 ]);
 
-static GUARDIAN_BEAST_PROTECTION: EffectDef = EffectDef::Apply {
+static GUARDIAN_BEAST_PROTECTION: EffectDef = EffectDef::StaticApply {
     recipient: EffectRecipientDef::matching_objects(
         GUARDIAN_BEAST_ARTIFACTS,
         &[ZoneKind::Battlefield],
@@ -412,7 +411,6 @@ static GUARDIAN_BEAST_PROTECTION: EffectDef = EffectDef::Apply {
         AppliedEffectDef::add_ability(&abilities::indestructible()),
         AppliedEffectDef::CannotChangeController,
     ]),
-    duration: EffectDurationDef::WhileSourceRemainsInZone,
 };
 
 // ARN 26 — Guardian Beast
@@ -531,7 +529,7 @@ pub(in crate::card::sets) static SORCERESS_QUEEN: CardRecord = CardRecord::new(
                 ValueDef::Constant(0),
                 ValueDef::Constant(2),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -675,7 +673,6 @@ pub(in crate::card::sets) static MIJAE_DJINN: CardRecord = CardRecord::new(
 );
 
 // ARN 43 — Rukh Egg
-// Audit: partial — Its delayed end-step effect resolves directly rather than becoming an orderable, respondable trigger.
 pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new(
     cards::RUKH_EGG,
     "Rukh Egg",
@@ -689,19 +686,19 @@ pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new(
                 from: Some(ZoneKind::Battlefield),
                 to: Some(ZoneKind::Graveyard),
             },
-            EffectDef::AtNextStep {
-                step: TurnStepDef::End,
-                player: PlayerRelation::Any,
-                effect: &EffectDef::CreateToken {
+            EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+                "At the beginning of the next end step, create a 4/4 red Bird creature token with flying.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::End,
+                    player: PlayerRelation::Any,
+                },
+                EffectDef::CreateToken {
                     token: cards::BIRD_TOKEN_4_4_RED,
                     count: ValueDef::Constant(1),
                     tapped: false,
                 },
-            },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The delayed end-step effect resolves directly instead of creating an orderable, respondable trigger.",
-        )),
+            ))),
+        ),
     ]),
 );
 
@@ -760,7 +757,7 @@ pub(in crate::card::sets) static ERHNAM_DJINN: CardRecord = CardRecord::new(
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             effect: AppliedEffectDef::add_ability(&ERHNAM_FORESTWALK),
-            duration: EffectDurationDef::UntilYourNextUpkeep,
+            duration: ResolvedEffectDurationDef::UntilYourNextUpkeep,
         },
     )]),
 );
@@ -821,7 +818,7 @@ pub(in crate::card::sets) static WYLULI_WOLF: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -913,10 +910,9 @@ pub(in crate::card::sets) static BRASS_MAN: CardRecord = CardRecord::new(
     CardRules::new_artifact_creature(mana_cost!("{1}"), &["Construct"], 1, 3).with_abilities(&[
         AbilityDef::static_ability(
             "This creature doesn't untap during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         AbilityDef::triggered(
@@ -998,9 +994,24 @@ pub(in crate::card::sets) static EBONY_HORSE: CardRecord = CardRecord::new(
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },
-                EffectDef::PreventCombatDamageThisTurn {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                EffectDef::Sequence(&[
+                    EffectDef::PreventDamage {
+                        prevention: DamagePreventionDef::unlimited(
+                            DamageEventMatcherDef::combat_to(EffectRecipientDef::Target(
+                                TargetIndex::PRIMARY,
+                            )),
+                        ),
+                        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                    },
+                    EffectDef::PreventDamage {
+                        prevention: DamagePreventionDef::unlimited(
+                            DamageEventMatcherDef::combat_from(ObjectRefDef::Target(
+                                TargetIndex::PRIMARY,
+                            )),
+                        ),
+                        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                    },
+                ]),
             ]),
         ),
     ]),
@@ -1025,7 +1036,7 @@ pub(in crate::card::sets) static FLYING_CARPET: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::add_ability(&abilities::flying()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1227,9 +1238,12 @@ pub(in crate::card::sets) static OASIS: CardRecord = CardRecord::new(
         &[AbilityTargetDef::exactly_one_permanent(
             ObjectPredicateDef::HasType(CardType::Creature),
         )],
-        EffectDef::PreventNextDamage {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            amount: ValueDef::Constant(1),
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::amount(
+                DamageEventMatcherDef::to(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
+                ValueDef::Constant(1),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );

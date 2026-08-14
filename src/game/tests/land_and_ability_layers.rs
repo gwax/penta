@@ -19,7 +19,7 @@ fn resolve_applied_effect_on_permanent(
     game: &mut Game,
     target: CardInstanceId,
     effect: AppliedEffectDef,
-    duration: EffectDurationDef,
+    duration: ResolvedEffectDurationDef,
     stack_id: u32,
 ) {
     let object = spell_with_targets(
@@ -148,14 +148,14 @@ fn turn_preserves_land_subtypes_and_only_later_ability_grants() {
         &mut game,
         forest,
         AppliedEffectDef::Composite(&FOREST_ANIMATION),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_000,
     );
     resolve_applied_effect_on_permanent(
         &mut game,
         forest,
         AppliedEffectDef::add_ability(&EARLIER_FLYING),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_001,
     );
     assert_eq!(
@@ -168,7 +168,7 @@ fn turn_preserves_land_subtypes_and_only_later_ability_grants() {
         &mut game,
         forest,
         AppliedEffectDef::Composite(&TURN_CHARACTERISTICS),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_002,
     );
     assert!(intrinsic_mana_colors(&game, &game.battlefield[0]).is_empty());
@@ -182,7 +182,7 @@ fn turn_preserves_land_subtypes_and_only_later_ability_grants() {
         &mut game,
         forest,
         AppliedEffectDef::add_ability(&LATER_TRAMPLE),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_003,
     );
     let affected = &game.battlefield[0];
@@ -206,14 +206,14 @@ fn end_of_turn_base_setter_reveals_an_earlier_permanent_setter_at_cleanup() {
         &mut game,
         target,
         AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(5), ValueDef::Constant(5)),
-        EffectDurationDef::Permanent,
+        ResolvedEffectDurationDef::Permanent,
         20_000,
     );
     resolve_applied_effect_on_permanent(
         &mut game,
         target,
         AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_001,
     );
     assert_eq!(
@@ -256,7 +256,7 @@ fn same_timestamp_composite_removes_then_adds_abilities_in_component_order() {
         &mut game,
         target,
         AppliedEffectDef::Composite(&REMOVE_THEN_ADD),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_000,
     );
 
@@ -623,7 +623,7 @@ fn blood_moon_preserves_external_grants_but_later_ability_removal_removes_them()
         &mut game,
         stage_id,
         AppliedEffectDef::add_ability(&GRANTED_FLYING),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_000,
     );
 
@@ -640,7 +640,7 @@ fn blood_moon_preserves_external_grants_but_later_ability_removal_removes_them()
         &mut game,
         stage_id,
         AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_001,
     );
     assert!(game.effective_abilities(&game.battlefield[0]).is_empty());
@@ -675,7 +675,7 @@ fn resolved_ability_additions_and_removals_are_ordered_and_expire() {
         &mut game,
         target,
         AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_000,
     );
     assert!(game.effective_abilities(&game.battlefield[0]).is_empty());
@@ -684,7 +684,7 @@ fn resolved_ability_additions_and_removals_are_ordered_and_expire() {
         &mut game,
         target,
         AppliedEffectDef::add_ability(&GRANTED_ACTIVATED),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_001,
     );
     assert!(
@@ -702,14 +702,14 @@ fn resolved_ability_additions_and_removals_are_ordered_and_expire() {
         &mut game,
         target,
         AppliedEffectDef::add_ability(&GRANTED_FLYING),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_002,
     );
     resolve_applied_effect_on_permanent(
         &mut game,
         target,
         AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(KeywordAbility::Flying)),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_003,
     );
     assert!(!game.has_flying(&game.battlefield[0]));
@@ -753,7 +753,7 @@ fn resolved_keyword_changes_are_visible_to_object_predicates() {
         &mut game,
         target,
         AppliedEffectDef::add_ability(&GRANTED_FLYING),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_000,
     );
     assert!(has_flying(&game));
@@ -761,7 +761,7 @@ fn resolved_keyword_changes_are_visible_to_object_predicates() {
         &mut game,
         target,
         AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(KeywordAbility::Flying)),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_001,
     );
     assert!(!has_flying(&game));
@@ -813,7 +813,7 @@ fn resolved_ability_removal_suppresses_custom_behavior_until_it_expires() {
         &mut game,
         ape,
         AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
-        EffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
         20_000,
     );
     assert_eq!(game.effective_behavior(&game.battlefield[1]), None);
@@ -830,26 +830,24 @@ fn static_ability_additions_and_removals_follow_source_timestamps() {
     static FLYING: AbilityDef = abilities::flying();
     static GRANT: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures have flying.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::HasType(CardType::Creature),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
             effect: AppliedEffectDef::add_ability(&FLYING),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
     static REMOVE: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures lose all abilities.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::HasType(CardType::Creature),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
             effect: AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
     let grant_id = CardDefinitionId(10_090);
@@ -975,14 +973,13 @@ fn game_granting_flying(extra: Vec<CardDefinition>) -> Game {
     static FLYING: AbilityDef = abilities::flying();
     static GRANT_FLYING: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures have flying.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::HasType(CardType::Creature),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
             effect: AppliedEffectDef::add_ability(&FLYING),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
 
@@ -1043,14 +1040,13 @@ fn a_static_ability_grant_picks_recipients_from_the_layer_below_itself() {
     static TRAMPLE: AbilityDef = abilities::trample();
     static GRANT_TRAMPLE: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures with flying have trample.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 FLIERS,
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
             effect: AppliedEffectDef::add_ability(&TRAMPLE),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
 
@@ -1073,7 +1069,7 @@ fn a_static_ability_grant_picks_recipients_from_the_layer_below_itself() {
 fn a_static_power_effect_keyed_on_a_keyword_sees_a_static_grant() {
     static SHRINK: [AbilityDef; 1] = [AbilityDef::static_ability(
         "Creatures with flying get -1/-0.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::matching_objects(
                 FLIERS,
                 &[ZoneKind::Battlefield],
@@ -1083,7 +1079,6 @@ fn a_static_power_effect_keyed_on_a_keyword_sees_a_static_grant() {
                 ValueDef::Constant(-1),
                 ValueDef::Constant(0),
             ),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
 

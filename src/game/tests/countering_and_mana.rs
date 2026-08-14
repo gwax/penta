@@ -1,6 +1,7 @@
 mod cavern_of_souls;
 
 use super::*;
+use crate::AbilityProgramDef;
 
 fn acceptance_cast_action_for_card(game: &Game, player: PlayerId, spell: GameObjectId) -> Action {
     game.legal_actions(player)
@@ -99,18 +100,14 @@ fn countering_acceptance_cards_report_complete_shared_implementations() {
             mode.declarative_effect().is_some()
                 && matches!(mode.definition, DeclarativeAbilityDef::Spell(spell) if spell.modal().is_none())
         }));
-        assert!(
-            modal
-                .modes
-                .iter()
-                .any(|mode| matches!(mode.effect.definition, EffectDef::Counter { .. }))
-        );
-        assert!(
-            modal
-                .modes
-                .iter()
-                .any(|mode| matches!(mode.effect.definition, EffectDef::Destroy { .. }))
-        );
+        assert!(modal.modes.iter().any(|mode| matches!(
+            mode.effect.definition,
+            AbilityProgramDef::Effects(EffectDef::Counter { .. })
+        )));
+        assert!(modal.modes.iter().any(|mode| matches!(
+            mode.effect.definition,
+            AbilityProgramDef::Effects(EffectDef::Destroy { .. })
+        )));
     }
 }
 
@@ -488,12 +485,7 @@ fn loxodon_smiter_replaces_an_opponent_caused_hand_to_graveyard_move() {
     );
     assert_eq!(
         replacement.0.effect.definition,
-        EffectDef::MoveToZone {
-            object: EffectRecipientDef::Source,
-            zone: ZoneKind::Battlefield,
-            controller: None,
-            placement: ZonePlacement::Top,
-        }
+        AbilityProgramDef::Replacement(ReplacementEffectDef::MoveToZone(ZoneKind::Battlefield,))
     );
 }
 

@@ -1,7 +1,7 @@
 use super::{
     AppliedEffectDef, CharacteristicContext, CounteredSpellZone, DeclarativeAbilityDef, EffectDef,
-    EffectDurationDef, EffectRecipientDef, Game, GameObjectId, StackObject, StackObjectKind,
-    Target, ZoneKind, applicable_part_ids,
+    EffectRecipientDef, Game, GameObjectId, StackObject, StackObjectKind, Target, ZoneKind,
+    applicable_part_ids,
 };
 
 impl Game {
@@ -43,41 +43,33 @@ impl Game {
         })
     }
 
-    #[allow(clippy::too_many_lines)]
-    pub(super) fn effect_applies_to_source(
-        effect: EffectDef,
-        expected: AppliedEffectDef,
-        duration: EffectDurationDef,
-    ) -> bool {
+    pub(super) fn effect_applies_to_source(effect: EffectDef, expected: AppliedEffectDef) -> bool {
         match effect {
             EffectDef::Sequence(effects) => effects
                 .iter()
-                .any(|effect| Self::effect_applies_to_source(*effect, expected, duration)),
-            EffectDef::Apply {
+                .any(|effect| Self::effect_applies_to_source(*effect, expected)),
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect,
-                duration: actual_duration,
-            } => Self::applied_effect_contains(effect, expected) && actual_duration == duration,
+            } => Self::applied_effect_contains(effect, expected),
             EffectDef::IfFormat {
                 then, otherwise, ..
             } => {
-                Self::effect_applies_to_source(*then, expected, duration)
-                    || Self::effect_applies_to_source(*otherwise, expected, duration)
+                Self::effect_applies_to_source(*then, expected)
+                    || Self::effect_applies_to_source(*otherwise, expected)
             }
-            EffectDef::Choose(choice) => {
-                Self::effect_applies_to_source(*choice.then, expected, duration)
-            }
+            EffectDef::Choose(choice) => Self::effect_applies_to_source(*choice.then, expected),
             EffectDef::PayOr(payment) => payment
                 .if_paid
                 .iter()
                 .chain(payment.otherwise.iter())
-                .any(|effect| Self::effect_applies_to_source(**effect, expected, duration)),
+                .any(|effect| Self::effect_applies_to_source(**effect, expected)),
             EffectDef::SplitIntoPiles(partition) => {
-                Self::effect_applies_to_source(*partition.then, expected, duration)
+                Self::effect_applies_to_source(*partition.then, expected)
             }
             EffectDef::None
             | EffectDef::Randomized { .. }
-            | EffectDef::PreventNextDamageFromSource { .. }
+            | EffectDef::PreventDamage { .. }
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }
@@ -99,15 +91,6 @@ impl Game {
             | EffectDef::DoesNotUntapWhileSourceTapped { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
-            | EffectDef::PreventAllCombatDamageThisTurn
-            | EffectDef::PreventNextDamage { .. }
-            | EffectDef::PreventAllDamageThisTurn { .. }
-            | EffectDef::PreventCombatDamageThisTurn { .. }
-            | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-            | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
             | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
             | EffectDef::Attach { .. }
             | EffectDef::Destroy { .. }
@@ -139,22 +122,16 @@ impl Game {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlWhileSourceRemains { .. }
             | EffectDef::GainControlThisTurn { .. }
-            | EffectDef::AtNextStep { .. }
             | EffectDef::IfCondition { .. }
-            | EffectDef::TriggerUntilYourNextTurn { .. }
+            | EffectDef::InstallTrigger(_)
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
-            | EffectDef::MultiplyEventAmount(_)
-            | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateTokenCopyOf { .. }
-            | EffectDef::ChooseCardName { .. }
-            | EffectDef::ChoosePlayer { .. }
-            | EffectDef::CopyPermanentAsItEnters { .. }
-            | EffectDef::ChooseCreatureType { .. }
+            | EffectDef::StaticApply { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => false,
         }
@@ -202,13 +179,9 @@ impl Game {
                             DeclarativeAbilityDef::Static(definition)
                                 if definition.source_zones.contains(&ZoneKind::Stack)
                         )
-                        && ability.declarative_effect().is_some_and(|effect| {
-                            Self::effect_applies_to_source(
-                                effect,
-                                expected,
-                                EffectDurationDef::WhileSourceRemainsInZone,
-                            )
-                        })
+                        && ability
+                            .declarative_effect()
+                            .is_some_and(|effect| Self::effect_applies_to_source(effect, expected))
                 })
             })
         })

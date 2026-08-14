@@ -1,13 +1,14 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
-    BasicLandType, BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
-    DamageSourceGroupDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectDurationDef,
-    EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ScaledValueDef,
+    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
+    CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, CounterKind,
+    DamageEventMatcherDef, DamagePreventionDef, DamageSourceGroupDef, DiscardSelectionDef,
+    DividedTotal, EffectDef, EffectExecutionDef, EffectRecipientDef, InstalledTriggerDef,
+    KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
 };
@@ -29,7 +30,7 @@ pub(in crate::card::sets) static AKRON_LEGIONNAIRE: CardRecord = CardRecord::new
         AbilityDef::static_ability(
             "Except for creatures named Akron Legionnaire and artifact creatures, creatures \
              you control can't attack.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -42,7 +43,6 @@ pub(in crate::card::sets) static AKRON_LEGIONNAIRE: CardRecord = CardRecord::new
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::CannotAttack,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -73,9 +73,12 @@ pub(in crate::card::sets) static ALABASTER_POTION: CardRecord = CardRecord::new(
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::AnyTarget,
                 )],
-                EffectDef::PreventNextDamage {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    amount: ValueDef::ChosenX,
+                EffectDef::PreventDamage {
+                    prevention: DamagePreventionDef::amount(
+                        DamageEventMatcherDef::to(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
+                        ValueDef::ChosenX,
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ),
         ],
@@ -92,10 +95,9 @@ pub(in crate::card::sets) static AMROU_KITHKIN: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{W}{W}"), &["Kithkin"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "This creature can't be blocked by creatures with power 3 or greater.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::PowerAtLeast(3)),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -202,13 +204,12 @@ pub(in crate::card::sets) static DIVINE_TRANSFORMATION: CardRecord = CardRecord:
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +3/+3.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::Constant(3),
                         ValueDef::Constant(3),
                     ),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -227,13 +228,12 @@ pub(in crate::card::sets) static ENCHANTED_BEING: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Prevent all combat damage that would be dealt to this creature by enchanted \
              creatures.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::PreventCombatDamageFrom(ObjectPredicateDef::All(&[
+                effect: AppliedEffectDef::prevent_combat_damage_from(ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Enchanted,
                 ])),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -265,7 +265,7 @@ pub(in crate::card::sets) static GREAT_DEFENDER: CardRecord = CardRecord::new(
                 ValueDef::Constant(0),
                 ValueDef::TargetManaValue(TargetIndex::PRIMARY),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -311,7 +311,10 @@ pub(in crate::card::sets) static HOLY_DAY: CardRecord = CardRecord::new(
     CardSet::Legends,
     CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell(
         "Prevent all combat damage that would be dealt this turn.",
-        EffectDef::PreventAllCombatDamageThisTurn,
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::COMBAT),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
     )),
 );
 
@@ -324,8 +327,11 @@ pub(in crate::card::sets) static INDESTRUCTIBLE_AURA: CardRecord = CardRecord::n
     CardRules::new_instant(mana_cost!("{W}")).with_abilities(&[AbilityDef::spell_with_targets(
         "Prevent all damage that would be dealt to target creature this turn.",
         &INDESTRUCTIBLE_AURA_TARGET,
-        EffectDef::PreventAllDamageThisTurn {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::to(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            )),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -361,9 +367,7 @@ pub(in crate::card::sets) static KISMET: CardRecord = CardRecord::new(
             ]),
             controller: PlayerRelation::Opponent,
         },
-        EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
-            BattlefieldEntryModificationDef::Tapped,
-        )),
+        ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
     )),
 );
 
@@ -460,7 +464,7 @@ pub(in crate::card::sets) static SEEKER: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted creature can't be blocked except by artifact creatures and/or white creatures.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
                         &ObjectPredicateDef::AnyOf(&[
@@ -468,7 +472,6 @@ pub(in crate::card::sets) static SEEKER: CardRecord = CardRecord::new(
                             ObjectPredicateDef::Color(ManaColor::White),
                         ]),
                     )),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -492,7 +495,7 @@ pub(in crate::card::sets) static SHIELD_WALL: CardRecord = CardRecord::new(
                 ValueDef::Constant(0),
                 ValueDef::Constant(2),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -743,14 +746,17 @@ static MANA_DRAIN_EFFECT: [EffectDef; 2] = [
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Graveyard,
     },
-    EffectDef::AtNextStep {
-        step: TurnStepDef::PrecombatMain,
-        player: PlayerRelation::You,
-        effect: &EffectDef::AddManaEqualTo {
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "At the beginning of your next precombat main phase, add colorless mana equal to that spell's mana value.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::PrecombatMain,
+            player: PlayerRelation::You,
+        },
+        EffectDef::AddManaEqualTo {
             color: ManaColor::Colorless,
             amount: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
         },
-    },
+    ))),
 ];
 
 // LEG 59 — Gaseous Form
@@ -765,10 +771,14 @@ pub(in crate::card::sets) static GASEOUS_FORM: CardRecord = CardRecord::new(
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::static_ability(
                 "Prevent all combat damage that would be dealt to and dealt by enchanted creature.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::PreventCombatDamage,
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::PreventDamage(
+                            DamageEventMatcherDef::COMBAT_FROM_AFFECTED,
+                        ),
+                        AppliedEffectDef::PreventDamage(DamageEventMatcherDef::COMBAT_TO_AFFECTED),
+                    ]),
                 },
             ),
         ]),
@@ -909,7 +919,7 @@ pub(in crate::card::sets) static SPECTRAL_CLOAK: CardRecord = CardRecord::new(
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::static_ability(
                 "Enchanted creature has shroud as long as it's untapped.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     // The condition rides on the recipient rather than on the
                     // effect, so tapping the host takes the shroud away
                     // without the Aura being touched.
@@ -921,8 +931,7 @@ pub(in crate::card::sets) static SPECTRAL_CLOAK: CardRecord = CardRecord::new(
                         &[ZoneKind::Battlefield],
                         PlayerRelation::Any,
                     ),
-                    effect: AppliedEffectDef::GrantAbility(&SPECTRAL_SHROUD),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::add_ability(&SPECTRAL_SHROUD),
                 },
             ),
         ]),
@@ -944,8 +953,11 @@ pub(in crate::card::sets) static TELEKINESIS: CardRecord = CardRecord::new(
             EffectDef::Tap {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             },
-            EffectDef::PreventCombatDamageDealtByThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::PreventDamage {
+                prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::combat_from(
+                    ObjectRefDef::Target(TargetIndex::PRIMARY),
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
             EffectDef::SkipNextUntapSteps {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -989,10 +1001,9 @@ pub(in crate::card::sets) static WALL_OF_VAPOR: CardRecord = CardRecord::new(
         abilities::defender(),
         AbilityDef::static_ability(
             "Prevent all damage that would be dealt to this creature by creatures it's blocking.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::PreventDamageFrom(ObjectPredicateDef::BlockedBySource),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::prevent_damage_from(ObjectPredicateDef::BlockedBySource),
             },
         ),
     ]),
@@ -1074,7 +1085,7 @@ pub(in crate::card::sets) static CARRION_ANTS: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1125,7 +1136,10 @@ pub(in crate::card::sets) static DARKNESS: CardRecord = CardRecord::new(
     CardSet::Legends,
     CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell(
         "Prevent all combat damage that would be dealt this turn.",
-        EffectDef::PreventAllCombatDamageThisTurn,
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::COMBAT),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
     )),
 );
 
@@ -1141,18 +1155,18 @@ pub(in crate::card::sets) static DEMONIC_TORMENT: CardRecord = CardRecord::new(
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::static_ability(
                 "Enchanted creature can't attack.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::CannotAttack,
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             AbilityDef::static_ability(
                 "Prevent all combat damage that would be dealt by enchanted creature.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::PreventCombatDamageDealtBy,
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::PreventDamage(
+                        DamageEventMatcherDef::COMBAT_FROM_AFFECTED,
+                    ),
                 },
             ),
         ]),
@@ -1167,7 +1181,7 @@ pub(in crate::card::sets) static EVIL_EYE_OF_ORMS_BY_GORE: CardRecord = CardReco
     CardRules::new_creature(mana_cost!("{4}{B}"), &["Eye"], 3, 6).with_abilities(&[
         AbilityDef::static_ability(
             "Non-Eye creatures you control can't attack.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -1177,17 +1191,15 @@ pub(in crate::card::sets) static EVIL_EYE_OF_ORMS_BY_GORE: CardRecord = CardReco
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::CannotAttack,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         AbilityDef::static_ability(
             "This creature can't be blocked except by Walls.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
                     &ObjectPredicateDef::Subtype("Wall"),
                 )),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ]),
@@ -1213,7 +1225,7 @@ pub(in crate::card::sets) static FALLEN_ANGEL: CardRecord = CardRecord::new(
                     ValueDef::Constant(2),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1241,7 +1253,7 @@ pub(in crate::card::sets) static GHOSTS_OF_THE_DAMNED: CardRecord = CardRecord::
                     ValueDef::Constant(-1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1299,7 +1311,7 @@ pub(in crate::card::sets) static HELL_SWARM: CardRecord = CardRecord::new(
                 ValueDef::Constant(-1),
                 ValueDef::Constant(0),
             ),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1573,11 +1585,11 @@ pub(in crate::card::sets) static VAMPIRE_BATS: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{B}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )
         .activations_each_turn(2),
@@ -1609,13 +1621,12 @@ pub(in crate::card::sets) static WALL_OF_PUTRID_FLESH: CardRecord = CardRecord::
         abilities::protection_from(ManaColor::White),
         AbilityDef::static_ability(
             "Prevent all damage that would be dealt to this creature by enchanted creatures.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::PreventDamageFrom(ObjectPredicateDef::All(&[
+                effect: AppliedEffectDef::prevent_damage_from(ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Enchanted,
                 ])),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ]),
@@ -1632,10 +1643,11 @@ pub(in crate::card::sets) static WALL_OF_SHADOWS: CardRecord = CardRecord::new(
         abilities::defender(),
         AbilityDef::static_ability(
             "Prevent all damage that would be dealt to this creature by creatures it's blocking.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::PreventDamageFrom(ObjectPredicateDef::BlockedBySource),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::prevent_damage_from(
+                    ObjectPredicateDef::BlockedBySource,
+                ),
             },
         ),
         AbilityDef::not_implemented(
@@ -1814,10 +1826,9 @@ pub(in crate::card::sets) static ETERNAL_WARRIOR: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted creature has vigilance.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::add_ability(&abilities::vigilance()),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1863,13 +1874,12 @@ pub(in crate::card::sets) static GIANT_STRENGTH: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/+2.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::Constant(2),
                         ValueDef::Constant(2),
                     ),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1889,12 +1899,11 @@ pub(in crate::card::sets) static GRAVITY_SPHERE: CardRecord = CardRecord::new(
         .with_supertype(CardSupertype::World)
         .with_ability(AbilityDef::static_ability(
             "All creatures lose flying.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Any),
                 effect: AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(
                     KeywordAbility::Flying,
                 )),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -1925,13 +1934,12 @@ pub(in crate::card::sets) static IMMOLATION: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/-2.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::Constant(2),
                         ValueDef::Constant(-2),
                     ),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1946,7 +1954,7 @@ pub(in crate::card::sets) static KOBOLD_DRILL_SERGEANT: CardRecord = CardRecord:
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Kobold", "Soldier"], 1, 2).with_ability(
         AbilityDef::static_ability(
             "Other Kobold creatures you control get +0/+1 and have trample.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -1963,7 +1971,6 @@ pub(in crate::card::sets) static KOBOLD_DRILL_SERGEANT: CardRecord = CardRecord:
                     ),
                     AppliedEffectDef::add_ability(&abilities::trample()),
                 ]),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -1979,7 +1986,7 @@ pub(in crate::card::sets) static KOBOLD_OVERLORD: CardRecord = CardRecord::new(
         abilities::first_strike(),
         AbilityDef::static_ability(
             "Other Kobold creatures you control have first strike.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -1990,7 +1997,6 @@ pub(in crate::card::sets) static KOBOLD_OVERLORD: CardRecord = CardRecord::new(
                     PlayerRelation::You,
                 ),
                 effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ]),
@@ -2008,7 +2014,7 @@ pub(in crate::card::sets) static KOBOLD_TASKMASTER: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Kobold"], 1, 2).with_ability(
         AbilityDef::static_ability(
             "Other Kobold creatures you control get +1/+0.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -2022,7 +2028,6 @@ pub(in crate::card::sets) static KOBOLD_TASKMASTER: CardRecord = CardRecord::new
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -2133,13 +2138,12 @@ pub(in crate::card::sets) static THE_BRUTE: CardRecord = CardRecord::new(
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::static_ability(
                 "Enchanted creature gets +1/+0.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::Constant(1),
                         ValueDef::Constant(0),
                     ),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             AbilityDef::activated(
@@ -2192,7 +2196,7 @@ pub(in crate::card::sets) static WALL_OF_OPPOSITION: CardRecord = CardRecord::ne
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -2214,9 +2218,10 @@ pub(in crate::card::sets) static AISLING_LEPRECHAUN: CardRecord = CardRecord::ne
             TriggerEventDef::BlocksOrBecomesBlockedBy {
                 object: ObjectPredicateDef::HasType(CardType::Creature),
             },
-            EffectDef::SetColor {
-                object: EffectRecipientDef::TriggeringObject,
-                color: ManaColor::Green,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::TriggeringObject,
+                effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Green])),
+                duration: ResolvedEffectDurationDef::Permanent,
             },
         ),
     ),
@@ -2261,10 +2266,9 @@ pub(in crate::card::sets) static CONCORDANT_CROSSROADS: CardRecord = CardRecord:
         .with_supertype(CardSupertype::World)
         .with_ability(AbilityDef::static_ability(
             "All creatures have haste.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Any),
                 effect: AppliedEffectDef::add_ability(&abilities::haste()),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -2314,7 +2318,7 @@ pub(in crate::card::sets) static ELVEN_RIDERS: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Elf"], 3, 3).with_ability(
         AbilityDef::static_ability(
             "This creature can't be blocked except by Walls and/or creatures with flying.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
                     &ObjectPredicateDef::AnyOf(&[
@@ -2322,7 +2326,6 @@ pub(in crate::card::sets) static ELVEN_RIDERS: CardRecord = CardRecord::new(
                         ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
                     ]),
                 )),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ),
@@ -2342,7 +2345,7 @@ pub(in crate::card::sets) static EMERALD_DRAGONFLY: CardRecord = CardRecord::new
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -2409,13 +2412,16 @@ pub(in crate::card::sets) static KILLER_BEES: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(1),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
 );
 
-static EVERY_LAND_A_CREATURE: AnimationDef = AnimationDef::new(1, 1);
+static EVERY_LAND_A_CREATURE: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+];
 
 // LEG 193 — Living Plane
 pub(in crate::card::sets) static LIVING_PLANE: CardRecord = CardRecord::new(
@@ -2427,14 +2433,13 @@ pub(in crate::card::sets) static LIVING_PLANE: CardRecord = CardRecord::new(
         .with_supertype(CardSupertype::World)
         .with_ability(AbilityDef::static_ability(
             "All lands are 1/1 creatures that are still lands.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::HasType(CardType::Land),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
-                effect: AppliedEffectDef::Animate(&EVERY_LAND_A_CREATURE),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::Composite(&EVERY_LAND_A_CREATURE),
             },
         )),
 );
@@ -2471,7 +2476,7 @@ pub(in crate::card::sets) static PIXIE_QUEEN: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::add_ability(&abilities::flying()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -2499,21 +2504,20 @@ pub(in crate::card::sets) static PRADESH_GYPSIES: CardRecord = CardRecord::new(
                     ValueDef::Constant(-2),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
 );
 
 /// Every Aura on it counts, whoever controls them.
-static AURAS_ON_THE_WOMBAT: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::All(&[
+static AURAS_ON_THE_WOMBAT: ObjectQueryDef = ObjectQueryDef::new(
+    ObjectPredicateDef::All(&[
         ObjectPredicateDef::Subtype("Aura"),
         ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source),
     ]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::Any,
-};
+    &[ZoneKind::Battlefield],
+);
 
 static WOMBAT_BONUS: ValueDef = ValueDef::Scaled(&ScaledValueDef::new(
     ValueDef::CountMatchingObjects(&AURAS_ON_THE_WOMBAT),
@@ -2530,13 +2534,9 @@ pub(in crate::card::sets) static RABID_WOMBAT: CardRecord = CardRecord::new(
         abilities::vigilance(),
         AbilityDef::static_ability(
             "This creature gets +2/+2 for each Aura attached to it.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: WOMBAT_BONUS,
-                    toughness: WOMBAT_BONUS,
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(WOMBAT_BONUS, WOMBAT_BONUS),
             },
         ),
     ]),
@@ -2560,7 +2560,7 @@ pub(in crate::card::sets) static RADJAN_SPIRIT: CardRecord = CardRecord::new(
                 effect: AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(
                     KeywordAbility::Flying,
                 )),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -2599,16 +2599,19 @@ pub(in crate::card::sets) static SUBDUE: CardRecord = CardRecord::new(
          creature gets +0/+X until end of turn, where X is its mana value.",
         &SUBDUE_TARGET,
         EffectDef::Sequence(&[
-            EffectDef::PreventCombatDamageDealtByThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::PreventDamage {
+                prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::combat_from(
+                    ObjectRefDef::Target(TargetIndex::PRIMARY),
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(0),
-                    toughness: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ]),
     )),
@@ -2722,10 +2725,9 @@ pub(in crate::card::sets) static WILLOW_SATYR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Satyr"], 1, 1).with_abilities(&[
         AbilityDef::static_ability(
             "You may choose not to untap this creature during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::MayChooseNotToUntap,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
         AbilityDef::activated_with_targets(
@@ -2810,7 +2812,10 @@ pub(in crate::card::sets) static ANGUS_MACKENZIE: CardRecord = CardRecord::new(
                     AbilityCostDef::Mana(mana_cost!("{G}{W}{U}")),
                     AbilityCostDef::TapSource,
                 ],
-                EffectDef::PreventAllCombatDamageThisTurn,
+                EffectDef::PreventDamage {
+                    prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::COMBAT),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
             )
             .with_activation_timing(ActivationTimingDef::BeforeCombatDamage),
         ),
@@ -2942,10 +2947,9 @@ pub(in crate::card::sets) static DAKKON_BLACKBLADE: CardRecord = CardRecord::new
         .with_ability(AbilityDef::static_ability(
             "Dakkon Blackblade's power and toughness are each equal to the number of lands you \
              control.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::modify_power_toughness(ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL), ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL)),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -3034,7 +3038,7 @@ pub(in crate::card::sets) static JACQUES_LE_VERT: CardRecord = CardRecord::new(
         .with_supertype(CardSupertype::Legendary)
         .with_ability(AbilityDef::static_ability(
             "Green creatures you control get +0/+2.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -3047,7 +3051,6 @@ pub(in crate::card::sets) static JACQUES_LE_VERT: CardRecord = CardRecord::new(
                     ValueDef::Constant(0),
                     ValueDef::Constant(2),
                 ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )),
 );
@@ -3115,9 +3118,12 @@ pub(in crate::card::sets) static KEI_TAKAHASHI: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
-            EffectDef::PreventNextDamage {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(2),
+            EffectDef::PreventDamage {
+                prevention: DamagePreventionDef::amount(
+                    DamageEventMatcherDef::to(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )),
 );
@@ -3163,8 +3169,11 @@ pub(in crate::card::sets) static LADY_EVANGELA: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
-            EffectDef::PreventCombatDamageDealtByThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::PreventDamage {
+                prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::combat_from(
+                    ObjectRefDef::Target(TargetIndex::PRIMARY),
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )),
 );
@@ -3329,7 +3338,7 @@ pub(in crate::card::sets) static PAVEL_MALIKI: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )),
 );
@@ -3442,10 +3451,9 @@ pub(in crate::card::sets) static RUBINIA_SOULSINGER: CardRecord = CardRecord::ne
         .with_abilities(&[
             AbilityDef::static_ability(
                 "You may choose not to untap Rubinia Soulsinger during your untap step.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::MayChooseNotToUntap,
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             AbilityDef::activated_with_targets(
@@ -3515,10 +3523,9 @@ pub(in crate::card::sets) static TETSUO_UMEZAWA: CardRecord = CardRecord::new(
         .with_abilities(&[
             AbilityDef::static_ability(
                 "Tetsuo Umezawa can't be the target of Aura spells.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::CannotBeEnchanted,
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             AbilityDef::activated_with_targets(
@@ -3629,7 +3636,7 @@ pub(in crate::card::sets) static TUKNIR_DEATHLOCK: CardRecord = CardRecord::new(
                         ValueDef::Constant(2),
                         ValueDef::Constant(2),
                     ),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ),
         ]),
@@ -3689,7 +3696,7 @@ pub(in crate::card::sets) static VAEVICTIS_ASMADI: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::activated(
@@ -3701,7 +3708,7 @@ pub(in crate::card::sets) static VAEVICTIS_ASMADI: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::activated(
@@ -3713,7 +3720,7 @@ pub(in crate::card::sets) static VAEVICTIS_ASMADI: CardRecord = CardRecord::new(
                     ValueDef::Constant(1),
                     ValueDef::Constant(0),
                 ),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -3759,9 +3766,12 @@ pub(in crate::card::sets) static AL_ABARAS_CARPET: CardRecord = CardRecord::new(
             AbilityCostDef::Mana(mana_cost!("{5}")),
             AbilityCostDef::TapSource,
         ],
-        EffectDef::PreventDamageToPlayerFromThisTurn {
-            player: EffectRecipientDef::Controller,
-            source: DamageSourceGroupDef::AttackingCreaturesWithoutFlying,
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::from_group_to(
+                DamageSourceGroupDef::AttackingCreaturesWithoutFlying,
+                EffectRecipientDef::Controller,
+            )),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -3831,8 +3841,11 @@ pub(in crate::card::sets) static HORN_OF_DEAFENING: CardRecord = CardRecord::new
         &[AbilityTargetDef::exactly_one_permanent(
             ObjectPredicateDef::HasType(CardType::Creature),
         )],
-        EffectDef::PreventCombatDamageDealtByThisTurn {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::combat_from(
+                ObjectRefDef::Target(TargetIndex::PRIMARY),
+            )),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -3864,16 +3877,19 @@ pub(in crate::card::sets) static KRY_SHIELD: CardRecord = CardRecord::new(
         ],
         &KRY_SHIELD_TARGET,
         EffectDef::Sequence(&[
-            EffectDef::PreventDamageDealtByThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::PreventDamage {
+                prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::from(
+                    ObjectRefDef::Target(TargetIndex::PRIMARY),
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(0),
-                    toughness: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ]),
     )),
@@ -4048,7 +4064,7 @@ pub(in crate::card::sets) static PENDELHAVEN: CardRecord = CardRecord::new(
                         ValueDef::Constant(1),
                         ValueDef::Constant(2),
                     ),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             )
             .with_coverage(AbilityCoverageDef::partial(
@@ -4085,10 +4101,9 @@ pub(in crate::card::sets) static THE_TABERNACLE_AT_PENDRELL_VALE: CardRecord = C
         .with_supertype(CardSupertype::Legendary)
         .with_ability(AbilityDef::static_ability(
             "All creatures have \"At the beginning of your upkeep, destroy this creature unless you pay {1}.\"",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Any),
                 effect: AppliedEffectDef::add_ability(&TABERNACLE_UPKEEP_ABILITY),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )),
 );

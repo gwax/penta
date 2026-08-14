@@ -3,12 +3,14 @@ use super::model::{
     ScopedEffectSnapshot,
 };
 use super::model_keyword::KeywordSnapshot;
+use super::model_prevention::DamagePreventionLocator;
 use super::{AbilityOrigin, AbilitySourceRef, Mana, ScopedEffect};
 use crate::CardCatalog;
 use crate::card::{
-    AbilityDef, AbilityOperationDef, AddManaEffectDef, AppliedEffectDef, BasicLandType,
-    CharacteristicOperationDef, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor,
-    ManaSpendEffectDef, ReplacementEffectDef, SpellAbilityDef,
+    AbilityDef, AbilityOperationDef, AbilityProgramDef, AbilityTargetDef, AddManaEffectDef,
+    AppliedEffectDef, BasicLandType, CharacteristicOperationDef, DamagePreventionDef,
+    DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor,
+    ManaSpendEffectDef, ObjectPredicateDef, ReplacementEffectDef, SpellAbilityDef,
 };
 
 pub(super) fn ability_locator(
@@ -152,9 +154,99 @@ pub(super) fn catalog_applied_effect(
     applied_effects(&ability).get(locator.effect_index).copied()
 }
 
+pub(super) fn resolved_damage_prevention_locator(
+    catalog: &CardCatalog,
+    source: AbilitySourceRef,
+    predicate: ObjectPredicateDef,
+) -> Option<DamagePreventionLocator> {
+    let expected = DamageSourceMatcherDef::Matching(predicate);
+    let (definition, part_id, ability_id) = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return None,
+    };
+    let root = AbilityLocator {
+        definition,
+        part_id,
+        ability_id,
+        nested: Vec::new(),
+    };
+    let root_definition = catalog_ability(catalog, &root)?;
+    let mut nested = Vec::new();
+    let mut contains = |candidate: &AbilityDef| {
+        damage_prevention_defs(candidate)
+            .iter()
+            .any(|prevention| prevention.matcher.source == expected)
+    };
+    if !locate_ability(&root_definition, &mut contains, &mut nested) {
+        return None;
+    }
+    let ability = AbilityLocator { nested, ..root };
+    let definition = catalog_ability(catalog, &ability)?;
+    let effect_index = damage_prevention_defs(&definition)
+        .iter()
+        .position(|prevention| prevention.matcher.source == expected)?;
+    Some(DamagePreventionLocator {
+        ability,
+        effect_index,
+    })
+}
+
+pub(super) fn catalog_damage_prevention(
+    catalog: &CardCatalog,
+    locator: &DamagePreventionLocator,
+) -> Option<DamagePreventionDef> {
+    let ability = catalog_ability(catalog, &locator.ability)?;
+    damage_prevention_defs(&ability)
+        .get(locator.effect_index)
+        .copied()
+}
+
+fn damage_prevention_defs(ability: &AbilityDef) -> Vec<DamagePreventionDef> {
+    let mut found = Vec::new();
+    match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => {
+            collect_damage_prevention_defs(effect, &mut found);
+        }
+        AbilityProgramDef::Replacement(effect) => {
+            for child in replacement_child_effects(effect) {
+                collect_damage_prevention_defs(child, &mut found);
+            }
+        }
+    }
+    found
+}
+
+fn collect_damage_prevention_defs(effect: EffectDef, found: &mut Vec<DamagePreventionDef>) {
+    if let EffectDef::PreventDamage { prevention, .. } = effect {
+        found.push(prevention);
+    }
+    for child in child_effects(effect) {
+        collect_damage_prevention_defs(child, found);
+    }
+}
+
 pub(super) fn applied_effects(ability: &AbilityDef) -> Vec<AppliedEffectDef> {
     let mut found = Vec::new();
-    collect_applied_effects_from_effect(ability.effect.definition, &mut found);
+    match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => {
+            collect_applied_effects_from_effect(effect, &mut found);
+        }
+        AbilityProgramDef::Replacement(effect) => {
+            for child in replacement_child_effects(effect) {
+                collect_applied_effects_from_effect(child, &mut found);
+            }
+        }
+    }
     for mana in mana_effects(ability) {
         for spend in mana.spend_effects {
             if let ManaSpendEffectDef::ApplyToPaidSpell(effect) = *spend {
@@ -188,12 +280,27 @@ pub(super) fn scoped_effect_snapshot(
     effect: ScopedEffect,
 ) -> Option<ScopedEffectSnapshot> {
     let mut path = Vec::new();
-    locate_effect(ability.effect.definition, effect.effect, &mut path).then_some(
-        ScopedEffectSnapshot {
-            path,
-            target_base: effect.target_base,
-        },
-    )
+    let found = match ability.effect.definition {
+        AbilityProgramDef::Effects(definition) => {
+            locate_effect(definition, effect.effect, &mut path)
+        }
+        AbilityProgramDef::Replacement(replacement) => replacement_child_effects(replacement)
+            .into_iter()
+            .enumerate()
+            .any(|(index, root)| {
+                path.push(index);
+                if locate_effect(root, effect.effect, &mut path) {
+                    true
+                } else {
+                    path.pop();
+                    false
+                }
+            }),
+    };
+    found.then_some(ScopedEffectSnapshot {
+        path,
+        target_base: effect.target_base,
+    })
 }
 
 pub(super) fn catalog_scoped_effect(
@@ -202,8 +309,14 @@ pub(super) fn catalog_scoped_effect(
     snapshot: &ScopedEffectSnapshot,
 ) -> Option<ScopedEffect> {
     let ability = catalog_ability(catalog, ability)?;
-    let mut effect = ability.effect.definition;
-    for &index in &snapshot.path {
+    let (mut effect, path) = match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => (effect, snapshot.path.as_slice()),
+        AbilityProgramDef::Replacement(replacement) => {
+            let (&root, path) = snapshot.path.split_first()?;
+            (*replacement_child_effects(replacement).get(root)?, path)
+        }
+    };
+    for &index in path {
         effect = *child_effects(effect).get(index)?;
     }
     Some(ScopedEffect {
@@ -243,20 +356,10 @@ pub(super) fn catalog_replacement_effect(
 
 pub(super) fn replacement_effects(ability: &AbilityDef) -> Vec<ReplacementEffectDef> {
     let mut effects = Vec::new();
-    collect_replacement_effects_from_effect(ability.effect.definition, &mut effects);
+    if let AbilityProgramDef::Replacement(effect) = ability.effect.definition {
+        collect_replacement_effects(effect, &mut effects);
+    }
     effects
-}
-
-fn collect_replacement_effects_from_effect(
-    effect: EffectDef,
-    found: &mut Vec<ReplacementEffectDef>,
-) {
-    if let EffectDef::Replacement(replacement) = effect {
-        collect_replacement_effects(replacement, found);
-    }
-    for child in child_effects(effect) {
-        collect_replacement_effects_from_effect(child, found);
-    }
 }
 
 fn collect_replacement_effects(
@@ -277,7 +380,7 @@ fn collect_replacement_effects(
                 collect_replacement_effects(*effect, found);
             }
         }
-        ReplacementEffectDef::OptionalPayment {
+        ReplacementEffectDef::PayOr {
             if_paid,
             if_declined,
             ..
@@ -286,11 +389,13 @@ fn collect_replacement_effects(
                 collect_replacement_effects(*effect, found);
             }
         }
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
+        ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::Perform(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => {}
+        | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::Choose(_)
+        | ReplacementEffectDef::CopyEntering { .. } => {}
     }
 }
 
@@ -333,9 +438,6 @@ pub(super) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         }
         | EffectDef::IfCondition {
             then: otherwise, ..
-        }
-        | EffectDef::AtNextStep {
-            effect: otherwise, ..
         } => vec![*otherwise],
         EffectDef::IfFormat {
             then, otherwise, ..
@@ -346,12 +448,11 @@ pub(super) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         EffectDef::LookAtTopAndSelect { selection, .. } => {
             selection.then.into_iter().copied().collect()
         }
-        EffectDef::Replacement(effect) => replacement_child_effects(effect),
         _ => Vec::new(),
     }
 }
 
-fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<EffectDef> {
+pub(super) fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<EffectDef> {
     match effect {
         ReplacementEffectDef::Sequence(effects) => effects
             .iter()
@@ -365,7 +466,7 @@ fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<EffectDef> {
             .chain(if_false.iter())
             .flat_map(|effect| replacement_child_effects(*effect))
             .collect(),
-        ReplacementEffectDef::OptionalPayment {
+        ReplacementEffectDef::PayOr {
             if_paid,
             if_declined,
             ..
@@ -374,10 +475,12 @@ fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<EffectDef> {
             .chain(if_declined.iter())
             .flat_map(|effect| replacement_child_effects(*effect))
             .collect(),
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
+        ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => Vec::new(),
+        | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::Choose(_)
+        | ReplacementEffectDef::CopyEntering { .. } => Vec::new(),
     }
 }
 
@@ -392,7 +495,14 @@ fn mana_effect_matches(effect: AddManaEffectDef, mana: Mana) -> bool {
 
 pub(super) fn mana_effects(ability: &AbilityDef) -> Vec<AddManaEffectDef> {
     let mut effects = Vec::new();
-    collect_mana_effects(ability.effect.definition, &mut effects);
+    match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => collect_mana_effects(effect, &mut effects),
+        AbilityProgramDef::Replacement(effect) => {
+            for child in replacement_child_effects(effect) {
+                collect_mana_effects(child, &mut effects);
+            }
+        }
+    }
     effects
 }
 
@@ -428,14 +538,39 @@ pub(super) fn child_abilities(ability: &AbilityDef) -> Vec<&AbilityDef> {
     if let DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) = ability.definition {
         children.extend(modal.modes);
     }
-    collect_effect_abilities(ability.effect.definition, &mut children);
+    match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => collect_effect_abilities(effect, &mut children),
+        AbilityProgramDef::Replacement(effect) => {
+            for child in replacement_child_effects(effect) {
+                collect_effect_abilities(child, &mut children);
+            }
+        }
+    }
     children
+}
+
+pub(super) const fn ability_target_defs(ability: &AbilityDef) -> &'static [AbilityTargetDef] {
+    match ability.definition {
+        DeclarativeAbilityDef::Spell(spell) => spell.targets(),
+        DeclarativeAbilityDef::ActivatedMana(activated)
+        | DeclarativeAbilityDef::Activated(activated) => activated.targets,
+        DeclarativeAbilityDef::TriggeredMana(triggered)
+        | DeclarativeAbilityDef::Triggered(triggered) => triggered.targets,
+        DeclarativeAbilityDef::Static(_)
+        | DeclarativeAbilityDef::Replacement(_)
+        | DeclarativeAbilityDef::AlternativeCast(_)
+        | DeclarativeAbilityDef::SpecialAction(_)
+        | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::Legacy => &[],
+    }
 }
 
 fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static AbilityDef>) {
     match effect {
-        EffectDef::Apply { effect, .. } => collect_applied_abilities(effect, abilities),
-        EffectDef::TriggerUntilYourNextTurn { ability } => abilities.push(ability),
+        EffectDef::Apply { effect, .. } | EffectDef::StaticApply { effect, .. } => {
+            collect_applied_abilities(effect, abilities);
+        }
+        EffectDef::InstallTrigger(installed) => abilities.push(installed.ability),
         _ => {}
     }
     for child in child_effects(effect) {
@@ -464,11 +599,8 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
         | AppliedEffectDef::RemainsAttachedThroughProtection
         | AppliedEffectDef::CannotBeBlockedBy(_)
         | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::PreventDamageFrom(_)
-        | AppliedEffectDef::PreventCombatDamageFrom(_)
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventCombatDamage
-        | AppliedEffectDef::PreventCombatDamageDealtBy
+        | AppliedEffectDef::PreventDamage(_)
         | AppliedEffectDef::Characteristic(_)
         | AppliedEffectDef::Special(_) => {}
     }
@@ -553,7 +685,7 @@ pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::card::{EffectDurationDef, EffectRecipientDef, ValueDef};
+    use crate::card::{EffectRecipientDef, ResolvedEffectDurationDef, ValueDef};
 
     static GRANTED: AbilityDef = AbilityDef::not_implemented(
         "A nested ability.",
@@ -566,12 +698,12 @@ mod tests {
     static PERFORM: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::Composite(&APPLIED),
-        duration: EffectDurationDef::UntilEndOfTurn,
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     };
     static PROGRAM: [ReplacementEffectDef; 1] = [ReplacementEffectDef::Perform(&PERFORM)];
     static OUTER: AbilityDef = AbilityDef::replacement(
         "Perform nested definitions while replacing an event.",
-        EffectDef::Replacement(ReplacementEffectDef::Sequence(&PROGRAM)),
+        ReplacementEffectDef::Sequence(&PROGRAM),
     );
 
     #[test]

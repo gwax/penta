@@ -2,8 +2,8 @@ use std::borrow::Cow;
 
 use crate::action::{AbilityOrigin, Target};
 use crate::card::{
-    AbilityTargetDef, CardSupertype, CardTypeSet, EffectDef, PlayerRelation, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ZoneKind,
+    AbilityTargetDef, CardSupertype, CardTypeSet, EffectDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ZoneKind,
 };
 use crate::casting::TargetSelection;
 use crate::ids::{
@@ -11,22 +11,7 @@ use crate::ids::{
     PlayerId,
 };
 
-use super::{ScopedEffect, StackAbilityResolver, StackObject};
-
-/// An effect queued for the next time a step begins. Whatever queued it has
-/// usually left by then, so the entry carries its own source and controller.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) struct DelayedTrigger {
-    /// The object that queued this, kept whole so the effect resolves with
-    /// the same source and controller it would have had at the time.
-    pub(super) object: Box<StackObject>,
-    /// Trigger-event information and effect-local bindings captured when the
-    /// effect was scheduled.
-    pub(super) context: EffectResolutionContext,
-    pub(super) step: TurnStepDef,
-    pub(super) player: PlayerRelation,
-    pub(super) effect: ScopedEffect,
-}
+use super::StackAbilityResolver;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct TriggerContext {
@@ -351,55 +336,70 @@ pub(super) struct PendingTrigger {
     pub(super) owner: PlayerId,
     pub(super) controller: PlayerId,
     pub(super) text: &'static str,
-    pub(super) target_defs: &'static [AbilityTargetDef],
+    pub(super) target_defs: Vec<AbilityTargetDef>,
     pub(super) targets: Vec<TargetSelection>,
     pub(super) effect: EffectDef,
     pub(super) resolver: StackAbilityResolver,
-    pub(super) context: TriggerContext,
+    pub(super) context: EffectResolutionContext,
     pub(super) condition: Option<&'static TriggerConditionDef>,
+    pub(super) x: u16,
 }
 
 /// The immutable declaration captured when one event matches one source
 /// ability. The game assigns the ephemeral trigger ID when it accepts this
 /// record into the pending-trigger queue.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct TriggerCapture {
     pub(super) source: AbilitySourceRef,
     pub(super) definition: CardDefinitionId,
     pub(super) owner: PlayerId,
     pub(super) controller: PlayerId,
     pub(super) text: &'static str,
-    pub(super) target_defs: &'static [AbilityTargetDef],
+    pub(super) target_defs: Vec<AbilityTargetDef>,
+    pub(super) targets: Vec<TargetSelection>,
     pub(super) effect: EffectDef,
     pub(super) resolver: StackAbilityResolver,
-    pub(super) context: TriggerContext,
+    pub(super) context: EffectResolutionContext,
     /// The intervening-if condition this trigger reads, checked both when the
     /// ability would go on the stack and again when it resolves.
     pub(super) condition: Option<&'static TriggerConditionDef>,
+    /// The X chosen for the installing ability. Installed triggers retain the
+    /// same resolving context as the effect that created them.
+    pub(super) x: u16,
 }
 
-/// A triggered ability with no object behind it, installed by an effect and
-/// listening until its controller's next turn begins. Everything the trigger
-/// needs is frozen here, because the ability that created it has finished
-/// resolving and its source may be long gone.
+/// How long a trigger installed outside every zone continues listening.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct FloatingTrigger {
+pub(super) enum InstalledTriggerLifetime {
+    /// Consume the listener on the first matching event, before checking an
+    /// intervening-if condition or putting its ability on the stack.
+    Once,
+    /// Stop listening when this player's frozen future turn begins.
+    UntilTurn { player: PlayerId, turn: u32 },
+}
+
+/// A triggered ability installed by a resolved effect. Everything needed to
+/// construct its stack object is frozen here because its source may be gone
+/// by the time an event matches.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct InstalledTrigger {
+    pub(super) id: u32,
     pub(super) event: TriggerEventDef,
     pub(super) capture: TriggerCapture,
-    pub(super) until_turn_of: PlayerId,
-    /// How many turns that player had already started, so the turn the
-    /// ability resolved during does not count as their next one.
-    pub(super) created_after_turns: u32,
+    pub(super) lifetime: InstalledTriggerLifetime,
 }
 
 /// One battlefield trigger listener frozen at the start of an atomic event.
 /// A simultaneous zone change can remove the source before another object in
 /// the same event is published, so listener discovery cannot consult the
 /// incrementally-mutated battlefield.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct BattlefieldTriggerListener {
     pub(super) event: TriggerEventDef,
     pub(super) uses_stack: bool,
+    /// Identifies an effect-installed listener. Battlefield listeners have no
+    /// ID because their source's zone presence determines their lifetime.
+    pub(super) installed: Option<u32>,
     pub(super) capture: TriggerCapture,
 }
 

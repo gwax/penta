@@ -1,4 +1,5 @@
 use super::*;
+use crate::AbilityProgramDef;
 
 /// Casts a modal spell by picking one mode. A selected mode's clause-local
 /// primary target becomes runtime slot zero.
@@ -163,11 +164,11 @@ fn selesnya_charm_pumps_and_grants_trample() {
         panic!("Selesnya Charm should have a spell ability")
     };
     let mode = spell.mode(ModeId(0)).unwrap();
-    let EffectDef::Apply {
+    let AbilityProgramDef::Effects(EffectDef::Apply {
         recipient,
         effect: AppliedEffectDef::Composite(components),
-        duration: EffectDurationDef::UntilEndOfTurn,
-    } = mode.effect.definition
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    }) = mode.effect.definition
     else {
         panic!("Selesnya Charm should apply one composite effect until end of turn")
     };

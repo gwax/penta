@@ -2,9 +2,9 @@ use super::{
     Action, AlternativeCastKindDef, CardBehavior, CardDefinitionId, CardType, CombatDamageStage,
     CommittedTriggerEvent, ContinuousEffectExpiration, DecisionContinuation, DecisionOption,
     DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
-    DeferredBeginTurnEffect, EffectDef, EffectResolutionContext, Game, GameEvent, GameObjectId,
-    GameResult, ManaPool, PendingProcedure, PlayerId, ReplacementEventDef, Step, TriggerContext,
-    TurnStepDef, one_or_none,
+    DeferredBeginTurnEffect, EffectResolutionContext, Game, GameEvent, GameObjectId, GameResult,
+    InstalledTriggerLifetime, ManaPool, PendingProcedure, PlayerId, ReplacementEffectDef,
+    ReplacementEventDef, Step, TriggerContext, TurnStepDef, one_or_none,
 };
 
 mod begin_turn;
@@ -178,7 +178,8 @@ impl Game {
                 let ReplacementEventDef::WouldGainLife(relation) = definition.event else {
                     return;
                 };
-                let Some(EffectDef::MultiplyEventAmount(factor)) = ability.declarative_effect()
+                let Some(ReplacementEffectDef::MultiplyEventAmount(factor)) =
+                    ability.declarative_replacement()
                 else {
                     return;
                 };
@@ -344,6 +345,16 @@ impl Game {
         self.active_player = next_player;
         self.turns_started[self.active_player.index()] += 1;
         let turns_started = self.turns_started;
+        self.damage_preventions.retain(|prevention| {
+            prevention
+                .expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
+        self.damage_redirects.retain(|redirect| {
+            redirect
+                .expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
         for permanent in &mut self.battlefield {
             permanent.resolved_continuous_effects.retain(|effect| {
                 effect
@@ -362,19 +373,23 @@ impl Game {
         self.miracle_window = None;
         self.step = Step::Upkeep;
         self.players[self.active_player.index()].land_played_this_turn = false;
-        // "Until your next turn" means the one now beginning, not the one the
-        // ability resolved during.
         let started = self.turns_started[self.active_player.index()];
         let active = self.active_player;
-        self.floating_triggers.retain(|floating| {
-            floating.until_turn_of != self.active_player || started <= floating.created_after_turns
-        });
+        // The lifetime freezes both the referenced player and the exact turn
+        // at installation, so extra turns and skipped turns have ordinary
+        // turn-engine semantics rather than being re-evaluated later.
+        self.installed_triggers
+            .retain(|installed| match installed.lifetime {
+                InstalledTriggerLifetime::Once => true,
+                InstalledTriggerLifetime::UntilTurn { player, turn } => {
+                    player != self.active_player || self.turns_started[player.index()] < turn
+                }
+            });
         for permanent in &mut self.battlefield {
             permanent
                 .keywords_until_upkeep_of
                 .retain(|(player, _)| *player != self.active_player);
-            // Detain ends when its controller's next turn begins, the same
-            // reading the floating triggers above take.
+            // Detain ends when its controller's next turn begins.
             if permanent
                 .detained_until_turn_of
                 .is_some_and(|(player, created)| player == active && started > created)
@@ -442,7 +457,6 @@ impl Game {
             step: TurnStepDef::Upkeep,
             player,
         });
-        self.fire_delayed_triggers(TurnStepDef::Upkeep);
     }
 
     /// CR 510.4-adjacent: "destroy that creature at end of combat" resolves
@@ -494,9 +508,10 @@ impl Game {
 
     pub(super) fn finish_cleanup(&mut self) {
         self.temporary_ability_grants.clear();
-        self.all_combat_damage_prevented = false;
-        self.prevention_shields.clear();
-        self.relational_damage_preventions.clear();
+        self.damage_preventions
+            .retain(|prevention| prevention.expiration.survives_cleanup());
+        self.damage_redirects
+            .retain(|redirect| redirect.expiration.survives_cleanup());
         for replacements in &mut self.draw_replacements {
             replacements.clear();
         }
@@ -536,9 +551,6 @@ impl Game {
             }
             permanent.unblockable_this_turn = false;
             permanent.cannot_block_this_turn = false;
-            permanent.combat_damage_prevented = false;
-            permanent.combat_damage_dealt_by_prevented = false;
-            permanent.damage_dealt_by_prevented = false;
             permanent.destroy_at_end = false;
             permanent.activations_this_turn.clear();
             permanent.dealt_damage_to_opponent_this_turn = false;

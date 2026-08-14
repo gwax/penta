@@ -3,16 +3,18 @@ use std::collections::HashSet;
 use super::{CardRecord, SET_MODULES, y1993, y1994, y1996, y2002, y2004, y2011, y2012, y2013};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityPredicateDef, AbilityProcedureDef,
-    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardChoiceSourceDef,
-    CardPrinting, CardPrintingId, CardStructure, CardSupertype, CardType,
-    CharacteristicOperationDef, ComparisonDef, ConditionDef, DeclarativeAbilityDef,
-    DoubleFacedKind, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
-    EffectRecipientSetDef, ImplementationStatus, KeywordAbility, ManaColor, ManaRestrictionDef,
-    ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PayOrDef, PlayActionKind, PlayRestriction, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, PowerToughnessOperationDef, ReplacementEffectDef, ReplacementEventDef,
-    SetOperationDef, SpellForm, TargetPredicate, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, cards,
+    AbilityProgramDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType,
+    CardChoiceSourceDef, CardPrinting, CardPrintingId, CardStructure, CardSupertype, CardType,
+    CharacteristicOperationDef, ComparisonDef, ConditionDef, CostDef, DamagePreventionCapacityDef,
+    DamagePreventionFollowUpDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
+    DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef,
+    EffectRecipientDef, EffectRecipientSetDef, ImplementationStatus, KeywordAbility, ManaColor,
+    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PayOrDef, PlayActionKind, PlayRestriction, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef, SpellForm, TargetPredicate,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZoneMoveCauseDef, ZonePlacement, cards,
 };
 use crate::{
     CardDefinitionId, CardPartId, CardSet, Format, ManaCost, ModeId, PlayOptionId, TargetSlotId,

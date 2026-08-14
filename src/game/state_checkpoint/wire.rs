@@ -546,9 +546,6 @@ fn parse_permanent(
     permanent.destroy_at_end_of_combat = state.destroy_at_end_of_combat;
     permanent.skipped_untap_steps = state.skipped_untap_steps;
     permanent.color_override = state.color_override.map(color_set_from_flags);
-    permanent.combat_damage_prevented = state.combat_damage_prevented;
-    permanent.combat_damage_dealt_by_prevented = state.combat_damage_dealt_by_prevented;
-    permanent.damage_dealt_by_prevented = state.damage_dealt_by_prevented;
     permanent.control_reverts_to = state
         .control_reverts_to
         .map(player_from_index)
@@ -854,16 +851,6 @@ pub(super) fn parse_pending_events(
             })
         })
         .collect()
-}
-
-pub(super) fn catalog_entry_replacement_effect(
-    catalog: &CardCatalog,
-    locator: &EntryReplacementLocator,
-) -> Result<BattlefieldEntryReplacementEffect, String> {
-    let ability = catalog_ability(catalog, &locator.ability)
-        .ok_or("entry replacement ability locator is absent from this catalog")?;
-    entry_replacement_effect(&ability)
-        .ok_or_else(|| "locator does not identify an entry replacement effect".into())
 }
 
 pub(super) const fn parse_zone_kind(zone: ZoneKindSnapshot) -> ZoneKind {

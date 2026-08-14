@@ -133,9 +133,6 @@ impl Game {
                     .collect()
             };
             for (recipient, amount) in split {
-                if self.combat_damage_is_prevented_for(recipient) {
-                    continue;
-                }
                 // Trample past a blocker is still combat damage to a player,
                 // so it goes through the same path as an unblocked hit.
                 if let Target::Player(player) = recipient {
@@ -145,19 +142,13 @@ impl Game {
                 }
             }
         }
-        if self.combat_damage_is_prevented_for(Target::Permanent(attacker_id)) {
-            return;
-        }
         let return_damage = blockers
             .iter()
             .filter_map(|id| {
                 self.battlefield
                     .iter()
                     .find(|permanent| permanent.card.id == *id)
-                    .filter(|permanent| {
-                        self.deals_damage_in_current_combat_step(permanent)
-                            && !self.combat_damage_is_prevented_from(permanent.card.id)
-                    })
+                    .filter(|permanent| self.deals_damage_in_current_combat_step(permanent))
                     .and_then(|permanent| self.power(permanent))
                     .map(|power| (*id, power.max(0).cast_unsigned()))
             })

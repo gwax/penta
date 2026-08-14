@@ -2,12 +2,12 @@ use super::{
     AbilitySourceRef, ApplicableZoneMoveReplacement, BattlefieldArrival, BattlefieldExit,
     BattlefieldExitCompletion, CardInstance, CardPartId, CommittedTriggerEvent, CounterKind,
     DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EntryCompletion,
-    FrozenZoneMoveReplacement, Game, GameEvent, GameObjectId, KeywordAbility,
-    PendingBattlefieldEntry, PendingBattlefieldExitBatch, PendingBattlefieldExitMove, Permanent,
-    PlayerId, ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef,
-    ReplacementEventDef, ScopedEffect, StackObject, StackObjectKind, Step, Target, TargetSlotId,
-    TriggerContext, TurnStepDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, remove_card,
+    DeclarativeAbilityDef, EffectDef, EntryCompletion, FrozenZoneMoveReplacement, Game, GameEvent,
+    GameObjectId, KeywordAbility, PendingBattlefieldEntry, PendingBattlefieldExitBatch,
+    PendingBattlefieldExitMove, Permanent, PlayerId, ReplacementConditionDef,
+    ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef, ScopedEffect, StackObject,
+    StackObjectKind, Step, Target, TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCauseDef,
+    ZonePlacement, remove_card,
 };
 
 impl Game {
@@ -305,7 +305,7 @@ impl Game {
                 {
                     return;
                 }
-                let Some(effect) = ability.declarative_effect() else {
+                let Some(effect) = ability.declarative_replacement() else {
                     return;
                 };
                 replacements.push(FrozenZoneMoveReplacement {
@@ -466,44 +466,12 @@ impl Game {
         batch: &mut PendingBattlefieldExitBatch,
         move_index: usize,
         context: ReplacementEffectContext,
-        effect: EffectDef,
-    ) {
-        match effect {
-            // Compatibility for already-authored replacements such as Rest in
-            // Peace. Source names the prospective moving object here, so this
-            // changes its event rather than moving the replacement source.
-            EffectDef::MoveToZone {
-                object: EffectRecipientDef::Source,
-                zone,
-                ..
-            } => batch.moves[move_index].destination = zone,
-            EffectDef::Replacement(effect) => {
-                self.apply_battlefield_exit_replacement_program(batch, move_index, context, effect);
-            }
-            EffectDef::Sequence(effects) => {
-                for effect in effects {
-                    self.apply_battlefield_exit_effect(batch, move_index, context, *effect);
-                }
-            }
-            // An ordinary operation authored directly in an older replacement
-            // clause is still performed in the frozen source context.
-            effect => self.perform_battlefield_exit_replacement_effect(context, effect),
-        }
-    }
-
-    fn apply_battlefield_exit_replacement_program(
-        &mut self,
-        batch: &mut PendingBattlefieldExitBatch,
-        move_index: usize,
-        context: ReplacementEffectContext,
         effect: ReplacementEffectDef,
     ) {
         match effect {
             ReplacementEffectDef::Sequence(effects) => {
                 for effect in effects {
-                    self.apply_battlefield_exit_replacement_program(
-                        batch, move_index, context, *effect,
-                    );
+                    self.apply_battlefield_exit_effect(batch, move_index, context, *effect);
                 }
             }
             ReplacementEffectDef::ReplaceEventWithNothing => {
@@ -515,10 +483,12 @@ impl Game {
             ReplacementEffectDef::Perform(effect) => {
                 self.perform_battlefield_exit_replacement_effect(context, *effect);
             }
-            ReplacementEffectDef::None
-            | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+            ReplacementEffectDef::ModifyBattlefieldEntry(_)
+            | ReplacementEffectDef::MultiplyEventAmount(_)
+            | ReplacementEffectDef::Choose(_)
+            | ReplacementEffectDef::CopyEntering { .. }
             | ReplacementEffectDef::Conditional { .. }
-            | ReplacementEffectDef::OptionalPayment { .. } => {}
+            | ReplacementEffectDef::PayOr { .. } => {}
         }
     }
 
@@ -880,8 +850,8 @@ impl Game {
         }
     }
 
-    /// Raises the start-of-step event and resolves whatever was waiting for
-    /// it. The upkeep has its own richer path and calls both itself.
+    /// Raises the start-of-step event. The upkeep has its own richer path and
+    /// publishes the same event there.
     pub(super) fn begin_step_triggers(&mut self) {
         if self.step == Step::Upkeep {
             return;
@@ -891,36 +861,6 @@ impl Game {
             step,
             player: self.active_player,
         });
-        self.fire_delayed_triggers(step);
-    }
-
-    /// Resolves the effects that were waiting for this step.
-    ///
-    /// A real delayed trigger goes on the stack and can be responded to. This
-    /// resolves at the step boundary instead, which no card here can tell
-    /// apart, and keeps the queue from needing a listener of its own.
-    pub(super) fn fire_delayed_triggers(&mut self, step: TurnStepDef) {
-        let active = self.active_player;
-        let mut waiting = std::mem::take(&mut self.delayed_triggers);
-        let mut due = Vec::new();
-        for delayed in waiting.extract_if(.., |delayed| {
-            delayed.step == step
-                && self.player_relation_matches(
-                    active,
-                    delayed.player,
-                    delayed.object.controller,
-                    delayed.context.trigger,
-                )
-        }) {
-            due.push(delayed);
-        }
-        // Restore the waiting allocation before resolving. A due effect may
-        // enqueue another delayed effect, which belongs after every entry
-        // that was already waiting and must not fire in this batch.
-        self.delayed_triggers = waiting;
-        for delayed in due {
-            self.resolve_effect_def(delayed.effect, &delayed.object, delayed.context);
-        }
     }
 
     pub(super) fn return_permanent_to_hand(&mut self, id: GameObjectId) {

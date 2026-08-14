@@ -2,19 +2,18 @@ use super::{
     AbilityDef, AbilityId, AbilityOperationDef, AbilityOrigin, AbilitySourceRef,
     AbilityTargetPredicate, AppliedEffectDef, CardPartId, CastSignature,
     CharacteristicOperationDef, ComparisonDef, ContinuousEffectExpiration,
-    ContinuousEffectTimestamp, ControlFlow, CounterKind, EffectDurationDef, EffectRecipientDef,
-    EffectRecipientSetDef, EffectResolutionContext, Game, GameObjectId, GrantId,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, Permanent, PlayerId,
-    PlayerRefDef, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef,
-    ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
-    ResolvedPowerToughnessOperation, ScopedEffect, StackObject, StackObjectKind, Target,
-    TargetIndex, TargetSelection, TargetSlotId, TemporaryAbilityGrant, TriggerConditionDef,
-    TriggerContext, ZoneKind,
+    ContinuousEffectTimestamp, ControlFlow, CounterKind, EffectRecipientDef, EffectRecipientSetDef,
+    EffectResolutionContext, Game, GameObjectId, GrantId, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRefDef, PlayerSetDef,
+    PowerToughnessOperationDef, QuantifierDef, ResolvedAbilityOperation, ResolvedContinuousEffect,
+    ResolvedContinuousEffectKind, ResolvedEffectDurationDef, ResolvedPowerToughnessOperation,
+    ScopedEffect, StackObject, StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId,
+    TemporaryAbilityGrant, TriggerConditionDef, TriggerContext, ZoneKind,
 };
 
 #[derive(Clone, Copy)]
 struct ResolvedAppliedEffect<'a> {
-    duration: EffectDurationDef,
+    duration: ResolvedEffectDurationDef,
     timestamp: ContinuousEffectTimestamp,
     object: &'a StackObject,
     context: &'a EffectResolutionContext,
@@ -29,7 +28,7 @@ impl Game {
         &mut self,
         recipient: EffectRecipientDef,
         effect: AppliedEffectDef,
-        duration: EffectDurationDef,
+        duration: ResolvedEffectDurationDef,
         object: &StackObject,
         context: &EffectResolutionContext,
         scoped: ScopedEffect,
@@ -64,11 +63,11 @@ impl Game {
         // than silently changing their lifetime.
         debug_assert!(matches!(
             duration,
-            EffectDurationDef::UntilEndOfTurn
-                | EffectDurationDef::Permanent
-                | EffectDurationDef::UntilYourNextUpkeep
-                | EffectDurationDef::UntilYourNextTurn
-                | EffectDurationDef::WhileSourceTapped
+            ResolvedEffectDurationDef::UntilEndOfTurn
+                | ResolvedEffectDurationDef::Permanent
+                | ResolvedEffectDurationDef::UntilYourNextUpkeep
+                | ResolvedEffectDurationDef::UntilYourNextTurn
+                | ResolvedEffectDurationDef::WhileSourceTapped
         ));
     }
 
@@ -106,24 +105,22 @@ impl Game {
     }
 
     pub(super) fn continuous_effect_expiration(
-        duration: EffectDurationDef,
+        duration: ResolvedEffectDurationDef,
         controller: PlayerId,
         turns_started: u32,
     ) -> ContinuousEffectExpiration {
         match duration {
-            EffectDurationDef::UntilEndOfTurn => ContinuousEffectExpiration::EndOfTurn,
-            EffectDurationDef::UntilYourNextUpkeep => {
+            ResolvedEffectDurationDef::UntilEndOfTurn => ContinuousEffectExpiration::EndOfTurn,
+            ResolvedEffectDurationDef::UntilYourNextUpkeep => {
                 ContinuousEffectExpiration::UpkeepOf(controller)
             }
-            EffectDurationDef::UntilYourNextTurn => ContinuousEffectExpiration::TurnOf {
+            ResolvedEffectDurationDef::UntilYourNextTurn => ContinuousEffectExpiration::TurnOf {
                 player: controller,
                 turn: turns_started.saturating_add(1),
             },
-            EffectDurationDef::Permanent => ContinuousEffectExpiration::Never,
-            EffectDurationDef::WhileSourceTapped => ContinuousEffectExpiration::WhileSourceTapped,
-            EffectDurationDef::WhileSourceRemainsInZone
-            | EffectDurationDef::UntilSourceLeavesZone => {
-                unreachable!("a resolving effect cannot have a static duration")
+            ResolvedEffectDurationDef::Permanent => ContinuousEffectExpiration::Never,
+            ResolvedEffectDurationDef::WhileSourceTapped => {
+                ContinuousEffectExpiration::WhileSourceTapped
             }
         }
     }
@@ -168,11 +165,8 @@ impl Game {
             | AppliedEffectDef::RemainsAttachedThroughProtection
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::PreventDamageFrom(_)
-            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventCombatDamage
-            | AppliedEffectDef::PreventCombatDamageDealtBy
+            | AppliedEffectDef::PreventDamage(_)
             | AppliedEffectDef::Special(_) => {}
         }
     }
@@ -852,7 +846,7 @@ impl Game {
             definition.predicate,
             object.controller,
             source,
-            ability.context,
+            ability.context.trigger,
         )
         .contains(&target)
     }

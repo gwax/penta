@@ -50,7 +50,7 @@ impl Game {
                 text: frozen.text,
                 target_defs: frozen.target_defs.to_vec(),
                 targets,
-                context: TriggerContext::empty(),
+                context: TriggerContext::empty().into(),
                 resolver: frozen.resolver,
                 // Only a triggered ability carries an intervening-if.
                 condition: None,

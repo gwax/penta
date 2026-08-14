@@ -154,12 +154,11 @@ fn modal_spell_semantics_derive_their_presentation_modes() {
             _ => None,
         }
         .expect("first positional mode")
-        .effect
-        .definition,
-        EffectDef::Counter {
+        .declarative_effect(),
+        Some(EffectDef::Counter {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Graveyard,
-        }
+        })
     );
     assert_eq!(
         match rules.ability_clauses()[0].definition {
@@ -167,12 +166,11 @@ fn modal_spell_semantics_derive_their_presentation_modes() {
             _ => None,
         }
         .expect("second positional mode")
-        .effect
-        .definition,
-        EffectDef::Destroy {
+        .declarative_effect(),
+        Some(EffectDef::Destroy {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             can_regenerate: true,
-        }
+        })
     );
     assert_eq!(rules.rules_text(), "Choose one.");
 }

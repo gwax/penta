@@ -3,9 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRelation, TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
+    TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::mana_cost;
 
@@ -94,13 +93,12 @@ pub(in crate::card::sets) static TSABOS_WEB: CardRecord = CardRecord::new(
         ),
         AbilityDef::static_ability(
             "Each land with an activated ability that isn't a mana ability doesn't untap during its controller's untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Land),
                         ObjectPredicateDef::HasNonManaActivatedAbility,
                     ]), &[ZoneKind::Battlefield], PlayerRelation::Any),
                 effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ]),

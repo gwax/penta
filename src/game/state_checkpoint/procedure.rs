@@ -4,21 +4,34 @@ use super::model::{EffectContinuationSnapshot, ScopedEffectSnapshot};
 use super::model_procedure::{DrawReplacementSnapshot, PendingProcedureSnapshot};
 use super::semantics::{catalog_scoped_effect, scoped_effect_snapshot};
 use super::stack::{
-    effect_resolution_context_snapshot, parse_effect_resolution_context,
-    resolution_context_referenced_object_ids,
+    detached_stack_snapshot_allowing, effect_resolution_context_snapshot,
+    parse_effect_resolution_context, resolution_context_referenced_object_ids,
+    stack_ability_snapshot_allowing, trigger_capture_has_unrebindable_hidden_reference_except,
 };
 use super::*;
 
 pub(super) fn draw_replacement_snapshot(
     game: &Game,
+    viewer: PlayerId,
     replacement: &super::super::DrawReplacement,
+) -> Option<DrawReplacementSnapshot> {
+    draw_replacement_snapshot_allowing(game, viewer, replacement, &[])
+}
+
+pub(super) fn draw_replacement_snapshot_allowing(
+    game: &Game,
+    viewer: PlayerId,
+    replacement: &super::super::DrawReplacement,
+    visible_rebindings: &[GameObjectId],
 ) -> Option<DrawReplacementSnapshot> {
     Some(DrawReplacementSnapshot {
         continuation: effect_continuation_snapshot(
             game,
+            viewer,
             &replacement.object,
             &replacement.context,
             replacement.effect,
+            visible_rebindings,
         )?,
     })
 }
@@ -37,6 +50,7 @@ pub(super) fn parse_draw_replacement(
 
 pub(super) fn pending_procedure_snapshot(
     game: &Game,
+    viewer: PlayerId,
     procedure: &super::super::PendingProcedure,
 ) -> Option<PendingProcedureSnapshot> {
     Some(match procedure {
@@ -52,7 +66,10 @@ pub(super) fn pending_procedure_snapshot(
             context,
             custom_followup,
         } => {
-            let ability = stack_ability_snapshot(game, object)?.ability_locator?;
+            if trigger_capture_has_unrebindable_hidden_reference(game, viewer, &[], context) {
+                return None;
+            }
+            let ability = stack_ability_snapshot(game, viewer, object)?.ability_locator?;
             let definition = catalog_ability(&game.catalog, &ability)?;
             let effects = effects
                 .iter()
@@ -67,7 +84,7 @@ pub(super) fn pending_procedure_snapshot(
             };
             PendingProcedureSnapshot::ResolveEffects {
                 effects,
-                object: Box::new(detached_stack_snapshot(game, object)?),
+                object: Box::new(detached_stack_snapshot(game, viewer, object)?),
                 ability,
                 context: effect_resolution_context_snapshot(context),
                 custom_followup,
@@ -190,14 +207,26 @@ pub(super) fn pending_procedure_referenced_object_ids(
 
 fn effect_continuation_snapshot(
     game: &Game,
+    viewer: PlayerId,
     object: &StackObject,
     context: &EffectResolutionContext,
     effect: ScopedEffect,
+    visible_rebindings: &[GameObjectId],
 ) -> Option<EffectContinuationSnapshot> {
-    let ability = stack_ability_snapshot(game, object)?.ability_locator?;
+    if trigger_capture_has_unrebindable_hidden_reference_except(
+        game,
+        viewer,
+        &[],
+        context,
+        visible_rebindings,
+    ) {
+        return None;
+    }
+    let ability = stack_ability_snapshot_allowing(game, viewer, object, visible_rebindings)?
+        .ability_locator?;
     let definition = catalog_ability(&game.catalog, &ability)?;
     Some(EffectContinuationSnapshot {
-        object: detached_stack_snapshot(game, object)?,
+        object: detached_stack_snapshot_allowing(game, viewer, object, visible_rebindings)?,
         ability,
         context: effect_resolution_context_snapshot(context),
         effect: scoped_effect_snapshot(&definition, effect)?,

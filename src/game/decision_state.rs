@@ -1,6 +1,6 @@
 use crate::action::{ManaColor, Target};
 use crate::card::{
-    CardTypeSet, ColorSet, EffectDef, ManaCost, ObjectChoiceBindingDef, PaymentDef,
+    CardTypeSet, ColorSet, EffectDef, EffectPaymentDef, ManaCost, ObjectChoiceBindingDef,
     ReplacementEffectDef, TurnKindDef, ZoneKind, ZonePlacement,
 };
 use crate::casting::TargetSelection;
@@ -379,7 +379,7 @@ pub(super) enum DecisionContinuation {
     /// pay. The prospective event itself remains at the front of the queue.
     BattlefieldEntryPayment {
         context: ReplacementEffectContext,
-        payment: PaymentDef,
+        payment: EffectPaymentDef,
         if_paid: &'static [ReplacementEffectDef],
         if_declined: &'static [ReplacementEffectDef],
     },
@@ -391,12 +391,6 @@ pub(super) enum DecisionContinuation {
     BattlefieldEntryCopy {
         choices: Vec<GameObjectId>,
         added_types: CardTypeSet,
-    },
-    /// A replacement its controller may decline as the permanent enters. Only
-    /// the ability is recorded; declining marks it applied so the rediscovery
-    /// pass stops offering it, and accepting re-reads its effect.
-    BattlefieldEntryOptional {
-        context: ReplacementEffectContext,
     },
     BattlefieldEntryCreatureType {
         choices: Vec<String>,

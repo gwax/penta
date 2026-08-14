@@ -2,9 +2,9 @@ use super::{
     AbilityDef, AbilityId, AbilityOrigin, AbilityProcedureDef, AbilitySourceRef, AddManaEffectDef,
     BattlefieldTriggerListener, CardDefinitionId, CardPartId, CardType, CommittedTriggerEvent,
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectiveAbility, FrozenActivatedAbility,
-    Game, GameEvent, GameObjectId, Mana, ManaSelectionDef, ManaSource, ObjectPredicateDef,
-    PendingTrigger, Permanent, PlayerId, PlayerRelation, RetiredObject, ScopedEffect,
-    StackAbilityResolver, Target, TriggerCapture, TriggerContext, TriggerEventDef,
+    Game, GameEvent, GameObjectId, InstalledTriggerLifetime, Mana, ManaSelectionDef, ManaSource,
+    ObjectPredicateDef, PendingTrigger, Permanent, PlayerId, PlayerRelation, RetiredObject,
+    ScopedEffect, StackAbilityResolver, Target, TriggerCapture, TriggerContext, TriggerEventDef,
     TriggerEventObject, ZoneKind,
 };
 
@@ -51,7 +51,7 @@ impl Game {
                 condition,
                 capture.source.object,
                 capture.controller,
-                capture.context,
+                capture.context.trigger,
                 Some(capture.source.ability),
                 None,
             )
@@ -67,12 +67,13 @@ impl Game {
             owner: capture.owner,
             controller: capture.controller,
             text: capture.text,
-            target_defs: capture.target_defs,
-            targets: Vec::new(),
+            target_defs: capture.target_defs.clone(),
+            targets: capture.targets.clone(),
             effect: capture.effect,
             resolver: capture.resolver,
-            context: capture.context,
+            context: capture.context.clone(),
             condition: capture.condition,
+            x: capture.x,
         });
         self.events.push(GameEvent::AbilityTriggered {
             player: capture.controller,
@@ -138,6 +139,7 @@ impl Game {
                 listeners.push(BattlefieldTriggerListener {
                     event: definition.event,
                     uses_stack,
+                    installed: None,
                     capture: TriggerCapture {
                         source,
                         definition: Self::ability_presentation_definition(
@@ -147,23 +149,26 @@ impl Game {
                         owner: permanent.card.owner,
                         controller: permanent.controller,
                         text: ability.text,
-                        target_defs: definition.targets,
-                        effect: ability.effect.definition,
+                        target_defs: definition.targets.to_vec(),
+                        targets: Vec::new(),
+                        effect: ability.declarative_effect().unwrap_or(EffectDef::None),
                         resolver: Self::ability_resolver(effective.origin, &ability),
-                        context: TriggerContext::empty(),
+                        context: TriggerContext::empty().into(),
                         condition: definition.condition,
+                        x: 0,
                     },
                 });
             });
         }
-        // A floating trigger listens the same way, minus a permanent to hang
-        // on; it is appended last so a permanent's own triggers keep the
+        // Installed triggers listen the same way, minus a permanent to hang
+        // on; they are appended last so a permanent's own triggers keep the
         // relative order they had before any existed.
-        listeners.extend(self.floating_triggers.iter().map(|floating| {
+        listeners.extend(self.installed_triggers.iter().map(|installed| {
             BattlefieldTriggerListener {
-                event: floating.event,
+                event: installed.event,
                 uses_stack: true,
-                capture: floating.capture,
+                installed: Some(installed.id),
+                capture: installed.capture.clone(),
             }
         }));
         listeners
@@ -176,13 +181,14 @@ impl Game {
     ) {
         let mana_triggers = listeners
             .iter()
-            .copied()
+            .cloned()
             .filter(|listener| {
                 !listener.uses_stack
-                    && self.trigger_event_matches(
+                    && self.trigger_event_matches_for_controller(
                         listener.event,
                         event,
                         listener.capture.source.object,
+                        Some(listener.capture.controller),
                     )
             })
             .collect::<Vec<_>>();
@@ -196,21 +202,40 @@ impl Game {
 
         let stack_triggers = listeners
             .iter()
-            .copied()
+            .cloned()
             .filter(|listener| {
                 listener.uses_stack
-                    && self.trigger_event_matches(
+                    && self.trigger_event_matches_for_controller(
                         listener.event,
                         event,
                         listener.capture.source.object,
+                        Some(listener.capture.controller),
                     )
             })
             .collect::<Vec<_>>();
         for listener in stack_triggers {
-            self.capture_trigger(&TriggerCapture {
-                context: event.context(),
-                ..listener.capture
-            });
+            if let Some(id) = listener.installed {
+                let Some(index) = self
+                    .installed_triggers
+                    .iter()
+                    .position(|installed| installed.id == id)
+                else {
+                    // A once-only listener can occur more than once in one
+                    // frozen event batch. Its first match already consumed it.
+                    continue;
+                };
+                if matches!(
+                    self.installed_triggers[index].lifetime,
+                    InstalledTriggerLifetime::Once
+                ) {
+                    self.installed_triggers.remove(index);
+                }
+            }
+            let mut capture = listener.capture;
+            // Keep every binding and target captured when the trigger was
+            // installed. Only the event-local portion changes on a match.
+            capture.context.trigger = event.context();
+            self.capture_trigger(&capture);
         }
     }
 
@@ -234,7 +259,7 @@ impl Game {
             | EffectDef::Choose(_)
             | EffectDef::PayOr(_)
             | EffectDef::SplitIntoPiles(_)
-            | EffectDef::PreventNextDamageFromSource { .. }
+            | EffectDef::PreventDamage { .. }
             | EffectDef::DealDamage { .. }
             | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
@@ -255,15 +280,6 @@ impl Game {
             | EffectDef::DoesNotUntapWhileSourceTapped { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
-            | EffectDef::PreventAllCombatDamageThisTurn
-            | EffectDef::PreventNextDamage { .. }
-            | EffectDef::PreventAllDamageThisTurn { .. }
-            | EffectDef::PreventCombatDamageThisTurn { .. }
-            | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-            | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
             | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
@@ -295,23 +311,17 @@ impl Game {
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlWhileSourceRemains { .. }
             | EffectDef::GainControlThisTurn { .. }
-            | EffectDef::AtNextStep { .. }
             | EffectDef::IfCondition { .. }
-            | EffectDef::TriggerUntilYourNextTurn { .. }
+            | EffectDef::InstallTrigger(_)
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
-            | EffectDef::MultiplyEventAmount(_)
-            | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateTokenCopyOf { .. }
-            | EffectDef::ChooseCardName { .. }
-            | EffectDef::ChoosePlayer { .. }
-            | EffectDef::CopyPermanentAsItEnters { .. }
-            | EffectDef::ChooseCreatureType { .. }
+            | EffectDef::StaticApply { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing and non-mana primitives need a dedicated
@@ -369,13 +379,21 @@ impl Game {
                         && definition.procedure == AbilityProcedureDef::Legacy
                         && effective.ability.custom_behavior().is_some()
                         && definition.source_zones.contains(&ZoneKind::Battlefield)
-                        && self.trigger_event_matches(definition.event, event, source.card.id) =>
+                        && self.trigger_event_matches_for_controller(
+                            definition.event,
+                            event,
+                            source.card.id,
+                            Some(source.controller),
+                        ) =>
                 {
                     Some((
                         effective.origin,
                         effective.ability.text,
                         definition.targets,
-                        effective.ability.effect.definition,
+                        effective
+                            .ability
+                            .declarative_effect()
+                            .unwrap_or(EffectDef::None),
                         Self::ability_resolver(effective.origin, &effective.ability),
                     ))
                 }
@@ -405,13 +423,15 @@ impl Game {
                 owner: source.card.owner,
                 controller: source.controller,
                 text,
-                target_defs: targets,
+                target_defs: targets.to_vec(),
+                targets: Vec::new(),
                 effect,
                 resolver,
-                context: event.context(),
+                context: event.context().into(),
                 // A legacy custom trigger states its own condition inside its
                 // behavior rather than declaring one here.
                 condition: None,
+                x: 0,
             });
         }
     }
@@ -513,6 +533,7 @@ impl Game {
         definition: TriggerEventDef,
         event: &CommittedTriggerEvent,
         source: GameObjectId,
+        controller: Option<PlayerId>,
     ) -> bool {
         let (
             TriggerEventDef::CombatDamageDealtToSource { source: predicate },
@@ -527,7 +548,8 @@ impl Game {
             return false;
         };
         *recipient == Target::Permanent(source)
-            && self.trigger_object_matches(predicate, dealer, source, false)
+            && self
+                .trigger_object_matches_for_controller(predicate, dealer, source, false, controller)
     }
 
     // Long because the event vocabulary is wide, not because the function
@@ -538,6 +560,21 @@ impl Game {
         definition: TriggerEventDef,
         event: &CommittedTriggerEvent,
         source: GameObjectId,
+    ) -> bool {
+        self.trigger_event_matches_for_controller(
+            definition,
+            event,
+            source,
+            self.controller_of_object(source),
+        )
+    }
+
+    fn trigger_event_matches_for_controller(
+        &self,
+        definition: TriggerEventDef,
+        event: &CommittedTriggerEvent,
+        source: GameObjectId,
+        controller: Option<PlayerId>,
     ) -> bool {
         match (definition, event) {
             (
@@ -554,7 +591,9 @@ impl Game {
             ) => {
                 from.is_none_or(|expected| expected == *actual_from)
                     && to.is_none_or(|expected| expected == *actual_to)
-                    && self.trigger_object_matches(predicate, object, source, false)
+                    && self.trigger_object_matches_for_controller(
+                        predicate, object, source, false, controller,
+                    )
             }
             (
                 TriggerEventDef::BecomesTapped(predicate),
@@ -581,13 +620,17 @@ impl Game {
             | (
                 TriggerEventDef::DamageDealtBy { source: predicate },
                 CommittedTriggerEvent::DamageDealt { source: object, .. },
-            ) => self.trigger_object_matches(predicate, object, source, false),
+            ) => self.trigger_object_matches_for_controller(
+                predicate, object, source, false, controller,
+            ),
             (
                 TriggerEventDef::BlocksOrBecomesBlockedBy { object: predicate },
                 CommittedTriggerEvent::BlocksOrBecomesBlocked { creature, other },
             ) => {
                 creature.id == source
-                    && self.trigger_object_matches(predicate, other, source, false)
+                    && self.trigger_object_matches_for_controller(
+                        predicate, other, source, false, controller,
+                    )
             }
             (
                 TriggerEventDef::AttacksInGroup {
@@ -599,25 +642,30 @@ impl Game {
             ) => {
                 *total >= minimum_total
                     && maximum_total.is_none_or(|maximum| *total <= maximum)
-                    && self.trigger_object_matches(predicate, object, source, false)
+                    && self.trigger_object_matches_for_controller(
+                        predicate, object, source, false, controller,
+                    )
             }
             (
                 trigger @ TriggerEventDef::CombatDamageDealtToSource { .. },
                 damage @ CommittedTriggerEvent::DamageDealt { .. },
-            ) => self.combat_damage_to_source_matches(trigger, damage, source),
+            ) => self.combat_damage_to_source_matches(trigger, damage, source, controller),
             (TriggerEventDef::Attacks(predicate), CommittedTriggerEvent::Attacks { object }) => {
-                self.trigger_object_matches(predicate, object, source, false)
+                self.trigger_object_matches_for_controller(
+                    predicate, object, source, false, controller,
+                )
             }
             (
                 TriggerEventDef::AttacksFirstTimeThisTurn(predicate),
                 CommittedTriggerEvent::Attacks { object },
             ) => {
-                self.trigger_object_matches(predicate, object, source, false)
-                    && self
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == object.id)
-                        .is_some_and(|permanent| permanent.attacks_this_turn == 1)
+                self.trigger_object_matches_for_controller(
+                    predicate, object, source, false, controller,
+                ) && self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == object.id)
+                    .is_some_and(|permanent| permanent.attacks_this_turn == 1)
             }
 
             (
@@ -635,15 +683,14 @@ impl Game {
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },
             ) => {
-                let controller = self
-                    .current_or_last_known_controller(source)
-                    .unwrap_or(*player);
+                let controller = controller.unwrap_or(*player);
                 self.player_relation_matches(*player, relation, controller, event.context())
             }
             (
                 TriggerEventDef::SpellCast(predicate),
                 CommittedTriggerEvent::SpellCast { object },
-            ) => self.trigger_object_matches(predicate, object, source, true),
+            ) => self
+                .trigger_object_matches_for_controller(predicate, object, source, true, controller),
             (
                 TriggerEventDef::StepBegins { step, player },
                 CommittedTriggerEvent::StepBegins {
@@ -660,8 +707,8 @@ impl Game {
                 if player == PlayerRelation::ControllerOfAttachedPermanent {
                     return self.attached_host_controller_of(source) == Some(*actual_player);
                 }
-                let controller = self
-                    .current_or_last_known_controller(source)
+                let controller = controller
+                    .or_else(|| self.current_or_last_known_controller(source))
                     .unwrap_or(*actual_player);
                 self.player_relation_matches(*actual_player, player, controller, event.context())
             }
@@ -672,17 +719,20 @@ impl Game {
                     ..
                 },
             ) => source == *actual_source,
-            _ => self.damage_to_player_trigger_matches(definition, event, source),
+            _ => self.damage_to_player_trigger_matches_with_controller(
+                definition, event, source, controller,
+            ),
         }
     }
 
     /// The one trigger family that reads both what dealt the damage and who
     /// took it, so "an opponent" excludes a source hitting its own side.
-    pub(super) fn damage_to_player_trigger_matches(
+    fn damage_to_player_trigger_matches_with_controller(
         &self,
         definition: TriggerEventDef,
         event: &CommittedTriggerEvent,
         source: GameObjectId,
+        controller: Option<PlayerId>,
     ) -> bool {
         let (
             TriggerEventDef::DamageDealtToPlayer {
@@ -698,7 +748,7 @@ impl Game {
         else {
             return false;
         };
-        self.trigger_object_matches(predicate, object, source, false)
+        self.trigger_object_matches_for_controller(predicate, object, source, false, controller)
             && self.player_relation_matches(
                 *damaged,
                 player,
@@ -811,6 +861,23 @@ impl Game {
         source: GameObjectId,
         is_spell: bool,
     ) -> bool {
+        self.trigger_object_matches_for_controller(
+            predicate,
+            object,
+            source,
+            is_spell,
+            self.controller_of_object(source),
+        )
+    }
+
+    fn trigger_object_matches_for_controller(
+        &self,
+        predicate: ObjectPredicateDef,
+        object: &TriggerEventObject,
+        source: GameObjectId,
+        is_spell: bool,
+        controller: Option<PlayerId>,
+    ) -> bool {
         match predicate {
             ObjectPredicateDef::Any => true,
             ObjectPredicateDef::Source => object.id == source,
@@ -871,16 +938,14 @@ impl Game {
             ObjectPredicateDef::HasCounter(kind) => {
                 self.current_or_last_known_counters(object.id, kind) > 0
             }
-            ObjectPredicateDef::ControlledBy(relation) => {
-                self.controller_of_object(source).is_some_and(|controller| {
-                    self.player_relation_matches(
-                        object.controller,
-                        relation,
-                        controller,
-                        TriggerContext::empty(),
-                    )
-                })
-            }
+            ObjectPredicateDef::ControlledBy(relation) => controller.is_some_and(|controller| {
+                self.player_relation_matches(
+                    object.controller,
+                    relation,
+                    controller,
+                    TriggerContext::empty(),
+                )
+            }),
             ObjectPredicateDef::Attacking => {
                 object.types.contains(CardType::Creature) && object.attacking
             }
@@ -903,15 +968,19 @@ impl Game {
                 self.battlefield_relationship_matches(predicate, object, source)
             }
             ObjectPredicateDef::Tapped => object.tapped,
-            ObjectPredicateDef::All(predicates) => predicates
-                .iter()
-                .all(|predicate| self.trigger_object_matches(*predicate, object, source, is_spell)),
-            ObjectPredicateDef::AnyOf(predicates) => predicates
-                .iter()
-                .any(|predicate| self.trigger_object_matches(*predicate, object, source, is_spell)),
-            ObjectPredicateDef::Not(predicate) => {
-                !self.trigger_object_matches(*predicate, object, source, is_spell)
-            }
+            ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {
+                self.trigger_object_matches_for_controller(
+                    *predicate, object, source, is_spell, controller,
+                )
+            }),
+            ObjectPredicateDef::AnyOf(predicates) => predicates.iter().any(|predicate| {
+                self.trigger_object_matches_for_controller(
+                    *predicate, object, source, is_spell, controller,
+                )
+            }),
+            ObjectPredicateDef::Not(predicate) => !self.trigger_object_matches_for_controller(
+                *predicate, object, source, is_spell, controller,
+            ),
             ObjectPredicateDef::Special(_) => false,
         }
     }

@@ -304,11 +304,8 @@ impl Game {
             | AppliedEffectDef::RemainsAttachedThroughProtection
             | AppliedEffectDef::CannotBeBlockedBy(_)
             | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::PreventDamageFrom(_)
-            | AppliedEffectDef::PreventCombatDamageFrom(_)
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventCombatDamage
-            | AppliedEffectDef::PreventCombatDamageDealtBy
+            | AppliedEffectDef::PreventDamage(_)
             | AppliedEffectDef::Composite(_)
             | AppliedEffectDef::Special(_) => return None,
         };

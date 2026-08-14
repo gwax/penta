@@ -271,7 +271,7 @@ impl Game {
                 condition,
                 object.source.unwrap_or(object.id),
                 object.controller,
-                ability.context,
+                ability.context.trigger,
                 Some(ability.origin),
                 None,
             )
@@ -284,7 +284,7 @@ impl Game {
             .map(|ability| {
                 (
                     ability.resolver,
-                    ability.context,
+                    ability.context.clone(),
                     ability.mode_effects.as_slice(),
                 )
             })
