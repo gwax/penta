@@ -23,6 +23,7 @@ pub(super) enum KeywordSnapshot {
     Flash,
     Hexproof,
     Shroud,
+    Unleash,
     Intimidate,
     Undying,
     Indestructible,

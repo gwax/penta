@@ -123,6 +123,88 @@ impl Game {
         None
     }
 
+    /// Asks whether to take an optional entry replacement. Declining lets the
+    /// entry continue untouched; accepting queues the replacement the way a
+    /// mandatory one would have been.
+    /// Re-reads the replacement an accepted optional entry offer names. The
+    /// ability is located rather than carried, so the pending decision stays
+    /// checkpointable without teaching the snapshot about effect bodies.
+    /// Resumes a suspended entry after its controller answered the optional
+    /// offer. Declining simply lets the entry continue; the rediscovery pass
+    /// has already recorded the ability as applied, so it is not asked twice.
+    pub(super) fn resume_optional_entry_replacement(
+        &mut self,
+        context: ReplacementEffectContext,
+        options: &[u32],
+    ) {
+        let accepted = options.first().is_some_and(|option| *option == 1);
+        if let Some(mut pending) = self.pending_events.pop_front() {
+            if accepted
+                && let Some(effect) = self.optional_entry_replacement_effect(&pending, context)
+            {
+                pending.effects.push(PendingReplacementEffect {
+                    context,
+                    effect: BattlefieldEntryReplacementEffect::Declarative(effect),
+                });
+            }
+            self.pending_events.push_front(pending);
+        }
+        self.continue_pending_events();
+    }
+
+    pub(super) fn optional_entry_replacement_effect(
+        &self,
+        pending: &PendingEvent,
+        context: ReplacementEffectContext,
+    ) -> Option<ReplacementEffectDef> {
+        // A self-entry replacement belongs to the permanent that is still
+        // entering, so it is not on the battlefield to be found there.
+        let ReplaceableEvent::BattlefieldEntry(entry) = &pending.event;
+        let permanent = if entry.permanent.card.id == context.source.object {
+            &entry.permanent
+        } else {
+            self.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == context.source.object)?
+        };
+        let effective = self.find_effective_ability(permanent, |effective| {
+            effective.origin == context.source.ability
+        })?;
+        match effective.ability.declarative_effect() {
+            Some(EffectDef::Replacement(effect)) => Some(effect),
+            _ => None,
+        }
+    }
+
+    fn queue_optional_entry_replacement(
+        &mut self,
+        player: PlayerId,
+        name: &str,
+        context: ReplacementEffectContext,
+    ) {
+        let options = [(0, "Decline"), (1, "Accept")]
+            .into_iter()
+            .map(|(id, label)| DecisionOption {
+                id,
+                label: label.into(),
+                card: None,
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::None,
+            })
+            .collect();
+        self.queue_decision(
+            player,
+            format!("Apply the optional replacement for {name}?"),
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::BattlefieldEntryOptional { context },
+        );
+    }
+
     pub(super) fn apply_pending_replacement_effect(
         &mut self,
         mut pending: PendingEvent,
@@ -146,6 +228,15 @@ impl Game {
                 object,
                 added_types,
             } => self.offer_entry_copy(pending, object, added_types),
+            // "You may have this enter with ..." is a real choice, so it is
+            // asked rather than assumed either way.
+            BattlefieldEntryReplacementEffect::OptionalDeclarative(_) => {
+                let player = Self::pending_event_controller(&pending);
+                let name = self.pending_entry_name(&pending);
+                self.pending_events.push_front(pending);
+                self.queue_optional_entry_replacement(player, &name, context);
+                None
+            }
             // With two players every relation this appears on names exactly
             // one candidate, so the choice is recorded rather than asked.
             BattlefieldEntryReplacementEffect::ChoosePlayer(relation) => {
@@ -592,6 +683,12 @@ impl Game {
                     return ControlFlow::Continue(());
                 };
                 let effect = match (definition.event, declarative_effect) {
+                    (
+                        ReplacementEventDef::SourceEntersBattlefield,
+                        EffectDef::Replacement(effect),
+                    ) if definition.optional => {
+                        BattlefieldEntryReplacementEffect::OptionalDeclarative(effect)
+                    }
                     (
                         ReplacementEventDef::SourceEntersBattlefield,
                         EffectDef::Replacement(effect),

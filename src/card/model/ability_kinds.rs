@@ -541,6 +541,9 @@ pub enum KeywordAbility {
     Flash,
     Hexproof,
     Shroud,
+    /// Unleash. The engine implements both halves: an optional +1/+1 counter
+    /// as the permanent enters, and no blocking while it carries one.
+    Unleash,
     Intimidate,
     Undying,
     Indestructible,
@@ -582,6 +585,7 @@ impl KeywordAbility {
             Self::AttacksEachCombatIfAble => 16,
             Self::Indestructible => 18,
             Self::Shroud => 19,
+            Self::Unleash => 26,
             // One index per land type, so a set of landwalks still packs into
             // the same bitmask as the parameterless keywords.
             Self::Landwalk(BasicLandType::Plains) => 20,

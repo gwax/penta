@@ -22,6 +22,10 @@ use super::model::{
     ReplacementEffectLocator, TriggerPlacementBatchSnapshot, TurnKindSnapshot,
     ZoneMoveCauseSnapshot, ZonePlacementSnapshot,
 };
+mod option;
+use option::parse_option;
+
+use super::event::parse_replacement_context_snapshot;
 use super::procedure::{draw_replacement_snapshot, parse_draw_replacement};
 use super::semantics::{
     ability_locator, catalog_ability, catalog_replacement_effect, catalog_scoped_effect,
@@ -291,6 +295,11 @@ fn continuation_snapshot(
                 choices: choices.clone(),
             }
         }
+        DecisionContinuation::BattlefieldEntryOptional { context } => {
+            DecisionContinuationSnapshot::BattlefieldEntryOptional {
+                context: replacement_context_snapshot(*context),
+            }
+        }
         DecisionContinuation::BattlefieldEntryCopy {
             choices,
             added_types,
@@ -523,36 +532,6 @@ fn parse_decision_observation(
             .iter()
             .map(parse_option)
             .collect::<Result<Vec<_>, _>>()?,
-    })
-}
-
-fn parse_option(value: &Value) -> Result<DecisionOption, String> {
-    let parse_card = |value: &Value| {
-        Ok((
-            GameObjectId(u32_field(value, "objectId")?),
-            CardDefinitionId(
-                u16::try_from(usize_field(value, "definition")?)
-                    .map_err(|_| "decision card definition is too large")?,
-            ),
-        ))
-    };
-    Ok(DecisionOption {
-        id: u32_field(value, "id")?,
-        label: str_field(value, "label")?.to_owned(),
-        card: value
-            .get("card")
-            .filter(|value| !value.is_null())
-            .map(parse_card)
-            .transpose()?,
-        members: array(field(value, "members")?)?
-            .iter()
-            .map(parse_card)
-            .collect::<Result<Vec<_>, String>>()?,
-        ability_text: value
-            .get("abilityText")
-            .and_then(Value::as_str)
-            .map(str::to_owned),
-        zone: parse_decision_zone(str_field(value, "zone")?)?,
     })
 }
 
@@ -805,6 +784,11 @@ fn parse_continuation(
         DecisionContinuationSnapshot::BattlefieldEntryCreatureType { choices } => {
             DecisionContinuation::BattlefieldEntryCreatureType {
                 choices: choices.clone(),
+            }
+        }
+        DecisionContinuationSnapshot::BattlefieldEntryOptional { context } => {
+            DecisionContinuation::BattlefieldEntryOptional {
+                context: parse_replacement_context_snapshot(*context)?,
             }
         }
         DecisionContinuationSnapshot::BattlefieldEntryCopy {

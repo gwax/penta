@@ -192,6 +192,14 @@ impl Game {
         if permanent.cannot_block_this_turn {
             return true;
         }
+        // Unleash: the counter is what stops it blocking, so a creature that
+        // declined the counter blocks as normal and one that took it never
+        // does again.
+        if permanent.counters(CounterKind::PlusOnePlusOne) > 0
+            && self.permanent_has_executable_keyword(permanent, KeywordAbility::Unleash)
+        {
+            return true;
+        }
         self.visit_static_applied_effects(permanent, |applied| {
             if matches!(applied.effect, AppliedEffectDef::CannotBlock) {
                 ControlFlow::Break(())

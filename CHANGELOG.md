@@ -71,6 +71,13 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Unleash**, which needed an entry replacement its controller may decline.
+  The entry path had no optional handling at all -- the only optional
+  replacement anywhere was on beginning a turn. The suspended decision records
+  the ability rather than the effect, so it stays checkpointable without
+  teaching the snapshot about effect bodies, and the effect is re-read when the
+  answer arrives. Eight Return to Ravnica identities are now executable, and
+  the blocking half falls out of the prohibition added alongside.
 - **A blocker-side "can't block" prohibition.** The vocabulary had only the
   attacker's side, so "this creature can't block" and "target creature can't
   block this turn" had no shape at all. It exists in both forms: a printed

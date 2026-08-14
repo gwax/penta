@@ -6,9 +6,10 @@
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
     AddManaEffectDef, AlternativeCastKindDef, AnimationDef, AppliedEffectDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardType, CardTypeSet, ConditionDef, CostDef, EffectDef,
-    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef,
-    ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEffectDef, ScaledValueDef,
+    BattlefieldEntryModificationDef, CardType, CardTypeSet, ConditionDef, CostDef, CounterKind,
+    DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef, KeywordAbility,
+    ManaColor, ManaCost, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation,
+    ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, ScaledValueDef,
     ShieldCoverageDef, TriggerEventDef, ValueDef, ZoneKind,
 };
 use crate::ids::ChoiceIndex;
@@ -468,6 +469,38 @@ pub const BATTALION_EVENT: TriggerEventDef = TriggerEventDef::AttacksInGroup {
     minimum_total: 3,
     maximum_total: None,
 };
+
+/// Unleash. The engine implements both halves from the keyword: an optional
+/// +1/+1 counter offered as the permanent enters, and no blocking for as long
+/// as it carries one.
+#[must_use]
+pub const fn unleash() -> AbilityDef {
+    keyword(
+        "Unleash (You may have this creature enter with a +1/+1 counter on it. It can't block as \
+         long as it has a +1/+1 counter on it.)",
+        KeywordAbility::Unleash,
+    )
+}
+
+/// The optional entry clause unleash offers. It is a separate replacement
+/// ability because the keyword itself carries no effect body.
+#[must_use]
+pub const fn unleash_counter() -> AbilityDef {
+    AbilityDef::defined(
+        "You may have this creature enter with a +1/+1 counter on it.",
+        DeclarativeAbilityDef::Replacement(
+            ReplacementAbilityDef::new()
+                .with_event(ReplacementEventDef::SourceEntersBattlefield)
+                .optional(),
+        ),
+        EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::AddCounters {
+                kind: CounterKind::PlusOnePlusOne,
+                amount: 1,
+            },
+        )),
+    )
+}
 
 /// A shared checkland-style entry clause backed by the general object-query
 /// condition vocabulary.

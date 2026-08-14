@@ -349,6 +349,12 @@ pub(super) enum DecisionContinuation {
         choices: Vec<GameObjectId>,
         added_types: CardTypeSet,
     },
+    /// A replacement its controller may decline as the permanent enters. Only
+    /// the ability is recorded; declining marks it applied so the rediscovery
+    /// pass stops offering it, and accepting re-reads its effect.
+    BattlefieldEntryOptional {
+        context: ReplacementEffectContext,
+    },
     BattlefieldEntryCreatureType {
         choices: Vec<String>,
     },

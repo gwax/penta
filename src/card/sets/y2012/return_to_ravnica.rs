@@ -1057,7 +1057,14 @@ pub(in crate::card::sets) static DAGGERDROME_IMP: CardRecord = CardRecord::new(
 // Audit: blocked — A dies trigger cannot address the card after it becomes a new graveyard object to move it onto its owner's library.
 
 // RTR 62 — Dead Reveler
-// Audit: blocked — Unleash needs an optional enters-with-counter replacement tied to a cannot-block restriction.
+pub(in crate::card::sets) static DEAD_REVELER: CardRecord = CardRecord::new(
+    cards::DEAD_REVELER,
+    "Dead Reveler",
+    CardArt::new("909a0a38-2c22-4b49-8938-1a8162c077e6", "David Palumbo"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Zombie"], 2, 3)
+        .with_abilities(&[abilities::unleash(), abilities::unleash_counter()]),
+);
 
 /// What the Demon takes when an opponent feeds it: it stays home for the turn
 /// and grows permanently.
@@ -1315,7 +1322,17 @@ pub(in crate::card::sets) static SLUM_REAPER: CardRecord = CardRecord::new(
 // Audit: blocked — Scavenge's graveyard activation, exile cost, and source-power counter amount are unavailable.
 
 // RTR 81 — Thrill-Kill Assassin
-// Audit: blocked — Unleash needs an optional enters-with-counter replacement tied to a cannot-block restriction.
+pub(in crate::card::sets) static THRILL_KILL_ASSASSIN: CardRecord = CardRecord::new(
+    cards::THRILL_KILL_ASSASSIN,
+    "Thrill-Kill Assassin",
+    CardArt::new("a9f32204-eda7-4184-92e5-9da8b15b2359", "Tyler Jacobson"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Human", "Assassin"], 1, 2).with_abilities(&[
+        abilities::deathtouch(),
+        abilities::unleash(),
+        abilities::unleash_counter(),
+    ]),
+);
 
 // RTR 82 — Ultimate Price
 pub(in crate::card::sets) static ULTIMATE_PRICE: CardRecord = CardRecord::new(
@@ -1443,7 +1460,17 @@ pub(in crate::card::sets) static BELLOWS_LIZARD: CardRecord = CardRecord::new(
 );
 
 // RTR 89 — Bloodfray Giant
-// Audit: blocked — Unleash needs an optional enters-with-counter replacement tied to a cannot-block restriction.
+pub(in crate::card::sets) static BLOODFRAY_GIANT: CardRecord = CardRecord::new(
+    cards::BLOODFRAY_GIANT,
+    "Bloodfray Giant",
+    CardArt::new("a8c468cd-1255-4257-9a69-c6b40a27c427", "Steve Argyle"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Giant"], 4, 3).with_abilities(&[
+        abilities::trample(),
+        abilities::unleash(),
+        abilities::unleash_counter(),
+    ]),
+);
 
 // RTR 90 — Chaos Imps
 // Audit: blocked — Unleash and a counter-dependent trample grant are unavailable.
@@ -1576,7 +1603,14 @@ pub(in crate::card::sets) static GOBLIN_RALLY: CardRecord = CardRecord::new(
 );
 
 // RTR 96 — Gore-House Chainwalker
-// Audit: blocked — Unleash needs an optional enters-with-counter replacement tied to a cannot-block restriction.
+pub(in crate::card::sets) static GORE_HOUSE_CHAINWALKER: CardRecord = CardRecord::new(
+    cards::GORE_HOUSE_CHAINWALKER,
+    "Gore-House Chainwalker",
+    CardArt::new("56ba132f-95fc-4b99-a1dc-ebe6f622bb41", "Dan Murayama Scott"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Warrior"], 2, 1)
+        .with_abilities(&[abilities::unleash(), abilities::unleash_counter()]),
+);
 
 // RTR 97 — Guild Feud
 // Audit: blocked — Needs two linked top-three selections, optional creature entries, graveyard placement, and a conditional fight between the chosen creatures.
@@ -1798,7 +1832,17 @@ pub(in crate::card::sets) static RACECOURSE_FURY: CardRecord = CardRecord::new(
 );
 
 // RTR 105 — Splatter Thug
-// Audit: blocked — Unleash needs an optional enters-with-counter replacement tied to a cannot-block restriction.
+pub(in crate::card::sets) static SPLATTER_THUG: CardRecord = CardRecord::new(
+    cards::SPLATTER_THUG,
+    "Splatter Thug",
+    CardArt::new("7c511805-3392-4033-8679-811711a0aaca", "Kev Walker"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Warrior"], 2, 2).with_abilities(&[
+        abilities::first_strike(),
+        abilities::unleash(),
+        abilities::unleash_counter(),
+    ]),
+);
 
 // RTR 106 — Street Spasm
 // Audit: blocked — The mana model cannot represent the overload cost {X}{X}{R}{R}.
@@ -2410,7 +2454,20 @@ pub(in crate::card::sets) static CALL_OF_THE_CONCLAVE: CardRecord = CardRecord::
 );
 
 // RTR 147 — Carnival Hellsteed
-// Audit: blocked — Unleash needs an optional enters-with-counter replacement tied to a cannot-block restriction.
+pub(in crate::card::sets) static CARNIVAL_HELLSTEED: CardRecord = CardRecord::new(
+    cards::CARNIVAL_HELLSTEED,
+    "Carnival Hellsteed",
+    CardArt::new("d8ada7ce-c693-48f0-a6e3-766f61d93370", "Chase Stone"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{4}{B}{R}"), &["Nightmare", "Horse"], 5, 4).with_abilities(
+        &[
+            abilities::first_strike(),
+            abilities::haste(),
+            abilities::unleash(),
+            abilities::unleash_counter(),
+        ],
+    ),
+);
 
 // RTR 148 — Centaur Healer
 pub(in crate::card::sets) static CENTAUR_HEALER: CardRecord = CardRecord::new(
@@ -3216,7 +3273,14 @@ pub(in crate::card::sets) static SKYMARK_ROC: CardRecord = CardRecord::new(
 // Audit: blocked — Scavenge needs a graveyard-only sorcery-speed activation whose counter amount is linked to the exiled card's power.
 
 // RTR 199 — Spawn of Rix Maadi
-// Audit: blocked — Unleash needs an optional enters-with-counter replacement tied to a cannot-block restriction.
+pub(in crate::card::sets) static SPAWN_OF_RIX_MAADI: CardRecord = CardRecord::new(
+    cards::SPAWN_OF_RIX_MAADI,
+    "Spawn of Rix Maadi",
+    CardArt::new("6196e702-7f76-49db-8ee4-bd343359d498", "Min Yum"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{3}{B}{R}"), &["Horror"], 5, 3)
+        .with_abilities(&[abilities::unleash(), abilities::unleash_counter()]),
+);
 
 // RTR 200 — Sphinx's Revelation
 pub(in crate::card::sets) static SPHINXS_REVELATION: CardRecord = CardRecord::new(
@@ -3637,7 +3701,14 @@ pub(in crate::card::sets) static JUDGES_FAMILIAR: CardRecord = CardRecord::new(
 // Audit: blocked — Needs exiling a chosen instant or sorcery spell you control from the stack as an activation cost.
 
 // RTR 220 — Rakdos Cackler
-// Audit: blocked — Unleash needs an optional enters-with-counter replacement tied to a cannot-block restriction.
+pub(in crate::card::sets) static RAKDOS_CACKLER: CardRecord = CardRecord::new(
+    cards::RAKDOS_CACKLER,
+    "Rakdos Cackler",
+    CardArt::new("5f873c0b-e779-4f09-8e9c-94a1765eb5da", "Ryan Barger"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{B/R}"), &["Devil"], 1, 1)
+        .with_abilities(&[abilities::unleash(), abilities::unleash_counter()]),
+);
 
 // RTR 221 — Rakdos Shred-Freak
 pub(in crate::card::sets) static RAKDOS_SHRED_FREAK: CardRecord = keyword_creature(
@@ -4246,6 +4317,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CATACOMB_SLUG,
     &CREMATE,
     &DAGGERDROME_IMP,
+    &DEAD_REVELER,
     &DESECRATION_DEMON,
     &DEVIANT_GLEE,
     &DRAINPIPE_VERMIN,
@@ -4253,15 +4325,18 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PERILOUS_SHADOW,
     &SHRIEKING_AFFLICTION,
     &SLUM_REAPER,
+    &THRILL_KILL_ASSASSIN,
     &ULTIMATE_PRICE,
     &UNDERWORLD_CONNECTIONS,
     &BATTERHORN,
     &BELLOWS_LIZARD,
+    &BLOODFRAY_GIANT,
     &COBBLEBRUTE,
     &DYNACHARGE,
     &ELECTRICKERY,
     &EXPLOSIVE_IMPACT,
     &GOBLIN_RALLY,
+    &GORE_HOUSE_CHAINWALKER,
     &GUTTERSNIPE,
     &LOBBER_CREW,
     &MINOTAUR_AGGRESSOR,
@@ -4269,6 +4344,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PURSUIT_OF_FLIGHT,
     &PYROCONVERGENCE,
     &RACECOURSE_FURY,
+    &SPLATTER_THUG,
     &SURVEY_THE_WRECKAGE,
     &TENEMENT_CRASHER,
     &TRAITOROUS_INSTINCT,
@@ -4293,6 +4369,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AUGER_SPREE,
     &AZORIUS_CHARM,
     &CALL_OF_THE_CONCLAVE,
+    &CARNIVAL_HELLSTEED,
     &CENTAUR_HEALER,
     &CHEMISTERS_TRICK,
     &COLLECTIVE_BLESSING,
@@ -4318,6 +4395,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SELESNYA_CHARM,
     &SKULL_REND,
     &SKYMARK_ROC,
+    &SPAWN_OF_RIX_MAADI,
     &SPHINXS_REVELATION,
     &SUPREME_VERDICT,
     &TELEPORTAL,
@@ -4330,6 +4408,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FROSTBURN_WEIRD,
     &GOLGARI_LONGLEGS,
     &JUDGES_FAMILIAR,
+    &RAKDOS_CACKLER,
     &RAKDOS_SHRED_FREAK,
     &VASSAL_SOUL,
     &AZORIUS_KEYRUNE,

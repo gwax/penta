@@ -39,7 +39,8 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             followup: Some(followup),
             ..
         } => extend_stack_continuation_ids(&mut ids, &followup.object, followup.context),
-        DecisionContinuation::BattlefieldEntryPayment { context, .. } => {
+        DecisionContinuation::BattlefieldEntryOptional { context }
+        | DecisionContinuation::BattlefieldEntryPayment { context, .. } => {
             ids.push(context.source.object);
         }
         DecisionContinuation::BattlefieldEntryReplacement { candidates } => {

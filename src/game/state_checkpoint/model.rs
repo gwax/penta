@@ -752,6 +752,9 @@ pub(super) enum DecisionContinuationSnapshot {
     BattlefieldEntryCardName {
         choices: Vec<String>,
     },
+    BattlefieldEntryOptional {
+        context: ReplacementEffectContextSnapshot,
+    },
     BattlefieldEntryCreatureType {
         choices: Vec<String>,
     },

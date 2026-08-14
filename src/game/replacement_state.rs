@@ -27,6 +27,8 @@ pub(super) struct ReplacementEffectContext {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum BattlefieldEntryReplacementEffect {
     Declarative(ReplacementEffectDef),
+    /// The same, from an ability its controller may decline.
+    OptionalDeclarative(ReplacementEffectDef),
     ChooseCreatureType,
     ChooseCardName,
     ChoosePlayer(PlayerRelation),
