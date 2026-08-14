@@ -51,6 +51,7 @@ impl Game {
                 | AbilityCostDef::DiscardSource
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::SacrificePermanent { .. }
+                | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::ExileSource
                 | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::ExileCardFromGraveyard(_)

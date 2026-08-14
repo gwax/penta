@@ -174,6 +174,7 @@ impl Game {
                         | AbilityCostDef::SacrificeSource
                         | AbilityCostDef::ExileSource
                         | AbilityCostDef::SacrificePermanent { .. }
+                        | AbilityCostDef::TapPermanent { .. }
                         // Payability is decided by whether any card qualifies,
                         // which the choice list below answers.
                         | AbilityCostDef::ExileCardFromGraveyard(_) => false,
@@ -204,6 +205,7 @@ impl Game {
                     matches!(
                         cost,
                         AbilityCostDef::SacrificePermanent { .. }
+                            | AbilityCostDef::TapPermanent { .. }
                             | AbilityCostDef::ExileCardFromGraveyard(_)
                     )
                 });
@@ -218,6 +220,29 @@ impl Game {
                         .iter()
                         .filter(|candidate| {
                             !(source_exit_costs == 1 && candidate.card.id == permanent.card.id)
+                                && self.player_relation_matches(
+                                    candidate.controller,
+                                    *controller,
+                                    player,
+                                    TriggerContext::empty(),
+                                )
+                                && self.trigger_object_matches(
+                                    *object,
+                                    &self.trigger_event_object(candidate),
+                                    permanent.card.id,
+                                    false,
+                                )
+                        })
+                        .map(|candidate| Some(candidate.card.id))
+                        .collect(),
+                    // The permanent paying has to be untapped and cannot be
+                    // the source, which is already tapping itself if asked.
+                    Some(AbilityCostDef::TapPermanent { object, controller }) => self
+                        .battlefield
+                        .iter()
+                        .filter(|candidate| {
+                            !candidate.tapped
+                                && candidate.card.id != permanent.card.id
                                 && self.player_relation_matches(
                                     candidate.controller,
                                     *controller,
@@ -430,6 +455,7 @@ impl Game {
                         | AbilityCostDef::PayLife(_)
                         | AbilityCostDef::DiscardCards(_)
                         | AbilityCostDef::SacrificePermanent { .. }
+                        | AbilityCostDef::TapPermanent { .. }
                         | AbilityCostDef::ExileSource
                         | AbilityCostDef::Loyalty(_)
                         | AbilityCostDef::ExileCardFromGraveyard(_)
@@ -512,6 +538,7 @@ impl Game {
                             | AbilityCostDef::DiscardSource
                             | AbilityCostDef::DiscardCards(_)
                             | AbilityCostDef::SacrificePermanent { .. }
+                            | AbilityCostDef::TapPermanent { .. }
                             | AbilityCostDef::Loyalty(_)
                             | AbilityCostDef::ExileCardFromGraveyard(_)
                             | AbilityCostDef::Special(_) => supported = false,

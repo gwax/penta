@@ -264,6 +264,7 @@ impl Game {
                 | AbilityCostDef::ExileCardFromGraveyard(_)
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::SacrificePermanent { .. }
+                | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::Special(_) => {
                     unreachable!("unsupported mana-ability costs are not enumerated")
                 }

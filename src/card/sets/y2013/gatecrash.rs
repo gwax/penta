@@ -961,8 +961,45 @@ pub(in crate::card::sets) static DYING_WISH: CardRecord = CardRecord::new(
         ]),
 );
 
+/// "Tap an untapped Gate you control."
+static TAP_A_GATE: AbilityCostDef = AbilityCostDef::TapPermanent {
+    object: ObjectPredicateDef::Subtype("Gate"),
+    controller: PlayerRelation::You,
+};
+
 // GTC 65 — Gateway Shade
-// Audit: blocked — Costs can tap only the ability source, not a chosen untapped Gate you control.
+pub(in crate::card::sets) static GATEWAY_SHADE: CardRecord = CardRecord::new(
+    cards::GATEWAY_SHADE,
+    "Gateway Shade",
+    CardArt::new("aa33fc15-3a4f-48bc-be7c-fdec1cb49c10", "Ryan Yee"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Shade"], 1, 1).with_abilities(&[
+        AbilityDef::activated(
+            "{B}: This creature gets +1/+1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(1),
+                    toughness: ValueDef::Constant(1),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated(
+            "Tap an untapped Gate you control: This creature gets +2/+2 until end of turn.",
+            &[TAP_A_GATE],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(2),
+                    toughness: ValueDef::Constant(2),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // GTC 66 — Grisly Spectacle
 pub(in crate::card::sets) static GRISLY_SPECTACLE: CardRecord = CardRecord::new(
@@ -1238,7 +1275,20 @@ pub(in crate::card::sets) static CINDER_ELEMENTAL: CardRecord = CardRecord::new(
 );
 
 // GTC 88 — Crackling Perimeter
-// Audit: blocked — Costs can tap only the ability source, not a chosen untapped Gate you control.
+pub(in crate::card::sets) static CRACKLING_PERIMETER: CardRecord = CardRecord::new(
+    cards::CRACKLING_PERIMETER,
+    "Crackling Perimeter",
+    CardArt::new("3323c86c-73bd-4e23-9f80-54bf5c1dd0bc", "Yeong-Hao Han"),
+    CardSet::Gatecrash,
+    CardRules::new_enchantment(mana_cost!("{1}{R}")).with_ability(AbilityDef::activated(
+        "Tap an untapped Gate you control: This enchantment deals 1 damage to each opponent.",
+        &[TAP_A_GATE],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Opponent,
+            amount: ValueDef::Constant(1),
+        },
+    )),
+);
 
 // GTC 89 — Ember Beast
 // Audit: blocked — Combat constraints cannot require another creature to attack or block alongside the source.
@@ -3581,6 +3631,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CORPSE_BLOCKADE,
     &CRYPT_GHAST,
     &DYING_WISH,
+    &GATEWAY_SHADE,
     &GRISLY_SPECTACLE,
     &GUTTER_SKULK,
     &HORROR_OF_THE_DIM,
@@ -3591,6 +3642,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ACT_OF_TREASON,
     &BOMBER_CORPS,
     &CINDER_ELEMENTAL,
+    &CRACKLING_PERIMETER,
     &FIREFIST_STRIKER,
     &FOUNDRY_STREET_DENIZEN,
     &HELLRAISER_GOBLIN,

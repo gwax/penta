@@ -25,6 +25,13 @@ pub enum CostDef {
         object: ObjectPredicateDef,
         controller: PlayerRelation,
     },
+    /// Tap a chosen untapped permanent other than the source, for "tap an
+    /// untapped Gate you control". Unlike [`Self::TapSource`] the permanent
+    /// paying is selected when the ability is activated.
+    TapPermanent {
+        object: ObjectPredicateDef,
+        controller: PlayerRelation,
+    },
     ExileSource,
     /// Exile a matching card from the controller's own graveyard. The card is
     /// chosen when the cost is paid, so it travels with the action rather

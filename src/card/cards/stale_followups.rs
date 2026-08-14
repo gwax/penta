@@ -14,3 +14,5 @@ pub const CROWNED_CERATOK: CardDefinitionId = CardDefinitionId(1629);
 pub const EXAVA_RAKDOS_BLOOD_WITCH: CardDefinitionId = CardDefinitionId(1630);
 pub const LILIANAS_REAVER: CardDefinitionId = CardDefinitionId(1631);
 pub const XATHRID_NECROMANCER: CardDefinitionId = CardDefinitionId(1632);
+pub const GATEWAY_SHADE: CardDefinitionId = CardDefinitionId(1633);
+pub const CRACKLING_PERIMETER: CardDefinitionId = CardDefinitionId(1634);

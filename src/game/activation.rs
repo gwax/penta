@@ -101,6 +101,7 @@ impl Game {
                 | AbilityCostDef::DiscardSource
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::SacrificePermanent { .. }
+                | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::ExileCardFromGraveyard(_)
                 | AbilityCostDef::Special(_) => {
@@ -208,6 +209,7 @@ impl Game {
                     | AbilityCostDef::PayLife(_)
                     | AbilityCostDef::DiscardCards(_)
                     | AbilityCostDef::SacrificePermanent { .. }
+                    | AbilityCostDef::TapPermanent { .. }
                     | AbilityCostDef::ExileSource
                     | AbilityCostDef::Loyalty(_)
                     | AbilityCostDef::ExileCardFromGraveyard(_)
@@ -305,6 +307,16 @@ impl Game {
                 .iter()
                 .any(|cost| matches!(cost, AbilityCostDef::SacrificePermanent { .. }));
             let sacrifice_choice_is_source = has_generic_sacrifice && cost_object == Some(source);
+            if definition
+                .costs
+                .iter()
+                .any(|cost| matches!(cost, AbilityCostDef::TapPermanent { .. }))
+            {
+                // Ahead of the loop, so automatic mana payment cannot tap the
+                // chosen permanent out from under the cost it is paying.
+                let chosen = cost_object.expect("a legal activation chose the one to tap");
+                let _ = self.tap_permanent(chosen);
+            }
             for cost in definition.costs.as_slice() {
                 match cost {
                     AbilityCostDef::Mana(cost) => {
@@ -327,13 +339,16 @@ impl Game {
                     AbilityCostDef::TapSource => {
                         let _ = self.tap_permanent(source);
                     }
-                    AbilityCostDef::SacrificeSource
+                    AbilityCostDef::TapPermanent { .. }
+                    | AbilityCostDef::SacrificeSource
                     | AbilityCostDef::ExileSource
                     | AbilityCostDef::SacrificePermanent { .. } => {
-                        // Deferred until mana and source-dependent costs have
-                        // been paid. A chosen permanent may itself produce
-                        // mana first, and the source may still owe a tap or
-                        // counter-removal cost before it leaves.
+                        // A tap of a chosen permanent was paid above, ahead of
+                        // mana. The rest are deferred until mana and
+                        // source-dependent costs have been paid: a chosen
+                        // permanent may itself produce mana first, and the
+                        // source may still owe a tap or counter-removal cost
+                        // before it leaves.
                     }
                     AbilityCostDef::RemoveCountersFromSource { kind, amount } => {
                         self.battlefield

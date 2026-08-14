@@ -78,6 +78,11 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Tapping a chosen permanent as a cost.** A cost could tap the ability's own
+  source, or sacrifice a chosen permanent, but not tap one -- so "tap an
+  untapped Gate you control" had no way to be paid. The candidate has to be
+  untapped and cannot be the source, which is already tapping itself if asked.
+  Gateway Shade and Crackling Perimeter.
 - **Tokens that arrive tapped.** A search could put a permanent onto the
   battlefield tapped after the previous entry; token creation could not, so
   "create a tapped 2/2 black Zombie creature token" had nowhere to say so.

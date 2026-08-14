@@ -168,6 +168,57 @@ fn a_tapped_token_arrives_tapped() {
     assert!(zombies[0].tapped, "and the token arrives tapped");
 }
 
+/// A cost that taps a chosen permanent: only untapped Gates its controller
+/// controls qualify, and paying taps the one chosen rather than the source.
+#[test]
+fn tapping_a_chosen_gate_pays_for_the_ability() {
+    let mut game = ready_game();
+    let shade = creature(10_000, cards::GATEWAY_SHADE, PlayerId::One);
+    let shade_id = shade.card.id;
+    game.battlefield.push(shade);
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, cost_object: Some(_), .. }
+                if *source == shade_id)
+        }),
+        "with no Gate there is nothing to tap"
+    );
+
+    let guildgate = creature(10_001, cards::AZORIUS_GUILDGATE, PlayerId::One);
+    let gate_id = guildgate.card.id;
+    game.battlefield.push(guildgate);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, cost_object: Some(chosen), .. }
+                if *source == shade_id && *chosen == gate_id)
+        })
+        .expect("the Gate can pay for it");
+    game.apply(PlayerId::One, action)
+        .expect("the ability activates");
+    drain_pending(&mut game);
+
+    let guildgate = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == gate_id)
+        .expect("still there");
+    assert!(guildgate.tapped, "the chosen Gate paid");
+    let shade = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == shade_id)
+        .expect("still there");
+    assert!(!shade.tapped, "and the source did not");
+    assert_eq!(
+        (game.power(shade), game.toughness(shade)),
+        (Some(3), Some(3))
+    );
+}
+
 #[test]
 fn every_unblocked_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -184,6 +235,8 @@ fn every_unblocked_identity_reports_complete_coverage() {
         cards::EXAVA_RAKDOS_BLOOD_WITCH,
         cards::LILIANAS_REAVER,
         cards::XATHRID_NECROMANCER,
+        cards::GATEWAY_SHADE,
+        cards::CRACKLING_PERIMETER,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

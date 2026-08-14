@@ -333,6 +333,7 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             // activating player's own graveyard, so only the predicate
             // needs checking.
             AbilityCostDef::SacrificePermanent { object, .. }
+            | AbilityCostDef::TapPermanent { object, .. }
             | AbilityCostDef::ExileCardFromGraveyard(object) => {
                 battlefield && shared_object_predicate(*object)
             }
