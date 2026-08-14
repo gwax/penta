@@ -404,6 +404,7 @@ mod removal_and_keywords;
 mod replacements_and_presentation;
 mod ring_of_maruf;
 mod search_and_reveal;
+mod spore;
 mod state_triggers_and_life;
 mod targeted_answers;
 mod triggers_and_stack;

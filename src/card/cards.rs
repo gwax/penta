@@ -9,6 +9,7 @@ mod landwalk_blocking;
 mod prevention;
 mod rampage;
 mod regeneration;
+mod spore;
 pub use attack_restrictions::*;
 pub use isd_rtr::*;
 pub use landwalk::*;
@@ -16,6 +17,7 @@ pub use landwalk_blocking::*;
 pub use prevention::*;
 pub use rampage::*;
 pub use regeneration::*;
+pub use spore::*;
 
 pub const ANKH_OF_MISHRA: CardDefinitionId = CardDefinitionId(1);
 pub const ATOG: CardDefinitionId = CardDefinitionId(2);

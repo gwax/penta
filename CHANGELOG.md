@@ -34,6 +34,13 @@ distinguishes snapshots of the covered source and build inputs.
   now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
+- **Spore counters.** A `CounterKind::Spore` was the only thing the Fallen
+  Empires Thallid cycle was missing; the upkeep trigger, the
+  remove-three-counters cost, and the token creation all existed. Thallid,
+  Thorn Thallid, Feral Thallid, Spore Flower, and Fungal Bloom are now
+  executable, and two of them spend their counters on capabilities added
+  earlier in this series -- regeneration and turn-wide combat prevention.
+
 - **A Fog prevents all combat damage for the turn.** Combat-damage prevention
   existed as a property of a permanent, which is enough for a Maze of Ith and
   not for a Fog: the spell has no permanent to attach to, and it has to cover

@@ -26,6 +26,15 @@ static YOU_CONTROL_NO_ISLANDS: TriggerConditionDef = TriggerConditionDef::Object
     amount: 0,
 };
 
+static REMOVE_THREE_SPORES: [AbilityCostDef; 1] = [AbilityCostDef::RemoveCountersFromSource {
+    kind: CounterKind::Spore,
+    amount: 3,
+}];
+
+static FUNGUS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Subtype("Fungus"),
+)];
+
 // FEM 1a — Combat Medic
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}{W}: Prevent the next 1 damage that would be dealt to any target this turn”.
 
@@ -614,10 +623,53 @@ static THELONITE_DRUID_ANIMATION: AnimationDef = AnimationDef::new(2, 3);
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{G}, {T}: Untap target attacking creature you control. Prevent all combat damage that would be dealt to and dealt by it this turn”.
 
 // FEM 69 — Feral Thallid
-// Audit: blocked — Needs regeneration shields and their destroy-event replacement procedure for “Remove three spore counters from this creature: Regenerate this creature”.
+pub(in crate::card::sets) static FERAL_THALLID: CardRecord = CardRecord::new(
+    cards::FERAL_THALLID,
+    "Feral Thallid",
+    CardArt::new("e585241e-c647-456d-b3b1-3d48dd78c372", "Rob Alexander"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}{G}"), &["Fungus"], 6, 3).with_abilities(&[
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, put a spore counter on this creature.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Spore,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated(
+            "Remove three spore counters from this creature: Regenerate this creature.",
+            &REMOVE_THREE_SPORES,
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // FEM 70 — Fungal Bloom
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{G}{G}: Put a spore counter on target Fungus”.
+pub(in crate::card::sets) static FUNGAL_BLOOM: CardRecord = CardRecord::new(
+    cards::FUNGAL_BLOOM,
+    "Fungal Bloom",
+    CardArt::new("cf1a2cb2-9a6b-41f7-96f7-ec457c69c16c", "Daniel Gelon"),
+    CardSet::FallenEmpires,
+    CardRules::new_enchantment(mana_cost!("{G}{G}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{G}{G}: Put a spore counter on target Fungus.",
+            &[AbilityCostDef::Mana(mana_cost!("{G}{G}"))],
+            &FUNGUS_TARGET,
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                kind: CounterKind::Spore,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
 
 // FEM 71a — Night Soil
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “{1}, Exile two creature cards from a single graveyard: Create a 1/1 green Saproling creature token”.
@@ -626,10 +678,63 @@ static THELONITE_DRUID_ANIMATION: AnimationDef = AnimationDef::new(2, 3);
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Tap all blocking creatures. Prevent all combat damage that would be dealt this turn. Each attacking creature and each blocking creature doesn't untap during its controller's next untap step”.
 
 // FEM 73 — Spore Flower
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Remove three spore counters from this creature: Prevent all combat damage that would be dealt this turn”.
+pub(in crate::card::sets) static SPORE_FLOWER: CardRecord = CardRecord::new(
+    cards::SPORE_FLOWER,
+    "Spore Flower",
+    CardArt::new("f9681dc0-d0fc-4d5b-a23c-63ec1cc8343d", "Margaret Organ-Kean"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{G}{G}"), &["Fungus"], 0, 1)
+        .with_abilities(&[
+            AbilityDef::triggered(
+                "At the beginning of your upkeep, put a spore counter on this creature.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::Spore,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            AbilityDef::activated(
+                "Remove three spore counters from this creature: Prevent all combat damage that would be dealt this turn.",
+                &REMOVE_THREE_SPORES,
+                EffectDef::PreventAllCombatDamageThisTurn,
+            ),
+        ]),
+);
 
 // FEM 74a — Thallid
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Remove three spore counters from this creature: Create a 1/1 green Saproling creature token”.
+pub(in crate::card::sets) static THALLID: CardRecord = CardRecord::new(
+    cards::THALLID,
+    "Thallid",
+    CardArt::new("4caaf31b-86a9-485b-8da7-d5b526ed1233", "Edward P. Beard, Jr."),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{G}"), &["Fungus"], 1, 1)
+        .with_abilities(&[
+            AbilityDef::triggered(
+                "At the beginning of your upkeep, put a spore counter on this creature.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::Spore,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            AbilityDef::activated(
+                "Remove three spore counters from this creature: Create a 1/1 green Saproling creature token.",
+                &REMOVE_THREE_SPORES,
+                EffectDef::CreateToken {
+                    token: cards::SAPROLING_TOKEN_1_1_GREEN,
+                    count: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // FEM 75 — Thallid Devourer
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Remove three spore counters from this creature: Create a 1/1 green Saproling creature token”.
@@ -681,7 +786,37 @@ pub(in crate::card::sets) static THELONITE_DRUID: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a resolving land-type-setting operation; SetLandTypes currently runs only as a static continuous effect.
 
 // FEM 80a — Thorn Thallid
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Remove three spore counters from this creature: It deals 1 damage to any target”.
+pub(in crate::card::sets) static THORN_THALLID: CardRecord = CardRecord::new(
+    cards::THORN_THALLID,
+    "Thorn Thallid",
+    CardArt::new("16e61c00-3e94-4f6f-8515-65b430829e91", "Daniel Gelon"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Fungus"], 2, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, put a spore counter on this creature.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Spore,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "Remove three spore counters from this creature: It deals 1 damage to any target.",
+            &REMOVE_THREE_SPORES,
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
 
 // FEM 81 — Aeolipile
 pub(in crate::card::sets) static AEOLIPILE: CardRecord = CardRecord::new(
@@ -944,7 +1079,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DWARVEN_LIEUTENANT,
     &GOBLIN_GRENADE,
     &ELVEN_FORTRESS,
+    &FERAL_THALLID,
+    &FUNGAL_BLOOM,
+    &SPORE_FLOWER,
+    &THALLID,
     &THELONITE_DRUID,
+    &THORN_THALLID,
     &AEOLIPILE,
     &ELVEN_LYRE,
     &RING_OF_RENEWAL,

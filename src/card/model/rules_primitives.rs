@@ -10,10 +10,11 @@ pub enum CounterKind {
     Muster,
     Charge,
     Loyalty,
+    Spore,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 5;
+    pub const COUNT: usize = 6;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -21,6 +22,7 @@ impl CounterKind {
         Self::Muster,
         Self::Charge,
         Self::Loyalty,
+        Self::Spore,
     ];
 
     #[must_use]
@@ -31,6 +33,7 @@ impl CounterKind {
             Self::Muster => 2,
             Self::Charge => 3,
             Self::Loyalty => 4,
+            Self::Spore => 5,
         }
     }
 
@@ -42,6 +45,7 @@ impl CounterKind {
             Self::Muster => "muster",
             Self::Charge => "charge",
             Self::Loyalty => "loyalty",
+            Self::Spore => "spore",
         }
     }
 }
