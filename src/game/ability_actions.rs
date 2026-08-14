@@ -116,6 +116,14 @@ impl Game {
                 if !ability.is_executable()
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)
                     || !self.activation_timing_allows(player, definition.timing)
+                    // The engine already counts every activation per ability
+                    // and clears the counts each turn, so the printed cap is
+                    // a read rather than new state.
+                    || (definition.once_each_turn
+                        && permanent
+                            .activations_this_turn
+                            .iter()
+                            .any(|(origin, count)| *origin == effective.origin && *count > 0))
                 {
                     return;
                 }

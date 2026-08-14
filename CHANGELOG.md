@@ -42,6 +42,12 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Printed "only once each turn" caps.** An activated ability can carry a
+  per-turn cap, and it needed no new state: the engine already counted every
+  activation per ability and cleared the counts each turn, so the cap reads
+  what was already there and already in the checkpoint. Gate to Phyrexia, Fire
+  Drake, and Darkthicket Wolf are now executable, and Gate to Phyrexia carries
+  both a window and a cap.
 - **Printed "Activate only during ..." windows.** An activated ability can now
   carry an activation window, checked where activations are enumerated, so a
   restricted ability is simply not offered outside it. Twenty identities name

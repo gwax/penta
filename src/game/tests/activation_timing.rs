@@ -135,3 +135,129 @@ fn every_timing_restricted_identity_reports_complete_coverage() {
         );
     }
 }
+
+/// Printed "only once each turn" caps. The engine already counted every
+/// activation per ability and cleared the counts each turn, so the cap is a
+/// read of existing state rather than new bookkeeping -- which is what these
+/// check, including that the allowance really does return.
+mod once_each_turn {
+    use super::*;
+
+    fn drake_game() -> (Game, GameObjectId) {
+        let mut game = ready_game();
+        game.turns_started[PlayerId::One.index()] = 1;
+        let drake = creature(10_000, cards::FIRE_DRAKE, PlayerId::One);
+        let drake_id = drake.card.id;
+        game.battlefield.push(drake);
+        game.players[PlayerId::One.index()].mana_pool.red = 5;
+        (game, drake_id)
+    }
+
+    fn pump(game: &mut Game, drake: GameObjectId) {
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == drake)
+            })
+            .expect("the pump is offered");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(game);
+    }
+
+    #[test]
+    fn a_capped_ability_is_offered_once_and_then_withheld() {
+        let (mut game, drake_id) = drake_game();
+        assert!(offers(&game, PlayerId::One, drake_id));
+
+        pump(&mut game, drake_id);
+
+        assert!(
+            !offers(&game, PlayerId::One, drake_id),
+            "the allowance is spent even though the mana is not"
+        );
+        let drake = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == drake_id)
+            .expect("the Drake is on the battlefield");
+        assert_eq!(game.power(drake), Some(2), "and the one activation landed");
+    }
+
+    /// The cap is per turn, so cleanup returns it. This is the half that a
+    /// naive "used" flag with no clearing would get wrong.
+    #[test]
+    fn the_allowance_returns_with_the_turn() {
+        let (mut game, drake_id) = drake_game();
+        pump(&mut game, drake_id);
+        assert!(!offers(&game, PlayerId::One, drake_id));
+
+        game.finish_cleanup();
+        game.players[PlayerId::One.index()].mana_pool.red = 5;
+
+        assert!(
+            offers(&game, PlayerId::One, drake_id),
+            "a new turn is a new allowance"
+        );
+    }
+
+    /// Gate to Phyrexia carries both restrictions, so it is the check that
+    /// they compose rather than one masking the other.
+    #[test]
+    fn a_window_and_a_cap_both_apply() {
+        let mut game = ready_game();
+        let phyrexia = creature(10_000, cards::GATE_TO_PHYREXIA, PlayerId::One);
+        let gate_id = phyrexia.card.id;
+        game.battlefield.push(phyrexia);
+        game.battlefield
+            .push(creature(10_001, cards::SEDGE_TROLL, PlayerId::One));
+        game.battlefield
+            .push(creature(10_002, cards::SEDGE_TROLL, PlayerId::One));
+        game.battlefield
+            .push(creature(10_003, cards::SOL_RING, PlayerId::Two));
+
+        game.step = Step::PrecombatMain;
+        assert!(
+            !offers(&game, PlayerId::One, gate_id),
+            "the window is shut outside upkeep"
+        );
+
+        game.step = Step::Upkeep;
+        assert!(offers(&game, PlayerId::One, gate_id));
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == gate_id)
+            })
+            .expect("the ability is offered in the open window");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        assert!(
+            !offers(&game, PlayerId::One, gate_id),
+            "the cap holds inside the open window, with a second creature to spare"
+        );
+    }
+
+    #[test]
+    fn every_capped_identity_reports_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [
+            cards::GATE_TO_PHYREXIA,
+            cards::FIRE_DRAKE,
+            cards::DARKTHICKET_WOLF,
+        ] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
+    }
+}

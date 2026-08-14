@@ -415,6 +415,21 @@ impl AbilityDef {
         self
     }
 
+    /// Caps an activated ability at one activation each turn, for a printed
+    /// "only once each turn" clause.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the clause is not an activated ability.
+    #[must_use]
+    pub const fn once_each_turn(mut self) -> Self {
+        let DeclarativeAbilityDef::Activated(definition) = self.definition else {
+            panic!("only an activated ability can be capped per turn");
+        };
+        self.definition = DeclarativeAbilityDef::Activated(definition.with_once_each_turn());
+        self
+    }
+
     #[must_use]
     /// Selects the legacy procedure for an activated or triggered ability.
     ///

@@ -762,7 +762,28 @@ pub(in crate::card::sets) static CAVE_PEOPLE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs halving a computed value, rounded up; counting the Mountains that set X is available.
 
 // DRK 62 — Fire Drake
-// Audit: blocked — Needs a per-object, per-turn activation quota for “{R}: This creature gets +1/+0 until end of turn. Activate only once each turn”.
+pub(in crate::card::sets) static FIRE_DRAKE: CardRecord = CardRecord::new(
+    cards::FIRE_DRAKE,
+    "Fire Drake",
+    CardArt::new("d3419db6-1c38-4aa4-b953-1dde7d22b927", "Christopher Rush"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Drake"], 1, 2).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::activated(
+            "{R}: This creature gets +1/+0 until end of turn. Activate only once each turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(1),
+                    toughness: ValueDef::Constant(0),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .once_each_turn(),
+    ]),
+);
 
 // DRK 63 — Fissure
 pub(in crate::card::sets) static FISSURE: CardRecord = CardRecord::new(
@@ -1553,6 +1574,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLOOD_MOON,
     &BROTHERS_OF_FIRE,
     &CAVE_PEOPLE,
+    &FIRE_DRAKE,
     &FISSURE,
     &GOBLIN_DIGGING_TEAM,
     &GOBLIN_HERO,

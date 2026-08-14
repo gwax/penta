@@ -82,11 +82,11 @@ fn built_in_records_keep_stable_dense_ids_and_unique_identity() {
         .iter()
         .flat_map(|module| module.cards.iter().copied())
         .collect::<Vec<_>>();
-    assert_eq!(records.len(), 1_460);
+    assert_eq!(records.len(), 1_463);
 
     let mut ids = records.iter().map(|record| record.id).collect::<Vec<_>>();
     ids.sort_unstable();
-    assert_eq!(ids, (1..=1_460).map(CardDefinitionId).collect::<Vec<_>>());
+    assert_eq!(ids, (1..=1_463).map(CardDefinitionId).collect::<Vec<_>>());
     // Names identify the cards a decklist can name. Tokens are not among
     // them, and Magic prints several that share a name.
     let deck_legal = records
@@ -115,7 +115,7 @@ fn built_in_catalog_indexes_definitions_and_printings_separately() {
         .partition(|record| record.debut_set == CardSet::Token);
 
     assert_eq!(token_records.len(), 35);
-    assert_eq!(printed_records.len(), 1_425);
+    assert_eq!(printed_records.len(), 1_428);
     assert_eq!(
         SET_MODULES
             .iter()
@@ -135,7 +135,7 @@ fn built_in_catalog_indexes_definitions_and_printings_separately() {
         .map(|record| catalog.printings_for(record.id).len())
         .sum::<usize>();
 
-    assert_eq!(printing_count, 1_984);
+    assert_eq!(printing_count, 1_987);
     for variant in 0..3 {
         assert!(
             catalog
@@ -332,7 +332,7 @@ fn every_non_declarative_clause_explains_its_implementation() {
         .iter()
         .flat_map(|module| module.cards.iter().copied())
         .collect::<Vec<_>>();
-    assert_eq!(records.len(), 1_460);
+    assert_eq!(records.len(), 1_463);
 
     for record in records {
         let definition = record.definition();
@@ -359,7 +359,7 @@ fn every_non_declarative_clause_explains_its_implementation() {
 #[test]
 fn standard_records_cover_the_top_eight_pool_with_stable_unique_ids() {
     let records = standard_records();
-    assert_eq!(records.len(), 859);
+    assert_eq!(records.len(), 860);
 
     let token_ids = SET_MODULES
         .iter()
@@ -374,6 +374,7 @@ fn standard_records_cover_the_top_eight_pool_with_stable_unique_ids() {
         .chain(607..=1_361)
         .chain(1_366..=1_367)
         .chain(1_432..=1_435)
+        .chain([1_463])
         .map(CardDefinitionId)
         .filter(|id| !token_ids.contains(id))
         .collect::<Vec<_>>();

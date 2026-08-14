@@ -213,7 +213,31 @@ pub(in crate::card::sets) static SAGE_OF_LAT_NAM: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a trigger relation for the attached permanent becoming tapped and its controller/characteristics for “Whenever enchanted artifact becomes tapped or a player activates an ability of enchanted artifact without {T} in its activation cost, this Aura deals 2 damage to that artifact's controller”.
 
 // ATQ 16 — Gate to Phyrexia
-// Audit: blocked — Needs linked sacrifice/destruction accounting for “Sacrifice a creature: Destroy target artifact. Activate only during your upkeep and only once each turn”.
+pub(in crate::card::sets) static GATE_TO_PHYREXIA: CardRecord = CardRecord::new(
+    cards::GATE_TO_PHYREXIA,
+    "Gate to Phyrexia",
+    CardArt::new("1f372950-6693-4838-80ef-8fd9aa3e0349", "Sandra Everingham"),
+    CardSet::Antiquities,
+    CardRules::new_enchantment(mana_cost!("{B}{B}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "Sacrifice a creature: Destroy target artifact. Activate only during your upkeep and \
+             only once each turn.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                controller: PlayerRelation::You,
+            }],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+            )],
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::YourUpkeep)
+        .once_each_turn(),
+    ),
+);
 
 // ATQ 17 — Haunting Wind
 // Audit: blocked — Needs artifact tap and non-tap activated-ability events, including inspection of the triggering activation's costs.
@@ -1218,6 +1242,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HURKYLS_RECALL,
     &RECONSTRUCTION,
     &SAGE_OF_LAT_NAM,
+    &GATE_TO_PHYREXIA,
     &ARTIFACT_BLAST,
     &ATOG,
     &DETONATE,

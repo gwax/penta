@@ -139,6 +139,9 @@ pub struct ActivatedAbilityDef {
     pub targets: &'static [AbilityTargetDef],
     pub procedure: AbilityProcedureDef,
     pub timing: ActivationTimingDef,
+    /// Whether a printed "only once each turn" clause caps this ability at one
+    /// activation per turn by its controller.
+    pub once_each_turn: bool,
 }
 
 impl ActivatedAbilityDef {
@@ -155,6 +158,7 @@ impl ActivatedAbilityDef {
             targets: &[],
             procedure: AbilityProcedureDef::Shared,
             timing: ActivationTimingDef::Any,
+            once_each_turn: false,
         }
     }
 
@@ -179,6 +183,12 @@ impl ActivatedAbilityDef {
     #[must_use]
     pub const fn with_timing(mut self, timing: ActivationTimingDef) -> Self {
         self.timing = timing;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_once_each_turn(mut self) -> Self {
+        self.once_each_turn = true;
         self
     }
 }

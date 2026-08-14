@@ -3128,7 +3128,27 @@ pub(in crate::card::sets) static BRAMBLECRUSH: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a permanent-card-type choice and a graveyard sweep keyed to the chosen type.
 
 // ISD 175 — Darkthicket Wolf
-// Audit: blocked — Needs a per-object, per-turn activation quota for “activate only once each turn”.
+pub(in crate::card::sets) static DARKTHICKET_WOLF: CardRecord = CardRecord::new(
+    cards::DARKTHICKET_WOLF,
+    "Darkthicket Wolf",
+    CardArt::new("fec37c5a-8223-441c-a8a6-8da1a2dfc3fb", "Wayne England"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Wolf"], 2, 2).with_abilities(&[
+        AbilityDef::activated(
+            "{2}{G}: This creature gets +2/+2 until end of turn. Activate only once each turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{2}{G}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(2),
+                    toughness: ValueDef::Constant(2),
+                },
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .once_each_turn(),
+    ]),
+);
 
 static NO_SPELLS_LAST_TURN: TriggerConditionDef = TriggerConditionDef::SpellsCastLastTurn {
     quantifier: QuantifierDef::Every,
@@ -4636,6 +4656,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AVACYNS_PILGRIM,
     &BONEYARD_WURM,
     &BRAMBLECRUSH,
+    &DARKTHICKET_WOLF,
     &DAYBREAK_RANGER,
     &ELDER_OF_LAURELS,
     &GARRUK_RELENTLESS,
