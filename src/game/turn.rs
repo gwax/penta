@@ -11,7 +11,19 @@ mod begin_turn;
 
 impl Game {
     fn skips_turn_based_untap(&self, permanent: &super::Permanent) -> bool {
-        self.does_not_untap_during_untap_step(permanent)
+        permanent.skipped_untap_steps > 0 || self.does_not_untap_during_untap_step(permanent)
+    }
+
+    /// Spends one owed untap step for each of the active player's permanents.
+    /// Called once the untap step is over, so the count is still readable
+    /// while the step decides what untaps.
+    fn spend_untap_skips(&mut self) {
+        let active = self.active_player;
+        for permanent in &mut self.battlefield {
+            if permanent.controller == active {
+                permanent.skipped_untap_steps = permanent.skipped_untap_steps.saturating_sub(1);
+            }
+        }
     }
 
     pub(super) fn untap_actions(&self, player: PlayerId) -> Vec<Action> {
@@ -119,6 +131,7 @@ impl Game {
         }
         self.untap_pending = false;
         self.priority = self.active_player;
+        self.spend_untap_skips();
         self.handle_upkeep_triggers();
     }
 
@@ -312,6 +325,28 @@ impl Game {
         }
     }
 
+    /// Drops the granted and removed abilities whose window closed with the
+    /// turn that just began.
+    fn expire_turn_scoped_ability_changes(&mut self) {
+        let turns_started = self.turns_started;
+        let active = self.active_player;
+        let expired = |expiration: AbilityEffectExpiration| match expiration {
+            AbilityEffectExpiration::UpkeepOf(player) => player != active,
+            AbilityEffectExpiration::TurnOf { player, turn } => {
+                turns_started[player.index()] < turn
+            }
+            AbilityEffectExpiration::EndOfTurn | AbilityEffectExpiration::Never => true,
+        };
+        for permanent in &mut self.battlefield {
+            permanent
+                .temporary_granted_abilities
+                .retain(|grant| expired(grant.expiration));
+            permanent
+                .temporary_removed_abilities
+                .retain(|removal| expired(removal.expiration));
+        }
+    }
+
     pub(super) fn commit_next_turn(
         &mut self,
         next_player: PlayerId,
@@ -324,27 +359,7 @@ impl Game {
         self.turn += 1;
         self.active_player = next_player;
         self.turns_started[self.active_player.index()] += 1;
-        let turns_started = self.turns_started;
-        for permanent in &mut self.battlefield {
-            permanent
-                .temporary_granted_abilities
-                .retain(|grant| match grant.expiration {
-                    AbilityEffectExpiration::UpkeepOf(player) => player != self.active_player,
-                    AbilityEffectExpiration::TurnOf { player, turn } => {
-                        turns_started[player.index()] < turn
-                    }
-                    AbilityEffectExpiration::EndOfTurn | AbilityEffectExpiration::Never => true,
-                });
-            permanent
-                .temporary_removed_abilities
-                .retain(|removal| match removal.expiration {
-                    AbilityEffectExpiration::UpkeepOf(player) => player != self.active_player,
-                    AbilityEffectExpiration::TurnOf { player, turn } => {
-                        turns_started[player.index()] < turn
-                    }
-                    AbilityEffectExpiration::EndOfTurn | AbilityEffectExpiration::Never => true,
-                });
-        }
+        self.expire_turn_scoped_ability_changes();
         self.creature_died_this_turn = false;
         self.sorcery_flash_grants = [0; 2];
         self.additional_combat_phases = 0;
@@ -416,6 +431,7 @@ impl Game {
             }
         }
         if !self.untap_pending {
+            self.spend_untap_skips();
             self.handle_upkeep_triggers();
         }
         if self.result.is_none() {

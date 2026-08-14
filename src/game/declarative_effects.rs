@@ -151,6 +151,26 @@ impl Game {
                     }
                 }
             }
+            EffectDef::SkipNextUntapSteps {
+                object: recipient,
+                count,
+            } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    let Target::Permanent(id) = target else {
+                        continue;
+                    };
+                    if let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == id)
+                    {
+                        // Two of these stack rather than overwrite: a creature
+                        // told twice to sit out sits out twice.
+                        permanent.skipped_untap_steps =
+                            permanent.skipped_untap_steps.saturating_add(count);
+                    }
+                }
+            }
             EffectDef::SetColor {
                 object: recipient,
                 color,

@@ -392,6 +392,13 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// The object sits out that many of its controller's untap steps,
+    /// starting with their next one. Unlike the continuous prohibition this
+    /// is spent as those steps arrive.
+    SkipNextUntapSteps {
+        object: EffectRecipientDef,
+        count: u8,
+    },
     /// Repaint an object's colours, replacing whatever it was. The Lace cycle
     /// says "becomes", not "in addition to", and prints no duration: the
     /// change lasts as long as the object does.

@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Skipped untap steps**, the spent-as-they-arrive counterpart to the
+  continuous "doesn't untap" prohibition. It is a count rather than a flag
+  because Telekinesis names two, and the count is spent by its controller's
+  own untap step, so an intervening turn by anyone else does not use it up.
+  Telekinesis and Barl's Cage.
 - **The Lace cycle**, and with it colour as something an effect can replace.
   "Becomes" is not "in addition to", and the Laces print no duration, so the
   new colour is permanent state on the permanent rather than an expiring

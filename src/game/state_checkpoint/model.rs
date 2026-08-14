@@ -1,5 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+// serde hands `skip_serializing_if` a reference, so this signature is fixed.
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_zero_u8(value: &u8) -> bool {
+    *value == 0
+}
+
 mod triggers;
 pub(in crate::game::state_checkpoint) use triggers::*;
 
@@ -187,6 +193,9 @@ pub(super) struct PermanentSnapshot {
     /// Detained until this seat's next turn, with the turn count it landed on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) detained_until_turn_of: Option<(usize, u32)>,
+    /// Untap steps this permanent still owes before it untaps normally.
+    #[serde(default, skip_serializing_if = "is_zero_u8")]
+    pub(super) skipped_untap_steps: u8,
     /// Colours painted over the printed ones, in WUBRG order, when a Lace
     /// has resolved onto this permanent.
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -222,6 +222,9 @@ struct Permanent {
     /// Detained until this player's next turn begins, recorded with how many
     /// turns they had taken when it landed so "next" means the one after.
     detained_until_turn_of: Option<(PlayerId, u32)>,
+    /// How many of this permanent's controller's untap steps it still has to
+    /// sit out. Counted rather than flagged because Telekinesis names two.
+    skipped_untap_steps: u8,
     /// Colours a resolved effect painted over the printed ones. The Lace
     /// cycle's change lasts indefinitely, so this is permanent state rather
     /// than a continuous effect with a duration to expire.
@@ -346,6 +349,7 @@ impl Permanent {
             unblockable_this_turn: false,
             cannot_block_this_turn: false,
             detained_until_turn_of: None,
+            skipped_untap_steps: 0,
             color_override: None,
             combat_damage_prevented: false,
             combat_damage_dealt_by_prevented: false,

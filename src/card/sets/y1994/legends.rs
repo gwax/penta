@@ -825,7 +825,31 @@ pub(in crate::card::sets) static SEGOVIAN_LEVIATHAN: CardRecord = CardRecord::ne
 // Audit: blocked — Needs executable shroud target-legality and a temporary keyword grant for “Enchanted creature has shroud as long as it's untapped”.
 
 // LEG 79 — Telekinesis
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Tap target creature. Prevent all combat damage that would be dealt by that creature this turn. It doesn't untap during its controller's next two untap steps”.
+pub(in crate::card::sets) static TELEKINESIS: CardRecord = CardRecord::new(
+    cards::TELEKINESIS,
+    "Telekinesis",
+    CardArt::new("d5aa920e-b93f-41c2-b505-a9350353be8b", "Daniel Gelon"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{U}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap target creature. Prevent all combat damage that would be dealt by that creature \
+         this turn. It doesn't untap during its controller's next two untap steps.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Tap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::PreventCombatDamageDealtByThisTurn {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::SkipNextUntapSteps {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                count: 2,
+            },
+        ]),
+    )),
+);
 
 // LEG 80 — Teleport
 // Audit: blocked — Needs a spell-casting timing condition tied to the active turn and step for “Cast this spell only during the declare attackers step”.
@@ -3581,6 +3605,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RECALL,
     &REMOVE_SOUL,
     &SEGOVIAN_LEVIATHAN,
+    &TELEKINESIS,
     &UNDERTOW,
     &ZEPHYR_FALCON,
     &CARRION_ANTS,

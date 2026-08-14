@@ -1826,7 +1826,7 @@ static PESTILENCE_NO_CREATURES: TriggerConditionDef = TriggerConditionDef::Objec
 // Audit: blocked — Dynamic power/toughness effects are battlefield-only and cannot implement a characteristic-defining ability in every zone.
 
 // LEA 119 — Paralyze
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “Enchanted creature doesn't untap during its controller's untap step”.
+// Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller, for the optional {4} untap. The untap prohibition itself is available.
 
 // LEA 120 — Pestilence
 pub(in crate::card::sets) static PESTILENCE: CardRecord = CardRecord::new(
@@ -3245,7 +3245,7 @@ pub(in crate::card::sets) static ICE_STORM: CardRecord = CardRecord::new(
 );
 
 // LEA 202 — Instill Energy
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “{0}: Untap enchanted creature. Activate only during your turn and only once each turn”.
+// Audit: blocked — Needs attacking as though hasty without the rest of haste, for "can attack as though it had haste". The once-each-turn untap ability is available.
 
 // LEA 203 — Ironroot Treefolk
 pub(in crate::card::sets) static IRONROOT_TREEFOLK: CardRecord = CardRecord::new(

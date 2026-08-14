@@ -83,6 +83,7 @@ impl Game {
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
             | EffectDef::SetColor { .. }
+            | EffectDef::SkipNextUntapSteps { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventAllCombatDamageThisTurn
             | EffectDef::PreventNextDamage { .. }

@@ -538,6 +538,7 @@ fn parse_permanent(
         .detained_until_turn_of
         .map(|(player, turns)| player_from_index(player).map(|player| (player, turns)))
         .transpose()?;
+    permanent.skipped_untap_steps = state.skipped_untap_steps;
     permanent.color_override = state.color_override.map(color_set_from_flags);
     permanent.combat_damage_prevented = state.combat_damage_prevented;
     permanent.combat_damage_dealt_by_prevented = state.combat_damage_dealt_by_prevented;

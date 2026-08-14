@@ -1287,7 +1287,23 @@ pub(in crate::card::sets) static DARK_HEART_OF_THE_WOOD: CardRecord = CardRecord
 );
 
 // DRK 96 — Barl's Cage
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “{3}: Target creature doesn't untap during its controller's next untap step”.
+pub(in crate::card::sets) static BARLS_CAGE: CardRecord = CardRecord::new(
+    cards::BARLS_CAGE,
+    "Barl's Cage",
+    CardArt::new("6768a307-da2e-435e-8efd-72d82b4d4a2b", "Tom Wänerstrand"),
+    CardSet::TheDark,
+    CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::activated_with_targets(
+        "{3}: Target creature doesn't untap during its controller's next untap step.",
+        &[AbilityCostDef::Mana(mana_cost!("{3}"))],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::SkipNextUntapSteps {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            count: 1,
+        },
+    )),
+);
 
 // DRK 97 — Bone Flute
 pub(in crate::card::sets) static BONE_FLUTE: CardRecord = CardRecord::new(
@@ -1643,6 +1659,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MARSH_GOBLINS,
     &SCARWOOD_GOBLINS,
     &DARK_HEART_OF_THE_WOOD,
+    &BARLS_CAGE,
     &BONE_FLUTE,
     &BOOK_OF_RASS,
     &DARK_SPHERE,

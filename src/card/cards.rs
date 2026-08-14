@@ -35,6 +35,7 @@ mod spore;
 mod tapped_and_untap;
 mod targeted_regeneration;
 mod unleash;
+mod untap_skips;
 mod wards;
 pub use activation_timing::*;
 pub use attack_restrictions::*;
@@ -69,6 +70,7 @@ pub use spore::*;
 pub use tapped_and_untap::*;
 pub use targeted_regeneration::*;
 pub use unleash::*;
+pub use untap_skips::*;
 pub use wards::*;
 
 pub const ANKH_OF_MISHRA: CardDefinitionId = CardDefinitionId(1);
