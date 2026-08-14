@@ -115,10 +115,65 @@ pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new
 // Audit: blocked — Needs a target predicate for a creature that dealt damage earlier this turn.
 
 // RTR 5 — Azorius Arrester
-// Audit: blocked — Detain requires attack, block, and activated-ability restrictions lasting until your next turn.
+pub(in crate::card::sets) static AZORIUS_ARRESTER: CardRecord = CardRecord::new(
+    cards::AZORIUS_ARRESTER,
+    "Azorius Arrester",
+    CardArt::new("199f7563-563e-483c-8317-5380a83db955", "Wayne Reynolds"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Soldier"], 2, 1).with_abilities(&[
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, detain target creature an opponent controls.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            EffectDef::Detain {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
 
 // RTR 6 — Azorius Justiciar
-// Audit: blocked — Detain requires attack, block, and activated-ability restrictions lasting until your next turn.
+pub(in crate::card::sets) static AZORIUS_JUSTICIAR: CardRecord = CardRecord::new(
+    cards::AZORIUS_JUSTICIAR,
+    "Azorius Justiciar",
+    CardArt::new("9f56272e-c05e-446b-8871-e3783dd29a8b", "Chris Rahn"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Human", "Wizard"], 2, 2).with_ability(
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, detain up to two target creatures your opponents control.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            &UP_TO_TWO_OPPOSING_CREATURES,
+            EffectDef::Detain {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ),
+);
+
+static UP_TO_TWO_OPPOSING_CREATURES: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+    2,
+)];
 
 // RTR 7 — Bazaar Krovod
 pub(in crate::card::sets) static BAZAAR_KROVOD: CardRecord = CardRecord::new(
@@ -253,7 +308,32 @@ pub(in crate::card::sets) static KNIGHTLY_VALOR: CardRecord = CardRecord::new(
 );
 
 // RTR 14 — Martial Law
-// Audit: blocked — Detain requires attack, block, and activated-ability restrictions lasting until your next turn.
+pub(in crate::card::sets) static MARTIAL_LAW: CardRecord = CardRecord::new(
+    cards::MARTIAL_LAW,
+    "Martial Law",
+    CardArt::new("21078b6f-a39d-4ec8-879e-ad10d97c3ff6", "Tyler Jacobson"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_ability(
+        AbilityDef::triggered_with_targets(
+            "At the beginning of your upkeep, detain target creature an opponent controls.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            EffectDef::Detain {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ),
+);
 
 // RTR 15 — Palisade Giant
 // Audit: blocked — Needs a damage-redirection replacement covering you and every other permanent you control.
@@ -676,7 +756,34 @@ pub(in crate::card::sets) static HOVER_BARRIER: CardRecord = CardRecord::new(
 );
 
 // RTR 41 — Inaction Injunction
-// Audit: blocked — Detain requires attack, block, and activated-ability restrictions lasting until your next turn.
+pub(in crate::card::sets) static INACTION_INJUNCTION: CardRecord = CardRecord::new(
+    cards::INACTION_INJUNCTION,
+    "Inaction Injunction",
+    CardArt::new("5342ec3c-9d26-474a-9df5-c21ac90bb233", "Wayne Reynolds"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_sorcery(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Detain target creature an opponent controls. Draw a card.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::Opponent),
+                owner: None,
+            },
+        )],
+        EffectDef::Sequence(&INACTION_INJUNCTION_EFFECTS),
+    )),
+);
+
+static INACTION_INJUNCTION_EFFECTS: [EffectDef; 2] = [
+    EffectDef::Detain {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
 
 // RTR 42 — Inspiration
 pub(in crate::card::sets) static INSPIRATION: CardRecord = CardRecord::new(
@@ -697,7 +804,34 @@ pub(in crate::card::sets) static INSPIRATION: CardRecord = CardRecord::new(
 );
 
 // RTR 43 — Isperia's Skywatch
-// Audit: blocked — Detain requires attack, block, and activated-ability restrictions lasting until your next turn.
+pub(in crate::card::sets) static ISPERIAS_SKYWATCH: CardRecord = CardRecord::new(
+    cards::ISPERIAS_SKYWATCH,
+    "Isperia's Skywatch",
+    CardArt::new("019ba84d-d236-45c5-a8ad-75def7736d0c", "Chris Rahn"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{5}{U}"), &["Vedalken", "Knight"], 3, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, detain target creature an opponent controls.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            EffectDef::Detain {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
 
 /// The ability Jace's first one leaves behind. It belongs to no permanent,
 /// so "an opponent" is read against the player who installed it.
@@ -2348,7 +2482,34 @@ pub(in crate::card::sets) static ABRUPT_DECAY: CardRecord = CardRecord::new(
 );
 
 // RTR 142 — Archon of the Triumvirate
-// Audit: blocked — Detain requires attack, block, and activated-ability restrictions lasting until your next turn.
+pub(in crate::card::sets) static ARCHON_OF_THE_TRIUMVIRATE: CardRecord = CardRecord::new(
+    cards::ARCHON_OF_THE_TRIUMVIRATE,
+    "Archon of the Triumvirate",
+    CardArt::new("bf91d847-4a87-4a65-8d6d-e20d538c5cec", "David Rapoza"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{5}{W}{U}"), &["Archon"], 4, 5).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_with_targets(
+            "Whenever this creature attacks, detain up to two target nonland permanents your \
+             opponents control.",
+            TriggerEventDef::Attacks(ObjectPredicateDef::Source),
+            &UP_TO_TWO_OPPOSING_NONLANDS,
+            EffectDef::Detain {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
+
+static UP_TO_TWO_OPPOSING_NONLANDS: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+    2,
+)];
 
 // RTR 143 — Armada Wurm
 pub(in crate::card::sets) static ARMADA_WURM: CardRecord = CardRecord::new(
@@ -3031,7 +3192,34 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
 );
 
 // RTR 179 — Lyev Skyknight
-// Audit: blocked — Detain requires attack, block, and activated-ability restrictions lasting until your next turn.
+pub(in crate::card::sets) static LYEV_SKYKNIGHT: CardRecord = CardRecord::new(
+    cards::LYEV_SKYKNIGHT,
+    "Lyev Skyknight",
+    CardArt::new("11cbeb3b-1579-4318-a024-4a2c06896eaf", "Johannes Voss"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{1}{W}{U}"), &["Human", "Knight"], 3, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, detain target nonland permanent an opponent controls.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            EffectDef::Detain {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
 
 // RTR 180 — Mercurial Chemister
 // Audit: blocked — The second ability needs the discarded card's mana value linked through its activation cost as the damage amount.
@@ -4282,11 +4470,14 @@ pub(in crate::card::sets) static TRANSGUILD_PROMENADE: CardRecord = CardRecord::
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANGEL_OF_SERENITY,
+    &AZORIUS_ARRESTER,
+    &AZORIUS_JUSTICIAR,
     &BAZAAR_KROVOD,
     &CONCORDIA_PEGASUS,
     &FENCING_ACE,
     &KEENING_APPARITION,
     &KNIGHTLY_VALOR,
+    &MARTIAL_LAW,
     &PRECINCT_CAPTAIN,
     &REST_IN_PEACE,
     &SELESNYA_SENTRY,
@@ -4303,7 +4494,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DOORKEEPER,
     &DOWNSIZE,
     &HOVER_BARRIER,
+    &INACTION_INJUNCTION,
     &INSPIRATION,
+    &ISPERIAS_SKYWATCH,
     &JACE_ARCHITECT_OF_THOUGHT,
     &MIZZIUM_SKIN,
     &PARALYZING_GRASP,
@@ -4365,6 +4558,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STONEFARE_CROCODILE,
     &TOWERING_INDRIK,
     &ABRUPT_DECAY,
+    &ARCHON_OF_THE_TRIUMVIRATE,
     &ARMADA_WURM,
     &AUGER_SPREE,
     &AZORIUS_CHARM,
@@ -4388,6 +4582,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IZZET_CHARM,
     &IZZET_STATICASTER,
     &LOXODON_SMITER,
+    &LYEV_SKYKNIGHT,
     &NIV_MIZZET_DRACOGENIUS,
     &RAKDOS_RAGEMUTT,
     &RAKDOS_RINGLEADER,

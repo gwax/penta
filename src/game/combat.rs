@@ -24,6 +24,7 @@ impl Game {
                 permanent.controller == player
                     && !permanent.tapped
                     && !permanent.attacking
+                    && permanent.detained_until_turn_of.is_none()
                     && self.can_attack_with_moat(permanent, moat_active)
             })
             .flat_map(|permanent| {
@@ -189,7 +190,7 @@ impl Game {
     /// blocking. Asked afresh, so a turn-scoped prohibition stops applying
     /// when it expires and a static one when its source leaves.
     pub(super) fn cannot_block(&self, permanent: &Permanent) -> bool {
-        if permanent.cannot_block_this_turn {
+        if permanent.cannot_block_this_turn || permanent.detained_until_turn_of.is_some() {
             return true;
         }
         // Unleash: the counter is what stops it blocking, so a creature that

@@ -527,6 +527,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
+        | EffectDef::Detain { .. }
         | EffectDef::CannotRegenerateThisTurn { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
         | EffectDef::GainControlWhileSourceRemains { .. }
@@ -603,6 +604,9 @@ fn collect_applied_ability_grants(effect: AppliedEffectDef, grants: &mut Vec<&Ab
     }
 }
 
+// One arm per effect that can carry a grant; the list is long because the
+// vocabulary is, not because the function does much.
+#[allow(clippy::too_many_lines)]
 fn ability_grant_sites(effect: EffectDef) -> usize {
     match effect {
         EffectDef::Sequence(effects) => effects
@@ -688,6 +692,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
+        | EffectDef::Detain { .. }
         | EffectDef::CannotRegenerateThisTurn { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
         | EffectDef::GainControlWhileSourceRemains { .. }

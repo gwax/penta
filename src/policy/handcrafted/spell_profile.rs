@@ -363,6 +363,7 @@ impl HandcraftedPolicy {
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
+            | EffectDef::Detain { .. }
             | EffectDef::CannotRegenerateThisTurn { .. }
             | EffectDef::MakeUnblockableThisTurn { .. }
             | EffectDef::GainControlWhileSourceRemains { .. }

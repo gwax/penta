@@ -184,6 +184,9 @@ pub(super) struct PermanentSnapshot {
     pub(super) unblockable_this_turn: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) cannot_block_this_turn: bool,
+    /// Detained until this seat's next turn, with the turn count it landed on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) detained_until_turn_of: Option<(usize, u32)>,
     pub(super) combat_damage_prevented: bool,
     pub(super) combat_damage_dealt_by_prevented: bool,
     pub(super) control_reverts_to: Option<usize>,

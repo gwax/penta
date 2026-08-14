@@ -213,6 +213,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
         | EffectDef::ExileLinkedToSource { object }
+        | EffectDef::Detain { object }
         | EffectDef::CannotRegenerateThisTurn { object }
         | EffectDef::MakeUnblockableThisTurn { object }
         | EffectDef::GainControlWhileSourceRemains { object, .. }

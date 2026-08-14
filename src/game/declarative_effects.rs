@@ -626,6 +626,20 @@ impl Game {
             EffectDef::GainControlThisTurn { object: recipient } => {
                 self.take_control_of(recipient, object, context, scoped, None);
             }
+            EffectDef::Detain { object: recipient } => {
+                let controller = object.controller;
+                let created = self.turns_started[controller.index()];
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Permanent(id) = target
+                        && let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == id)
+                    {
+                        permanent.detained_until_turn_of = Some((controller, created));
+                    }
+                }
+            }
             EffectDef::CannotRegenerateThisTurn { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Permanent(id) = target

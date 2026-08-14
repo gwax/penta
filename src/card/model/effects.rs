@@ -1,6 +1,8 @@
+mod likelihood;
 mod replacements;
 mod values;
 
+pub use likelihood::*;
 pub use replacements::*;
 pub use values::*;
 
@@ -150,52 +152,6 @@ pub enum AppliedEffectDef {
     /// activated ability does, and it keeps the permanent's other types.
     Animate(&'static AnimationDef),
     Special(&'static str),
-}
-
-/// A floating-point chance used by seeded randomized effects.
-///
-/// The value is finite and inclusive between `0.0` and `1.0`. The wrapper
-/// keeps effect definitions const-friendly while giving their floating-point
-/// likelihood a well-defined `Eq`/`Hash` contract.
-#[derive(Clone, Copy, Debug)]
-pub struct LikelihoodDef(f64);
-
-impl LikelihoodDef {
-    /// # Panics
-    ///
-    /// Panics when `likelihood` is not finite or is outside `0.0..=1.0`.
-    #[must_use]
-    pub const fn new(likelihood: f64) -> Self {
-        assert!(
-            likelihood >= 0.0 && likelihood <= 1.0,
-            "likelihood must be finite and between 0.0 and 1.0"
-        );
-        let canonical = if likelihood.to_bits() == (-0.0_f64).to_bits() {
-            0.0
-        } else {
-            likelihood
-        };
-        Self(canonical)
-    }
-
-    #[must_use]
-    pub const fn value(self) -> f64 {
-        self.0
-    }
-}
-
-impl PartialEq for LikelihoodDef {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.to_bits() == other.0.to_bits()
-    }
-}
-
-impl Eq for LikelihoodDef {}
-
-impl std::hash::Hash for LikelihoodDef {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.to_bits().hash(state);
-    }
 }
 
 /// A reusable selector for ability-removing continuous effects.
@@ -743,6 +699,13 @@ pub enum EffectDef {
     /// [`Self::GainControlThisTurn`] this outlives the turn and ends when the
     /// source does, which is the "for as long as you control this creature"
     /// that several printed cards use.
+    /// Detain: until the resolving controller's next turn, the recipient
+    /// cannot attack or block and its activated abilities cannot be
+    /// activated. One effect rather than three, because the keyword is one
+    /// thing and the three restrictions always travel together.
+    Detain {
+        object: EffectRecipientDef,
+    },
     GainControlWhileSourceRemains {
         object: EffectRecipientDef,
         /// Whether the source also has to stay tapped, for the cards that

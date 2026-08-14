@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Detain**, the last of Return to Ravnica's four keywords. It is one effect
+  rather than three: the restrictions always travel together and end at one
+  moment, the detaining player's next turn, which is recorded the way floating
+  triggers already record "until your next turn". Seven identities are now
+  executable.
 - **Unleash**, which needed an entry replacement its controller may decline.
   The entry path had no optional handling at all -- the only optional
   replacement anywhere was on beginning a turn. The suspended decision records

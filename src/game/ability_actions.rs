@@ -115,6 +115,9 @@ impl Game {
                 last_activated_origin = Some(effective.origin);
                 if !ability.is_executable()
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)
+                    // Detain stops activated abilities, not the permanent's
+                    // other clauses.
+                    || permanent.detained_until_turn_of.is_some()
                     || !self.activation_timing_allows(player, definition.timing)
                     // The engine already counts every activation per ability
                     // and clears the counts each turn, so the printed cap is

@@ -389,6 +389,7 @@ mod countering_and_mana;
 mod damage_dealt_by;
 mod decisions_and_effects;
 mod delayed_triggers;
+mod detain;
 mod entry_replacements;
 mod exalted;
 mod exile_source_costs;

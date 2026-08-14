@@ -502,6 +502,10 @@ pub const fn unleash_counter() -> AbilityDef {
     )
 }
 
+/// The reminder text every detain clause prints, so the cards agree on it.
+pub const DETAIN_REMINDER: &str = "(Until your next turn, that permanent can't attack or block \
+                                   and its activated abilities can't be activated.)";
+
 /// A shared checkland-style entry clause backed by the general object-query
 /// condition vocabulary.
 #[must_use]

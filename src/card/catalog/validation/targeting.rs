@@ -222,6 +222,7 @@ fn validate_effect_references(
         | EffectDef::ChangeTextBasicLandType { object }
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ExileLinkedToSource { object }
+        | EffectDef::Detain { object }
         | EffectDef::CannotRegenerateThisTurn { object }
         | EffectDef::MakeUnblockableThisTurn { object }
         | EffectDef::GainControlWhileSourceRemains { object, .. }

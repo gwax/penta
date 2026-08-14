@@ -302,7 +302,11 @@ impl Game {
         }
     }
 
-    fn commit_next_turn(&mut self, next_player: PlayerId, deferred: Vec<DeferredBeginTurnEffect>) {
+    pub(super) fn commit_next_turn(
+        &mut self,
+        next_player: PlayerId,
+        deferred: Vec<DeferredBeginTurnEffect>,
+    ) {
         // CR 614.10b: an action coupled to a skipped turn is the first thing
         // that happens in the next turn that actually occurs. Do not expose it
         // while another prospective turn can still be replaced.
@@ -345,6 +349,7 @@ impl Game {
         // "Until your next turn" means the one now beginning, not the one the
         // ability resolved during.
         let started = self.turns_started[self.active_player.index()];
+        let active = self.active_player;
         self.floating_triggers.retain(|floating| {
             floating.until_turn_of != self.active_player || started <= floating.created_after_turns
         });
@@ -352,6 +357,14 @@ impl Game {
             permanent
                 .keywords_until_upkeep_of
                 .retain(|(player, _)| *player != self.active_player);
+            // Detain ends when its controller's next turn begins, the same
+            // reading the floating triggers above take.
+            if permanent
+                .detained_until_turn_of
+                .is_some_and(|(player, created)| player == active && started > created)
+            {
+                permanent.detained_until_turn_of = None;
+            }
             // One loyalty ability per planeswalker per turn, so the allowance
             // returns as the turn does.
             permanent.activated_loyalty_this_turn = false;

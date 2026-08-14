@@ -498,6 +498,10 @@ fn parse_permanent(
     permanent.activated_loyalty_this_turn = shown.activated_loyalty_this_turn;
     permanent.unblockable_this_turn = state.unblockable_this_turn;
     permanent.cannot_block_this_turn = state.cannot_block_this_turn;
+    permanent.detained_until_turn_of = state
+        .detained_until_turn_of
+        .map(|(player, turns)| player_from_index(player).map(|player| (player, turns)))
+        .transpose()?;
     permanent.combat_damage_prevented = state.combat_damage_prevented;
     permanent.combat_damage_dealt_by_prevented = state.combat_damage_dealt_by_prevented;
     permanent.control_reverts_to = state

@@ -219,6 +219,9 @@ struct Permanent {
     /// the rest of the turn. The printed static form is read from the
     /// continuous layer instead.
     cannot_block_this_turn: bool,
+    /// Detained until this player's next turn begins, recorded with how many
+    /// turns they had taken when it landed so "next" means the one after.
+    detained_until_turn_of: Option<(PlayerId, u32)>,
     /// Whether combat damage to and from this permanent is prevented for the
     /// rest of the turn. Maze of Ith sets it; the creature stays an attacker
     /// so its attack triggers and its blockers are unaffected.
@@ -338,6 +341,7 @@ impl Permanent {
             activated_loyalty_this_turn: false,
             unblockable_this_turn: false,
             cannot_block_this_turn: false,
+            detained_until_turn_of: None,
             combat_damage_prevented: false,
             combat_damage_dealt_by_prevented: false,
             control_reverts_to: None,
