@@ -623,8 +623,35 @@ pub(in crate::card::sets) static KIRD_APE: CardRecord = CardRecord::new(
 // ARN 41 — Magnetic Mountain
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “At the beginning of each player's upkeep, that player may choose any number of tapped blue creatures they control and pay {4} for each creature chosen this way. If the player does, untap…”.
 
+/// The losing branch: out of combat, and tapped as if it had attacked.
+static MIJAE_DJINN_LOST: EffectDef = EffectDef::Sequence(&[
+    EffectDef::RemoveFromCombat {
+        object: EffectRecipientDef::Source,
+    },
+    EffectDef::Tap {
+        object: EffectRecipientDef::Source,
+    },
+]);
+
 // ARN 42 — Mijae Djinn
-// Audit: blocked — Needs a deterministic recorded coin-flip choice and both result branches for “Whenever this creature attacks, flip a coin. If you lose the flip, remove this creature from combat and tap it”.
+pub(in crate::card::sets) static MIJAE_DJINN: CardRecord = CardRecord::new(
+    cards::MIJAE_DJINN,
+    "Mijae Djinn",
+    CardArt::new("d3ddbe51-cd1a-4b2c-849a-7c82d622122a", "Susan Van Camp"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{R}{R}{R}"), &["Djinn"], 6, 3).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature attacks, flip a coin. If you lose the flip, remove this \
+             creature from combat and tap it.",
+            TriggerEventDef::Attacks(ObjectPredicateDef::Source),
+            EffectDef::Randomized {
+                likelihood: LikelihoodDef::new(0.5),
+                on_success: &EffectDef::None,
+                on_failure: &MIJAE_DJINN_LOST,
+            },
+        ),
+    ),
+);
 
 // ARN 43 — Rukh Egg
 // Audit: partial — Its delayed end-step effect resolves directly rather than becoming an orderable, respondable trigger.
@@ -658,7 +685,7 @@ pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new(
 );
 
 // ARN 44 — Ydwen Efreet
-// Audit: blocked — Needs a deterministic recorded coin-flip choice and both result branches for “Whenever this creature blocks, flip a coin. If you lose the flip, remove this creature from combat and it can't block this turn. Creatures it was blocking that had become blocked by only…”.
+// Audit: blocked — Needs attackers this creature had blocked alone to become unblocked, which reverses the ordinary rule that removing a blocker leaves them blocked. The flip and the combat removal are available.
 
 // ARN 45 — Cyclone
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your upkeep, put a wind counter on this enchantment, then sacrifice this enchantment unless you pay {G} for each wind counter on it. If you pay, this enchantment…”.
@@ -1219,6 +1246,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BIRD_MAIDEN,
     &HURR_JACKAL,
     &KIRD_APE,
+    &MIJAE_DJINN,
     &RUKH_EGG,
     &DESERT_TWISTER,
     &ERHNAM_DJINN,

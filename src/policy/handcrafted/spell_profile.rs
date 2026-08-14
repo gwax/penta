@@ -311,6 +311,7 @@ impl HandcraftedPolicy {
                 profile.mark(DeclarativeSpellProfile::REMOVES);
             }
             EffectDef::Tap { .. }
+            | EffectDef::RemoveFromCombat { .. }
             | EffectDef::SetColor { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }

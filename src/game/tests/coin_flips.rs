@@ -103,10 +103,96 @@ fn orcish_captain_pumps_or_shrinks_the_same_orc() {
     assert!(lost > 0, "and so is the losing one");
 }
 
+/// Mijae Djinn attacks and then may take itself out of combat. The losing
+/// branch is the interesting one: a 6/3 that stops attacking and taps.
+#[test]
+fn mijae_djinn_either_attacks_or_takes_itself_out() {
+    let (won, lost) = outcomes(|seed| {
+        let mut game = ready_game_with_seed(seed);
+        let djinn = creature(10_000, cards::MIJAE_DJINN, PlayerId::One);
+        let djinn_id = djinn.card.id;
+        game.battlefield.push(djinn);
+        game.step = Step::DeclareAttackers;
+        game.active_player = PlayerId::One;
+        game.priority = PlayerId::One;
+
+        game.apply(
+            PlayerId::One,
+            Action::DeclareAttacker {
+                attacker: djinn_id,
+                defender: AttackDefender::Player(PlayerId::Two),
+            },
+        )
+        .expect("a 6/3 can attack");
+        game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+            .expect("attackers are declared");
+        drain_pending(&mut game);
+
+        let djinn = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == djinn_id)
+            .expect("still there");
+        // Declaring it tapped it either way; what the coin decides is
+        // whether it is still in the attack.
+        assert!(djinn.tapped);
+        let attacking = djinn.attacking;
+
+        let before = game.players[PlayerId::Two.index()].life;
+        game.deal_combat_damage();
+        let dealt = before - game.players[PlayerId::Two.index()].life;
+        assert_eq!(
+            dealt,
+            if attacking { 6 } else { 0 },
+            "a Djinn out of combat deals nothing"
+        );
+        attacking
+    });
+
+    assert!(won > 0, "it can stay in the attack");
+    assert!(lost > 0, "and it can take itself out");
+}
+
+/// Removing a blocker from combat frees the attacker it was blocking from
+/// having a blocker, which is what CR 506.4 asks of the removal itself.
+#[test]
+fn removing_a_blocker_from_combat_clears_the_blocking_relationship() {
+    let mut game = ready_game();
+    let mut attacker = creature(10_000, cards::SERRA_ANGEL, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let mut blocker = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
+    blocker.blocking = Some(attacker_id);
+    let blocker_id = blocker.card.id;
+    game.battlefield.push(blocker);
+
+    game.remove_permanent_from_combat(blocker_id);
+
+    let blocker = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == blocker_id)
+        .expect("still there");
+    assert_eq!(blocker.blocking, None);
+
+    game.deal_combat_damage();
+    let blocker = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == blocker_id)
+        .expect("a creature out of combat takes nothing");
+    assert_eq!(blocker.damage, 0);
+}
+
 #[test]
 fn both_identities_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::ORCISH_CAPTAIN, cards::BOTTLE_OF_SULEIMAN] {
+    for definition in [
+        cards::ORCISH_CAPTAIN,
+        cards::BOTTLE_OF_SULEIMAN,
+        cards::MIJAE_DJINN,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

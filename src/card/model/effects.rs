@@ -481,6 +481,12 @@ pub enum EffectDef {
     Tap {
         object: EffectRecipientDef,
     },
+    /// CR 506.4: the permanent stops attacking or blocking, and anything
+    /// blocking it stops. An attacker removed this way was still blocked, so
+    /// it deals no damage rather than getting through.
+    RemoveFromCombat {
+        object: EffectRecipientDef,
+    },
     Untap {
         object: EffectRecipientDef,
     },

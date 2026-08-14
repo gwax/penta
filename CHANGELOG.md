@@ -78,6 +78,11 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Removing a creature from combat.** Regeneration already did exactly this
+  as part of its shield, so the step is now shared rather than reimplemented:
+  the permanent stops attacking or blocking and anything blocking it stops.
+  An attacker removed this way was still blocked, so it deals no damage
+  rather than getting through. Mijae Djinn.
 - **Per-turn activation caps count rather than flag.** "Activate only once
   each turn" was a boolean, so "no more than twice each turn" had nowhere to
   go. The engine was already counting every activation per ability and

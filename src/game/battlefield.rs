@@ -178,12 +178,26 @@ impl Game {
             permanent.regeneration_shields -= 1;
             permanent.damage = 0;
             permanent.deathtouch_damage = false;
-            permanent.attacking = false;
-            permanent.blocked = false;
-            permanent.blocking = None;
-            permanent.combat_damage_assignment.clear();
         }
+        self.remove_permanent_from_combat(id);
         let _ = self.tap_permanent(id);
+    }
+
+    /// CR 506.4: the permanent stops attacking or blocking, and anything that
+    /// was blocking it stops. Regeneration does this as part of its shield;
+    /// an effect that only removes a creature from combat does the same.
+    pub(super) fn remove_permanent_from_combat(&mut self, id: GameObjectId) {
+        let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == id)
+        else {
+            return;
+        };
+        permanent.attacking = false;
+        permanent.blocked = false;
+        permanent.blocking = None;
+        permanent.combat_damage_assignment.clear();
         for other in &mut self.battlefield {
             if other.card.id != id && other.blocking == Some(id) {
                 other.blocking = None;

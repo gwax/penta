@@ -83,6 +83,7 @@ impl Game {
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
+            | EffectDef::RemoveFromCombat { .. }
             | EffectDef::SetColor { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }

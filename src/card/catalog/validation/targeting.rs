@@ -215,6 +215,7 @@ fn validate_effect_references(
         | EffectDef::EmptyManaPool { player: object }
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
+        | EffectDef::RemoveFromCombat { object }
         | EffectDef::SetColor { object, .. }
         | EffectDef::DestroyAtEndOfCombat { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }

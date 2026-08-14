@@ -247,6 +247,7 @@ impl Game {
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
+            | EffectDef::RemoveFromCombat { .. }
             | EffectDef::SetColor { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }

@@ -33,3 +33,4 @@ pub const HOMARID_WARRIOR: CardDefinitionId = CardDefinitionId(1658);
 pub const SPECTRAL_CLOAK: CardDefinitionId = CardDefinitionId(1659);
 pub const VAMPIRE_BATS: CardDefinitionId = CardDefinitionId(1660);
 pub const BEETLEFORM_MAGE: CardDefinitionId = CardDefinitionId(1661);
+pub const MIJAE_DJINN: CardDefinitionId = CardDefinitionId(1662);

@@ -272,6 +272,13 @@ impl Game {
                     }
                 }
             }
+            EffectDef::RemoveFromCombat { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Permanent(permanent) = target {
+                        self.remove_permanent_from_combat(permanent);
+                    }
+                }
+            }
             EffectDef::Regenerate { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Permanent(permanent) = target {

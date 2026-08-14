@@ -480,6 +480,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
+        | EffectDef::RemoveFromCombat { .. }
         | EffectDef::SetColor { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
@@ -769,6 +770,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::LoseTheGame { .. }
                     | EffectDef::Regenerate { .. }
                     | EffectDef::Tap { .. }
+                    | EffectDef::RemoveFromCombat { .. }
                     | EffectDef::SetColor { .. }
                     | EffectDef::DestroyAtEndOfCombat { .. }
                     | EffectDef::SkipNextUntapSteps { .. }
