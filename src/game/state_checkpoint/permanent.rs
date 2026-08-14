@@ -80,6 +80,11 @@ pub(super) fn permanent_snapshot(
             .iter()
             .map(|bonus| (bonus.source.0, bonus.power, bonus.toughness))
             .collect(),
+        held_tapped_by: permanent
+            .held_tapped_by
+            .iter()
+            .map(|source| source.0)
+            .collect(),
         unblockable_this_turn: permanent.unblockable_this_turn,
         cannot_block_this_turn: permanent.cannot_block_this_turn,
         detained_until_turn_of: permanent

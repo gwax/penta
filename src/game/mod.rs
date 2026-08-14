@@ -221,6 +221,9 @@ struct Permanent {
     /// Modifications that end when the permanent that made them untaps,
     /// rather than at cleanup with `power_bonus`.
     while_source_tapped: Vec<TappedSourceStatBonus>,
+    /// Permanents whose staying tapped keeps this one from untapping. Like
+    /// `while_source_tapped` the rule has no deadline; the sources do.
+    held_tapped_by: Vec<GameObjectId>,
     attacking: bool,
     attack_defender: Option<crate::AttackDefender>,
     emblem_source: Option<AbilityOrigin>,
@@ -363,6 +366,7 @@ impl Permanent {
             power_bonus: 0,
             toughness_bonus: 0,
             while_source_tapped: Vec::new(),
+            held_tapped_by: Vec::new(),
             attacking: false,
             attack_defender: None,
             emblem_source: None,

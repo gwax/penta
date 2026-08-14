@@ -538,6 +538,11 @@ fn parse_permanent(
             toughness: *toughness,
         })
         .collect();
+    permanent.held_tapped_by = state
+        .held_tapped_by
+        .iter()
+        .map(|source| GameObjectId(*source))
+        .collect();
     permanent.attacking = shown.attacking;
     permanent.attack_defender = shown.attack_defender;
     permanent.blocked = shown.blocked;

@@ -9,6 +9,7 @@ use super::{
 
 mod permanent_state;
 mod prevention;
+mod tapping;
 
 impl Game {
     #[allow(clippy::too_many_lines)]
@@ -265,12 +266,10 @@ impl Game {
                     }
                 }
             }
-            EffectDef::Tap { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Permanent(permanent) = target {
-                        let _ = self.tap_permanent(permanent);
-                    }
-                }
+            EffectDef::Tap { .. }
+            | EffectDef::Untap { .. }
+            | EffectDef::DoesNotUntapWhileSourceTapped { .. } => {
+                self.resolve_tap_effect(scoped, object, context);
             }
             EffectDef::RemoveFromCombat { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
@@ -316,18 +315,6 @@ impl Game {
                     .collect::<Vec<_>>();
                 for definition in copies {
                     self.create_token(object.controller, definition);
-                }
-            }
-            EffectDef::Untap { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Permanent(id) = target
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|candidate| candidate.card.id == id)
-                    {
-                        permanent.tapped = false;
-                    }
                 }
             }
             EffectDef::PreventNextDamage { .. }

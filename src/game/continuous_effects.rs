@@ -312,95 +312,108 @@ impl Game {
                 then, otherwise, ..
             } => Self::immediate_attachment_target(*then)
                 .or_else(|| Self::immediate_attachment_target(*otherwise)),
-            EffectDef::None
-            | EffectDef::Randomized { .. }
-            | EffectDef::ChoosePermanent { .. }
-            | EffectDef::ChooseDamageSource { .. }
-            | EffectDef::PreventNextDamageFromSource { .. }
-            | EffectDef::AddMana(_)
-            | EffectDef::AddManaEqualTo { .. }
-            | EffectDef::DealDamage { .. }
-            | EffectDef::DrainLife { .. }
-            | EffectDef::GainLife { .. }
-            | EffectDef::AddPoisonCounters { .. }
-            | EffectDef::DrawCards { .. }
-            | EffectDef::Discard { .. }
-            | EffectDef::ShuffleLibrary { .. }
-            | EffectDef::EmptyManaPool { .. }
-            | EffectDef::LoseLife { .. }
-            | EffectDef::LoseTheGame { .. }
-            | EffectDef::Regenerate { .. }
-            | EffectDef::Tap { .. }
-            | EffectDef::RemoveFromCombat { .. }
-            | EffectDef::SetColor { .. }
-            | EffectDef::DestroyAtEndOfCombat { .. }
-            | EffectDef::SkipNextUntapSteps { .. }
-            | EffectDef::RemoveAllCounters { .. }
-            | EffectDef::Untap { .. }
-            | EffectDef::PreventAllCombatDamageThisTurn
-            | EffectDef::PreventNextDamage { .. }
-            | EffectDef::PreventAllDamageThisTurn { .. }
-            | EffectDef::PreventCombatDamageThisTurn { .. }
-            | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-            | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
-            | EffectDef::Destroy { .. }
-            | EffectDef::Sacrifice { .. }
-            | EffectDef::SacrificeOfChoice { .. }
-            | EffectDef::DestroyOfChoice { .. }
-            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-            | EffectDef::RevealAndSplitIntoPiles { .. }
-            | EffectDef::Mill { .. }
-            | EffectDef::LookAtTopAndMayTake { .. }
-            | EffectDef::LookAtTopAndSelect { .. }
-            | EffectDef::LookAtHand { .. }
-            | EffectDef::SearchZone { .. }
-            | EffectDef::ChooseCards { .. }
-            | EffectDef::ReplaceNextDrawThisTurn { .. }
-            | EffectDef::CreateEmblem { .. }
-            | EffectDef::Transform { .. }
-            | EffectDef::Counter { .. }
-            | EffectDef::CounterUnlessPaid { .. }
-            | EffectDef::AddCounters { .. }
-            | EffectDef::ChangeTextBasicLandType { .. }
-            | EffectDef::BecomeCopyOf { .. }
-            | EffectDef::OptionalPayment { .. }
-            | EffectDef::UnlessPaid { .. }
-            | EffectDef::May { .. }
-            | EffectDef::AdditionalCombatPhase
-            | EffectDef::TakeExtraTurn { .. }
-            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
-            | EffectDef::GrantFlashToNextSorcery
-            | EffectDef::ExileLinkedToSource { .. }
-            | EffectDef::ReturnLinkedExiles { .. }
-            | EffectDef::Detain { .. }
-            | EffectDef::CannotRegenerateThisTurn { .. }
-            | EffectDef::MakeUnblockableThisTurn { .. }
-            | EffectDef::GainControlWhileSourceRemains { .. }
-            | EffectDef::GainControlThisTurn { .. }
-            | EffectDef::AtNextStep { .. }
-            | EffectDef::IfCondition { .. }
-            | EffectDef::TriggerUntilYourNextTurn { .. }
-            | EffectDef::CannotBeForcedToSacrifice
-            | EffectDef::ReduceGenericCostBy(_)
-            | EffectDef::PlayersCantPlay(_)
-            | EffectDef::LandwalkCanBeBlocked(_)
-            | EffectDef::CannotAttackUnless(_)
-            | EffectDef::MultiplyEventAmount(_)
-            | EffectDef::Replacement(_)
-            | EffectDef::MoveToZone { .. }
-            | EffectDef::Attach { .. }
-            | EffectDef::CreateToken { .. }
-            | EffectDef::CreateTokenCopyOf { .. }
-            | EffectDef::ChooseCardName { .. }
-            | EffectDef::ChoosePlayer { .. }
-            | EffectDef::CopyPermanentAsItEnters { .. }
-            | EffectDef::ChooseCreatureType { .. }
-            | EffectDef::Apply { .. }
-            | EffectDef::Special(_) => None,
+            other => {
+                debug_assert!(Self::effect_never_attaches(other));
+                None
+            }
         }
+    }
+
+    /// Every effect that cannot attach anything. Listed exhaustively so a
+    /// new effect has to be classified rather than silently answering None.
+    fn effect_never_attaches(effect: EffectDef) -> bool {
+        matches!(
+            effect,
+            EffectDef::None
+                | EffectDef::Randomized { .. }
+                | EffectDef::ChoosePermanent { .. }
+                | EffectDef::ChooseDamageSource { .. }
+                | EffectDef::PreventNextDamageFromSource { .. }
+                | EffectDef::AddMana(_)
+                | EffectDef::AddManaEqualTo { .. }
+                | EffectDef::DealDamage { .. }
+                | EffectDef::DrainLife { .. }
+                | EffectDef::GainLife { .. }
+                | EffectDef::AddPoisonCounters { .. }
+                | EffectDef::DrawCards { .. }
+                | EffectDef::Discard { .. }
+                | EffectDef::ShuffleLibrary { .. }
+                | EffectDef::EmptyManaPool { .. }
+                | EffectDef::LoseLife { .. }
+                | EffectDef::LoseTheGame { .. }
+                | EffectDef::Regenerate { .. }
+                | EffectDef::Tap { .. }
+                | EffectDef::RemoveFromCombat { .. }
+                | EffectDef::SetColor { .. }
+                | EffectDef::DestroyAtEndOfCombat { .. }
+                | EffectDef::SkipNextUntapSteps { .. }
+                | EffectDef::DoesNotUntapWhileSourceTapped { .. }
+                | EffectDef::RemoveAllCounters { .. }
+                | EffectDef::Untap { .. }
+                | EffectDef::PreventAllCombatDamageThisTurn
+                | EffectDef::PreventNextDamage { .. }
+                | EffectDef::PreventAllDamageThisTurn { .. }
+                | EffectDef::PreventCombatDamageThisTurn { .. }
+                | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
+                | EffectDef::PreventDamageDealtByThisTurn { .. }
+                | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
+                | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
+                | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
+                | EffectDef::Destroy { .. }
+                | EffectDef::Sacrifice { .. }
+                | EffectDef::SacrificeOfChoice { .. }
+                | EffectDef::DestroyOfChoice { .. }
+                | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
+                | EffectDef::RevealAndSplitIntoPiles { .. }
+                | EffectDef::Mill { .. }
+                | EffectDef::LookAtTopAndMayTake { .. }
+                | EffectDef::LookAtTopAndSelect { .. }
+                | EffectDef::LookAtHand { .. }
+                | EffectDef::SearchZone { .. }
+                | EffectDef::ChooseCards { .. }
+                | EffectDef::ReplaceNextDrawThisTurn { .. }
+                | EffectDef::CreateEmblem { .. }
+                | EffectDef::Transform { .. }
+                | EffectDef::Counter { .. }
+                | EffectDef::CounterUnlessPaid { .. }
+                | EffectDef::AddCounters { .. }
+                | EffectDef::ChangeTextBasicLandType { .. }
+                | EffectDef::BecomeCopyOf { .. }
+                | EffectDef::OptionalPayment { .. }
+                | EffectDef::UnlessPaid { .. }
+                | EffectDef::May { .. }
+                | EffectDef::AdditionalCombatPhase
+                | EffectDef::TakeExtraTurn { .. }
+                | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
+                | EffectDef::GrantFlashToNextSorcery
+                | EffectDef::ExileLinkedToSource { .. }
+                | EffectDef::ReturnLinkedExiles { .. }
+                | EffectDef::Detain { .. }
+                | EffectDef::CannotRegenerateThisTurn { .. }
+                | EffectDef::MakeUnblockableThisTurn { .. }
+                | EffectDef::GainControlWhileSourceRemains { .. }
+                | EffectDef::GainControlThisTurn { .. }
+                | EffectDef::AtNextStep { .. }
+                | EffectDef::IfCondition { .. }
+                | EffectDef::TriggerUntilYourNextTurn { .. }
+                | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::ReduceGenericCostBy(_)
+                | EffectDef::PlayersCantPlay(_)
+                | EffectDef::LandwalkCanBeBlocked(_)
+                | EffectDef::CannotAttackUnless(_)
+                | EffectDef::MultiplyEventAmount(_)
+                | EffectDef::Replacement(_)
+                | EffectDef::MoveToZone { .. }
+                | EffectDef::Attach { .. }
+                | EffectDef::CreateToken { .. }
+                | EffectDef::CreateTokenCopyOf { .. }
+                | EffectDef::ChooseCardName { .. }
+                | EffectDef::ChoosePlayer { .. }
+                | EffectDef::CopyPermanentAsItEnters { .. }
+                | EffectDef::ChooseCreatureType { .. }
+                | EffectDef::Apply { .. }
+                | EffectDef::Special(_)
+        )
     }
 
     /// Whether a static effect forbids Auras on this permanent. This is not a

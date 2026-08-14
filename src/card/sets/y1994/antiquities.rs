@@ -242,8 +242,43 @@ pub(in crate::card::sets) static GATE_TO_PHYREXIA: CardRecord = CardRecord::new(
 // ATQ 17 — Haunting Wind
 // Audit: blocked — Needs artifact tap and non-tap activated-ability events, including inspection of the triggering activation's costs.
 
+static GREMLIN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+)];
+
 // ATQ 18 — Phyrexian Gremlins
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “{T}: Tap target artifact. It doesn't untap during its controller's untap step for as long as this creature remains tapped”.
+pub(in crate::card::sets) static PHYREXIAN_GREMLINS: CardRecord = CardRecord::new(
+    cards::PHYREXIAN_GREMLINS,
+    "Phyrexian Gremlins",
+    CardArt::new("21a985a9-5612-4844-982e-fd1aa6249770", "Amy Weber"),
+    CardSet::Antiquities,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Phyrexian", "Gremlin"], 1, 1).with_abilities(
+        &[
+            AbilityDef::static_ability(
+                "You may choose not to untap this creature during your untap step.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::MayChooseNotToUntap,
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "{T}: Tap target artifact. It doesn't untap during its controller's untap step \
+                 for as long as this creature remains tapped.",
+                &[AbilityCostDef::TapSource],
+                &GREMLIN_TARGET,
+                EffectDef::Sequence(&[
+                    EffectDef::Tap {
+                        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    },
+                    EffectDef::DoesNotUntapWhileSourceTapped {
+                        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    },
+                ]),
+            ),
+        ],
+    ),
+);
 
 // ATQ 19 — Priest of Yawgmoth
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “{T}, Sacrifice an artifact: Add an amount of {B} equal to the sacrificed artifact's mana value”.
@@ -1423,6 +1458,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RECONSTRUCTION,
     &SAGE_OF_LAT_NAM,
     &GATE_TO_PHYREXIA,
+    &PHYREXIAN_GREMLINS,
     &ARTIFACT_BLAST,
     &ATOG,
     &DETONATE,

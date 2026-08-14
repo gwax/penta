@@ -408,6 +408,7 @@ mod extra_turns;
 mod fetch_tapped;
 mod filtered_player_prevention;
 mod guardian_beast;
+mod held_tapped;
 mod identity_and_mana;
 mod laces;
 mod land_and_ability_layers;

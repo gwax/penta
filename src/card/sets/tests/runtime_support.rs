@@ -524,6 +524,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::SetColor { .. }
                     | EffectDef::DestroyAtEndOfCombat { .. }
                     | EffectDef::SkipNextUntapSteps { .. }
+                    | EffectDef::DoesNotUntapWhileSourceTapped { .. }
                     | EffectDef::RemoveAllCounters { .. }
                     | EffectDef::Untap { .. }
                     | EffectDef::PreventAllCombatDamageThisTurn

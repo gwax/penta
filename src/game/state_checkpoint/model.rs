@@ -194,6 +194,10 @@ pub(super) struct PermanentSnapshot {
     /// predate them.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) while_source_tapped: Vec<(u32, i16, i16)>,
+    /// Permanents whose staying tapped keeps this one from untapping. Absent
+    /// from checkpoints that predate them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) held_tapped_by: Vec<u32>,
     pub(super) unblockable_this_turn: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) cannot_block_this_turn: bool,
@@ -329,10 +333,12 @@ pub(super) enum RetiredObjectSnapshot {
         card: DetachedCardSnapshot,
     },
     Stack {
-        object: DetachedStackSnapshot,
+        object: Box<DetachedStackSnapshot>,
     },
+    /// Boxed: a retired permanent carries far more than a retired card, and
+    /// the enum is stored in a vector of every retired object.
     Permanent {
-        permanent: DetachedPermanentSnapshot,
+        permanent: Box<DetachedPermanentSnapshot>,
         power: Option<i16>,
         toughness: Option<i16>,
         mana_value: u16,

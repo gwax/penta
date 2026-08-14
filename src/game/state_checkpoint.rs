@@ -197,7 +197,7 @@ impl Game {
                     mana_value,
                     keywords,
                 } => Some(RetiredObjectSnapshot::Permanent {
-                    permanent: detached_permanent_snapshot(&self.catalog, permanent),
+                    permanent: Box::new(detached_permanent_snapshot(&self.catalog, permanent)),
                     power: *power,
                     toughness: *toughness,
                     mana_value: *mana_value,
@@ -211,7 +211,7 @@ impl Game {
                     },
                 }),
                 RetiredObject::Stack(object) => Some(RetiredObjectSnapshot::Stack {
-                    object: detached_stack_snapshot(self, object)?,
+                    object: Box::new(detached_stack_snapshot(self, object)?),
                 }),
             })
             .collect::<Vec<_>>();

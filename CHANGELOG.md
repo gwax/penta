@@ -78,6 +78,11 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Holding a permanent down while the source stays tapped.** The same
+  deadline-free shape as the tapped-artifact stat bonus, applied to untapping:
+  the source is recorded and the question asked afresh at each untap step, so
+  the hold ends when the source untaps without anything being undone on the
+  permanent it held. Phyrexian Gremlins.
 - **A static bonus that counts, and then scales.** Static power/toughness
   could count matching objects but not multiply the count, so "+2/+2 for each
   Aura attached to it" had no form. The value walk now handles a scale over

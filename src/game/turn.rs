@@ -11,7 +11,12 @@ mod begin_turn;
 
 impl Game {
     fn skips_turn_based_untap(&self, permanent: &super::Permanent) -> bool {
-        permanent.skipped_untap_steps > 0 || self.does_not_untap_during_untap_step(permanent)
+        permanent.skipped_untap_steps > 0
+            || self.does_not_untap_during_untap_step(permanent)
+            || permanent
+                .held_tapped_by
+                .iter()
+                .any(|source| self.permanent_is_tapped(*source))
     }
 
     /// Spends one owed untap step for each of the active player's permanents.
@@ -522,6 +527,9 @@ impl Game {
             permanent
                 .while_source_tapped
                 .retain(|bonus| still_tapped.contains(&bonus.source));
+            permanent
+                .held_tapped_by
+                .retain(|source| still_tapped.contains(source));
         }
         for permanent in &mut self.battlefield {
             permanent.damage = 0;

@@ -493,6 +493,13 @@ pub enum EffectDef {
     Tap {
         object: EffectRecipientDef,
     },
+    /// The recipient does not untap during its controller's untap step for as
+    /// long as the effect's own source stays tapped. Unlike
+    /// [`Self::SkipNextUntapSteps`] nothing is spent: the source decides when
+    /// it ends by untapping.
+    DoesNotUntapWhileSourceTapped {
+        object: EffectRecipientDef,
+    },
     /// CR 506.4: the permanent stops attacking or blocking, and anything
     /// blocking it stops. An attacker removed this way was still blocked, so
     /// it deals no damage rather than getting through.
