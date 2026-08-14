@@ -272,16 +272,27 @@ impl Game {
     }
 
     /// Whether this permanent has the shared Aura attachment spell effect.
+    /// An Aura attaches as its own spell resolves, which is what separates it
+    /// from Equipment: both attach, but only one does so from a spell clause,
+    /// and only one goes to the graveyard when it comes loose.
     pub(super) fn is_aura_permanent(&self, permanent: &Permanent) -> bool {
         self.effective_rules(permanent).is_some_and(|rules| {
             rules.ability_clauses().iter().any(|ability| {
                 ability.is_executable()
+                    && matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
                     && ability
                         .declarative_effect()
                         .and_then(Self::immediate_attachment_target)
                         .is_some()
             })
         })
+    }
+
+    /// CR 301.5. Equipment attaches through its equip ability rather than as
+    /// it enters, and coming loose leaves it on the battlefield.
+    pub(super) fn is_equipment_permanent(&self, permanent: &Permanent) -> bool {
+        self.effective_rules(permanent)
+            .is_some_and(|rules| rules.subtypes().contains(&"Equipment"))
     }
 
     /// Finds the target an Aura attaches to as part of its spell procedure.

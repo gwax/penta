@@ -4248,8 +4248,32 @@ pub(in crate::card::sets) static WREATH_OF_GEISTS: CardRecord = CardRecord::new(
 // ISD 218 — Cellar Door
 // Audit: blocked — Needs moving the bottom library card and branching on that moved card's creature type.
 
+static COBBLED_WINGS_FLYING: AbilityDef = abilities::flying();
+
 // ISD 219 — Cobbled Wings
-// Audit: blocked — Needs the equip procedure and its sorcery-speed attachment activation.
+pub(in crate::card::sets) static COBBLED_WINGS: CardRecord = CardRecord::new(
+    cards::COBBLED_WINGS,
+    "Cobbled Wings",
+    CardArt::new("24abd762-e533-491a-97b6-aed40c214e9d", "Matt Stewart"),
+    CardSet::Innistrad,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has flying.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&COBBLED_WINGS_FLYING),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{1}"),
+                "Equip {1} ({1}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // ISD 220 — Creepy Doll
 // Audit: blocked — Needs a recorded coin flip after combat damage to a creature and a conditional destroy branch.
@@ -4852,6 +4876,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ULVENWALD_MYSTICS,
     &VILLAGERS_OF_ESTWALD,
     &WREATH_OF_GEISTS,
+    &COBBLED_WINGS,
     &GALVANIC_JUGGERNAUT,
     &GEISTCATCHERS_RIG,
     &GHOULCALLERS_BELL,

@@ -71,6 +71,16 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Equip**, and with it attachment as something an ability does rather than
+  only something an Aura spell does. `EffectDef::Attach` was a no-op because
+  an Aura attaches as it enters and nothing else needed it. Telling the two
+  apart is the substance: an Aura is now recognised by attaching from a *spell*
+  clause, and Equipment that loses its creature comes loose and stays on the
+  battlefield instead of dying. Cobbled Wings and Skyblinder Staff, with ten
+  more Equipment identities each blocked on one further thing.
+- **Two exalted identities with no engine change**, Knight of Glory and Knight
+  of Infamy. Their audit lines said exalted needed an attacks-alone event; it
+  has had one since exalted was implemented.
 - **Clauses that read a counter count.** Conditions could count objects, spells
   cast, loyalty, and activations, but not the counters on their own source, so
   "as long as there are exactly three tide counters on this creature" had no

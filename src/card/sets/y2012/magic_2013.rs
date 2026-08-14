@@ -404,7 +404,16 @@ pub(in crate::card::sets) static HEALER_OF_THE_PRIDE: CardRecord = CardRecord::n
 // Audit: blocked — Power predicates omit continuous static bonuses, so they cannot enforce the target's full current power.
 
 // M13 21 — Knight of Glory
-// Audit: blocked — Exalted needs an attacks-alone event and access to the lone attacking creature.
+pub(in crate::card::sets) static KNIGHT_OF_GLORY: CardRecord = CardRecord::new(
+    cards::KNIGHT_OF_GLORY,
+    "Knight of Glory",
+    CardArt::new("1646cb67-e0ac-4f2d-af21-618ff3613d69", "Peter Mohrbacher"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Knight"], 2, 1).with_abilities(&[
+        abilities::protection_from(ManaColor::Black),
+        abilities::exalted(),
+    ]),
+);
 
 // M13 22 — Oblivion Ring
 pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
@@ -1504,7 +1513,16 @@ pub(in crate::card::sets) static HARBOR_BANDIT: CardRecord = CardRecord::new(
 );
 
 // M13 96 — Knight of Infamy
-// Audit: blocked — Exalted needs an attacks-alone event and access to the lone attacking creature.
+pub(in crate::card::sets) static KNIGHT_OF_INFAMY: CardRecord = CardRecord::new(
+    cards::KNIGHT_OF_INFAMY,
+    "Knight of Infamy",
+    CardArt::new("9e339853-5b6b-47b7-8d88-e9d3befb803f", "Peter Mohrbacher"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Human", "Knight"], 2, 1).with_abilities(&[
+        abilities::protection_from(ManaColor::White),
+        abilities::exalted(),
+    ]),
+);
 
 // M13 97 — Liliana of the Dark Realms
 // Audit: blocked — Needs a choice between dynamic Swamp-count pump or shrink and an emblem that multiplies mana from Swamps.
@@ -3183,6 +3201,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GUARDIAN_LIONS,
     &GUARDIANS_OF_AKRASA,
     &HEALER_OF_THE_PRIDE,
+    &KNIGHT_OF_GLORY,
     &OBLIVION_RING,
     &PILLARFIELD_OX,
     &PLANAR_CLEANSING,
@@ -3226,6 +3245,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ESSENCE_DRAIN,
     &GIANT_SCORPION,
     &HARBOR_BANDIT,
+    &KNIGHT_OF_INFAMY,
     &LILIANAS_SHADE,
     &MARK_OF_THE_VAMPIRE,
     &MIND_ROT,

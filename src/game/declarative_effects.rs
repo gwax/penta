@@ -7,6 +7,7 @@ use super::{
     ZoneKind, ZoneMoveCause, public_cards,
 };
 
+mod permanent_state;
 mod prevention;
 
 impl Game {
@@ -151,77 +152,11 @@ impl Game {
                     }
                 }
             }
-            EffectDef::DestroyAtEndOfCombat { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    let Target::Permanent(id) = target else {
-                        continue;
-                    };
-                    if let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == id)
-                    {
-                        permanent.destroy_at_end_of_combat = true;
-                    }
-                }
-            }
-            EffectDef::RemoveAllCounters {
-                object: recipient,
-                kind,
-            } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    let Target::Permanent(id) = target else {
-                        continue;
-                    };
-                    if let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == id)
-                    {
-                        let held = permanent.counters(kind);
-                        permanent.remove_counters(kind, held);
-                    }
-                }
-            }
-            EffectDef::SkipNextUntapSteps {
-                object: recipient,
-                count,
-            } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    let Target::Permanent(id) = target else {
-                        continue;
-                    };
-                    if let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == id)
-                    {
-                        // Two of these stack rather than overwrite: a creature
-                        // told twice to sit out sits out twice.
-                        permanent.skipped_untap_steps =
-                            permanent.skipped_untap_steps.saturating_add(count);
-                    }
-                }
-            }
-            EffectDef::SetColor {
-                object: recipient,
-                color,
-            } => {
-                let colors = ColorSet::empty().with(color);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    let (Target::Permanent(id) | Target::Spell(id)) = target else {
-                        continue;
-                    };
-                    if let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == id)
-                    {
-                        permanent.color_override = Some(colors);
-                    } else if let Some(spell) = self.stack.iter_mut().find(|spell| spell.id == id) {
-                        spell.colors = Some(colors);
-                    }
-                }
+            EffectDef::DestroyAtEndOfCombat { .. }
+            | EffectDef::RemoveAllCounters { .. }
+            | EffectDef::SkipNextUntapSteps { .. }
+            | EffectDef::SetColor { .. } => {
+                self.resolve_permanent_state_effect(scoped, object, context);
             }
             EffectDef::AddPoisonCounters { recipient, amount } => {
                 let amount = self
@@ -973,8 +908,31 @@ impl Game {
             }
             // An Aura attaches as its spell becomes a permanent, which is
             // handled where the permanent enters rather than here.
-            EffectDef::Attach { .. }
-            | EffectDef::None
+            // An Aura attaches as its spell becomes a permanent, so its own
+            // clause has nothing left to do. Equip resolves this instead.
+            EffectDef::Attach { object: recipient } => {
+                let Some(source) = object.source else {
+                    return;
+                };
+                let host = self
+                    .effect_recipients(recipient, object, context, scoped)
+                    .into_iter()
+                    .find_map(|target| match target {
+                        Target::Permanent(id) => Some(id),
+                        _ => None,
+                    });
+                if host.is_none() {
+                    return;
+                }
+                if let Some(permanent) = self
+                    .battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == source)
+                {
+                    permanent.attached_to = host;
+                }
+            }
+            EffectDef::None
             | EffectDef::Replacement(_)
             | EffectDef::AddMana(AddManaEffectDef {
                 mana: ManaSelectionDef::Choice(_),

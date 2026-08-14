@@ -15,6 +15,7 @@ impl Game {
             return;
         }
         self.annihilate_opposing_counters();
+        self.unattach_illegal_equipment();
         loop {
             let battlefield_len = self.battlefield.len();
             let mut regenerate = Vec::new();
@@ -22,6 +23,8 @@ impl Game {
             for permanent in &self.battlefield {
                 // 704.5m: an Aura attached to nothing, or to something that is
                 // no longer a legal host, is put into its owner's graveyard.
+                // 704.5p does the milder thing for Equipment: it comes loose
+                // and stays where it is.
                 if self.is_aura_permanent(permanent)
                     && permanent
                         .attached_to
@@ -73,6 +76,33 @@ impl Game {
             }
         }
         self.capture_state_triggers();
+    }
+
+    /// CR 704.5p: Equipment attached to something that is no longer a
+    /// creature becomes unattached. Unlike an Aura it stays on the
+    /// battlefield, which is the whole difference between the two.
+    fn unattach_illegal_equipment(&mut self) {
+        let loose = self
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.attached_to.is_some_and(|host| {
+                    !self.battlefield.iter().any(|candidate| {
+                        candidate.card.id == host && self.power(candidate).is_some()
+                    })
+                }) && self.is_equipment_permanent(permanent)
+            })
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>();
+        for id in loose {
+            if let Some(permanent) = self
+                .battlefield
+                .iter_mut()
+                .find(|permanent| permanent.card.id == id)
+            {
+                permanent.attached_to = None;
+            }
+        }
     }
 
     /// CR 121.3: a permanent with both +1/+1 and -1/-1 counters loses an

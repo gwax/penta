@@ -3219,8 +3219,38 @@ pub(in crate::card::sets) static RAZORTIP_WHIP: CardRecord = CardRecord::new(
 // GTC 237 — Simic Keyrune
 // Audit: blocked — Animation cannot set the keyrune's green-blue colors while retaining its printed mana ability and exact subtype behavior.
 
+static SKYBLINDER_STAFF_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::Constant(1),
+        toughness: ValueDef::Constant(0),
+    },
+    AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::HasKeyword(KeywordAbility::Flying)),
+];
+
 // GTC 238 — Skyblinder Staff
-// Audit: blocked — Needs the equip procedure and static attachment bonuses.
+pub(in crate::card::sets) static SKYBLINDER_STAFF: CardRecord = CardRecord::new(
+    cards::SKYBLINDER_STAFF,
+    "Skyblinder Staff",
+    CardArt::new("d1602ee8-019d-4dde-8d31-042207017615", "Mark Winters"),
+    CardSet::Gatecrash,
+    CardRules::new_artifact(mana_cost!("{1}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/+0 and can't be blocked by creatures with flying.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&SKYBLINDER_STAFF_BONUS),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{3}"),
+                "Equip {3} ({3}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // GTC 239 — Boros Guildgate
 pub(in crate::card::sets) static BOROS_GUILDGATE: CardRecord = CardRecord::new(
@@ -3502,6 +3532,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SHATTERING_BLOW,
     &MILLENNIAL_GARGOYLE,
     &RAZORTIP_WHIP,
+    &SKYBLINDER_STAFF,
     &BOROS_GUILDGATE,
     &BREEDING_POOL,
     &DIMIR_GUILDGATE,

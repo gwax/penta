@@ -395,6 +395,7 @@ mod decisions_and_effects;
 mod delayed_triggers;
 mod detain;
 mod entry_replacements;
+mod equipment;
 mod evolve;
 mod exalted;
 mod exile_source_costs;

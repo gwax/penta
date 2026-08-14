@@ -5,12 +5,13 @@
 
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
-    ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AnimationDef, AppliedEffectDef,
-    BasicLandType, BattlefieldEntryModificationDef, CardType, CardTypeSet, ConditionDef, CostDef,
-    CounterKind, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
-    KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, ObjectQueryDef, PaymentDef,
-    PlayerRelation, ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef,
-    ScaledValueDef, ShieldCoverageDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef,
+    AnimationDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardType,
+    CardTypeSet, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, EffectDef,
+    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef,
+    ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementAbilityDef, ReplacementEffectDef,
+    ReplacementEventDef, ScaledValueDef, ShieldCoverageDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind,
 };
 use crate::ids::{ChoiceIndex, TargetIndex};
 
@@ -402,6 +403,32 @@ pub const fn bloodrush(
         effect,
     )
     .with_source_zones(&[ZoneKind::Hand])
+}
+
+/// The target an equip ability chooses: a creature its controller controls.
+static EQUIP_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+/// Equip. Attaching is what the ability does, and it is sorcery-speed, which
+/// is the whole difference between this and an Aura arriving from the stack.
+/// Reminder text carries the cost, so each card supplies its own literal.
+#[must_use]
+pub const fn equip(mana_cost: ManaCost, text: &'static str) -> AbilityDef {
+    AbilityDef::activated_with_cost_list_and_targets(
+        text,
+        AbilityCostList::one(AbilityCostDef::Mana(mana_cost)),
+        &EQUIP_TARGET,
+        EffectDef::Attach {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed)
 }
 
 /// Scavenge, whose printed cost is the card's own exile from its owner's
