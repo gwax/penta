@@ -1352,7 +1352,26 @@ pub(in crate::card::sets) static UNDEAD_MINOTAUR: CardRecord = CardRecord::new(
 );
 
 // M14 120 — Vampire Warlord
-// Audit: blocked — Regeneration shields and their destroy-event replacement procedure are not declarative.
+pub(in crate::card::sets) static VAMPIRE_WARLORD: CardRecord = CardRecord::new(
+    cards::VAMPIRE_WARLORD,
+    "Vampire Warlord",
+    CardArt::new("7e07929b-450c-45b0-85e6-512ad280a122", "Wesley Burt"),
+    CardSet::Magic2014,
+    CardRules::new_creature(mana_cost!("{4}{B}"), &["Vampire", "Warrior"], 4, 2).with_ability(
+        abilities::regenerate_self(
+            "Sacrifice another creature: Regenerate this creature.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ANOTHER_CREATURE,
+                controller: PlayerRelation::You,
+            }],
+        ),
+    ),
+);
+
+static ANOTHER_CREATURE: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
 
 // M14 122 — Wring Flesh
 pub(in crate::card::sets) static WRING_FLESH: CardRecord = CardRecord::new(
@@ -2375,7 +2394,38 @@ pub(in crate::card::sets) static SPOREMOUND: CardRecord = CardRecord::new(
 );
 
 // M14 197 — Trollhide
-// Audit: blocked — Regeneration shields and their destroy-event replacement procedure are not declarative.
+pub(in crate::card::sets) static TROLLHIDE: CardRecord = CardRecord::new(
+    cards::TROLLHIDE,
+    "Trollhide",
+    CardArt::new("08b9c400-dc8f-4fe6-a868-fdf0d247086a", "Steven Belledin"),
+    CardSet::Magic2014,
+    CardRules::new_enchantment(mana_cost!("{2}{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +2/+2 and has \"{1}{G}: Regenerate this creature.\"",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&TROLLHIDE_GRANT),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+        ]),
+);
+
+static TROLLHIDE_GRANT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::Constant(2),
+        toughness: ValueDef::Constant(2),
+    },
+    AppliedEffectDef::GrantAbility(&TROLLHIDE_REGENERATION),
+];
+
+static TROLLHIDE_REGENERATION: AbilityDef = abilities::regenerate_self(
+    "{1}{G}: Regenerate this creature.",
+    &[AbilityCostDef::Mana(mana_cost!("{1}{G}"))],
+);
 
 // M14 198 — Vastwood Hydra
 // Audit: blocked — Entry replacements cannot add chosen-X counters, and counter distribution cannot read the dead source's last-known counter count.
@@ -2823,6 +2873,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SHRIVEL,
     &SYPHON_SLIVER,
     &UNDEAD_MINOTAUR,
+    &VAMPIRE_WARLORD,
     &WRING_FLESH,
     &AWAKEN_THE_ANCIENT,
     &BARRAGE_OF_EXPENDABLES,
@@ -2860,6 +2911,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUMBLING_BALOTH,
     &SCAVENGING_OOZE,
     &SPOREMOUND,
+    &TROLLHIDE,
     &WINDSTORM,
     &DARKSTEEL_FORGE,
     &RATCHET_BOMB,

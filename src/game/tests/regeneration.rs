@@ -671,3 +671,112 @@ mod cannot_be_regenerated {
         }
     }
 }
+
+/// The Premodern half of the same sweep. Neither card needed engine work;
+/// what they add is a sacrifice cost that refuses the source itself, and a
+/// granted regeneration ability riding on an Aura.
+mod premodern {
+    use super::*;
+
+    #[test]
+    fn vampire_warlord_eats_another_creature_but_not_itself() {
+        let mut game = ready_game();
+        let warlord = creature(10_000, cards::VAMPIRE_WARLORD, PlayerId::One);
+        let warlord_id = warlord.card.id;
+        game.battlefield.push(warlord);
+        let fodder = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One);
+        let fodder_id = fodder.card.id;
+        game.battlefield.push(fodder);
+
+        assert!(
+            !game.legal_actions(PlayerId::One).iter().any(|action| {
+                matches!(
+                    action,
+                    Action::ActivateAbility { source, cost_object: Some(paid), .. }
+                        if *source == warlord_id && *paid == warlord_id
+                )
+            }),
+            "\"another creature\" excludes the Warlord itself"
+        );
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(
+                    action,
+                    Action::ActivateAbility { source, cost_object: Some(paid), .. }
+                        if *source == warlord_id && *paid == fodder_id
+                )
+            })
+            .expect("the other creature can pay");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == warlord_id)
+                .expect("still there")
+                .regeneration_shields,
+            1,
+        );
+    }
+
+    /// Trollhide grants its host an activated ability, so the shield is armed
+    /// by the creature rather than by the Aura.
+    #[test]
+    fn trollhide_grants_its_host_a_regeneration_ability() {
+        let mut game = ready_game();
+        let troll = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+        let troll_id = troll.card.id;
+        game.battlefield.push(troll);
+        let mut hide = creature(10_001, cards::TROLLHIDE, PlayerId::One);
+        hide.attached_to = Some(troll_id);
+        game.battlefield.push(hide);
+        game.players[PlayerId::One.index()].mana_pool.green = 1;
+        game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+
+        let host = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == troll_id)
+            .expect("the host is on the battlefield");
+        assert_eq!(game.power(host), Some(4), "a 2/1 wearing +2/+2");
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == troll_id)
+            })
+            .expect("the granted ability is offered on the creature");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(&mut game);
+
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == troll_id)
+                .expect("still there")
+                .regeneration_shields,
+            1,
+        );
+    }
+
+    #[test]
+    fn both_identities_report_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [cards::VAMPIRE_WARLORD, cards::TROLLHIDE] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
+    }
+}

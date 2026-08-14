@@ -60,6 +60,10 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Two Premodern regeneration cards**, with no engine change. Vampire Warlord
+  sacrifices another creature -- a cost that has to refuse the source itself --
+  and Trollhide grants its host the regeneration ability rather than carrying
+  it. Both patterns were already in use in Old School.
 - **Printed coin flips**, with no engine change. The seeded randomiser and its
   two branches have existed since Chaos Orb used them; a coin is that with an
   even chance. Orcish Captain and Bottle of Suleiman are now executable, along
