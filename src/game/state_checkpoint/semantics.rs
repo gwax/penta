@@ -518,6 +518,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
+        | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)

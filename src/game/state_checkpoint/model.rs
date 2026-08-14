@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+mod triggers;
+pub(in crate::game::state_checkpoint) use triggers::*;
+
 use super::model_keyword::KeywordSnapshot;
 
 use super::model_animation::{AnimationSnapshot, UpkeepKeywordSnapshot};
@@ -177,6 +180,10 @@ pub(super) struct PermanentSnapshot {
     pub(super) combat_damage_prevented: bool,
     pub(super) combat_damage_dealt_by_prevented: bool,
     pub(super) control_reverts_to: Option<usize>,
+    /// The permanent sustaining a duration-scoped control change, absent for
+    /// the turn-scoped form and for everything untouched.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) control_source: Option<u32>,
     pub(super) chosen_player: Option<usize>,
     pub(super) destroy_at_end: bool,
     pub(super) counters: Vec<u16>,
@@ -956,26 +963,6 @@ pub(super) enum ZoneMoveCauseSnapshot {
 pub(super) struct ReplacementEffectContextSnapshot {
     pub(super) source: AbilitySourceSnapshot,
     pub(super) controller: usize,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct PendingTriggerSnapshot {
-    pub(super) id: u32,
-    pub(super) source: AbilitySourceSnapshot,
-    pub(super) ability: AbilityLocator,
-    pub(super) definition: u16,
-    pub(super) owner: usize,
-    pub(super) controller: usize,
-    pub(super) targets: Vec<TargetSelectionSnapshot>,
-    pub(super) context: TriggerContextSnapshot,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct TriggerPlacementBatchSnapshot {
-    pub(super) controller: usize,
-    pub(super) triggers: Vec<PendingTriggerSnapshot>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

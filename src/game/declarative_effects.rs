@@ -701,38 +701,12 @@ impl Game {
                     self.return_exiled_card(card, zone, grant);
                 }
             }
+            EffectDef::GainControlWhileSourceRemains { object: recipient } => {
+                let source = object.source.unwrap_or(object.id);
+                self.take_control_of(recipient, object, context, scoped, Some(source));
+            }
             EffectDef::GainControlThisTurn { object: recipient } => {
-                let controller = object.controller;
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    let Target::Permanent(id) = target else {
-                        continue;
-                    };
-                    let Some(index) = self
-                        .battlefield
-                        .iter()
-                        .position(|permanent| permanent.card.id == id)
-                    else {
-                        continue;
-                    };
-                    if self.battlefield[index].controller == controller
-                        || self.cannot_change_controller(&self.battlefield[index])
-                    {
-                        continue;
-                    }
-                    let permanent = &mut self.battlefield[index];
-                    // Only the first change records where control came from,
-                    // so passing a permanent around and back still returns it
-                    // to whoever had it before the turn started.
-                    permanent
-                        .control_reverts_to
-                        .get_or_insert(permanent.controller);
-                    permanent.controller = controller;
-                    // It has not been under its new controller's control
-                    // since their turn began, so it is summoning sick unless
-                    // something grants haste. This is why the cards that
-                    // steal a creature almost always grant it too.
-                    permanent.entered_controller_turn = self.turns_started[controller.index()];
-                }
+                self.take_control_of(recipient, object, context, scoped, None);
             }
             EffectDef::MakeUnblockableThisTurn { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {

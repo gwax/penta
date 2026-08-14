@@ -208,6 +208,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Sacrifice { object }
         | EffectDef::ExileLinkedToSource { object }
         | EffectDef::MakeUnblockableThisTurn { object }
+        | EffectDef::GainControlWhileSourceRemains { object }
         | EffectDef::GainControlThisTurn { object }
         | EffectDef::AddCounters { object, .. }
         | EffectDef::Attach { object }

@@ -424,6 +424,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
+        | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }
         | EffectDef::AtNextStep { .. }
         | EffectDef::TriggerUntilYourNextTurn { .. }
@@ -675,6 +676,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ExileLinkedToSource { .. }
                     | EffectDef::ReturnLinkedExiles { .. }
                     | EffectDef::MakeUnblockableThisTurn { .. }
+                    | EffectDef::GainControlWhileSourceRemains { .. }
                     | EffectDef::GainControlThisTurn { .. }
                     | EffectDef::AtNextStep { .. }
                     | EffectDef::IfCondition { .. }

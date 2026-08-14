@@ -348,6 +348,7 @@ impl Game {
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::MakeUnblockableThisTurn { .. }
+            | EffectDef::GainControlWhileSourceRemains { .. }
             | EffectDef::GainControlThisTurn { .. }
             | EffectDef::AtNextStep { .. }
             | EffectDef::IfCondition { .. }

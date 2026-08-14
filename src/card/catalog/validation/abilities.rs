@@ -526,6 +526,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
+        | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)
@@ -681,6 +682,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
+        | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)

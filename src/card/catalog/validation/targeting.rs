@@ -219,6 +219,7 @@ fn validate_effect_references(
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ExileLinkedToSource { object }
         | EffectDef::MakeUnblockableThisTurn { object }
+        | EffectDef::GainControlWhileSourceRemains { object }
         | EffectDef::GainControlThisTurn { object }
         | EffectDef::Transform { object }
         | EffectDef::MoveToZone { object, .. }

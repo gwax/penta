@@ -530,7 +530,42 @@ pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “As an additional cost to cast this spell, exile a creature you control”.
 
 // FEM 44 — Thrull Champion
-// Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: Gain control of target Thrull for as long as you control this creature”.
+pub(in crate::card::sets) static THRULL_CHAMPION: CardRecord = CardRecord::new(
+    cards::THRULL_CHAMPION,
+    "Thrull Champion",
+    CardArt::new("4d3cafdd-a03b-4b08-b9c1-c776f8450d3a", "Daniel Gelon"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{4}{B}"), &["Thrull"], 2, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "Thrull creatures get +1/+1.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Subtype("Thrull"),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(1),
+                    toughness: ValueDef::Constant(1),
+                },
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{T}: Gain control of target Thrull for as long as you control this creature.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::Subtype("Thrull"),
+            )],
+            EffectDef::GainControlWhileSourceRemains {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
 
 // FEM 45 — Thrull Retainer
 pub(in crate::card::sets) static THRULL_RETAINER: CardRecord = CardRecord::new(
@@ -1256,6 +1291,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BREEDING_PIT,
     &HYMN_TO_TOURACH,
     &ORDER_OF_THE_EBON_HAND,
+    &THRULL_CHAMPION,
     &THRULL_RETAINER,
     &DWARVEN_LIEUTENANT,
     &GOBLIN_CHIRURGEON,

@@ -60,6 +60,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Control changes that outlive the turn.** The engine could only take control
+  until cleanup. `EffectDef::GainControlWhileSourceRemains` lasts as long as the
+  permanent holding it stays on the battlefield under the same controller, and
+  ends the moment either stops being true. Aladdin and Thrull Champion are now
+  executable. The holder is an additive checkpoint member.
 - **A `Blocking` object predicate**, the other half of "attacking or
   blocking", which neither single-sided predicate could express. Tetsuo
   Umezawa needs it and is now executable; People of the Woods joins the

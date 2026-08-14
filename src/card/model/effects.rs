@@ -714,6 +714,14 @@ pub enum EffectDef {
     },
     /// Gain control of a permanent for the rest of the turn. Control reverts
     /// in cleanup, so nothing needs to remember which effect took it.
+    /// Gain control of the recipient for as long as the ability's source
+    /// stays on the battlefield under the same controller. Unlike
+    /// [`Self::GainControlThisTurn`] this outlives the turn and ends when the
+    /// source does, which is the "for as long as you control this creature"
+    /// that several printed cards use.
+    GainControlWhileSourceRemains {
+        object: EffectRecipientDef,
+    },
     GainControlThisTurn {
         object: EffectRecipientDef,
     },

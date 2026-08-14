@@ -449,7 +449,28 @@ pub(in crate::card::sets) static STONE_THROWING_DEVILS: CardRecord = CardRecord:
 );
 
 // ARN 34 — Aladdin
-// Audit: blocked — Needs duration-aware control-changing continuous effects for “{1}{R}{R}, {T}: Gain control of target artifact for as long as you control this creature”.
+pub(in crate::card::sets) static ALADDIN: CardRecord = CardRecord::new(
+    cards::ALADDIN,
+    "Aladdin",
+    CardArt::new("db52bad2-a3ec-4f6f-9418-12e8c40703f6", "Julie Baroh"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Human", "Rogue"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{1}{R}{R}, {T}: Gain control of target artifact for as long as you control this \
+             creature.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}{R}{R}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+            )],
+            EffectDef::GainControlWhileSourceRemains {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ),
+);
 
 // ARN 35 — Ali Baba
 pub(in crate::card::sets) static ALI_BABA: CardRecord = CardRecord::new(
@@ -1064,6 +1085,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JUZAM_DJINN,
     &SORCERESS_QUEEN,
     &STONE_THROWING_DEVILS,
+    &ALADDIN,
     &ALI_BABA,
     &BIRD_MAIDEN,
     &KIRD_APE,

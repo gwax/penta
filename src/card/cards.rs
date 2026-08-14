@@ -4,6 +4,7 @@ use crate::CardDefinitionId;
 
 mod activation_timing;
 mod attack_restrictions;
+mod control_duration;
 mod counted_bodies;
 mod isd_rtr;
 mod landwalk;
@@ -20,6 +21,7 @@ mod tapped_and_untap;
 mod targeted_regeneration;
 pub use activation_timing::*;
 pub use attack_restrictions::*;
+pub use control_duration::*;
 pub use counted_bodies::*;
 pub use isd_rtr::*;
 pub use landwalk::*;

@@ -272,6 +272,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::MakeUnblockableThisTurn { .. }
+        | EffectDef::GainControlWhileSourceRemains { .. }
         | EffectDef::GainControlThisTurn { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::PlayersCantPlay(_)

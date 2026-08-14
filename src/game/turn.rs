@@ -424,7 +424,11 @@ impl Game {
             permanent
                 .temporary_removed_abilities
                 .retain(|removal| removal.expiration != AbilityEffectExpiration::EndOfTurn);
-            if let Some(owner) = permanent.control_reverts_to.take() {
+            // A control change held by a permanent outlives the turn; only
+            // the turn-scoped form is ended here.
+            if permanent.control_source.is_none()
+                && let Some(owner) = permanent.control_reverts_to.take()
+            {
                 permanent.controller = owner;
             }
             permanent.unblockable_this_turn = false;

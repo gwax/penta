@@ -6,6 +6,7 @@ use super::{
 impl Game {
     pub(super) fn check_state_based_actions(&mut self) {
         self.close_stale_miracle_window();
+        self.end_expired_control_changes();
         if self.check_player_loss_conditions() {
             return;
         }
@@ -183,6 +184,38 @@ impl Game {
             self.move_permanents_to_graveyard(&[extra]);
             if !self.pending_decisions.is_empty() || !self.pending_events.is_empty() {
                 return;
+            }
+        }
+    }
+    /// "For as long as you control this creature" ends when that stops being
+    /// true: the holder leaving the battlefield, or passing to someone else,
+    /// both return the stolen permanent to whoever had it before.
+    fn end_expired_control_changes(&mut self) {
+        let expired = self
+            .battlefield
+            .iter()
+            .filter_map(|permanent| {
+                let holder = permanent.control_source?;
+                let held = self
+                    .battlefield
+                    .iter()
+                    .find(|candidate| candidate.card.id == holder)
+                    .is_some_and(|candidate| candidate.controller == permanent.controller);
+                (!held).then_some(permanent.card.id)
+            })
+            .collect::<Vec<_>>();
+        for id in expired {
+            let Some(permanent) = self
+                .battlefield
+                .iter_mut()
+                .find(|permanent| permanent.card.id == id)
+            else {
+                continue;
+            };
+            permanent.control_source = None;
+            if let Some(owner) = permanent.control_reverts_to.take() {
+                permanent.controller = owner;
+                permanent.entered_controller_turn = self.turns_started[owner.index()];
             }
         }
     }

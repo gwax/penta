@@ -53,6 +53,7 @@ mod combat;
 mod combat_state;
 mod continuous_effects;
 mod continuous_state;
+mod control_changes;
 mod creature_characteristics;
 mod damage;
 mod decision;
@@ -221,6 +222,10 @@ struct Permanent {
     /// Who controls this permanent again once the turn ends, set while a
     /// control-changing effect holds it. Cleanup restores it.
     control_reverts_to: Option<PlayerId>,
+    /// The permanent whose continued presence is holding this one's control
+    /// change. When it leaves the battlefield or changes hands, control goes
+    /// back to `control_reverts_to`.
+    control_source: Option<GameObjectId>,
     /// Whether this attacker was blocked. A blocked creature stays blocked
     /// even if every blocker leaves, so this cannot be recomputed from the
     /// blockers still on the battlefield.
@@ -323,6 +328,7 @@ impl Permanent {
             combat_damage_prevented: false,
             combat_damage_dealt_by_prevented: false,
             control_reverts_to: None,
+            control_source: None,
             blocked: false,
             blocking: None,
             chosen_player: None,
