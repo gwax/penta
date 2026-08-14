@@ -48,3 +48,4 @@ pub const SCARECROW: CardDefinitionId = CardDefinitionId(1673);
 pub const AL_ABARAS_CARPET: CardDefinitionId = CardDefinitionId(1674);
 pub const SUBDUE: CardDefinitionId = CardDefinitionId(1675);
 pub const KRY_SHIELD: CardDefinitionId = CardDefinitionId(1676);
+pub const MEEKSTONE: CardDefinitionId = CardDefinitionId(1677);

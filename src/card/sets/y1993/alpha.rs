@@ -4291,7 +4291,29 @@ pub(in crate::card::sets) static MANA_VAULT: CardRecord = CardRecord::new(
 );
 
 // LEA 260 — Meekstone
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Creatures with power 3 or greater don't untap during their controllers' untap steps”.
+pub(in crate::card::sets) static MEEKSTONE: CardRecord = CardRecord::new(
+    cards::MEEKSTONE,
+    "Meekstone",
+    CardArt::new("13a68a17-22ee-47c9-870a-83e911862b94", "Quinton Hoover"),
+    CardSet::Alpha,
+    CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::static_ability(
+        "Creatures with power 3 or greater don't untap during their controllers' untap steps.",
+        EffectDef::Apply {
+            // Read live, so a creature pumped past two stays tapped and one
+            // shrunk below three untaps as usual.
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::PowerAtLeast(3),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::Any,
+            },
+            effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )),
+);
 
 // LEA 261 — Mox Emerald
 pub(in crate::card::sets) static MOX_EMERALD: CardRecord = CardRecord::new(
@@ -4886,6 +4908,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KORMUS_BELL,
     &LIVING_WALL,
     &MANA_VAULT,
+    &MEEKSTONE,
     &MOX_EMERALD,
     &MOX_JET,
     &MOX_PEARL,

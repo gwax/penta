@@ -415,6 +415,7 @@ mod landwalk;
 mod mana_ability_costs;
 mod mana_and_costs;
 mod mana_vault;
+mod meekstone;
 mod modal_effects;
 mod morbid;
 mod old_school_interactions;

@@ -78,6 +78,10 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Meekstone.** Its prohibition is aimed by a live power reading rather than
+  a list frozen when the artifact entered, so a creature pumped past two stays
+  tapped and one shrunk below three untaps as usual. Every piece was already
+  built; the audit line had gone stale.
 - **Preventing every kind of damage one creature would deal.** The
   turn-scoped by-direction prevention covered combat damage only, so a card
   that stops a creature's damage outright had no form. Kry Shield silences an
