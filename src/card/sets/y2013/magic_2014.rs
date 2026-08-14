@@ -3095,6 +3095,7 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&alpha::GIANT_GROWTH),           // M14 174
     PrintingRecord::reprint(&alpha::GIANT_SPIDER),           // M14 175
     PrintingRecord::reprint(&onslaught::NATURALIZE),         // M14 186
+    PrintingRecord::reprint(&magic_2013::PLUMMET),           // M14 188
     PrintingRecord::reprint(&innistrad::RANGERS_GUILE),      // M14 191
     PrintingRecord::reprint(&darksteel::DARKSTEEL_INGOT),    // M14 207
     PrintingRecord::reprint(&antiquities::MILLSTONE),        // M14 213

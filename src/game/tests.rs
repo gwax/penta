@@ -440,6 +440,7 @@ mod spore;
 mod stale_followups;
 mod stat_counters;
 mod state_triggers_and_life;
+mod static_keyword_predicates;
 mod targeted_answers;
 mod targeting_characteristics;
 mod triggers_and_stack;

@@ -670,7 +670,30 @@ pub(in crate::card::sets) static DREADWATERS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional hexproof grant to both paired creatures.
 
 // AVR 51 — Favorable Winds
-// Audit: blocked — The flying predicate used by static effects ignores flying granted or removed by other static continuous effects.
+pub(in crate::card::sets) static FAVORABLE_WINDS: CardRecord = CardRecord::new(
+    cards::FAVORABLE_WINDS,
+    "Favorable Winds",
+    CardArt::new("4cbd57f1-9883-40a4-9b52-1649cee83815", "Winona Nelson"),
+    CardSet::AvacynRestored,
+    CardRules::new_enchantment(mana_cost!("{1}{U}")).with_ability(AbilityDef::static_ability(
+        "Creatures you control with flying get +1/+1.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::You,
+            },
+            effect: AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(1),
+                toughness: ValueDef::Constant(1),
+            },
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )),
+);
 
 // AVR 52 — Fettergeist
 // Audit: blocked — Needs an unless-payment whose mana amount is the dynamic count of other creatures you control.
@@ -2133,7 +2156,43 @@ pub(in crate::card::sets) static SCALDING_DEVIL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs identity links from the three created tokens to the delayed sacrifice so it does not sacrifice unrelated Human tokens.
 
 // AVR 159 — Thunderbolt
-// Audit: blocked — The flying target predicate does not see flying granted or removed by static continuous effects.
+pub(in crate::card::sets) static THUNDERBOLT: CardRecord = CardRecord::new(
+    cards::THUNDERBOLT,
+    "Thunderbolt",
+    CardArt::new("5845a5bc-6b7d-4bbb-80b3-a0f877b95553", "Anthony Francisco"),
+    CardSet::AvacynRestored,
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(AbilityDef::modal_spell(
+        "Choose one —\n• Thunderbolt deals 3 damage to target player or planeswalker.\n• Thunderbolt deals 4 damage to target creature with flying.",
+        &[
+            AbilityDef::spell_with_targets(
+                "Thunderbolt deals 3 damage to target player or planeswalker",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
+                )],
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(3),
+                },
+            ),
+            AbilityDef::spell_with_targets(
+                "Thunderbolt deals 4 damage to target creature with flying",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                    ]),
+                )],
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(4),
+                },
+            ),
+        ],
+        1,
+        1,
+        false,
+    )),
+);
 
 // AVR 160 — Thunderous Wrath
 pub(in crate::card::sets) static THUNDEROUS_WRATH: CardRecord = CardRecord::new(
@@ -2351,7 +2410,26 @@ pub(in crate::card::sets) static BORDERLAND_RANGER: CardRecord = CardRecord::new
 );
 
 // AVR 170 — Bower Passage
-// Audit: blocked — The blocker flying predicate ignores flying granted or removed by static continuous effects.
+pub(in crate::card::sets) static BOWER_PASSAGE: CardRecord = CardRecord::new(
+    cards::BOWER_PASSAGE,
+    "Bower Passage",
+    CardArt::new("b9f0048f-aaa0-4597-b898-ee754d0bbe4b", "Cliff Childs"),
+    CardSet::AvacynRestored,
+    CardRules::new_enchantment(mana_cost!("{1}{G}")).with_ability(AbilityDef::static_ability(
+        "Creatures with flying can't block creatures you control.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::You,
+            },
+            effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::HasKeyword(
+                KeywordAbility::Flying,
+            )),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )),
+);
 
 // AVR 171 — Champion of Lambholt
 // Audit: blocked — Needs a blocking predicate that dynamically compares each prospective blocker's power with this creature's current power.
@@ -2482,9 +2560,7 @@ pub(in crate::card::sets) static GROUNDED: CardRecord = CardRecord::new(
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::RemoveAbilities(
-                        crate::card::AbilityPredicateDef::Keyword(
-                            crate::card::KeywordAbility::Flying,
-                        ),
+                        crate::card::AbilityPredicateDef::Keyword(KeywordAbility::Flying),
                     ),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
@@ -3169,6 +3245,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ZEALOUS_STRIKE,
     &ALCHEMISTS_APPRENTICE,
     &DREADWATERS,
+    &FAVORABLE_WINDS,
     &FLEETING_DISTRACTION,
     &GEIST_SNATCH,
     &GHOSTFORM,
@@ -3221,12 +3298,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RIOT_RINGLEADER,
     &RUSH_OF_BLOOD,
     &SCALDING_DEVIL,
+    &THUNDERBOLT,
     &THUNDEROUS_WRATH,
     &UNCANNY_SPEED,
     &VIGILANTE_JUSTICE,
     &ZEALOUS_CONSCRIPTS,
     &ABUNDANT_GROWTH,
     &BORDERLAND_RANGER,
+    &BOWER_PASSAGE,
     &CRATERHOOF_BEHEMOTH,
     &DRUIDS_REPOSITORY,
     &GLOOMWIDOW,

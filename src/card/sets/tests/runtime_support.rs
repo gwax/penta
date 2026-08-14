@@ -556,8 +556,20 @@ pub(super) fn shared_static_applied_effect(
             !land_types.is_empty()
         }
         AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
-        AppliedEffectDef::CannotBeBlockedBy(predicate)
-        | AppliedEffectDef::CanBlockOnly(predicate)
+        // A blocking restriction is read off the ordinary static-effect walk
+        // over the attacker, so a group recipient works exactly as a
+        // self-applied one does: Bower Passage names every creature you
+        // control rather than only itself. The other two keep the narrower
+        // list because no card applies them to a group.
+        AppliedEffectDef::CannotBeBlockedBy(predicate) => {
+            matches!(
+                recipient,
+                EffectRecipientDef::Source
+                    | EffectRecipientDef::AttachedPermanent
+                    | EffectRecipientDef::MatchingObjects { .. }
+            ) && shared_object_predicate(predicate)
+        }
+        AppliedEffectDef::CanBlockOnly(predicate)
         | AppliedEffectDef::PreventDamageFrom(predicate) => {
             matches!(
                 recipient,

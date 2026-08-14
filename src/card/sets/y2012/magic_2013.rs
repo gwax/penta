@@ -2184,7 +2184,33 @@ pub(in crate::card::sets) static KRENKOS_COMMAND: CardRecord = CardRecord::new(
 );
 
 // M13 140 — Magmaquake
-// Audit: blocked — Flying predicates omit continuous static grants, so the creature sweep cannot use full current characteristics.
+pub(in crate::card::sets) static MAGMAQUAKE: CardRecord = CardRecord::new(
+    cards::MAGMAQUAKE,
+    "Magmaquake",
+    CardArt::new("ac85679e-17c7-4525-8eed-979d04feb8f1", "Gabor Szikszai"),
+    CardSet::Magic2013,
+    CardRules::new_instant(mana_cost!("{X}{R}{R}")).with_ability(AbilityDef::spell(
+        "Magmaquake deals X damage to each creature without flying and each planeswalker.",
+        // One sweep rather than two, so a permanent that is both a nonflying
+        // creature and a planeswalker is dealt X once.
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasKeyword(
+                            KeywordAbility::Flying,
+                        )),
+                    ]),
+                    ObjectPredicateDef::HasType(CardType::Planeswalker),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::Any,
+            },
+            amount: ValueDef::ChosenX,
+        },
+    )),
+);
 
 // M13 141 — Mark of Mutiny
 pub(in crate::card::sets) static MARK_OF_MUTINY: CardRecord = CardRecord::new(
@@ -2662,10 +2688,63 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
 // Audit: blocked — No static effect prohibits targeting cards in graveyards.
 
 // M13 177 — Mwonvuli Beast Tracker
-// Audit: blocked — Keyword predicates omit continuous static grants, so the search cannot test full current abilities.
+pub(in crate::card::sets) static MWONVULI_BEAST_TRACKER: CardRecord = CardRecord::new(
+    cards::MWONVULI_BEAST_TRACKER,
+    "Mwonvuli Beast Tracker",
+    CardArt::new("0034d32c-cc82-48d7-a913-d58cc3d3afeb", "Zoltan Boros"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Human", "Scout"], 2, 1).with_ability(
+        AbilityDef::triggered(
+            "When this creature enters, search your library for a creature card with deathtouch, hexproof, reach, or trample, reveal it, then shuffle your library and put that card on top of it.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Deathtouch),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Hexproof),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Reach),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Trample),
+                    ]),
+                ]),
+                minimum: 1,
+                maximum: 1,
+                reveal: true,
+                destination: ZoneKind::Library,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: false,
+            },
+        ),
+    ),
+);
 
 // M13 179 — Plummet
-// Audit: blocked — Flying predicates omit continuous static grants, so target legality cannot use full current characteristics.
+pub(in crate::card::sets) static PLUMMET: CardRecord = CardRecord::new(
+    cards::PLUMMET,
+    "Plummet",
+    CardArt::new("a96d7d96-5a86-45ef-a30b-b11ece22f060", "Pete Venters"),
+    CardSet::Magic2013,
+    CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target creature with flying.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+            ]),
+        )],
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+        },
+    )),
+);
 
 // M13 180 — Predatory Rampage
 // Audit: blocked — No turn-long effect requires creatures to block if able.
@@ -2747,7 +2826,30 @@ pub(in crate::card::sets) static SERPENTS_GIFT: CardRecord = CardRecord::new(
 );
 
 // M13 191 — Silklash Spider
-// Audit: blocked — Flying predicates omit continuous static grants, so the X-damage sweep cannot use full current characteristics.
+pub(in crate::card::sets) static SILKLASH_SPIDER: CardRecord = CardRecord::new(
+    cards::SILKLASH_SPIDER,
+    "Silklash Spider",
+    CardArt::new("359d1bb9-dbfd-4094-bda0-9a19817ce4bc", "Iain McCaig"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Spider"], 2, 7).with_abilities(&[
+        abilities::reach(),
+        AbilityDef::activated(
+            "{X}{G}{G}: This creature deals X damage to each creature with flying.",
+            &[AbilityCostDef::Mana(mana_cost!("{X}{G}{G}"))],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                amount: ValueDef::ChosenX,
+            },
+        ),
+    ]),
+);
 
 // M13 192 — Spiked Baloth
 pub(in crate::card::sets) static SPIKED_BALOTH: CardRecord = CardRecord::new(
@@ -3305,6 +3407,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KINDLED_FURY,
     &KRENKO_MOB_BOSS,
     &KRENKOS_COMMAND,
+    &MAGMAQUAKE,
     &MARK_OF_MUTINY,
     &RECKLESS_BRUTE,
     &RUMMAGING_GOBLIN,
@@ -3324,10 +3427,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DUSKDALE_WURM,
     &ELVISH_VISIONARY,
     &FLINTHOOF_BOAR,
+    &MWONVULI_BEAST_TRACKER,
+    &PLUMMET,
     &PRIMAL_HUNTBEAST,
     &REVIVE,
     &SENTINEL_SPIDER,
     &SERPENTS_GIFT,
+    &SILKLASH_SPIDER,
     &SPIKED_BALOTH,
     &THRAGTUSK,
     &TIMBERPACK_WOLF,

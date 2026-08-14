@@ -414,6 +414,19 @@ distinguishes snapshots of the covered source and build inputs.
   recipients from the layer below itself, so it cannot see a keyword another
   static ability hands out. That is the CR 613.8 dependency case, and it needs
   the fixed-point evaluator rather than a deeper recursion.
+- **The ten identities that stratification left implementable.** Every one of
+  them asks "does this creature have flying?" from a place that used to answer
+  from printed abilities alone, and none needed anything else. Favorable Winds
+  and Smog Elemental are static power and toughness effects keyed on the
+  keyword; Bower Passage and Spire Tracer are blocking restrictions; Plummet,
+  Thunderbolt, and Clan Defiance are target predicates; Magmaquake and Silklash
+  Spider are damage sweeps; Mwonvuli Beast Tracker searches a library by four
+  keywords at once. Bower Passage is the one that widened anything: a blocking
+  restriction is read off the ordinary static-effect walk over the attacker, so
+  a group recipient always worked, and only the declaration boundary had to
+  admit it. Clan Defiance is the second "choose one or more" card, and
+  Thunderbolt the second modal spell at all. The audit lines all named this one
+  gap and are gone.
 
 - **A tapped object predicate**, which was the whole of Royal Assassin's gap.
   Island Fish Jasconius joins it from the same sweep with no engine change:

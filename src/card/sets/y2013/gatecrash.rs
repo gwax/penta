@@ -1151,7 +1151,33 @@ pub(in crate::card::sets) static SHADOW_ALLEY_DENIZEN: CardRecord = CardRecord::
 // Audit: blocked — There is no trigger event for a creature becoming blocked or a captured defending player.
 
 // GTC 79 — Smog Elemental
-// Audit: blocked — A continuous HasKeyword(Flying) recipient predicate ignores abilities granted by other static effects.
+pub(in crate::card::sets) static SMOG_ELEMENTAL: CardRecord = CardRecord::new(
+    cards::SMOG_ELEMENTAL,
+    "Smog Elemental",
+    CardArt::new("667871d3-0d1b-496b-afbd-7504989798e4", "Yeong-Hao Han"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{4}{B}{B}"), &["Elemental"], 3, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "Creatures with flying your opponents control get -1/-1.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Opponent,
+                },
+                effect: AppliedEffectDef::ModifyPowerToughness {
+                    power: ValueDef::Constant(-1),
+                    toughness: ValueDef::Constant(-1),
+                },
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // GTC 80 — Syndicate Enforcer
 pub(in crate::card::sets) static SYNDICATE_ENFORCER: CardRecord = CardRecord::new(
@@ -1951,7 +1977,30 @@ pub(in crate::card::sets) static SLAUGHTERHORN: CardRecord = CardRecord::new(
 );
 
 // GTC 135 — Spire Tracer
-// Audit: blocked — A HasKeyword(Flying or Reach) blocking predicate ignores abilities supplied by continuous static effects.
+pub(in crate::card::sets) static SPIRE_TRACER: CardRecord = CardRecord::new(
+    cards::SPIRE_TRACER,
+    "Spire Tracer",
+    CardArt::new(
+        "428b0d43-94c9-4f7f-b042-ea63f88ac697",
+        "Christopher Moeller",
+    ),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Scout"], 1, 1).with_ability(
+        AbilityDef::static_ability(
+            "This creature can't be blocked except by creatures with flying or reach.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
+                    &ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Reach),
+                    ]),
+                )),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ),
+);
 
 // GTC 136 — Sylvan Primordial
 // Audit: blocked — Needs a successful-destruction continuation that searches for a Forest, puts it onto the battlefield tapped, and repeats per opponent.
@@ -2230,7 +2279,58 @@ pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
 // Audit: blocked — Protection needs a resolving color choice, not a fixed color known in the declaration.
 
 // GTC 151 — Clan Defiance
-// Audit: blocked — Its flying and nonflying target predicates ignore abilities supplied by continuous static effects.
+pub(in crate::card::sets) static CLAN_DEFIANCE: CardRecord = CardRecord::new(
+    cards::CLAN_DEFIANCE,
+    "Clan Defiance",
+    CardArt::new("efa05298-9c94-4179-b75a-49ee2ca92920", "Daarken"),
+    CardSet::Gatecrash,
+    CardRules::new_sorcery(mana_cost!("{X}{R}{G}")).with_ability(AbilityDef::modal_spell(
+        "Choose one or more —\n• Clan Defiance deals X damage to target creature with flying.\n• Clan Defiance deals X damage to target creature without flying.\n• Clan Defiance deals X damage to target player or planeswalker.",
+        &[
+            AbilityDef::spell_with_targets(
+                "Clan Defiance deals X damage to target creature with flying",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                    ]),
+                )],
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::ChosenX,
+                },
+            ),
+            AbilityDef::spell_with_targets(
+                "Clan Defiance deals X damage to target creature without flying",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasKeyword(
+                            KeywordAbility::Flying,
+                        )),
+                    ]),
+                )],
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::ChosenX,
+                },
+            ),
+            AbilityDef::spell_with_targets(
+                "Clan Defiance deals X damage to target player or planeswalker",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
+                )],
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::ChosenX,
+                },
+            ),
+        ],
+        1,
+        3,
+        false,
+    )),
+);
 
 // GTC 152 — Consuming Aberration
 // Audit: blocked — Its cast trigger needs every opponent to reveal through a land and move each revealed group to a graveyard.
@@ -3637,6 +3737,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HORROR_OF_THE_DIM,
     &SEPULCHRAL_PRIMORDIAL,
     &SHADOW_ALLEY_DENIZEN,
+    &SMOG_ELEMENTAL,
     &SYNDICATE_ENFORCER,
     &WIGHT_OF_PRECINCT_SIX,
     &ACT_OF_TREASON,
@@ -3666,6 +3767,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCAB_CLAN_CHARGER,
     &SKARRG_GOLIATH,
     &SLAUGHTERHORN,
+    &SPIRE_TRACER,
     &TOWER_DEFENSE,
     &WASTELAND_VIPER,
     &WILDWOOD_REBIRTH,
@@ -3674,6 +3776,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AURELIAS_FURY,
     &BIOVISIONARY,
     &BOROS_CHARM,
+    &CLAN_DEFIANCE,
     &DINROVA_HORROR,
     &DOMRI_RADE,
     &DRAKEWING_KRASIS,
