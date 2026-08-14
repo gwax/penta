@@ -32,7 +32,10 @@ fn snapcaster_grants_an_ordinary_card_cost_flashback_ability() {
     let snapcaster = catalog.get(cards::SNAPCASTER_MAGE).unwrap();
     let trigger = snapcaster.rules.ability(AbilityId(1)).unwrap();
     let EffectDef::Apply {
-        effect: AppliedEffectDef::GrantAbility(granted),
+        effect:
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Add(granted),
+            )),
         duration: EffectDurationDef::UntilEndOfTurn,
         ..
     } = trigger.effect.definition
@@ -603,11 +606,15 @@ fn ghor_clan_rampager_uses_one_shared_bloodrush_effect() {
     assert!(matches!(
         components,
         [
-            AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(4),
-                toughness: ValueDef::Constant(4),
-            },
-            AppliedEffectDef::GrantAbility(ability),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::Modify {
+                    power: ValueDef::Constant(4),
+                    toughness: ValueDef::Constant(4),
+                },
+            )),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Add(ability),
+            )),
         ] if ability.definition == DeclarativeAbilityDef::Keyword(KeywordAbility::Trample)
     ));
 }

@@ -31,7 +31,7 @@ pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::GrantAbility(&SAFEKEEPER_SHROUD),
+                effect: AppliedEffectDef::add_ability(&SAFEKEEPER_SHROUD),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),

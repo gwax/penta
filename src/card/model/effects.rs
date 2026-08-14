@@ -12,9 +12,9 @@ use crate::Format;
 use crate::ids::{CardDefinitionId, ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
 use super::{
-    AbilityDef, AddManaEffectDef, BasicLandType, CardType, CardTypeSet, ColorSet, CostDef,
-    CounterKind, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation,
-    TriggerConditionDef, ZoneKind, ZonePlacement,
+    AbilityDef, AddManaEffectDef, BasicLandType, CardTypeSet, ColorSet, CostDef, CounterKind,
+    KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation, TriggerConditionDef,
+    ZoneKind, ZonePlacement,
 };
 
 /// An object reference evaluated in the resolving effect's context.
@@ -250,12 +250,81 @@ pub enum EffectDurationDef {
     WhileSourceTapped,
 }
 
+/// An add, remove, or set operation over one set-valued characteristic.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum SetOperationDef<T> {
+    Add(T),
+    Remove(T),
+    Set(T),
+}
+
+/// Creature subtypes named by one layer-4 operation.
+///
+/// `all` remains semantic rather than expanding to the engine's current list,
+/// so a permanent with all creature types also matches types added later.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct CreatureTypeSetDef {
+    pub named: &'static [&'static str],
+    pub all: bool,
+}
+
+impl CreatureTypeSetDef {
+    #[must_use]
+    pub const fn named(named: &'static [&'static str]) -> Self {
+        Self { named, all: false }
+    }
+
+    pub const ALL: Self = Self {
+        named: &[],
+        all: true,
+    };
+}
+
+/// One layer-6 operation over the affected object's abilities.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AbilityOperationDef {
+    Add(&'static AbilityDef),
+    Remove(AbilityPredicateDef),
+}
+
+/// One layer-7 operation over power and toughness.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PowerToughnessOperationDef {
+    /// Set base power and toughness in layer 7b.
+    SetBase {
+        power: ValueDef,
+        toughness: ValueDef,
+    },
+    /// Modify power and toughness in layer 7c.
+    Modify {
+        power: ValueDef,
+        toughness: ValueDef,
+    },
+}
+
+/// A typed continuous-effect leaf applied in its characteristic's rules
+/// layer. Compound transformations use [`AppliedEffectDef::Composite`] so
+/// each leaf keeps its own Add, Remove, or Set semantics.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum CharacteristicOperationDef {
+    Abilities(AbilityOperationDef),
+    /// Basic land-subtype operations in layer 4. `Set` additionally has the
+    /// rules consequences of CR 305.7; `Add` and `Remove` do not.
+    BasicLandTypes(SetOperationDef<&'static [BasicLandType]>),
+    CardTypes(SetOperationDef<CardTypeSet>),
+    Colors(SetOperationDef<ColorSet>),
+    CreatureTypes(SetOperationDef<CreatureTypeSetDef>),
+    PowerToughness(PowerToughnessOperationDef),
+}
+
 /// A continuous or rules-modifying effect applied to a game object.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AppliedEffectDef {
     /// Components applied to the same recipient for the same duration as one
     /// continuous effect.
     Composite(&'static [AppliedEffectDef]),
+    /// One typed operation in the characteristic layer named by the leaf.
+    Characteristic(CharacteristicOperationDef),
     CannotBeCountered,
     /// The affected permanent's controller may choose to leave it tapped
     /// during their untap step. Unlike
@@ -319,29 +388,80 @@ pub enum AppliedEffectDef {
     /// that names combat means combat: a burn spell from the same source
     /// still lands.
     PreventCombatDamageFrom(ObjectPredicateDef),
-    /// Adds land subtypes without removing the object's existing subtypes.
-    AddLandTypes(&'static [BasicLandType]),
-    /// Sets the object's land subtypes, removing its existing land subtypes and
-    /// abilities supplied by its rules text or copiable values under CR 305.7.
-    /// Independently granted abilities are not part of that removal.
-    SetLandTypes(&'static [BasicLandType]),
-    ModifyPowerToughness {
-        power: ValueDef,
-        toughness: ValueDef,
-    },
-    /// Give the affected object an ordinary ability. The granted definition
-    /// carries its own keyword, activation, or alternative-casting procedure.
-    GrantAbility(&'static AbilityDef),
-    /// Remove each ability matching the predicate. Unlike
-    /// [`Self::SetLandTypes`], this is an ordinary ability-layer operation and
-    /// can remove intrinsic or independently granted abilities.
-    RemoveAbilities(AbilityPredicateDef),
-    /// Turn the affected permanent into a creature. This is what a manland's
-    /// activated ability does, and it keeps the permanent's other types.
-    Animate(&'static AnimationDef),
     Special(&'static str),
 }
 
+impl AppliedEffectDef {
+    #[must_use]
+    pub const fn add_ability(ability: &'static AbilityDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        ))
+    }
+
+    #[must_use]
+    pub const fn remove_abilities(predicate: AbilityPredicateDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Remove(predicate),
+        ))
+    }
+
+    #[must_use]
+    pub const fn add_basic_land_types(types: &'static [BasicLandType]) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::BasicLandTypes(
+            SetOperationDef::Add(types),
+        ))
+    }
+
+    #[must_use]
+    pub const fn set_basic_land_types(types: &'static [BasicLandType]) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::BasicLandTypes(
+            SetOperationDef::Set(types),
+        ))
+    }
+
+    #[must_use]
+    pub const fn add_card_types(types: CardTypeSet) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Add(
+            types,
+        )))
+    }
+
+    #[must_use]
+    pub const fn add_creature_types(types: CreatureTypeSetDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::CreatureTypes(
+            SetOperationDef::Add(types),
+        ))
+    }
+
+    #[must_use]
+    pub const fn set_creature_types(types: CreatureTypeSetDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::CreatureTypes(
+            SetOperationDef::Set(types),
+        ))
+    }
+
+    #[must_use]
+    pub const fn set_colors(colors: ColorSet) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::Colors(SetOperationDef::Set(
+            colors,
+        )))
+    }
+
+    #[must_use]
+    pub const fn set_base_power_toughness(power: ValueDef, toughness: ValueDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::SetBase { power, toughness },
+        ))
+    }
+
+    #[must_use]
+    pub const fn modify_power_toughness(power: ValueDef, toughness: ValueDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::Modify { power, toughness },
+        ))
+    }
+}
 /// A reusable selector for ability-removing continuous effects.
 ///
 /// `Any` supports ordinary "loses all abilities" effects. The keyword form is
@@ -352,84 +472,6 @@ pub enum AbilityPredicateDef {
     Any,
     Keyword(KeywordAbility),
 }
-
-/// The creature a permanent becomes while an animation effect is active. A
-/// manland stays a land, so these types and subtypes are added rather than
-/// replacing what is printed.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct AnimationDef {
-    pub power: i16,
-    pub toughness: i16,
-    /// Added on top of the printed types. `Creature` belongs here; a card
-    /// that becomes an artifact creature names both.
-    pub types: CardTypeSet,
-    pub subtypes: &'static [&'static str],
-    /// "With all creature types", which no fixed subtype list can express
-    /// because changelings must keep matching types printed later.
-    pub all_creature_types: bool,
-    /// Whether the printed subtypes are replaced rather than added to, for
-    /// "becomes a Weird" as opposed to "becomes an Assembly-Worker as well".
-    pub replaces_subtypes: bool,
-    /// Whether the permanent loses its printed abilities.
-    pub loses_abilities: bool,
-    /// The colours the permanent becomes, when the animation repaints it.
-    pub colors: Option<ColorSet>,
-}
-
-impl AnimationDef {
-    #[must_use]
-    pub const fn new(power: i16, toughness: i16) -> Self {
-        Self {
-            power,
-            toughness,
-            types: CardTypeSet::single(CardType::Creature),
-            subtypes: &[],
-            all_creature_types: false,
-            replaces_subtypes: false,
-            loses_abilities: false,
-            colors: None,
-        }
-    }
-
-    /// "Loses all abilities and becomes a ..." — the printed subtypes,
-    /// abilities, and colours all give way to what the effect names.
-    #[must_use]
-    pub const fn becoming(mut self, subtypes: &'static [&'static str], colors: ColorSet) -> Self {
-        self.subtypes = subtypes;
-        self.replaces_subtypes = true;
-        self.loses_abilities = true;
-        self.colors = Some(colors);
-        self
-    }
-
-    #[must_use]
-    pub const fn with_types(mut self, types: CardTypeSet) -> Self {
-        self.types = types;
-        self
-    }
-
-    #[must_use]
-    pub const fn with_subtypes(mut self, subtypes: &'static [&'static str]) -> Self {
-        self.subtypes = subtypes;
-        self
-    }
-
-    #[must_use]
-    pub const fn with_all_creature_types(mut self) -> Self {
-        self.all_creature_types = true;
-        self
-    }
-
-    /// Repaints the permanent without otherwise disturbing it, for "all
-    /// Swamps are 1/1 black creatures that are still lands": the colour
-    /// changes, the printed subtypes and abilities do not.
-    #[must_use]
-    pub const fn with_colors(mut self, colors: ColorSet) -> Self {
-        self.colors = Some(colors);
-        self
-    }
-}
-
 /// An event that a replacement ability can modify before it is committed.
 ///
 /// Replacement events deliberately have their own vocabulary rather than

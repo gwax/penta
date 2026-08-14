@@ -48,7 +48,7 @@ pub(in crate::card::sets) static NYLEAS_PRESENCE: CardRecord = CardRecord::new(
                 "Enchanted land is every basic land type in addition to its other types.",
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::AddLandTypes(&BasicLandType::ALL),
+                    effect: AppliedEffectDef::add_basic_land_types(&BasicLandType::ALL),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),

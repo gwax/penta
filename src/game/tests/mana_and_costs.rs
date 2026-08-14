@@ -726,10 +726,15 @@ fn an_animated_untapped_mishras_factory_can_block() {
     let mut attacker = creature(10_000, cards::GOBLINS_OF_THE_FLARG, PlayerId::One);
     attacker.attacking = true;
     let attacker_id = attacker.card.id;
-    let mut factory = creature(10_001, cards::MISHRA_S_FACTORY, PlayerId::Two);
-    factory.animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
+    let factory = creature(10_001, cards::MISHRA_S_FACTORY, PlayerId::Two);
     let factory_id = factory.card.id;
     game.battlefield = vec![attacker, factory];
+    attach_constant_resolved_characteristics(
+        &mut game,
+        factory_id,
+        &TEST_MISHRAS_FACTORY_CHARACTERISTICS,
+        ContinuousEffectExpiration::EndOfTurn,
+    );
     game.active_player = PlayerId::One;
     game.step = Step::DeclareBlockers;
     game.blockers_declared = false;

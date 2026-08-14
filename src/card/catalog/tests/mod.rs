@@ -145,7 +145,7 @@ fn definition_granting(granted: &'static AbilityDef) -> CardDefinition {
             "This object grants an ability.",
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(granted),
+                effect: AppliedEffectDef::add_ability(granted),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )]

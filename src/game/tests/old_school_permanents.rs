@@ -548,7 +548,15 @@ fn pendelhaven_only_pumps_something_that_is_still_a_one_one_when_it_resolves() {
     // A 1/1 and a 2/1: only the first is a legal target.
     game.battlefield
         .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
-    game.battlefield[1].power_bonus = -1;
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_001),
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(-1),
+            ValueDef::Constant(0),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
     game.battlefield
         .push(creature(10_002, cards::SAVANNAH_LIONS, PlayerId::One));
 
@@ -577,7 +585,15 @@ fn pendelhaven_only_pumps_something_that_is_still_a_one_one_when_it_resolves() {
     // The ability is on the stack. Growing the target before it resolves
     // makes the target illegal, and the whole ability does nothing.
     assert_eq!(game.stack.len(), 1, "it waits on the stack");
-    game.battlefield[1].power_bonus += 1;
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_001),
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(1),
+            ValueDef::Constant(0),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
     drain_pending(&mut game);
 
     let lions = game
@@ -599,7 +615,15 @@ fn pendelhaven_pumps_a_one_one_that_stays_one() {
         .push(creature(10_000, cards::PENDELHAVEN, PlayerId::One));
     game.battlefield
         .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
-    game.battlefield[1].power_bonus = -1;
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_001),
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(-1),
+            ValueDef::Constant(0),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
 
     game.apply(
         PlayerId::One,

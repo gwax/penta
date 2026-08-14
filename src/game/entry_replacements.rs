@@ -1,10 +1,10 @@
 use super::{
-    AbilityDef, AbilitySourceRef, ApplicableReplacement, AppliedEffectDef, BasicLandType,
-    BattlefieldEntryModificationDef, BattlefieldEntryReplacementEffect, CardTypeSet,
-    CommittedTriggerEvent, ConditionDef, ControlFlow, CostDef, DecisionContinuation,
-    DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
-    EffectDef, EffectDurationDef, EffectRecipientDef, EntryCompletion, Game, GameEvent,
-    GameObjectId, ObjectPredicateDef, PaymentDef, PendingBattlefieldEntry, PendingEvent,
+    AbilityDef, AbilityOperationDef, AbilitySourceRef, ApplicableReplacement, AppliedEffectDef,
+    BasicLandType, BattlefieldEntryModificationDef, BattlefieldEntryReplacementEffect, CardTypeSet,
+    CharacteristicOperationDef, CommittedTriggerEvent, ConditionDef, ControlFlow, CostDef,
+    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
+    DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef, EntryCompletion, Game,
+    GameEvent, GameObjectId, ObjectPredicateDef, PaymentDef, PendingBattlefieldEntry, PendingEvent,
     PendingReplacementEffect, Permanent, PlayerId, PlayerRelation, ReplaceableEvent,
     ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef,
     Target, TriggerContext, ZoneKind,
@@ -570,11 +570,14 @@ impl Game {
                         (source || found.0, external || found.1)
                     })
             }
-            AppliedEffectDef::GrantAbility(ability) => (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Add(ability),
+            )) => (
                 Self::is_source_entry_replacement(ability),
                 Self::is_external_entry_replacement(ability),
             ),
-            AppliedEffectDef::CannotBeCountered
+            AppliedEffectDef::Characteristic(_)
+            | AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::DoesNotUntapDuringUntapStep
             | AppliedEffectDef::MayChooseNotToUntap
             | AppliedEffectDef::CannotBlock
@@ -591,11 +594,6 @@ impl Game {
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
             | AppliedEffectDef::PreventCombatDamage
             | AppliedEffectDef::PreventCombatDamageDealtBy
-            | AppliedEffectDef::AddLandTypes(_)
-            | AppliedEffectDef::SetLandTypes(_)
-            | AppliedEffectDef::RemoveAbilities(_)
-            | AppliedEffectDef::Animate(_)
-            | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::Special(_) => (false, false),
         }
     }

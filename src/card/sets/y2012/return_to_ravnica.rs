@@ -4,8 +4,8 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::sets::{y1993::alpha, y2012::magic_2013};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AnimationDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef, CounterKind,
+    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
+    CardType, CardTypeSet, ColorSet, ComparisonDef, CounterKind, CreatureTypeSetDef,
     DiscardSelectionDef, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef, PlayerRelation, ReplacementEventDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
@@ -193,10 +193,7 @@ pub(in crate::card::sets) static BAZAAR_KROVOD: CardRecord = CardRecord::new(
             EffectDef::Sequence(&[
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(0),
-                        toughness: ValueDef::Constant(2),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(0), ValueDef::Constant(2)),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Untap {
@@ -314,11 +311,11 @@ pub(in crate::card::sets) static KNIGHTLY_VALOR: CardRecord = CardRecord::new(
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::ModifyPowerToughness {
-                            power: ValueDef::Constant(2),
-                            toughness: ValueDef::Constant(2),
-                        },
-                        AppliedEffectDef::GrantAbility(&abilities::vigilance()),
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(2),
+                            ValueDef::Constant(2),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::vigilance()),
                     ]),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
@@ -431,7 +428,7 @@ static ROOTBORN_DEFENSES_EFFECTS: [EffectDef; 2] = [
             &[ZoneKind::Battlefield],
             PlayerRelation::You,
         ),
-        effect: AppliedEffectDef::GrantAbility(&ROOTBORN_INDESTRUCTIBLE),
+        effect: AppliedEffectDef::add_ability(&ROOTBORN_INDESTRUCTIBLE),
         duration: EffectDurationDef::UntilEndOfTurn,
     },
 ];
@@ -526,12 +523,12 @@ pub(in crate::card::sets) static SWIFT_JUSTICE: CardRecord = CardRecord::new(
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             effect: AppliedEffectDef::Composite(&[
-                AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
-                AppliedEffectDef::GrantAbility(&abilities::first_strike()),
-                AppliedEffectDef::GrantAbility(&abilities::lifelink()),
+                AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                AppliedEffectDef::add_ability(&abilities::first_strike()),
+                AppliedEffectDef::add_ability(&abilities::lifelink()),
             ]),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
@@ -597,10 +594,10 @@ pub(in crate::card::sets) static AQUUS_STEED: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(-2),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-2),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -786,10 +783,10 @@ pub(in crate::card::sets) static DOWNSIZE: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(-4),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-4),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -802,10 +799,10 @@ pub(in crate::card::sets) static DOWNSIZE: CardRecord = CardRecord::new(
                     &[ZoneKind::Battlefield],
                     PlayerRelation::NotYou,
                 ),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(-4),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-4),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -913,10 +910,10 @@ static JACE_ATTACK_TAX: AbilityDef = AbilityDef::triggered(
     ])),
     EffectDef::Apply {
         recipient: EffectRecipientDef::TriggeringObject,
-        effect: AppliedEffectDef::ModifyPowerToughness {
-            power: ValueDef::Constant(-1),
-            toughness: ValueDef::Constant(0),
-        },
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(-1),
+            ValueDef::Constant(0),
+        ),
         duration: EffectDurationDef::UntilEndOfTurn,
     },
 );
@@ -971,11 +968,8 @@ pub(in crate::card::sets) static JACE_ARCHITECT_OF_THOUGHT: CardRecord = CardRec
 );
 
 static MIZZIUM_SKIN_EFFECT: AppliedEffectDef = AppliedEffectDef::Composite(&[
-    AppliedEffectDef::ModifyPowerToughness {
-        power: ValueDef::Constant(0),
-        toughness: ValueDef::Constant(1),
-    },
-    AppliedEffectDef::GrantAbility(&abilities::hexproof()),
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(0), ValueDef::Constant(1)),
+    AppliedEffectDef::add_ability(&abilities::hexproof()),
 ]);
 
 // RTR 45 — Mizzium Skin
@@ -1169,10 +1163,10 @@ pub(in crate::card::sets) static TOWER_DRAKE: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{W}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(0),
-                    toughness: ValueDef::Constant(1),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(1),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1359,7 +1353,7 @@ static DEVIANT_GLEE_TRAMPLE: AbilityDef = AbilityDef::activated(
     &[AbilityCostDef::Mana(mana_cost!("{R}"))],
     EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
+        effect: AppliedEffectDef::add_ability(&abilities::trample()),
         duration: EffectDurationDef::UntilEndOfTurn,
     },
 );
@@ -1387,11 +1381,8 @@ pub(in crate::card::sets) static DEVIANT_GLEE: CardRecord = CardRecord::new(
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::ModifyPowerToughness {
-                            power: ValueDef::Constant(2),
-                            toughness: ValueDef::Constant(1),
-                        },
-                        AppliedEffectDef::GrantAbility(&DEVIANT_GLEE_TRAMPLE),
+                        AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(1)),
+                        AppliedEffectDef::add_ability(&DEVIANT_GLEE_TRAMPLE),
                     ]),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
@@ -1503,10 +1494,10 @@ pub(in crate::card::sets) static PERILOUS_SHADOW: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{1}{B}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(2),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1656,7 +1647,7 @@ pub(in crate::card::sets) static UNDERWORLD_CONNECTIONS: CardRecord = CardRecord
                 "Enchanted land has \"{T}, Pay 1 life: Draw a card.\"",
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&UNDERWORLD_CONNECTIONS_DRAW),
+                    effect: AppliedEffectDef::add_ability(&UNDERWORLD_CONNECTIONS_DRAW),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
@@ -1731,10 +1722,10 @@ pub(in crate::card::sets) static BELLOWS_LIZARD: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{1}{R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1764,7 +1755,7 @@ static CHAOS_IMPS_TRAMPLE_GRANT: AbilityDef = abilities::trample();
 
 static CHAOS_IMPS_TRAMPLE: EffectDef = EffectDef::Apply {
     recipient: EffectRecipientDef::Source,
-    effect: AppliedEffectDef::GrantAbility(&CHAOS_IMPS_TRAMPLE_GRANT),
+    effect: AppliedEffectDef::add_ability(&CHAOS_IMPS_TRAMPLE_GRANT),
     duration: EffectDurationDef::WhileSourceRemainsInZone,
 };
 
@@ -1819,10 +1810,10 @@ pub(in crate::card::sets) static DYNACHARGE: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1835,10 +1826,10 @@ pub(in crate::card::sets) static DYNACHARGE: CardRecord = CardRecord::new(
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -2041,7 +2032,7 @@ static PURSUIT_OF_FLIGHT_FLYING: AbilityDef = AbilityDef::activated(
     &[AbilityCostDef::Mana(mana_cost!("{U}"))],
     EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::GrantAbility(&abilities::flying()),
+        effect: AppliedEffectDef::add_ability(&abilities::flying()),
         duration: EffectDurationDef::UntilEndOfTurn,
     },
 );
@@ -2069,11 +2060,8 @@ pub(in crate::card::sets) static PURSUIT_OF_FLIGHT: CardRecord = CardRecord::new
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::ModifyPowerToughness {
-                            power: ValueDef::Constant(2),
-                            toughness: ValueDef::Constant(2),
-                        },
-                        AppliedEffectDef::GrantAbility(&PURSUIT_OF_FLIGHT_FLYING),
+                        AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+                        AppliedEffectDef::add_ability(&PURSUIT_OF_FLIGHT_FLYING),
                     ]),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
@@ -2112,7 +2100,7 @@ static RACECOURSE_FURY_HASTE: AbilityDef = AbilityDef::activated_with_targets(
     )],
     EffectDef::Apply {
         recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        effect: AppliedEffectDef::GrantAbility(&abilities::haste()),
+        effect: AppliedEffectDef::add_ability(&abilities::haste()),
         duration: EffectDurationDef::UntilEndOfTurn,
     },
 );
@@ -2139,7 +2127,7 @@ pub(in crate::card::sets) static RACECOURSE_FURY: CardRecord = CardRecord::new(
                 "Enchanted land has \"{T}: Target creature gains haste until end of turn.\"",
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&RACECOURSE_FURY_HASTE),
+                    effect: AppliedEffectDef::add_ability(&RACECOURSE_FURY_HASTE),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
@@ -2222,11 +2210,8 @@ pub(in crate::card::sets) static TRAITOROUS_INSTINCT: CardRecord = CardRecord::n
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::ModifyPowerToughness {
-                            power: ValueDef::Constant(2),
-                            toughness: ValueDef::Constant(0),
-                        },
-                        AppliedEffectDef::GrantAbility(&abilities::haste()),
+                        AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(0)),
+                        AppliedEffectDef::add_ability(&abilities::haste()),
                     ]),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
@@ -2418,11 +2403,8 @@ pub(in crate::card::sets) static CHORUS_OF_MIGHT: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::Composite(&[
-                    AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::CountMatchingObjects(&CHORUS_OF_MIGHT_CREATURES),
-                        toughness: ValueDef::CountMatchingObjects(&CHORUS_OF_MIGHT_CREATURES),
-                    },
-                    AppliedEffectDef::GrantAbility(&abilities::trample()),
+                    AppliedEffectDef::modify_power_toughness(ValueDef::CountMatchingObjects(&CHORUS_OF_MIGHT_CREATURES), ValueDef::CountMatchingObjects(&CHORUS_OF_MIGHT_CREATURES)),
+                    AppliedEffectDef::add_ability(&abilities::trample()),
                 ]),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
@@ -2604,10 +2586,10 @@ pub(in crate::card::sets) static SAVAGE_SURGE: CardRecord = CardRecord::new(
         EffectDef::Sequence(&[
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(2),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
             EffectDef::Untap {
@@ -2661,7 +2643,7 @@ pub(in crate::card::sets) static STONEFARE_CROCODILE: CardRecord = CardRecord::n
             &[AbilityCostDef::Mana(mana_cost!("{2}{B}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&abilities::lifelink()),
+                effect: AppliedEffectDef::add_ability(&abilities::lifelink()),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -2786,10 +2768,10 @@ pub(in crate::card::sets) static AUGER_SPREE: CardRecord = CardRecord::new(
         )],
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(4),
-                toughness: ValueDef::Constant(-4),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(4),
+                ValueDef::Constant(-4),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )),
@@ -2808,7 +2790,7 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
                 "Creatures you control gain lifelink until end of turn",
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
-                    effect: AppliedEffectDef::GrantAbility(&abilities::lifelink()),
+                    effect: AppliedEffectDef::add_ability(&abilities::lifelink()),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
             ),
@@ -2911,11 +2893,8 @@ pub(in crate::card::sets) static CHEMISTERS_TRICK: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::Composite(&[
-                    AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(-2),
-                        toughness: ValueDef::Constant(0),
-                    },
-                    AppliedEffectDef::GrantAbility(&CHEMISTERS_TRICK_ATTACK),
+                    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(-2), ValueDef::Constant(0)),
+                    AppliedEffectDef::add_ability(&CHEMISTERS_TRICK_ATTACK),
                 ]),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
@@ -2926,11 +2905,8 @@ pub(in crate::card::sets) static CHEMISTERS_TRICK: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::NotYou),
                 effect: AppliedEffectDef::Composite(&[
-                    AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(-2),
-                        toughness: ValueDef::Constant(0),
-                    },
-                    AppliedEffectDef::GrantAbility(&CHEMISTERS_TRICK_ATTACK),
+                    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(-2), ValueDef::Constant(0)),
+                    AppliedEffectDef::add_ability(&CHEMISTERS_TRICK_ATTACK),
                 ]),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
@@ -2953,10 +2929,10 @@ pub(in crate::card::sets) static COLLECTIVE_BLESSING: CardRecord = CardRecord::n
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(3),
-                    toughness: ValueDef::Constant(3),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(3),
+                    ValueDef::Constant(3),
+                ),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
@@ -3231,10 +3207,7 @@ pub(in crate::card::sets) static GOLGARI_CHARM: CardRecord = CardRecord::new(
                 "All creatures get -1/-1 until end of turn",
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Any),
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(-1),
-                        toughness: ValueDef::Constant(-1),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(-1), ValueDef::Constant(-1)),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
             ),
@@ -3513,7 +3486,7 @@ pub(in crate::card::sets) static NEW_PRAHV_GUILDMAGE: CardRecord = CardRecord::n
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::GrantAbility(&NEW_PRAHV_FLYING),
+                effect: AppliedEffectDef::add_ability(&NEW_PRAHV_FLYING),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -3669,11 +3642,8 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
             )], EffectDef::Apply {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::ModifyPowerToughness {
-                            power: ValueDef::Constant(2),
-                            toughness: ValueDef::Constant(2),
-                        },
-                        AppliedEffectDef::GrantAbility(&abilities::trample()),
+                        AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+                        AppliedEffectDef::add_ability(&abilities::trample()),
                     ]),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 }),
@@ -3848,10 +3818,7 @@ pub(in crate::card::sets) static TELEPORTAL: CardRecord = CardRecord::new(
             EffectDef::Sequence(&[
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(1),
-                        toughness: ValueDef::Constant(0),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::MakeUnblockableThisTurn {
@@ -3865,10 +3832,7 @@ pub(in crate::card::sets) static TELEPORTAL: CardRecord = CardRecord::new(
             EffectDef::Sequence(&[
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(1),
-                        toughness: ValueDef::Constant(0),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::MakeUnblockableThisTurn {
@@ -3980,7 +3944,7 @@ static VRASKA_ABILITIES: [AbilityDef; 3] = [
         &[AbilityCostDef::Loyalty(1)],
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::GrantAbility(&VRASKA_RETALIATION),
+            effect: AppliedEffectDef::add_ability(&VRASKA_RETALIATION),
             duration: EffectDurationDef::UntilYourNextTurn,
         },
     ),
@@ -4048,10 +4012,7 @@ pub(in crate::card::sets) static BLISTERCOIL_WEIRD: CardRecord = CardRecord::new
             EffectDef::Sequence(&[
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(1),
-                        toughness: ValueDef::Constant(1),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Untap {
@@ -4152,10 +4113,10 @@ pub(in crate::card::sets) static FROSTBURN_WEIRD: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{U/R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(-1),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(-1),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -4266,16 +4227,31 @@ pub(in crate::card::sets) static VASSAL_SOUL: CardRecord = keyword_creature(
     abilities::flying(),
 );
 
-static AZORIUS_KEYRUNE_ANIMATION: AnimationDef = AnimationDef {
-    power: 2,
-    toughness: 2,
-    types: CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
-    subtypes: &["Bird"],
-    all_creature_types: false,
-    replaces_subtypes: true,
-    loses_abilities: false,
-    colors: Some(ColorSet::from_colors(&[ManaColor::White, ManaColor::Blue])),
-};
+const fn keyrune_animation(
+    power: i32,
+    toughness: i32,
+    creature_types: &'static [&'static str],
+    colors: ColorSet,
+) -> [AppliedEffectDef; 4] {
+    [
+        AppliedEffectDef::add_card_types(
+            CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
+        ),
+        AppliedEffectDef::set_creature_types(CreatureTypeSetDef::named(creature_types)),
+        AppliedEffectDef::set_colors(colors),
+        AppliedEffectDef::set_base_power_toughness(
+            ValueDef::Constant(power),
+            ValueDef::Constant(toughness),
+        ),
+    ]
+}
+
+static AZORIUS_KEYRUNE_ANIMATION: [AppliedEffectDef; 4] = keyrune_animation(
+    2,
+    2,
+    &["Bird"],
+    ColorSet::from_colors(&[ManaColor::White, ManaColor::Blue]),
+);
 
 // RTR 225 — Azorius Keyrune
 pub(in crate::card::sets) static AZORIUS_KEYRUNE: CardRecord = CardRecord::new(
@@ -4298,8 +4274,8 @@ pub(in crate::card::sets) static AZORIUS_KEYRUNE: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::Composite(&[
-                    AppliedEffectDef::Animate(&AZORIUS_KEYRUNE_ANIMATION),
-                    AppliedEffectDef::GrantAbility(&abilities::flying()),
+                    AppliedEffectDef::Composite(&AZORIUS_KEYRUNE_ANIMATION),
+                    AppliedEffectDef::add_ability(&abilities::flying()),
                 ]),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
@@ -4334,7 +4310,7 @@ pub(in crate::card::sets) static CHROMATIC_LANTERN: CardRecord = CardRecord::new
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
-                effect: AppliedEffectDef::GrantAbility(&CHROMATIC_LANTERN_MANA),
+                effect: AppliedEffectDef::add_ability(&CHROMATIC_LANTERN_MANA),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
@@ -4388,16 +4364,12 @@ pub(in crate::card::sets) static CODEX_SHREDDER: CardRecord = CardRecord::new(
     ]),
 );
 
-static GOLGARI_KEYRUNE_ANIMATION: AnimationDef = AnimationDef {
-    power: 2,
-    toughness: 2,
-    types: CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
-    subtypes: &["Insect"],
-    all_creature_types: false,
-    replaces_subtypes: true,
-    loses_abilities: false,
-    colors: Some(ColorSet::from_colors(&[ManaColor::Black, ManaColor::Green])),
-};
+static GOLGARI_KEYRUNE_ANIMATION: [AppliedEffectDef; 4] = keyrune_animation(
+    2,
+    2,
+    &["Insect"],
+    ColorSet::from_colors(&[ManaColor::Black, ManaColor::Green]),
+);
 
 // RTR 229 — Golgari Keyrune
 pub(in crate::card::sets) static GOLGARI_KEYRUNE: CardRecord = CardRecord::new(
@@ -4420,8 +4392,8 @@ pub(in crate::card::sets) static GOLGARI_KEYRUNE: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::Composite(&[
-                    AppliedEffectDef::Animate(&GOLGARI_KEYRUNE_ANIMATION),
-                    AppliedEffectDef::GrantAbility(&abilities::deathtouch()),
+                    AppliedEffectDef::Composite(&GOLGARI_KEYRUNE_ANIMATION),
+                    AppliedEffectDef::add_ability(&abilities::deathtouch()),
                 ]),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
@@ -4452,16 +4424,12 @@ static IZZET_KEYRUNE_COMBAT: AbilityDef = AbilityDef::triggered(
     },
 );
 
-static IZZET_KEYRUNE_ANIMATION: AnimationDef = AnimationDef {
-    power: 2,
-    toughness: 1,
-    types: CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
-    subtypes: &["Elemental"],
-    all_creature_types: false,
-    replaces_subtypes: true,
-    loses_abilities: false,
-    colors: Some(ColorSet::from_colors(&[ManaColor::Blue, ManaColor::Red])),
-};
+static IZZET_KEYRUNE_ANIMATION: [AppliedEffectDef; 4] = keyrune_animation(
+    2,
+    1,
+    &["Elemental"],
+    ColorSet::from_colors(&[ManaColor::Blue, ManaColor::Red]),
+);
 
 // RTR 230 — Izzet Keyrune
 pub(in crate::card::sets) static IZZET_KEYRUNE: CardRecord = CardRecord::new(
@@ -4483,7 +4451,7 @@ pub(in crate::card::sets) static IZZET_KEYRUNE: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{U}{R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::Animate(&IZZET_KEYRUNE_ANIMATION),
+                effect: AppliedEffectDef::Composite(&IZZET_KEYRUNE_ANIMATION),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -4516,16 +4484,12 @@ pub(in crate::card::sets) static PITHING_NEEDLE: CardRecord = CardRecord::new(
     ]),
 );
 
-static RAKDOS_KEYRUNE_ANIMATION: AnimationDef = AnimationDef {
-    power: 3,
-    toughness: 1,
-    types: CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
-    subtypes: &["Devil"],
-    all_creature_types: false,
-    replaces_subtypes: true,
-    loses_abilities: false,
-    colors: Some(ColorSet::from_colors(&[ManaColor::Black, ManaColor::Red])),
-};
+static RAKDOS_KEYRUNE_ANIMATION: [AppliedEffectDef; 4] = keyrune_animation(
+    3,
+    1,
+    &["Devil"],
+    ColorSet::from_colors(&[ManaColor::Black, ManaColor::Red]),
+);
 
 // RTR 232 — Rakdos Keyrune
 pub(in crate::card::sets) static RAKDOS_KEYRUNE: CardRecord = CardRecord::new(
@@ -4548,8 +4512,8 @@ pub(in crate::card::sets) static RAKDOS_KEYRUNE: CardRecord = CardRecord::new(
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::Composite(&[
-                    AppliedEffectDef::Animate(&RAKDOS_KEYRUNE_ANIMATION),
-                    AppliedEffectDef::GrantAbility(&abilities::first_strike()),
+                    AppliedEffectDef::Composite(&RAKDOS_KEYRUNE_ANIMATION),
+                    AppliedEffectDef::add_ability(&abilities::first_strike()),
                 ]),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
@@ -4557,16 +4521,12 @@ pub(in crate::card::sets) static RAKDOS_KEYRUNE: CardRecord = CardRecord::new(
     ]),
 );
 
-static SELESNYA_KEYRUNE_ANIMATION: AnimationDef = AnimationDef {
-    power: 3,
-    toughness: 3,
-    types: CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
-    subtypes: &["Wolf"],
-    all_creature_types: false,
-    replaces_subtypes: true,
-    loses_abilities: false,
-    colors: Some(ColorSet::from_colors(&[ManaColor::Green, ManaColor::White])),
-};
+static SELESNYA_KEYRUNE_ANIMATION: [AppliedEffectDef; 4] = keyrune_animation(
+    3,
+    3,
+    &["Wolf"],
+    ColorSet::from_colors(&[ManaColor::Green, ManaColor::White]),
+);
 
 // RTR 233 — Selesnya Keyrune
 pub(in crate::card::sets) static SELESNYA_KEYRUNE: CardRecord = CardRecord::new(
@@ -4588,7 +4548,7 @@ pub(in crate::card::sets) static SELESNYA_KEYRUNE: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{G}{W}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::Animate(&SELESNYA_KEYRUNE_ANIMATION),
+                effect: AppliedEffectDef::Composite(&SELESNYA_KEYRUNE_ANIMATION),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),

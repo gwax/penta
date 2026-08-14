@@ -1,8 +1,9 @@
 use crate::card::catalog::GrantedAbilityValidationError;
 use crate::card::{
-    AbilityTargetDef, AppliedEffectDef, ConditionDef, EffectDef, EffectRecipientDef,
-    EffectRecipientSetDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ReplacementEffectDef, TriggerConditionDef, ValueDef,
+    AbilityTargetDef, AppliedEffectDef, CharacteristicOperationDef, ConditionDef, EffectDef,
+    EffectRecipientDef, EffectRecipientSetDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, ReplacementEffectDef,
+    TriggerConditionDef, ValueDef,
 };
 use crate::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -283,14 +284,16 @@ fn validate_applied_effect_target_references(
             }
             Ok(())
         }
-        AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::SetBase { power, toughness }
+            | PowerToughnessOperationDef::Modify { power, toughness },
+        )) => {
             validate_value_target_references(power, target_count, scope)?;
             validate_value_target_references(toughness, target_count, scope)
         }
         // A granted ability introduces its own target scope and is validated
         // separately when the grant tree is traversed.
-        AppliedEffectDef::GrantAbility(_)
-        | AppliedEffectDef::CannotBeCountered
+        AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
@@ -307,10 +310,7 @@ fn validate_applied_effect_target_references(
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::RemoveAbilities(_)
-        | AppliedEffectDef::Animate(_)
+        | AppliedEffectDef::Characteristic(_)
         | AppliedEffectDef::Special(_) => Ok(()),
     }
 }

@@ -1,12 +1,15 @@
 use super::{
-    AbilityDef, AbilityEffectExpiration, AbilityId, AbilityOrigin, AbilityTargetPredicate,
-    AppliedEffectDef, CardPartId, CastSignature, ComparisonDef, ContinuousEffectTimestamp,
-    ControlFlow, CounterKind, EffectDurationDef, EffectRecipientDef, EffectRecipientSetDef,
-    EffectResolutionContext, Game, GameObjectId, GrantId, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRefDef, PlayerSetDef, QuantifierDef,
-    ScopedEffect, StackObject, StackObjectKind, TappedSourceStatBonus, Target, TargetIndex,
-    TargetSelection, TargetSlotId, TemporaryAbilityGrant, TemporaryGrantedAbility,
-    TemporaryRemovedAbilities, TriggerConditionDef, TriggerContext, ZoneKind,
+    AbilityDef, AbilityId, AbilityOperationDef, AbilityOrigin, AbilitySourceRef,
+    AbilityTargetPredicate, AppliedEffectDef, CardPartId, CastSignature,
+    CharacteristicOperationDef, ComparisonDef, ContinuousEffectExpiration,
+    ContinuousEffectTimestamp, ControlFlow, CounterKind, EffectDurationDef, EffectRecipientDef,
+    EffectRecipientSetDef, EffectResolutionContext, Game, GameObjectId, GrantId,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, Permanent, PlayerId,
+    PlayerRefDef, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef,
+    ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
+    ResolvedPowerToughnessOperation, ScopedEffect, StackObject, StackObjectKind, Target,
+    TargetIndex, TargetSelection, TargetSlotId, TemporaryAbilityGrant, TriggerConditionDef,
+    TriggerContext, ZoneKind,
 };
 
 #[derive(Clone, Copy)]
@@ -16,6 +19,7 @@ struct ResolvedAppliedEffect<'a> {
     object: &'a StackObject,
     context: &'a EffectResolutionContext,
     scoped: ScopedEffect,
+    component_order: u16,
 }
 
 mod queries;
@@ -31,15 +35,29 @@ impl Game {
         scoped: ScopedEffect,
     ) {
         let timestamp = self.allocate_continuous_effect_timestamp();
-        let resolution = ResolvedAppliedEffect {
+        let base_resolution = ResolvedAppliedEffect {
             duration,
             timestamp,
             object,
             context,
             scoped,
+            component_order: 0,
         };
+        let mut components = Vec::new();
+        Self::flatten_applied_effect(effect, &mut components);
         for target in self.effect_recipients(recipient, object, context, scoped) {
-            self.apply_applied_effect_component(target, effect, resolution);
+            for (index, component) in components.iter().copied().enumerate() {
+                let component_order = u16::try_from(index)
+                    .expect("one applied effect contains at most 65,536 components");
+                self.apply_applied_effect_component(
+                    target,
+                    component,
+                    ResolvedAppliedEffect {
+                        component_order,
+                        ..base_resolution
+                    },
+                );
+            }
         }
         // Everything else lasts until cleanup. Keeping the duration explicit
         // here makes unsupported permanent/granted effects visible rather
@@ -54,177 +72,58 @@ impl Game {
         ));
     }
 
+    fn flatten_applied_effect(effect: AppliedEffectDef, components: &mut Vec<AppliedEffectDef>) {
+        match effect {
+            AppliedEffectDef::Composite(effects) => {
+                for effect in effects {
+                    Self::flatten_applied_effect(*effect, components);
+                }
+            }
+            leaf => components.push(leaf),
+        }
+    }
+
     /// Where a granted ability lands: the supported nonbattlefield flashback
     /// case keeps its cleanup-bounded card grant, while a permanent records an
     /// ordered, duration-aware layer operation for every ability category.
-    pub(super) fn apply_granted_ability(
+    fn apply_nonbattlefield_granted_ability(
         &mut self,
         target: Target,
         ability: &'static AbilityDef,
-        duration: EffectDurationDef,
-        timestamp: ContinuousEffectTimestamp,
-        object: &StackObject,
     ) {
-        match target {
-            Target::Card(target) => {
-                let grant = TemporaryAbilityGrant {
-                    object: target,
-                    ability: *ability,
-                };
-                if self.card_in_nonbattlefield_zone(target).is_some()
-                    && !self.temporary_ability_grants.contains(&grant)
-                {
-                    self.temporary_ability_grants.push(grant);
-                }
-            }
-            Target::Permanent(target) => {
-                let source = object.source.unwrap_or(object.id);
-                let origin = object.ability_origin().unwrap_or(AbilityOrigin::Printed {
-                    definition: object.presentation_definition(),
-                    part: CardPartId::PRIMARY,
-                    ability: AbilityId::PRIMARY,
-                });
-                let (source_definition, source_part, source_ability) =
-                    Self::ability_origin_components(origin, object.presentation_definition());
-                let expiration = Self::ability_effect_expiration(
-                    duration,
-                    object.controller,
-                    self.turns_started[object.controller.index()],
-                );
-                if let Some(permanent) = self
-                    .battlefield
-                    .iter_mut()
-                    .find(|permanent| permanent.card.id == target)
-                {
-                    let order = u16::try_from(
-                        permanent.temporary_granted_abilities.len()
-                            + permanent.temporary_removed_abilities.len(),
-                    )
-                    .expect("one resolved effect creates at most 65,536 ability operations");
-                    let grant = GrantId::from_index(permanent.temporary_granted_abilities.len())
-                        .expect("one permanent has at most 256 resolved grants");
-                    permanent
-                        .temporary_granted_abilities
-                        .push(TemporaryGrantedAbility {
-                            ability: *ability,
-                            source,
-                            source_definition,
-                            source_part,
-                            source_ability,
-                            grant,
-                            timestamp,
-                            order,
-                            expiration,
-                        });
-                }
-            }
-            Target::Player(_) | Target::Spell(_) => {}
+        let Target::Card(target) = target else {
+            return;
+        };
+        let grant = TemporaryAbilityGrant {
+            object: target,
+            ability: *ability,
+        };
+        if self.card_in_nonbattlefield_zone(target).is_some()
+            && !self.temporary_ability_grants.contains(&grant)
+        {
+            self.temporary_ability_grants.push(grant);
         }
     }
 
-    pub(super) fn ability_effect_expiration(
+    pub(super) fn continuous_effect_expiration(
         duration: EffectDurationDef,
         controller: PlayerId,
         turns_started: u32,
-    ) -> AbilityEffectExpiration {
+    ) -> ContinuousEffectExpiration {
         match duration {
-            EffectDurationDef::UntilEndOfTurn => AbilityEffectExpiration::EndOfTurn,
-            EffectDurationDef::UntilYourNextUpkeep => AbilityEffectExpiration::UpkeepOf(controller),
-            EffectDurationDef::UntilYourNextTurn => AbilityEffectExpiration::TurnOf {
+            EffectDurationDef::UntilEndOfTurn => ContinuousEffectExpiration::EndOfTurn,
+            EffectDurationDef::UntilYourNextUpkeep => {
+                ContinuousEffectExpiration::UpkeepOf(controller)
+            }
+            EffectDurationDef::UntilYourNextTurn => ContinuousEffectExpiration::TurnOf {
                 player: controller,
                 turn: turns_started.saturating_add(1),
             },
-            EffectDurationDef::Permanent => AbilityEffectExpiration::Never,
+            EffectDurationDef::Permanent => ContinuousEffectExpiration::Never,
+            EffectDurationDef::WhileSourceTapped => ContinuousEffectExpiration::WhileSourceTapped,
             EffectDurationDef::WhileSourceRemainsInZone
-            | EffectDurationDef::UntilSourceLeavesZone
-            // Only a stat modification may last while its source stays
-            // tapped, and that one never becomes a granted ability.
-            | EffectDurationDef::WhileSourceTapped => {
+            | EffectDurationDef::UntilSourceLeavesZone => {
                 unreachable!("a resolving effect cannot have a static duration")
-            }
-        }
-    }
-
-    /// The removal half of a resolved ability-layer operation, kept beside
-    /// the dispatch rather than inside it.
-    fn apply_removed_abilities(
-        &mut self,
-        target: Target,
-        predicate: crate::card::AbilityPredicateDef,
-        resolution: ResolvedAppliedEffect<'_>,
-    ) {
-        let Target::Permanent(target) = target else {
-            return;
-        };
-        let expiration = Self::ability_effect_expiration(
-            resolution.duration,
-            resolution.object.controller,
-            self.turns_started[resolution.object.controller.index()],
-        );
-        if let Some(permanent) = self
-            .battlefield
-            .iter_mut()
-            .find(|permanent| permanent.card.id == target)
-        {
-            let order = u16::try_from(
-                permanent.temporary_granted_abilities.len()
-                    + permanent.temporary_removed_abilities.len(),
-            )
-            .expect("one resolved effect creates at most 65,536 ability operations");
-            permanent
-                .temporary_removed_abilities
-                .push(TemporaryRemovedAbilities {
-                    predicate,
-                    timestamp: resolution.timestamp,
-                    order,
-                    expiration,
-                });
-        }
-    }
-
-    /// Where a resolved power/toughness modification lands: on the ordinary
-    /// accumulator that cleanup zeroes, or -- for "as long as this artifact
-    /// remains tapped" -- on a record naming the source it depends on.
-    fn apply_stat_modification(
-        &mut self,
-        target: Target,
-        power: super::ValueDef,
-        toughness: super::ValueDef,
-        resolution: ResolvedAppliedEffect<'_>,
-    ) {
-        let Target::Permanent(target) = target else {
-            return;
-        };
-        let resolve = |value| {
-            i16::try_from(
-                self.effect_value(
-                    value,
-                    resolution.object,
-                    resolution.context,
-                    resolution.scoped,
-                )
-                .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
-            )
-            .expect("the effect value was clamped to i16")
-        };
-        let power = resolve(power);
-        let toughness = resolve(toughness);
-        let while_tapped = (resolution.duration == EffectDurationDef::WhileSourceTapped)
-            .then(|| resolution.object.source.unwrap_or(resolution.object.id));
-        if let Some(permanent) = self
-            .battlefield
-            .iter_mut()
-            .find(|permanent| permanent.card.id == target)
-        {
-            if let Some(source) = while_tapped {
-                permanent.while_source_tapped.push(TappedSourceStatBonus {
-                    source,
-                    power,
-                    toughness,
-                });
-            } else {
-                permanent.power_bonus = permanent.power_bonus.saturating_add(power);
-                permanent.toughness_bonus = permanent.toughness_bonus.saturating_add(toughness);
             }
         }
     }
@@ -236,22 +135,11 @@ impl Game {
         resolution: ResolvedAppliedEffect<'_>,
     ) {
         match effect {
-            AppliedEffectDef::Composite(effects) => {
-                for effect in effects {
-                    self.apply_applied_effect_component(target, *effect, resolution);
-                }
+            AppliedEffectDef::Composite(_) => {
+                unreachable!("applied effects are flattened before dispatch")
             }
-            AppliedEffectDef::GrantAbility(ability) => {
-                self.apply_granted_ability(
-                    target,
-                    ability,
-                    resolution.duration,
-                    resolution.timestamp,
-                    resolution.object,
-                );
-            }
-            AppliedEffectDef::RemoveAbilities(predicate) => {
-                self.apply_removed_abilities(target, predicate, resolution);
+            AppliedEffectDef::Characteristic(operation) => {
+                self.apply_characteristic_component(target, effect, operation, resolution);
             }
             // A resolved prohibition is recorded on the permanent, the way
             // the other until-end-of-turn combat riders are; the printed
@@ -265,21 +153,6 @@ impl Game {
                 {
                     permanent.cannot_block_this_turn = true;
                 }
-            }
-            AppliedEffectDef::Animate(animation) => {
-                if let Target::Permanent(target) = target
-                    && let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                {
-                    // A second animation overwrites the first, which is what
-                    // the later timestamp does.
-                    permanent.animation = Some(animation);
-                }
-            }
-            AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
-                self.apply_stat_modification(target, power, toughness, resolution);
             }
             // Only the printed static forms of these exist. "Can't attack"
             // is applied from elsewhere and read off the continuous layer;
@@ -300,10 +173,143 @@ impl Game {
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
             | AppliedEffectDef::PreventCombatDamage
             | AppliedEffectDef::PreventCombatDamageDealtBy
-            | AppliedEffectDef::AddLandTypes(_)
-            | AppliedEffectDef::SetLandTypes(_)
             | AppliedEffectDef::Special(_) => {}
         }
+    }
+
+    fn apply_characteristic_component(
+        &mut self,
+        target: Target,
+        definition: AppliedEffectDef,
+        operation: CharacteristicOperationDef,
+        resolution: ResolvedAppliedEffect<'_>,
+    ) {
+        if let CharacteristicOperationDef::Abilities(AbilityOperationDef::Add(ability)) = operation
+            && matches!(target, Target::Card(_))
+        {
+            self.apply_nonbattlefield_granted_ability(target, ability);
+            return;
+        }
+        let Target::Permanent(target) = target else {
+            return;
+        };
+
+        let Some(kind) = self.resolve_characteristic_kind(target, operation, resolution) else {
+            return;
+        };
+        let source = AbilitySourceRef {
+            object: resolution.object.source.unwrap_or(resolution.object.id),
+            ability: resolution
+                .object
+                .ability_origin()
+                .unwrap_or(AbilityOrigin::Printed {
+                    definition: resolution.object.presentation_definition(),
+                    part: CardPartId::PRIMARY,
+                    ability: AbilityId::PRIMARY,
+                }),
+        };
+        let expiration = Self::continuous_effect_expiration(
+            resolution.duration,
+            resolution.object.controller,
+            self.turns_started[resolution.object.controller.index()],
+        );
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == target)
+        {
+            permanent
+                .resolved_continuous_effects
+                .push(ResolvedContinuousEffect {
+                    definition,
+                    source,
+                    timestamp: resolution.timestamp,
+                    component_order: resolution.component_order,
+                    expiration,
+                    kind,
+                });
+        }
+    }
+
+    fn resolve_characteristic_kind(
+        &self,
+        target: GameObjectId,
+        operation: CharacteristicOperationDef,
+        resolution: ResolvedAppliedEffect<'_>,
+    ) -> Option<ResolvedContinuousEffectKind> {
+        Some(match operation {
+            CharacteristicOperationDef::Abilities(AbilityOperationDef::Add(ability)) => {
+                let permanent = self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == target)?;
+                let mut used_grants = [false; 256];
+                for grant in permanent
+                    .resolved_continuous_effects
+                    .iter()
+                    .filter_map(|effect| match effect.kind {
+                        ResolvedContinuousEffectKind::Abilities(
+                            ResolvedAbilityOperation::Add { grant, .. },
+                        ) => Some(grant),
+                        _ => None,
+                    })
+                {
+                    used_grants[grant.index()] = true;
+                }
+                let grant = used_grants
+                    .iter()
+                    .position(|used| !used)
+                    .and_then(GrantId::from_index)
+                    .expect("one permanent has at most 256 active resolved grants");
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add {
+                    ability: *ability,
+                    grant,
+                })
+            }
+            CharacteristicOperationDef::Abilities(AbilityOperationDef::Remove(predicate)) => {
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Remove(predicate))
+            }
+            CharacteristicOperationDef::BasicLandTypes(operation) => {
+                ResolvedContinuousEffectKind::BasicLandTypes(operation)
+            }
+            CharacteristicOperationDef::CardTypes(operation) => {
+                ResolvedContinuousEffectKind::CardTypes(operation)
+            }
+            CharacteristicOperationDef::Colors(operation) => {
+                ResolvedContinuousEffectKind::Colors(operation)
+            }
+            CharacteristicOperationDef::CreatureTypes(operation) => {
+                ResolvedContinuousEffectKind::CreatureTypes(operation)
+            }
+            CharacteristicOperationDef::PowerToughness(operation) => {
+                let freeze = |value| {
+                    i16::try_from(
+                        self.effect_value(
+                            value,
+                            resolution.object,
+                            resolution.context,
+                            resolution.scoped,
+                        )
+                        .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
+                    )
+                    .expect("the effect value was clamped to i16")
+                };
+                ResolvedContinuousEffectKind::PowerToughness(match operation {
+                    PowerToughnessOperationDef::SetBase { power, toughness } => {
+                        ResolvedPowerToughnessOperation::SetBase {
+                            power: freeze(power),
+                            toughness: freeze(toughness),
+                        }
+                    }
+                    PowerToughnessOperationDef::Modify { power, toughness } => {
+                        ResolvedPowerToughnessOperation::Modify {
+                            power: freeze(power),
+                            toughness: freeze(toughness),
+                        }
+                    }
+                })
+            }
+        })
     }
 
     pub(super) fn live_object_target(&self, object: GameObjectId) -> Option<Target> {

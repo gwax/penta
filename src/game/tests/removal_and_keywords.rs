@@ -493,7 +493,15 @@ fn indestructible_stops_destruction_and_lethal_damage_but_not_other_death() {
         "lethal damage does not destroy it"
     );
 
-    game.battlefield[0].toughness_bonus = -1;
+    attach_constant_resolved_characteristics(
+        &mut game,
+        lions_id,
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(0),
+            ValueDef::Constant(-1),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
     game.check_state_based_actions();
     assert!(
         game.battlefield.is_empty(),

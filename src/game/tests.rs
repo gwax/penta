@@ -17,6 +17,13 @@ use crate::{
 
 static TEST_FLYING_ABILITY: [AbilityDef; 1] = [abilities::flying()];
 static TEST_FLYING_TRAMPLE_ABILITIES: [AbilityDef; 2] = [abilities::flying(), abilities::trample()];
+pub(super) static TEST_MISHRAS_FACTORY_CHARACTERISTICS: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::add_card_types(
+        CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
+    ),
+    AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Assembly-Worker"])),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+];
 static CARD_COST_FLASHBACK: AbilityDef = abilities::flashback_for_card_mana_cost();
 const TEST_OPPONENT_LAND_ENTRY_TEXT: &str = "Lands your opponents control enter tapped.";
 static TEST_OPPONENT_LANDS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement_for(
@@ -61,7 +68,7 @@ static TEST_SELF_GRANTED_ENTRY_ABILITY: [AbilityDef; 1] = [AbilityDef::static_ab
     "This permanent has \"This permanent enters tapped.\"",
     EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::GrantAbility(&TEST_GRANTED_ENTRY_REPLACEMENT),
+        effect: AppliedEffectDef::add_ability(&TEST_GRANTED_ENTRY_REPLACEMENT),
         duration: EffectDurationDef::WhileSourceRemainsInZone,
     },
 )];
@@ -69,7 +76,7 @@ static TEST_SELF_PLAINS_ABILITY: [AbilityDef; 1] = [AbilityDef::static_ability(
     "This land is a Plains in addition to its other types.",
     EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::AddLandTypes(&[BasicLandType::Plains]),
+        effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Plains]),
         duration: EffectDurationDef::WhileSourceRemainsInZone,
     },
 )];
@@ -143,6 +150,134 @@ pub(super) fn creature(id: u32, definition: CardDefinitionId, controller: Player
         controller,
         0,
     )
+}
+
+/// Attach constant resolved characteristic leaves to one permanent as a
+/// single timestamped effect. Test setup uses this instead of recreating the
+/// fragmented animation, ability, and power/toughness state this model
+/// replaced.
+pub(super) fn attach_constant_resolved_characteristics(
+    game: &mut Game,
+    permanent: GameObjectId,
+    effects: &[AppliedEffectDef],
+    expiration: ContinuousEffectExpiration,
+) -> ContinuousEffectTimestamp {
+    fn flatten(effect: AppliedEffectDef, leaves: &mut Vec<AppliedEffectDef>) {
+        match effect {
+            AppliedEffectDef::Composite(components) => {
+                for component in components {
+                    flatten(*component, leaves);
+                }
+            }
+            leaf => leaves.push(leaf),
+        }
+    }
+
+    let timestamp = game.allocate_continuous_effect_timestamp();
+    let target = game
+        .battlefield
+        .iter()
+        .find(|candidate| candidate.card.id == permanent)
+        .expect("the resolved characteristic target is on the battlefield");
+    let source = AbilitySourceRef {
+        object: permanent,
+        ability: AbilityOrigin::Printed {
+            definition: target.card.definition,
+            part: target.presented,
+            ability: AbilityId::PRIMARY,
+        },
+    };
+    let mut leaves = Vec::new();
+    for effect in effects {
+        flatten(*effect, &mut leaves);
+    }
+    let mut used_grants = [false; 256];
+    for grant in target
+        .resolved_continuous_effects
+        .iter()
+        .filter_map(|effect| match effect.kind {
+            ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add {
+                grant,
+                ..
+            }) => Some(grant),
+            _ => None,
+        })
+    {
+        used_grants[grant.index()] = true;
+    }
+    let target = game
+        .battlefield
+        .iter_mut()
+        .find(|candidate| candidate.card.id == permanent)
+        .expect("the resolved characteristic target is on the battlefield");
+    for (component_order, definition) in leaves.into_iter().enumerate() {
+        let AppliedEffectDef::Characteristic(operation) = definition else {
+            panic!("resolved characteristic fixtures accept only characteristic leaves");
+        };
+        let kind = match operation {
+            CharacteristicOperationDef::Abilities(AbilityOperationDef::Add(ability)) => {
+                let grant = used_grants
+                    .iter()
+                    .position(|used| !used)
+                    .and_then(GrantId::from_index)
+                    .expect("one fixture permanent has at most 256 resolved grants");
+                used_grants[grant.index()] = true;
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add {
+                    ability: *ability,
+                    grant,
+                })
+            }
+            CharacteristicOperationDef::Abilities(AbilityOperationDef::Remove(predicate)) => {
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Remove(predicate))
+            }
+            CharacteristicOperationDef::BasicLandTypes(operation) => {
+                ResolvedContinuousEffectKind::BasicLandTypes(operation)
+            }
+            CharacteristicOperationDef::CardTypes(operation) => {
+                ResolvedContinuousEffectKind::CardTypes(operation)
+            }
+            CharacteristicOperationDef::Colors(operation) => {
+                ResolvedContinuousEffectKind::Colors(operation)
+            }
+            CharacteristicOperationDef::CreatureTypes(operation) => {
+                ResolvedContinuousEffectKind::CreatureTypes(operation)
+            }
+            CharacteristicOperationDef::PowerToughness(operation) => {
+                let constant = |value| {
+                    let ValueDef::Constant(value) = value else {
+                        panic!("resolved characteristic fixtures require constant P/T values");
+                    };
+                    i16::try_from(value).expect("fixture P/T fits in i16")
+                };
+                ResolvedContinuousEffectKind::PowerToughness(match operation {
+                    PowerToughnessOperationDef::SetBase { power, toughness } => {
+                        ResolvedPowerToughnessOperation::SetBase {
+                            power: constant(power),
+                            toughness: constant(toughness),
+                        }
+                    }
+                    PowerToughnessOperationDef::Modify { power, toughness } => {
+                        ResolvedPowerToughnessOperation::Modify {
+                            power: constant(power),
+                            toughness: constant(toughness),
+                        }
+                    }
+                })
+            }
+        };
+        target
+            .resolved_continuous_effects
+            .push(ResolvedContinuousEffect {
+                definition,
+                source,
+                timestamp,
+                component_order: u16::try_from(component_order)
+                    .expect("one fixture effect has at most 65,536 components"),
+                expiration,
+                kind,
+            });
+    }
+    timestamp
 }
 
 fn copied_characteristics(definition: CardDefinitionId) -> CopiableCharacteristics {

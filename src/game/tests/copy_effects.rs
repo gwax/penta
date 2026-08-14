@@ -237,7 +237,17 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
     );
     game.apply(PlayerId::One, animate).unwrap();
     drain_pending(&mut game);
-    assert!(game.battlefield[0].animation.is_some());
+    let animated_stage = game.battlefield[0].clone();
+    let types = game.permanent_types(&animated_stage).expect("types");
+    for card_type in [CardType::Land, CardType::Artifact, CardType::Creature] {
+        assert!(types.contains(card_type));
+    }
+    assert_eq!(game.power(&animated_stage), Some(2));
+    assert_eq!(game.toughness(&animated_stage), Some(2));
+    assert!(
+        !animated_stage.resolved_continuous_effects.is_empty(),
+        "the animation is represented by resolved characteristic leaves"
+    );
 
     let retained_copy_ability = activated_ability_for(&game, stage_id, 2);
     game.players[0].mana_pool.colorless = 2;
@@ -472,7 +482,7 @@ fn granted_activation_freezes_payload_before_sacrificing_grant_source() {
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             ),
-            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
@@ -561,12 +571,12 @@ fn separate_grant_sites_receive_distinct_structural_origins() {
     static EFFECTS: [EffectDef; 2] = [
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     ];
@@ -634,7 +644,7 @@ fn a_nonmatching_grant_site_still_advances_the_structural_origin() {
     static EFFECTS: [EffectDef; 2] = [
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
         EffectDef::Apply {
@@ -643,7 +653,7 @@ fn a_nonmatching_grant_site_still_advances_the_structural_origin() {
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             ),
-            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     ];
@@ -703,7 +713,7 @@ fn a_nonmatching_grant_site_still_advances_the_structural_origin() {
 fn nonmatching_composite_grant_sites_still_advance_structural_origins() {
     static GRANTED_ABILITY: AbilityDef = abilities::flying();
     static MISSED_COMPONENTS: [AppliedEffectDef; 1] =
-        [AppliedEffectDef::GrantAbility(&GRANTED_ABILITY)];
+        [AppliedEffectDef::add_ability(&GRANTED_ABILITY)];
     static EFFECTS: [EffectDef; 2] = [
         EffectDef::Apply {
             recipient: EffectRecipientDef::AttachedPermanent,
@@ -712,7 +722,7 @@ fn nonmatching_composite_grant_sites_still_advance_structural_origins() {
         },
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     ];
@@ -789,7 +799,7 @@ static COPY_GRANT_SOURCE_A_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_abil
             &[ZoneKind::Battlefield],
             PlayerRelation::You,
         ),
-        effect: AppliedEffectDef::GrantAbility(&COPY_GRANT_A),
+        effect: AppliedEffectDef::add_ability(&COPY_GRANT_A),
         duration: EffectDurationDef::WhileSourceRemainsInZone,
     },
 )];
@@ -801,7 +811,7 @@ static COPY_GRANT_SOURCE_B_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_abil
             &[ZoneKind::Battlefield],
             PlayerRelation::You,
         ),
-        effect: AppliedEffectDef::GrantAbility(&COPY_GRANT_B),
+        effect: AppliedEffectDef::add_ability(&COPY_GRANT_B),
         duration: EffectDurationDef::WhileSourceRemainsInZone,
     },
 )];

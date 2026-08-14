@@ -68,10 +68,7 @@ pub(in crate::card::sets) static ELEMENTAL_TOKEN_GREEN_WHITE: CardRecord = CardR
             "This token's power and toughness are each equal to the number of creatures you control.",
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
-                    toughness: ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL), ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL)),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )),
@@ -356,10 +353,10 @@ pub(in crate::card::sets) static DRAGON_TOKEN_2_2_RED: CardRecord = CardRecord::
             &[crate::card::AbilityCostDef::Mana(crate::mana_cost!("{R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         )),
@@ -426,10 +423,10 @@ pub(in crate::card::sets) static DOMRI_RADE_EMBLEM: CardRecord = CardRecord::new
 );
 
 static DOMRI_EMBLEM_KEYWORDS: [AppliedEffectDef; 4] = [
-    AppliedEffectDef::GrantAbility(&DOMRI_DOUBLE_STRIKE),
-    AppliedEffectDef::GrantAbility(&DOMRI_TRAMPLE),
-    AppliedEffectDef::GrantAbility(&DOMRI_HEXPROOF),
-    AppliedEffectDef::GrantAbility(&DOMRI_HASTE),
+    AppliedEffectDef::add_ability(&DOMRI_DOUBLE_STRIKE),
+    AppliedEffectDef::add_ability(&DOMRI_TRAMPLE),
+    AppliedEffectDef::add_ability(&DOMRI_HEXPROOF),
+    AppliedEffectDef::add_ability(&DOMRI_HASTE),
 ];
 
 static DOMRI_DOUBLE_STRIKE: AbilityDef = abilities::double_strike();

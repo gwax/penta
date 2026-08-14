@@ -2,12 +2,11 @@ use super::{CardRecord, PrintingRecord};
 use crate::Format;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior,
-    CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef, CounterKind,
-    DiscardSelectionDef, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
-    LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef,
-    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardChoiceSourceDef,
+    CardRules, CardSet, CardType, ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef,
+    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, LikelihoodDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef, PlayerRelation, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -49,10 +48,10 @@ pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(2),
-                toughness: ValueDef::Constant(0),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(2),
+                ValueDef::Constant(0),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )]),
@@ -119,10 +118,10 @@ pub(in crate::card::sets) static PIETY: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(0),
-                toughness: ValueDef::Constant(3),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(0),
+                ValueDef::Constant(3),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )]),
@@ -180,7 +179,7 @@ pub(in crate::card::sets) static FISHLIVER_OIL: CardRecord = CardRecord::new(
                 "Enchanted creature has islandwalk.",
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&abilities::landwalk(
+                    effect: AppliedEffectDef::add_ability(&abilities::landwalk(
                         BasicLandType::Island,
                     )),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
@@ -352,10 +351,10 @@ pub(in crate::card::sets) static UNSTABLE_MUTATION: CardRecord = CardRecord::new
                 "Enchanted creature gets +3/+3.",
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(3),
-                        toughness: ValueDef::Constant(3),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(3),
+                        ValueDef::Constant(3),
+                    ),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
@@ -410,7 +409,7 @@ static GUARDIAN_BEAST_PROTECTION: EffectDef = EffectDef::Apply {
     ),
     effect: AppliedEffectDef::Composite(&[
         AppliedEffectDef::CannotBecomeEnchanted,
-        AppliedEffectDef::GrantAbility(&abilities::indestructible()),
+        AppliedEffectDef::add_ability(&abilities::indestructible()),
         AppliedEffectDef::CannotChangeController,
     ]),
     duration: EffectDurationDef::WhileSourceRemainsInZone,
@@ -499,10 +498,6 @@ pub(in crate::card::sets) static JUZAM_DJINN: CardRecord = CardRecord::new(
     ]),
 );
 
-/// Setting the base stats does not remove the target's types, colors,
-/// subtypes, or abilities.
-static SORCERESS_QUEEN_BASE_STATS: AnimationDef = AnimationDef::new(0, 2);
-
 // ARN 30 — Khabál Ghoul
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of each end step, put a +1/+1 counter on this creature for each creature that died this turn”.
 
@@ -510,7 +505,6 @@ static SORCERESS_QUEEN_BASE_STATS: AnimationDef = AnimationDef::new(0, 2);
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “When this enchantment enters, target creature phases out until this enchantment leaves the battlefield. Tap that creature as it phases in this way”.
 
 // ARN 32 — Sorceress Queen
-// Audit: partial — Setting base power/toughness overwrites added types and subtypes from a prior animation.
 pub(in crate::card::sets) static SORCERESS_QUEEN: CardRecord = CardRecord::new(
     cards::SORCERESS_QUEEN,
     "Sorceress Queen",
@@ -533,13 +527,13 @@ pub(in crate::card::sets) static SORCERESS_QUEEN: CardRecord = CardRecord::new(
         )],
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            effect: AppliedEffectDef::Animate(&SORCERESS_QUEEN_BASE_STATS),
+            effect: AppliedEffectDef::set_base_power_toughness(
+                ValueDef::Constant(0),
+                ValueDef::Constant(2),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "The base-power/toughness setter overwrites a prior animation's added types and subtypes.",
-    ))]),
+    )]),
 );
 
 // ARN 33 — Stone-Throwing Devils
@@ -765,7 +759,7 @@ pub(in crate::card::sets) static ERHNAM_DJINN: CardRecord = CardRecord::new(
         &ERHNAM_TARGET,
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            effect: AppliedEffectDef::GrantAbility(&ERHNAM_FORESTWALK),
+            effect: AppliedEffectDef::add_ability(&ERHNAM_FORESTWALK),
             duration: EffectDurationDef::UntilYourNextUpkeep,
         },
     )]),
@@ -823,10 +817,10 @@ pub(in crate::card::sets) static WYLULI_WOLF: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1030,7 +1024,7 @@ pub(in crate::card::sets) static FLYING_CARPET: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::GrantAbility(&abilities::flying()),
+                effect: AppliedEffectDef::add_ability(&abilities::flying()),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),

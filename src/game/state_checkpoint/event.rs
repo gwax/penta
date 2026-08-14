@@ -22,9 +22,9 @@ pub(super) fn pending_event_referenced_object_ids(pending: &PendingEvent) -> Vec
     ids.extend(
         entry
             .permanent
-            .temporary_granted_abilities
+            .resolved_continuous_effects
             .iter()
-            .map(|grant| grant.source),
+            .map(|effect| effect.source.object),
     );
     ids
 }

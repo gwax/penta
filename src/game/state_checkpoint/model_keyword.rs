@@ -41,3 +41,10 @@ pub(super) enum KeywordSnapshot {
     ProtectionFromGreen,
     ProtectionFromColorless,
 }
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct UpkeepKeywordSnapshot {
+    pub(super) seat: usize,
+    pub(super) keyword: KeywordSnapshot,
+}

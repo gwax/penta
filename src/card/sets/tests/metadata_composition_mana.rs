@@ -197,7 +197,11 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
                         && matches!(
                             ability.declarative_effect(),
                             Some(EffectDef::Apply {
-                                effect: AppliedEffectDef::AddLandTypes(types),
+                                effect: AppliedEffectDef::Characteristic(
+                                    CharacteristicOperationDef::BasicLandTypes(
+                                        SetOperationDef::Add(types)
+                                    )
+                                ),
                                 duration: EffectDurationDef::WhileSourceRemainsInZone,
                                 ..
                             }) if !types.is_empty()

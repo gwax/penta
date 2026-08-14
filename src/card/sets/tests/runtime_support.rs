@@ -153,7 +153,7 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
                     .all(shared_cannot_be_countered_effect)
         }
         AppliedEffectDef::CannotBeCountered | AppliedEffectDef::CannotBeEnchanted => true,
-        AppliedEffectDef::ModifyPowerToughness { .. }
+        AppliedEffectDef::Characteristic(_)
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
@@ -169,11 +169,6 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::RemoveAbilities(_)
-        | AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::GrantAbility(_)
         | AppliedEffectDef::Special(_) => false,
     }
 }
@@ -210,35 +205,35 @@ pub(super) fn shared_resolving_apply(
     effect: AppliedEffectDef,
     duration: EffectDurationDef,
 ) -> bool {
-    // Resolved ability additions and removals share one duration-aware
-    // operation path. Other applied effects still end with the turn.
-    let ability_change = resolving_effect_is_only_ability_changes(effect);
+    // Stored characteristic operations share one duration-aware path. Other
+    // resolving rules modifiers still end with the turn.
+    let characteristic_change = resolving_effect_is_only_characteristic_changes(effect);
     // "For as long as this artifact remains tapped" is recorded against its
-    // source rather than a deadline, which only the stat modification does.
-    let stat_change = matches!(effect, AppliedEffectDef::ModifyPowerToughness { .. });
+    // source rather than a deadline, which only power/toughness changes use.
+    let power_toughness_change = resolving_effect_is_only_power_toughness_changes(effect);
     let duration_is_supported = duration == EffectDurationDef::UntilEndOfTurn
-        || duration == EffectDurationDef::UntilYourNextUpkeep && ability_change
+        || duration == EffectDurationDef::UntilYourNextUpkeep && characteristic_change
         || matches!(
             duration,
             EffectDurationDef::UntilYourNextTurn | EffectDurationDef::Permanent
-        ) && ability_change
-        || duration == EffectDurationDef::WhileSourceTapped && stat_change;
+        ) && characteristic_change
+        || duration == EffectDurationDef::WhileSourceTapped && power_toughness_change;
     if !duration_is_supported || !shared_effect_recipient(recipient) {
         return false;
     }
     shared_resolving_applied_effect(effect)
 }
 
-fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
+fn resolving_effect_is_only_characteristic_changes(effect: AppliedEffectDef) -> bool {
     match effect {
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty()
                 && effects
                     .iter()
                     .copied()
-                    .all(resolving_effect_is_only_ability_changes)
+                    .all(resolving_effect_is_only_characteristic_changes)
         }
-        AppliedEffectDef::GrantAbility(_) | AppliedEffectDef::RemoveAbilities(_) => true,
+        AppliedEffectDef::Characteristic(_) => true,
         AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
@@ -256,10 +251,37 @@ fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::ModifyPowerToughness { .. }
+        | AppliedEffectDef::Special(_) => false,
+    }
+}
+
+fn resolving_effect_is_only_power_toughness_changes(effect: AppliedEffectDef) -> bool {
+    match effect {
+        AppliedEffectDef::Composite(effects) => {
+            !effects.is_empty()
+                && effects
+                    .iter()
+                    .copied()
+                    .all(resolving_effect_is_only_power_toughness_changes)
+        }
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(_)) => true,
+        AppliedEffectDef::Characteristic(_)
+        | AppliedEffectDef::CannotBeCountered
+        | AppliedEffectDef::DoesNotUntapDuringUntapStep
+        | AppliedEffectDef::MayChooseNotToUntap
+        | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotAttack
+        | AppliedEffectDef::CannotBeBlocked
+        | AppliedEffectDef::CannotBeEnchanted
+        | AppliedEffectDef::CannotBecomeEnchanted
+        | AppliedEffectDef::CannotChangeController
+        | AppliedEffectDef::RemainsAttachedThroughProtection
+        | AppliedEffectDef::CannotBeBlockedBy(_)
+        | AppliedEffectDef::CanBlockOnly(_)
+        | AppliedEffectDef::PreventDamageFrom(_)
+        | AppliedEffectDef::PreventCombatDamageFrom(_)
+        | AppliedEffectDef::PreventCombatDamage
+        | AppliedEffectDef::PreventCombatDamageDealtBy
         | AppliedEffectDef::Special(_) => false,
     }
 }
@@ -269,16 +291,12 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty() && effects.iter().copied().all(shared_resolving_applied_effect)
         }
-        // These operations are executed directly by the shared apply
-        // path; animation reads the whole creature off the definition.
-        // "Can't block this turn" joins these: several cards print it as a
-        // resolving rider, so the shared apply path has to place it.
-        AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::ModifyPowerToughness { .. }
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::RemoveAbilities(_) => true,
-        AppliedEffectDef::GrantAbility(ability) => match ability.definition {
+        // These resolving rules modifiers join stored characteristic
+        // operations: several cards print them as until-end-of-turn riders.
+        AppliedEffectDef::CannotBlock | AppliedEffectDef::CannotBeBlocked => true,
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        )) => match ability.definition {
             DeclarativeAbilityDef::ActivatedMana(definition)
             | DeclarativeAbilityDef::Activated(definition) => {
                 battlefield_only(definition.source_zones) && shared_definition_ability(ability)
@@ -296,6 +314,7 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
             | DeclarativeAbilityDef::SpecialAction(_)
             | DeclarativeAbilityDef::Legacy => false,
         },
+        AppliedEffectDef::Characteristic(_) => true,
         // The rest are continuous, not an until-end-of-turn rider a spell
         // hands out.
         AppliedEffectDef::CannotAttack
@@ -313,8 +332,6 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
         | AppliedEffectDef::Special(_) => false,
     }
 }

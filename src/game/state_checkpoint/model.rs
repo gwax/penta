@@ -11,10 +11,9 @@ mod triggers;
 pub(in crate::game::state_checkpoint) use stack::*;
 pub(in crate::game::state_checkpoint) use triggers::*;
 
-use super::model_keyword::KeywordSnapshot;
+use super::model_keyword::{KeywordSnapshot, UpkeepKeywordSnapshot};
 pub(super) use super::model_prevention::*;
 
-use super::model_animation::{AnimationSnapshot, UpkeepKeywordSnapshot};
 use super::model_procedure::{DrawReplacementSnapshot, PendingProcedureSnapshot};
 use super::model_trigger::{DelayedTriggerSnapshot, FloatingTriggerSnapshot};
 
@@ -187,13 +186,6 @@ pub(super) struct PermanentSnapshot {
     pub(super) owner: usize,
     pub(super) timestamp: u64,
     pub(super) entered_controller_turn: u32,
-    pub(super) power_bonus: i16,
-    pub(super) toughness_bonus: i16,
-    /// Modifications that end when the permanent that made them untaps, as
-    /// (source object, power, toughness). Absent from checkpoints that
-    /// predate them.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub(super) while_source_tapped: Vec<(u32, i16, i16)>,
     /// Permanents whose staying tapped keeps this one from untapping. Absent
     /// from checkpoints that predate them.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -244,11 +236,9 @@ pub(super) struct PermanentSnapshot {
     pub(super) dealt_damage_to_opponent_this_turn: bool,
     pub(super) deathtouch_damage: bool,
     pub(super) created_by: Option<u32>,
-    pub(super) animation: Option<AnimationSnapshot>,
     pub(super) temporary_keywords: Vec<KeywordSnapshot>,
     pub(super) keywords_until_upkeep_of: Vec<UpkeepKeywordSnapshot>,
-    pub(super) temporary_granted_abilities: Vec<TemporaryGrantedAbilitySnapshot>,
-    pub(super) temporary_removed_abilities: Vec<TemporaryRemovedAbilitySnapshot>,
+    pub(super) resolved_continuous_effects: Vec<ResolvedContinuousEffectSnapshot>,
     pub(super) activations_this_turn: Vec<AbilityActivationSnapshot>,
     pub(super) copy_effect: Option<CopiableCharacteristicsSnapshot>,
     pub(super) copied_from: Option<CopiedFromSnapshot>,
@@ -258,25 +248,38 @@ pub(super) struct PermanentSnapshot {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct TemporaryGrantedAbilitySnapshot {
-    pub(super) ability: AbilityLocator,
-    pub(super) source: u32,
-    pub(super) source_definition: u16,
-    pub(super) source_part_id: u8,
-    pub(super) source_ability_id: u8,
-    pub(super) grant_id: u8,
+pub(super) struct ResolvedContinuousEffectSnapshot {
+    pub(super) definition: AppliedEffectLocator,
+    pub(super) source: AbilitySourceSnapshot,
     pub(super) timestamp: u64,
-    pub(super) order: u16,
-    pub(super) expiration: AbilityEffectExpirationSnapshot,
+    pub(super) component_order: u16,
+    pub(super) expiration: ContinuousEffectExpirationSnapshot,
+    pub(super) operation: ResolvedContinuousOperationSnapshot,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) enum SetOperationSnapshot {
+    Add,
+    Remove,
+    Set,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct TemporaryRemovedAbilitySnapshot {
-    pub(super) effect: AppliedEffectLocator,
-    pub(super) timestamp: u64,
-    pub(super) order: u16,
-    pub(super) expiration: AbilityEffectExpirationSnapshot,
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub(super) enum ResolvedContinuousOperationSnapshot {
+    AbilityAdd { grant_id: u8 },
+    AbilityRemove,
+    BasicLandTypes { operation: SetOperationSnapshot },
+    CardTypes { operation: SetOperationSnapshot },
+    Colors { operation: SetOperationSnapshot },
+    CreatureTypes { operation: SetOperationSnapshot },
+    SetBasePowerToughness { power: i16, toughness: i16 },
+    ModifyPowerToughness { power: i16, toughness: i16 },
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -315,10 +318,11 @@ pub(super) struct CopiedFromSnapshot {
     rename_all = "camelCase",
     rename_all_fields = "camelCase"
 )]
-pub(super) enum AbilityEffectExpirationSnapshot {
+pub(super) enum ContinuousEffectExpirationSnapshot {
     EndOfTurn,
     UpkeepOf { seat: usize },
     TurnOf { seat: usize, turn: u32 },
+    WhileSourceTapped,
     Never,
 }
 

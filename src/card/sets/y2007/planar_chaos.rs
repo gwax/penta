@@ -23,7 +23,7 @@ pub(in crate::card::sets) static URBORG_TOMB_OF_YAWGMOTH: CardRecord = CardRecor
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
-                effect: AppliedEffectDef::AddLandTypes(&[BasicLandType::Swamp]),
+                effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Swamp]),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )),

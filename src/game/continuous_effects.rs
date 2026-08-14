@@ -1,14 +1,59 @@
+use std::cell::Cell;
+
 #[cfg(test)]
 use super::{AbilityId, AbilityOrigin};
 use super::{
-    AbilityTargetPredicate, AppliedEffectDef, CardDefinitionId, CardRules, CardSet, CardTypeSet,
-    ColorSet, ControlFlow, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
-    EffectRecipientSetDef, Game, GameObjectId, GrantId, KeywordAbility, ManaColor, ObjectRefDef,
-    ObjectSetDef, Permanent, PlayerId, RetiredObject, StackAbilityResolver, StackObject,
-    StaticAppliedEffect, StaticEffectTraversal, Target, TargetIndex, TriggerContext, ZoneKind,
+    AbilityOperationDef, AbilityTargetPredicate, AppliedEffectDef, CardDefinitionId, CardRules,
+    CardSet, CardType, CardTypeSet, CharacteristicOperationDef, ColorSet,
+    ContinuousEffectExpiration, ControlFlow, DeclarativeAbilityDef, EffectDef, EffectDurationDef,
+    EffectRecipientDef, EffectRecipientSetDef, Game, GameObjectId, GrantId, KeywordAbility,
+    ManaColor, ObjectRefDef, ObjectSetDef, Permanent, PlayerId, ResolvedContinuousEffect,
+    ResolvedContinuousEffectKind, RetiredObject, SetOperationDef, StackAbilityResolver,
+    StackObject, StaticAppliedEffect, StaticEffectTraversal, Target, TargetIndex, TriggerContext,
+    ZoneKind,
 };
 
+thread_local! {
+    /// Guards the live set-characteristic walk when a static recipient query
+    /// asks for the same characteristics being assembled.
+    static STATIC_SET_CHARACTERISTIC_LAYER_PASS: Cell<bool> = const { Cell::new(false) };
+}
+
+struct StaticSetCharacteristicLayerGuard;
+
+impl StaticSetCharacteristicLayerGuard {
+    fn enter() -> Option<Self> {
+        STATIC_SET_CHARACTERISTIC_LAYER_PASS
+            .with(|pass| if pass.replace(true) { None } else { Some(Self) })
+    }
+}
+
+impl Drop for StaticSetCharacteristicLayerGuard {
+    fn drop(&mut self) {
+        STATIC_SET_CHARACTERISTIC_LAYER_PASS.with(|pass| pass.set(false));
+    }
+}
+
 impl Game {
+    /// Whether a resolved characteristic component still contributes at this
+    /// moment. A source-tapped duration is read through its recorded source
+    /// object, not through the affected permanent.
+    pub(super) fn resolved_continuous_effect_is_active(
+        &self,
+        effect: &ResolvedContinuousEffect,
+    ) -> bool {
+        match effect.expiration {
+            ContinuousEffectExpiration::WhileSourceTapped => self
+                .battlefield
+                .iter()
+                .any(|source| source.card.id == effect.source.object && source.tapped),
+            ContinuousEffectExpiration::EndOfTurn
+            | ContinuousEffectExpiration::UpkeepOf(_)
+            | ContinuousEffectExpiration::TurnOf { .. }
+            | ContinuousEffectExpiration::Never => true,
+        }
+    }
+
     pub(super) fn visit_static_applied_effects(
         &self,
         affected: &Permanent,
@@ -54,6 +99,7 @@ impl Game {
                     affected,
                     prospective: None,
                     next_grant: 0,
+                    next_component_order: 0,
                 };
                 if self
                     .visit_static_effect(effect, &mut traversal, &mut visitor)
@@ -119,6 +165,7 @@ impl Game {
                     affected,
                     prospective: prospective_source,
                     next_grant: 0,
+                    next_component_order: 0,
                 };
                 if self
                     .visit_static_effect(effect, &mut traversal, &mut visitor)
@@ -225,7 +272,8 @@ impl Game {
                 }
                 ControlFlow::Continue(())
             }
-            AppliedEffectDef::CannotBeCountered
+            AppliedEffectDef::Characteristic(_)
+            | AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::DoesNotUntapDuringUntapStep
             | AppliedEffectDef::MayChooseNotToUntap
             | AppliedEffectDef::CannotBlock
@@ -242,14 +290,18 @@ impl Game {
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
             | AppliedEffectDef::PreventCombatDamage
             | AppliedEffectDef::PreventCombatDamageDealtBy
-            | AppliedEffectDef::AddLandTypes(_)
-            | AppliedEffectDef::SetLandTypes(_)
-            | AppliedEffectDef::Animate(_)
-            | AppliedEffectDef::ModifyPowerToughness { .. }
-            | AppliedEffectDef::GrantAbility(_)
-            | AppliedEffectDef::RemoveAbilities(_)
             | AppliedEffectDef::Special(_) => {
-                let grant = if matches!(effect, AppliedEffectDef::GrantAbility(_)) {
+                let component_order = traversal.next_component_order;
+                traversal.next_component_order = traversal
+                    .next_component_order
+                    .checked_add(1)
+                    .expect("one static ability contains at most 65,536 applied components");
+                let grant = if matches!(
+                    effect,
+                    AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                        AbilityOperationDef::Add(_)
+                    ))
+                ) {
                     let grant = GrantId::from_index(traversal.next_grant)
                         .expect("one static ability contains at most 256 grant sites");
                     traversal.next_grant += 1;
@@ -265,6 +317,7 @@ impl Game {
                         source_part: traversal.source_part,
                         source_ability: traversal.source_ability,
                         grant,
+                        component_order,
                         effect,
                     })
                 } else {
@@ -772,23 +825,102 @@ impl Game {
         if let Some(copy) = &permanent.copy_effect {
             types = types.union(copy.added_types);
         }
-        if let Some(animation) = self.effective_animation(permanent) {
-            types = types.union(animation.types);
+        let mut operations = permanent
+            .resolved_continuous_effects
+            .iter()
+            .filter(|effect| self.resolved_continuous_effect_is_active(effect))
+            .filter_map(|effect| match effect.kind {
+                ResolvedContinuousEffectKind::CardTypes(operation) => {
+                    Some((effect.timestamp, effect.component_order, operation))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        if let Some(_pass) = StaticSetCharacteristicLayerGuard::enter() {
+            let result = self.visit_static_applied_effects(permanent, |applied| {
+                if let AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+                    operation,
+                )) = applied.effect
+                {
+                    operations.push((applied.timestamp, applied.component_order, operation));
+                }
+                ControlFlow::Continue(())
+            });
+            debug_assert!(result.is_continue());
+        }
+        operations.sort_by_key(|(timestamp, order, _)| (*timestamp, *order));
+        for (_, _, operation) in operations {
+            types = Self::apply_card_type_operation(types, operation);
         }
         Some(types)
     }
 
-    /// The colours a permanent actually is. An animation that repaints it
-    /// replaces the printed colours rather than adding to them, and a Lace
-    /// resolved onto it replaces whatever it was before that.
+    fn apply_card_type_operation(
+        current: CardTypeSet,
+        operation: SetOperationDef<CardTypeSet>,
+    ) -> CardTypeSet {
+        match operation {
+            SetOperationDef::Add(types) => current.union(types),
+            SetOperationDef::Set(types) => types,
+            SetOperationDef::Remove(removed) => CardType::ALL
+                .into_iter()
+                .filter(|card_type| current.contains(*card_type) && !removed.contains(*card_type))
+                .fold(CardTypeSet::empty(), CardTypeSet::with),
+        }
+    }
+
+    /// The colours a permanent actually is after layer-5 operations.
     pub(super) fn effective_colors(&self, permanent: &Permanent, rules: &CardRules) -> [bool; 5] {
-        permanent
-            .color_override
-            .or_else(|| {
-                self.effective_animation(permanent)
-                    .and_then(|animation| animation.colors)
+        let mut colors = rules.color_set();
+        let mut operations = permanent
+            .resolved_continuous_effects
+            .iter()
+            .filter(|effect| self.resolved_continuous_effect_is_active(effect))
+            .filter_map(|effect| match effect.kind {
+                ResolvedContinuousEffectKind::Colors(operation) => {
+                    Some((effect.timestamp, effect.component_order, operation))
+                }
+                _ => None,
             })
-            .map_or_else(|| rules.colors(), ColorSet::to_flags)
+            .collect::<Vec<_>>();
+        if let Some(_pass) = StaticSetCharacteristicLayerGuard::enter() {
+            let result = self.visit_static_applied_effects(permanent, |applied| {
+                if let AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
+                    operation,
+                )) = applied.effect
+                {
+                    operations.push((applied.timestamp, applied.component_order, operation));
+                }
+                ControlFlow::Continue(())
+            });
+            debug_assert!(result.is_continue());
+        }
+        operations.sort_by_key(|(timestamp, order, _)| (*timestamp, *order));
+        for (_, _, operation) in operations {
+            colors = Self::apply_color_operation(colors, operation);
+        }
+        colors.to_flags()
+    }
+
+    fn apply_color_operation(current: ColorSet, operation: SetOperationDef<ColorSet>) -> ColorSet {
+        let (included, excluded) = match operation {
+            SetOperationDef::Add(added) => (Some(added), None),
+            SetOperationDef::Remove(removed) => (None, Some(removed)),
+            SetOperationDef::Set(set) => return set,
+        };
+        [
+            ManaColor::White,
+            ManaColor::Blue,
+            ManaColor::Black,
+            ManaColor::Red,
+            ManaColor::Green,
+        ]
+        .into_iter()
+        .filter(|color| {
+            (current.contains(*color) || included.is_some_and(|set| set.contains(*color)))
+                && !excluded.is_some_and(|set| set.contains(*color))
+        })
+        .fold(ColorSet::empty(), ColorSet::with)
     }
 
     /// Every colour question about a permanent goes through here, so a

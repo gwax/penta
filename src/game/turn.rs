@@ -1,6 +1,6 @@
 use super::{
-    AbilityEffectExpiration, Action, AlternativeCastKindDef, CardBehavior, CardDefinitionId,
-    CardType, CombatDamageStage, CommittedTriggerEvent, DecisionContinuation, DecisionOption,
+    Action, AlternativeCastKindDef, CardBehavior, CardDefinitionId, CardType, CombatDamageStage,
+    CommittedTriggerEvent, ContinuousEffectExpiration, DecisionContinuation, DecisionOption,
     DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
     DeferredBeginTurnEffect, EffectDef, EffectResolutionContext, Game, GameEvent, GameObjectId,
     GameResult, ManaPool, PendingProcedure, PlayerId, ReplacementEventDef, Step, TriggerContext,
@@ -331,28 +331,6 @@ impl Game {
         }
     }
 
-    /// Drops the granted and removed abilities whose window closed with the
-    /// turn that just began.
-    fn expire_turn_scoped_ability_changes(&mut self) {
-        let turns_started = self.turns_started;
-        let active = self.active_player;
-        let expired = |expiration: AbilityEffectExpiration| match expiration {
-            AbilityEffectExpiration::UpkeepOf(player) => player != active,
-            AbilityEffectExpiration::TurnOf { player, turn } => {
-                turns_started[player.index()] < turn
-            }
-            AbilityEffectExpiration::EndOfTurn | AbilityEffectExpiration::Never => true,
-        };
-        for permanent in &mut self.battlefield {
-            permanent
-                .temporary_granted_abilities
-                .retain(|grant| expired(grant.expiration));
-            permanent
-                .temporary_removed_abilities
-                .retain(|removal| expired(removal.expiration));
-        }
-    }
-
     pub(super) fn commit_next_turn(
         &mut self,
         next_player: PlayerId,
@@ -365,7 +343,14 @@ impl Game {
         self.turn += 1;
         self.active_player = next_player;
         self.turns_started[self.active_player.index()] += 1;
-        self.expire_turn_scoped_ability_changes();
+        let turns_started = self.turns_started;
+        for permanent in &mut self.battlefield {
+            permanent.resolved_continuous_effects.retain(|effect| {
+                effect
+                    .expiration
+                    .survives_turn_start(self.active_player, turns_started)
+            });
+        }
         self.creature_died_this_turn = false;
         self.sorcery_flash_grants = [0; 2];
         self.additional_combat_phases = 0;
@@ -515,8 +500,9 @@ impl Game {
         for replacements in &mut self.draw_replacements {
             replacements.clear();
         }
-        // A bonus whose source has untapped or left is spent; dropping it at
-        // cleanup keeps the list from growing without bound.
+        // A source-tapped effect survives cleanup only while its recorded
+        // source is still present and tapped. Once spent, remove the ordered
+        // component so tapping that source again cannot revive it.
         let still_tapped: Vec<_> = self
             .battlefield
             .iter()
@@ -524,9 +510,6 @@ impl Game {
             .map(|permanent| permanent.card.id)
             .collect();
         for permanent in &mut self.battlefield {
-            permanent
-                .while_source_tapped
-                .retain(|bonus| still_tapped.contains(&bonus.source));
             permanent
                 .held_tapped_by
                 .retain(|source| still_tapped.contains(source));
@@ -536,15 +519,14 @@ impl Game {
             permanent.exile_instead_of_dying = false;
             permanent.damage_sources.clear();
             permanent.deathtouch_damage = false;
-            permanent.power_bonus = 0;
-            permanent.toughness_bonus = 0;
             permanent.temporary_keywords.clear();
-            permanent
-                .temporary_granted_abilities
-                .retain(|grant| grant.expiration != AbilityEffectExpiration::EndOfTurn);
-            permanent
-                .temporary_removed_abilities
-                .retain(|removal| removal.expiration != AbilityEffectExpiration::EndOfTurn);
+            permanent.resolved_continuous_effects.retain(|effect| {
+                effect.expiration.survives_cleanup()
+                    && (!matches!(
+                        effect.expiration,
+                        ContinuousEffectExpiration::WhileSourceTapped
+                    ) || still_tapped.contains(&effect.source.object))
+            });
             // A control change held by a permanent outlives the turn; only
             // the turn-scoped form is ended here.
             if permanent.control_source.is_none()
@@ -558,7 +540,6 @@ impl Game {
             permanent.combat_damage_dealt_by_prevented = false;
             permanent.damage_dealt_by_prevented = false;
             permanent.destroy_at_end = false;
-            permanent.animation = None;
             permanent.activations_this_turn.clear();
             permanent.dealt_damage_to_opponent_this_turn = false;
             permanent.regeneration_shields = 0;

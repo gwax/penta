@@ -89,10 +89,10 @@ pub(in crate::card::sets) static HOLY_LIGHT: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(-1),
-                toughness: ValueDef::Constant(-1),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-1),
+                ValueDef::Constant(-1),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )]),
@@ -149,10 +149,10 @@ pub(in crate::card::sets) static MORALE: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(1),
-                toughness: ValueDef::Constant(1),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(1),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )]),
@@ -300,10 +300,10 @@ pub(in crate::card::sets) static ELECTRIC_EEL: CardRecord = CardRecord::new(
             EffectDef::Sequence(&[
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(2),
-                        toughness: ValueDef::Constant(0),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(2),
+                        ValueDef::Constant(0),
+                    ),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::DealDamage {
@@ -454,10 +454,10 @@ pub(in crate::card::sets) static SUNKEN_CITY: CardRecord = CardRecord::new(
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
@@ -484,10 +484,10 @@ pub(in crate::card::sets) static WATER_WURM: CardRecord = CardRecord::new(
             "This creature gets +0/+1 as long as an opponent controls an Island.",
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(0),
-                    toughness: ValueDef::AnyMatchingObject(&WATER_WURM_OPPONENT_ISLAND),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::AnyMatchingObject(&WATER_WURM_OPPONENT_ISLAND),
+                ),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
@@ -627,10 +627,10 @@ pub(in crate::card::sets) static MARSH_GAS: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(-2),
-                toughness: ValueDef::Constant(0),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-2),
+                ValueDef::Constant(0),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )]),
@@ -722,7 +722,7 @@ pub(in crate::card::sets) static BLOOD_MOON: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::SetLandTypes(&[crate::card::BasicLandType::Mountain]),
+            effect: AppliedEffectDef::set_basic_land_types(&[crate::card::BasicLandType::Mountain]),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )]),
@@ -767,10 +767,10 @@ pub(in crate::card::sets) static CAVE_PEOPLE: CardRecord = CardRecord::new(
             TriggerEventDef::Attacks(ObjectPredicateDef::Source),
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(-2),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(-2),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -785,7 +785,7 @@ pub(in crate::card::sets) static CAVE_PEOPLE: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::GrantAbility(&abilities::mountainwalk()),
+                effect: AppliedEffectDef::add_ability(&abilities::mountainwalk()),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -808,10 +808,10 @@ pub(in crate::card::sets) static FIRE_DRAKE: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         )
@@ -972,10 +972,7 @@ pub(in crate::card::sets) static ORC_GENERAL: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(1),
-                toughness: ValueDef::Constant(1),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )]),
@@ -1044,7 +1041,7 @@ pub(in crate::card::sets) static HIDDEN_PATH: CardRecord = CardRecord::new(
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
-                effect: AppliedEffectDef::GrantAbility(&abilities::forestwalk()),
+                effect: AppliedEffectDef::add_ability(&abilities::forestwalk()),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
@@ -1115,10 +1112,10 @@ pub(in crate::card::sets) static PEOPLE_OF_THE_WOODS: CardRecord = CardRecord::n
             "People of the Woods's toughness is equal to the number of Forests you control.",
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(0),
-                    toughness: ValueDef::CountMatchingObjects(&FORESTS_YOU_CONTROL),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::CountMatchingObjects(&FORESTS_YOU_CONTROL),
+                ),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )
@@ -1186,7 +1183,7 @@ pub(in crate::card::sets) static SCARWOOD_HAG: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::GrantAbility(&abilities::forestwalk()),
+                effect: AppliedEffectDef::add_ability(&abilities::forestwalk()),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1198,7 +1195,7 @@ pub(in crate::card::sets) static SCARWOOD_HAG: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Keyword(
+                effect: AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(
                     KeywordAbility::Landwalk(BasicLandType::Forest),
                 )),
                 duration: EffectDurationDef::UntilEndOfTurn,
@@ -1301,7 +1298,7 @@ const fn wormwood_clause(land_type: BasicLandType) -> [EffectDef; 2] {
     [
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::GrantAbility(match land_type {
+            effect: AppliedEffectDef::add_ability(match land_type {
                 BasicLandType::Forest => &FORESTWALK,
                 _ => &SWAMPWALK,
             }),
@@ -1392,10 +1389,10 @@ pub(in crate::card::sets) static BONE_FLUTE: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(-1),
-                toughness: ValueDef::Constant(0),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-1),
+                ValueDef::Constant(0),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )]),

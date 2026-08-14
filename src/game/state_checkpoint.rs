@@ -3,21 +3,23 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use serde_json::Value;
 
 use super::{
-    AbilityEffectExpiration, AbilitySourceRef, ApplicableReplacement, AppliedStackEffect,
-    BasicLandTypeChange, BattlefieldEntryReplacementEffect, CardInstance, CharacteristicSource,
-    CombatDamageStage, ContinuousEffectTimestamp, CopiableAbility, CopiableCharacteristics,
-    CounterKind, EffectResolutionContext, EntryCompletion, Game, GameEvent, GameObjectId,
-    GameStack, Mana, ManaSource, ObjectBacking, PendingBattlefieldEntry, PendingEvent,
-    PendingReplacementEffect, Permanent, PlayerId, PlayerState, Pregame, PreventionShield,
-    RelationalDamagePrevention, RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext,
-    ReplayRng, RetiredObject, ScopedEffect, ShieldCoverageDef, StackAbilityPayload, StackObject,
-    StackObjectKind, Step, TappedSourceStatBonus, TemporaryAbilityGrant, TemporaryGrantedAbility,
-    TemporaryRemovedAbilities, TriggerContext, ZoneMoveCause,
+    AbilitySourceRef, ApplicableReplacement, AppliedStackEffect, BasicLandTypeChange,
+    BattlefieldEntryReplacementEffect, CardInstance, CharacteristicSource, CombatDamageStage,
+    ContinuousEffectExpiration, ContinuousEffectTimestamp, CopiableAbility,
+    CopiableCharacteristics, CounterKind, EffectResolutionContext, EntryCompletion, Game,
+    GameEvent, GameObjectId, GameStack, Mana, ManaSource, ObjectBacking, PendingBattlefieldEntry,
+    PendingEvent, PendingReplacementEffect, Permanent, PlayerId, PlayerState, Pregame,
+    PreventionShield, RelationalDamagePrevention, RelationalSourceFilter, ReplaceableEvent,
+    ReplacementEffectContext, ReplayRng, ResolvedAbilityOperation, ResolvedContinuousEffect,
+    ResolvedContinuousEffectKind, ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect,
+    ShieldCoverageDef, StackAbilityPayload, StackObject, StackObjectKind, Step,
+    TemporaryAbilityGrant, TriggerContext, ZoneMoveCause,
 };
 use crate::card::{
-    AppliedEffectDef, BasicLandType, CardType, CardTypeSet, ColorSet, DeclarativeAbilityDef,
-    EffectDef, EffectRecipientDef, ManaColor, ReplacementEffectDef, ReplacementEventDef, SpellForm,
-    ZoneKind,
+    AbilityOperationDef, AppliedEffectDef, BasicLandType, CardType, CardTypeSet,
+    CharacteristicOperationDef, ColorSet, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
+    ManaColor, PowerToughnessOperationDef, ReplacementEffectDef, ReplacementEventDef,
+    SetOperationDef, SpellForm, ZoneKind,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::{
@@ -30,7 +32,6 @@ mod decision;
 mod emblem;
 mod event;
 mod model;
-mod model_animation;
 mod model_keyword;
 mod model_prevention;
 mod model_procedure;
@@ -56,28 +57,27 @@ use event::{
     pending_event_snapshot,
 };
 use model::{
-    AbilityActivationSnapshot, AbilityEffectExpirationSnapshot, AbilityOriginSnapshot,
-    AbilitySourceSnapshot, ApplicableReplacementSnapshot, AttackDefenderSnapshot,
-    BasicLandTypeSnapshot, CombatDamageAssignmentSnapshot, CombatDamageStageSnapshot,
+    AbilityActivationSnapshot, AbilityOriginSnapshot, AbilitySourceSnapshot,
+    ApplicableReplacementSnapshot, AttackDefenderSnapshot, BasicLandTypeSnapshot,
+    CombatDamageAssignmentSnapshot, CombatDamageStageSnapshot, ContinuousEffectExpirationSnapshot,
     CopiableAbilitySnapshot, CopiableCharacteristicsSnapshot, CopiedFromSnapshot,
     DetachedCardSnapshot, DetachedPermanentSnapshot, EntryCompletionSnapshot,
     EntryReplacementLocator, GameSnapshot, ManaColorSnapshot, ManaSnapshot, ManaSourceSnapshot,
     PendingBattlefieldEntrySnapshot, PendingEventSnapshot, PendingReplacementEffectSnapshot,
     PermanentSnapshot, PregameSnapshot, RelationalDamagePreventionSnapshot,
-    ReplacementEffectContextSnapshot, RetiredObjectSnapshot, StackSnapshot,
-    TemporaryAbilityGrantSnapshot, TemporaryGrantedAbilitySnapshot,
-    TemporaryRemovedAbilitySnapshot, ZoneKindSnapshot,
+    ReplacementEffectContextSnapshot, ResolvedContinuousEffectSnapshot,
+    ResolvedContinuousOperationSnapshot, RetiredObjectSnapshot, SetOperationSnapshot,
+    StackSnapshot, TemporaryAbilityGrantSnapshot, ZoneKindSnapshot,
 };
-use model_animation::UpkeepKeywordSnapshot;
+use model_keyword::UpkeepKeywordSnapshot;
 use permanent::{detached_permanent_snapshot, permanent_snapshot};
 use procedure::{
     draw_replacement_referenced_object_ids, draw_replacement_snapshot, parse_draw_replacement,
     parse_pending_procedure, pending_procedure_referenced_object_ids, pending_procedure_snapshot,
 };
 use semantics::{
-    ability_locator, animation_snapshot, applied_effect_locator, catalog_ability,
-    catalog_animation, catalog_applied_effect, catalog_mana_payload, keyword_snapshot,
-    mana_payload_locator, parse_keyword,
+    ability_locator, catalog_ability, catalog_applied_effect, catalog_mana_payload,
+    keyword_snapshot, mana_payload_locator, parse_keyword, resolved_applied_effect_locator,
 };
 use stack::{
     applied_stack_effect_snapshots, detached_stack_snapshot, parse_detached_stack, parse_stack,
@@ -265,6 +265,24 @@ impl Game {
             .collect::<Vec<_>>();
         let has_unlocated_pending_procedure =
             pending_procedures.len() != self.pending_procedures.len();
+        let battlefield = self
+            .battlefield
+            .iter()
+            .map(|permanent| permanent_snapshot(&self.catalog, permanent))
+            .collect::<Vec<_>>();
+        let has_unlocated_battlefield_characteristics = battlefield
+            .iter()
+            .any(|permanent| permanent.has_dynamic_characteristics);
+        let has_unlocated_pending_characteristics = pending_events
+            .iter()
+            .any(|pending| pending.entry.permanent.state.has_dynamic_characteristics);
+        let has_unlocated_retired_characteristics = retired_objects.iter().any(|retired| {
+            matches!(
+                retired,
+                RetiredObjectSnapshot::Permanent { permanent, .. }
+                    if permanent.state.has_dynamic_characteristics
+            )
+        });
         GameSnapshot {
             version: crate::protocol::CHECKPOINT_VERSION,
             simulation_fingerprint: crate::protocol::SIMULATION_FINGERPRINT.to_owned(),
@@ -401,11 +419,7 @@ impl Game {
                     combatants: strike_wave_combatants.iter().map(|id| id.0).collect(),
                 },
             },
-            battlefield: self
-                .battlefield
-                .iter()
-                .map(|permanent| permanent_snapshot(&self.catalog, permanent))
-                .collect(),
+            battlefield,
             emblems: self.emblems.iter().map(emblem_snapshot).collect(),
             stack: self
                 .stack
@@ -456,6 +470,9 @@ impl Game {
                 || has_unsupported_event
                 || has_unlocated_pending_trigger
                 || has_unlocated_retired_object
+                || has_unlocated_battlefield_characteristics
+                || has_unlocated_pending_characteristics
+                || has_unlocated_retired_characteristics
                 || has_unlocated_mana
                 || has_unlocated_draw_replacement
                 || has_unlocated_pending_procedure,
@@ -860,38 +877,46 @@ const fn parse_mana_color(color: ManaColorSnapshot) -> crate::ManaColor {
 }
 
 const fn expiration_snapshot(
-    expiration: AbilityEffectExpiration,
-) -> AbilityEffectExpirationSnapshot {
+    expiration: ContinuousEffectExpiration,
+) -> ContinuousEffectExpirationSnapshot {
     match expiration {
-        AbilityEffectExpiration::EndOfTurn => AbilityEffectExpirationSnapshot::EndOfTurn,
-        AbilityEffectExpiration::UpkeepOf(player) => AbilityEffectExpirationSnapshot::UpkeepOf {
-            seat: player.index(),
-        },
-        AbilityEffectExpiration::TurnOf { player, turn } => {
-            AbilityEffectExpirationSnapshot::TurnOf {
+        ContinuousEffectExpiration::EndOfTurn => ContinuousEffectExpirationSnapshot::EndOfTurn,
+        ContinuousEffectExpiration::UpkeepOf(player) => {
+            ContinuousEffectExpirationSnapshot::UpkeepOf {
+                seat: player.index(),
+            }
+        }
+        ContinuousEffectExpiration::TurnOf { player, turn } => {
+            ContinuousEffectExpirationSnapshot::TurnOf {
                 seat: player.index(),
                 turn,
             }
         }
-        AbilityEffectExpiration::Never => AbilityEffectExpirationSnapshot::Never,
+        ContinuousEffectExpiration::WhileSourceTapped => {
+            ContinuousEffectExpirationSnapshot::WhileSourceTapped
+        }
+        ContinuousEffectExpiration::Never => ContinuousEffectExpirationSnapshot::Never,
     }
 }
 
 fn parse_expiration(
-    expiration: AbilityEffectExpirationSnapshot,
-) -> Result<AbilityEffectExpiration, String> {
+    expiration: ContinuousEffectExpirationSnapshot,
+) -> Result<ContinuousEffectExpiration, String> {
     match expiration {
-        AbilityEffectExpirationSnapshot::EndOfTurn => Ok(AbilityEffectExpiration::EndOfTurn),
-        AbilityEffectExpirationSnapshot::UpkeepOf { seat } => {
-            Ok(AbilityEffectExpiration::UpkeepOf(player_from_index(seat)?))
-        }
-        AbilityEffectExpirationSnapshot::TurnOf { seat, turn } => {
-            Ok(AbilityEffectExpiration::TurnOf {
+        ContinuousEffectExpirationSnapshot::EndOfTurn => Ok(ContinuousEffectExpiration::EndOfTurn),
+        ContinuousEffectExpirationSnapshot::UpkeepOf { seat } => Ok(
+            ContinuousEffectExpiration::UpkeepOf(player_from_index(seat)?),
+        ),
+        ContinuousEffectExpirationSnapshot::TurnOf { seat, turn } => {
+            Ok(ContinuousEffectExpiration::TurnOf {
                 player: player_from_index(seat)?,
                 turn,
             })
         }
-        AbilityEffectExpirationSnapshot::Never => Ok(AbilityEffectExpiration::Never),
+        ContinuousEffectExpirationSnapshot::WhileSourceTapped => {
+            Ok(ContinuousEffectExpiration::WhileSourceTapped)
+        }
+        ContinuousEffectExpirationSnapshot::Never => Ok(ContinuousEffectExpiration::Never),
     }
 }
 

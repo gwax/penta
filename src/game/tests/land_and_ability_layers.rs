@@ -41,6 +41,244 @@ fn resolve_applied_effect_on_permanent(
 }
 
 #[test]
+fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_types() {
+    let mut game = ready_game();
+    game.catalog = crate::card::catalog().unwrap();
+    game.turns_started[PlayerId::One.index()] = 1;
+    let factory = GameObjectId(10_000);
+    let queen = GameObjectId(10_001);
+    game.battlefield.extend([
+        creature(factory.0, cards::MISHRA_S_FACTORY, PlayerId::One),
+        creature(queen.0, cards::SORCERESS_QUEEN, PlayerId::One),
+    ]);
+
+    game.players[0].mana_pool.colorless = 1;
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: factory,
+            ability: activated_ability_for(&game, factory, 0),
+            targets: Vec::new(),
+            cost_object: None,
+            x: 0,
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: queen,
+            ability: activated_ability_for(&game, queen, 0),
+            targets: activated_targets(Target::Permanent(factory)),
+            cost_object: None,
+            x: 0,
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+
+    let affected = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == factory)
+        .expect("Factory remains on the battlefield")
+        .clone();
+    let types = game
+        .permanent_types(&affected)
+        .expect("Factory has card types");
+    for card_type in [CardType::Land, CardType::Artifact, CardType::Creature] {
+        assert!(types.contains(card_type));
+    }
+    assert!(
+        game.effective_subtypes(&affected)
+            .contains(&"Assembly-Worker")
+    );
+    assert_eq!(
+        (game.power(&affected), game.toughness(&affected)),
+        (Some(0), Some(2))
+    );
+
+    game.players[0].mana_pool.colorless = 1;
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: factory,
+            ability: activated_ability_for(&game, factory, 0),
+            targets: Vec::new(),
+            cost_object: None,
+            x: 0,
+        },
+    )
+    .unwrap();
+    drain_pending(&mut game);
+    let affected = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == factory)
+        .expect("Factory remains on the battlefield");
+    assert_eq!(
+        (game.power(affected), game.toughness(affected)),
+        (Some(2), Some(2))
+    );
+}
+
+#[test]
+fn turn_preserves_land_subtypes_and_only_later_ability_grants() {
+    static EARLIER_FLYING: AbilityDef = abilities::flying();
+    static LATER_TRAMPLE: AbilityDef = abilities::trample();
+    static FOREST_ANIMATION: [AppliedEffectDef; 2] = [
+        AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+        AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+    ];
+    static TURN_CHARACTERISTICS: [AppliedEffectDef; 5] = [
+        AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+        AppliedEffectDef::set_creature_types(CreatureTypeSetDef::named(&["Weird"])),
+        AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
+        AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Red])),
+        AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(0), ValueDef::Constant(1)),
+    ];
+
+    let mut game = ready_game();
+    let forest = GameObjectId(10_000);
+    game.battlefield
+        .push(creature(forest.0, cards::FOREST, PlayerId::One));
+    resolve_applied_effect_on_permanent(
+        &mut game,
+        forest,
+        AppliedEffectDef::Composite(&FOREST_ANIMATION),
+        EffectDurationDef::UntilEndOfTurn,
+        20_000,
+    );
+    resolve_applied_effect_on_permanent(
+        &mut game,
+        forest,
+        AppliedEffectDef::add_ability(&EARLIER_FLYING),
+        EffectDurationDef::UntilEndOfTurn,
+        20_001,
+    );
+    assert_eq!(
+        intrinsic_mana_colors(&game, &game.battlefield[0]),
+        vec![ManaColor::Green]
+    );
+    assert!(game.has_flying(&game.battlefield[0]));
+
+    resolve_applied_effect_on_permanent(
+        &mut game,
+        forest,
+        AppliedEffectDef::Composite(&TURN_CHARACTERISTICS),
+        EffectDurationDef::UntilEndOfTurn,
+        20_002,
+    );
+    assert!(intrinsic_mana_colors(&game, &game.battlefield[0]).is_empty());
+    assert!(
+        game.mana_ability_activations(&game.battlefield[0])
+            .is_empty()
+    );
+    assert!(!game.has_flying(&game.battlefield[0]));
+
+    resolve_applied_effect_on_permanent(
+        &mut game,
+        forest,
+        AppliedEffectDef::add_ability(&LATER_TRAMPLE),
+        EffectDurationDef::UntilEndOfTurn,
+        20_003,
+    );
+    let affected = &game.battlefield[0];
+    assert!(game.has_trample(affected));
+    let subtypes = game.effective_subtypes(affected);
+    assert!(subtypes.contains(&"Forest"));
+    assert!(subtypes.contains(&"Weird"));
+    assert_eq!(
+        (game.power(affected), game.toughness(affected)),
+        (Some(0), Some(1))
+    );
+}
+
+#[test]
+fn end_of_turn_base_setter_reveals_an_earlier_permanent_setter_at_cleanup() {
+    let mut game = ready_game();
+    let target = GameObjectId(10_000);
+    game.battlefield
+        .push(creature(target.0, cards::SAVANNAH_LIONS, PlayerId::One));
+    resolve_applied_effect_on_permanent(
+        &mut game,
+        target,
+        AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(5), ValueDef::Constant(5)),
+        EffectDurationDef::Permanent,
+        20_000,
+    );
+    resolve_applied_effect_on_permanent(
+        &mut game,
+        target,
+        AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+        EffectDurationDef::UntilEndOfTurn,
+        20_001,
+    );
+    assert_eq!(
+        (
+            game.power(&game.battlefield[0]),
+            game.toughness(&game.battlefield[0])
+        ),
+        (Some(1), Some(1))
+    );
+
+    game.finish_cleanup();
+    assert_eq!(
+        (
+            game.power(&game.battlefield[0]),
+            game.toughness(&game.battlefield[0])
+        ),
+        (Some(5), Some(5)),
+        "cleanup removes only the later EOT setter"
+    );
+    assert_eq!(game.battlefield[0].resolved_continuous_effects.len(), 1);
+    assert_eq!(
+        game.battlefield[0].resolved_continuous_effects[0].expiration,
+        ContinuousEffectExpiration::Never
+    );
+}
+
+#[test]
+fn same_timestamp_composite_removes_then_adds_abilities_in_component_order() {
+    static LATER_TRAMPLE: AbilityDef = abilities::trample();
+    static REMOVE_THEN_ADD: [AppliedEffectDef; 2] = [
+        AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
+        AppliedEffectDef::add_ability(&LATER_TRAMPLE),
+    ];
+
+    let mut game = ready_game();
+    let target = GameObjectId(10_000);
+    game.battlefield
+        .push(creature(target.0, cards::SERRA_ANGEL, PlayerId::One));
+    resolve_applied_effect_on_permanent(
+        &mut game,
+        target,
+        AppliedEffectDef::Composite(&REMOVE_THEN_ADD),
+        EffectDurationDef::UntilEndOfTurn,
+        20_000,
+    );
+
+    let affected = &game.battlefield[0];
+    assert!(!game.has_flying(affected));
+    assert!(!game.permanent_has_executable_keyword(affected, KeywordAbility::Vigilance));
+    assert!(game.has_trample(affected));
+    assert_eq!(game.effective_abilities(affected).len(), 1);
+    let operations = affected
+        .resolved_continuous_effects
+        .iter()
+        .filter(|effect| matches!(effect.kind, ResolvedContinuousEffectKind::Abilities(_)))
+        .collect::<Vec<_>>();
+    assert_eq!(operations.len(), 2);
+    assert_eq!(operations[0].timestamp, operations[1].timestamp);
+    assert_eq!(
+        [operations[0].component_order, operations[1].component_order],
+        [0, 1]
+    );
+}
+
+#[test]
 fn urborg_and_yavimaya_add_types_and_intrinsic_mana_to_every_land() {
     for sources in [
         [
@@ -384,7 +622,7 @@ fn blood_moon_preserves_external_grants_but_later_ability_removal_removes_them()
     resolve_applied_effect_on_permanent(
         &mut game,
         stage_id,
-        AppliedEffectDef::GrantAbility(&GRANTED_FLYING),
+        AppliedEffectDef::add_ability(&GRANTED_FLYING),
         EffectDurationDef::UntilEndOfTurn,
         20_000,
     );
@@ -401,7 +639,7 @@ fn blood_moon_preserves_external_grants_but_later_ability_removal_removes_them()
     resolve_applied_effect_on_permanent(
         &mut game,
         stage_id,
-        AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Any),
+        AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
         EffectDurationDef::UntilEndOfTurn,
         20_001,
     );
@@ -436,7 +674,7 @@ fn resolved_ability_additions_and_removals_are_ordered_and_expire() {
     resolve_applied_effect_on_permanent(
         &mut game,
         target,
-        AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Any),
+        AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
         EffectDurationDef::UntilEndOfTurn,
         20_000,
     );
@@ -445,7 +683,7 @@ fn resolved_ability_additions_and_removals_are_ordered_and_expire() {
     resolve_applied_effect_on_permanent(
         &mut game,
         target,
-        AppliedEffectDef::GrantAbility(&GRANTED_ACTIVATED),
+        AppliedEffectDef::add_ability(&GRANTED_ACTIVATED),
         EffectDurationDef::UntilEndOfTurn,
         20_001,
     );
@@ -463,14 +701,14 @@ fn resolved_ability_additions_and_removals_are_ordered_and_expire() {
     resolve_applied_effect_on_permanent(
         &mut game,
         target,
-        AppliedEffectDef::GrantAbility(&GRANTED_FLYING),
+        AppliedEffectDef::add_ability(&GRANTED_FLYING),
         EffectDurationDef::UntilEndOfTurn,
         20_002,
     );
     resolve_applied_effect_on_permanent(
         &mut game,
         target,
-        AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Keyword(KeywordAbility::Flying)),
+        AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(KeywordAbility::Flying)),
         EffectDurationDef::UntilEndOfTurn,
         20_003,
     );
@@ -514,7 +752,7 @@ fn resolved_keyword_changes_are_visible_to_object_predicates() {
     resolve_applied_effect_on_permanent(
         &mut game,
         target,
-        AppliedEffectDef::GrantAbility(&GRANTED_FLYING),
+        AppliedEffectDef::add_ability(&GRANTED_FLYING),
         EffectDurationDef::UntilEndOfTurn,
         20_000,
     );
@@ -522,7 +760,7 @@ fn resolved_keyword_changes_are_visible_to_object_predicates() {
     resolve_applied_effect_on_permanent(
         &mut game,
         target,
-        AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Keyword(KeywordAbility::Flying)),
+        AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(KeywordAbility::Flying)),
         EffectDurationDef::UntilEndOfTurn,
         20_001,
     );
@@ -574,7 +812,7 @@ fn resolved_ability_removal_suppresses_custom_behavior_until_it_expires() {
     resolve_applied_effect_on_permanent(
         &mut game,
         ape,
-        AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Any),
+        AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
         EffectDurationDef::UntilEndOfTurn,
         20_000,
     );
@@ -598,7 +836,7 @@ fn static_ability_additions_and_removals_follow_source_timestamps() {
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::GrantAbility(&FLYING),
+            effect: AppliedEffectDef::add_ability(&FLYING),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
@@ -610,7 +848,7 @@ fn static_ability_additions_and_removals_follow_source_timestamps() {
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Any),
+            effect: AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
@@ -743,7 +981,7 @@ fn game_granting_flying(extra: Vec<CardDefinition>) -> Game {
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::GrantAbility(&FLYING),
+            effect: AppliedEffectDef::add_ability(&FLYING),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
@@ -811,7 +1049,7 @@ fn a_static_ability_grant_picks_recipients_from_the_layer_below_itself() {
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::GrantAbility(&TRAMPLE),
+            effect: AppliedEffectDef::add_ability(&TRAMPLE),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];
@@ -841,10 +1079,10 @@ fn a_static_power_effect_keyed_on_a_keyword_sees_a_static_grant() {
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(-1),
-                toughness: ValueDef::Constant(0),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-1),
+                ValueDef::Constant(0),
+            ),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];

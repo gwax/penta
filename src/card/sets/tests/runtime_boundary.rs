@@ -74,7 +74,7 @@ fn static_queries_reject_resolution_only_player_references() {
     );
     let effect = EffectDef::Apply {
         recipient: EffectRecipientDef::objects(ObjectSetDef::Query(EVENT_PLAYERS_PERMANENTS)),
-        effect: AppliedEffectDef::AddLandTypes(&[BasicLandType::Plains]),
+        effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Plains]),
         duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
 
@@ -333,7 +333,7 @@ fn nested_definition_assertions_descend_replacement_programs() {
     );
     static GRANT: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::GrantAbility(&UNSUPPORTED),
+        effect: AppliedEffectDef::add_ability(&UNSUPPORTED),
         duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
     static PROGRAM: [ReplacementEffectDef; 1] = [ReplacementEffectDef::Perform(&GRANT)];
@@ -497,8 +497,8 @@ fn long_lived_composite_ability_changes_accept_shared_activated_grants() {
         },
     );
     static CHANGES: [AppliedEffectDef; 2] = [
-        AppliedEffectDef::RemoveAbilities(AbilityPredicateDef::Any),
-        AppliedEffectDef::GrantAbility(&ACTIVATED),
+        AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
+        AppliedEffectDef::add_ability(&ACTIVATED),
     ];
     let recipient = EffectRecipientDef::matching_objects(
         ObjectPredicateDef::HasType(CardType::Creature),

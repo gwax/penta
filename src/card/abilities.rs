@@ -6,14 +6,13 @@
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef,
-    AnimationDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardType,
-    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ConditionDef, CostDef, CounterKind,
-    DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectPaymentDef, EffectRecipientDef,
-    KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef, PaymentDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef,
-    ReplacementEventDef, ScaledValueDef, ShieldCoverageDef, SplitIntoPilesDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind,
+    AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardType,
+    ChoiceVisibilityDef, ChooseDef, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef,
+    EffectDef, EffectDurationDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PartitionItemsDef, PayOrDef, PaymentDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, ScaledValueDef,
+    ShieldCoverageDef, SplitIntoPilesDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -68,13 +67,6 @@ pub const fn aura_spell(text: &'static str, targets: &'static [AbilityTargetDef]
         },
     )
 }
-
-/// Mishra's Factory's 2/2 Assembly-Worker artifact creature. The card's
-/// animation still resolves through its legacy immediate path, which reads
-/// this definition rather than restating the creature it becomes.
-pub static MISHRAS_FACTORY_ANIMATION: AnimationDef = AnimationDef::new(2, 2)
-    .with_types(CardTypeSet::single(CardType::Creature).with(CardType::Artifact))
-    .with_subtypes(&["Assembly-Worker"]);
 
 /// "Attacks each combat if able." Cards state this in their own words rather
 /// than as a printed keyword, so the text is supplied by the caller.
@@ -208,10 +200,10 @@ pub const fn rampage(amount: usize, text: &'static str) -> AbilityDef {
         TriggerEventDef::BecomesBlocked(ObjectPredicateDef::Source),
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Scaled(scale),
-                toughness: ValueDef::Scaled(scale),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Scaled(scale),
+                ValueDef::Scaled(scale),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )
@@ -301,7 +293,7 @@ const fn ward_clauses(color: usize) -> [EffectDef; 2] {
     [
         EffectDef::Apply {
             recipient: EffectRecipientDef::AttachedPermanent,
-            effect: AppliedEffectDef::GrantAbility(&WARD_PROTECTIONS[color]),
+            effect: AppliedEffectDef::add_ability(&WARD_PROTECTIONS[color]),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
         // Without this the Aura would be an illegal attachment the moment it
@@ -732,10 +724,10 @@ pub const fn exalted() -> AbilityDef {
         },
         EffectDef::Apply {
             recipient: EffectRecipientDef::TriggeringObject,
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(1),
-                toughness: ValueDef::Constant(1),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(1),
+            ),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )

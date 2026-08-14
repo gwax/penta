@@ -9,21 +9,23 @@ use crate::action::{
 #[cfg(test)]
 use crate::card::AbilityPredicateDef;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityProcedureDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivatedAbilityDef, ActivationTimingDef, AddManaEffectDef, AlternativeCastAbilityDef,
-    AlternativeCastKindDef, AnimationDef, AppliedEffectDef, BasicLandType,
+    AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityProcedureDef, AbilityTargetDef,
+    AbilityTargetPredicate, ActivatedAbilityDef, ActivationTimingDef, AddManaEffectDef,
+    AlternativeCastAbilityDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType,
     BattlefieldEntryModificationDef, CREATURE_TYPES, CardBehavior, CardCatalog,
     CardChoiceSourceDef, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
-    CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext, ColorSet,
-    ComparisonDef, ConditionDef, CostDef, CounterKind, DamageSourceGroupDef, DeclarativeAbilityDef,
-    DiscardSelectionDef, DividedTotal, DoubleFacedKind, EffectDef, EffectDurationDef,
-    EffectRecipientDef, EffectRecipientSetDef, HybridPair, KeywordAbility, ManaCost,
-    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, ShieldCoverageDef, TargetPredicate, TargetSlotDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef,
-    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
+    CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext,
+    CharacteristicOperationDef, ColorSet, ComparisonDef, ConditionDef, CostDef, CounterKind,
+    CreatureTypeSetDef, DamageSourceGroupDef, DeclarativeAbilityDef, DiscardSelectionDef,
+    DividedTotal, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef,
+    EffectRecipientSetDef, HybridPair, KeywordAbility, ManaCost, ManaRestrictionDef,
+    ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef,
+    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, SetOperationDef,
+    ShieldCoverageDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
+    abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;
@@ -122,9 +124,10 @@ use characteristic_state::{
 };
 use combat_state::CombatDamageStage;
 use continuous_state::{
-    AbilityEffectExpiration, AbilityLayerOperation, AbilityLayerOperationKind,
-    ContinuousEffectTimestamp, StaticAppliedEffect, StaticEffectTraversal, TemporaryAbilityGrant,
-    TemporaryGrantedAbility, TemporaryRemovedAbilities,
+    AbilityLayerOperation, AbilityLayerOperationKind, ContinuousEffectExpiration,
+    ContinuousEffectTimestamp, ResolvedAbilityOperation, ResolvedContinuousEffect,
+    ResolvedContinuousEffectKind, ResolvedPowerToughnessOperation, StaticAppliedEffect,
+    StaticEffectTraversal, TemporaryAbilityGrant,
 };
 use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
@@ -193,16 +196,6 @@ struct CardInstance {
     characteristics: CharacteristicSource,
 }
 
-/// A power/toughness modification that lasts while a named permanent
-/// remains tapped. The source is recorded rather than the deadline, since
-/// there is no deadline to record.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct TappedSourceStatBonus {
-    source: GameObjectId,
-    power: i16,
-    toughness: i16,
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 struct Permanent {
@@ -215,14 +208,9 @@ struct Permanent {
     tapped: bool,
     entered_controller_turn: u32,
     damage: u16,
-    /// Loyalty counters are distinct from marked creature damage and persist
-    power_bonus: i16,
-    toughness_bonus: i16,
-    /// Modifications that end when the permanent that made them untaps,
-    /// rather than at cleanup with `power_bonus`.
-    while_source_tapped: Vec<TappedSourceStatBonus>,
     /// Permanents whose staying tapped keeps this one from untapping. Like
-    /// `while_source_tapped` the rule has no deadline; the sources do.
+    /// a source-tapped continuous effect, the rule has no deadline; the
+    /// sources do.
     held_tapped_by: Vec<GameObjectId>,
     attacking: bool,
     attack_defender: Option<crate::AttackDefender>,
@@ -282,11 +270,8 @@ struct Permanent {
     chosen_card_name: Option<String>,
     destroy_at_end: bool,
     temporary_keywords: Vec<KeywordAbility>,
-    temporary_granted_abilities: Vec<TemporaryGrantedAbility>,
-    temporary_removed_abilities: Vec<TemporaryRemovedAbilities>,
-    /// The creature this permanent has become for the turn, if a manland's
-    /// animation ability has resolved.
-    animation: Option<&'static AnimationDef>,
+    /// Resolved noncopiable characteristic changes, in creation order.
+    resolved_continuous_effects: Vec<ResolvedContinuousEffect>,
     /// How many times each of this permanent's activated abilities has been
     /// activated this turn, for the cards that count their own activations.
     /// Cleared with the rest of the once-a-turn state.
@@ -363,9 +348,6 @@ impl Permanent {
             tapped: false,
             entered_controller_turn,
             damage: 0,
-            power_bonus: 0,
-            toughness_bonus: 0,
-            while_source_tapped: Vec::new(),
             held_tapped_by: Vec::new(),
             attacking: false,
             attack_defender: None,
@@ -391,9 +373,7 @@ impl Permanent {
             chosen_card_name: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
-            temporary_granted_abilities: Vec::new(),
-            temporary_removed_abilities: Vec::new(),
-            animation: None,
+            resolved_continuous_effects: Vec::new(),
             activations_this_turn: Vec::new(),
             counters: [0; CounterKind::COUNT],
             attached_to: None,

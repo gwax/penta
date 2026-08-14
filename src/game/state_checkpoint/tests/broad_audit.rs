@@ -232,15 +232,20 @@ fn categories(game: &Game, wire: &Value) -> Vec<&'static str> {
         "copied-permanents",
     );
     note(
-        battlefield().any(|permanent| !permanent.temporary_granted_abilities.is_empty()),
+        battlefield().any(|permanent| {
+            permanent.resolved_continuous_effects.iter().any(|effect| {
+                matches!(
+                    effect.kind,
+                    ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add { .. })
+                )
+            })
+        }),
         "granted-permanent-abilities",
     );
     note(
         battlefield().any(|permanent| {
             !permanent.temporary_keywords.is_empty()
-                || permanent.power_bonus != 0
-                || permanent.toughness_bonus != 0
-                || permanent.animation.is_some()
+                || !permanent.resolved_continuous_effects.is_empty()
                 || !permanent.text_changes.is_empty()
         }),
         "modified-permanents",

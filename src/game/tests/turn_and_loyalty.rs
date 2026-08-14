@@ -304,7 +304,7 @@ fn turn_strips_a_creature_and_burn_finishes_it() {
     game.resolve_effect_def(
         ScopedEffect::primary(EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            effect: AppliedEffectDef::Animate(&TURN_TEST_ANIMATION),
+            effect: AppliedEffectDef::Composite(&TURN_TEST_CHARACTERISTICS),
             duration: EffectDurationDef::UntilEndOfTurn,
         }),
         &turn,
@@ -348,11 +348,13 @@ fn turn_strips_a_creature_and_burn_finishes_it() {
     );
 }
 
-static TURN_TEST_ANIMATION: crate::card::AnimationDef = crate::card::AnimationDef::new(0, 1)
-    .becoming(
-        &["Weird"],
-        crate::card::ColorSet::from_colors(&[crate::card::ManaColor::Red]),
-    );
+static TURN_TEST_CHARACTERISTICS: [AppliedEffectDef; 5] = [
+    AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+    AppliedEffectDef::set_creature_types(CreatureTypeSetDef::named(&["Weird"])),
+    AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
+    AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Red])),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(0), ValueDef::Constant(1)),
+];
 
 #[test]
 fn flames_of_the_firebrand_splits_its_three_damage() {

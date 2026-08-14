@@ -359,7 +359,9 @@ pub(in super::super) fn assert_nested_definition_applied_effect(
                 assert_nested_definition_applied_effect(card_name, *effect);
             }
         }
-        AppliedEffectDef::GrantAbility(ability) => {
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        )) => {
             if ability.declarative_effect().is_some() {
                 assert!(
                     shared_definition_ability(ability),
@@ -385,11 +387,7 @@ pub(in super::super) fn assert_nested_definition_applied_effect(
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::RemoveAbilities(_)
-        | AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::ModifyPowerToughness { .. }
+        | AppliedEffectDef::Characteristic(_)
         | AppliedEffectDef::Special(_) => {}
     }
 }

@@ -60,9 +60,8 @@ pub struct PermanentObservation {
     /// characteristics. Changing faces does not change `id`.
     pub presented: CardPartId,
     pub controller: PlayerId,
-    /// The card types this permanent presents right now. An animated land
-    /// reports the creature types its animation added, which is what the
-    /// printed rules alone cannot say.
+    /// The card types this permanent presents right now, including resolved
+    /// continuous changes that the printed rules alone cannot say.
     pub types: CardTypeSet,
     /// Public choice associated with permanents such as Cavern of Souls.
     pub chosen_creature_type: Option<String>,

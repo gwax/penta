@@ -216,7 +216,7 @@ A clone forks the *true* state, hidden zones included. That is right for
 self-play but wrong for a search bot in a hosted match: its rollouts must use
 worlds consistent with its observation, not cards only the host knows.
 
-The optional `reconstruction.checkpoint.v3` capability advertises a hidden-safe
+The optional `reconstruction.checkpoint.v4` capability advertises a hidden-safe
 current-state checkpoint in each observation. The checkpoint was introduced in
 protocol 19, expanded in protocol 21 into the complete typed snapshot described
 below, and given its own nested format version in protocol 22. Supply a
@@ -349,7 +349,7 @@ world it can search.
 | field | meaning |
 | --- | --- |
 | `protocolVersion` | the breaking bot-wire epoch; protocol 22 objects are open-world, but an epoch mismatch requires migration |
-| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v3`; ignore unknown entries |
+| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v4`; ignore unknown entries |
 | `simulationFingerprint` | a conservative identity of simulation source and build requirements; pin it for training and require it for reconstruction |
 | `engineVersion` | package-release provenance; it is not an exact simulation identity |
 | `format` | the rules/deck profile slug, such as `"old-school-93-94"` or `"isd-rtr-standard"` |
@@ -713,9 +713,27 @@ that remain in hidden zones while a decision is pending also carry their actual
 origin seat and zone so reconstruction can keep their disclosed object ids
 without assuming that the deciding seat owns them.
 
-Current consumers of reconstruction should require
-`reconstruction.checkpoint.v3`; format-2 payloads and consumers must migrate
-rather than interpreting the new bookkeeping approximately.
+Consumers that implemented format 3 required
+`reconstruction.checkpoint.v3`; format-2 payloads could not interpret the new
+bookkeeping approximately.
+
+### Migrating checkpoint format 3 to 4
+
+This rules change again leaves protocol 22 in place. Checkpoint format 4
+replaces a permanent's separate animation, aggregate power/toughness bonus,
+granted-ability, and removed-ability bookkeeping with one ordered vector of
+resolved continuous effects. Each entry retains its exact authored effect,
+source-ability provenance, timestamp and component order, expiration, and any
+value that had to be evaluated when the effect resolved. In particular, a
+dynamic power/toughness value is frozen rather than being recomputed from the
+reconstructed battlefield.
+
+Format-3 checkpoints cannot be upgraded approximately: their aggregate
+power/toughness fields and single animation field no longer retain the
+individual effects, ordering, provenance, or duration needed to rebuild the
+new state. Current consumers of reconstruction should require
+`reconstruction.checkpoint.v4` and regenerate checkpoints with the current
+engine.
 
 ### Migrating from protocol 21
 
@@ -744,7 +762,7 @@ Protocol 22 splits wire compatibility from conservative source identity:
   `requiredSimulationFingerprint` to refuse a different simulation before it
   is listed or assigned.
 
-The current optional capability is `reconstruction.checkpoint.v3`. An ordinary
+The current optional capability is `reconstruction.checkpoint.v4`. An ordinary
 hosted bot that only reads `legalActions` should declare an empty capability
 list; do not copy the server's advertised capabilities without implementing
 them.

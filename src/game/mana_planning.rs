@@ -1,10 +1,10 @@
 use super::{
     AbilityCostDef, AbilityOrigin, AbilityProcedureDef, Action, ActivatedAbilityDef,
-    AppliedEffectDef, CardBehavior, CardDefinitionId, CardInstance, CardRules,
-    CharacteristicContext, CostConfiguration, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
-    FlexibleManaSource, Game, GameObjectId, HybridPair, ManaColor, ManaCost, ManaPaymentPurpose,
-    ManaPool, PlannedManaActivation, PlayOptionDef, PlayerId, TriggerContext, ValueDef, ZoneKind,
-    extra_target_cost,
+    AppliedEffectDef, CardBehavior, CardDefinitionId, CardInstance, CardRules, CardType,
+    CharacteristicContext, CharacteristicOperationDef, CostConfiguration, DeclarativeAbilityDef,
+    EffectDef, EffectRecipientDef, FlexibleManaSource, Game, GameObjectId, HybridPair, ManaColor,
+    ManaCost, ManaPaymentPurpose, ManaPool, PlannedManaActivation, PlayOptionDef, PlayerId,
+    SetOperationDef, TriggerContext, ValueDef, ZoneKind, extra_target_cost,
 };
 
 impl Game {
@@ -176,9 +176,9 @@ impl Game {
         match effect {
             Some(EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::Animate(_),
+                effect,
                 ..
-            }) => true,
+            }) => Self::applied_effect_adds_creature_type(effect),
             Some(EffectDef::Sequence(effects)) => effects
                 .iter()
                 .any(|effect| Self::effect_animates_source(Some(*effect))),
@@ -199,6 +199,19 @@ impl Game {
             Some(EffectDef::SplitIntoPiles(partition)) => {
                 Self::effect_animates_source(Some(*partition.then))
             }
+            _ => false,
+        }
+    }
+
+    fn applied_effect_adds_creature_type(effect: AppliedEffectDef) -> bool {
+        match effect {
+            AppliedEffectDef::Composite(effects) => effects
+                .iter()
+                .copied()
+                .any(Self::applied_effect_adds_creature_type),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+                SetOperationDef::Add(types) | SetOperationDef::Set(types),
+            )) => types.contains(CardType::Creature),
             _ => false,
         }
     }

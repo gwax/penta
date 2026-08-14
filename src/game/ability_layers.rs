@@ -3,9 +3,11 @@ use std::cell::Cell;
 use crate::card::AbilityPredicateDef;
 
 use super::{
-    AbilityDef, AbilityId, AbilityLayerOperation, AbilityLayerOperationKind, AbilityOrigin,
-    AppliedEffectDef, BasicLandType, CardBehavior, CardType, ControlFlow, DeclarativeAbilityDef,
-    EffectiveAbility, Game, KeywordAbility, Permanent, StaticAppliedEffect, abilities,
+    AbilityDef, AbilityId, AbilityLayerOperation, AbilityLayerOperationKind, AbilityOperationDef,
+    AbilityOrigin, AppliedEffectDef, BasicLandType, CardBehavior, CardType,
+    CharacteristicOperationDef, ControlFlow, DeclarativeAbilityDef, EffectiveAbility, Game,
+    KeywordAbility, Permanent, ResolvedAbilityOperation, ResolvedContinuousEffectKind,
+    StaticAppliedEffect, abilities,
 };
 
 thread_local! {
@@ -45,7 +47,7 @@ impl Game {
     /// Nothing else needs the question, so no full-walk variant exists yet.
     pub(super) fn has_nonmana_activated_ability(&self, permanent: &Permanent) -> bool {
         let mut abilities = self.collect_base_effective_abilities(permanent, None);
-        for operation in Self::resolved_ability_layer_operations(permanent) {
+        for operation in self.resolved_ability_layer_operations(permanent) {
             Self::apply_ability_layer_operation(&mut abilities, &operation);
         }
         abilities.into_iter().any(|effective| {
@@ -96,14 +98,8 @@ impl Game {
                 self.rules_text_abilities_removed_with_prospective(permanent, prospective)
             },
         );
-        let animation_removes_abilities = permanent
-            .animation
-            .is_some_and(|animation| animation.loses_abilities);
         let mut abilities = Vec::new();
-        if !rules_text_removed
-            && !animation_removes_abilities
-            && let Some(rules) = self.effective_rules(characteristics)
-        {
+        if !rules_text_removed && let Some(rules) = self.effective_rules(characteristics) {
             let (definition, part) = Self::effective_rules_source(characteristics);
             for attached in rules.indexed_abilities() {
                 abilities.push(EffectiveAbility {
@@ -191,13 +187,12 @@ impl Game {
         permanent: &Permanent,
         prospective: Option<&Permanent>,
     ) -> Vec<AbilityLayerOperation> {
-        let mut operations = Self::resolved_ability_layer_operations(permanent);
+        let mut operations = self.resolved_ability_layer_operations(permanent);
         let Some(_pass) = StaticAbilityLayerGuard::enter() else {
             return operations;
         };
         let mut visit_static = |applied: StaticAppliedEffect| {
-            let order = u16::try_from(operations.len()).unwrap_or(u16::MAX);
-            if let Some(operation) = Self::static_ability_layer_operation(applied, order) {
+            if let Some(operation) = Self::static_ability_layer_operation(applied) {
                 operations.push(operation);
             }
             ControlFlow::Continue(())
@@ -217,29 +212,44 @@ impl Game {
         operations
     }
 
-    fn resolved_ability_layer_operations(permanent: &Permanent) -> Vec<AbilityLayerOperation> {
+    fn resolved_ability_layer_operations(
+        &self,
+        permanent: &Permanent,
+    ) -> Vec<AbilityLayerOperation> {
         let mut operations = Vec::new();
-        for granted in &permanent.temporary_granted_abilities {
+        for effect in &permanent.resolved_continuous_effects {
+            if !self.resolved_continuous_effect_is_active(effect) {
+                continue;
+            }
+            let ResolvedContinuousEffectKind::Abilities(operation) = effect.kind else {
+                continue;
+            };
+            let kind = match operation {
+                ResolvedAbilityOperation::Add { ability, grant } => {
+                    let (source_definition, source_part, source_ability) =
+                        Self::ability_origin_components(
+                            effect.source.ability,
+                            permanent.card.definition,
+                        );
+                    AbilityLayerOperationKind::Add {
+                        origin: AbilityOrigin::Granted {
+                            source: effect.source.object,
+                            source_definition,
+                            source_part,
+                            source_ability,
+                            grant,
+                        },
+                        ability,
+                    }
+                }
+                ResolvedAbilityOperation::Remove(predicate) => {
+                    AbilityLayerOperationKind::Remove(predicate)
+                }
+            };
             operations.push(AbilityLayerOperation {
-                timestamp: granted.timestamp,
-                order: granted.order,
-                kind: AbilityLayerOperationKind::Add {
-                    origin: AbilityOrigin::Granted {
-                        source: granted.source,
-                        source_definition: granted.source_definition,
-                        source_part: granted.source_part,
-                        source_ability: granted.source_ability,
-                        grant: granted.grant,
-                    },
-                    ability: granted.ability,
-                },
-            });
-        }
-        for removal in &permanent.temporary_removed_abilities {
-            operations.push(AbilityLayerOperation {
-                timestamp: removal.timestamp,
-                order: removal.order,
-                kind: AbilityLayerOperationKind::Remove(removal.predicate),
+                timestamp: effect.timestamp,
+                order: effect.component_order,
+                kind,
             });
         }
         operations.sort_by_key(|operation| (operation.timestamp, operation.order));
@@ -262,10 +272,11 @@ impl Game {
 
     fn static_ability_layer_operation(
         applied: StaticAppliedEffect,
-        order: u16,
     ) -> Option<AbilityLayerOperation> {
         let kind = match applied.effect {
-            AppliedEffectDef::GrantAbility(ability) => AbilityLayerOperationKind::Add {
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Add(ability),
+            )) => AbilityLayerOperationKind::Add {
                 origin: AbilityOrigin::Granted {
                     source: applied.source,
                     source_definition: applied.source_definition,
@@ -277,10 +288,11 @@ impl Game {
                 },
                 ability: *ability,
             },
-            AppliedEffectDef::RemoveAbilities(predicate) => {
-                AbilityLayerOperationKind::Remove(predicate)
-            }
-            AppliedEffectDef::CannotBeCountered
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Remove(predicate),
+            )) => AbilityLayerOperationKind::Remove(predicate),
+            AppliedEffectDef::Characteristic(_)
+            | AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::DoesNotUntapDuringUntapStep
             | AppliedEffectDef::MayChooseNotToUntap
             | AppliedEffectDef::CannotBlock
@@ -297,16 +309,12 @@ impl Game {
             | AppliedEffectDef::RedirectPlayerDamageToThis(_)
             | AppliedEffectDef::PreventCombatDamage
             | AppliedEffectDef::PreventCombatDamageDealtBy
-            | AppliedEffectDef::AddLandTypes(_)
-            | AppliedEffectDef::SetLandTypes(_)
-            | AppliedEffectDef::Animate(_)
             | AppliedEffectDef::Composite(_)
-            | AppliedEffectDef::ModifyPowerToughness { .. }
             | AppliedEffectDef::Special(_) => return None,
         };
         Some(AbilityLayerOperation {
             timestamp: applied.timestamp,
-            order,
+            order: applied.component_order,
             kind,
         })
     }
@@ -409,7 +417,7 @@ impl Game {
 
     pub(super) fn effective_behavior(&self, permanent: &Permanent) -> Option<CardBehavior> {
         let mut abilities = self.collect_base_effective_abilities(permanent, None);
-        for operation in Self::resolved_ability_layer_operations(permanent) {
+        for operation in self.resolved_ability_layer_operations(permanent) {
             Self::apply_ability_layer_operation(&mut abilities, &operation);
         }
         abilities

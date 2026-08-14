@@ -400,9 +400,17 @@ fn su_chi_mana_and_source_power_use_ordinary_stack_and_lki() {
     assert_eq!(game.players[0].mana_pool.colorless, 4);
 
     let mut game = ready_game();
-    let mut source = creature(10_010, cards::SAVANNAH_LIONS, PlayerId::One);
-    source.power_bonus = 3;
+    let source = creature(10_010, cards::SAVANNAH_LIONS, PlayerId::One);
     game.battlefield.push(source);
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_010),
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(3),
+            ValueDef::Constant(0),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
     game.capture_trigger(&TriggerCapture {
         source: AbilitySourceRef {
             object: CardInstanceId(10_010),

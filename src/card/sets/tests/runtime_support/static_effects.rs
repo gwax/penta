@@ -195,6 +195,14 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
     }
 }
 
+fn shared_static_animation_query(recipient: EffectRecipientDef) -> bool {
+    recipient.object_query().is_some_and(|query| {
+        query.zones == [ZoneKind::Battlefield]
+            && shared_static_query(query)
+            && Game::static_animation_predicate_is_supported(query.object)
+    })
+}
+
 pub(in super::super) fn shared_static_applied_effect(
     recipient: EffectRecipientDef,
     effect: AppliedEffectDef,
@@ -207,13 +215,39 @@ pub(in super::super) fn shared_static_applied_effect(
                     .copied()
                     .all(|effect| shared_static_applied_effect(recipient, effect))
         }
-        AppliedEffectDef::ModifyPowerToughness { power, toughness } => {
-            static_stat_value(power) && static_stat_value(toughness)
-        }
-        AppliedEffectDef::AddLandTypes(land_types) | AppliedEffectDef::SetLandTypes(land_types) => {
-            !land_types.is_empty()
-        }
-        AppliedEffectDef::GrantAbility(ability) => shared_definition_ability(ability),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::SetBase { power, toughness }
+            | PowerToughnessOperationDef::Modify { power, toughness },
+        )) => static_stat_value(power) && static_stat_value(toughness),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(
+            SetOperationDef::Add(land_types)
+            | SetOperationDef::Remove(land_types)
+            | SetOperationDef::Set(land_types),
+        )) => !land_types.is_empty(),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        )) => shared_definition_ability(ability),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Remove(_),
+        )) => true,
+        // Static animation is deliberately narrower than resolving
+        // characteristic changes: it may add the creature card type, may
+        // repaint color, and must use a query that cannot read anything those
+        // operations supply. Static subtype changes remain outside this
+        // stratified walk.
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+            SetOperationDef::Add(types),
+        )) => types.contains(CardType::Creature) && shared_static_animation_query(recipient),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
+            SetOperationDef::Set(_),
+        )) => shared_static_animation_query(recipient),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+            SetOperationDef::Remove(_) | SetOperationDef::Set(_),
+        ))
+        | AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
+            SetOperationDef::Add(_) | SetOperationDef::Remove(_),
+        ))
+        | AppliedEffectDef::Characteristic(CharacteristicOperationDef::CreatureTypes(_)) => false,
         // A blocking restriction is read off the ordinary static-effect walk
         // over the attacker, so a group recipient works exactly as a
         // self-applied one does: Bower Passage names every creature you
@@ -258,25 +292,10 @@ pub(in super::super) fn shared_static_applied_effect(
         | AppliedEffectDef::CannotBlock
         | AppliedEffectDef::CannotAttack
         | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::RemoveAbilities(_)
         | AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController => true,
-        // A static animation is read live rather than materialised, so it
-        // is held to what `Game::static_animation` can stratify: it may only
-        // add the creature type and stats, and it may only be aimed by
-        // predicates that cannot read what it supplies.
-        AppliedEffectDef::Animate(animation) => {
-            Game::static_animation_is_additive(animation)
-                && match recipient.object_query() {
-                    Some(query) => {
-                        query.zones == [ZoneKind::Battlefield]
-                            && Game::static_animation_predicate_is_supported(query.object)
-                    }
-                    None => false,
-                }
-        }
         AppliedEffectDef::Special(_) => false,
     }
 }

@@ -23,7 +23,7 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRec
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
-                effect: AppliedEffectDef::AddLandTypes(&[BasicLandType::Forest]),
+                effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Forest]),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )),

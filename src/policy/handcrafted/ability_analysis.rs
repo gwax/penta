@@ -1,7 +1,8 @@
 use super::{
-    AbilityCostDef, AbilityOrigin, CardDefinitionId, DeclarativeAbilityDef,
-    DeclarativeSpellProfile, EffectDef, EffectRecipientDef, GameObjectId, HandcraftedPolicy,
-    ObjectPredicateDef, PlayerObservation, PlayerRelation, Step, Target, ValueDef,
+    AbilityCostDef, AbilityOrigin, AppliedEffectDef, CardDefinitionId, CharacteristicOperationDef,
+    DeclarativeAbilityDef, DeclarativeSpellProfile, EffectDef, EffectRecipientDef, GameObjectId,
+    HandcraftedPolicy, ObjectPredicateDef, PlayerObservation, PlayerRelation,
+    PowerToughnessOperationDef, SetOperationDef, Step, Target, ValueDef,
 };
 
 impl HandcraftedPolicy {
@@ -91,16 +92,51 @@ impl HandcraftedPolicy {
             .get(definition)
             .and_then(|card| card.part(part))
             .and_then(|part| part.rules.ability(ability))
-            .is_some_and(|ability| {
-                matches!(
-                    ability.declarative_effect(),
-                    Some(EffectDef::Apply {
-                        recipient: EffectRecipientDef::Source,
-                        effect: crate::card::AppliedEffectDef::Animate(_),
-                        ..
-                    })
-                )
-            })
+            .and_then(|ability| ability.declarative_effect())
+            .is_some_and(Self::effect_animates_source)
+    }
+
+    pub(super) fn effect_animates_source(effect: EffectDef) -> bool {
+        let EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect,
+            ..
+        } = effect
+        else {
+            return false;
+        };
+        Self::applied_effect_adds_creature_type(effect)
+    }
+
+    fn applied_effect_adds_creature_type(effect: AppliedEffectDef) -> bool {
+        match effect {
+            AppliedEffectDef::Composite(effects) => effects
+                .iter()
+                .copied()
+                .any(Self::applied_effect_adds_creature_type),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+                SetOperationDef::Add(types) | SetOperationDef::Set(types),
+            )) => types.contains(crate::card::CardType::Creature),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+                SetOperationDef::Remove(_),
+            ))
+            | AppliedEffectDef::Characteristic(_)
+            | AppliedEffectDef::CannotBeCountered
+            | AppliedEffectDef::MayChooseNotToUntap
+            | AppliedEffectDef::DoesNotUntapDuringUntapStep
+            | AppliedEffectDef::CannotBeEnchanted
+            | AppliedEffectDef::CannotBecomeEnchanted
+            | AppliedEffectDef::CannotChangeController
+            | AppliedEffectDef::RemainsAttachedThroughProtection
+            | AppliedEffectDef::CannotBeBlockedBy(_)
+            | AppliedEffectDef::CannotBlock
+            | AppliedEffectDef::CanBlockOnly(_)
+            | AppliedEffectDef::CannotAttack
+            | AppliedEffectDef::CannotBeBlocked
+            | AppliedEffectDef::PreventCombatDamage
+            | AppliedEffectDef::PreventDamageFrom(_)
+            | AppliedEffectDef::Special(_) => false,
+        }
     }
 
     /// Whether a battlefield permanent satisfies a cost's predicate. Only the
@@ -162,10 +198,12 @@ impl HandcraftedPolicy {
         let Some(EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
             effect:
-                crate::card::AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(power),
-                    ..
-                },
+                AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                    PowerToughnessOperationDef::Modify {
+                        power: ValueDef::Constant(power),
+                        ..
+                    },
+                )),
             duration: crate::card::EffectDurationDef::UntilEndOfTurn,
         }) = ability.declarative_effect()
         else {
@@ -285,10 +323,12 @@ impl HandcraftedPolicy {
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect:
-                    crate::card::AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(power),
-                        toughness: ValueDef::Constant(toughness),
-                    },
+                    AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                        PowerToughnessOperationDef::Modify {
+                            power: ValueDef::Constant(power),
+                            toughness: ValueDef::Constant(toughness),
+                        },
+                    )),
                 ..
             } => power + toughness == 0,
             _ => false,

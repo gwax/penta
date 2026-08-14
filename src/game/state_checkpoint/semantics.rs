@@ -2,14 +2,13 @@ use super::model::{
     AbilityLocator, AppliedEffectLocator, ManaPayloadLocator, ReplacementEffectLocator,
     ScopedEffectSnapshot,
 };
-use super::model_animation::AnimationSnapshot;
 use super::model_keyword::KeywordSnapshot;
-use super::{Mana, ScopedEffect};
+use super::{AbilityOrigin, AbilitySourceRef, Mana, ScopedEffect};
 use crate::CardCatalog;
 use crate::card::{
-    AbilityDef, AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType,
-    DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaSpendEffectDef,
-    ReplacementEffectDef, SpellAbilityDef,
+    AbilityDef, AbilityOperationDef, AddManaEffectDef, AppliedEffectDef, BasicLandType,
+    CharacteristicOperationDef, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor,
+    ManaSpendEffectDef, ReplacementEffectDef, SpellAbilityDef,
 };
 
 pub(super) fn ability_locator(
@@ -86,6 +85,55 @@ pub(super) fn applied_effect_locator(
     let ability = ability_locator(catalog, |candidate| {
         applied_effects(candidate).contains(&expected)
     })?;
+    let definition = catalog_ability(catalog, &ability)?;
+    let effect_index = applied_effects(&definition)
+        .iter()
+        .position(|effect| *effect == expected)?;
+    Some(AppliedEffectLocator {
+        ability,
+        effect_index,
+    })
+}
+
+/// Locates a resolved leaf beneath the ability provenance that created it.
+///
+/// The runtime source identifies the exact top-level printed clause, which is
+/// stronger than the catalog-wide structural fallback used for detached
+/// semantic values. Nested abilities still use the first structurally equal
+/// path because the runtime does not retain a nested catalog path; the exact
+/// simulation fingerprint makes equal definitions interchangeable here.
+pub(super) fn resolved_applied_effect_locator(
+    catalog: &CardCatalog,
+    source: AbilitySourceRef,
+    expected: AppliedEffectDef,
+) -> Option<AppliedEffectLocator> {
+    let (definition, part_id, ability_id) = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return applied_effect_locator(catalog, expected),
+    };
+    let root = AbilityLocator {
+        definition,
+        part_id,
+        ability_id,
+        nested: Vec::new(),
+    };
+    let root_definition = catalog_ability(catalog, &root)?;
+    let mut nested = Vec::new();
+    let mut contains = |candidate: &AbilityDef| applied_effects(candidate).contains(&expected);
+    if !locate_ability(&root_definition, &mut contains, &mut nested) {
+        return applied_effect_locator(catalog, expected);
+    }
+    let ability = AbilityLocator { nested, ..root };
     let definition = catalog_ability(catalog, &ability)?;
     let effect_index = applied_effects(&definition)
         .iter()
@@ -401,7 +449,9 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
                 collect_applied_abilities(*effect, abilities);
             }
         }
-        AppliedEffectDef::GrantAbility(ability) => abilities.push(ability),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        )) => abilities.push(ability),
         AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
@@ -419,29 +469,8 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::RemoveAbilities(_)
-        | AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::ModifyPowerToughness { .. }
+        | AppliedEffectDef::Characteristic(_)
         | AppliedEffectDef::Special(_) => {}
-    }
-}
-
-pub(super) fn animation_snapshot(animation: &AnimationDef) -> AnimationSnapshot {
-    AnimationSnapshot {
-        power: animation.power,
-        toughness: animation.toughness,
-        types: animation.types.type_name().clone(),
-        subtypes: animation
-            .subtypes
-            .iter()
-            .map(|value| (*value).to_owned())
-            .collect(),
-        all_creature_types: animation.all_creature_types,
-        replaces_subtypes: animation.replaces_subtypes,
-        loses_abilities: animation.loses_abilities,
-        colors: animation.colors.map(crate::card::ColorSet::to_flags),
     }
 }
 
@@ -521,78 +550,18 @@ pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
     }
 }
 
-pub(super) fn catalog_animation(
-    catalog: &CardCatalog,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    catalog
-        .definitions()
-        .into_iter()
-        .flat_map(|definition| &definition.parts)
-        .flat_map(|part| part.rules.indexed_abilities())
-        .find_map(|attached| animation_in_ability(&attached.definition, key))
-}
-
-fn animation_in_ability(
-    ability: &AbilityDef,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    if let DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) = ability.definition
-        && let Some(animation) = modal
-            .modes
-            .iter()
-            .find_map(|mode| animation_in_ability(mode, key))
-    {
-        return Some(animation);
-    }
-    animation_in_effect(ability.effect.definition, key)
-}
-
-fn animation_in_effect(
-    effect: EffectDef,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    let direct = match effect {
-        EffectDef::TriggerUntilYourNextTurn { ability } => animation_in_ability(ability, key),
-        EffectDef::Apply { effect, .. } => animation_in_applied(effect, key),
-        _ => None,
-    };
-    direct.or_else(|| {
-        child_effects(effect)
-            .into_iter()
-            .find_map(|effect| animation_in_effect(effect, key))
-    })
-}
-
-fn animation_in_applied(
-    effect: AppliedEffectDef,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    match effect {
-        AppliedEffectDef::Animate(animation) if animation_snapshot(animation) == *key => {
-            Some(animation)
-        }
-        AppliedEffectDef::Composite(effects) => effects
-            .iter()
-            .find_map(|effect| animation_in_applied(*effect, key)),
-        AppliedEffectDef::GrantAbility(ability) => animation_in_ability(ability, key),
-        _ => None,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::card::{EffectDurationDef, EffectRecipientDef};
+    use crate::card::{EffectDurationDef, EffectRecipientDef, ValueDef};
 
-    static ANIMATION: AnimationDef = AnimationDef::new(3, 3);
     static GRANTED: AbilityDef = AbilityDef::not_implemented(
         "A nested ability.",
         "Only structural checkpoint traversal matters in this fixture.",
     );
     static APPLIED: [AppliedEffectDef; 2] = [
-        AppliedEffectDef::GrantAbility(&GRANTED),
-        AppliedEffectDef::Animate(&ANIMATION),
+        AppliedEffectDef::add_ability(&GRANTED),
+        AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(3), ValueDef::Constant(3)),
     ];
     static PERFORM: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
@@ -608,10 +577,6 @@ mod tests {
     #[test]
     fn checkpoint_semantic_walkers_descend_replacement_programs() {
         assert_eq!(child_abilities(&OUTER), vec![&GRANTED]);
-        let key = animation_snapshot(&ANIMATION);
-        assert_eq!(
-            animation_in_effect(OUTER.effect.definition, &key),
-            Some(&ANIMATION),
-        );
+        assert!(applied_effects(&OUTER).contains(&APPLIED[1]));
     }
 }

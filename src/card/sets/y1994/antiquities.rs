@@ -1,12 +1,13 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     abilities, cards, AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
-    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
+    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    CardTypeSet, CounterKind, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
-    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef, PlayerRelation,
-    ReplacementEffectDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    CardTypeSet, CounterKind, CreatureTypeSetDef, DamageSourceGroupDef, DiscardSelectionDef,
+    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility,
+    ManaColor, ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef,
+    PlayerRelation, ReplacementEffectDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -153,7 +154,7 @@ pub(in crate::card::sets) static ENERGY_FLUX: CardRecord = CardRecord::new(
         "All artifacts have \"At the beginning of your upkeep, sacrifice this artifact unless you pay {2}.\"",
         EffectDef::Apply {
             recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Artifact), &[ZoneKind::Battlefield], PlayerRelation::Any),
-            effect: AppliedEffectDef::GrantAbility(&ENERGY_FLUX_GRANTED_ABILITY),
+            effect: AppliedEffectDef::add_ability(&ENERGY_FLUX_GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )]),
@@ -344,10 +345,10 @@ pub(in crate::card::sets) static ATOG: CardRecord = CardRecord::new(
             }],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(2),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -589,10 +590,10 @@ pub(in crate::card::sets) static GAEAS_AVENGER: CardRecord = CardRecord::new(
              artifacts your opponents control.",
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
-                    toughness: ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
+                    ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
+                ),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )
@@ -676,10 +677,10 @@ pub(in crate::card::sets) static ASHNODS_BATTLE_GEAR: CardRecord = CardRecord::n
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(-2),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(-2),
+                ),
                 duration: EffectDurationDef::WhileSourceTapped,
             },
         ),
@@ -760,10 +761,10 @@ pub(in crate::card::sets) static DRAGON_ENGINE: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{2}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -919,10 +920,10 @@ pub(in crate::card::sets) static MIGHTSTONE: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(1),
-                toughness: ValueDef::Constant(0),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(0),
+            ),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )]),
@@ -1079,10 +1080,10 @@ pub(in crate::card::sets) static STAFF_OF_ZEGON: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(-2),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-2),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1204,10 +1205,10 @@ pub(in crate::card::sets) static TAWNOSS_WEAPONRY: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
                 duration: EffectDurationDef::WhileSourceTapped,
             },
         ),
@@ -1344,10 +1345,10 @@ pub(in crate::card::sets) static WEAKSTONE: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(-1),
-                toughness: ValueDef::Constant(0),
-            },
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-1),
+                ValueDef::Constant(0),
+            ),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )]),
@@ -1365,9 +1366,13 @@ pub(in crate::card::sets) static YOTIAN_SOLDIER: CardRecord = CardRecord::new(
 
 /// Animating keeps the land: the creature and artifact types are added on
 /// top of what is printed.
-static MISHRAS_FACTORY_ANIMATION: AnimationDef = AnimationDef::new(2, 2)
-    .with_types(CardTypeSet::single(CardType::Creature).with(CardType::Artifact))
-    .with_subtypes(&["Assembly-Worker"]);
+static MISHRAS_FACTORY_ANIMATION: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::add_card_types(
+        CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
+    ),
+    AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Assembly-Worker"])),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+];
 
 /// The pump reaches any Assembly-Worker, including a Factory that has already
 /// animated itself and a second Factory across the table.
@@ -1396,7 +1401,7 @@ pub(in crate::card::sets) static MISHRA_S_FACTORY: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{1}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::Animate(&MISHRAS_FACTORY_ANIMATION),
+                effect: AppliedEffectDef::Composite(&MISHRAS_FACTORY_ANIMATION),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1406,10 +1411,7 @@ pub(in crate::card::sets) static MISHRA_S_FACTORY: CardRecord = CardRecord::new(
             &MISHRAS_FACTORY_PUMP_TARGET,
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1533,7 +1535,8 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
 mod tests {
     use super::{ENERGY_FLUX, ENERGY_FLUX_GRANTED_ABILITY};
     use crate::card::{
-        AppliedEffectDef, CardEffectStatus, DeclarativeAbilityDef, EffectDef, ImplementationStatus,
+        AbilityOperationDef, AppliedEffectDef, CardEffectStatus, CharacteristicOperationDef,
+        DeclarativeAbilityDef, EffectDef, ImplementationStatus,
     };
 
     #[test]
@@ -1553,7 +1556,9 @@ mod tests {
         assert!(matches!(
             clauses[0].effect.definition,
             EffectDef::Apply {
-                effect: AppliedEffectDef::GrantAbility(granted),
+                effect: AppliedEffectDef::Characteristic(
+                    CharacteristicOperationDef::Abilities(AbilityOperationDef::Add(granted))
+                ),
                 ..
             } if granted == &ENERGY_FLUX_GRANTED_ABILITY
         ));

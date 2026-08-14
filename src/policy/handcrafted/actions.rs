@@ -1,7 +1,6 @@
 use super::{
     Action, BasicLandType, CardDefinitionId, CardSupertype, DecisionObservation, DecisionOption,
-    DecisionZone, EffectDef, EffectRecipientDef, GameObjectId, HandcraftedPolicy,
-    PlayerObservation, Step,
+    DecisionZone, GameObjectId, HandcraftedPolicy, PlayerObservation, Step,
 };
 
 impl HandcraftedPolicy {
@@ -23,16 +22,11 @@ impl HandcraftedPolicy {
     pub(super) fn definition_animates_itself(&self, definition: CardDefinitionId) -> bool {
         self.catalog.get(definition).is_some_and(|card| {
             card.parts.iter().any(|part| {
-                part.rules.ability_clauses().iter().any(|ability| {
-                    matches!(
-                        ability.declarative_effect(),
-                        Some(EffectDef::Apply {
-                            recipient: EffectRecipientDef::Source,
-                            effect: crate::card::AppliedEffectDef::Animate(_),
-                            ..
-                        })
-                    )
-                })
+                part.rules
+                    .ability_clauses()
+                    .iter()
+                    .filter_map(|ability| ability.declarative_effect())
+                    .any(Self::effect_animates_source)
             })
         })
     }

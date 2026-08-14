@@ -717,16 +717,14 @@ fn multiple_time_vaults_share_one_choice_and_only_one_replaces_each_turn() {
 fn removing_time_vaults_abilities_removes_the_begin_turn_replacement() {
     let mut game = ready_game();
     game.step = Step::Cleanup;
-    let mut vault = tapped_time_vault(10_000, PlayerId::Two);
-    vault
-        .temporary_removed_abilities
-        .push(TemporaryRemovedAbilities {
-            predicate: AbilityPredicateDef::Any,
-            timestamp: ContinuousEffectTimestamp(1),
-            order: 0,
-            expiration: AbilityEffectExpiration::Never,
-        });
+    let vault = tapped_time_vault(10_000, PlayerId::Two);
     game.battlefield.push(vault);
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_000),
+        &[AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any)],
+        ContinuousEffectExpiration::Never,
+    );
     assert!(game.effective_abilities(&game.battlefield[0]).is_empty());
 
     game.start_next_turn();

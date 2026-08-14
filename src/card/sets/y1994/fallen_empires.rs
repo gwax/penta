@@ -1,12 +1,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef, EffectDurationDef,
-    EffectRecipientDef, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
-    PlayerRelation, ReplacementEffectDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
+    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, CounterKind, DiscardSelectionDef,
+    EffectDef, EffectDurationDef, EffectRecipientDef, LikelihoodDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PayOrDef, PlayerRelation, ReplacementEffectDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -131,10 +130,10 @@ pub(in crate::card::sets) static ICATIAN_LIEUTENANT: CardRecord = CardRecord::ne
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -212,10 +211,10 @@ pub(in crate::card::sets) static ICATIAN_PRIEST: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -243,7 +242,7 @@ pub(in crate::card::sets) static ICATIAN_SCOUT: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::GrantAbility(&abilities::first_strike()),
+                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         )]),
@@ -282,7 +281,7 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
                 &[AbilityCostDef::Mana(mana_cost!("{W}"))],
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::GrantAbility(&abilities::first_strike()),
+                    effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
             ),
@@ -291,10 +290,10 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
                 &[AbilityCostDef::Mana(mana_cost!("{W}{W}"))],
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(1),
-                        toughness: ValueDef::Constant(0),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(0),
+                    ),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
             ),
@@ -327,19 +326,16 @@ static HOMARID_FOUR_TIDE: TriggerConditionDef = TriggerConditionDef::SourceCount
 
 static HOMARID_SHRINK: EffectDef = EffectDef::Apply {
     recipient: EffectRecipientDef::Source,
-    effect: AppliedEffectDef::ModifyPowerToughness {
-        power: ValueDef::Constant(-1),
-        toughness: ValueDef::Constant(-1),
-    },
+    effect: AppliedEffectDef::modify_power_toughness(
+        ValueDef::Constant(-1),
+        ValueDef::Constant(-1),
+    ),
     duration: EffectDurationDef::WhileSourceRemainsInZone,
 };
 
 static HOMARID_GROW: EffectDef = EffectDef::Apply {
     recipient: EffectRecipientDef::Source,
-    effect: AppliedEffectDef::ModifyPowerToughness {
-        power: ValueDef::Constant(1),
-        toughness: ValueDef::Constant(1),
-    },
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
     duration: EffectDurationDef::WhileSourceRemainsInZone,
 };
 
@@ -468,7 +464,7 @@ pub(in crate::card::sets) static RIVER_MERFOLK: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{U}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&abilities::mountainwalk()),
+                effect: AppliedEffectDef::add_ability(&abilities::mountainwalk()),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -497,7 +493,7 @@ pub(in crate::card::sets) static SVYELUNITE_PRIEST: CardRecord = CardRecord::new
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::GrantAbility(&SHROUD),
+                effect: AppliedEffectDef::add_ability(&SHROUD),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         )
@@ -760,7 +756,7 @@ pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord
             &[AbilityCostDef::Mana(mana_cost!("{B}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&abilities::first_strike()),
+                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -769,10 +765,10 @@ pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord
             &[AbilityCostDef::Mana(mana_cost!("{B}{B}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -800,10 +796,10 @@ pub(in crate::card::sets) static THRULL_CHAMPION: CardRecord = CardRecord::new(
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
@@ -835,10 +831,10 @@ pub(in crate::card::sets) static THRULL_RETAINER: CardRecord = CardRecord::new(
                 "Enchanted creature gets +1/+1.",
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(1),
-                        toughness: ValueDef::Constant(1),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
                     duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
@@ -888,10 +884,10 @@ pub(in crate::card::sets) static DWARVEN_LIEUTENANT: CardRecord = CardRecord::ne
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -987,10 +983,10 @@ static ORCISH_CAPTAIN_LOST: EffectDef = orcish_captain_pump(0, -2);
 const fn orcish_captain_pump(power: i32, toughness: i32) -> EffectDef {
     EffectDef::Apply {
         recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        effect: AppliedEffectDef::ModifyPowerToughness {
-            power: ValueDef::Constant(power),
-            toughness: ValueDef::Constant(toughness),
-        },
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(power),
+            ValueDef::Constant(toughness),
+        ),
         duration: EffectDurationDef::UntilEndOfTurn,
     }
 }
@@ -1026,17 +1022,15 @@ pub(in crate::card::sets) static ELVEN_FORTRESS: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(0),
-                    toughness: ValueDef::Constant(1),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(1),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
 );
-
-static THELONITE_DRUID_ANIMATION: AnimationDef = AnimationDef::new(2, 3);
 
 // FEM 66 — Elvish Farmer
 pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new(
@@ -1261,10 +1255,7 @@ pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new(
             }],
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(1),
-                        toughness: ValueDef::Constant(2),
-                    },
+                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(2)),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 },
             ),
@@ -1276,6 +1267,11 @@ pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new(
 
 // FEM 77 — Thelon's Curse
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “At the beginning of each player's upkeep, that player may choose any number of tapped blue creatures they control and pay {U} for each creature chosen this way. If the player does, untap…”.
+
+static THELONITE_DRUID_ANIMATION: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::add_card_types(crate::card::CardTypeSet::single(CardType::Creature)),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(2), ValueDef::Constant(3)),
+];
 
 // FEM 78 — Thelonite Druid
 pub(in crate::card::sets) static THELONITE_DRUID: CardRecord = CardRecord::new(
@@ -1304,14 +1300,14 @@ pub(in crate::card::sets) static THELONITE_DRUID: CardRecord = CardRecord::new(
         ],
         EffectDef::Apply {
             recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]), &[ZoneKind::Battlefield], PlayerRelation::You),
-            effect: AppliedEffectDef::Animate(&THELONITE_DRUID_ANIMATION),
+            effect: AppliedEffectDef::Composite(&THELONITE_DRUID_ANIMATION),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
 
 // FEM 79 — Thelonite Monk
-// Audit: blocked — Needs a resolving land-type-setting operation; SetLandTypes currently runs only as a static continuous effect.
+// Audit: blocked — Needs its permanent-duration target-land characteristic effect and green-creature sacrifice cost authored and tested.
 
 // FEM 80a — Thorn Thallid
 pub(in crate::card::sets) static THORN_THALLID: CardRecord = CardRecord::new(
@@ -1405,10 +1401,10 @@ pub(in crate::card::sets) static ELVEN_LYRE: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(2),
-                },
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),

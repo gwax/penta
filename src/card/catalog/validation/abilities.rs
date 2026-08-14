@@ -1,8 +1,9 @@
 use super::targeting::validate_ability_targets;
 use crate::card::catalog::{CatalogError, GrantedAbilityValidationError};
 use crate::card::{
-    AbilityDef, AbilityProcedureDef, AppliedEffectDef, CardDefinition, DeclarativeAbilityDef,
-    EffectDef, EffectExecutionDef, ImplementationStatus, ReplacementEffectDef, SpellForm, ZoneKind,
+    AbilityDef, AbilityOperationDef, AbilityProcedureDef, AppliedEffectDef, CardDefinition,
+    CharacteristicOperationDef, DeclarativeAbilityDef, EffectDef, EffectExecutionDef,
+    ImplementationStatus, ReplacementEffectDef, SpellForm, ZoneKind,
 };
 use crate::{AbilityId, AlternativeCostId, CardPartId, GrantId, ModeId};
 
@@ -629,7 +630,9 @@ fn collect_applied_ability_grants(effect: AppliedEffectDef, grants: &mut Vec<&Ab
                 collect_applied_ability_grants(*effect, grants);
             }
         }
-        AppliedEffectDef::GrantAbility(ability) => grants.push(ability),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        )) => grants.push(ability),
         AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
@@ -647,11 +650,7 @@ fn collect_applied_ability_grants(effect: AppliedEffectDef, grants: &mut Vec<&Ab
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::RemoveAbilities(_)
-        | AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::ModifyPowerToughness { .. }
+        | AppliedEffectDef::Characteristic(_)
         | AppliedEffectDef::Special(_) => {}
     }
 }
@@ -806,7 +805,9 @@ fn applied_ability_grant_sites(effect: AppliedEffectDef) -> usize {
             .iter()
             .map(|effect| applied_ability_grant_sites(*effect))
             .fold(0, usize::saturating_add),
-        AppliedEffectDef::GrantAbility(_) => 1,
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(_),
+        )) => 1,
         AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
@@ -824,11 +825,7 @@ fn applied_ability_grant_sites(effect: AppliedEffectDef) -> usize {
         | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::RemoveAbilities(_)
-        | AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::ModifyPowerToughness { .. }
+        | AppliedEffectDef::Characteristic(_)
         | AppliedEffectDef::Special(_) => 0,
     }
 }

@@ -802,8 +802,13 @@ fn vraska_plus_one_retaliates_against_combat_damage_until_the_next_turn() {
     pass_priority_pair(&mut game);
     assert_eq!(
         permanent(&game, walker_id)
-            .temporary_granted_abilities
-            .len(),
+            .resolved_continuous_effects
+            .iter()
+            .filter(|effect| matches!(
+                effect.kind,
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add { .. })
+            ))
+            .count(),
         1
     );
 
@@ -834,15 +839,24 @@ fn vraska_plus_one_retaliates_against_combat_damage_until_the_next_turn() {
     game.start_next_turn();
     assert_eq!(
         permanent(&game, walker_id)
-            .temporary_granted_abilities
-            .len(),
+            .resolved_continuous_effects
+            .iter()
+            .filter(|effect| matches!(
+                effect.kind,
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add { .. })
+            ))
+            .count(),
         1
     );
     game.start_next_turn();
     assert!(
         permanent(&game, walker_id)
-            .temporary_granted_abilities
-            .is_empty()
+            .resolved_continuous_effects
+            .iter()
+            .all(|effect| !matches!(
+                effect.kind,
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add { .. })
+            ))
     );
 }
 

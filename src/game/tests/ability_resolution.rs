@@ -264,7 +264,7 @@ fn granted_ability_keeps_its_frozen_resolver_when_the_source_changes() {
         "This permanent has the test ability.",
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
+            effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
             duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )];

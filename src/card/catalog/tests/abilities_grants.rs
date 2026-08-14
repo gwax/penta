@@ -65,7 +65,7 @@ fn grant_ids_reject_more_than_their_structural_address_space() {
         vec![
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&GRANTED),
+                effect: AppliedEffectDef::add_ability(&GRANTED),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             };
             257
@@ -102,7 +102,7 @@ fn delayed_grants_count_toward_the_structural_address_space() {
     );
     static GRANT: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::GrantAbility(&GRANTED),
+        effect: AppliedEffectDef::add_ability(&GRANTED),
         duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
     static DELAYED_GRANT: EffectDef = EffectDef::AtNextStep {
@@ -141,7 +141,7 @@ fn replacement_program_grants_count_toward_the_structural_address_space() {
     );
     static GRANT: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::GrantAbility(&GRANTED),
+        effect: AppliedEffectDef::add_ability(&GRANTED),
         duration: EffectDurationDef::WhileSourceRemainsInZone,
     };
     let replacement_effects =
@@ -193,7 +193,7 @@ fn granted_ability_validation_reports_nested_structural_paths() {
         &[],
         EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::GrantAbility(&INVALID),
+            effect: AppliedEffectDef::add_ability(&INVALID),
             duration: EffectDurationDef::UntilEndOfTurn,
         },
     );
@@ -215,7 +215,7 @@ fn granted_ability_validation_follows_sacrifice_continuations() {
     static INVALID: AbilityDef = AbilityDef::spell("", EffectDef::None);
     static THEN: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::GrantAbility(&INVALID),
+        effect: AppliedEffectDef::add_ability(&INVALID),
         duration: EffectDurationDef::UntilEndOfTurn,
     };
     static CHILD: AbilityDef = AbilityDef::activated(
@@ -246,7 +246,7 @@ fn granted_ability_validation_follows_replacement_programs() {
     static INVALID: AbilityDef = AbilityDef::spell("", EffectDef::None);
     static GRANT: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::GrantAbility(&INVALID),
+        effect: AppliedEffectDef::add_ability(&INVALID),
         duration: EffectDurationDef::UntilEndOfTurn,
     };
     static PROGRAM: [ReplacementEffectDef; 2] = [
@@ -285,7 +285,7 @@ fn granted_modal_branches_validate_nested_grants_in_printed_order() {
             "The first mode grants a valid ability.",
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&VALID),
+                effect: AppliedEffectDef::add_ability(&VALID),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -293,7 +293,7 @@ fn granted_modal_branches_validate_nested_grants_in_printed_order() {
             "The second mode grants an invalid ability.",
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&INVALID),
+                effect: AppliedEffectDef::add_ability(&INVALID),
                 duration: EffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -323,7 +323,7 @@ fn granted_modal_capacity_counts_grants_across_all_modes() {
             vec![
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::GrantAbility(&TERMINAL),
+                    effect: AppliedEffectDef::add_ability(&TERMINAL),
                     duration: EffectDurationDef::UntilEndOfTurn,
                 };
                 count
@@ -791,7 +791,7 @@ fn nested_grant_capacity_is_validated_per_granted_definition() {
         vec![
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&TERMINAL),
+                effect: AppliedEffectDef::add_ability(&TERMINAL),
                 duration: EffectDurationDef::UntilEndOfTurn,
             };
             257

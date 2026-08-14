@@ -59,10 +59,10 @@ distinguishes snapshots of the covered source and build inputs.
   now moves only for incompatible interpretation changes; new cards, rules
   fixes, and different legal-action membership through existing action shapes
   change the automatic `simulationFingerprint` instead. Observations and
-  catalogs advertise `protocolCapabilities`; the first optional facility is
-  now `reconstruction.checkpoint.v3`. Stable wire tags are explicit mappings
-  rather than Rust `Debug` output. Protocol 22 is the one-time transition from
-  the former all-purpose counter to this breaking-only epoch.
+  catalogs advertise `protocolCapabilities`; the current reconstruction
+  facility is `reconstruction.checkpoint.v4`. Stable wire tags are explicit
+  mappings rather than Rust `Debug` output. Protocol 22 is the one-time
+  transition from the former all-purpose counter to this breaking-only epoch.
 - **Banding, in part.** CR 702.22 gives banding two separate jobs, and the
   engine now does one: a creature with banding blocking an attacker moves the
   choice of how that attacker assigns its combat damage to the defending
@@ -375,6 +375,12 @@ distinguishes snapshots of the covered source and build inputs.
   payments, and pile procedures can resume without losing earlier results.
   This changes only the dedicated checkpoint format and capability; the bot
   protocol epoch remains 22.
+- **Checkpoint reconstruction v4.** Resolved continuous effects now round-trip
+  as one ordered vector with their authored catalog location, source-ability
+  provenance, expiration, and frozen resolution-time values. This replaces
+  the lossy animation and aggregate power/toughness fields; format-3
+  checkpoints must be regenerated. The dedicated checkpoint capability moves
+  to `reconstruction.checkpoint.v4`, while the bot protocol epoch remains 22.
 - **Battalion**, sharing exalted's event. The attack-declaration event now
   carries how many creatures attacked, and each keyword states the range it
   wants: exactly one for exalted, three or more for battalion. Eight Gatecrash

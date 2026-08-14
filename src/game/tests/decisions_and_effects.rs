@@ -784,7 +784,12 @@ fn balance_counts_an_animated_land_in_both_phases() {
         creature(10_001, cards::SWAMP, PlayerId::Two),
         creature(10_002, cards::FOREST, PlayerId::Two),
     ]);
-    game.battlefield[0].animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_000),
+        &TEST_MISHRAS_FACTORY_CHARACTERISTICS,
+        ContinuousEffectExpiration::EndOfTurn,
+    );
 
     game.resolve_balance(PlayerId::One);
     let mut prompts = Vec::new();

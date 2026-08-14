@@ -257,18 +257,17 @@ impl Game {
             .iter()
             .chain(self.emblems.iter())
             .map(|permanent| permanent.timestamp.0)
-            .chain(self.battlefield.iter().flat_map(|permanent| {
-                permanent
-                    .temporary_granted_abilities
+            .chain(
+                self.battlefield
                     .iter()
-                    .map(|effect| effect.timestamp.0)
-                    .chain(
+                    .chain(self.emblems.iter())
+                    .flat_map(|permanent| {
                         permanent
-                            .temporary_removed_abilities
+                            .resolved_continuous_effects
                             .iter()
-                            .map(|effect| effect.timestamp.0),
-                    )
-            }))
+                            .map(|effect| effect.timestamp.0)
+                    }),
+            )
             .max()
             .map_or(0, |timestamp| timestamp.saturating_add(1));
         self.next_continuous_effect_timestamp =

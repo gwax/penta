@@ -8,13 +8,13 @@
 //! depend on.
 
 use super::super::semantics::{
-    ability_locator, animation_snapshot, applied_effect_locator, applied_effects, catalog_ability,
-    catalog_animation, catalog_applied_effect, catalog_mana_payload, catalog_replacement_effect,
+    ability_locator, applied_effect_locator, applied_effects, catalog_ability,
+    catalog_applied_effect, catalog_mana_payload, catalog_replacement_effect,
     catalog_scoped_effect, child_abilities, mana_effects, mana_payload_locator,
     replacement_effect_locator, replacement_effects, scoped_effect_snapshot,
 };
 use super::super::{ScopedEffect, entry_replacement_effect, entry_replacement_locator};
-use crate::card::{AbilityDef, AddManaEffectDef, AnimationDef, AppliedEffectDef, ManaSelectionDef};
+use crate::card::{AbilityDef, AddManaEffectDef, ManaSelectionDef};
 use crate::game::Mana;
 use crate::{CardCatalog, CardDefinitionId, CardPartId};
 
@@ -185,42 +185,6 @@ fn produced_mana(effect: AddManaEffectDef) -> Vec<Mana> {
             spend_effects: effect.spend_effects,
         })
         .collect()
-}
-
-/// Animations are addressed by their shape rather than by a card name, so a
-/// permanent animated by one card rebuilds even when another card prints the
-/// same animation. The shape must still identify exactly one definition.
-#[test]
-fn every_catalog_animation_rebuilds_from_its_shape() {
-    let catalog = crate::poc::catalog().expect("catalog builds");
-    let mut unaddressable = Vec::new();
-    for (definition, _, ability) in catalog_abilities(&catalog) {
-        for animation in animations(&ability) {
-            let key = animation_snapshot(animation);
-            match catalog_animation(&catalog, &key) {
-                Some(rebuilt) if *rebuilt == *animation => {}
-                _ => unaddressable.push(format!(
-                    "{}: {}",
-                    card_name(&catalog, definition),
-                    ability.text
-                )),
-            }
-        }
-    }
-    assert!(
-        unaddressable.is_empty(),
-        "animations without a stable checkpoint shape: {unaddressable:#?}"
-    );
-}
-
-fn animations(ability: &AbilityDef) -> Vec<&'static AnimationDef> {
-    let mut found = Vec::new();
-    for effect in applied_effects(ability) {
-        if let AppliedEffectDef::Animate(animation) = effect {
-            found.push(animation);
-        }
-    }
-    found
 }
 
 /// Suspended resolutions carry the remaining effect as a path from the

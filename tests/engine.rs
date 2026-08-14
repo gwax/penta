@@ -732,7 +732,7 @@ fn aura_sequence_attaches_to_its_indexed_semantic_target() {
             "Enchanted creature has flying.",
             EffectDef::Apply {
                 recipient: EffectRecipientDef::AttachedPermanent,
-                effect: AppliedEffectDef::GrantAbility(&FLYING),
+                effect: AppliedEffectDef::add_ability(&FLYING),
                 duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
