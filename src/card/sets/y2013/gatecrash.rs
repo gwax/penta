@@ -897,8 +897,38 @@ pub(in crate::card::sets) static CRYPT_GHAST: CardRecord = CardRecord::new(
 // GTC 63 — Devour Flesh
 // Audit: blocked — The sacrifice-choice continuation exposes the sacrificed creature's power, not its last-known toughness.
 
+static DYING_WISH_DRAIN: [EffectDef; 2] = [
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::TriggeringObjectPower,
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::TriggeringObjectPower,
+    },
+];
+
 // GTC 64 — Dying Wish
-// Audit: blocked — Needs the triggering object's power to survive a target decision: the value reads zero on a trigger that takes a target, while the same value is correct on an untargeted one.
+pub(in crate::card::sets) static DYING_WISH: CardRecord = CardRecord::new(
+    cards::DYING_WISH,
+    "Dying Wish",
+    CardArt::new("b46e83d3-c66d-42fb-8435-b6c448db01ae", "Scott Chou"),
+    CardSet::Gatecrash,
+    CardRules::new_enchantment(mana_cost!("{1}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature you control", &ENCHANT_YOUR_CREATURE),
+            AbilityDef::triggered_with_targets(
+                "When enchanted creature dies, target player loses X life and you gain X life, \
+                 where X is its power.",
+                ENCHANTED_CREATURE_DIES,
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Player(PlayerRelation::Any),
+                )],
+                EffectDef::Sequence(&DYING_WISH_DRAIN),
+            ),
+        ]),
+);
 
 // GTC 65 — Gateway Shade
 // Audit: blocked — Costs can tap only the ability source, not a chosen untapped Gate you control.
@@ -3493,6 +3523,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CONTAMINATED_GROUND,
     &CORPSE_BLOCKADE,
     &CRYPT_GHAST,
+    &DYING_WISH,
     &GRISLY_SPECTACLE,
     &GUTTER_SKULK,
     &HORROR_OF_THE_DIM,

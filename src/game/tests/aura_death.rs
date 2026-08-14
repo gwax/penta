@@ -65,16 +65,70 @@ fn the_aura_itself_is_gone_when_the_trigger_resolves() {
     );
 }
 
+/// Dying Wish targets, and the target is the point: the life leaves whoever
+/// was chosen rather than the Aura's controller. Answering the choice with
+/// the first candidate would pick its own controller and net to nothing,
+/// which is why this names the opponent explicitly.
+#[test]
+fn dying_wish_drains_the_chosen_player() {
+    let (mut game, host) = enchanted(cards::DYING_WISH, 1);
+    let before = [
+        game.players[PlayerId::One.index()].life,
+        game.players[PlayerId::Two.index()].life,
+    ];
+
+    game.destroy_permanent(host);
+    game.check_state_based_actions();
+    game.priority = PlayerId::One;
+    // The trigger reaches the stack on the next priority pass, and only then
+    // is its target asked for.
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("priority passes");
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .expect("the trigger asks for its target")
+        .observation
+        .clone();
+    let opponent = decision
+        .options
+        .iter()
+        .last()
+        .expect("the other player is offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![opponent],
+        },
+    )
+    .expect("the choice is submitted");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        before[1] - 3,
+        "the chosen player lost three"
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        before[0] + 3,
+        "and its controller gained three"
+    );
+}
+
 #[test]
 fn murder_investigation_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    let card = catalog
-        .get(cards::MURDER_INVESTIGATION)
-        .expect("the card is cataloged");
-    assert_eq!(
-        card.rules.implementation_status(),
-        ImplementationStatus::Complete,
-        "{} should be fully executable",
-        card.name,
-    );
+    for definition in [cards::MURDER_INVESTIGATION, cards::DYING_WISH] {
+        let card = catalog.get(definition).expect("the card is cataloged");
+        assert_eq!(
+            card.rules.implementation_status(),
+            ImplementationStatus::Complete,
+            "{} should be fully executable",
+            card.name,
+        );
+    }
 }
