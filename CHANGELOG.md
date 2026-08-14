@@ -78,6 +78,15 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Lands animated by a static ability.** "All Forests are 1/1 creatures that
+  are still lands" keeps applying as Forests come and go, so unlike a resolved
+  animation it cannot be written onto the land; it is read live. That raises
+  the usual live-read problem -- the effect changes characteristics, and it
+  picks its permanents by characteristics -- so the stratification is narrow
+  on purpose: a static animation may only add the creature type and stats, and
+  may only be aimed by predicates that cannot read what it supplies. The
+  runtime boundary holds cards to exactly those limits. Living Lands, Kormus
+  Bell, and Living Plane.
 - **Auras that watch their own host being tapped.** Every piece this needs --
   the becomes-tapped event, the attached-permanent relation, and the host
   controller as a recipient -- was already built, and the audit lines saying

@@ -1,13 +1,13 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, ComparisonDef, CounterKind, DiscardSelectionDef, DividedTotal, EffectDef,
-    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
+    BasicLandType, BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet,
+    CardSupertype, CardType, ComparisonDef, CounterKind, DiscardSelectionDef, DividedTotal,
+    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEffectDef,
+    ReplacementEventDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -2293,8 +2293,29 @@ pub(in crate::card::sets) static KILLER_BEES: CardRecord = CardRecord::new(
     ]),
 );
 
+static EVERY_LAND_A_CREATURE: AnimationDef = AnimationDef::new(1, 1);
+
 // LEG 193 — Living Plane
-// Audit: blocked — Needs static animation to continuously turn the matching lands into creatures for “All lands are 1/1 creatures that are still lands”.
+pub(in crate::card::sets) static LIVING_PLANE: CardRecord = CardRecord::new(
+    cards::LIVING_PLANE,
+    "Living Plane",
+    CardArt::new("0341da27-3d77-4959-b7fa-5929b2cc7141", "Bryon Wackwitz"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{2}{G}{G}"))
+        .with_supertype(CardSupertype::World)
+        .with_ability(AbilityDef::static_ability(
+            "All lands are 1/1 creatures that are still lands.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::MatchingObjects {
+                    object: ObjectPredicateDef::HasType(CardType::Land),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: PlayerRelation::Any,
+                },
+                effect: AppliedEffectDef::Animate(&EVERY_LAND_A_CREATURE),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        )),
+);
 
 // LEG 194 — Master of the Hunt
 // Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
@@ -3912,6 +3933,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FIRE_SPRITES,
     &HORNET_COBRA,
     &KILLER_BEES,
+    &LIVING_PLANE,
     &MOSS_MONSTER,
     &PIXIE_QUEEN,
     &PRADESH_GYPSIES,

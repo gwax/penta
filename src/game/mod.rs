@@ -84,6 +84,7 @@ mod stack_resolution;
 mod stack_rules;
 mod state_based;
 mod state_checkpoint;
+mod static_animation;
 mod targeting;
 mod trigger_capture;
 mod trigger_placement;

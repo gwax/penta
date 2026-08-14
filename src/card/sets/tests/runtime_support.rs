@@ -4,6 +4,7 @@ mod stack_effects;
 pub(super) use nested_definitions::*;
 pub(super) use stack_effects::shared_stack_effect;
 
+use crate::Game;
 use crate::card::{ActivatedAbilityDef, ReplacementConditionDef, SpellAdditionalCostDef};
 
 use super::*;
@@ -599,9 +600,21 @@ pub(super) fn shared_static_applied_effect(
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController => true,
-        // Only a resolving animation is supported; nothing reads one off
-        // a static ability.
-        AppliedEffectDef::Animate(_) | AppliedEffectDef::Special(_) => false,
+        // A static animation is read live rather than materialised, so it
+        // is held to what `Game::static_animation` can stratify: it may only
+        // add the creature type and stats, and it may only be aimed by
+        // predicates that cannot read what it supplies.
+        AppliedEffectDef::Animate(animation) => {
+            Game::static_animation_is_additive(animation)
+                && match recipient {
+                    EffectRecipientDef::MatchingObjects { object, zones, .. } => {
+                        zones == [ZoneKind::Battlefield]
+                            && Game::static_animation_predicate_is_supported(object)
+                    }
+                    _ => false,
+                }
+        }
+        AppliedEffectDef::Special(_) => false,
     }
 }
 

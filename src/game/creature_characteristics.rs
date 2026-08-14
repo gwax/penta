@@ -11,7 +11,7 @@ impl Game {
         // abilities does not end the continuous animation effect. In
         // particular, Blood Moon changes its land subtype and abilities but
         // leaves the active artifact-creature types and 2/2 base stats intact.
-        if let Some(animation) = permanent.animation {
+        if let Some(animation) = self.effective_animation(permanent) {
             Some(crate::CreatureStats {
                 power: animation.power,
                 toughness: animation.toughness,

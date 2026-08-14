@@ -822,7 +822,7 @@ impl Game {
         if let Some(copy) = &permanent.copy_effect {
             types = types.union(copy.added_types);
         }
-        if let Some(animation) = permanent.animation {
+        if let Some(animation) = self.effective_animation(permanent) {
             types = types.union(animation.types);
         }
         Some(types)
@@ -831,10 +831,13 @@ impl Game {
     /// The colours a permanent actually is. An animation that repaints it
     /// replaces the printed colours rather than adding to them, and a Lace
     /// resolved onto it replaces whatever it was before that.
-    pub(super) fn effective_colors(permanent: &Permanent, rules: &CardRules) -> [bool; 5] {
+    pub(super) fn effective_colors(&self, permanent: &Permanent, rules: &CardRules) -> [bool; 5] {
         permanent
             .color_override
-            .or_else(|| permanent.animation.and_then(|animation| animation.colors))
+            .or_else(|| {
+                self.effective_animation(permanent)
+                    .and_then(|animation| animation.colors)
+            })
             .map_or_else(|| rules.colors(), ColorSet::to_flags)
     }
 
@@ -845,7 +848,7 @@ impl Game {
         let Some(rules) = self.effective_rules(permanent) else {
             return [false; 5];
         };
-        Self::effective_colors(permanent, rules)
+        self.effective_colors(permanent, rules)
     }
 
     pub(super) fn is_protected_from_colors(

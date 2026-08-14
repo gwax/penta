@@ -26,3 +26,6 @@ pub const WALL_OF_SHADOWS: CardDefinitionId = CardDefinitionId(1651);
 pub const PSYCHIC_VENOM: CardDefinitionId = CardDefinitionId(1652);
 pub const BLIGHT: CardDefinitionId = CardDefinitionId(1653);
 pub const SPIRIT_SHACKLE: CardDefinitionId = CardDefinitionId(1654);
+pub const LIVING_LANDS: CardDefinitionId = CardDefinitionId(1655);
+pub const KORMUS_BELL: CardDefinitionId = CardDefinitionId(1656);
+pub const LIVING_PLANE: CardDefinitionId = CardDefinitionId(1657);

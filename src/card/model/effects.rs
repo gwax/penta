@@ -253,6 +253,15 @@ impl AnimationDef {
         self.all_creature_types = true;
         self
     }
+
+    /// Repaints the permanent without otherwise disturbing it, for "all
+    /// Swamps are 1/1 black creatures that are still lands": the colour
+    /// changes, the printed subtypes and abilities do not.
+    #[must_use]
+    pub const fn with_colors(mut self, colors: ColorSet) -> Self {
+        self.colors = Some(colors);
+        self
+    }
 }
 
 /// An event that a replacement ability can modify before it is committed.

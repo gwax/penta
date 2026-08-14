@@ -1,13 +1,14 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior,
-    CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef, CostDef, CounterKind,
-    DeclarativeAbilityDef, DiscardSelectionDef, EffectDef, EffectDurationDef, EffectExecutionDef,
-    EffectRecipientDef, KeywordAbility, LikelihoodDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementAbilityDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, ShieldCoverageDef, TriggerConditionDef,
-    TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType, CardArt,
+    CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ColorSet,
+    ComparisonDef, CostDef, CounterKind, DeclarativeAbilityDef, DiscardSelectionDef, EffectDef,
+    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, LikelihoodDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation,
+    ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
+    ShieldCoverageDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ChoiceIndex, TargetIndex};
 use crate::mana_cost;
@@ -3445,8 +3446,29 @@ pub(in crate::card::sets) static LIFELACE: CardRecord = CardRecord::new(
 // LEA 208 — Living Artifact
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your upkeep, you may remove a vitality counter from this Aura. If you do, you gain 1 life”.
 
+/// The lands keep their printed types and abilities; only the creature type
+/// line and stats are added.
+static LAND_CREATURE: AnimationDef = AnimationDef::new(1, 1);
+
 // LEA 209 — Living Lands
-// Audit: blocked — Needs static animation to continuously turn the matching lands into creatures for “All Forests are 1/1 creatures that are still lands”.
+pub(in crate::card::sets) static LIVING_LANDS: CardRecord = CardRecord::new(
+    cards::LIVING_LANDS,
+    "Living Lands",
+    CardArt::new("80be0580-7948-4d8e-8c0f-5e2797ac411b", "Jesper Myrfors"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{3}{G}")).with_ability(AbilityDef::static_ability(
+        "All Forests are 1/1 creatures that are still lands.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::Any,
+            },
+            effect: AppliedEffectDef::Animate(&LAND_CREATURE),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )),
+);
 
 // LEA 210 — Llanowar Elves
 pub(in crate::card::sets) static LLANOWAR_ELVES: CardRecord = CardRecord::new(
@@ -4148,8 +4170,29 @@ pub(in crate::card::sets) static JUGGERNAUT: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Black as well, which is the only characteristic Kormus Bell repaints.
+static BLACK_LAND_CREATURE: AnimationDef =
+    AnimationDef::new(1, 1).with_colors(ColorSet::from_colors(&[ManaColor::Black]));
+
 // LEA 256 — Kormus Bell
-// Audit: blocked — Needs static animation to continuously turn the matching lands into creatures for “All Swamps are 1/1 black creatures that are still lands”.
+pub(in crate::card::sets) static KORMUS_BELL: CardRecord = CardRecord::new(
+    cards::KORMUS_BELL,
+    "Kormus Bell",
+    CardArt::new("3f4ef7a1-148d-44ac-89ed-0ef379cca0c6", "Christopher Rush"),
+    CardSet::Alpha,
+    CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::static_ability(
+        "All Swamps are 1/1 black creatures that are still lands.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::MatchingObjects {
+                object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
+                zones: &[ZoneKind::Battlefield],
+                controller: PlayerRelation::Any,
+            },
+            effect: AppliedEffectDef::Animate(&BLACK_LAND_CREATURE),
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )),
+);
 
 // LEA 257 — Library of Leng
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “If an effect causes you to discard a card, discard it, but you may put it on top of your library instead of into your graveyard”.
@@ -4780,6 +4823,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LEY_DRUID,
     &LIFEFORCE,
     &LIFELACE,
+    &LIVING_LANDS,
     &LLANOWAR_ELVES,
     &REGENERATION,
     &REGROWTH,
@@ -4813,6 +4857,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IVORY_CUP,
     &JAYEMDAE_TOME,
     &JUGGERNAUT,
+    &KORMUS_BELL,
     &LIVING_WALL,
     &MANA_VAULT,
     &MOX_EMERALD,
