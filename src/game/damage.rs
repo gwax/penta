@@ -125,6 +125,11 @@ impl Game {
         else {
             return false;
         };
+        if group == super::RelationalSourceFilter::Artifacts {
+            return self
+                .permanent_types(permanent)
+                .is_some_and(|types| types.contains(CardType::Artifact));
+        }
         if !self
             .permanent_types(permanent)
             .is_some_and(|types| types.contains(CardType::Creature))
@@ -136,6 +141,18 @@ impl Game {
             super::RelationalSourceFilter::CreaturesWithFlying => flying,
             super::RelationalSourceFilter::AttackingCreaturesWithoutFlying => {
                 permanent.attacking && !flying
+            }
+            super::RelationalSourceFilter::UnblockedCreatures => {
+                permanent.attacking
+                    && !self
+                        .battlefield
+                        .iter()
+                        .any(|blocker| blocker.blocking == Some(source))
+            }
+            // Not a creature question at all, so it is asked before the one
+            // above rather than through it.
+            super::RelationalSourceFilter::Artifacts => {
+                unreachable!("handled before the type gate")
             }
         }
     }
@@ -198,6 +215,62 @@ impl Game {
         self.damage_target_from_kind(source, target, amount, false)
     }
 
+    /// Where damage actually lands. A permanent whose static effect redirects
+    /// its controller's damage takes it instead, provided the source is in
+    /// the group that effect names.
+    fn redirected_damage_target(
+        &self,
+        source: Option<GameObjectId>,
+        target: Option<Target>,
+    ) -> Option<Target> {
+        let Some(Target::Player(player)) = target else {
+            return target;
+        };
+        let Some(source) = source else {
+            return target;
+        };
+        for candidate in &self.battlefield {
+            if candidate.controller != player {
+                continue;
+            }
+            let mut redirects = false;
+            let _ = self.visit_static_applied_effects(candidate, |applied| {
+                if let AppliedEffectDef::RedirectPlayerDamageToThis(group) = applied.effect
+                    && self.damage_source_is_in_group(source, Self::relational_source_filter(group))
+                {
+                    redirects = true;
+                    ControlFlow::Break(())
+                } else {
+                    ControlFlow::Continue(())
+                }
+            });
+            if redirects {
+                return Some(Target::Permanent(candidate.card.id));
+            }
+        }
+        target
+    }
+
+    /// The engine-side name for a card-side damage-source group.
+    pub(super) fn relational_source_filter(
+        group: crate::card::DamageSourceGroupDef,
+    ) -> super::RelationalSourceFilter {
+        match group {
+            crate::card::DamageSourceGroupDef::CreaturesWithFlying => {
+                super::RelationalSourceFilter::CreaturesWithFlying
+            }
+            crate::card::DamageSourceGroupDef::AttackingCreaturesWithoutFlying => {
+                super::RelationalSourceFilter::AttackingCreaturesWithoutFlying
+            }
+            crate::card::DamageSourceGroupDef::Artifacts => {
+                super::RelationalSourceFilter::Artifacts
+            }
+            crate::card::DamageSourceGroupDef::UnblockedCreatures => {
+                super::RelationalSourceFilter::UnblockedCreatures
+            }
+        }
+    }
+
     pub(super) fn damage_target_from_kind(
         &mut self,
         source: Option<GameObjectId>,
@@ -205,6 +278,10 @@ impl Game {
         amount: u16,
         combat: bool,
     ) -> u16 {
+        // CR 614.9: redirection applies before the damage is dealt, so the
+        // shields and preventions below all answer the permanent it lands on
+        // rather than the player it was aimed at.
+        let target = self.redirected_damage_target(source, target);
         let Some(amount) = self.spend_prevention_shields(target, amount, source) else {
             return 0;
         };

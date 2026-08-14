@@ -78,6 +78,13 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Bodyguards: damage aimed at a player that lands on a creature instead.**
+  Redirection happens before anything else looks at the damage (CR 614.9), so
+  the shields and preventions downstream all answer the creature that took it
+  rather than the player it was aimed at. The source group is the same closed
+  vocabulary the turn-long preventions use, now with artifacts and unblocked
+  creatures, and the "as long as this creature is untapped" condition rides on
+  the recipient. Veteran Bodyguard and Martyrs of Korlis.
 - **Standing Stones.** Three cost kinds on one mana ability -- mana, a tap,
   and a life payment -- which the mana-cost work made expressible; its audit
   line had gone stale since.

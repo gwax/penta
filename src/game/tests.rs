@@ -396,6 +396,7 @@ mod counted_bodies;
 mod counter_conditions;
 mod countering_and_mana;
 mod damage_dealt_by;
+mod damage_redirection;
 mod decisions_and_effects;
 mod delayed_triggers;
 mod detain;

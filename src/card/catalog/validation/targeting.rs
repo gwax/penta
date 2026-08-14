@@ -150,6 +150,7 @@ fn validate_applied_effect_target_references(
         | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamageFrom(_)
+        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
         | AppliedEffectDef::AddLandTypes(_)

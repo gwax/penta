@@ -174,6 +174,7 @@ impl Game {
             | AppliedEffectDef::CanBlockOnly(_)
             | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::PreventCombatDamageFrom(_)
+            | AppliedEffectDef::RedirectPlayerDamageToThis(_)
             | AppliedEffectDef::PreventCombatDamage
             | AppliedEffectDef::PreventCombatDamageDealtBy
             | AppliedEffectDef::ModifyPowerToughness { .. }
@@ -344,6 +345,7 @@ impl Game {
             | AppliedEffectDef::CanBlockOnly(_)
             | AppliedEffectDef::PreventDamageFrom(_)
             | AppliedEffectDef::PreventCombatDamageFrom(_)
+            | AppliedEffectDef::RedirectPlayerDamageToThis(_)
             | AppliedEffectDef::PreventCombatDamage
             | AppliedEffectDef::PreventCombatDamageDealtBy
             | AppliedEffectDef::Animate(_)

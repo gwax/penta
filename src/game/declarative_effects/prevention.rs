@@ -23,6 +23,8 @@ impl Game {
             DamageSourceGroupDef::AttackingCreaturesWithoutFlying => {
                 RelationalSourceFilter::AttackingCreaturesWithoutFlying
             }
+            DamageSourceGroupDef::Artifacts => RelationalSourceFilter::Artifacts,
+            DamageSourceGroupDef::UnblockedCreatures => RelationalSourceFilter::UnblockedCreatures,
         };
         for target in self.effect_recipients(player, object, context, scoped) {
             if let Target::Player(player) = target {

@@ -3,12 +3,12 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType, CardArt,
     CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ColorSet,
-    ComparisonDef, CostDef, CounterKind, DeclarativeAbilityDef, DiscardSelectionDef, EffectDef,
-    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, LikelihoodDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation,
-    ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
-    ShieldCoverageDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    ComparisonDef, CostDef, CounterKind, DamageSourceGroupDef, DeclarativeAbilityDef,
+    DiscardSelectionDef, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
+    KeywordAbility, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PaymentDef,
+    PlayerRelation, ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef,
+    ReplacementEventDef, ShieldCoverageDef, TriggerConditionDef, TriggerEventDef, TurnKindDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ChoiceIndex, TargetIndex};
 use crate::mana_cost;
@@ -774,8 +774,38 @@ pub(in crate::card::sets) static SWORDS_TO_PLOWSHARES: CardRecord = CardRecord::
     )]),
 );
 
+/// "As long as this creature is untapped": the condition rides on the
+/// recipient, so tapping it turns the redirection off and untapping turns it
+/// back on without the creature being touched.
+static UNTAPPED_SELF: EffectRecipientDef = EffectRecipientDef::MatchingObjects {
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Source,
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+    ]),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::Any,
+};
+
 // LEA 41 — Veteran Bodyguard
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “As long as this creature is untapped, all damage that would be dealt to you by unblocked creatures is dealt to this creature instead”.
+pub(in crate::card::sets) static VETERAN_BODYGUARD: CardRecord = CardRecord::new(
+    cards::VETERAN_BODYGUARD,
+    "Veteran Bodyguard",
+    CardArt::new("cbd9ab01-a833-4fa4-8dee-151bd9800835", "Douglas Shuler"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Human"], 2, 5).with_ability(
+        AbilityDef::static_ability(
+            "As long as this creature is untapped, all damage that would be dealt to you by \
+             unblocked creatures is dealt to this creature instead.",
+            EffectDef::Apply {
+                recipient: UNTAPPED_SELF,
+                effect: AppliedEffectDef::RedirectPlayerDamageToThis(
+                    DamageSourceGroupDef::UnblockedCreatures,
+                ),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ),
+);
 
 // LEA 42 — Wall of Swords
 pub(in crate::card::sets) static WALL_OF_SWORDS: CardRecord = CardRecord::new(
@@ -4747,6 +4777,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SAVANNAH_LIONS,
     &SERRA_ANGEL,
     &SWORDS_TO_PLOWSHARES,
+    &VETERAN_BODYGUARD,
     &WALL_OF_SWORDS,
     &WHITE_KNIGHT,
     &WHITE_WARD,

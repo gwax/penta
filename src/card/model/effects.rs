@@ -157,6 +157,11 @@ pub enum AppliedEffectDef {
     /// prevented. Unlike [`Self::PreventCombatDamage`] this is one direction,
     /// so the permanent still takes what its blockers deal it.
     PreventCombatDamageDealtBy,
+    /// Damage a matching source would deal to the affected permanent's
+    /// controller is dealt to that permanent instead. The redirection is read
+    /// live, so a condition on the recipient -- "as long as this creature is
+    /// untapped" -- turns it off without the permanent being touched.
+    RedirectPlayerDamageToThis(DamageSourceGroupDef),
     /// Damage from a source matching this predicate is prevented before it
     /// touches the affected permanent. Only a permanent can be the source
     /// today, which is all "damage from artifact creatures" needs.
@@ -965,6 +970,10 @@ impl EffectDef {
 pub enum DamageSourceGroupDef {
     CreaturesWithFlying,
     AttackingCreaturesWithoutFlying,
+    Artifacts,
+    /// Attacking creatures nothing is blocking. The question is asked as the
+    /// damage arrives, so a blocker removed mid-combat changes the answer.
+    UnblockedCreatures,
 }
 
 /// Turn structure used by beginning/end-of-step trigger declarations.

@@ -230,6 +230,12 @@ pub(in super::super) fn shared_static_applied_effect(
                 EffectRecipientDef::Source | EffectRecipientDef::AttachedPermanent
             ) && shared_object_predicate(predicate)
         }
+        // The redirection names a group rather than a predicate, and it can
+        // only be aimed at a permanent whose controller it protects.
+        AppliedEffectDef::RedirectPlayerDamageToThis(_) => matches!(
+            recipient,
+            EffectRecipientDef::Source | EffectRecipientDef::MatchingObjects { .. }
+        ),
         // A static combat-damage prevention carries no predicate, so only the
         // recipient it is applied to has to be one the runtime understands.
         AppliedEffectDef::PreventCombatDamage | AppliedEffectDef::PreventCombatDamageDealtBy => {

@@ -382,6 +382,7 @@ pub(in super::super) fn assert_nested_definition_applied_effect(
         | AppliedEffectDef::CanBlockOnly(_)
         | AppliedEffectDef::PreventDamageFrom(_)
         | AppliedEffectDef::PreventCombatDamageFrom(_)
+        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
         | AppliedEffectDef::PreventCombatDamage
         | AppliedEffectDef::PreventCombatDamageDealtBy
         | AppliedEffectDef::AddLandTypes(_)

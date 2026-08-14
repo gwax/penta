@@ -3,10 +3,11 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    CardTypeSet, CounterKind, DiscardSelectionDef, EffectDef, EffectDurationDef,
-    EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
-    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEffectDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardTypeSet, CounterKind, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
+    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation,
+    ReplacementEffectDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -101,8 +102,41 @@ pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_ARTIFACTS: CardRecord = Ca
 // ATQ 5 — Damping Field
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “Players can't untap more than one artifact during their untap steps”.
 
+/// "As long as this creature is untapped": the condition rides on the
+/// recipient, so tapping it turns the redirection off and untapping turns it
+/// back on without the creature being touched.
+static MARTYRS_UNTAPPED: EffectRecipientDef = EffectRecipientDef::MatchingObjects {
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Source,
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+    ]),
+    zones: &[ZoneKind::Battlefield],
+    controller: PlayerRelation::Any,
+};
+
 // ATQ 6 — Martyrs of Korlis
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “As long as this creature is untapped, all damage that would be dealt to you by artifacts is dealt to this creature instead”.
+pub(in crate::card::sets) static MARTYRS_OF_KORLIS: CardRecord = CardRecord::new(
+    cards::MARTYRS_OF_KORLIS,
+    "Martyrs of Korlis",
+    CardArt::new(
+        "bde037b9-4947-4ff7-8ea4-e9f1a7e4ab88",
+        "Margaret Organ-Kean",
+    ),
+    CardSet::Antiquities,
+    CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Human"], 1, 6).with_ability(
+        AbilityDef::static_ability(
+            "As long as this creature is untapped, all damage that would be dealt to you by \
+             artifacts is dealt to this creature instead.",
+            EffectDef::Apply {
+                recipient: MARTYRS_UNTAPPED,
+                effect: AppliedEffectDef::RedirectPlayerDamageToThis(
+                    DamageSourceGroupDef::Artifacts,
+                ),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ),
+);
 
 // ATQ 7 — Reverse Polarity
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “You gain X life, where X is twice the damage dealt to you so far this turn by artifacts”.
@@ -1453,6 +1487,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGIVIAN_ARCHAEOLOGIST,
     &ARGIVIAN_BLACKSMITH,
     &CIRCLE_OF_PROTECTION_ARTIFACTS,
+    &MARTYRS_OF_KORLIS,
     &ENERGY_FLUX,
     &HURKYLS_RECALL,
     &RECONSTRUCTION,

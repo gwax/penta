@@ -55,3 +55,5 @@ pub const RAMSES_OVERDARK: CardDefinitionId = CardDefinitionId(1680);
 pub const RABID_WOMBAT: CardDefinitionId = CardDefinitionId(1681);
 pub const PHYREXIAN_GREMLINS: CardDefinitionId = CardDefinitionId(1682);
 pub const STANDING_STONES: CardDefinitionId = CardDefinitionId(1683);
+pub const VETERAN_BODYGUARD: CardDefinitionId = CardDefinitionId(1684);
+pub const MARTYRS_OF_KORLIS: CardDefinitionId = CardDefinitionId(1685);

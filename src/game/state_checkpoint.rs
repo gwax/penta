@@ -368,6 +368,8 @@ impl Game {
                                 RelationalSourceFilter::AttackingCreaturesWithoutFlying => {
                                     "attackingCreaturesWithoutFlying"
                                 }
+                                RelationalSourceFilter::Artifacts => "artifacts",
+                                RelationalSourceFilter::UnblockedCreatures => "unblockedCreatures",
                             }
                             .into(),
                         }
@@ -704,6 +706,8 @@ impl Game {
                             "attackingCreaturesWithoutFlying" => {
                                 RelationalSourceFilter::AttackingCreaturesWithoutFlying
                             }
+                            "artifacts" => RelationalSourceFilter::Artifacts,
+                            "unblockedCreatures" => RelationalSourceFilter::UnblockedCreatures,
                             _ => {
                                 return Err(
                                     "unknown relational prevention source group".to_string()

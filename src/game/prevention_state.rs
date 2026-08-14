@@ -7,6 +7,8 @@ use super::{GameObjectId, PlayerId};
 pub(super) enum RelationalSourceFilter {
     CreaturesWithFlying,
     AttackingCreaturesWithoutFlying,
+    Artifacts,
+    UnblockedCreatures,
 }
 
 /// A turn-long damage-prevention rule whose affected objects are evaluated
