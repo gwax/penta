@@ -102,6 +102,26 @@ impl Game {
         }
     }
 
+    /// The same characteristics with continuous static effects included.
+    ///
+    /// [`Self::trigger_event_object`] deliberately leaves statics out: it is
+    /// used while static effects are being resolved, and asking for a value
+    /// that depends on them there would re-enter the computation. Target
+    /// legality is asked from outside that resolution, so it can and must see
+    /// the real numbers -- a creature a Crusade has made 2/2 is not a legal
+    /// target for "target 1/1 creature".
+    ///
+    /// Keywords are not widened here. The keyword mask has the same seam and
+    /// the same fix, but building it needs to walk static ability grants
+    /// rather than read a value that already exists.
+    pub(super) fn targeting_event_object(&self, permanent: &Permanent) -> TriggerEventObject {
+        TriggerEventObject {
+            power: self.power(permanent),
+            toughness: self.toughness(permanent),
+            ..self.trigger_event_object(permanent)
+        }
+    }
+
     pub(super) fn trigger_event_object_with_prospective(
         &self,
         permanent: &Permanent,

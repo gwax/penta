@@ -88,7 +88,7 @@ impl Game {
         let mut targets = Vec::new();
         if zones.contains(&ZoneKind::Battlefield) {
             targets.extend(self.battlefield.iter().filter_map(|permanent| {
-                let characteristics = self.trigger_event_object(permanent);
+                let characteristics = self.targeting_event_object(permanent);
                 (controller_relation.is_none_or(|relation| {
                     self.player_relation_matches(
                         permanent.controller,

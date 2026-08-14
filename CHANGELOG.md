@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Target legality read power and toughness without continuous static
+  effects.** Trigger capture and static resolution share a characteristics view
+  that deliberately leaves statics out, because it is used while those effects
+  are being resolved. Target legality is asked from outside that resolution and
+  was using the same view, so a creature a Crusade had made 2/2 was still a
+  legal target for Pendelhaven's "target 1/1 creature", and one pushed past a
+  "power 2 or less" ceiling still qualified. Target legality now reads the real
+  values. The keyword mask has the same seam and is unchanged.
 - **Berserk never destroyed the creature it pumped.** Its delayed trigger asks
   whether the creature attacked this turn, and that predicate was reading
   whether the creature is *still* attacking. End of combat clears that flag

@@ -36,12 +36,14 @@ pub enum ObjectPredicateDef {
     ManaValueEqualTo(ValueDef),
     /// Mana value at most a computed amount, for "with mana value X or less".
     ManaValueAtMostValue(ValueDef),
-    /// Power at least this much, for "power N or greater". Reads current
-    /// power on the battlefield, so a pumped creature qualifies.
+    /// Power at least this much, for "power N or greater". Target legality
+    /// reads real current power, so a creature a Crusade has pumped qualifies.
+    /// Trigger and static matching read power without continuous statics; see
+    /// [`crate::card::ObjectPredicateDef::HasKeyword`] for the same seam.
     PowerAtLeast(i16),
     /// Power exactly this much. Like [`Self::PowerAtLeast`] this reads
-    /// current power, so "target 1/1 creature" stops being one the moment
-    /// anything pumps it.
+    /// current power for target legality, so "target 1/1 creature" stops being
+    /// one the moment anything pumps it, a Crusade included.
     PowerExactly(i16),
     /// Toughness exactly this much, read the same way.
     ToughnessExactly(i16),
@@ -65,6 +67,12 @@ pub enum ObjectPredicateDef {
     AttackingOrBlocking,
     /// Has this keyword. Protection is not askable this way, because it is a
     /// keyword per color rather than one keyword.
+    ///
+    /// Unlike the power and toughness predicates, this still reads a keyword
+    /// mask that excludes continuous static grants, so a creature wearing a
+    /// Lord's granted keyword does not match. Building the mask means walking
+    /// static ability grants rather than reading an existing value, which is
+    /// why that half is not done.
     HasKeyword(KeywordAbility),
     /// Has at least one ordinary activated ability rather than only mana
     /// abilities. This is the distinction Tsabo's Web asks for.

@@ -410,6 +410,7 @@ mod search_and_reveal;
 mod spore;
 mod state_triggers_and_life;
 mod targeted_answers;
+mod targeting_characteristics;
 mod triggers_and_stack;
 mod turn_and_loyalty;
 mod tutors_and_fetch_lands;
