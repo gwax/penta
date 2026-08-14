@@ -80,6 +80,7 @@ pub(super) fn permanent_snapshot(
         detained_until_turn_of: permanent
             .detained_until_turn_of
             .map(|(player, turns)| (player.index(), turns)),
+        color_override: permanent.color_override.map(ColorSet::to_flags),
         combat_damage_prevented: permanent.combat_damage_prevented,
         combat_damage_dealt_by_prevented: permanent.combat_damage_dealt_by_prevented,
         control_reverts_to: permanent.control_reverts_to.map(PlayerId::index),

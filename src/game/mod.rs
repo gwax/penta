@@ -222,6 +222,10 @@ struct Permanent {
     /// Detained until this player's next turn begins, recorded with how many
     /// turns they had taken when it landed so "next" means the one after.
     detained_until_turn_of: Option<(PlayerId, u32)>,
+    /// Colours a resolved effect painted over the printed ones. The Lace
+    /// cycle's change lasts indefinitely, so this is permanent state rather
+    /// than a continuous effect with a duration to expire.
+    color_override: Option<ColorSet>,
     /// Whether combat damage to and from this permanent is prevented for the
     /// rest of the turn. Maze of Ith sets it; the creature stays an attacker
     /// so its attack triggers and its blockers are unaffected.
@@ -342,6 +346,7 @@ impl Permanent {
             unblockable_this_turn: false,
             cannot_block_this_turn: false,
             detained_until_turn_of: None,
+            color_override: None,
             combat_damage_prevented: false,
             combat_damage_dealt_by_prevented: false,
             control_reverts_to: None,
@@ -562,6 +567,10 @@ impl GameStack {
 
     fn iter(&self) -> std::slice::Iter<'_, StackObject> {
         self.objects.iter()
+    }
+
+    fn iter_mut(&mut self) -> std::slice::IterMut<'_, StackObject> {
+        self.objects.iter_mut()
     }
 }
 

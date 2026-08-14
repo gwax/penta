@@ -14,8 +14,9 @@ use super::{
     TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerContext, ZoneMoveCause,
 };
 use crate::card::{
-    AppliedEffectDef, BasicLandType, CardType, CardTypeSet, DeclarativeAbilityDef, EffectDef,
-    EffectRecipientDef, ReplacementEffectDef, ReplacementEventDef, SpellForm, ZoneKind,
+    AppliedEffectDef, BasicLandType, CardType, CardTypeSet, ColorSet, DeclarativeAbilityDef,
+    EffectDef, EffectRecipientDef, ManaColor, ReplacementEffectDef, ReplacementEventDef, SpellForm,
+    ZoneKind,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::{

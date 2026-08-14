@@ -317,6 +317,7 @@ impl Game {
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
+            | EffectDef::SetColor { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventAllCombatDamageThisTurn
             | EffectDef::PreventNextDamage { .. }
@@ -560,10 +561,13 @@ impl Game {
         if self.cannot_be_enchanted(host) {
             return false;
         }
+        if self.effective_rules(aura).is_none() {
+            return false;
+        }
+        let aura_colors = self.permanent_colors(aura);
         let Some(rules) = self.effective_rules(aura) else {
             return false;
         };
-        let aura_colors = rules.colors();
         let Some(target) = rules.ability_clauses().iter().find_map(|ability| {
             let target = Self::immediate_attachment_target(ability.declarative_effect()?)?;
             let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
@@ -793,12 +797,23 @@ impl Game {
     }
 
     /// The colours a permanent actually is. An animation that repaints it
-    /// replaces the printed colours rather than adding to them.
+    /// replaces the printed colours rather than adding to them, and a Lace
+    /// resolved onto it replaces whatever it was before that.
     pub(super) fn effective_colors(permanent: &Permanent, rules: &CardRules) -> [bool; 5] {
         permanent
-            .animation
-            .and_then(|animation| animation.colors)
+            .color_override
+            .or_else(|| permanent.animation.and_then(|animation| animation.colors))
             .map_or_else(|| rules.colors(), ColorSet::to_flags)
+    }
+
+    /// Every colour question about a permanent goes through here, so a
+    /// repainted one answers the same way to protection, to Aura legality,
+    /// and to anything else that asks.
+    pub(super) fn permanent_colors(&self, permanent: &Permanent) -> [bool; 5] {
+        let Some(rules) = self.effective_rules(permanent) else {
+            return [false; 5];
+        };
+        Self::effective_colors(permanent, rules)
     }
 
     pub(super) fn is_protected_from_colors(
@@ -907,9 +922,7 @@ impl Game {
             .iter()
             .find(|permanent| permanent.card.id == object)
         {
-            return self
-                .effective_rules(permanent)
-                .map_or([false; 5], CardRules::colors);
+            return self.permanent_colors(permanent);
         }
         if let Some(stack) = self.stack.iter().find(|stack| stack.id == object) {
             return stack.colors.map_or_else(
@@ -922,9 +935,7 @@ impl Game {
         }
         if let Some(retired) = self.retired_objects.get(&object) {
             return match retired {
-                RetiredObject::Permanent { permanent, .. } => self
-                    .effective_rules(permanent)
-                    .map_or([false; 5], CardRules::colors),
+                RetiredObject::Permanent { permanent, .. } => self.permanent_colors(permanent),
                 RetiredObject::Stack(stack) => self
                     .stack_trigger_event_object(stack)
                     .map_or([false; 5], |event| event.colors),
@@ -946,9 +957,7 @@ impl Game {
             .map_or([false; 5], |definition| definition.rules.colors())
     }
     pub(super) fn combat_is_protected(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
-        let blocker_colors = self
-            .effective_rules(blocker)
-            .map_or([false; 5], CardRules::colors);
+        let blocker_colors = self.permanent_colors(blocker);
         self.is_protected_from_colors(attacker, blocker_colors)
     }
 }

@@ -276,15 +276,10 @@ impl Game {
                             KeywordAbility::Intimidate,
                         );
                         let shares_color = self
-                            .effective_rules(attacker_permanent)
-                            .zip(self.effective_rules(blocker_permanent))
-                            .is_some_and(|(attacker, blocker)| {
-                                attacker
-                                    .colors()
-                                    .into_iter()
-                                    .zip(blocker.colors())
-                                    .any(|(attacker, blocker)| attacker && blocker)
-                            });
+                            .permanent_colors(attacker_permanent)
+                            .into_iter()
+                            .zip(self.permanent_colors(blocker_permanent))
+                            .any(|(attacker, blocker)| attacker && blocker);
                         let can_block = !(*unblockable
                             || attacker_permanent.unblockable_this_turn
                             || self.cannot_be_blocked(attacker_permanent)

@@ -247,6 +247,7 @@ impl Game {
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
+            | EffectDef::SetColor { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventAllCombatDamageThisTurn
             | EffectDef::PreventNextDamage { .. }

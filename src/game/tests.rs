@@ -397,6 +397,7 @@ mod exile_source_costs;
 mod extra_turns;
 mod guardian_beast;
 mod identity_and_mana;
+mod laces;
 mod land_and_ability_layers;
 mod land_characteristics;
 mod landwalk;

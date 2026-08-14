@@ -211,6 +211,7 @@ fn validate_effect_references(
         | EffectDef::EmptyManaPool { player: object }
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
+        | EffectDef::SetColor { object, .. }
         | EffectDef::Untap { object }
         | EffectDef::PreventNextDamage { object, .. }
         | EffectDef::PreventAllDamageThisTurn { object }

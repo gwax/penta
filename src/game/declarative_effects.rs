@@ -1,10 +1,10 @@
 use super::{
-    AbilitySourceRef, AddManaEffectDef, CardPartId, CharacteristicSource, CopiableAbility, CostDef,
-    CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger, DiscardSelectionDef,
-    DrawReplacement, EffectDef, EffectRecipientDef, FloatingTrigger, Game, GameResult, Mana,
-    ManaPool, ManaSelectionDef, ManaSource, Permanent, SacrificeFollowup, ScopedEffect,
-    StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason, ZoneKind,
-    ZoneMoveCause, public_cards,
+    AbilitySourceRef, AddManaEffectDef, CardPartId, CharacteristicSource, ColorSet,
+    CopiableAbility, CostDef, CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger,
+    DiscardSelectionDef, DrawReplacement, EffectDef, EffectRecipientDef, FloatingTrigger, Game,
+    GameResult, Mana, ManaPool, ManaSelectionDef, ManaSource, Permanent, SacrificeFollowup,
+    ScopedEffect, StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason,
+    ZoneKind, ZoneMoveCause, public_cards,
 };
 
 mod prevention;
@@ -148,6 +148,26 @@ impl Game {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
                         self.gain_life(player, amount);
+                    }
+                }
+            }
+            EffectDef::SetColor {
+                object: recipient,
+                color,
+            } => {
+                let colors = ColorSet::empty().with(color);
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    let (Target::Permanent(id) | Target::Spell(id)) = target else {
+                        continue;
+                    };
+                    if let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == id)
+                    {
+                        permanent.color_override = Some(colors);
+                    } else if let Some(spell) = self.stack.iter_mut().find(|spell| spell.id == id) {
+                        spell.colors = Some(colors);
                     }
                 }
             }

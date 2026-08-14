@@ -534,8 +534,31 @@ pub(in crate::card::sets) static PEARLED_UNICORN: CardRecord = CardRecord::new(
 // LEA 31 — Personal Incarnation
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{0}: The next 1 damage that would be dealt to this creature this turn is dealt to its owner instead. Only this creatures owner may activate this ability”.
 
+/// The Lace cycle's target: anything at all, on the stack or the battlefield.
+static SPELL_OR_PERMANENT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Battlefield, ZoneKind::Stack],
+        controller: None,
+        owner: None,
+    },
+)];
+
 // LEA 32 — Purelace
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “Target spell or permanent becomes white”.
+pub(in crate::card::sets) static PURELACE: CardRecord = CardRecord::new(
+    cards::PURELACE,
+    "Purelace",
+    CardArt::new("2facf462-55cd-4da4-997f-2cf4add75628", "Sandra Everingham"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Target spell or permanent becomes white. (Mana symbols on that permanent remain unchanged.)",
+        &SPELL_OR_PERMANENT_TARGET,
+        EffectDef::SetColor {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            color: ManaColor::White,
+        },
+    )),
+);
 
 // LEA 33 — Red Ward
 pub(in crate::card::sets) static RED_WARD: CardRecord = CardRecord::new(
@@ -1286,7 +1309,20 @@ pub(in crate::card::sets) static STASIS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs an attachment-scoped control-changing continuous effect for “You control enchanted artifact”.
 
 // LEA 82 — Thoughtlace
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “Target spell or permanent becomes blue”.
+pub(in crate::card::sets) static THOUGHTLACE: CardRecord = CardRecord::new(
+    cards::THOUGHTLACE,
+    "Thoughtlace",
+    CardArt::new("23749375-1416-47a4-9251-52f41fe2fae9", "Mark Poole"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Target spell or permanent becomes blue. (Mana symbols on that permanent remain unchanged.)",
+        &SPELL_OR_PERMANENT_TARGET,
+        EffectDef::SetColor {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            color: ManaColor::Blue,
+        },
+    )),
+);
 
 // LEA 83 — Time Walk
 pub(in crate::card::sets) static TIME_WALK: CardRecord = CardRecord::new(
@@ -1534,7 +1570,20 @@ pub(in crate::card::sets) static DEATHGRIP: CardRecord = CardRecord::new(
 );
 
 // LEA 101 — Deathlace
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “Target spell or permanent becomes black”.
+pub(in crate::card::sets) static DEATHLACE: CardRecord = CardRecord::new(
+    cards::DEATHLACE,
+    "Deathlace",
+    CardArt::new("6ff1cefc-62cb-4525-b0c5-2b09603b4314", "Sandra Everingham"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target spell or permanent becomes black. (Mana symbols on that permanent remain unchanged.)",
+        &SPELL_OR_PERMANENT_TARGET,
+        EffectDef::SetColor {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            color: ManaColor::Black,
+        },
+    )),
+);
 
 // LEA 102 — Demonic Attorney
 // Audit: blocked — Needs the ante procedure and its associated deck-construction handling for “Each player antes the top card of their library”.
@@ -2161,7 +2210,20 @@ static DRAGON_WHELP_PUMP: [EffectDef; 2] = [
 ];
 
 // LEA 139 — Chaoslace
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “Target spell or permanent becomes red”.
+pub(in crate::card::sets) static CHAOSLACE: CardRecord = CardRecord::new(
+    cards::CHAOSLACE,
+    "Chaoslace",
+    CardArt::new("72ea2048-57bc-43d5-8987-33ca727f1a97", "Dameon Willich"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Target spell or permanent becomes red. (Its mana symbols remain unchanged.)",
+        &SPELL_OR_PERMANENT_TARGET,
+        EffectDef::SetColor {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            color: ManaColor::Red,
+        },
+    )),
+);
 
 // LEA 140 — Disintegrate
 // Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “Disintegrate deals X damage to any target. If it's a creature, it can't be regenerated this turn, and if it would die this turn, exile it instead”.
@@ -3239,7 +3301,20 @@ pub(in crate::card::sets) static LIFEFORCE: CardRecord = CardRecord::new(
 );
 
 // LEA 207 — Lifelace
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “Target spell or permanent becomes green”.
+pub(in crate::card::sets) static LIFELACE: CardRecord = CardRecord::new(
+    cards::LIFELACE,
+    "Lifelace",
+    CardArt::new("38cb601b-a35c-412e-b386-e77dad3daa54", "Amy Weber"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Target spell or permanent becomes green. (Mana symbols on that permanent remain unchanged.)",
+        &SPELL_OR_PERMANENT_TARGET,
+        EffectDef::SetColor {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            color: ManaColor::Green,
+        },
+    )),
+);
 
 // LEA 208 — Living Artifact
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your upkeep, you may remove a vitality counter from this Aura. If you do, you gain 1 life”.
@@ -4409,6 +4484,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LANCE,
     &NORTHERN_PALADIN,
     &PEARLED_UNICORN,
+    &PURELACE,
     &RED_WARD,
     &RESURRECTION,
     &REVERSE_DAMAGE,
@@ -4445,6 +4521,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SEA_SERPENT,
     &SPELL_BLAST,
     &STASIS,
+    &THOUGHTLACE,
     &TIME_WALK,
     &TIMETWISTER,
     &TWIDDLE,
@@ -4457,6 +4534,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BOG_WRAITH,
     &DARK_RITUAL,
     &DEATHGRIP,
+    &DEATHLACE,
     &DEMONIC_TUTOR,
     &DRAIN_LIFE,
     &DRUDGE_SKELETONS,
@@ -4480,6 +4558,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WILL_O_THE_WISP,
     &ZOMBIE_MASTER,
     &BURROWING,
+    &CHAOSLACE,
     &DRAGON_WHELP,
     &DWARVEN_DEMOLITION_TEAM,
     &DWARVEN_WARRIORS,
@@ -4532,6 +4611,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IRONROOT_TREEFOLK,
     &LEY_DRUID,
     &LIFEFORCE,
+    &LIFELACE,
     &LLANOWAR_ELVES,
     &REGENERATION,
     &REGROWTH,

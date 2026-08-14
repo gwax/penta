@@ -392,6 +392,13 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// Repaint an object's colours, replacing whatever it was. The Lace cycle
+    /// says "becomes", not "in addition to", and prints no duration: the
+    /// change lasts as long as the object does.
+    SetColor {
+        object: EffectRecipientDef,
+        color: ManaColor,
+    },
     /// Poison counters given to a player. Ten of them is a state-based loss,
     /// which is why this is not expressible as life loss.
     AddPoisonCounters {

@@ -196,6 +196,22 @@ pub(super) fn i16_pair(value: &Value) -> Result<[i16; 2], String> {
     Ok([read_i16(&values[0])?, read_i16(&values[1])?])
 }
 
+fn color_set_from_flags(flags: [bool; 5]) -> ColorSet {
+    let mut colors = ColorSet::empty();
+    for (present, color) in flags.into_iter().zip([
+        ManaColor::White,
+        ManaColor::Blue,
+        ManaColor::Black,
+        ManaColor::Red,
+        ManaColor::Green,
+    ]) {
+        if present {
+            colors = colors.with(color);
+        }
+    }
+    colors
+}
+
 /// Poison counters, which are additive on the wire: an observation written
 /// before poison existed simply has none, and reconstructs with none.
 pub(super) fn poison_pair(observation: &Value) -> Result<[u16; 2], String> {
@@ -522,6 +538,7 @@ fn parse_permanent(
         .detained_until_turn_of
         .map(|(player, turns)| player_from_index(player).map(|player| (player, turns)))
         .transpose()?;
+    permanent.color_override = state.color_override.map(color_set_from_flags);
     permanent.combat_damage_prevented = state.combat_damage_prevented;
     permanent.combat_damage_dealt_by_prevented = state.combat_damage_dealt_by_prevented;
     permanent.control_reverts_to = state

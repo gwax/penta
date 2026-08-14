@@ -82,6 +82,7 @@ impl Game {
             | EffectDef::LoseTheGame { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
+            | EffectDef::SetColor { .. }
             | EffectDef::Untap { .. }
             | EffectDef::PreventAllCombatDamageThisTurn
             | EffectDef::PreventNextDamage { .. }

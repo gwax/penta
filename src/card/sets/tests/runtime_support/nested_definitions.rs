@@ -242,6 +242,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
+        | EffectDef::SetColor { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }

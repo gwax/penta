@@ -492,6 +492,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
+        | EffectDef::SetColor { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }
@@ -660,6 +661,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
+        | EffectDef::SetColor { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }

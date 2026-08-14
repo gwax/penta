@@ -484,6 +484,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::LoseTheGame { .. }
         | EffectDef::Regenerate { .. }
         | EffectDef::Tap { .. }
+        | EffectDef::SetColor { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }

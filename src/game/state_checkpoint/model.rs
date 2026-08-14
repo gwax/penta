@@ -187,6 +187,10 @@ pub(super) struct PermanentSnapshot {
     /// Detained until this seat's next turn, with the turn count it landed on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) detained_until_turn_of: Option<(usize, u32)>,
+    /// Colours painted over the printed ones, in WUBRG order, when a Lace
+    /// has resolved onto this permanent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) color_override: Option<[bool; 5]>,
     pub(super) combat_damage_prevented: bool,
     pub(super) combat_damage_dealt_by_prevented: bool,
     pub(super) control_reverts_to: Option<usize>,

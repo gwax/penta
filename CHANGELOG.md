@@ -71,6 +71,13 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **The Lace cycle**, and with it colour as something an effect can replace.
+  "Becomes" is not "in addition to", and the Laces print no duration, so the
+  new colour is permanent state on the permanent rather than an expiring
+  continuous effect. Every colour question now goes through one funnel, so a
+  repainted permanent answers the same way to protection, to Aura legality,
+  and to blocking. A spell still on the stack can be repainted too. Purelace,
+  Thoughtlace, Deathlace, Chaoslace, and Lifelace.
 - **Poison counters**, a second way to lose that has nothing to do with life.
   Observations gain a `poison` pair alongside `life`, and `result.reason` gains
   `OpponentPoisoned`; both are additive, so a bot that ignores them or treats
