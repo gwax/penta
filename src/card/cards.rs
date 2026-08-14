@@ -2,6 +2,7 @@
 
 use crate::CardDefinitionId;
 
+mod activation_timing;
 mod attack_restrictions;
 mod isd_rtr;
 mod landwalk;
@@ -16,6 +17,7 @@ mod regeneration_followup;
 mod spore;
 mod tapped_and_untap;
 mod targeted_regeneration;
+pub use activation_timing::*;
 pub use attack_restrictions::*;
 pub use isd_rtr::*;
 pub use landwalk::*;

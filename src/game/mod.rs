@@ -10,18 +10,19 @@ use crate::action::{
 use crate::card::AbilityPredicateDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityProcedureDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivatedAbilityDef, AddManaEffectDef, AlternativeCastAbilityDef, AlternativeCastKindDef,
-    AnimationDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CREATURE_TYPES,
-    CardBehavior, CardCatalog, CardChoiceSourceDef, CardDefinition, CardEffectStatus, CardPart,
-    CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext,
-    ColorSet, ComparisonDef, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef,
-    DiscardSelectionDef, DividedTotal, DoubleFacedKind, EffectDef, EffectDurationDef,
-    EffectRecipientDef, HybridPair, KeywordAbility, ManaCost, ManaRestrictionDef, ManaSelectionDef,
-    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind,
-    PlayOptionDef, PlayRestriction, PlayerRelation, QuantifierDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, ShieldCoverageDef, TargetPredicate, TargetSlotDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef,
-    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
+    ActivatedAbilityDef, ActivationTimingDef, AddManaEffectDef, AlternativeCastAbilityDef,
+    AlternativeCastKindDef, AnimationDef, AppliedEffectDef, BasicLandType,
+    BattlefieldEntryModificationDef, CREATURE_TYPES, CardBehavior, CardCatalog,
+    CardChoiceSourceDef, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
+    CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext, ColorSet,
+    ComparisonDef, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, DiscardSelectionDef,
+    DividedTotal, DoubleFacedKind, EffectDef, EffectDurationDef, EffectRecipientDef, HybridPair,
+    KeywordAbility, ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
+    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind, PlayOptionDef, PlayRestriction,
+    PlayerRelation, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
+    ReplacementEventDef, ShieldCoverageDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind,
+    ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;

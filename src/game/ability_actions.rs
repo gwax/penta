@@ -115,6 +115,7 @@ impl Game {
                 last_activated_origin = Some(effective.origin);
                 if !ability.is_executable()
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)
+                    || !self.activation_timing_allows(player, definition.timing)
                 {
                     return;
                 }

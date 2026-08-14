@@ -1,11 +1,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AnimationDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
-    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, CounterKind, DiscardSelectionDef,
-    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, ReplacementEffectDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
+    ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef, EffectDurationDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ReplacementEffectDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -313,7 +314,33 @@ pub(in crate::card::sets) static RIVER_MERFOLK: CardRecord = CardRecord::new(
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: Gain control of target creature whose controller controls an Island for as long as you control this creature and this creature remains tapped”.
 
 // FEM 26 — Svyelunite Priest
-// Audit: blocked — Needs executable shroud target-legality and a temporary keyword grant for “{U}{U}, {T}: Target creature gains shroud until end of turn. Activate only during your upkeep”.
+pub(in crate::card::sets) static SVYELUNITE_PRIEST: CardRecord = CardRecord::new(
+    cards::SVYELUNITE_PRIEST,
+    "Svyelunite Priest",
+    CardArt::new("316d25ae-7ac6-4f5b-93ab-0e0e28ec104b", "Ron Spencer"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Merfolk", "Cleric"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{U}{U}, {T}: Target creature gains shroud until end of turn. Activate only during \
+             your upkeep.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{U}{U}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::GrantAbility(&SHROUD),
+                duration: EffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::YourUpkeep),
+    ),
+);
+
+static SHROUD: AbilityDef = abilities::shroud();
 
 // FEM 27a — Tidal Flats
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{U}{U}: For each attacking creature without flying, its controller may pay {1}. If that player doesn't, creatures you control blocking that creature gain first strike until end of turn”.
@@ -1221,6 +1248,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORDER_OF_LEITBUR,
     &HOMARID_SHAMAN,
     &RIVER_MERFOLK,
+    &SVYELUNITE_PRIEST,
     &VODALIAN_KNIGHTS,
     &VODALIAN_MAGE,
     &VODALIAN_SOLDIERS,

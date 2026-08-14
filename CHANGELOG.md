@@ -42,6 +42,14 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Printed "Activate only during ..." windows.** An activated ability can now
+  carry an activation window, checked where activations are enumerated, so a
+  restricted ability is simply not offered outside it. Twenty identities name
+  such a clause; four needed nothing else and are now executable: Disrupting
+  Scepter, Dwarven Weaponsmith, Svyelunite Priest, and Gwendlyn Di Corci.
+  Three of the four had audit lines blaming capabilities that already existed
+  -- a hidden-zone discard, seeded random selection, and executable shroud --
+  with the window as the only real gap.
 - **Two identities the spore pass left behind.** Elvish Farmer and Thallid
   Devourer print the same two spore clauses the Thallid cycle already has, plus
   a third that spends a Saproling as an activation cost -- a use for the token

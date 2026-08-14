@@ -4,11 +4,12 @@ use crate::ids::TargetIndex;
 
 use super::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityEffectDef, AbilityProcedureDef,
-    AbilityTargetDef, ActivatedAbilityDef, AlternativeCastAbilityDef, AlternativeCastKindDef,
-    AlternativeCastManaCostDef, CardBehavior, DeclarativeAbilityDef, EffectDef, EffectExecutionDef,
-    ImplementationStatus, KeywordAbility, ManaCost, ReplacementAbilityDef, ReplacementEffectDef,
-    ReplacementEventDef, SpecialActionDef, SpellAbilityDef, StaticAbilityDef, TriggerConditionDef,
-    TriggerEventDef, TriggeredAbilityDef, ZoneKind,
+    AbilityTargetDef, ActivatedAbilityDef, ActivationTimingDef, AlternativeCastAbilityDef,
+    AlternativeCastKindDef, AlternativeCastManaCostDef, CardBehavior, DeclarativeAbilityDef,
+    EffectDef, EffectExecutionDef, ImplementationStatus, KeywordAbility, ManaCost,
+    ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, SpecialActionDef,
+    SpellAbilityDef, StaticAbilityDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef,
+    ZoneKind,
 };
 
 /// One printed rules clause and its implementation.
@@ -395,6 +396,22 @@ impl AbilityDef {
     #[must_use]
     pub const fn with_coverage(mut self, coverage: AbilityCoverageDef) -> Self {
         self.coverage = coverage;
+        self
+    }
+
+    /// Narrows when an activated ability may be activated, for a printed
+    /// "Activate only during ..." clause.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the clause is not an activated ability, since nothing else
+    /// carries an activation window.
+    #[must_use]
+    pub const fn with_activation_timing(mut self, timing: ActivationTimingDef) -> Self {
+        let DeclarativeAbilityDef::Activated(definition) = self.definition else {
+            panic!("only an activated ability has an activation window");
+        };
+        self.definition = DeclarativeAbilityDef::Activated(definition.with_timing(timing));
         self
     }
 

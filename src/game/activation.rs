@@ -1,11 +1,29 @@
 use super::{
-    AbilityCostDef, AbilityOrigin, AbilityProcedureDef, BattlefieldExitCompletion, CardBehavior,
-    CardInstance, CharacteristicContext, CounterKind, DeclarativeAbilityDef,
-    FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost, ManaPaymentPurpose, PlayerId,
-    Target, TargetSelection, ZoneKind, remove_card,
+    AbilityCostDef, AbilityOrigin, AbilityProcedureDef, ActivationTimingDef,
+    BattlefieldExitCompletion, CardBehavior, CardInstance, CharacteristicContext, CounterKind,
+    DeclarativeAbilityDef, FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost,
+    ManaPaymentPurpose, PlayerId, Step, Target, TargetSelection, ZoneKind, remove_card,
 };
 
 impl Game {
+    /// Whether a printed "Activate only ..." window is currently open for
+    /// this player. The restriction narrows when an ability may be activated;
+    /// it says nothing about priority, so an ability still needs its
+    /// controller to have it.
+    pub(super) fn activation_timing_allows(
+        &self,
+        player: PlayerId,
+        timing: ActivationTimingDef,
+    ) -> bool {
+        match timing {
+            ActivationTimingDef::Any => true,
+            ActivationTimingDef::YourTurn => self.active_player == player,
+            ActivationTimingDef::YourUpkeep => {
+                self.active_player == player && self.step == Step::Upkeep
+            }
+        }
+    }
+
     #[allow(clippy::too_many_lines)]
     pub(super) fn activate_ability(
         &mut self,

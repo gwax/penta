@@ -1,12 +1,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AnimationDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt,
-    CardBehavior, CardRules, CardSet, CardType, CardTypeSet, CounterKind, DiscardSelectionDef,
-    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ManaRestrictionDef, ObjectPredicateDef, PaymentDef, PlayerRelation,
-    ReplacementEffectDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
+    BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
+    CardTypeSet, CounterKind, DiscardSelectionDef, EffectDef, EffectDurationDef,
+    EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
+    ObjectPredicateDef, PaymentDef, PlayerRelation, ReplacementEffectDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -308,7 +308,34 @@ pub(in crate::card::sets) static DETONATE: CardRecord = CardRecord::new(
 );
 
 // ATQ 25 — Dwarven Weaponsmith
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{T}, Sacrifice an artifact: Put a +1/+1 counter on target creature. Activate only during your upkeep”.
+pub(in crate::card::sets) static DWARVEN_WEAPONSMITH: CardRecord = CardRecord::new(
+    cards::DWARVEN_WEAPONSMITH,
+    "Dwarven Weaponsmith",
+    CardArt::new("0848d94a-2704-460f-986b-b192dd6d26b7", "Mark Poole"),
+    CardSet::Antiquities,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Dwarf", "Artificer"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice an artifact: Put a +1/+1 counter on target creature. Activate only \
+             during your upkeep.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::HasType(CardType::Artifact),
+                    controller: PlayerRelation::You,
+                },
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::YourUpkeep),
+    ),
+);
 
 // ATQ 26 — Goblin Artisans
 // Audit: blocked — Needs a deterministic recorded coin-flip choice and both result branches for “{T}: Flip a coin. If you win the flip, draw a card. If you lose the flip, counter target artifact spell you control that isn't the target of an ability from another creature named Goblin…”.
@@ -1194,6 +1221,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARTIFACT_BLAST,
     &ATOG,
     &DETONATE,
+    &DWARVEN_WEAPONSMITH,
     &ORCISH_MECHANICS,
     &SHATTERSTORM,
     &ARGOTHIAN_PIXIES,

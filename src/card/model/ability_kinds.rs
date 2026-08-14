@@ -118,12 +118,27 @@ pub enum AbilityProcedureDef {
     Legacy,
 }
 
+/// When a printed "Activate only ..." clause allows an ability to be
+/// activated. This restricts the window; it does not change priority, so an
+/// ability that is also sorcery-speed still needs an empty stack.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub enum ActivationTimingDef {
+    /// Any time its controller has priority, which is the printed default.
+    #[default]
+    Any,
+    /// Only during a turn its controller is taking.
+    YourTurn,
+    /// Only during the upkeep step of a turn its controller is taking.
+    YourUpkeep,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ActivatedAbilityDef {
     pub source_zones: &'static [ZoneKind],
     pub costs: AbilityCostList,
     pub targets: &'static [AbilityTargetDef],
     pub procedure: AbilityProcedureDef,
+    pub timing: ActivationTimingDef,
 }
 
 impl ActivatedAbilityDef {
@@ -139,6 +154,7 @@ impl ActivatedAbilityDef {
             costs,
             targets: &[],
             procedure: AbilityProcedureDef::Shared,
+            timing: ActivationTimingDef::Any,
         }
     }
 
@@ -157,6 +173,12 @@ impl ActivatedAbilityDef {
     #[must_use]
     pub const fn with_procedure(mut self, procedure: AbilityProcedureDef) -> Self {
         self.procedure = procedure;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_timing(mut self, timing: ActivationTimingDef) -> Self {
+        self.timing = timing;
         self
     }
 }

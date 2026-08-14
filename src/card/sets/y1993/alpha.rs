@@ -1,8 +1,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, CardTypeSet, ComparisonDef, CostDef, CounterKind,
+    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior,
+    CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef, CostDef, CounterKind,
     DeclarativeAbilityDef, DiscardSelectionDef, EffectDef, EffectDurationDef, EffectExecutionDef,
     EffectRecipientDef, KeywordAbility, LikelihoodDef, ManaColor, ObjectPredicateDef,
     ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementAbilityDef, ReplacementConditionDef,
@@ -3611,7 +3611,30 @@ pub(in crate::card::sets) static DINGUS_EGG: CardRecord = CardRecord::new(
 );
 
 // LEA 242 — Disrupting Scepter
-// Audit: blocked — Needs a hidden-zone decision and continuation for “{3}, {T}: Target player discards a card. Activate only during your turn”.
+pub(in crate::card::sets) static DISRUPTING_SCEPTER: CardRecord = CardRecord::new(
+    cards::DISRUPTING_SCEPTER,
+    "Disrupting Scepter",
+    CardArt::new("ca571ee8-07a2-43b8-9acf-89cbfd3cf7c9", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_artifact(mana_cost!("{3}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "{3}, {T}: Target player discards a card. Activate only during your turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{3}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::Discard {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+                selection: DiscardSelectionDef::RecipientChooses,
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::YourTurn),
+    ),
+);
 
 // LEA 243 — Forcefield
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}: The next time an unblocked creature of your choice would deal combat damage to you this turn, prevent all but 1 of that damage”.
@@ -4401,6 +4424,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COPPER_TABLET,
     &CRYSTAL_ROD,
     &DINGUS_EGG,
+    &DISRUPTING_SCEPTER,
     &GLASSES_OF_URZA,
     &ICY_MANIPULATOR,
     &IRON_STAR,

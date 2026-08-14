@@ -1,7 +1,7 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType,
+    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
     CardType, ComparisonDef, CounterKind, DiscardSelectionDef, DividedTotal, EffectDef,
     EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
@@ -2375,7 +2375,29 @@ pub(in crate::card::sets) static GOSTA_DIRK: CardRecord = CardRecord::new(
 );
 
 // LEG 228 — Gwendlyn Di Corci
-// Audit: blocked — Needs seeded random selection with replay-visible provenance for “{T}: Target player discards a card at random. Activate only during your turn”.
+pub(in crate::card::sets) static GWENDLYN_DI_CORCI: CardRecord = CardRecord::new(
+    cards::GWENDLYN_DI_CORCI,
+    "Gwendlyn Di Corci",
+    CardArt::new("473d70b6-a88c-49f4-9415-19919c4468ae", "Julie Baroh"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{U}{B}{B}{R}"), &["Human", "Rogue"], 3, 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(
+            AbilityDef::activated_with_targets(
+                "{T}: Target player discards a card at random. Activate only during your turn.",
+                &[AbilityCostDef::TapSource],
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Player(PlayerRelation::Any),
+                )],
+                EffectDef::Discard {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(1),
+                    selection: DiscardSelectionDef::Random,
+                },
+            )
+            .with_activation_timing(ActivationTimingDef::YourTurn),
+        ),
+);
 
 // LEG 229 — Halfdane
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “At the beginning of your upkeep, change Halfdane's base power and toughness to the power and toughness of target creature other than Halfdane until the end of your next upkeep”.
@@ -3419,6 +3441,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BORIS_DEVILBOON,
     &CHROMIUM,
     &GOSTA_DIRK,
+    &GWENDLYN_DI_CORCI,
     &HUNDING_GJORNERSEN,
     &JACQUES_LE_VERT,
     &JASMINE_BOREAL,
