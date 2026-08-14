@@ -183,3 +183,53 @@ fn handcrafted_lower_card_value_uses_members_to_choose_the_cheaper_pile() {
         })
     );
 }
+
+#[test]
+fn handcrafted_scores_a_selectable_card_before_auxiliary_inspection_members() {
+    let catalog = poc::catalog().unwrap();
+    let inspected = vec![
+        (CardInstanceId(10), poc::cards::LIGHTNING_BOLT),
+        (CardInstanceId(11), poc::cards::MOUNTAIN),
+    ];
+    let mut observation = policy_observation(Vec::new(), Vec::new());
+    observation.decision = Some(DecisionObservation {
+        id: 43,
+        player: PlayerId::One,
+        kind: DecisionKind::Choice,
+        order_semantics: None,
+        prompt: "Choose one inspected card".to_owned(),
+        visibility: DecisionVisibility::Private,
+        preference: DecisionPreference::HigherCardValue,
+        minimum: 1,
+        maximum: 1,
+        cancellable: false,
+        options: vec![
+            DecisionOption {
+                id: 0,
+                label: "Lightning Bolt".to_owned(),
+                card: Some((CardInstanceId(10), poc::cards::LIGHTNING_BOLT)),
+                members: inspected.clone(),
+                ability_text: None,
+                zone: DecisionZone::Library,
+            },
+            DecisionOption {
+                id: 1,
+                label: "Mountain".to_owned(),
+                card: Some((CardInstanceId(11), poc::cards::MOUNTAIN)),
+                members: inspected,
+                ability_text: None,
+                zone: DecisionZone::Library,
+            },
+        ],
+    });
+    let mut policy = HandcraftedPolicy::new(catalog);
+
+    assert_eq!(
+        policy.choose_action(&observation),
+        Some(Action::ChooseDecision {
+            decision: 43,
+            options: vec![1],
+        }),
+        "auxiliary inspected cards do not turn each selectable option into the same pile",
+    );
+}

@@ -1,16 +1,17 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior,
-    CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef,
-    ColorSet, ComparisonDef, CostDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
-    DamagePreventionFollowUpDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
-    DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectRecipientDef, InstalledTriggerDef,
-    KeywordAbility, LikelihoodDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PaymentDef, PlayerRefDef, PlayerRelation,
-    ReplacementAbilityDef, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
-    TurnKindDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
+    ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, CounterKind, DamageEventMatcherDef,
+    DamagePreventionDef, DamagePreventionFollowUpDef, DamageRecipientMatcherDef,
+    DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, LikelihoodDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef,
+    ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -353,7 +354,10 @@ static FARMSTEAD_LAND_ABILITY: AbilityDef = AbilityDef::triggered(
         player: PlayerRelation::You,
     },
     EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{W}{W}"))]),
+        EffectPaymentDef::mana(
+            PlayerSetDef::Related(PlayerRelation::You),
+            mana_cost!("{W}{W}"),
+        ),
         &EffectDef::GainLife {
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(1),
@@ -608,9 +612,10 @@ pub(in crate::card::sets) static PURELACE: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
         "Target spell or permanent becomes white. (Mana symbols on that permanent remain unchanged.)",
         &SPELL_OR_PERMANENT_TARGET,
-        EffectDef::SetColor {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            color: ManaColor::White,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::White])),
+            duration: ResolvedEffectDurationDef::Permanent,
         },
     )),
 );
@@ -806,9 +811,9 @@ pub(in crate::card::sets) static VETERAN_BODYGUARD: CardRecord = CardRecord::new
              unblocked creatures is dealt to this creature instead.",
             EffectDef::StaticApply {
                 recipient: UNTAPPED_SELF,
-                effect: AppliedEffectDef::RedirectPlayerDamageToThis(
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::RedirectPlayerDamageToThis(
                     DamageSourceGroupDef::UnblockedCreatures,
-                ),
+                )),
             },
         ),
     ),
@@ -1071,8 +1076,8 @@ pub(in crate::card::sets) static INVISIBILITY: CardRecord = CardRecord::new(
                 "Enchanted creature can't be blocked except by Walls.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
-                        &ObjectPredicateDef::Subtype("Wall"),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Wall")),
                     )),
                 },
             ),
@@ -1420,7 +1425,7 @@ pub(in crate::card::sets) static STASIS: CardRecord = CardRecord::new(
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::triggered(
@@ -1451,9 +1456,10 @@ pub(in crate::card::sets) static THOUGHTLACE: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
         "Target spell or permanent becomes blue. (Mana symbols on that permanent remain unchanged.)",
         &SPELL_OR_PERMANENT_TARGET,
-        EffectDef::SetColor {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            color: ManaColor::Blue,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Blue])),
+            duration: ResolvedEffectDurationDef::Permanent,
         },
     )),
 );
@@ -1727,9 +1733,10 @@ pub(in crate::card::sets) static DEATHLACE: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
         "Target spell or permanent becomes black. (Mana symbols on that permanent remain unchanged.)",
         &SPELL_OR_PERMANENT_TARGET,
-        EffectDef::SetColor {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            color: ManaColor::Black,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Black])),
+            duration: ResolvedEffectDurationDef::Permanent,
         },
     )),
 );
@@ -1839,11 +1846,11 @@ pub(in crate::card::sets) static FEAR: CardRecord = CardRecord::new(
                 "Enchanted creature has fear. (It can't be blocked except by artifact creatures and/or black creatures.)",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
-                        &ObjectPredicateDef::AnyOf(&[
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
                             ObjectPredicateDef::HasType(CardType::Artifact),
                             ObjectPredicateDef::Color(ManaColor::Black),
-                        ]),
+                        ])),
                     )),
                 },
             )
@@ -2380,9 +2387,10 @@ pub(in crate::card::sets) static CHAOSLACE: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
         "Target spell or permanent becomes red. (Its mana symbols remain unchanged.)",
         &SPELL_OR_PERMANENT_TARGET,
-        EffectDef::SetColor {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            color: ManaColor::Red,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Red])),
+            duration: ResolvedEffectDurationDef::Permanent,
         },
     )),
 );
@@ -2445,8 +2453,12 @@ pub(in crate::card::sets) static DWARVEN_WARRIORS: CardRecord = CardRecord::new(
                     ObjectPredicateDef::Not(&ObjectPredicateDef::PowerAtLeast(3)),
                 ]),
             )],
-            EffectDef::MakeUnblockableThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -3489,9 +3501,10 @@ pub(in crate::card::sets) static LIFELACE: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{G}")).with_ability(AbilityDef::spell_with_targets(
         "Target spell or permanent becomes green. (Mana symbols on that permanent remain unchanged.)",
         &SPELL_OR_PERMANENT_TARGET,
-        EffectDef::SetColor {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            color: ManaColor::Green,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Green])),
+            duration: ResolvedEffectDurationDef::Permanent,
         },
     )),
 );
@@ -3838,7 +3851,7 @@ pub(in crate::card::sets) static BASALT_MONOLITH: CardRecord = CardRecord::new(
             "This artifact doesn't untap during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::activated_mana(
@@ -4021,7 +4034,10 @@ pub(in crate::card::sets) static CRYSTAL_ROD: CardRecord = CardRecord::new(
         "Whenever a player casts a blue spell, you may pay {1}. If you do, you gain 1 life.",
         TriggerEventDef::SpellCast(ObjectPredicateDef::Color(ManaColor::Blue)),
         EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{1}"))]),
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
+            ),
             &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -4152,7 +4168,10 @@ pub(in crate::card::sets) static IRON_STAR: CardRecord = CardRecord::new(
         "Whenever a player casts a red spell, you may pay {1}. If you do, you gain 1 life.",
         TriggerEventDef::SpellCast(ObjectPredicateDef::Color(ManaColor::Red)),
         EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{1}"))]),
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
+            ),
             &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -4171,7 +4190,10 @@ pub(in crate::card::sets) static IVORY_CUP: CardRecord = CardRecord::new(
         "Whenever a player casts a white spell, you may pay {1}. If you do, you gain 1 life.",
         TriggerEventDef::SpellCast(ObjectPredicateDef::Color(ManaColor::White)),
         EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{1}"))]),
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
+            ),
             &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -4219,7 +4241,9 @@ pub(in crate::card::sets) static JUGGERNAUT: CardRecord = CardRecord::new(
             "This creature can't be blocked by Walls.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Subtype("Wall")),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Subtype("Wall"),
+                )),
             },
         ),
     ]),
@@ -4280,7 +4304,7 @@ pub(in crate::card::sets) static MANA_VAULT: CardRecord = CardRecord::new(
             "This artifact doesn't untap during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::triggered(
@@ -4290,9 +4314,9 @@ pub(in crate::card::sets) static MANA_VAULT: CardRecord = CardRecord::new(
                 player: PlayerRelation::You,
             },
             EffectDef::PayOr(PayOrDef::optional(
-                PaymentDef::new(
-                    PlayerRelation::You,
-                    &[CostDef::Mana(mana_cost!("{4}"))],
+                EffectPaymentDef::mana(
+                    PlayerSetDef::Related(PlayerRelation::You),
+                    mana_cost!("{4}"),
                 ),
                 &EffectDef::Untap {
                     object: EffectRecipientDef::Source,
@@ -4340,7 +4364,7 @@ pub(in crate::card::sets) static MEEKSTONE: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
         },
     )),
 );
@@ -4485,7 +4509,10 @@ pub(in crate::card::sets) static SOUL_NET: CardRecord = CardRecord::new(
             Some(ZoneKind::Graveyard),
         ),
         EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{1}"))]),
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
+            ),
             &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -4527,7 +4554,10 @@ pub(in crate::card::sets) static THRONE_OF_BONE: CardRecord = CardRecord::new(
         "Whenever a player casts a black spell, you may pay {1}. If you do, you gain 1 life.",
         TriggerEventDef::SpellCast(ObjectPredicateDef::Color(ManaColor::Black)),
         EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{1}"))]),
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
+            ),
             &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -4555,7 +4585,7 @@ pub(in crate::card::sets) static TIME_VAULT: CardRecord = CardRecord::new(
             "This artifact doesn't untap during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::defined_replacement(
@@ -4604,7 +4634,10 @@ pub(in crate::card::sets) static WOODEN_SPHERE: CardRecord = CardRecord::new(
         "Whenever a player casts a green spell, you may pay {1}. If you do, you gain 1 life.",
         TriggerEventDef::SpellCast(ObjectPredicateDef::Color(ManaColor::Green)),
         EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{1}"))]),
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
+            ),
             &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),

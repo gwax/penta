@@ -1,8 +1,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt,
-    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, DamageCoverageDef,
+    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    CardArt, CardBehavior, CardRules, CardSet, CardType, ComparisonDef, DamageCoverageDef,
     DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
     EffectDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
@@ -556,7 +556,9 @@ pub(in crate::card::sets) static BOG_RATS: CardRecord = CardRecord::new(
             "This creature can't be blocked by Walls.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Subtype("Wall")),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Subtype("Wall"),
+                )),
             },
         ),
     ]),

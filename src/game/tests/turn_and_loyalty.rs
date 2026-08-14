@@ -181,6 +181,27 @@ fn pithing_needle_locks_the_named_card_but_not_its_mana() {
         .first()
         .map(|pending| pending.observation.clone())
         .expect("the Needle names a card as it enters");
+    assert!(
+        choice
+            .options
+            .iter()
+            .any(|option| option.label == "Savannah Lions"),
+        "the generic card-name list includes legal names without activated abilities",
+    );
+    assert!(
+        choice
+            .options
+            .iter()
+            .any(|option| option.label == "Garruk, the Veil-Cursed"),
+        "independently nameable back faces are included",
+    );
+    assert!(
+        !choice
+            .options
+            .iter()
+            .any(|option| matches!(option.label.as_str(), "Dragon" | "Domri Rade emblem")),
+        "synthetic tokens and emblems are not legal card-name choices",
+    );
     let factory_name = choice
         .options
         .iter()
@@ -204,6 +225,41 @@ fn pithing_needle_locks_the_named_card_but_not_its_mana() {
     assert!(
         mana_actions(&game) > 0,
         "but a mana ability is exempt from the lock"
+    );
+
+    let mut transformed = ready_game();
+    transformed.battlefield.clear();
+    let garruk = transformed
+        .put_onto_battlefield(PlayerId::One, cards::GARRUK_RELENTLESS)
+        .expect("cataloged");
+    transformed.transform_permanent(garruk);
+    transformed.turn = 2;
+    transformed.step = Step::PrecombatMain;
+    transformed.priority = PlayerId::One;
+    transformed
+        .put_onto_battlefield(PlayerId::One, cards::PITHING_NEEDLE)
+        .expect("cataloged");
+    let choice = transformed.pending_decisions[0].observation.clone();
+    let back_face = choice
+        .options
+        .iter()
+        .find(|option| option.label == "Garruk, the Veil-Cursed")
+        .expect("the transformed face can be named");
+    transformed
+        .apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: choice.id,
+                options: vec![back_face.id],
+            },
+        )
+        .unwrap();
+    drain_pending(&mut transformed);
+    assert!(
+        !transformed.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == garruk)
+        ),
+        "naming the presented back face locks its activated abilities",
     );
 }
 
@@ -669,6 +725,7 @@ fn aurelias_fury_taps_what_it_burns_and_locks_who_it_hits() {
         // A creature with flash, so the only thing stopping it would be the
         // lock rather than sorcery timing.
         card(27_002, cards::RESTORATION_ANGEL, PlayerId::Two),
+        card(27_003, cards::PLAINS, PlayerId::Two),
     ];
     game.players[1].mana_pool = ManaPool {
         red: 1,
@@ -724,6 +781,20 @@ fn aurelias_fury_taps_what_it_burns_and_locks_who_it_hits() {
     assert!(
         casts.contains(&GameObjectId(27_002)),
         "but a creature spell is not"
+    );
+    let plains = game.players[1]
+        .hand
+        .iter()
+        .find(|card| card.id == GameObjectId(27_003))
+        .expect("the land remains in hand");
+    let land_option = game
+        .catalog
+        .get(cards::PLAINS)
+        .and_then(|definition| definition.play_options.first())
+        .expect("Plains has a land-play option");
+    assert!(
+        !game.play_is_prohibited(plains, PlayerId::Two, land_option),
+        "the cast-only rule leaves land plays untouched"
     );
 }
 
@@ -871,6 +942,127 @@ fn huntmaster_turns_on_a_quiet_turn_and_back_on_a_busy_one() {
             .filter(|permanent| permanent.card.definition == cards::WOLF_TOKEN_2_2_GREEN)
             .count(),
         2
+    );
+}
+
+fn activate_domri_plus_one(game: &mut Game, domri: GameObjectId) {
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let plus_one = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, .. }
+                if *source == domri
+                    && matches!(ability, AbilityOrigin::Printed { ability, .. } if *ability == AbilityId(0)))
+        })
+        .expect("Domri's +1 is offered");
+    game.apply(PlayerId::One, plus_one).unwrap();
+    pass_until_decision(game);
+}
+
+#[test]
+fn domri_plus_one_filters_reveals_and_preserves_a_declined_or_ineligible_top_card() {
+    let setup = |top| {
+        let mut game = ready_game();
+        game.players[0].library.clear();
+        stack_library(&mut game, &[(19_100, top), (19_101, cards::LIGHTNING_BOLT)]);
+        let domri = game
+            .put_onto_battlefield(PlayerId::One, cards::DOMRI_RADE)
+            .expect("cataloged");
+        (game, domri)
+    };
+
+    let (mut taken, domri) = setup(cards::SAVANNAH_LIONS);
+    activate_domri_plus_one(&mut taken, domri);
+    let decision = taken
+        .observe(PlayerId::One)
+        .decision
+        .expect("a creature top card may be taken");
+    assert_eq!(decision.visibility, DecisionVisibility::Private);
+    assert_eq!(decision.minimum, 0);
+    assert_eq!(decision.maximum, 1);
+    assert_eq!(decision.options.len(), 1);
+    choose_decision_by_label(&mut taken, PlayerId::One, "Savannah Lions");
+    assert!(
+        taken.players[0]
+            .hand
+            .iter()
+            .any(|card| { card.definition == cards::SAVANNAH_LIONS })
+    );
+    assert!(taken.events.iter().any(|event| matches!(
+        event,
+        GameEvent::CardRevealed {
+            player: PlayerId::One,
+            definition: cards::SAVANNAH_LIONS,
+            ..
+        }
+    )));
+
+    let (mut declined, domri) = setup(cards::SAVANNAH_LIONS);
+    activate_domri_plus_one(&mut declined, domri);
+    let decision = declined.observe(PlayerId::One).decision.unwrap();
+    declined
+        .apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: Vec::new(),
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        declined.players[0].library.last().unwrap().definition,
+        cards::SAVANNAH_LIONS
+    );
+    assert_eq!(
+        declined.players[0].library.last().unwrap().id,
+        GameObjectId(19_100),
+        "declining does not create a library-to-library zone change"
+    );
+    assert!(
+        !declined
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::CardRevealed { .. }))
+    );
+
+    let (mut ineligible, domri) = setup(cards::LIGHTNING_BOLT);
+    activate_domri_plus_one(&mut ineligible, domri);
+    let decision = ineligible
+        .observe(PlayerId::One)
+        .decision
+        .expect("the private inspection remains observable even with no legal selection");
+    assert_eq!((decision.minimum, decision.maximum), (0, 0));
+    assert_eq!(decision.options.len(), 1);
+    assert_eq!(
+        decision.options[0].members,
+        vec![(GameObjectId(19_100), cards::LIGHTNING_BOLT)],
+        "the chooser sees the ineligible card they looked at",
+    );
+    assert!(
+        ineligible.observe(PlayerId::Two).decision.is_none(),
+        "the private inspection is hidden from the opponent",
+    );
+    ineligible
+        .apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: Vec::new(),
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        ineligible.players[0].library.last().unwrap().definition,
+        cards::LIGHTNING_BOLT
+    );
+    assert!(
+        !ineligible
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::CardRevealed { .. }))
     );
 }
 

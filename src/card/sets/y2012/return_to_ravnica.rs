@@ -4,13 +4,13 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::sets::{y1993::alpha, y2012::magic_2013};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, CardTypeSet, ColorSet, ComparisonDef, CounterKind, CreatureTypeSetDef,
-    DiscardSelectionDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef, PlayerRefDef, PlayerRelation,
-    ReplacementChoiceDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
-    ZonePlacement, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardRules, CardSet,
+    CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
+    CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
+    InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardDefinitionId, TargetIndex};
 use crate::mana_cost;
@@ -1017,7 +1017,7 @@ pub(in crate::card::sets) static PARALYZING_GRASP: CardRecord = CardRecord::new(
                 "Enchanted creature doesn't untap during its controller's untap step.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
                 },
             ),
         ]),
@@ -1394,9 +1394,9 @@ pub(in crate::card::sets) static DRAINPIPE_VERMIN: CardRecord = CardRecord::new(
                 AbilityTargetPredicate::Player(PlayerRelation::Any),
             )],
             EffectDef::PayOr(PayOrDef::optional(
-                PaymentDef::new(
-                    PlayerRelation::You,
-                    &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+                EffectPaymentDef::mana(
+                    PlayerSetDef::Related(PlayerRelation::You),
+                    mana_cost!("{B}"),
                 ),
                 &DRAINPIPE_VERMIN_DISCARD,
             )),
@@ -2175,8 +2175,9 @@ pub(in crate::card::sets) static TRAITOROUS_INSTINCT: CardRecord = CardRecord::n
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControlThisTurn {
+                EffectDef::GainControl {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    duration: ControlDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -3766,30 +3767,40 @@ pub(in crate::card::sets) static TELEPORTAL: CardRecord = CardRecord::new(
                     owner: None,
                 },
             )],
-            EffectDef::Sequence(&[
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
-                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                },
-                EffectDef::MakeUnblockableThisTurn {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
-            ]),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(0),
+                    ),
+                    AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                        ObjectPredicateDef::Any,
+                    )),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
         ),
         abilities::overload(
             mana_cost!("{3}{U}{R}"),
             "Each creature you control gets +1/+0 until end of turn and can't be blocked this turn.",
-            EffectDef::Sequence(&[
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
-                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
-                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                },
-                EffectDef::MakeUnblockableThisTurn {
-                    object: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
-                },
-            ]),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(0),
+                    ),
+                    AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                        ObjectPredicateDef::Any,
+                    )),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
         ),
     ]),
 );
@@ -4414,7 +4425,9 @@ pub(in crate::card::sets) static PITHING_NEEDLE: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
         AbilityDef::replacement(
             "As this artifact enters, choose a card name.",
-            ReplacementEffectDef::Choose(ReplacementChoiceDef::CardName),
+            ReplacementEffectDef::Choose(ReplacementChoiceDef::Scalar(
+                crate::card::BattlefieldEntryScalarChoiceDef::CARD_NAME,
+            )),
         ),
         // The named card's abilities are locked by the action generator, the
         // same place every other activation restriction is enforced.
@@ -4628,8 +4641,12 @@ pub(in crate::card::sets) static ROGUES_PASSAGE: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
-            EffectDef::MakeUnblockableThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),

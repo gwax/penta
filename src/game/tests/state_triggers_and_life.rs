@@ -1,4 +1,5 @@
 use super::*;
+use crate::card::{PlayActionMatcherDef, PlayRestrictionDef};
 
 static MUTAVAULT_TEST_CHARACTERISTICS: [AppliedEffectDef; 3] = [
     AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
@@ -1117,7 +1118,30 @@ fn a_phase_scheduled_during_the_ending_phase_precedes_the_next_turn() {
     permanent.attacks_this_turn = 1;
     permanent.damage_sources.push(source.card.id);
     game.sorcery_flash_grants[PlayerId::One.index()] = 1;
-    game.noncreature_casts_locked[PlayerId::One.index()] = true;
+    let play_rule = AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(PlayRestrictionDef::new(
+        PlayActionMatcherDef::CastSpell,
+        ObjectPredicateDef::NoncreatureSpell,
+    )));
+    game.resolved_play_restrictions
+        .push(ResolvedPlayRestriction {
+            definition: play_rule,
+            source: AbilitySourceRef {
+                object: source.card.id,
+                ability: AbilityOrigin::Printed {
+                    definition: cards::AURELIAS_FURY,
+                    part: CardPartId::PRIMARY,
+                    ability: AbilityId::PRIMARY,
+                },
+            },
+            affected_player: PlayerId::One,
+            timestamp: ContinuousEffectTimestamp(40_003),
+            component_order: 0,
+            expiration: ContinuousEffectExpiration::EndOfTurn,
+            restriction: PlayRestrictionDef::new(
+                PlayActionMatcherDef::CastSpell,
+                ObjectPredicateDef::NoncreatureSpell,
+            ),
+        });
     game.channel_active = [true; 2];
     game.miracle_window = Some(source.card.id);
     game.step = Step::End;
@@ -1131,7 +1155,7 @@ fn a_phase_scheduled_during_the_ending_phase_precedes_the_next_turn() {
     assert_eq!(game.turn, 1);
     assert_eq!(game.step, Step::BeginningOfCombat);
     assert_eq!(game.sorcery_flash_grants[PlayerId::One.index()], 0);
-    assert!(!game.noncreature_casts_locked[PlayerId::One.index()]);
+    assert!(game.resolved_play_restrictions.is_empty());
     assert_eq!(game.channel_active, [false; 2]);
     assert_eq!(game.miracle_window, None);
     let permanent = game

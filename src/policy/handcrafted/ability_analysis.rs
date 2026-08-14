@@ -1,3 +1,5 @@
+use crate::card::AppliedRuleDef;
+
 use super::{
     AbilityCostDef, AbilityOrigin, AppliedEffectDef, CardDefinitionId, CharacteristicOperationDef,
     DeclarativeAbilityDef, DeclarativeSpellProfile, EffectDef, EffectRecipientDef, GameObjectId,
@@ -121,20 +123,7 @@ impl HandcraftedPolicy {
                 SetOperationDef::Remove(_),
             ))
             | AppliedEffectDef::Characteristic(_)
-            | AppliedEffectDef::CannotBeCountered
-            | AppliedEffectDef::MayChooseNotToUntap
-            | AppliedEffectDef::DoesNotUntapDuringUntapStep
-            | AppliedEffectDef::CannotBeEnchanted
-            | AppliedEffectDef::CannotBecomeEnchanted
-            | AppliedEffectDef::CannotChangeController
-            | AppliedEffectDef::RemainsAttachedThroughProtection
-            | AppliedEffectDef::CannotBeBlockedBy(_)
-            | AppliedEffectDef::CannotBlock
-            | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::CannotAttack
-            | AppliedEffectDef::CannotBeBlocked
-            | AppliedEffectDef::PreventDamage(_)
-            | AppliedEffectDef::Special(_) => false,
+            | AppliedEffectDef::Rule(_) => false,
         }
     }
 
@@ -359,8 +348,12 @@ impl HandcraftedPolicy {
             .is_some_and(|ability| {
                 matches!(
                     ability.declarative_effect(),
-                    Some(EffectDef::MakeUnblockableThisTurn {
-                        object: EffectRecipientDef::Source
+                    Some(EffectDef::Apply {
+                        recipient: EffectRecipientDef::Source,
+                        effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                            ObjectPredicateDef::Any
+                        )),
+                        ..
                     })
                 )
             })
@@ -422,12 +415,12 @@ impl HandcraftedPolicy {
             EffectDef::Choose(choice) => Self::target_condition_in_object_set(choice.candidates)
                 .or_else(|| Self::target_condition_in(*choice.then)),
             EffectDef::PayOr(payment) => {
-                let payment_condition = match payment.payment {
-                    crate::card::EffectPaymentDef::GenericMana { amount, .. } => {
+                let payment_condition = match payment.payment.cost {
+                    crate::card::EffectPaymentCostDef::GenericMana(amount) => {
                         Self::target_condition_in_value(amount)
                     }
-                    crate::card::EffectPaymentDef::Costs(_)
-                    | crate::card::EffectPaymentDef::Mana { .. } => None,
+                    crate::card::EffectPaymentCostDef::Mana(_)
+                    | crate::card::EffectPaymentCostDef::Life(_) => None,
                 };
                 payment_condition.or_else(|| {
                     payment
@@ -478,6 +471,7 @@ impl HandcraftedPolicy {
             }
             crate::card::ObjectSetDef::One(_)
             | crate::card::ObjectSetDef::Binding(_)
+            | crate::card::ObjectSetDef::LegalTargets(_)
             | crate::card::ObjectSetDef::SharingNameWith(_) => None,
         }
     }

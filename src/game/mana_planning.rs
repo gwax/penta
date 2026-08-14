@@ -1,10 +1,12 @@
+use std::ops::ControlFlow;
+
 use super::{
     AbilityCostDef, AbilityOrigin, AbilityProcedureDef, Action, ActivatedAbilityDef,
-    AppliedEffectDef, CardBehavior, CardDefinitionId, CardInstance, CardRules, CardType,
+    AppliedEffectDef, CardBehavior, CardDefinitionId, CardInstance, CardType,
     CharacteristicContext, CharacteristicOperationDef, CostConfiguration, DeclarativeAbilityDef,
     EffectDef, EffectRecipientDef, FlexibleManaSource, Game, GameObjectId, HybridPair, ManaColor,
-    ManaCost, ManaPaymentPurpose, ManaPool, PlannedManaActivation, PlayOptionDef, PlayerId,
-    SetOperationDef, TriggerContext, ValueDef, ZoneKind, extra_target_cost,
+    ManaCost, ManaPaymentPurpose, ManaPool, PlannedManaActivation, PlayActionKind, PlayOptionDef,
+    PlayerId, SetOperationDef, TriggerContext, ValueDef, ZoneKind, extra_target_cost,
 };
 
 impl Game {
@@ -41,7 +43,7 @@ impl Game {
                             cost,
                             extra_target_cost(definition, choices.iter_targets().count()),
                         ),
-                        self.spell_cost_reduction(definition.id, player),
+                        self.spell_cost_reduction(definition.id, player, *card),
                     ),
                     choices.x(),
                     None,
@@ -504,44 +506,54 @@ impl Game {
         Some(selected)
     }
 
-    /// How much generic mana this card's own static clauses take off its
-    /// cost. Read from the hand, which is where casting reads it.
     /// "Players can't cast spells or play lands with ..." Read while play
     /// options are offered, so a prohibited card is simply not a legal action.
     /// The prohibition is a property of the card, not of who holds it, so it
     /// applies to both players.
-    pub(super) fn play_is_prohibited(&self, card: &CardInstance, controller: PlayerId) -> bool {
-        let prohibitions = self
-            .battlefield
-            .iter()
-            .filter_map(|permanent| self.effective_rules(permanent))
-            .flat_map(CardRules::ability_clauses)
-            .filter(|ability| ability.is_executable())
-            .filter_map(|ability| match ability.declarative_effect()? {
-                EffectDef::PlayersCantPlay(predicate) => Some(predicate),
-                _ => None,
-            })
-            .collect::<Vec<_>>();
-        if prohibitions.is_empty() {
-            return false;
-        }
-        let Some(object) = self.printed_trigger_event_object(
-            card.id,
-            card.definition,
-            controller,
-            &CharacteristicContext::Hand,
-        ) else {
+    pub(super) fn play_is_prohibited(
+        &self,
+        card: &CardInstance,
+        controller: PlayerId,
+        option: &PlayOptionDef,
+    ) -> bool {
+        let context = match option.action {
+            PlayActionKind::CastSpell => CharacteristicContext::Stack {
+                form: option.form.clone(),
+            },
+            // Land plays never become stack objects. The current authored
+            // land restriction is set-origin based, for which the ordinary
+            // hand characteristics are exact.
+            PlayActionKind::PlayLand => CharacteristicContext::Hand,
+        };
+        let Some(object) =
+            self.printed_trigger_event_object(card.id, card.definition, controller, &context)
+        else {
             return false;
         };
-        prohibitions
-            .into_iter()
-            .any(|predicate| self.trigger_object_matches(*predicate, &object, card.id, false))
+        self.visit_play_restrictions(controller, |applied| {
+            if applied.restriction.action.matches(option.action)
+                && self.trigger_object_matches(
+                    applied.restriction.object,
+                    &object,
+                    applied.source,
+                    option.action == PlayActionKind::CastSpell,
+                )
+            {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
     }
 
+    /// How much generic mana this card's own static clauses take off its
+    /// cost. Read from the hand, which is where casting reads it.
     pub(super) fn spell_cost_reduction(
         &self,
         definition: CardDefinitionId,
         player: PlayerId,
+        source: GameObjectId,
     ) -> u16 {
         let Some(card) = self.catalog.get(definition) else {
             return 0;
@@ -554,38 +566,26 @@ impl Game {
                 EffectDef::ReduceGenericCostBy(value) => Some(value),
                 _ => None,
             })
-            .map(|value| self.cost_reduction_value(value, player))
+            .map(|value| self.cost_reduction_value(value, player, source))
             .fold(0, u16::saturating_add)
     }
 
     /// The values a cost reduction can read. There is no resolving object
-    /// while a cost is being worked out, so only board counts are available.
-    pub(super) fn cost_reduction_value(&self, value: ValueDef, player: PlayerId) -> u16 {
+    /// while a cost is being worked out, but static zone queries can still
+    /// use the card being cast as their source.
+    pub(super) fn cost_reduction_value(
+        &self,
+        value: ValueDef,
+        player: PlayerId,
+        source: GameObjectId,
+    ) -> u16 {
         match value {
             ValueDef::Constant(amount) => u16::try_from(amount.max(0)).unwrap_or(u16::MAX),
-            ValueDef::CountMatchingObjects(query) if query.zones == [ZoneKind::Battlefield] => {
-                u16::try_from(
-                    self.battlefield
-                        .iter()
-                        .filter(|permanent| {
-                            self.query_player_constraints_match(
-                                Some(permanent.controller),
-                                permanent.card.owner,
-                                *query,
-                                player,
-                                TriggerContext::empty(),
-                                None,
-                            ) && self.trigger_object_matches(
-                                query.object,
-                                &self.trigger_event_object(permanent),
-                                permanent.card.id,
-                                false,
-                            )
-                        })
-                        .count(),
-                )
-                .unwrap_or(u16::MAX)
-            }
+            ValueDef::CountMatchingObjects(query) => u16::try_from(
+                self.objects_matching_query(*query, player, source, TriggerContext::empty())
+                    .len(),
+            )
+            .unwrap_or(u16::MAX),
             _ => 0,
         }
     }

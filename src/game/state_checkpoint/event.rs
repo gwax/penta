@@ -60,7 +60,11 @@ fn pending_replacement_effect_snapshot(
 ) -> Option<PendingReplacementEffectSnapshot> {
     Some(PendingReplacementEffectSnapshot {
         context: replacement_context_snapshot(pending.context),
-        effect: replacement_effect_locator(catalog, pending.effect)?,
+        effect: resolved_replacement_effect_locator(
+            catalog,
+            pending.context.source,
+            pending.effect,
+        )?,
     })
 }
 
@@ -70,7 +74,11 @@ pub(super) fn applicable_replacement_snapshot(
 ) -> Option<ApplicableReplacementSnapshot> {
     Some(ApplicableReplacementSnapshot {
         context: replacement_context_snapshot(replacement.context),
-        effect: replacement_effect_locator(catalog, replacement.effect)?,
+        effect: resolved_replacement_effect_locator(
+            catalog,
+            replacement.context.source,
+            replacement.effect,
+        )?,
         definition: replacement.definition.0,
     })
 }
@@ -79,12 +87,20 @@ pub(super) fn parse_applicable_replacement(
     snapshot: &ApplicableReplacementSnapshot,
     catalog: &CardCatalog,
 ) -> Result<ApplicableReplacement, String> {
+    let context = parse_replacement_context_snapshot(snapshot.context)?;
+    if !replacement_effect_locator_matches_source(&snapshot.effect, context.source) {
+        return Err("entry replacement locator disagrees with its source".into());
+    }
     let ability = catalog_ability(catalog, &snapshot.effect.ability)
         .ok_or("entry replacement ability locator is absent from this catalog")?;
+    let DeclarativeAbilityDef::Replacement(definition) = ability.definition else {
+        return Err("entry replacement locator does not identify a replacement ability".into());
+    };
     Ok(ApplicableReplacement {
-        context: parse_replacement_context_snapshot(snapshot.context)?,
+        context,
         definition: CardDefinitionId(snapshot.definition),
         text: ability.text,
+        optional: definition.optional,
         effect: catalog_replacement_effect(catalog, &snapshot.effect)
             .filter(|_| is_entry_replacement_ability(&ability))
             .ok_or("entry replacement locator does not identify an entry replacement")?,

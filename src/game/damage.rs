@@ -8,9 +8,9 @@ use super::prevention_state::{
     ResolvedDamageRecipientMatcher, ResolvedDamageSourceMatcher,
 };
 use super::{
-    AppliedEffectDef, CardType, CommittedTriggerEvent, ControlFlow, CounterKind, Game,
-    GameObjectId, KeywordAbility, Permanent, PlayerId, RelationalSourceFilter, RetiredObject,
-    StackObjectKind, Target, TriggerEventObject,
+    AppliedRuleDef, CardType, CommittedTriggerEvent, ControlFlow, CounterKind, Game, GameObjectId,
+    KeywordAbility, Permanent, PlayerId, RelationalSourceFilter, RetiredObject, StackObjectKind,
+    Target, TriggerEventObject,
 };
 
 impl Game {
@@ -265,8 +265,8 @@ impl Game {
         recipient_object: Option<&TriggerEventObject>,
         combat: bool,
     ) -> bool {
-        self.visit_static_applied_effects(affected, |applied| {
-            if matches!(applied.effect, AppliedEffectDef::PreventDamage(matcher)
+        self.visit_applied_rules(affected, |applied| {
+            if matches!(applied.rule, AppliedRuleDef::PreventDamage(matcher)
             if self.static_damage_matcher_matches(
                 matcher,
                 applied.source,
@@ -460,8 +460,8 @@ impl Game {
                 continue;
             }
             let mut redirects = false;
-            let _ = self.visit_static_applied_effects(candidate, |applied| {
-                if let AppliedEffectDef::RedirectPlayerDamageToThis(group) = applied.effect
+            let _ = self.visit_applied_rules(candidate, |applied| {
+                if let AppliedRuleDef::RedirectPlayerDamageToThis(group) = applied.rule
                     && self.damage_source_is_in_group(source, Self::relational_source_filter(group))
                 {
                     redirects = true;

@@ -11,22 +11,22 @@ use crate::card::AbilityPredicateDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityProcedureDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivatedAbilityDef, ActivationTimingDef, AddManaEffectDef,
-    AlternativeCastAbilityDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType,
-    BattlefieldEntryModificationDef, CREATURE_TYPES, CardBehavior, CardCatalog,
+    AlternativeCastAbilityDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
+    BasicLandType, BattlefieldEntryModificationDef, CREATURE_TYPES, CardBehavior, CardCatalog,
     CardChoiceSourceDef, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
     CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext,
-    CharacteristicOperationDef, ColorSet, ComparisonDef, ConditionDef, CostDef, CounterKind,
-    CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
-    DamageSourceMatcherDef, DeclarativeAbilityDef, DiscardSelectionDef, DividedTotal,
-    DoubleFacedKind, EffectDef, EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef,
-    HybridPair, KeywordAbility, ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PaymentDef, PlayActionKind,
-    PlayOptionDef, PlayRestriction, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    PowerToughnessOperationDef, QuantifierDef, ReplacementChoiceDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef,
-    TapPurposeDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
-    ZonePlacement, abilities, applicable_part_ids,
+    CharacteristicOperationDef, ColorSet, ComparisonDef, ConditionDef, ControlDurationDef,
+    CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DeclarativeAbilityDef, DiscardSelectionDef,
+    DividedTotal, DoubleFacedKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, EffectRecipientSetDef, HybridPair, KeywordAbility, ManaCost,
+    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef, ReplacementChoiceDef,
+    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SetOperationDef, TapPurposeDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;
@@ -130,15 +130,16 @@ use characteristic_state::{
 };
 use combat_state::CombatDamageStage;
 use continuous_state::{
-    AbilityLayerOperation, AbilityLayerOperationKind, ContinuousEffectExpiration,
-    ContinuousEffectTimestamp, ResolvedAbilityOperation, ResolvedContinuousEffect,
-    ResolvedContinuousEffectKind, ResolvedPowerToughnessOperation, StaticAppliedEffect,
-    StaticEffectTraversal, TemporaryAbilityGrant,
+    AbilityLayerOperation, AbilityLayerOperationKind, AppliedPlayRestriction, AppliedRuleEffect,
+    ContinuousEffectExpiration, ContinuousEffectTimestamp, ResolvedAbilityOperation,
+    ResolvedContinuousEffect, ResolvedContinuousEffectKind, ResolvedPlayRestriction,
+    ResolvedPowerToughnessOperation, StaticAppliedEffect, StaticEffectTraversal,
+    TemporaryAbilityGrant,
 };
 use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
     DecisionContinuation, DeferredBeginTurnEffect, FORK_COPY_COLOR, PendingDecision, Pregame,
-    SacrificeFollowup, ZoneMoveCause,
+    ResolvedEffectPayment, SacrificeFollowup, ZoneMoveCause,
 };
 use mana_state::{
     AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaPaymentPurpose,
@@ -214,23 +215,12 @@ struct Permanent {
     tapped: bool,
     entered_controller_turn: u32,
     damage: u16,
-    /// Permanents whose staying tapped keeps this one from untapping. Like
-    /// a source-tapped continuous effect, the rule has no deadline; the
-    /// sources do.
-    held_tapped_by: Vec<GameObjectId>,
     attacking: bool,
     attack_defender: Option<crate::AttackDefender>,
     emblem_source: Option<AbilityOrigin>,
     /// Whether a loyalty ability has already been activated this turn. CR
     /// 606.3 allows one per planeswalker per turn.
     activated_loyalty_this_turn: bool,
-    /// Whether nothing may block this creature for the rest of the turn.
-    /// Cleared in cleanup with the other until-end-of-turn state.
-    unblockable_this_turn: bool,
-    /// Whether a resolved effect has taken this permanent's blocking away for
-    /// the rest of the turn. The printed static form is read from the
-    /// continuous layer instead.
-    cannot_block_this_turn: bool,
     /// Detained until this player's next turn begins, recorded with how many
     /// turns they had taken when it landed so "next" means the one after.
     detained_until_turn_of: Option<(PlayerId, u32)>,
@@ -239,16 +229,9 @@ struct Permanent {
     /// How many of this permanent's controller's untap steps it still has to
     /// sit out. Counted rather than flagged because Telekinesis names two.
     skipped_untap_steps: u8,
-    /// Colours a resolved effect painted over the printed ones. The Lace
-    /// cycle's change lasts indefinitely, so this is permanent state rather
-    /// than a continuous effect with a duration to expire.
-    color_override: Option<ColorSet>,
     /// Who controls this permanent again once the turn ends, set while a
     /// control-changing effect holds it. Cleanup restores it.
     control_reverts_to: Option<PlayerId>,
-    /// Whether a "can't be regenerated" effect is covering this permanent
-    /// for the rest of the turn.
-    cannot_regenerate_this_turn: bool,
     /// The permanent whose continued presence is holding this one's control
     /// change. When it leaves the battlefield or changes hands, control goes
     /// back to `control_reverts_to`.
@@ -266,7 +249,8 @@ struct Permanent {
     chosen_card_name: Option<String>,
     destroy_at_end: bool,
     temporary_keywords: Vec<KeywordAbility>,
-    /// Resolved noncopiable characteristic changes, in creation order.
+    /// Resolved noncopiable characteristic changes and rules modifications,
+    /// in creation order.
     resolved_continuous_effects: Vec<ResolvedContinuousEffect>,
     /// How many times each of this permanent's activated abilities has been
     /// activated this turn, for the cards that count their own activations.
@@ -344,19 +328,14 @@ impl Permanent {
             tapped: false,
             entered_controller_turn,
             damage: 0,
-            held_tapped_by: Vec::new(),
             attacking: false,
             attack_defender: None,
             emblem_source: None,
             activated_loyalty_this_turn: false,
-            unblockable_this_turn: false,
-            cannot_block_this_turn: false,
             detained_until_turn_of: None,
             destroy_at_end_of_combat: false,
             skipped_untap_steps: 0,
-            color_override: None,
             control_reverts_to: None,
-            cannot_regenerate_this_turn: false,
             control_source: None,
             control_requires_source_tapped: false,
             blocked: false,
@@ -445,9 +424,9 @@ struct StackObject {
     /// They transfer to a resolving permanent but are not copied by spell-copy
     /// effects.
     text_changes: Vec<BasicLandTypeChange>,
-    /// Colours the copy effect that made this object imposed on it, for
-    /// "except that the copy is red". Nothing else changes an object's
-    /// colour on the stack.
+    /// Colours imposed on this object by a copy effect or a resolving
+    /// characteristic effect, such as "except that the copy is red" or a
+    /// Lace. The override lasts for this stack incarnation.
     colors: Option<ColorSet>,
     /// Flashback replaces every destination this physical card would use when
     /// leaving the stack. This is frozen at cast time because the permission
@@ -749,9 +728,9 @@ pub struct Game {
     /// The ordinary continuation displaced when the first queued phase starts.
     /// It stays frozen while nested phase schedules prepend more work.
     turn_phase_resume: Option<TurnPhaseResume>,
-    /// Whether each player has been stopped from casting noncreature spells
-    /// for the rest of the turn.
-    noncreature_casts_locked: [bool; 2],
+    /// Resolving play prohibitions in creation/component order. Static
+    /// prohibitions remain source-derived from battlefield abilities.
+    resolved_play_restrictions: Vec<ResolvedPlayRestriction>,
     /// Emblems, which are objects with abilities and no zone. They are kept
     /// beside the battlefield rather than on it: only the static-effect walk
     /// reads them, and nothing can target, tap, or destroy one.

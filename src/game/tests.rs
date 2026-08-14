@@ -1,6 +1,7 @@
 use super::*;
 use crate::card::{
-    ChoiceVisibilityDef, ChooseDef, EffectPaymentDef, ObjectChoiceBindingDef, PayOrDef, abilities,
+    ChoiceVisibilityDef, ChooseDef, EffectPaymentDef, ObjectChoiceBindingDef, PayOrDef,
+    PlayerSetDef, abilities,
 };
 use crate::mana_cost;
 use crate::poc::{self, cards};
@@ -34,16 +35,12 @@ static TEST_OPPONENT_LANDS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::
     },
     ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
 )];
-static TEST_EXTERNAL_PAYMENT_COST: [CostDef; 1] = [CostDef::PayLife(2)];
 static TEST_EXTERNAL_ENTER_TAPPED: [ReplacementEffectDef; 1] =
     [ReplacementEffectDef::ModifyBattlefieldEntry(
         BattlefieldEntryModificationDef::Tapped,
     )];
 static TEST_EXTERNAL_PAYMENT: [ReplacementEffectDef; 1] = [ReplacementEffectDef::PayOr {
-    payment: EffectPaymentDef::Costs(PaymentDef::new(
-        PlayerRelation::You,
-        &TEST_EXTERNAL_PAYMENT_COST,
-    )),
+    payment: EffectPaymentDef::life(PlayerSetDef::Related(PlayerRelation::You), 2),
     if_paid: &[],
     if_declined: &TEST_EXTERNAL_ENTER_TAPPED,
 }];

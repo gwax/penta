@@ -1,4 +1,399 @@
 use super::*;
+use crate::card::{EffectPaymentDef, PayOrDef, abilities};
+
+#[test]
+fn catalog_rejects_effect_operations_in_the_wrong_execution_context() {
+    static STATIC_PUMP: EffectDef = EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(1),
+            ValueDef::Constant(1),
+        ),
+    };
+    static RESOLVING_STATIC: [EffectDef; 1] = [STATIC_PUMP];
+    static ATTACK_QUERY: ObjectQueryDef =
+        ObjectQueryDef::new(ObjectPredicateDef::Any, &[ZoneKind::Battlefield]);
+
+    let cases = [
+        (
+            AbilityDef::static_ability(
+                "At static-effect time, draw a card.",
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            "static",
+            "DrawCards",
+        ),
+        (
+            AbilityDef::static_ability(
+                "At static-effect time, store a resolved pump.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            "static",
+            "Apply",
+        ),
+        (
+            AbilityDef::spell(
+                "Resolve a live static effect.",
+                EffectDef::Sequence(&RESOLVING_STATIC),
+            ),
+            "resolving",
+            "StaticApply",
+        ),
+        (
+            AbilityDef::activated(
+                "Use a declaration-only attack restriction.",
+                &[],
+                EffectDef::CannotAttackUnless(&ATTACK_QUERY),
+            ),
+            "resolving",
+            "CannotAttackUnless",
+        ),
+    ];
+
+    for (ability, context, operation) in cases {
+        assert_eq!(
+            error(definition_with_ability(ability)),
+            CatalogError::UnsupportedAbilityEffectProgramContext {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                context,
+                operation,
+            },
+        );
+    }
+}
+
+#[test]
+fn catalog_accepts_each_supported_static_program_lane() {
+    static GRAVEYARD_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        &[ZoneKind::Graveyard],
+        PlayerRelation::You,
+    );
+    let abilities = [
+        AbilityDef::static_ability(
+            "This creature gets +1/+1.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+            },
+        ),
+        AbilityDef::static_ability(
+            "Players can't cast noncreature spells.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::EachPlayer,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                    PlayRestrictionDef::new(
+                        PlayActionMatcherDef::CastSpell,
+                        ObjectPredicateDef::NoncreatureSpell,
+                    ),
+                )),
+            },
+        ),
+        AbilityDef::static_ability(
+            "This spell can't be countered.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
+            },
+        )
+        .with_source_zones(&[ZoneKind::Stack]),
+        AbilityDef::static_ability(
+            "This spell costs {1} less for each creature card in your graveyard.",
+            EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(&GRAVEYARD_CREATURES)),
+        )
+        .with_source_zones(&[ZoneKind::Hand]),
+        AbilityDef::enforced_when_cast(
+            "This spell has an externally enforced casting restriction.",
+            "The casting action generator enforces this clause.",
+        ),
+    ];
+
+    for ability in abilities {
+        CardCatalog::new([definition_with_ability(ability)])
+            .expect("the live runtime consumes this static program lane");
+    }
+}
+
+#[test]
+fn static_apply_rejects_shapes_its_live_reader_would_ignore() {
+    let cases = [
+        (
+            EffectRecipientDef::EachPlayer,
+            AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+            "StaticApply with an unsupported player-facing effect",
+        ),
+        (
+            EffectRecipientDef::Source,
+            AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(PlayRestrictionDef::new(
+                PlayActionMatcherDef::CastSpell,
+                ObjectPredicateDef::Any,
+            ))),
+            "StaticApply with an unsupported object-facing effect",
+        ),
+        (
+            EffectRecipientDef::Source,
+            AppliedEffectDef::Composite(&[]),
+            "StaticApply with an unsupported object-facing effect",
+        ),
+        (
+            EffectRecipientDef::Source,
+            AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(DamageEventMatcherDef {
+                recipient: DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
+                    PlayerRefDef::EffectController,
+                ),
+                ..DamageEventMatcherDef::ANY
+            })),
+            "StaticApply with an unsupported object-facing effect",
+        ),
+        (
+            EffectRecipientDef::Source,
+            AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(DamageEventMatcherDef {
+                source: DamageSourceMatcherDef::Object(ObjectRefDef::ResolvingObject),
+                ..DamageEventMatcherDef::ANY
+            })),
+            "StaticApply with an unsupported object-facing effect",
+        ),
+    ];
+
+    for (recipient, effect, operation) in cases {
+        let ability = AbilityDef::static_ability(
+            "Apply a live static effect.",
+            EffectDef::StaticApply { recipient, effect },
+        );
+        assert_eq!(
+            error(definition_with_ability(ability)),
+            CatalogError::UnsupportedAbilityEffectProgramContext {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                context: "static",
+                operation,
+            },
+        );
+    }
+}
+
+#[test]
+fn resolving_apply_rejects_shapes_that_cannot_be_stored() {
+    for effect in [
+        AppliedEffectDef::Composite(&[]),
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
+        AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(DamageEventMatcherDef::ANY)),
+    ] {
+        assert_eq!(
+            validate_ability_targets(
+                &[],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect,
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect),
+        );
+    }
+    assert_eq!(
+        validate_ability_targets(
+            &[],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect),
+    );
+}
+
+#[test]
+fn nonbattlefield_ability_grants_are_executable_flashback_until_cleanup() {
+    static FLYING: AbilityDef = abilities::flying();
+    static FLASHBACK: AbilityDef = abilities::flashback_for_card_mana_cost();
+    static MIRACLE: AbilityDef = abilities::miracle(ManaCost::new(0, 0));
+    static INCOMPLETE_FLASHBACK: AbilityDef = abilities::flashback_for_card_mana_cost()
+        .with_coverage(AbilityCoverageDef::metadata_only(
+            "This fixture verifies that non-executable grants are rejected.",
+        ));
+    static GRAVEYARD_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Any,
+            zones: &[ZoneKind::Graveyard],
+            controller: None,
+            owner: None,
+        },
+    )];
+    static UNSUPPORTED_ZONE_TARGETS: [AbilityTargetDef; 2] = [
+        AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Any,
+            zones: &[ZoneKind::Hand],
+            controller: None,
+            owner: None,
+        }),
+        AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Any,
+            zones: &[ZoneKind::Stack],
+            controller: None,
+            owner: None,
+        }),
+    ];
+    static GRAVEYARD_CARDS: ObjectQueryDef =
+        ObjectQueryDef::new(ObjectPredicateDef::Any, &[ZoneKind::Graveyard]);
+
+    let targeted_grant = |ability, duration| EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::add_ability(ability),
+        duration,
+    };
+
+    validate_ability_targets(
+        &GRAVEYARD_TARGET,
+        targeted_grant(&FLASHBACK, ResolvedEffectDurationDef::UntilEndOfTurn),
+    )
+    .expect("the hidden-zone runtime reads executable flashback grants until cleanup");
+    validate_ability_targets(
+        &[],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::objects(ObjectSetDef::Query(GRAVEYARD_CARDS)),
+            effect: AppliedEffectDef::add_ability(&FLASHBACK),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )
+    .expect("mass flashback grants use the same supported hidden-zone reader");
+
+    for ability in [&FLYING, &MIRACLE, &INCOMPLETE_FLASHBACK] {
+        assert_eq!(
+            validate_ability_targets(
+                &GRAVEYARD_TARGET,
+                targeted_grant(ability, ResolvedEffectDurationDef::UntilEndOfTurn),
+            ),
+            Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect),
+            "a hidden-zone grant must be an executable Flashback ability",
+        );
+    }
+    for target in UNSUPPORTED_ZONE_TARGETS {
+        assert_eq!(
+            validate_ability_targets(
+                &[target],
+                targeted_grant(&FLASHBACK, ResolvedEffectDurationDef::UntilEndOfTurn),
+            ),
+            Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect),
+            "the temporary Flashback reader only consumes graveyard-card grants",
+        );
+    }
+    assert_eq!(
+        validate_ability_targets(
+            &GRAVEYARD_TARGET,
+            targeted_grant(&FLASHBACK, ResolvedEffectDurationDef::Permanent),
+        ),
+        Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect),
+        "the runtime only stores nonbattlefield card grants until cleanup",
+    );
+
+    for duration in [
+        ResolvedEffectDurationDef::UntilEndOfTurn,
+        ResolvedEffectDurationDef::Permanent,
+    ] {
+        let spell = AbilityDef::spell(
+            "This spell grants itself an ability.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&FLYING),
+                duration,
+            },
+        );
+        assert_eq!(
+            error(definition_with_ability(spell)),
+            CatalogError::UnsupportedAbilityEffectProgramContext {
+                definition: CardDefinitionId(1),
+                part: CardPartId::PRIMARY,
+                ability: AbilityId::PRIMARY,
+                context: "resolving",
+                operation: "Apply grants an ability to a nonbattlefield source",
+            },
+        );
+    }
+}
+
+#[test]
+fn triggering_object_grants_use_the_declared_event_zone() {
+    static HASTE: AbilityDef = abilities::haste();
+
+    let grant = |event| {
+        AbilityDef::triggered(
+            "The triggering object gains haste until end of turn.",
+            event,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::TriggeringObject,
+                effect: AppliedEffectDef::add_ability(&HASTE),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        )
+    };
+
+    CardCatalog::new([definition_with_ability(grant(
+        TriggerEventDef::zone_changed(ObjectPredicateDef::Any, None, Some(ZoneKind::Battlefield)),
+    ))])
+    .expect("an ETB trigger provably names a battlefield object");
+
+    assert_eq!(
+        error(definition_with_ability(grant(
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Any,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            )
+        ))),
+        CatalogError::UnsupportedResolvingAppliedEffect {
+            definition: CardDefinitionId(1),
+            part: CardPartId::PRIMARY,
+            ability: AbilityId::PRIMARY,
+        },
+        "a departure trigger names a nonbattlefield card and cannot grant haste",
+    );
+}
+
+#[test]
+fn payment_target_sets_must_resolve_to_one_player() {
+    static PLAYER_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+        AbilityTargetPredicate::Player(PlayerRelation::Any),
+        2,
+    )];
+    static NONE: EffectDef = EffectDef::None;
+
+    assert_eq!(
+        validate_ability_targets(
+            &PLAYER_TARGETS,
+            EffectDef::PayOr(PayOrDef::optional(
+                EffectPaymentDef::mana(
+                    PlayerSetDef::LegalTargets(TargetIndex::PRIMARY),
+                    ManaCost::new(1, 0),
+                ),
+                &NONE,
+            )),
+        ),
+        Err(
+            GrantedAbilityValidationError::TargetReferenceRequiresSingular {
+                target: TargetIndex::PRIMARY,
+                maximum: 2,
+            },
+        ),
+    );
+}
 
 #[test]
 fn ability_ids_follow_clause_order_within_each_card_part() {
@@ -1161,7 +1556,14 @@ fn merged_effect_vocabulary_preserves_local_target_bounds() {
             player: recipient,
             amount: ValueDef::DividedAmongTargets,
         },
-        EffectDef::CannotCastNoncreatureSpellsThisTurn { player: recipient },
+        EffectDef::Apply {
+            recipient,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(PlayRestrictionDef::new(
+                PlayActionMatcherDef::CastSpell,
+                ObjectPredicateDef::NoncreatureSpell,
+            ))),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
     ];
 
     for effect in effects {

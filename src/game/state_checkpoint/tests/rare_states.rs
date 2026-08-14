@@ -8,8 +8,8 @@
 
 use super::super::*;
 use super::{determinized, true_hidden_hypothesis};
-use crate::game::DecisionContinuation;
 use crate::game::tests::{card, creature, mana_ability_for, ready_game};
+use crate::game::{DecisionContinuation, ResolvedEffectPayment};
 use crate::{Action, CardDefinitionId, CounterKind, ManaColor, TargetSelection};
 use serde_json::Value;
 
@@ -298,6 +298,30 @@ fn answer_with_first_option(game: &mut Game) {
     .expect("the first option is answerable");
 }
 
+fn answer_with_label(game: &mut Game, label: &str) {
+    let pending = game
+        .pending_decisions
+        .first()
+        .expect("a decision is pending");
+    let player = pending.observation.player;
+    let decision = pending.observation.id;
+    let option = pending
+        .observation
+        .options
+        .iter()
+        .find(|option| option.label == label)
+        .unwrap_or_else(|| panic!("the decision does not offer {label}"))
+        .id;
+    game.apply(
+        player,
+        Action::ChooseDecision {
+            decision,
+            options: vec![option],
+        },
+    )
+    .unwrap_or_else(|error| panic!("the {label} option is answerable: {error}"));
+}
+
 /// Casts `source` at `target` by finding the action the seat is actually
 /// offered, so target-slot bookkeeping stays the engine's business.
 fn cast_targeting(game: &mut Game, player: PlayerId, source: GameObjectId, target: Target) {
@@ -546,6 +570,66 @@ fn a_generic_pile_split_reconstructs_and_resumes_for_both_seats() {
     );
     assert_reconstructs(&game, "a generic pile split");
 
+    let split_observation = game.observe(PlayerId::Two);
+    let split_actions = crate::protocol::protocol_actions(&split_observation);
+    let split_wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &split_observation,
+        game.in_pregame(),
+        &split_actions,
+    );
+    assert!(
+        split_wire["checkpoint"]["decisionState"]["continuation"]
+            .get("items")
+            .is_none(),
+        "split items are reconstructed from the authored outer effect",
+    );
+    let canonical_items = match &game.pending_decisions[0].continuation {
+        DecisionContinuation::SplitForEffect { items, .. } => items.clone(),
+        _ => unreachable!(),
+    };
+    let outside = game.players[PlayerId::One.index()]
+        .library
+        .iter()
+        .enumerate()
+        .find(|(_, card)| !canonical_items.contains(&Target::Card(card.id)))
+        .expect("the library has a card outside Jace's top three");
+    let mut spliced_split = split_wire.clone();
+    let old_object = spliced_split["decision"]["options"][0]["card"]["objectId"]
+        .as_u64()
+        .expect("Jace's split option is a card");
+    let outside_name = game
+        .catalog
+        .get(outside.1.definition)
+        .expect("the outside card is cataloged")
+        .name
+        .clone();
+    spliced_split["decision"]["options"][0]["label"] = Value::String(outside_name);
+    spliced_split["decision"]["options"][0]["card"]["objectId"] = Value::from(outside.1.id.0);
+    spliced_split["decision"]["options"][0]["card"]["definition"] =
+        Value::from(outside.1.definition.0);
+    let origin = spliced_split["checkpoint"]["decisionState"]["cardOrigins"]
+        .as_array_mut()
+        .expect("split origins are an array")
+        .iter_mut()
+        .find(|origin| origin["objectId"].as_u64() == Some(old_object))
+        .expect("the replaced split option has an origin");
+    origin["objectId"] = Value::from(outside.1.id.0);
+    origin["index"] = Value::from(outside.0);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &spliced_split,
+        &true_hidden_hypothesis(&game, PlayerId::Two),
+        4_249,
+    )
+    .expect_err("Jace's split cannot substitute a card outside the authored top three");
+    assert!(
+        error.contains("pile split decision options disagree"),
+        "unexpected split error: {error}",
+    );
+
     for (viewer, seed) in [(PlayerId::One, 4_250), (PlayerId::Two, 4_251)] {
         let mut rebuilt = rebuild_from_truth_for_viewer(&game, viewer, seed);
         let items = match &rebuilt.pending_decisions[0].continuation {
@@ -578,6 +662,33 @@ fn a_generic_pile_split_reconstructs_and_resumes_for_both_seats() {
         "splitting must lead to the pile choice"
     );
     assert_reconstructs(&game, "a generic pile choice");
+
+    let pile_observation = game.observe(PlayerId::One);
+    let pile_actions = crate::protocol::protocol_actions(&pile_observation);
+    let pile_wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &pile_observation,
+        game.in_pregame(),
+        &pile_actions,
+    );
+    let mut duplicated = pile_wire.clone();
+    let first = duplicated["checkpoint"]["decisionState"]["continuation"]["first"][0].clone();
+    duplicated["checkpoint"]["decisionState"]["continuation"]["second"][0] = first;
+    let first_member = duplicated["decision"]["options"][0]["members"][0].clone();
+    duplicated["decision"]["options"][1]["members"][0] = first_member;
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &duplicated,
+        &true_hidden_hypothesis(&game, PlayerId::One),
+        4_250,
+    )
+    .expect_err("a pile choice cannot duplicate one item and omit another");
+    assert!(
+        error.contains("exact disjoint partition"),
+        "unexpected pile error: {error}",
+    );
 
     for (viewer, seed) in [(PlayerId::One, 4_252), (PlayerId::Two, 4_253)] {
         let mut rebuilt = rebuild_from_truth_for_viewer(&game, viewer, seed);
@@ -688,7 +799,13 @@ fn a_permanent_that_named_a_card_reconstructs_while_naming_and_after() {
             game.pending_decisions
                 .first()
                 .map(|pending| &pending.continuation),
-            Some(DecisionContinuation::BattlefieldEntryCardName { .. })
+            Some(DecisionContinuation::BattlefieldEntryScalarChoice {
+                choice: crate::card::BattlefieldEntryScalarChoiceDef {
+                    destination: crate::card::BattlefieldEntryChoiceDestinationDef::CardName,
+                    ..
+                },
+                ..
+            })
         ),
         "entering must ask for a card name, not {:?}",
         game.pending_decisions
@@ -696,6 +813,64 @@ fn a_permanent_that_named_a_card_reconstructs_while_naming_and_after() {
             .map(|pending| &pending.continuation)
     );
     assert_reconstructs(&game, "a permanent choosing a card name");
+
+    let viewer = PlayerId::One;
+    let observation = game.observe(viewer);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let mut wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
+    );
+    assert!(
+        wire["checkpoint"]["decisionState"]["continuation"]
+            .get("destination")
+            .is_none(),
+        "the chosen-value destination comes from the authored replacement locator",
+    );
+    let mut wrong_kind = wire.clone();
+    wrong_kind["decision"]["kind"] = Value::String("TriggerOrder".into());
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &wrong_kind,
+        &true_hidden_hypothesis(&game, viewer),
+        4_243,
+    )
+    .expect_err("a scalar entry choice rejects another decision procedure's kind");
+    assert!(
+        error.contains("decision kind disagrees"),
+        "unexpected error: {error}"
+    );
+    let hidden = true_hidden_hypothesis(&game, viewer);
+    let mut spliced_destination = wire.clone();
+    spliced_destination["checkpoint"]["decisionState"]["continuation"]["effect"]["ability"]["definition"] =
+        Value::from(crate::card::cards::CAVERN_OF_SOULS.0);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &spliced_destination,
+        &hidden,
+        4_243,
+    )
+    .expect_err("Cavern's creature-type destination cannot be spliced onto Pithing Needle");
+    assert!(
+        error.contains("locator disagrees with its replacement source"),
+        "unexpected reconstruction error: {error}",
+    );
+
+    wire["decision"]["options"][0]["label"] = Value::String("Tampered Name".into());
+    wire["checkpoint"]["decisionState"]["continuation"]["choices"][0] =
+        Value::String("Tampered Name".into());
+    let error =
+        Game::from_observation_checkpoint(game.catalog.clone(), game.format, &wire, &hidden, 4_243)
+            .expect_err("matching edited labels cannot replace the authored card-name vocabulary");
+    assert!(
+        error.contains("vocabulary disagrees"),
+        "unexpected reconstruction error: {error}",
+    );
 
     answer_with_first_option(&mut game);
     assert!(
@@ -705,6 +880,428 @@ fn a_permanent_that_named_a_card_reconstructs_while_naming_and_after() {
         "the choice must leave a named permanent behind"
     );
     assert_reconstructs(&game, "a permanent holding a chosen card name");
+}
+
+/// Creature types use the same scalar entry-choice procedure as card names,
+/// while recording the answer in a distinct typed destination.
+#[test]
+fn a_permanent_that_named_a_creature_type_reconstructs_while_naming_and_after() {
+    let mut game = staged_modern_game();
+    let cavern = card(11_100, crate::card::cards::CAVERN_OF_SOULS, PlayerId::One);
+    let cavern_id = cavern.id;
+    game.players[PlayerId::One.index()].hand.push(cavern);
+
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: cavern_id,
+            option: crate::PlayOptionId::DEFAULT,
+        },
+    )
+    .expect("Cavern of Souls is playable");
+
+    assert!(
+        matches!(
+            game.pending_decisions
+                .first()
+                .map(|pending| &pending.continuation),
+            Some(DecisionContinuation::BattlefieldEntryScalarChoice {
+                choice: crate::card::BattlefieldEntryScalarChoiceDef {
+                    destination: crate::card::BattlefieldEntryChoiceDestinationDef::CreatureType,
+                    ..
+                },
+                ..
+            })
+        ),
+        "entering must ask for a creature type through the scalar choice continuation"
+    );
+    assert_reconstructs(&game, "a permanent choosing a creature type");
+
+    answer_with_first_option(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.chosen_creature_type.is_some()),
+        "the choice must leave a permanent holding the chosen creature type"
+    );
+    assert_reconstructs(&game, "a permanent holding a chosen creature type");
+}
+
+#[test]
+fn an_optional_entry_replacement_reconstructs_resumes_and_rejects_splices() {
+    let mut game = staged_modern_game();
+    let cackler = card(11_150, crate::card::cards::RAKDOS_CACKLER, PlayerId::One);
+    let cackler_id = cackler.id;
+    game.players[PlayerId::One.index()].hand.push(cackler);
+    fill_mana(&mut game, PlayerId::One, 1);
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == cackler_id))
+        .expect("Rakdos Cackler is castable");
+    game.apply(PlayerId::One, action)
+        .expect("Rakdos Cackler is cast");
+    resolve_top_of_stack(&mut game);
+
+    let (context, effect) = match game
+        .pending_decisions
+        .first()
+        .map(|pending| &pending.continuation)
+    {
+        Some(DecisionContinuation::BattlefieldEntryOptional { context, effect }) => {
+            (*context, *effect)
+        }
+        other => panic!("unleash must suspend as an optional entry replacement: {other:?}"),
+    };
+    assert!(matches!(
+        effect,
+        crate::card::ReplacementEffectDef::ModifyBattlefieldEntry(
+            crate::card::BattlefieldEntryModificationDef::AddCounters {
+                kind: CounterKind::PlusOnePlusOne,
+                amount: 1,
+            }
+        )
+    ));
+    let pending_event = game
+        .pending_events
+        .front()
+        .expect("the prospective entry remains suspended");
+    assert_eq!(
+        pending_event
+            .applied
+            .iter()
+            .filter(|source| **source == context.source)
+            .count(),
+        1,
+        "the optional source is recorded exactly once before asking",
+    );
+    assert!(
+        pending_event.effects.is_empty(),
+        "acceptance, not suspension, queues the authored operation",
+    );
+    assert_reconstructs(&game, "an optional unleash entry replacement");
+
+    let observation = game.observe(PlayerId::One);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
+    );
+    let hidden = true_hidden_hypothesis(&game, PlayerId::One);
+    for (label, mut edited) in [
+        ("effect source", wire.clone()),
+        ("applied source", wire.clone()),
+        ("decision options", wire.clone()),
+    ] {
+        if label == "effect source" {
+            edited["checkpoint"]["decisionState"]["continuation"]["effect"]["ability"]["definition"] =
+                Value::from(crate::card::cards::FESTERHIDE_BOAR.0);
+        } else if label == "applied source" {
+            edited["checkpoint"]["pendingEvents"][0]["applied"] = serde_json::json!([]);
+        } else {
+            edited["decision"]["options"][1]["label"] = Value::String("Tampered".into());
+        }
+        let error = Game::from_observation_checkpoint(
+            game.catalog.clone(),
+            game.format,
+            &edited,
+            &hidden,
+            4_244,
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("locator disagrees")
+                || error.contains("context disagrees")
+                || error.contains("options disagree"),
+            "unexpected {label} error: {error}",
+        );
+    }
+
+    let mut accepted = rebuild_from_truth(&game, 4_245);
+    answer_with_label(&mut accepted, "Accept");
+    resolve_top_of_stack(&mut accepted);
+    let accepted = accepted
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == crate::card::cards::RAKDOS_CACKLER)
+        .expect("the accepted Cackler enters");
+    assert_eq!(accepted.counters(CounterKind::PlusOnePlusOne), 1);
+
+    let mut declined = rebuild_from_truth(&game, 4_246);
+    answer_with_label(&mut declined, "Decline");
+    resolve_top_of_stack(&mut declined);
+    let declined = declined
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == crate::card::cards::RAKDOS_CACKLER)
+        .expect("the declined Cackler enters");
+    assert_eq!(declined.counters(CounterKind::PlusOnePlusOne), 0);
+}
+
+#[test]
+fn battlefield_entry_payment_freezes_and_authenticates_its_payer_and_cost() {
+    let mut game = staged_modern_game();
+    let land = card(11_200, crate::card::cards::HALLOWED_FOUNTAIN, PlayerId::One);
+    let land_id = land.id;
+    game.players[PlayerId::One.index()].hand.push(land);
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: land_id,
+            option: crate::PlayOptionId::DEFAULT,
+        },
+    )
+    .expect("the shock land is playable");
+
+    assert!(matches!(
+        game.pending_decisions
+            .first()
+            .map(|pending| &pending.continuation),
+        Some(DecisionContinuation::BattlefieldEntryPayment {
+            player: PlayerId::One,
+            payment: ResolvedEffectPayment::Life(2),
+            definition: crate::card::ReplacementEffectDef::PayOr { .. },
+            ..
+        })
+    ));
+    assert_reconstructs(&game, "a frozen battlefield-entry payment");
+
+    let observation = game.observe(PlayerId::One);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
+    );
+    let hidden = true_hidden_hypothesis(&game, PlayerId::One);
+    for (label, mut edited) in [
+        ("payer", wire.clone()),
+        ("payment", wire.clone()),
+        ("source", wire.clone()),
+        ("schema", wire.clone()),
+    ] {
+        if label == "payer" {
+            edited["checkpoint"]["decisionState"]["continuation"]["player"] =
+                Value::from(PlayerId::Two.index());
+        } else if label == "payment" {
+            edited["checkpoint"]["decisionState"]["continuation"]["payment"]["value"] =
+                Value::from(3);
+        } else if label == "source" {
+            edited["checkpoint"]["decisionState"]["continuation"]["effect"]["ability"]["definition"] =
+                Value::from(crate::card::cards::STEAM_VENTS.0);
+        } else {
+            edited["decision"]["orderSemantics"] = Value::String("resolution".into());
+        }
+        let error = Game::from_observation_checkpoint(
+            game.catalog.clone(),
+            game.format,
+            &edited,
+            &hidden,
+            4_244,
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("payer or payment disagrees")
+                || error.contains("locator disagrees with its replacement source")
+                || error.contains("decision kind disagrees"),
+            "unexpected {label} error: {error}",
+        );
+    }
+}
+
+#[test]
+fn ordinary_pay_or_rejects_payer_and_payment_splices() {
+    let mut game = staged_game();
+    let mut vault = creature(11_300, crate::card::cards::MANA_VAULT, PlayerId::One);
+    vault.tapped = true;
+    game.battlefield.push(vault);
+    for id in 11_301..11_305 {
+        game.battlefield
+            .push(creature(id, crate::card::cards::MOUNTAIN, PlayerId::One));
+    }
+    game.step = crate::Step::Upkeep;
+    game.handle_upkeep_triggers();
+    game.finish_rules_procedure();
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        game.apply(priority, Action::PassPriority)
+            .expect("priority passes while Mana Vault resolves");
+    }
+    assert!(matches!(
+        game.pending_decisions
+            .first()
+            .map(|pending| &pending.continuation),
+        Some(DecisionContinuation::PayOr {
+            player: PlayerId::One,
+            payment: ResolvedEffectPayment::Mana(_),
+            ..
+        })
+    ));
+    assert_reconstructs(&game, "an ordinary frozen pay-or choice");
+
+    let observation = game.observe(PlayerId::One);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
+    );
+    let hidden = true_hidden_hypothesis(&game, PlayerId::One);
+    for (label, mut edited) in [
+        ("payer", wire.clone()),
+        ("payment", wire.clone()),
+        ("definition", wire.clone()),
+        ("schema", wire.clone()),
+    ] {
+        if label == "payer" {
+            edited["checkpoint"]["decisionState"]["continuation"]["player"] =
+                Value::from(PlayerId::Two.index());
+        } else if label == "payment" {
+            edited["checkpoint"]["decisionState"]["continuation"]["payment"]["value"]["generic"] =
+                Value::from(5);
+        } else if label == "definition" {
+            edited["checkpoint"]["decisionState"]["continuation"]["definition"]["path"] =
+                serde_json::json!([999]);
+        } else {
+            edited["decision"]["orderSemantics"] = Value::String("resolution".into());
+        }
+        let error = Game::from_observation_checkpoint(
+            game.catalog.clone(),
+            game.format,
+            &edited,
+            &hidden,
+            4_245,
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("payer")
+                || error.contains("payment")
+                || error.contains("locator is absent")
+                || error.contains("decision kind disagrees"),
+            "unexpected {label} error: {error}",
+        );
+    }
+}
+
+#[test]
+fn duress_choice_checkpoint_rejects_ineligible_hand_card_splices() {
+    let mut game = staged_modern_game();
+    let duress = card(11_400, crate::card::cards::DURESS, PlayerId::One);
+    let duress_id = duress.id;
+    game.players[0].hand.push(duress);
+    game.players[1].hand.extend([
+        card(11_401, crate::card::cards::SAVANNAH_LIONS, PlayerId::Two),
+        card(11_402, crate::card::cards::MOUNTAIN, PlayerId::Two),
+        card(11_403, crate::card::cards::LIGHTNING_BOLT, PlayerId::Two),
+        card(11_404, crate::card::cards::BLACK_LOTUS, PlayerId::Two),
+    ]);
+    fill_mana(&mut game, PlayerId::One, 1);
+    game.apply(
+        PlayerId::One,
+        Action::CastSpell {
+            card: duress_id,
+            choices: crate::CastChoices::default().with_targets(vec![TargetSelection::single(
+                crate::TargetSlotId(0),
+                Target::Player(PlayerId::Two),
+            )]),
+            sacrifices: Vec::new(),
+        },
+    )
+    .expect("Duress is castable");
+    resolve_top_of_stack(&mut game);
+    assert!(matches!(
+        game.pending_decisions
+            .first()
+            .map(|pending| &pending.continuation),
+        Some(DecisionContinuation::ChooseForEffect { .. })
+    ));
+    assert_reconstructs(&game, "Duress's authored object choice");
+
+    let viewer = PlayerId::One;
+    let observation = game.observe(viewer);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
+    );
+    let hidden = true_hidden_hypothesis(&game, viewer);
+
+    let mut missing_origin = wire.clone();
+    missing_origin["checkpoint"]["decisionState"]["cardOrigins"] = serde_json::json!([]);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &missing_origin,
+        &hidden,
+        4_246,
+    )
+    .expect_err("a disclosed hidden-hand option requires its origin");
+    assert!(
+        error.contains("lacks a card origin"),
+        "unexpected error: {error}"
+    );
+
+    let mut wrong_origin = wire.clone();
+    wrong_origin["checkpoint"]["decisionState"]["cardOrigins"][0]["zone"] =
+        Value::String("library".into());
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &wrong_origin,
+        &hidden,
+        4_247,
+    )
+    .expect_err("a disclosed hand option rejects a library origin");
+    assert!(
+        error.contains("disagrees with its option zone"),
+        "unexpected error: {error}",
+    );
+
+    let savannah = game.players[1]
+        .hand
+        .iter()
+        .find(|card| card.definition == crate::card::cards::SAVANNAH_LIONS)
+        .expect("the excluded creature remains in hand");
+    let mut spliced = wire.clone();
+    let old_object = spliced["decision"]["options"][0]["card"]["objectId"]
+        .as_u64()
+        .expect("the eligible option has an object id");
+    spliced["decision"]["options"][0]["label"] = Value::String("Savannah Lions".into());
+    spliced["decision"]["options"][0]["card"]["objectId"] = Value::from(savannah.id.0);
+    spliced["decision"]["options"][0]["card"]["definition"] = Value::from(savannah.definition.0);
+    let origins = spliced["checkpoint"]["decisionState"]["cardOrigins"]
+        .as_array_mut()
+        .expect("card origins are an array");
+    let origin = origins
+        .iter_mut()
+        .find(|origin| origin["objectId"].as_u64() == Some(old_object))
+        .expect("the edited option has an origin");
+    origin["objectId"] = Value::from(savannah.id.0);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &spliced,
+        &hidden,
+        4_248,
+    )
+    .expect_err("Duress cannot be edited to choose a creature");
+    assert!(
+        error.contains("object choice decision options disagree"),
+        "unexpected error: {error}",
+    );
 }
 
 /// Mishra's Workshop pays for artifacts and nothing else. Unspent restricted

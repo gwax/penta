@@ -3,9 +3,16 @@ mod display;
 use std::fmt;
 
 use crate::card::{
-    CardEffectStatus, CardPrintingId, ManaCost, ObjectChoiceBindingDef, PlayActionKind,
-    PlayerSetDef, ReplacementEventDef, SpellForm, TargetSlotDef, TriggerEventDef,
+    AbilityTargetPredicate, BattlefieldEntryChoiceDestinationDef, CardEffectStatus, CardPrintingId,
+    EffectRecipientDef, ManaCost, ObjectChoiceBindingDef, PlayActionKind, PlayerSetDef,
+    ReplacementEventDef, ScalarChoiceListDef, SpellForm, TargetSlotDef, TriggerEventDef,
 };
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum EffectSubjectKind {
+    Object,
+    Player,
+}
 use crate::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, GrantId, ModeId,
     ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId, TargetIndex, TargetSlotId,
@@ -46,6 +53,15 @@ pub enum GrantedAbilityValidationError {
     /// choices or stack-only effects. The runtime supports one or more fixed
     /// `AddMana` leaves and nothing else.
     UnsupportedTriggeredManaProgram,
+    /// A resolving Apply must contain at least one storable permanent effect;
+    /// stack-only rules and player recipients use different vocabulary.
+    UnsupportedResolvingAppliedEffect,
+    /// The selected ordinary-effect runtime does not interpret this operation
+    /// in the declared static or resolving program context.
+    UnsupportedEffectProgramContext {
+        context: &'static str,
+        operation: &'static str,
+    },
     TooManyTargets {
         count: usize,
     },
@@ -58,6 +74,26 @@ pub enum GrantedAbilityValidationError {
         target: TargetIndex,
         target_count: usize,
     },
+    TargetReferenceKindMismatch {
+        target: TargetIndex,
+        predicate: AbilityTargetPredicate,
+        expected: EffectSubjectKind,
+    },
+    TargetReferenceRequiresSingular {
+        target: TargetIndex,
+        maximum: u8,
+    },
+    EffectRecipientKindMismatch {
+        recipient: EffectRecipientDef,
+        expected: EffectSubjectKind,
+    },
+    InvalidScalarChoice {
+        list: ScalarChoiceListDef,
+        destination: BattlefieldEntryChoiceDestinationDef,
+    },
+    UnsupportedStaticPlayerRecipient {
+        recipient: EffectRecipientDef,
+    },
     InvalidObjectChoiceBounds {
         binding: ObjectChoiceBindingDef,
         minimum: usize,
@@ -65,6 +101,9 @@ pub enum GrantedAbilityValidationError {
     },
     InvalidPileRole {
         role: &'static str,
+        players: PlayerSetDef,
+    },
+    InvalidPaymentPayer {
         players: PlayerSetDef,
     },
     ObjectBindingReferenceOutOfScope {
@@ -121,6 +160,13 @@ impl fmt::Display for GrantedAbilityValidationError {
             Self::UnsupportedTriggeredManaProgram => formatter.write_str(
                 "uses a triggered mana program that cannot resolve immediately",
             ),
+            Self::UnsupportedResolvingAppliedEffect => formatter.write_str(
+                "uses a resolving applied effect that cannot be stored on its recipient",
+            ),
+            Self::UnsupportedEffectProgramContext { context, operation } => write!(
+                formatter,
+                "uses {operation} in a {context} effect program, where that operation is not interpreted",
+            ),
             Self::TooManyTargets { count } => write!(
                 formatter,
                 "defines {count} targets, but positional target indices support at most 256"
@@ -140,6 +186,33 @@ impl fmt::Display for GrantedAbilityValidationError {
                 formatter,
                 "references target {target:?}, but the clause defines only {target_count} target slots"
             ),
+            Self::TargetReferenceKindMismatch {
+                target,
+                predicate,
+                expected,
+            } => write!(
+                formatter,
+                "references target {target:?} as an {expected:?}, but its predicate is {predicate:?}"
+            ),
+            Self::TargetReferenceRequiresSingular { target, maximum } => write!(
+                formatter,
+                "reads one value from target {target:?}, but that slot allows up to {maximum} targets"
+            ),
+            Self::EffectRecipientKindMismatch {
+                recipient,
+                expected,
+            } => write!(
+                formatter,
+                "uses {recipient:?} where the effect requires an {expected:?} recipient"
+            ),
+            Self::InvalidScalarChoice { list, destination } => write!(
+                formatter,
+                "stores a {list:?} choice in the incompatible {destination:?} destination"
+            ),
+            Self::UnsupportedStaticPlayerRecipient { recipient } => write!(
+                formatter,
+                "uses {recipient:?} for a static player rule, but it cannot be resolved from the static source"
+            ),
             Self::InvalidObjectChoiceBounds {
                 binding,
                 minimum,
@@ -151,6 +224,10 @@ impl fmt::Display for GrantedAbilityValidationError {
             Self::InvalidPileRole { role, players } => write!(
                 formatter,
                 "uses {players:?} for pile {role}, but that role must select at most one player"
+            ),
+            Self::InvalidPaymentPayer { players } => write!(
+                formatter,
+                "uses {players:?} for an effect payment, but a payment must select at most one player"
             ),
             Self::ObjectBindingReferenceOutOfScope { binding } => {
                 write!(formatter, "references object binding {binding:?} outside its scope")
@@ -323,6 +400,18 @@ pub enum CatalogError {
         part: CardPartId,
         ability: AbilityId,
     },
+    UnsupportedResolvingAppliedEffect {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+    },
+    UnsupportedAbilityEffectProgramContext {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        context: &'static str,
+        operation: &'static str,
+    },
     TooManyAbilityTargets {
         definition: CardDefinitionId,
         part: CardPartId,
@@ -344,6 +433,41 @@ pub enum CatalogError {
         target: TargetIndex,
         target_count: usize,
     },
+    AbilityTargetReferenceKindMismatch {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        target: TargetIndex,
+        predicate: AbilityTargetPredicate,
+        expected: EffectSubjectKind,
+    },
+    AbilityTargetReferenceRequiresSingular {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        target: TargetIndex,
+        maximum: u8,
+    },
+    AbilityEffectRecipientKindMismatch {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        recipient: EffectRecipientDef,
+        expected: EffectSubjectKind,
+    },
+    InvalidAbilityScalarChoice {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        list: ScalarChoiceListDef,
+        destination: BattlefieldEntryChoiceDestinationDef,
+    },
+    UnsupportedStaticAbilityPlayerRecipient {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        recipient: EffectRecipientDef,
+    },
     InvalidAbilityObjectChoiceBounds {
         definition: CardDefinitionId,
         part: CardPartId,
@@ -357,6 +481,12 @@ pub enum CatalogError {
         part: CardPartId,
         ability: AbilityId,
         role: &'static str,
+        players: PlayerSetDef,
+    },
+    InvalidAbilityPaymentPayer {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
         players: PlayerSetDef,
     },
     AbilityObjectBindingReferenceOutOfScope {

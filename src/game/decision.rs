@@ -69,7 +69,9 @@ pub struct DecisionOption {
     pub label: String,
     pub card: Option<(GameObjectId, CardDefinitionId)>,
     /// Cards represented collectively by this option, such as one pile in a
-    /// choose-a-pile decision. This remains empty for ordinary card options.
+    /// choose-a-pile decision, or disclosed alongside its selectable `card`
+    /// after a private inspection. When `card` is present, it remains the
+    /// object chosen by this option; `members` are auxiliary information.
     pub members: Vec<(GameObjectId, CardDefinitionId)>,
     /// Frozen creating-ability text when this option represents a pending
     /// trigger. This distinguishes multiple abilities from the same source.

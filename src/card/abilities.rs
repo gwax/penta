@@ -6,14 +6,14 @@
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef,
-    AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardType,
-    ChoiceVisibilityDef, ChooseDef, ConditionDef, CostDef, CounterKind, DamageEventMatcherDef,
+    AppliedEffectDef, AppliedRuleDef, BasicLandType, BattlefieldEntryModificationDef, CardType,
+    ChoiceVisibilityDef, ChooseDef, ConditionDef, CounterKind, DamageEventMatcherDef,
     DamagePreventionDef, DamageRecipientMatcherDef, EffectDef, EffectPaymentDef,
     EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef,
-    PaymentDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
-    SplitIntoPilesDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef, SplitIntoPilesDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -78,8 +78,6 @@ pub const fn attacks_each_combat_if_able(text: &'static str) -> AbilityDef {
 const ENTER_TAPPED: [ReplacementEffectDef; 1] = [ReplacementEffectDef::ModifyBattlefieldEntry(
     BattlefieldEntryModificationDef::Tapped,
 )];
-const PAY_TWO_LIFE: [CostDef; 1] = [CostDef::PayLife(2)];
-
 const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
     AbilityDef::keyword(text, keyword)
 }
@@ -298,7 +296,7 @@ const fn ward_clauses(color: usize) -> [EffectDef; 2] {
         // printed exception exists to stop.
         EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::RemainsAttachedThroughProtection,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::RemainsAttachedThroughProtection),
         },
     ]
 }
@@ -482,7 +480,7 @@ pub const fn cannot_be_countered() -> AbilityDef {
         "This spell can't be countered.",
         EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::CannotBeCountered,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
         },
     )
     .with_source_zones(&[ZoneKind::Stack])
@@ -528,7 +526,7 @@ pub const fn shock_land_enters() -> AbilityDef {
     AbilityDef::as_enters(
         "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
         ReplacementEffectDef::PayOr {
-            payment: EffectPaymentDef::Costs(PaymentDef::new(PlayerRelation::You, &PAY_TWO_LIFE)),
+            payment: EffectPaymentDef::life(PlayerSetDef::Related(PlayerRelation::You), 2),
             if_paid: &[],
             if_declined: &ENTER_TAPPED,
         },
@@ -639,7 +637,7 @@ const fn pay_or_counter(
     otherwise: &'static EffectDef,
 ) -> EffectDef {
     EffectDef::PayOr(PayOrDef {
-        payment: EffectPaymentDef::GenericMana { payer, amount },
+        payment: EffectPaymentDef::generic_mana(PlayerSetDef::One(payer), amount),
         if_paid: None,
         otherwise: Some(otherwise),
         visibility: ChoiceVisibilityDef::Public,
@@ -819,7 +817,7 @@ pub const fn cannot_be_blocked(text: &'static str) -> AbilityDef {
         text,
         EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::CannotBeBlocked,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlocked),
         },
     )
 }
@@ -865,7 +863,7 @@ mod tests {
     use crate::card::{
         AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AddManaEffectDef,
         AlternativeCastKindDef, AlternativeCastManaCostDef, BasicLandType, CardRules, ConditionDef,
-        CostDef, DeclarativeAbilityDef, EffectDef, EffectPaymentDef, KeywordAbility, ManaColor,
+        DeclarativeAbilityDef, EffectDef, EffectPaymentCostDef, KeywordAbility, ManaColor,
         ManaCost, ObjectPredicateDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ZoneKind,
     };
     use crate::mana_cost;
@@ -929,9 +927,8 @@ mod tests {
                 payment,
                 if_declined: [_],
                 ..
-            }) if matches!(payment, EffectPaymentDef::Costs(payment)
-                if payment.payer == PlayerRelation::You
-                    && payment.costs == [CostDef::PayLife(2)])
+            }) if payment.payer == PlayerSetDef::Related(PlayerRelation::You)
+                && payment.cost == EffectPaymentCostDef::Life(2)
         ));
 
         let check = check_land_enters(

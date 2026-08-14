@@ -225,20 +225,20 @@ fn uses_declarative_ability_constructs() {
         abilities[0].declarative_effect(),
         Some(EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
         })
     ));
     assert!(matches!(
         abilities[1].declarative_effect(),
         Some(EffectDef::PayOr(PayOrDef {
-            payment: EffectPaymentDef::Costs(payment),
+            payment,
             if_paid: Some(&EffectDef::Untap {
                 object: EffectRecipientDef::Source,
             }),
             otherwise: None,
             visibility: ChoiceVisibilityDef::Private,
-        })) if payment.payer == PlayerRelation::You
-            && payment.costs == [CostDef::Mana(ManaCost::new(4, 0))]
+        })) if payment.payer == PlayerSetDef::Related(PlayerRelation::You)
+            && payment.cost == EffectPaymentCostDef::Mana(ManaCost::new(4, 0))
     ));
     let DeclarativeAbilityDef::Triggered(draw) = abilities[2].definition else {
         panic!("the draw-step clause is a trigger");

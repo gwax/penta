@@ -305,6 +305,7 @@ impl Game {
             | EffectDef::AddPoisonCounters { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::Discard { .. }
+            | EffectDef::DiscardCards { .. }
             | EffectDef::ShuffleLibrary { .. }
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::LoseLife { .. }
@@ -313,18 +314,14 @@ impl Game {
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
             | EffectDef::RemoveFromCombat { .. }
-            | EffectDef::SetColor { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }
-            | EffectDef::DoesNotUntapWhileSourceTapped { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
-            | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Mill { .. }
-            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::SearchZone { .. }
@@ -341,19 +338,14 @@ impl Game {
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
-            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::Detain { .. }
-            | EffectDef::CannotRegenerateThisTurn { .. }
-            | EffectDef::MakeUnblockableThisTurn { .. }
-            | EffectDef::GainControlWhileSourceRemains { .. }
-            | EffectDef::GainControlThisTurn { .. }
+            | EffectDef::GainControl { .. }
             | EffectDef::IfCondition { .. }
             | EffectDef::InstallTrigger(_)
             | EffectDef::ReduceGenericCostBy(_)
-            | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
             | EffectDef::MoveToZone { .. }
@@ -567,21 +559,7 @@ impl Game {
     // Long because the event vocabulary is wide, not because the function
     // does several things: every arm pairs one definition with one event.
     #[allow(clippy::too_many_lines)]
-    pub(super) fn trigger_event_matches(
-        &self,
-        definition: TriggerEventDef,
-        event: &CommittedTriggerEvent,
-        source: GameObjectId,
-    ) -> bool {
-        self.trigger_event_matches_for_controller(
-            definition,
-            event,
-            source,
-            self.controller_of_object(source),
-        )
-    }
-
-    fn trigger_event_matches_for_controller(
+    pub(super) fn trigger_event_matches_for_controller(
         &self,
         definition: TriggerEventDef,
         event: &CommittedTriggerEvent,
@@ -812,6 +790,7 @@ impl Game {
                     }),
                 EffectRecipientSetDef::Objects(
                     ObjectSetDef::Binding(_)
+                    | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::Query(_)
                     | ObjectSetDef::SharingNameWith(_),
                 ) => false,
@@ -857,6 +836,7 @@ impl Game {
     ) -> bool {
         match players {
             PlayerSetDef::All => true,
+            PlayerSetDef::LegalTargets(_) => false,
             PlayerSetDef::One(reference) => {
                 self.trigger_event_player_reference(reference, ability_source, controller, event)
                     == Some(recipient)
@@ -958,6 +938,7 @@ impl Game {
         predicate: ObjectPredicateDef,
         object: &TriggerEventObject,
         source: GameObjectId,
+        controller: Option<PlayerId>,
     ) -> bool {
         match predicate {
             ObjectPredicateDef::HasNonManaActivatedAbility => self
@@ -994,11 +975,12 @@ impl Game {
                         .find(|candidate| candidate.card.id == host)
                 })
                 .is_some_and(|host| {
-                    self.trigger_object_matches(
+                    self.trigger_object_matches_for_controller(
                         *predicate,
                         &self.trigger_event_object(host),
                         source,
                         false,
+                        controller,
                     )
                 }),
             _ => unreachable!("only the battlefield-reading predicates arrive here"),
@@ -1118,7 +1100,7 @@ impl Game {
             | ObjectPredicateDef::BlockedBySource
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::AttachedTo(_) => {
-                self.battlefield_relationship_matches(predicate, object, source)
+                self.battlefield_relationship_matches(predicate, object, source, controller)
             }
             ObjectPredicateDef::Tapped => object.tapped,
             ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {

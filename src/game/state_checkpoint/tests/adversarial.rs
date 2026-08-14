@@ -237,6 +237,7 @@ fn a_private_effect_choice_is_not_serialized_for_the_other_seat() {
             }],
         },
         continuation: DecisionContinuation::ChooseForEffect {
+            definition: ScopedEffect::primary(EffectDef::None),
             binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
             object: Box::new(resolving),
             context,
@@ -333,6 +334,7 @@ fn a_public_effect_choice_cannot_retain_an_unexposed_hidden_object_id() {
             }],
         },
         continuation: DecisionContinuation::ChooseForEffect {
+            definition: ScopedEffect::primary(effect),
             binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
             object: Box::new(resolving),
             context,
@@ -352,6 +354,7 @@ fn a_public_effect_choice_cannot_retain_an_unexposed_hidden_object_id() {
 
     let definition = game.players[viewer.opponent().index()].library[0].definition;
     game.pending_decisions[0].observation.options[0].card = Some((secret, definition));
+    game.pending_decisions[0].observation.options[0].zone = DecisionZone::Library;
     let observation = game.observe(viewer);
     let actions = crate::protocol::protocol_actions(&observation);
     let wire = crate::protocol::observation_json_for_format(
@@ -361,25 +364,11 @@ fn a_public_effect_choice_cannot_retain_an_unexposed_hidden_object_id() {
         game.in_pregame(),
         &actions,
     );
-    assert!(wire["checkpoint"]["decisionState"].is_object());
-    assert_eq!(wire["checkpoint"]["hasDeferredState"], false);
-    assert_eq!(
-        wire["checkpoint"]["decisionState"]["cardOrigins"][0]["objectId"],
-        secret.0,
-    );
-    let rebuilt = Game::from_observation_checkpoint(
-        game.catalog.clone(),
-        game.format,
-        &wire,
-        &true_hidden_hypothesis(&game, viewer),
-        9_003,
-    )
-    .expect("a visible public decision card rebinds its continuation references");
+    assert!(wire["checkpoint"]["decisionState"].is_null());
+    assert_eq!(wire["checkpoint"]["hasDeferredState"], true);
     assert!(
-        rebuilt.players[viewer.opponent().index()]
-            .library
-            .iter()
-            .any(|card| card.id == secret)
+        !contains_integer(&wire["checkpoint"], u64::from(secret.0)),
+        "exposing a card cannot authenticate a hand-built continuation whose outer effect is absent",
     );
 }
 
@@ -567,15 +556,10 @@ fn retained_trigger_state_never_serializes_unrebindable_hidden_object_ids() {
 
 #[test]
 fn a_checkpoint_missing_any_required_field_is_rejected_by_name() {
-    // Additive members carry `#[serde(default)]` deliberately, so that a
-    // checkpoint written before they existed still decodes. They are the one
-    // kind of field that is not load-bearing, and each is listed rather than
-    // inferred so a genuinely required field cannot quietly join them.
-    const ADDITIVE: &[&str] = &[
-        "allCombatDamagePrevented",
-        "preventionShields",
-        "relationalDamagePreventions",
-    ];
+    // Top-level additive members belong in this explicit list so a genuinely
+    // required field cannot quietly become optional. Format 3 currently has
+    // none; nested additive members are exercised through their parent field.
+    const ADDITIVE: &[&str] = &[];
 
     let fixture = Fixture::played(120, 8_101);
     fixture.assert_baseline_rebuilds();

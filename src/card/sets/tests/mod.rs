@@ -5,7 +5,7 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityPredicateDef, AbilityProcedureDef,
     AbilityProgramDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType,
     CardChoiceSourceDef, CardPrinting, CardPrintingId, CardStructure, CardSupertype, CardType,
-    CharacteristicOperationDef, ComparisonDef, ConditionDef, CostDef, DamagePreventionCapacityDef,
+    CharacteristicOperationDef, ComparisonDef, ConditionDef, DamagePreventionCapacityDef,
     DamagePreventionFollowUpDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
     DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef,
     EffectRecipientDef, EffectRecipientSetDef, ImplementationStatus, KeywordAbility, ManaColor,

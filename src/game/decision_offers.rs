@@ -1,8 +1,8 @@
 use super::{
-    CharacteristicSource, ColorSet, CounteredSpellZone, DecisionContinuation, DecisionKind,
-    DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    DeclarativeAbilityDef, EffectResolutionContext, FORK_COPY_COLOR, Game, GameObjectId, ManaCost,
-    PendingDecision, PlayerId, ScopedEffect, StackObject, Target, TargetSelection, TargetSlotId,
+    CharacteristicSource, ColorSet, DecisionContinuation, DecisionKind, DecisionObservation,
+    DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
+    EffectResolutionContext, FORK_COPY_COLOR, Game, ManaCost, PendingDecision, PlayerId,
+    ResolvedEffectPayment, ScopedEffect, StackObject, Target, TargetSelection, TargetSlotId,
     TriggerContext, flatten_target_selections, target_combinations,
 };
 use crate::card::ChoiceVisibilityDef;
@@ -63,8 +63,9 @@ impl Game {
     pub(super) fn queue_pay_or(
         &mut self,
         player: PlayerId,
-        cost: ManaCost,
+        payment: ResolvedEffectPayment,
         visibility: ChoiceVisibilityDef,
+        definition: ScopedEffect,
         object: &StackObject,
         context: EffectResolutionContext,
         if_paid: Option<ScopedEffect>,
@@ -73,7 +74,7 @@ impl Game {
         if if_paid.is_none() && otherwise.is_none() {
             return;
         }
-        let can_pay = self.can_pay_cost(player, cost, 0);
+        let can_pay = self.can_pay_effect_payment(player, payment);
         if !can_pay {
             if let Some(effect) = otherwise {
                 self.resolve_effect_def(effect, object, context);
@@ -91,7 +92,7 @@ impl Game {
         if can_pay {
             options.push(DecisionOption {
                 id: 1,
-                label: "Pay the cost".into(),
+                label: Self::effect_payment_label(payment),
                 card: None,
                 members: Vec::new(),
                 ability_text: None,
@@ -108,7 +109,8 @@ impl Game {
             options,
             DecisionContinuation::PayOr {
                 player,
-                cost,
+                payment,
+                definition,
                 object: Box::new(object.clone()),
                 context,
                 if_paid,
@@ -117,148 +119,41 @@ impl Game {
         );
     }
 
-    /// Offers the payment that would call the effect off. A controller who
-    /// cannot pay has no decision to make, so the effect just happens.
-    pub(super) fn queue_mana_payment_or_else(
-        &mut self,
+    pub(super) fn can_pay_effect_payment(
+        &self,
         player: PlayerId,
-        cost: ManaCost,
-        object: &StackObject,
-        context: EffectResolutionContext,
-        effect: ScopedEffect,
-    ) {
-        if !self.can_pay_cost(player, cost, 0) {
-            self.resolve_effect_def(effect, object, context);
-            return;
+        payment: ResolvedEffectPayment,
+    ) -> bool {
+        match payment {
+            ResolvedEffectPayment::Mana(cost) => self.can_pay_cost(player, cost, 0),
+            ResolvedEffectPayment::Life(amount) => i16::try_from(amount)
+                .is_ok_and(|amount| self.players[player.index()].life >= amount),
         }
-        let options = [(0, "Decline"), (1, "Pay the cost")]
-            .into_iter()
-            .map(|(id, label)| DecisionOption {
-                id,
-                label: label.into(),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::None,
-            })
-            .collect();
-        self.queue_decision(
-            player,
-            object.ability_text().unwrap_or("Pay the cost?"),
-            DecisionVisibility::Private,
-            DecisionPreference::Neutral,
-            1..=1,
-            false,
-            options,
-            DecisionContinuation::ManaPaymentOrElse {
-                player,
-                cost,
-                object: Box::new(object.clone()),
-                context,
-                effect,
-            },
-        );
     }
 
-    pub(super) fn queue_optional_mana_payment(
+    pub(super) fn pay_effect_payment(
         &mut self,
         player: PlayerId,
-        cost: ManaCost,
-        object: &StackObject,
-        context: EffectResolutionContext,
-        effect: ScopedEffect,
-    ) {
-        let mut options = vec![DecisionOption {
-            id: 0,
-            label: "Decline".into(),
-            card: None,
-            members: Vec::new(),
-            ability_text: None,
-            zone: DecisionZone::None,
-        }];
-        if self.can_pay_cost(player, cost, 0) {
-            options.push(DecisionOption {
-                id: 1,
-                label: "Pay the cost".into(),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::None,
-            });
+        payment: ResolvedEffectPayment,
+    ) -> bool {
+        if !self.can_pay_effect_payment(player, payment) {
+            return false;
         }
-        self.queue_decision(
-            player,
-            object
-                .ability_text()
-                .unwrap_or("Pay the optional mana cost?"),
-            DecisionVisibility::Private,
-            DecisionPreference::Neutral,
-            1..=1,
-            false,
-            options,
-            DecisionContinuation::OptionalManaPayment {
-                player,
-                cost,
-                object: Box::new(object.clone()),
-                context,
-                effect,
-            },
-        );
+        match payment {
+            ResolvedEffectPayment::Mana(cost) => {
+                self.activate_mana_for_cost(player, cost, 0);
+                let _spent = self.pay_player_cost(player, cost, 0);
+            }
+            ResolvedEffectPayment::Life(amount) => self.lose_life(player, amount),
+        }
+        true
     }
 
-    /// Offers the spell's own controller the chance to keep it. A controller
-    /// who cannot pay is not asked; the spell is simply countered.
-    pub(super) fn queue_counter_unless_paid(
-        &mut self,
-        spell: GameObjectId,
-        amount: u16,
-        zone: CounteredSpellZone,
-    ) {
-        let Some(controller) = self
-            .stack
-            .iter()
-            .find(|object| object.id == spell)
-            .map(|object| object.controller)
-        else {
-            return;
-        };
-        let cost = ManaCost::new(amount, 0);
-        if !self.can_pay_cost(controller, cost, 0) {
-            self.counter_spell_into(spell, zone);
-            return;
+    pub(super) fn effect_payment_label(payment: ResolvedEffectPayment) -> String {
+        match payment {
+            ResolvedEffectPayment::Mana(_) => "Pay the cost".to_string(),
+            ResolvedEffectPayment::Life(amount) => format!("Pay {amount} life"),
         }
-        self.queue_decision(
-            controller,
-            format!("Pay {amount} or your spell is countered"),
-            DecisionVisibility::Public,
-            DecisionPreference::Neutral,
-            1..=1,
-            false,
-            vec![
-                DecisionOption {
-                    id: 0,
-                    label: "Let it be countered".into(),
-                    card: None,
-                    members: Vec::new(),
-                    ability_text: None,
-                    zone: DecisionZone::None,
-                },
-                DecisionOption {
-                    id: 1,
-                    label: "Pay the cost".into(),
-                    card: None,
-                    members: Vec::new(),
-                    ability_text: None,
-                    zone: DecisionZone::None,
-                },
-            ],
-            DecisionContinuation::CounterUnlessPaid {
-                spell,
-                player: controller,
-                cost,
-                zone,
-            },
-        );
     }
 
     /// Offers an effect its controller may decline, resolving it only on a

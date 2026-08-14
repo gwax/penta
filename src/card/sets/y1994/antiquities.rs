@@ -1,13 +1,14 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, BattlefieldEntryModificationDef,
-    CardArt, CardBehavior, CardRules, CardSet, CardType, CardTypeSet, CounterKind,
-    CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DamageSourceGroupDef,
-    DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectRecipientDef, InstalledTriggerDef,
-    KeywordAbility, ManaColor, ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
-    PaymentDef, PlayerRelation, ReplacementEffectDef, ResolvedEffectDurationDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef,
+    BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
+    CardTypeSet, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef,
+    DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ManaRestrictionDef,
+    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -131,9 +132,9 @@ pub(in crate::card::sets) static MARTYRS_OF_KORLIS: CardRecord = CardRecord::new
              artifacts is dealt to this creature instead.",
             EffectDef::StaticApply {
                 recipient: MARTYRS_UNTAPPED,
-                effect: AppliedEffectDef::RedirectPlayerDamageToThis(
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::RedirectPlayerDamageToThis(
                     DamageSourceGroupDef::Artifacts,
-                ),
+                )),
             },
         ),
     ),
@@ -288,7 +289,7 @@ pub(in crate::card::sets) static PHYREXIAN_GREMLINS: CardRecord = CardRecord::ne
                 "You may choose not to untap this creature during your untap step.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::MayChooseNotToUntap,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
                 },
             ),
             AbilityDef::activated_with_targets(
@@ -302,7 +303,7 @@ pub(in crate::card::sets) static PHYREXIAN_GREMLINS: CardRecord = CardRecord::ne
                     },
                     EffectDef::Apply {
                         recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                        effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                        effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
                         duration: ResolvedEffectDurationDef::WhileSourceTapped,
                     },
                 ]),
@@ -494,7 +495,9 @@ pub(in crate::card::sets) static ARGOTHIAN_PIXIES: CardRecord = CardRecord::new(
             "This creature can't be blocked by artifact creatures.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ARTIFACT_CREATURE),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ARTIFACT_CREATURE,
+                )),
             },
         ),
         AbilityDef::static_ability(
@@ -662,7 +665,7 @@ pub(in crate::card::sets) static ASHNODS_BATTLE_GEAR: CardRecord = CardRecord::n
             "You may choose not to untap this artifact during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::MayChooseNotToUntap,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
             },
         ),
         AbilityDef::activated_with_targets(
@@ -728,7 +731,7 @@ pub(in crate::card::sets) static COLOSSUS_OF_SARDIA: CardRecord = CardRecord::ne
             "This creature doesn't untap during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::activated(
@@ -1126,9 +1129,9 @@ pub(in crate::card::sets) static TABLET_OF_EPITYR: CardRecord = CardRecord::new(
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ]), Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
         EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(
-                PlayerRelation::You,
-                &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
             ),
             &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
@@ -1161,8 +1164,12 @@ pub(in crate::card::sets) static TAWNOSS_WAND: CardRecord = CardRecord::new(
                     ObjectPredicateDef::Not(&ObjectPredicateDef::PowerAtLeast(3)),
                 ]),
             )],
-            EffectDef::MakeUnblockableThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -1189,7 +1196,7 @@ pub(in crate::card::sets) static TAWNOSS_WEAPONRY: CardRecord = CardRecord::new(
             "You may choose not to untap this artifact during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::MayChooseNotToUntap,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
             },
         ),
         AbilityDef::activated_with_targets(
@@ -1302,9 +1309,9 @@ pub(in crate::card::sets) static URZAS_CHALICE: CardRecord = CardRecord::new(
         "Whenever a player casts an artifact spell, you may pay {1}. If you do, you gain 1 life.",
         TriggerEventDef::SpellCast(ObjectPredicateDef::HasType(CardType::Artifact)),
         EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(
-                PlayerRelation::You,
-                &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
             ),
             &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,

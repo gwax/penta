@@ -326,14 +326,11 @@ impl HandcraftedPolicy {
             }
             EffectDef::Tap { .. }
             | EffectDef::RemoveFromCombat { .. }
-            | EffectDef::SetColor { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }
-            | EffectDef::DoesNotUntapWhileSourceTapped { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
-            | EffectDef::PreventDamage { .. }
-            | EffectDef::RedirectTargetDamageToSourceThisTurn { .. } => {
+            | EffectDef::PreventDamage { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);
             }
             EffectDef::StaticApply { .. } | EffectDef::Apply { .. } => {
@@ -355,8 +352,8 @@ impl HandcraftedPolicy {
             | EffectDef::Regenerate { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::DiscardCards { .. }
             | EffectDef::Mill { .. }
-            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::SearchZone { .. }
@@ -371,19 +368,14 @@ impl HandcraftedPolicy {
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
-            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::Detain { .. }
-            | EffectDef::CannotRegenerateThisTurn { .. }
-            | EffectDef::MakeUnblockableThisTurn { .. }
-            | EffectDef::GainControlWhileSourceRemains { .. }
-            | EffectDef::GainControlThisTurn { .. }
+            | EffectDef::GainControl { .. }
             | EffectDef::InstallTrigger(_)
             | EffectDef::IfCondition { .. }
             | EffectDef::ReduceGenericCostBy(_)
-            | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
             | EffectDef::MoveToZone { .. }

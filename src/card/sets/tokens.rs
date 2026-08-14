@@ -11,9 +11,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AbilityCoverageDef, AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
+    CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 
 pub(in crate::card::sets) static BEAST_TOKEN_3_3_GREEN: CardRecord = CardRecord::new(
@@ -132,7 +133,7 @@ pub(in crate::card::sets) static TETRAVITE_TOKEN: CardRecord = CardRecord::new(
                 "This token can't be enchanted.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::CannotBeEnchanted,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeEnchanted),
                 },
             )
             .with_coverage(AbilityCoverageDef::explained_complete(

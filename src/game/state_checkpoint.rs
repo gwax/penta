@@ -9,19 +9,18 @@ use super::{
     EntryCompletion, Game, GameEvent, GameObjectId, GameStack, InstalledTrigger,
     InstalledTriggerLifetime, Mana, ManaSource, ObjectBacking, PendingBattlefieldEntry,
     PendingEvent, PendingReplacementEffect, Permanent, PlayerId, PlayerState, Pregame,
-    ReplaceableEvent, ReplacementEffectContext, ReplayRng, ResolvedAbilityOperation,
-    ResolvedContinuousEffect, ResolvedContinuousEffectKind, ResolvedDamagePrevention,
-    ResolvedDamagePreventionCapacity, ResolvedDamagePreventionCoverage,
+    RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext, ReplayRng,
+    ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
+    ResolvedDamagePrevention, ResolvedDamagePreventionCapacity, ResolvedDamagePreventionCoverage,
     ResolvedDamageRecipientMatcher, ResolvedDamageRedirect, ResolvedDamageSourceMatcher,
-    ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect, StackAbilityPayload,
-    StackAbilityResolver, StackObject, StackObjectKind, Step, TemporaryAbilityGrant,
-    TriggerCapture, TriggerContext, TurnPhaseResume, ZoneMoveCause,
+    ResolvedPlayRestriction, ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect,
+    StackAbilityPayload, StackAbilityResolver, StackObject, StackObjectKind, Step,
+    TemporaryAbilityGrant, TriggerCapture, TriggerContext, TurnPhaseResume, ZoneMoveCause,
 };
 use crate::card::{
     AbilityOperationDef, AppliedEffectDef, BasicLandType, CardType, CardTypeSet,
-    CharacteristicOperationDef, ColorSet, DeclarativeAbilityDef, ManaColor,
-    PowerToughnessOperationDef, ReplacementEffectDef, ReplacementEventDef, SetOperationDef,
-    SpellForm, TurnPhaseDef, ZoneKind,
+    CharacteristicOperationDef, DeclarativeAbilityDef, PowerToughnessOperationDef,
+    ReplacementEffectDef, ReplacementEventDef, SetOperationDef, SpellForm, TurnPhaseDef, ZoneKind,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::{
@@ -39,6 +38,7 @@ mod model_prevention;
 mod model_procedure;
 mod model_trigger;
 mod permanent;
+mod play_restriction;
 mod prevention;
 mod procedure;
 mod semantics;
@@ -79,7 +79,8 @@ use procedure::{
 use semantics::{
     ability_locator, ability_target_defs, catalog_ability, catalog_applied_effect,
     catalog_mana_payload, catalog_replacement_effect, keyword_snapshot, mana_payload_locator,
-    parse_keyword, replacement_effect_locator, resolved_applied_effect_locator,
+    parse_keyword, replacement_effect_locator_matches_source, resolved_applied_effect_locator,
+    resolved_replacement_effect_locator,
 };
 use stack::{
     applied_stack_effect_snapshots, detached_stack_snapshot, parse_detached_stack, parse_stack,
@@ -226,6 +227,11 @@ impl Game {
                     .flat_map(prevention::damage_prevention_referenced_object_ids),
             )
             .chain(
+                self.resolved_play_restrictions
+                    .iter()
+                    .map(|restriction| restriction.source.object),
+            )
+            .chain(
                 self.damage_redirects
                     .iter()
                     .copied()
@@ -328,6 +334,16 @@ impl Game {
             .copied()
             .map(prevention::damage_redirect_snapshot)
             .collect();
+        let resolved_play_restrictions = self
+            .resolved_play_restrictions
+            .iter()
+            .copied()
+            .filter_map(|restriction| {
+                play_restriction::resolved_play_restriction_snapshot(&self.catalog, restriction)
+            })
+            .collect::<Vec<_>>();
+        let has_unlocated_play_restriction =
+            resolved_play_restrictions.len() != self.resolved_play_restrictions.len();
         let battlefield = self
             .battlefield
             .iter()
@@ -417,7 +433,7 @@ impl Game {
                 .map(turn_phase_snapshot)
                 .collect(),
             turn_phase_resume: self.turn_phase_resume.map(turn_phase_resume_snapshot),
-            noncreature_casts_locked: self.noncreature_casts_locked,
+            resolved_play_restrictions,
             spells_cast_this_turn: self.spells_cast_this_turn,
             spells_cast_last_turn: self.spells_cast_last_turn,
             cards_drawn_this_turn: self.cards_drawn_this_turn,
@@ -498,6 +514,7 @@ impl Game {
                 || has_unlocated_draw_replacement
                 || has_unlocated_pending_procedure
                 || has_unlocated_damage_prevention
+                || has_unlocated_play_restriction
                 || has_unlocated_stack_state,
             // Makes accidental reuse with another seat fail closed in the
             // importer without revealing anything about that other seat.
@@ -667,6 +684,13 @@ impl Game {
             .copied()
             .map(prevention::parse_damage_redirect)
             .collect::<Result<Vec<_>, _>>()?;
+        let resolved_play_restrictions = checkpoint
+            .resolved_play_restrictions
+            .iter()
+            .map(|restriction| {
+                play_restriction::parse_resolved_play_restriction(&catalog, restriction)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         let mut game = Self {
             format,
             seed: rollout_seed,
@@ -701,7 +725,7 @@ impl Game {
                 .map(parse_turn_phase)
                 .collect(),
             turn_phase_resume: checkpoint.turn_phase_resume.map(parse_turn_phase_resume),
-            noncreature_casts_locked: checkpoint.noncreature_casts_locked,
+            resolved_play_restrictions,
             emblems: Vec::new(),
             spells_cast_this_turn: checkpoint.spells_cast_this_turn,
             spells_cast_last_turn: checkpoint.spells_cast_last_turn,

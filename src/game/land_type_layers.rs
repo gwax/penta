@@ -202,22 +202,7 @@ impl Game {
                 .copied()
                 .any(Self::applied_effect_contains_land_type_operation),
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(_)) => true,
-            AppliedEffectDef::Characteristic(_)
-            | AppliedEffectDef::CannotBeCountered
-            | AppliedEffectDef::DoesNotUntapDuringUntapStep
-            | AppliedEffectDef::MayChooseNotToUntap
-            | AppliedEffectDef::CannotBlock
-            | AppliedEffectDef::CannotAttack
-            | AppliedEffectDef::CannotBeBlocked
-            | AppliedEffectDef::CannotBeEnchanted
-            | AppliedEffectDef::CannotBecomeEnchanted
-            | AppliedEffectDef::CannotChangeController
-            | AppliedEffectDef::RemainsAttachedThroughProtection
-            | AppliedEffectDef::CannotBeBlockedBy(_)
-            | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventDamage(_)
-            | AppliedEffectDef::Special(_) => false,
+            AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
         }
     }
 
@@ -405,22 +390,7 @@ impl Game {
                     .expect("one static ability contains at most 65,536 components");
                 operations.push((source, order, Self::resolved_land_type_operation(operation)));
             }
-            AppliedEffectDef::Characteristic(_)
-            | AppliedEffectDef::CannotBeCountered
-            | AppliedEffectDef::DoesNotUntapDuringUntapStep
-            | AppliedEffectDef::MayChooseNotToUntap
-            | AppliedEffectDef::CannotBlock
-            | AppliedEffectDef::CannotAttack
-            | AppliedEffectDef::CannotBeBlocked
-            | AppliedEffectDef::CannotBeEnchanted
-            | AppliedEffectDef::CannotBecomeEnchanted
-            | AppliedEffectDef::CannotChangeController
-            | AppliedEffectDef::RemainsAttachedThroughProtection
-            | AppliedEffectDef::CannotBeBlockedBy(_)
-            | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventDamage(_)
-            | AppliedEffectDef::Special(_) => {}
+            AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => {}
         }
     }
 
@@ -458,6 +428,7 @@ impl Game {
                     | ObjectRefDef::TriggeringObject,
                 )
                 | ObjectSetDef::Binding(_)
+                | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::SharingNameWith(_),
             )
             | EffectRecipientSetDef::Players(_) => false,

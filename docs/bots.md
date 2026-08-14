@@ -216,7 +216,7 @@ A clone forks the *true* state, hidden zones included. That is right for
 self-play but wrong for a search bot in a hosted match: its rollouts must use
 worlds consistent with its observation, not cards only the host knows.
 
-The optional `reconstruction.checkpoint.v6` capability advertises a hidden-safe
+The optional `reconstruction.checkpoint.v3` capability advertises a hidden-safe
 current-state checkpoint in each observation. The checkpoint was introduced in
 protocol 19, expanded in protocol 21 into the complete typed snapshot described
 below, and given its own nested format version in protocol 22. Supply a
@@ -300,13 +300,14 @@ lexical targets or bindings name a card in a hidden zone that has no stable
 public object ID; the checkpoint omits that trigger rather than serializing a
 host-only identity.
 
-Checkpoint format 6 covers every ordinary action boundary emitted by the
+Checkpoint format 3 covers every ordinary action boundary emitted by the
 hosted formats: pregame and turn/combat progression; complete permanent,
 emblem, stack, and combat state; restricted/source-specific mana; copied and
 temporarily modified characteristics; retired-object last-known information;
 pending battlefield-entry replacement programs; installed and pending
-triggers; ordered resolved damage-prevention rules; ordered inserted-turn-phase
-queues and their frozen ordinary continuation; and every pending decision
+triggers; ordered resolved damage-prevention, characteristic, object-rule, and
+player play-restriction effects; ordered inserted-turn-phase queues and their
+frozen ordinary continuation; and every pending decision
 continuation emitted by the hosted formats, including prospective begin-turn
 replacement choices. Stack payloads retain target-slot groupings, divided
 amounts, modes, X, complete lexical resolution context, flashback/copy state,
@@ -353,7 +354,7 @@ world it can search.
 | field | meaning |
 | --- | --- |
 | `protocolVersion` | the breaking bot-wire epoch; protocol 22 objects are open-world, but an epoch mismatch requires migration |
-| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v6`; ignore unknown entries |
+| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v3`; ignore unknown entries |
 | `simulationFingerprint` | a conservative identity of simulation source and build requirements; pin it for training and require it for reconstruction |
 | `engineVersion` | package-release provenance; it is not an exact simulation identity |
 | `format` | the rules/deck profile slug, such as `"old-school-93-94"` or `"isd-rtr-standard"` |
@@ -707,76 +708,47 @@ reconstruction closed as described above.
 
 ### Migrating checkpoint format 2 to 3
 
-This rules change also leaves protocol 22 in place. Checkpoint format 3 splits
-the event-only trigger context from the typed bindings accumulated while a
-declarative effect resolves. Suspended effects now carry `singleObjects` and
-`objectGroups`, whose entries retain whether each referenced object is a card,
-permanent, or spell. Generic object choices, payment branches, and pile
-procedures have typed continuations that preserve those bindings. Public cards
-that remain in hidden zones while a decision is pending also carry their actual
-origin seat and zone so reconstruction can keep their disclosed object ids
-without assuming that the deciding seat owns them.
+Protocol 22 remains in place. Checkpoint format 3 separates event-only trigger
+context from the typed single-object and object-set bindings accumulated while
+a declarative effect resolves. Suspended choices, mana-or-life payments, and
+pile procedures retain those bindings through shared typed continuations.
+Battlefield-entry scalar choices use the same destination-tagged continuation,
+and private top-card selections retain whether the chosen card must be
+revealed. Each disclosed hidden-zone card records its exact seat, zone, and
+index, preserving public object identity, duplicate definitions, and visible
+option order under a hidden-zone hypothesis.
 
-Consumers that implemented format 3 required
-`reconstruction.checkpoint.v3`; format-2 payloads could not interpret the new
-bookkeeping approximately.
+Resolved characteristic and object-rule modifications are one ordered,
+expiration-aware continuous-effect collection. Every entry retains its exact
+authored catalog location, source-ability provenance, timestamp and component
+order, and frozen resolution-time values; resolved player play restrictions
+use a parallel ordered collection. These replace the separate animation,
+aggregate power/toughness, granted-ability, removed-ability, unblockable,
+can't-block, and can't-regenerate fields.
 
-### Migrating checkpoint format 3 to 4
+Resolved damage prevention is likewise one ordered typed collection, replacing
+the separate Fog flag, prevention shields, relational rules, and per-permanent
+combat-prevention flags while retaining concrete matchers, remaining point or
+event capacity, coverage, life-gain recipient, provenance, timestamp, and
+expiration. Effect-scheduled instructions and floating listeners are unified
+as installed triggers with their lexical targets and bindings; pending and
+stacked triggers carry the same complete resolution context. Entry-replacement
+continuations use typed replacement-program locators, including nested
+branches.
 
-This rules change again leaves protocol 22 in place. Checkpoint format 4
-replaces a permanent's separate animation, aggregate power/toughness bonus,
-granted-ability, and removed-ability bookkeeping with one ordered vector of
-resolved continuous effects. Each entry retains its exact authored effect,
-source-ability provenance, timestamp and component order, expiration, and any
-value that had to be evaluated when the effect resolved. In particular, a
-dynamic power/toughness value is frozen rather than being recomputed from the
-reconstructed battlefield.
+The scalar additional-combat counter is now an ordered queue of inserted major
+phases with a frozen ordinary continuation. Authored `combat, postcombat main`
+sequences stay intact, later and nested schedules retain their ordering, and
+the continuation distinguishes resuming ordinary combat from proceeding to the
+end step. Legacy card-, payment-, destruction-, and pile-specific continuation
+tags are replaced by the shared choice, PayOr, and partition procedures.
 
-Format-3 checkpoints cannot be upgraded approximately: their aggregate
-power/toughness fields and single animation field no longer retain the
-individual effects, ordering, provenance, or duration needed to rebuild the
-new state. Current consumers of reconstruction should require
-`reconstruction.checkpoint.v4` and regenerate checkpoints with the current
-engine.
-
-### Migrating checkpoint format 4 to 5
-
-This rules change leaves protocol 22 in place. Checkpoint format 5 replaces
-the separate Fog flag, prevention shields, relational prevention rules, and
-permanent combat-prevention flags with one ordered collection of resolved
-damage-prevention rules. Each entry retains concrete source and recipient
-matchers, remaining point or event capacity, coverage, any frozen life-gain
-recipient, source-ability provenance, timestamp, and expiration.
-
-Effect-scheduled step instructions and floating listeners are likewise one
-installed-trigger collection. A listener retains the installing effect's
-typed object bindings and target selections while receiving fresh event
-context each time it triggers; pending and stacked triggered abilities now
-carry that complete resolution context. Entry-replacement continuations use
-typed replacement-effect locators, including nested branches.
-
-Format-4 checkpoints cannot recover this ordering, trigger identity, or
-lexical context from their fragmented fields. Current reconstruction consumers
-should require `reconstruction.checkpoint.v5` and regenerate checkpoints with
-the current engine.
-
-### Migrating checkpoint format 5 to 6
-
-This rules change also leaves protocol 22 in place. Checkpoint format 6
-replaces the scalar additional-combat counter with an ordered queue of inserted
-major phases and an optional frozen continuation. A single effect can preserve
-the authored sequence `combat, postcombat main`; a later schedule at the same
-phase boundary runs first; and a schedule created during an inserted phase is
-placed immediately after that phase. The frozen continuation distinguishes an
-insertion after the precombat main, which resumes the ordinary combat, from one
-after the postcombat main, which resumes at the end step. Turn-step names remain
-trigger labels and the ordinary untap procedure is not represented as an
-inserted phase.
-
-Format-5 checkpoints cannot represent ordered mixed phase sequences or their
-displaced continuation. Current reconstruction consumers should require
-`reconstruction.checkpoint.v6` and regenerate checkpoints with the current
-engine.
+Format-2 checkpoints do not contain the individual ordering, provenance,
+duration, trigger identity, lexical context, phase sequence, displaced
+continuation, payment kind, reveal instruction, or exact hidden-zone positions
+needed to recover this state. They cannot be upgraded by guessing. Current
+reconstruction consumers should require `reconstruction.checkpoint.v3` and
+regenerate checkpoints with the current engine.
 
 ### Migrating from protocol 21
 
@@ -805,7 +777,7 @@ Protocol 22 splits wire compatibility from conservative source identity:
   `requiredSimulationFingerprint` to refuse a different simulation before it
   is listed or assigned.
 
-The current optional capability is `reconstruction.checkpoint.v6`. An ordinary
+The current optional capability is `reconstruction.checkpoint.v3`. An ordinary
 hosted bot that only reads `legalActions` should declare an empty capability
 list; do not copy the server's advertised capabilities without implementing
 them.

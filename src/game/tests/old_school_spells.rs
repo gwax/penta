@@ -594,10 +594,11 @@ fn combined_spell_trigger_and_target_characteristics_union_parts() {
         ObjectPredicateDef::Subtype("Arcane"),
         ObjectPredicateDef::Subtype("Lesson"),
     ] {
-        assert!(game.trigger_event_matches(
+        assert!(game.trigger_event_matches_for_controller(
             TriggerEventDef::SpellCast(predicate),
             &event,
             GameObjectId(99_999),
+            None,
         ));
     }
 
@@ -689,7 +690,7 @@ fn animated_factory_keeps_types_and_last_known_stats_under_blood_moon() {
         damage_sources: Vec::new(),
     };
     for card_type in [CardType::Land, CardType::Creature, CardType::Artifact] {
-        assert!(game.trigger_event_matches(
+        assert!(game.trigger_event_matches_for_controller(
             TriggerEventDef::zone_changed(
                 ObjectPredicateDef::HasType(card_type),
                 Some(ZoneKind::Battlefield),
@@ -697,6 +698,7 @@ fn animated_factory_keeps_types_and_last_known_stats_under_blood_moon() {
             ),
             &event,
             GameObjectId(99_999),
+            None,
         ));
     }
 }

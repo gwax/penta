@@ -1,4 +1,5 @@
 use super::*;
+use crate::card::AppliedRuleDef;
 
 #[test]
 fn standard_records_have_complete_unique_scryfall_metadata() {
@@ -168,7 +169,7 @@ fn cavern_records_both_mana_abilities_and_the_colored_mana_riders() {
                     == [ManaRestrictionDef::CastCreatureSpellOfChosenType]
                 && mana.spend_effects
                     == [ManaSpendEffectDef::ApplyToPaidSpell(
-                        AppliedEffectDef::CannotBeCountered,
+                        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
                     )]
     ));
 }

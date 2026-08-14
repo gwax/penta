@@ -10,6 +10,27 @@ use super::{
     EffectResolutionContext, Game, ScopedEffect, StackObject, Target,
 };
 
+pub(super) struct EffectChoiceDecisionState {
+    pub(super) chooser: super::PlayerId,
+    pub(super) candidates: Vec<Target>,
+    pub(super) minimum: usize,
+    pub(super) maximum: usize,
+    pub(super) options: Vec<DecisionOption>,
+    pub(super) preference: DecisionPreference,
+}
+
+pub(super) struct EffectPileSplitState {
+    pub(super) divider: super::PlayerId,
+    pub(super) chooser: super::PlayerId,
+    pub(super) items: Vec<Target>,
+    pub(super) options: Vec<DecisionOption>,
+}
+
+pub(super) struct EffectPileChoiceState {
+    pub(super) options: Vec<DecisionOption>,
+    pub(super) preference: DecisionPreference,
+}
+
 impl Game {
     /// Offers one generic bounded, non-targeting object choice and resumes its
     /// nested effect with the selected object or group in the resolution
@@ -22,28 +43,54 @@ impl Game {
         context: EffectResolutionContext,
         scoped: ScopedEffect,
     ) {
-        let Some(chooser) =
-            self.effect_player_reference(definition.chooser, object, &context, scoped)
+        let Some(state) = self.effect_choice_decision_state(definition, object, &context, scoped)
         else {
             return;
         };
-        let excluded = definition.exclude.and_then(|reference| {
-            self.effect_object_reference_id(reference, object, &context, scoped)
-        });
-        let mut candidates = self.effect_objects(definition.candidates, object, &context, scoped);
-        candidates.retain(|candidate| target_object_id(*candidate) != excluded);
 
         // A mandatory single-object instruction has no decision when zero or
         // one legal objects exist: Magic does as much as possible, binding
         // none or the only object. An optional instruction still asks, because
         // declining is itself the player's choice even with one candidate.
-        if definition.minimum > 0 && candidates.len() <= definition.minimum {
+        if definition.minimum > 0 && state.candidates.len() <= definition.minimum {
             let mut context = context;
-            Self::bind_effect_choice(&mut context, definition.binding, candidates);
+            Self::bind_effect_choice(&mut context, definition.binding, state.candidates);
             self.resolve_effect_def(scoped.with_effect(*definition.then), object, context);
             return;
         }
 
+        self.queue_decision(
+            state.chooser,
+            "Choose objects",
+            effect_choice_visibility(definition.visibility),
+            state.preference,
+            state.minimum..=state.maximum,
+            false,
+            state.options,
+            DecisionContinuation::ChooseForEffect {
+                definition: scoped,
+                binding: definition.binding,
+                object: Box::new(object.clone()),
+                context,
+                candidates: state.candidates,
+                effect: scoped.with_effect(*definition.then),
+            },
+        );
+    }
+
+    pub(super) fn effect_choice_decision_state(
+        &self,
+        definition: ChooseDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> Option<EffectChoiceDecisionState> {
+        let chooser = self.effect_player_reference(definition.chooser, object, context, scoped)?;
+        let excluded = definition.exclude.and_then(|reference| {
+            self.effect_object_reference_id(reference, object, context, scoped)
+        });
+        let mut candidates = self.effect_objects(definition.candidates, object, context, scoped);
+        candidates.retain(|candidate| target_object_id(*candidate) != excluded);
         let minimum = definition.minimum.min(candidates.len());
         let maximum = definition.maximum.min(candidates.len()).max(minimum);
         let options = candidates
@@ -64,22 +111,14 @@ impl Game {
         } else {
             DecisionPreference::Neutral
         };
-        self.queue_decision(
+        Some(EffectChoiceDecisionState {
             chooser,
-            "Choose objects",
-            effect_choice_visibility(definition.visibility),
-            preference,
-            minimum..=maximum,
-            false,
+            candidates,
+            minimum,
+            maximum,
             options,
-            DecisionContinuation::ChooseForEffect {
-                binding: definition.binding,
-                object: Box::new(object.clone()),
-                context,
-                candidates,
-                effect: scoped.with_effect(*definition.then),
-            },
-        );
+            preference,
+        })
     }
 
     pub(super) fn bind_effect_choice(
@@ -107,30 +146,59 @@ impl Game {
         mut context: EffectResolutionContext,
         scoped: ScopedEffect,
     ) {
-        let dividers = self.effect_players(definition.divider, object, &context, scoped);
+        let Some(state) = self.effect_pile_split_state(definition, object, &context, scoped) else {
+            return;
+        };
+
+        if state.items.is_empty() {
+            context.bind_object_group(definition.chosen, Vec::new());
+            context.bind_object_group(definition.unchosen, Vec::new());
+            self.resolve_effect_def(scoped.with_effect(*definition.then), object, context);
+            return;
+        }
+
+        self.queue_decision(
+            state.divider,
+            "Separate the objects into two piles",
+            DecisionVisibility::Public,
+            DecisionPreference::BalancedPartition,
+            0..=state.items.len(),
+            false,
+            state.options,
+            DecisionContinuation::SplitForEffect {
+                definition: scoped,
+                chooser: state.chooser,
+                items: state.items,
+                object: Box::new(object.clone()),
+                context,
+            },
+        );
+    }
+
+    pub(super) fn effect_pile_split_state(
+        &self,
+        definition: SplitIntoPilesDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> Option<EffectPileSplitState> {
+        let dividers = self.effect_players(definition.divider, object, context, scoped);
         let [divider] = dividers.as_slice() else {
-            return;
+            return None;
         };
-        let divider = *divider;
-        let choosers = self.effect_players(definition.chooser, object, &context, scoped);
+        let choosers = self.effect_players(definition.chooser, object, context, scoped);
         let [chooser] = choosers.as_slice() else {
-            return;
+            return None;
         };
-        let chooser = *chooser;
         let items = match definition.items {
             PartitionItemsDef::Objects(objects) => {
-                self.effect_objects(objects, object, &context, scoped)
+                self.effect_objects(objects, object, context, scoped)
             }
             PartitionItemsDef::TopOfLibrary { player, count } => {
-                let Some(player) = self.effect_player_reference(player, object, &context, scoped)
-                else {
-                    return;
-                };
-                let Ok(count) =
-                    usize::try_from(self.effect_value(count, object, &context, scoped).max(0))
-                else {
-                    return;
-                };
+                let player = self.effect_player_reference(player, object, context, scoped)?;
+                let count =
+                    usize::try_from(self.effect_value(count, object, context, scoped).max(0))
+                        .ok()?;
                 self.players[player.index()]
                     .library
                     .iter()
@@ -140,38 +208,18 @@ impl Game {
                     .collect()
             }
         };
-
-        if items.is_empty() {
-            context.bind_object_group(definition.chosen, Vec::new());
-            context.bind_object_group(definition.unchosen, Vec::new());
-            self.resolve_effect_def(scoped.with_effect(*definition.then), object, context);
-            return;
-        }
-
         let options = items
             .iter()
             .copied()
             .enumerate()
             .map(|(index, item)| self.effect_target_option(index, item))
             .collect();
-        self.queue_decision(
-            divider,
-            "Separate the objects into two piles",
-            DecisionVisibility::Public,
-            DecisionPreference::BalancedPartition,
-            0..=items.len(),
-            false,
+        Some(EffectPileSplitState {
+            divider: *divider,
+            chooser: *chooser,
+            items,
             options,
-            DecisionContinuation::SplitForEffect {
-                chooser,
-                items,
-                chosen: definition.chosen,
-                unchosen: definition.unchosen,
-                object: Box::new(object.clone()),
-                context,
-                effect: scoped.with_effect(*definition.then),
-            },
-        );
+        })
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -180,13 +228,43 @@ impl Game {
         chooser: super::PlayerId,
         first: Vec<Target>,
         second: Vec<Target>,
-        chosen: ObjectSetBindingIndex,
-        unchosen: ObjectSetBindingIndex,
         object: Box<StackObject>,
         context: EffectResolutionContext,
-        effect: ScopedEffect,
+        definition: ScopedEffect,
     ) {
-        let options = [&first, &second]
+        let EffectDef::SplitIntoPiles(authored) = definition.effect else {
+            return;
+        };
+        let state = self.effect_pile_choice_state(&first, &second, authored, definition);
+        self.queue_decision(
+            chooser,
+            "Choose a pile",
+            DecisionVisibility::Public,
+            state.preference,
+            1..=1,
+            false,
+            state.options,
+            DecisionContinuation::ChoosePileForEffect {
+                definition,
+                first,
+                second,
+                chosen: authored.chosen,
+                unchosen: authored.unchosen,
+                object,
+                context,
+                effect: definition.with_effect(*authored.then),
+            },
+        );
+    }
+
+    pub(super) fn effect_pile_choice_state(
+        &self,
+        first: &[Target],
+        second: &[Target],
+        definition: SplitIntoPilesDef,
+        scoped: ScopedEffect,
+    ) -> EffectPileChoiceState {
+        let options = [first, second]
             .into_iter()
             .enumerate()
             .map(|(index, pile)| {
@@ -216,31 +294,18 @@ impl Game {
                 }
             })
             .collect();
-        let preference = if effect_moves_group_to_hand(effect.effect, chosen) {
+        let effect = scoped.with_effect(*definition.then);
+        let preference = if effect_moves_group_to_hand(effect.effect, definition.chosen) {
             DecisionPreference::HigherCardValue
-        } else if effect_sacrifices_group(effect.effect, chosen) {
+        } else if effect_sacrifices_group(effect.effect, definition.chosen) {
             DecisionPreference::LowerCardValue
         } else {
             DecisionPreference::Neutral
         };
-        self.queue_decision(
-            chooser,
-            "Choose a pile",
-            DecisionVisibility::Public,
-            preference,
-            1..=1,
-            false,
+        EffectPileChoiceState {
             options,
-            DecisionContinuation::ChoosePileForEffect {
-                first,
-                second,
-                chosen,
-                unchosen,
-                object,
-                context,
-                effect,
-            },
-        );
+            preference,
+        }
     }
 
     fn effect_target_option(&self, index: usize, target: Target) -> DecisionOption {
@@ -363,6 +428,7 @@ fn effect_removes_binding(effect: EffectDef, binding: ObjectChoiceBindingDef) ->
     match effect {
         EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
+        | EffectDef::DiscardCards { object }
         | EffectDef::MoveToZone {
             object,
             zone: ZoneKind::Graveyard | ZoneKind::Exile,

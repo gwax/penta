@@ -372,13 +372,18 @@ impl Game {
     /// can be blocked anyway. The keyword itself is untouched, so anything
     /// else that reads it still sees it; only blocking ignores it.
     fn landwalk_can_be_blocked(&self, land_type: BasicLandType) -> bool {
-        self.battlefield
-            .iter()
-            .filter_map(|permanent| self.effective_rules(permanent))
-            .flat_map(CardRules::ability_clauses)
-            .filter(|ability| ability.is_executable())
-            .filter_map(|ability| ability.declarative_effect())
-            .any(|effect| effect == EffectDef::LandwalkCanBeBlocked(land_type))
+        self.battlefield.iter().any(|permanent| {
+            self.find_effective_ability(permanent, |effective| {
+                effective.ability.is_executable()
+                    && matches!(
+                        effective.ability.definition,
+                        DeclarativeAbilityDef::Static(_)
+                    )
+                    && effective.ability.declarative_effect()
+                        == Some(EffectDef::LandwalkCanBeBlocked(land_type))
+            })
+            .is_some()
+        })
     }
 
     pub(super) fn permanent_has_executable_keyword(

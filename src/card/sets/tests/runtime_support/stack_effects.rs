@@ -1,5 +1,4 @@
 use super::*;
-use crate::CostDef;
 use crate::card::{
     ChooseDef, EffectPaymentDef, ObjectChoiceBindingDef, PartitionItemsDef, SplitIntoPilesDef,
 };
@@ -9,17 +8,10 @@ pub(in super::super) fn shared_stack_effect(effect: EffectDef) -> bool {
 }
 
 fn shared_effect_payment(payment: EffectPaymentDef) -> bool {
-    match payment {
-        EffectPaymentDef::Costs(payment) => {
-            !matches!(
-                payment.payer,
-                PlayerRelation::Any | PlayerRelation::ChosenPlayer | PlayerRelation::EventPlayer
-            ) && matches!(payment.costs, [CostDef::Mana(_)])
-        }
-        EffectPaymentDef::Mana { payer, .. } | EffectPaymentDef::GenericMana { payer, .. } => {
-            shared_effect_recipient(EffectRecipientDef::player(payer))
-        }
-    }
+    !matches!(
+        payment.payer,
+        PlayerSetDef::All | PlayerSetDef::Related(PlayerRelation::Any)
+    ) && shared_effect_recipient(EffectRecipientDef::players(payment.payer))
 }
 
 fn shared_choose(choice: ChooseDef) -> bool {
@@ -97,11 +89,6 @@ fn shared_damage_prevention(prevention: crate::card::DamagePreventionDef) -> boo
 /// decision is allowed where they sit; this checks only their arguments.
 fn shared_decision_effect(effect: EffectDef) -> bool {
     match effect {
-        // Looking is private and the offer is the only visible part, and
-        // the chosen card comes from the named player's own library.
-        EffectDef::LookAtTopAndMayTake { player, object } => {
-            shared_effect_recipient(player) && shared_object_predicate(object)
-        }
         EffectDef::LookAtTopAndSelect { player, selection } => {
             let supported_zone = |zone| {
                 matches!(
@@ -110,6 +97,7 @@ fn shared_decision_effect(effect: EffectDef) -> bool {
                 )
             };
             shared_effect_recipient(player)
+                && selection.object.is_none_or(shared_object_predicate)
                 && selection.minimum <= selection.maximum
                 && supported_zone(selection.selected_zone)
                 && supported_zone(selection.rest_zone)
@@ -159,9 +147,6 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             };
             branch_is_shared(*on_success) && branch_is_shared(*on_failure)
         }
-        EffectDef::RedirectTargetDamageToSourceThisTurn { player, .. } => {
-            shared_effect_recipient(player)
-        }
         EffectDef::PreventDamage { prevention, .. } => shared_damage_prevention(prevention),
         EffectDef::Choose(choice) => {
             deferred_decision_allowed
@@ -197,11 +182,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Mill {
             player: recipient, ..
         }
-        | EffectDef::CannotCastNoncreatureSpellsThisTurn { player: recipient }
         | EffectDef::LoseTheGame { player: recipient }
         | EffectDef::LookAtHand { player: recipient } => shared_effect_recipient(recipient),
         EffectDef::SacrificeOfChoice { .. } => shared_sacrifice_of_choice(effect),
-        EffectDef::LookAtTopAndMayTake { .. } | EffectDef::LookAtTopAndSelect { .. } => {
+        EffectDef::LookAtTopAndSelect { .. } => {
             deferred_decision_allowed && shared_decision_effect(effect)
         }
         EffectDef::SearchZone {
@@ -278,17 +262,14 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::RemoveFromCombat { object }
         | EffectDef::DestroyAtEndOfCombat { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }
-        | EffectDef::DoesNotUntapWhileSourceTapped { object }
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
+        | EffectDef::DiscardCards { object }
         | EffectDef::ExileLinkedToSource { object }
         | EffectDef::Detain { object }
-        | EffectDef::CannotRegenerateThisTurn { object }
-        | EffectDef::MakeUnblockableThisTurn { object }
-        | EffectDef::GainControlWhileSourceRemains { object, .. }
-        | EffectDef::GainControlThisTurn { object }
+        | EffectDef::GainControl { object, .. }
         | EffectDef::AddCounters { object, .. }
         | EffectDef::Attach { object }
         | EffectDef::ChangeTextBasicLandType { object }
@@ -343,7 +324,6 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::StaticApply { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::Special(_) => false,

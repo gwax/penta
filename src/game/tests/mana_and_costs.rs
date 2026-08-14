@@ -1,6 +1,28 @@
 use super::*;
 
 #[test]
+fn generic_cost_reduction_counts_matching_cards_outside_the_battlefield() {
+    let mut game = ready_game();
+    let ghoultree = card(10_000, cards::GHOULTREE, PlayerId::One);
+    let source = ghoultree.id;
+    game.players[0].hand.push(ghoultree);
+    game.players[0].graveyard.extend([
+        card(10_001, cards::SAVANNAH_LIONS, PlayerId::One),
+        card(10_002, cards::JUGGERNAUT, PlayerId::One),
+        card(10_003, cards::SENGIR_VAMPIRE, PlayerId::One),
+    ]);
+    game.players[0]
+        .graveyard
+        .push(card(10_004, cards::BLACK_VISE, PlayerId::One));
+
+    assert_eq!(
+        game.spell_cost_reduction(cards::GHOULTREE, PlayerId::One, source),
+        3,
+        "Ghoultree reads creature cards in its controller's graveyard rather than only battlefield permanents",
+    );
+}
+
+#[test]
 fn mana_preview_uses_existing_pool_before_tapping_sources() {
     let mut game = ready_game();
     let mountain = creature(10_000, cards::MOUNTAIN, PlayerId::One);
@@ -218,7 +240,6 @@ fn iron_star_payment_can_use_untapped_mana_sources() {
 
 #[test]
 fn optional_payment_uses_its_declared_payer() {
-    static COSTS: [CostDef; 1] = [CostDef::Mana(ManaCost::new(1, 0))];
     static IF_PAID: EffectDef = EffectDef::GainLife {
         recipient: EffectRecipientDef::Controller,
         amount: ValueDef::Constant(1),
@@ -229,7 +250,10 @@ fn optional_payment_uses_its_declared_payer() {
     game.battlefield.push(mountain);
     let source = spell(10_001, cards::LIGHTNING_BOLT, PlayerId::One, 0);
     let effect = EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::Opponent, &COSTS),
+        EffectPaymentDef::mana(
+            PlayerSetDef::Related(PlayerRelation::Opponent),
+            ManaCost::new(1, 0),
+        ),
         &IF_PAID,
     ));
 
@@ -261,14 +285,55 @@ fn optional_payment_uses_its_declared_payer() {
 }
 
 #[test]
+fn optional_life_payment_is_private_and_resumes_the_paid_branch() {
+    static IF_PAID: EffectDef = EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    };
+    let mut game = ready_game();
+    let source = spell(10_001, cards::LIGHTNING_BOLT, PlayerId::One, 0);
+    let effect = EffectDef::PayOr(PayOrDef::optional(
+        EffectPaymentDef::life(PlayerSetDef::One(PlayerRefDef::EffectController), 2),
+        &IF_PAID,
+    ));
+
+    game.resolve_effect_def(
+        ScopedEffect::primary(effect),
+        &source,
+        TriggerContext::empty(),
+    );
+    assert!(
+        game.observe(PlayerId::Two).decision.is_none(),
+        "the other seat cannot inspect a private payment choice"
+    );
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the payer receives the life-payment choice");
+    assert_eq!(decision.options[1].label, "Pay 2 life");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![1],
+        },
+    )
+    .unwrap();
+
+    assert_eq!(game.players[0].life, 21);
+}
+
+#[test]
 fn nested_choice_payment_preserves_its_binding_and_outer_sequence_tail() {
-    static COSTS: [CostDef; 1] = [CostDef::Mana(ManaCost::new(1, 0))];
     static DESTROY_CHOSEN: EffectDef = EffectDef::Destroy {
         object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
         can_regenerate: false,
     };
     static PAY_TO_DESTROY: EffectDef = EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::You, &COSTS),
+        EffectPaymentDef::mana(
+            PlayerSetDef::Related(PlayerRelation::You),
+            ManaCost::new(1, 0),
+        ),
         &DESTROY_CHOSEN,
     ));
     static CHOOSE_CREATURE: EffectDef = EffectDef::Choose(ChooseDef {

@@ -34,11 +34,10 @@ pub(super) fn stack_ability_snapshot_allowing(
     visible_rebindings: &[GameObjectId],
 ) -> Option<StackAbilitySnapshot> {
     let payload = object.ability.as_ref()?;
-    if trigger_capture_has_unrebindable_hidden_reference_except(
+    if stack_payload_has_unrebindable_hidden_reference_except(
         game,
         viewer,
-        &payload.targets,
-        &payload.context,
+        payload,
         visible_rebindings,
     ) {
         return None;
@@ -211,12 +210,7 @@ pub(super) fn stack_object_has_unrebindable_hidden_reference(
     object: &StackObject,
 ) -> bool {
     object.ability.as_ref().is_some_and(|payload| {
-        trigger_capture_has_unrebindable_hidden_reference(
-            game,
-            viewer,
-            &payload.targets,
-            &payload.context,
-        )
+        stack_payload_has_unrebindable_hidden_reference_except(game, viewer, payload, &[])
     })
 }
 
@@ -232,12 +226,42 @@ pub(super) fn referenced_object_ids(object: &StackObject) -> impl Iterator<Item 
     );
     if let Some(payload) = &object.ability {
         ids.extend(resolution_context_referenced_object_ids(&payload.context));
-        ids.extend(target_selections_referenced_object_ids(&payload.targets));
-    }
-    if let Some(signature) = &object.signature {
-        ids.extend(target_selections_referenced_object_ids(signature.targets()));
+        ids.extend(lexical_target_referenced_object_ids(payload));
     }
     ids.into_iter()
+}
+
+/// Target selections with a declared slot are ordinary targets: once their
+/// object changes zones, the id is deliberately left dangling so legality
+/// makes the spell or ability fizzle. Extra selections without a declared
+/// slot are captured lexical state (for example a delayed follow-up referring
+/// to an earlier target), so they still require hidden rebinding and LKI.
+fn lexical_target_referenced_object_ids(payload: &StackAbilityPayload) -> Vec<GameObjectId> {
+    payload
+        .targets
+        .iter()
+        .filter(|selection| payload.target_defs.get(selection.slot().index()).is_none())
+        .flat_map(|selection| selection.targets())
+        .filter_map(|target| match target {
+            Target::Player(_) => None,
+            Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
+        })
+        .collect()
+}
+
+fn stack_payload_has_unrebindable_hidden_reference_except(
+    game: &Game,
+    viewer: PlayerId,
+    payload: &StackAbilityPayload,
+    visible_rebindings: &[GameObjectId],
+) -> bool {
+    lexical_target_referenced_object_ids(payload)
+        .into_iter()
+        .chain(resolution_context_referenced_object_ids(&payload.context))
+        .any(|object| {
+            object_reference_requires_hidden_rebinding(game, viewer, object)
+                && !visible_rebindings.contains(&object)
+        })
 }
 
 pub(super) fn target_selections_referenced_object_ids(

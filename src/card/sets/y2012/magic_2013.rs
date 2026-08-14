@@ -6,15 +6,16 @@ use crate::card::sets::{
 };
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, ComparisonDef, CounterKind, DamageEventMatcherDef,
-    DamagePreventionDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectExecutionDef,
-    EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRefDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
+    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
+    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
+    DiscardSelectionDef, DividedTotal, EffectDef, EffectExecutionDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // M13 1 — Ajani, Caller of the Pride
@@ -1114,7 +1115,9 @@ pub(in crate::card::sets) static TRICKS_OF_THE_TRADE: CardRecord = CardRecord::n
                             ValueDef::Constant(2),
                             ValueDef::Constant(0),
                         ),
-                        AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Any),
+                        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                            ObjectPredicateDef::Any,
+                        )),
                     ]),
                 },
             ),
@@ -1384,19 +1387,44 @@ pub(in crate::card::sets) static DISENTOMB: CardRecord = CardRecord::new(
     )),
 );
 
+static DURESS_DISCARD: EffectDef = EffectDef::DiscardCards {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+};
+
 // M13 90 — Duress
 pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new(
     cards::DURESS,
     "Duress",
     CardArt::new("f7201d43-ae2e-4faa-a508-8555079c3bc7", "Steven Belledin"),
     CardSet::Magic2013,
-    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(
-        AbilityDef::custom_full(
-            "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card.",
-            CardBehavior::Duress,
-            "Implemented by the named card-local special behavior.",
-        ),
-    ),
+    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card.",
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+            PlayerRelation::Opponent,
+        ))],
+        EffectDef::Sequence(&[
+            EffectDef::LookAtHand {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::Choose(ChooseDef {
+                binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                chooser: PlayerRefDef::EffectController,
+                candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    ]),
+                    &[ZoneKind::Hand],
+                    PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+                )),
+                exclude: None,
+                minimum: 1,
+                maximum: 1,
+                visibility: ChoiceVisibilityDef::Public,
+                then: &DURESS_DISCARD,
+            }),
+        ]),
+    )),
 );
 
 /// Mutilate scales with your Swamps, and reads the same count twice.
@@ -1479,8 +1507,12 @@ pub(in crate::card::sets) static HARBOR_BANDIT: CardRecord = CardRecord::new(
         AbilityDef::activated(
             "{1}{U}: This creature can't be blocked this turn.",
             &[AbilityCostDef::Mana(mana_cost!("{1}{U}"))],
-            EffectDef::MakeUnblockableThisTurn {
-                object: EffectRecipientDef::Source,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1667,7 +1699,7 @@ pub(in crate::card::sets) static RAVENOUS_RATS: CardRecord = CardRecord::new(
 );
 
 // M13 107 — Rise from the Grave
-// Audit: blocked — Continuous effects cannot add black color and the Zombie subtype to the reanimated target indefinitely.
+// Audit: blocked — Reanimation and permanent color/subtype changes exist, but the continuation cannot bind the newly created battlefield object to receive them.
 
 // M13 108 — Servant of Nefarox
 pub(in crate::card::sets) static SERVANT_OF_NEFAROX: CardRecord = CardRecord::new(
@@ -2180,8 +2212,9 @@ pub(in crate::card::sets) static MARK_OF_MUTINY: CardRecord = CardRecord::new(
             ObjectPredicateDef::HasType(CardType::Creature),
         )],
         EffectDef::Sequence(&[
-            EffectDef::GainControlThisTurn {
+            EffectDef::GainControl {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                duration: ControlDurationDef::UntilEndOfTurn,
             },
             EffectDef::AddCounters {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),

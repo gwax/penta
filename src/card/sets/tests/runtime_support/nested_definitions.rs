@@ -162,19 +162,10 @@ pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> b
             if_paid,
             if_declined,
         } => {
-            let EffectPaymentDef::Costs(payment) = payment else {
-                return false;
-            };
-            let payable_life = payment.costs.iter().try_fold(0_u32, |total, cost| {
-                let CostDef::PayLife(amount) = cost else {
-                    return None;
-                };
-                total.checked_add(u32::from(*amount))
-            });
-            payment.payer != PlayerRelation::Any
-                && !payment.costs.is_empty()
-                && payable_life.is_some_and(|amount| amount > 0 && i16::try_from(amount).is_ok())
-                && if_paid.iter().copied().all(shared_entry_replacement_effect)
+            !matches!(
+                payment.payer,
+                PlayerSetDef::All | PlayerSetDef::Related(PlayerRelation::Any)
+            ) && if_paid.iter().copied().all(shared_entry_replacement_effect)
                 && if_declined
                     .iter()
                     .copied()
@@ -341,6 +332,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::AddPoisonCounters { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
+        | EffectDef::DiscardCards { .. }
         | EffectDef::ShuffleLibrary { .. }
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
@@ -350,11 +342,9 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::RemoveFromCombat { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
-        | EffectDef::DoesNotUntapWhileSourceTapped { .. }
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventDamage { .. }
-        | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
         | EffectDef::Attach { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
@@ -362,7 +352,6 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::Mill { .. }
-        | EffectDef::LookAtTopAndMayTake { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
@@ -375,17 +364,12 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
-        | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
-        | EffectDef::CannotRegenerateThisTurn { .. }
-        | EffectDef::MakeUnblockableThisTurn { .. }
-        | EffectDef::GainControlWhileSourceRemains { .. }
-        | EffectDef::GainControlThisTurn { .. }
+        | EffectDef::GainControl { .. }
         | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::MoveToZone { .. }
@@ -458,21 +442,6 @@ pub(in super::super) fn assert_nested_definition_applied_effect(
             }
             assert_nested_program_abilities(card_name, ability.effect.definition);
         }
-        AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventDamage(_)
-        | AppliedEffectDef::Characteristic(_)
-        | AppliedEffectDef::Special(_) => {}
+        AppliedEffectDef::Rule(_) | AppliedEffectDef::Characteristic(_) => {}
     }
 }

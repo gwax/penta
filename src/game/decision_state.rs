@@ -1,10 +1,11 @@
 use crate::action::{ManaColor, Target};
 use crate::card::{
-    CardTypeSet, ColorSet, EffectDef, EffectPaymentDef, ManaCost, ObjectChoiceBindingDef,
-    ReplacementEffectDef, TurnKindDef, ZoneKind, ZonePlacement,
+    BattlefieldEntryScalarChoiceDef, CardTypeSet, ColorSet, EffectDef, ManaCost,
+    ObjectChoiceBindingDef, ReplacementEffectDef, TopCardSelectionDef, TurnKindDef, ZoneKind,
+    ZonePlacement,
 };
 use crate::casting::TargetSelection;
-use crate::ids::{CardDefinitionId, ChoiceIndex, GameObjectId, ObjectSetBindingIndex, PlayerId};
+use crate::ids::{CardDefinitionId, GameObjectId, ObjectSetBindingIndex, PlayerId};
 
 use super::{
     AbilitySourceRef, ApplicableReplacement, ApplicableZoneMoveReplacement, CardInstance,
@@ -24,6 +25,14 @@ pub(super) struct SacrificeFollowup {
     pub(super) object: Box<StackObject>,
     pub(super) context: EffectResolutionContext,
     pub(super) effect: ScopedEffect,
+}
+
+/// A payment whose dynamic values and payer have been frozen before a
+/// resolving effect suspends behind a decision.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum ResolvedEffectPayment {
+    Mana(ManaCost),
+    Life(u16),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -156,22 +165,6 @@ pub(super) enum DecisionContinuation {
     BasicLandTypeTextChange {
         target: Target,
     },
-    OptionalManaPayment {
-        player: PlayerId,
-        cost: ManaCost,
-        object: Box<StackObject>,
-        context: EffectResolutionContext,
-        effect: ScopedEffect,
-    },
-    /// The same offer read the other way round: declining is what makes the
-    /// effect happen.
-    ManaPaymentOrElse {
-        player: PlayerId,
-        cost: ManaCost,
-        object: Box<StackObject>,
-        context: EffectResolutionContext,
-        effect: ScopedEffect,
-    },
     ChainLightning {
         player: PlayerId,
         spell: StackObject,
@@ -188,29 +181,17 @@ pub(super) enum DecisionContinuation {
     RecallReturn {
         player: PlayerId,
     },
-    Duress {
-        victim: PlayerId,
-        cause: ZoneMoveCause,
-    },
     /// An effect the controller was offered and may decline.
     OptionalEffect {
         object: Box<StackObject>,
         context: EffectResolutionContext,
         effect: ScopedEffect,
     },
-    /// Resume a declarative effect after its controller chooses a permanent
-    /// during resolution. The choice is not a target.
-    ChoosePermanentForEffect {
-        choice: ChoiceIndex,
-        object: Box<StackObject>,
-        context: EffectResolutionContext,
-        candidates: Vec<Target>,
-        effect: ScopedEffect,
-    },
     /// A generic bounded non-targeting object choice. `candidates` is kept
     /// typed because a spell and a permanent are different objects even
     /// though both are addressed by `GameObjectId`.
     ChooseForEffect {
+        definition: ScopedEffect,
         binding: ObjectChoiceBindingDef,
         object: Box<StackObject>,
         context: EffectResolutionContext,
@@ -221,7 +202,8 @@ pub(super) enum DecisionContinuation {
     /// able to continue the same effect program.
     PayOr {
         player: PlayerId,
-        cost: ManaCost,
+        payment: ResolvedEffectPayment,
+        definition: ScopedEffect,
         object: Box<StackObject>,
         context: EffectResolutionContext,
         if_paid: Option<ScopedEffect>,
@@ -230,16 +212,15 @@ pub(super) enum DecisionContinuation {
     /// The divider has selected the first pile. The chooser still has to
     /// choose between the two typed groups before the nested effect runs.
     SplitForEffect {
+        definition: ScopedEffect,
         chooser: PlayerId,
         items: Vec<Target>,
-        chosen: ObjectSetBindingIndex,
-        unchosen: ObjectSetBindingIndex,
         object: Box<StackObject>,
         context: EffectResolutionContext,
-        effect: ScopedEffect,
     },
     /// The divider's two piles, waiting for the chooser to name one.
     ChoosePileForEffect {
+        definition: ScopedEffect,
         first: Vec<Target>,
         second: Vec<Target>,
         chosen: ObjectSetBindingIndex,
@@ -251,31 +232,6 @@ pub(super) enum DecisionContinuation {
     /// The card just drawn, offered to its controller to reveal.
     MiracleReveal {
         card: GameObjectId,
-    },
-    /// One player separating another's permanents into two piles.
-    PileSplit {
-        owner: PlayerId,
-    },
-    /// An opponent separating revealed cards into two piles. The cards have
-    /// already left the library, so the continuation must place all of them.
-    RevealedPileSplit {
-        player: PlayerId,
-        revealed: Vec<CardInstance>,
-        rest: ZoneKind,
-        placement: ZonePlacement,
-    },
-    /// The revealed piles, offered to whoever gets to keep one.
-    RevealedPileChoice {
-        player: PlayerId,
-        first: Vec<CardInstance>,
-        second: Vec<CardInstance>,
-        rest: ZoneKind,
-        placement: ZonePlacement,
-    },
-    /// The split piles, offered to whoever must give one up.
-    PileChoice {
-        first: Vec<GameObjectId>,
-        second: Vec<GameObjectId>,
     },
     /// A card-owned resolver has separated object-backed options into two
     /// piles. The shared runtime owns choice mechanics; the card owns what a
@@ -294,18 +250,6 @@ pub(super) enum DecisionContinuation {
     SacrificeOfChoice {
         followup: Option<SacrificeFollowup>,
         optional: bool,
-    },
-    /// A destruction an effect demanded, chosen by the player who controls
-    /// the candidates.
-    DestroyOfChoice {
-        can_regenerate: bool,
-    },
-    /// The spell's controller deciding whether to keep it alive.
-    CounterUnlessPaid {
-        spell: GameObjectId,
-        player: PlayerId,
-        cost: ManaCost,
-        zone: CounteredSpellZone,
     },
     /// Holds the revealed cards while the caster decides which to keep; they
     /// have already left the library, so the continuation must place them all.
@@ -343,10 +287,6 @@ pub(super) enum DecisionContinuation {
     TetravusAssemble {
         source: GameObjectId,
     },
-    /// Sin Collector and Lifebane Zombie, holding the hand they exile from.
-    ExileFromHand {
-        victim: PlayerId,
-    },
     /// Augur of Bolas holding the three cards it looked at; they have already
     /// left the library, so the continuation must place all of them.
     AugurOfBolas {
@@ -358,16 +298,23 @@ pub(super) enum DecisionContinuation {
     TopCardSelection {
         player: PlayerId,
         revealed: Vec<CardInstance>,
-        selected_zone: ZoneKind,
-        selected_placement: ZonePlacement,
-        rest_zone: ZoneKind,
-        rest_placement: ZonePlacement,
-        followup: Option<(Box<StackObject>, EffectResolutionContext, ScopedEffect)>,
+        selection: &'static TopCardSelectionDef,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        effect: ScopedEffect,
     },
     /// The affected object's controller chooses which currently applicable
     /// replacement effect to apply next.
     BattlefieldEntryReplacement {
         candidates: Vec<ApplicableReplacement>,
+    },
+    /// A replacement its controller may decline as the permanent enters. The
+    /// exact authored operation is retained so accepting resumes the same
+    /// program that was offered; checkpoint import authenticates it against
+    /// the source ability before rebuilding this continuation.
+    BattlefieldEntryOptional {
+        context: ReplacementEffectContext,
+        effect: ReplacementEffectDef,
     },
     /// A simultaneous battlefield-exit batch suspended while the affected
     /// object's controller orders two or more applicable replacement effects.
@@ -379,11 +326,13 @@ pub(super) enum DecisionContinuation {
     /// pay. The prospective event itself remains at the front of the queue.
     BattlefieldEntryPayment {
         context: ReplacementEffectContext,
-        payment: EffectPaymentDef,
-        if_paid: &'static [ReplacementEffectDef],
-        if_declined: &'static [ReplacementEffectDef],
+        player: PlayerId,
+        payment: ResolvedEffectPayment,
+        definition: ReplacementEffectDef,
     },
-    BattlefieldEntryCardName {
+    BattlefieldEntryScalarChoice {
+        context: ReplacementEffectContext,
+        choice: BattlefieldEntryScalarChoiceDef,
         choices: Vec<String>,
     },
     /// The permanents an entering copy effect could imitate, plus the option
@@ -391,9 +340,6 @@ pub(super) enum DecisionContinuation {
     BattlefieldEntryCopy {
         choices: Vec<GameObjectId>,
         added_types: CardTypeSet,
-    },
-    BattlefieldEntryCreatureType {
-        choices: Vec<String>,
     },
     TriggerOrder {
         batch: TriggerPlacementBatch,

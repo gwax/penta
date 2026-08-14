@@ -1,7 +1,7 @@
 use super::{
-    AppliedEffectDef, CharacteristicContext, CounteredSpellZone, DeclarativeAbilityDef, EffectDef,
-    EffectRecipientDef, Game, GameObjectId, StackObject, StackObjectKind, Target, ZoneKind,
-    applicable_part_ids,
+    AppliedEffectDef, AppliedRuleDef, CharacteristicContext, CounteredSpellZone,
+    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, Game, GameObjectId, StackObject,
+    StackObjectKind, Target, ZoneKind, applicable_part_ids,
 };
 
 impl Game {
@@ -78,6 +78,7 @@ impl Game {
             | EffectDef::AddPoisonCounters { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::Discard { .. }
+            | EffectDef::DiscardCards { .. }
             | EffectDef::ShuffleLibrary { .. }
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::LoseLife { .. }
@@ -85,19 +86,15 @@ impl Game {
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
             | EffectDef::RemoveFromCombat { .. }
-            | EffectDef::SetColor { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }
-            | EffectDef::DoesNotUntapWhileSourceTapped { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
-            | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
             | EffectDef::Attach { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Mill { .. }
-            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::SearchZone { .. }
@@ -113,19 +110,14 @@ impl Game {
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
-            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::Detain { .. }
-            | EffectDef::CannotRegenerateThisTurn { .. }
-            | EffectDef::MakeUnblockableThisTurn { .. }
-            | EffectDef::GainControlWhileSourceRemains { .. }
-            | EffectDef::GainControlThisTurn { .. }
+            | EffectDef::GainControl { .. }
             | EffectDef::IfCondition { .. }
             | EffectDef::InstallTrigger(_)
             | EffectDef::ReduceGenericCostBy(_)
-            | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
             | EffectDef::MoveToZone { .. }
@@ -191,10 +183,15 @@ impl Game {
     /// abilities and effects carried by mana converge here; neither changes
     /// whether the spell is a legal target.
     pub(super) fn can_be_countered(&self, object: &StackObject) -> bool {
-        !self.stack_spell_has_static_effect(object, AppliedEffectDef::CannotBeCountered)
-            && !object.applied_effects.iter().any(|applied| {
-                Self::applied_effect_contains(applied.effect, AppliedEffectDef::CannotBeCountered)
-            })
+        !self.stack_spell_has_static_effect(
+            object,
+            AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
+        ) && !object.applied_effects.iter().any(|applied| {
+            Self::applied_effect_contains(
+                applied.effect,
+                AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
+            )
+        })
     }
 
     pub(super) fn counter_spell(&mut self, id: GameObjectId) {

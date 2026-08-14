@@ -9,8 +9,10 @@ use crate::mana_cost;
 
 static IMPULSE_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     count: ValueDef::Constant(4),
+    object: None,
     minimum: 1,
     maximum: 1,
+    reveal_selected: false,
     selected_zone: ZoneKind::Hand,
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Library,

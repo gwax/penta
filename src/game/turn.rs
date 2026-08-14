@@ -12,12 +12,7 @@ mod begin_turn;
 
 impl Game {
     fn skips_turn_based_untap(&self, permanent: &super::Permanent) -> bool {
-        permanent.skipped_untap_steps > 0
-            || self.does_not_untap_during_untap_step(permanent)
-            || permanent
-                .held_tapped_by
-                .iter()
-                .any(|source| self.permanent_is_tapped(*source))
+        permanent.skipped_untap_steps > 0 || self.does_not_untap_during_untap_step(permanent)
     }
 
     /// Spends one owed untap step for each of the active player's permanents.
@@ -400,6 +395,11 @@ impl Game {
                 .expiration
                 .survives_turn_start(self.active_player, turns_started)
         });
+        self.resolved_play_restrictions.retain(|restriction| {
+            restriction
+                .expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
         for permanent in &mut self.battlefield {
             permanent.resolved_continuous_effects.retain(|effect| {
                 effect
@@ -411,7 +411,6 @@ impl Game {
         self.sorcery_flash_grants = [0; 2];
         self.turn_phase_queue.clear();
         self.turn_phase_resume = None;
-        self.noncreature_casts_locked = [false; 2];
         self.spells_cast_last_turn = self.spells_cast_this_turn;
         self.spells_cast_this_turn = [0; 2];
         self.cards_drawn_this_turn = [0; 2];
@@ -562,7 +561,8 @@ impl Game {
         // cleanup step. A later phase can still be inserted into this turn,
         // but it must not revive an expired Quicken or Aurelia's Fury effect.
         self.sorcery_flash_grants = [0; 2];
-        self.noncreature_casts_locked = [false; 2];
+        self.resolved_play_restrictions
+            .retain(|restriction| restriction.expiration.survives_cleanup());
         self.channel_active = [false; 2];
         self.miracle_window = None;
         self.damage_preventions
@@ -582,11 +582,6 @@ impl Game {
             .map(|permanent| permanent.card.id)
             .collect();
         for permanent in &mut self.battlefield {
-            permanent
-                .held_tapped_by
-                .retain(|source| still_tapped.contains(source));
-        }
-        for permanent in &mut self.battlefield {
             permanent.damage = 0;
             permanent.exile_instead_of_dying = false;
             permanent.deathtouch_damage = false;
@@ -605,11 +600,8 @@ impl Game {
             {
                 permanent.controller = owner;
             }
-            permanent.unblockable_this_turn = false;
-            permanent.cannot_block_this_turn = false;
             permanent.destroy_at_end = false;
             permanent.regeneration_shields = 0;
-            permanent.cannot_regenerate_this_turn = false;
         }
     }
 

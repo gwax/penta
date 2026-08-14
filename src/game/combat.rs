@@ -1,6 +1,6 @@
 use super::{
-    Action, AppliedEffectDef, AttackDefender, CardBehavior, CardRules, CardType,
-    CombatDamageAssignment, CombatDamageStage, CommittedTriggerEvent, ControlFlow, CounterKind,
+    Action, AppliedRuleDef, AttackDefender, CardBehavior, CardType, CombatDamageAssignment,
+    CombatDamageStage, CommittedTriggerEvent, ControlFlow, CounterKind, DeclarativeAbilityDef,
     EffectDef, Game, GameEvent, GameObjectId, KeywordAbility, Permanent, PlayerId, Target,
 };
 
@@ -79,17 +79,27 @@ impl Game {
     /// "defending player" is read as the attacker's opponent -- which is the
     /// only defending player there is in a two-player game.
     fn attack_restrictions_met(&self, permanent: &Permanent) -> bool {
-        self.effective_rules(permanent)
-            .into_iter()
-            .flat_map(CardRules::ability_clauses)
-            .filter(|ability| ability.is_executable())
-            .filter_map(|ability| match ability.declarative_effect()? {
-                EffectDef::CannotAttackUnless(query) => Some(query),
-                _ => None,
-            })
-            .all(|query| {
-                self.any_battlefield_object_matches(query, permanent.card.id, permanent.controller)
-            })
+        let mut allowed = true;
+        let _ = self.visit_effective_abilities(permanent, |effective| {
+            if effective.ability.is_executable()
+                && matches!(
+                    effective.ability.definition,
+                    DeclarativeAbilityDef::Static(_)
+                )
+                && let Some(EffectDef::CannotAttackUnless(query)) =
+                    effective.ability.declarative_effect()
+                && !self.any_battlefield_object_matches(
+                    query,
+                    permanent.card.id,
+                    permanent.controller,
+                )
+            {
+                allowed = false;
+                return ControlFlow::Break(());
+            }
+            ControlFlow::Continue(())
+        });
+        allowed
     }
 
     pub(super) fn declare_attacker(&mut self, attacker: GameObjectId, defender: AttackDefender) {
@@ -172,9 +182,9 @@ impl Game {
     pub(super) fn blocker_may_only_block(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
         let characteristics = self.trigger_event_object(attacker);
         let mut restricted = false;
-        let _ = self.visit_static_applied_effects(blocker, |applied| {
-            if let AppliedEffectDef::CanBlockOnly(predicate) = applied.effect
-                && !self.trigger_object_matches(predicate, &characteristics, blocker.card.id, false)
+        let _ = self.visit_applied_rules(blocker, |applied| {
+            if let AppliedRuleDef::CanBlockOnly(predicate) = applied.rule
+                && !self.trigger_object_matches(predicate, &characteristics, applied.source, false)
             {
                 restricted = true;
                 return ControlFlow::Break(());
@@ -189,8 +199,8 @@ impl Game {
     pub(super) fn blocking_is_prevented(&self, attacker: &Permanent, blocker: &Permanent) -> bool {
         let characteristics = self.trigger_event_object(blocker);
         let mut prevented = false;
-        let result = self.visit_static_applied_effects(attacker, |applied| {
-            if let AppliedEffectDef::CannotBeBlockedBy(predicate) = applied.effect
+        let result = self.visit_applied_rules(attacker, |applied| {
+            if let AppliedRuleDef::CannotBeBlockedBy(predicate) = applied.rule
                 && self.trigger_object_matches(predicate, &characteristics, applied.source, false)
             {
                 prevented = true;
@@ -202,38 +212,22 @@ impl Game {
         prevented
     }
 
-    /// Whether a continuous effect currently forbids this permanent from
-    /// blocking. Asked afresh, so a turn-scoped prohibition stops applying
-    /// when it expires and a static one when its source leaves.
     /// Whether a continuous effect currently stops anything blocking this
-    /// permanent. The turn-scoped form is a flag beside it.
+    /// permanent. Asked afresh, so a resolved rule stops when its duration
+    /// expires and a static one when its source leaves.
     fn cannot_be_blocked(&self, permanent: &Permanent) -> bool {
-        self.visit_static_applied_effects(permanent, |applied| {
-            if matches!(applied.effect, AppliedEffectDef::CannotBeBlocked) {
-                ControlFlow::Break(())
-            } else {
-                ControlFlow::Continue(())
-            }
-        })
-        .is_break()
+        self.has_applied_rule(permanent, AppliedRuleDef::CannotBeBlocked)
     }
 
     /// Whether a continuous effect from anywhere forbids this creature from
     /// attacking. The printed "can't attack unless ..." clause is a separate
     /// question a creature asks about itself.
     pub(super) fn cannot_attack(&self, permanent: &Permanent) -> bool {
-        self.visit_static_applied_effects(permanent, |applied| {
-            if matches!(applied.effect, AppliedEffectDef::CannotAttack) {
-                ControlFlow::Break(())
-            } else {
-                ControlFlow::Continue(())
-            }
-        })
-        .is_break()
+        self.has_applied_rule(permanent, AppliedRuleDef::CannotAttack)
     }
 
     pub(super) fn cannot_block(&self, permanent: &Permanent) -> bool {
-        if permanent.cannot_block_this_turn || permanent.detained_until_turn_of.is_some() {
+        if permanent.detained_until_turn_of.is_some() {
             return true;
         }
         // Unleash: the counter is what stops it blocking, so a creature that
@@ -244,14 +238,7 @@ impl Game {
         {
             return true;
         }
-        self.visit_static_applied_effects(permanent, |applied| {
-            if matches!(applied.effect, AppliedEffectDef::CannotBlock) {
-                ControlFlow::Break(())
-            } else {
-                ControlFlow::Continue(())
-            }
-        })
-        .is_break()
+        self.has_applied_rule(permanent, AppliedRuleDef::CannotBlock)
     }
 
     pub(super) fn blocker_actions(&self, player: PlayerId) -> Vec<Action> {
@@ -311,7 +298,6 @@ impl Game {
                             .zip(self.permanent_colors(blocker_permanent))
                             .any(|(attacker, blocker)| attacker && blocker);
                         let can_block = !(*unblockable
-                            || attacker_permanent.unblockable_this_turn
                             || self.cannot_be_blocked(attacker_permanent)
                             || self.blocking_is_prevented(attacker_permanent, blocker_permanent)
                             || self.blocker_may_only_block(blocker_permanent, attacker_permanent)

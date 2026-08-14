@@ -229,6 +229,24 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "triggered mana ability {ability:?} on part {part:?} of card definition {definition:?} cannot resolve its program immediately"
             ),
+            Self::UnsupportedResolvingAppliedEffect {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses a resolving applied effect that cannot be stored on its recipient"
+            ),
+            Self::UnsupportedAbilityEffectProgramContext {
+                definition,
+                part,
+                ability,
+                context,
+                operation,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {operation} in a {context} effect program, where that operation is not interpreted"
+            ),
             Self::TooManyAbilityTargets {
                 definition,
                 part,
@@ -259,6 +277,56 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "ability {ability:?} on part {part:?} of card definition {definition:?} references target {target:?}, but defines only {target_count} target slots"
             ),
+            Self::AbilityTargetReferenceKindMismatch {
+                definition,
+                part,
+                ability,
+                target,
+                predicate,
+                expected,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} references target {target:?} as an {expected:?}, but its predicate is {predicate:?}"
+            ),
+            Self::AbilityTargetReferenceRequiresSingular {
+                definition,
+                part,
+                ability,
+                target,
+                maximum,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} reads one value from target {target:?}, but that slot allows up to {maximum} targets"
+            ),
+            Self::AbilityEffectRecipientKindMismatch {
+                definition,
+                part,
+                ability,
+                recipient,
+                expected,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {recipient:?} where the effect requires an {expected:?} recipient"
+            ),
+            Self::InvalidAbilityScalarChoice {
+                definition,
+                part,
+                ability,
+                list,
+                destination,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} stores a {list:?} choice in the incompatible {destination:?} destination"
+            ),
+            Self::UnsupportedStaticAbilityPlayerRecipient {
+                definition,
+                part,
+                ability,
+                recipient,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {recipient:?} for a static player rule, but it cannot be resolved from the static source"
+            ),
             Self::InvalidAbilityObjectChoiceBounds {
                 definition,
                 part,
@@ -279,6 +347,15 @@ impl fmt::Display for CatalogError {
             } => write!(
                 formatter,
                 "ability {ability:?} on part {part:?} of card definition {definition:?} uses {players:?} for pile {role}, but that role must select at most one player"
+            ),
+            Self::InvalidAbilityPaymentPayer {
+                definition,
+                part,
+                ability,
+                players,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {players:?} for an effect payment, but a payment must select at most one player"
             ),
             Self::AbilityObjectBindingReferenceOutOfScope {
                 definition,

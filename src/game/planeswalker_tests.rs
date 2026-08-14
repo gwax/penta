@@ -386,7 +386,19 @@ fn domri_plus_one_reveals_a_top_creature_but_not_a_noncreature() {
 
     activate_loyalty(&mut game, walker_id, cards::DOMRI_RADE, 0, Vec::new());
     pass_priority_pair(&mut game);
-    assert!(game.pending_decisions.is_empty());
+    let decision = game
+        .pending_decisions
+        .first()
+        .expect("the private inspection remains visible to Domri's controller");
+    assert_eq!(
+        (decision.observation.minimum, decision.observation.maximum),
+        (0, 0)
+    );
+    assert_eq!(
+        decision.observation.options[0].members,
+        vec![(GameObjectId(21_000), cards::MOUNTAIN)],
+    );
+    choose_cards(&mut game, PlayerId::One, &[]);
     assert!(game.players[PlayerId::One.index()].hand.is_empty());
     assert_eq!(game.players[PlayerId::One.index()].library.len(), 1);
 }

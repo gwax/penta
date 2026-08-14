@@ -1,8 +1,9 @@
 use super::runtime_support::*;
 use super::*;
-use crate::card::{InstalledTriggerDef, PartitionItemsDef, SplitIntoPilesDef};
+use crate::card::{AppliedRuleDef, InstalledTriggerDef, PartitionItemsDef, SplitIntoPilesDef};
 use crate::{
-    CostDef, DamageEventMatcherDef, ObjectSetBindingIndex, PaymentDef, ZoneChangeEventMatcherDef,
+    BattlefieldEntryModificationDef, CounterKind, DamageEventMatcherDef, ObjectSetBindingIndex,
+    ReplacementConditionDef, ZoneChangeEventMatcherDef,
 };
 
 #[test]
@@ -156,44 +157,44 @@ fn assert_stack_effect_support(effects: &[EffectDef], expected: bool) {
     }
 }
 
-fn assert_unsupported_optional_payments(tap: &'static EffectDef) {
-    static ONE_MANA: [CostDef; 1] = [CostDef::Mana(ManaCost::new(1, 0))];
-    static ONE_LIFE: [CostDef; 1] = [CostDef::PayLife(1)];
-    static TWO_MANA_PAYMENTS: [CostDef; 2] = [
-        CostDef::Mana(ManaCost::new(1, 0)),
-        CostDef::Mana(ManaCost::new(1, 0)),
-    ];
-
+fn assert_optional_payment_boundaries(tap: &'static EffectDef) {
     let any_payer = EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::Any, &ONE_MANA),
+        EffectPaymentDef::mana(
+            PlayerSetDef::Related(PlayerRelation::Any),
+            ManaCost::new(1, 0),
+        ),
         tap,
     ));
     let chosen_payer = EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::ChosenPlayer, &ONE_MANA),
+        EffectPaymentDef::mana(
+            PlayerSetDef::Related(PlayerRelation::ChosenPlayer),
+            ManaCost::new(1, 0),
+        ),
         tap,
     ));
     let event_payer = EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::EventPlayer, &ONE_MANA),
+        EffectPaymentDef::mana(
+            PlayerSetDef::Related(PlayerRelation::EventPlayer),
+            ManaCost::new(1, 0),
+        ),
         tap,
     ));
     let life_payment = EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::You, &ONE_LIFE),
+        EffectPaymentDef::life(PlayerSetDef::Related(PlayerRelation::You), 1),
         tap,
     ));
-    let multiple_mana_payments = EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::You, &TWO_MANA_PAYMENTS),
+    let dynamic_mana = EffectDef::PayOr(PayOrDef::optional(
+        EffectPaymentDef::generic_mana(
+            PlayerSetDef::Related(PlayerRelation::You),
+            ValueDef::Constant(1),
+        ),
         tap,
     ));
 
+    assert_stack_effect_support(&[any_payer], false);
     assert_stack_effect_support(
-        &[
-            any_payer,
-            chosen_payer,
-            event_payer,
-            life_payment,
-            multiple_mana_payments,
-        ],
-        false,
+        &[chosen_payer, event_payer, life_payment, dynamic_mana],
+        true,
     );
 }
 
@@ -212,7 +213,10 @@ fn decision_effects_suspend_inside_shared_stack_sequences() {
         effect: &TAP,
     };
     static OPTIONAL_TAP: EffectDef = EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(ManaCost::new(1, 0))]),
+        EffectPaymentDef::mana(
+            PlayerSetDef::Related(PlayerRelation::You),
+            ManaCost::new(1, 0),
+        ),
         &TAP,
     ));
     static SOURCE_PRESENT: TriggerConditionDef = TriggerConditionDef::SourceOnBattlefield;
@@ -266,7 +270,7 @@ fn decision_effects_suspend_inside_shared_stack_sequences() {
         ],
         true,
     );
-    assert_unsupported_optional_payments(&TAP);
+    assert_optional_payment_boundaries(&TAP);
 }
 
 #[test]
@@ -354,7 +358,7 @@ fn zone_search_boundary_rejects_ambiguous_or_incoherent_shapes() {
 fn static_conditions_require_only_source_battlefield_state() {
     static APPLIED: EffectDef = EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::CannotBeEnchanted,
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeEnchanted),
     };
     static SOURCE_UNTAPPED: TriggerConditionDef = TriggerConditionDef::SourceUntapped;
     static TARGET_MATCHES: TriggerConditionDef = TriggerConditionDef::TargetMatches {
@@ -397,6 +401,22 @@ fn replacement_perform_stays_coupled_to_its_prospective_event() {
 }
 
 #[test]
+fn conditional_source_entry_replacements_stay_within_the_shared_runtime_boundary() {
+    let ability = AbilityDef::as_enters_if(
+        "This creature enters with a counter on it if a creature died this turn.",
+        ReplacementConditionDef::CreatureDiedThisTurn,
+        ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::AddCounters {
+                kind: CounterKind::PlusOnePlusOne,
+                amount: 1,
+            },
+        ),
+    );
+
+    assert!(shared_definition_ability(&ability));
+}
+
+#[test]
 #[should_panic(expected = "nested shared declarative ability outside the shared runtime boundary")]
 fn nested_definition_assertions_descend_replacement_programs() {
     static UNSUPPORTED: AbilityDef = AbilityDef::static_ability(
@@ -417,10 +437,11 @@ fn nested_definition_assertions_descend_replacement_programs() {
 
 #[test]
 fn composite_uncounterability_stays_within_the_shared_runtime_boundary() {
-    static CANNOT_BE_COUNTERED: [AppliedEffectDef; 1] = [AppliedEffectDef::CannotBeCountered];
+    static CANNOT_BE_COUNTERED: [AppliedEffectDef; 1] =
+        [AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered)];
     static MIXED: [AppliedEffectDef; 2] = [
-        AppliedEffectDef::CannotBeCountered,
-        AppliedEffectDef::Special("unsupported"),
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
     ];
     static RIDERS: [ManaSpendEffectDef; 1] = [ManaSpendEffectDef::ApplyToPaidSpell(
         AppliedEffectDef::Composite(&CANNOT_BE_COUNTERED),
@@ -581,5 +602,29 @@ fn long_lived_composite_ability_changes_accept_shared_activated_grants() {
         recipient,
         AppliedEffectDef::Composite(&CHANGES),
         ResolvedEffectDurationDef::Permanent,
+    ));
+}
+
+#[test]
+fn source_tapped_duration_accepts_only_supported_recursive_leaves() {
+    static SUPPORTED: [AppliedEffectDef; 2] = [
+        AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+        AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+    ];
+    static UNSUPPORTED: [AppliedEffectDef; 2] = [
+        AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+    ];
+    let recipient = EffectRecipientDef::Target(TargetIndex::PRIMARY);
+
+    assert!(shared_resolving_apply(
+        recipient,
+        AppliedEffectDef::Composite(&SUPPORTED),
+        ResolvedEffectDurationDef::WhileSourceTapped,
+    ));
+    assert!(!shared_resolving_apply(
+        recipient,
+        AppliedEffectDef::Composite(&UNSUPPORTED),
+        ResolvedEffectDurationDef::WhileSourceTapped,
     ));
 }

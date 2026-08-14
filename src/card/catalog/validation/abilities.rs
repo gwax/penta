@@ -1,10 +1,11 @@
+use super::program_context::validate_ability_effect_context;
 use super::targeting::{validate_ability_program_targets, validate_ability_trigger_event};
 use crate::card::catalog::{CatalogError, GrantedAbilityValidationError};
 use crate::card::{
     AbilityDef, AbilityOperationDef, AbilityProcedureDef, AbilityProgramDef, AppliedEffectDef,
-    CardDefinition, CharacteristicOperationDef, CostDef, DeclarativeAbilityDef, EffectDef,
-    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, ImplementationStatus, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, SpellForm, ZoneKind, ZoneMoveCauseDef,
+    CardDefinition, CharacteristicOperationDef, DeclarativeAbilityDef, EffectDef,
+    EffectExecutionDef, EffectRecipientDef, ImplementationStatus, ReplacementEffectDef,
+    ReplacementEventDef, SpellForm, ZoneKind, ZoneMoveCauseDef,
 };
 use crate::{AbilityId, AlternativeCostId, CardPartId, GrantId, ModeId};
 
@@ -206,15 +207,6 @@ fn validate_granted_abilities(
         let grant = GrantId::from_index(index)
             .expect("the containing ability's grant-site capacity was validated");
         path.push(grant);
-        if let Err(problem) = validate_ability_definition(granted) {
-            return Err(CatalogError::InvalidGrantedAbility {
-                definition: definition.id,
-                part,
-                ability: outer_ability,
-                grant_path: path.clone(),
-                problem,
-            });
-        }
         if granted.is_executable() && matches!(granted.definition, DeclarativeAbilityDef::Static(_))
         {
             return Err(CatalogError::InvalidGrantedAbility {
@@ -223,6 +215,15 @@ fn validate_granted_abilities(
                 ability: outer_ability,
                 grant_path: path.clone(),
                 problem: GrantedAbilityValidationError::ExecutableStaticAbility,
+            });
+        }
+        if let Err(problem) = validate_ability_definition(granted) {
+            return Err(CatalogError::InvalidGrantedAbility {
+                definition: definition.id,
+                part,
+                ability: outer_ability,
+                grant_path: path.clone(),
+                problem,
             });
         }
         validate_granted_abilities(definition, part, outer_ability, granted, path)?;
@@ -364,7 +365,28 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
             _ => {}
         }
     }
-    validate_ability_program_targets(targets, ability.effect.definition)?;
+    if let Err(problem) = validate_ability_effect_context(ability) {
+        return Err(
+            GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                context: problem.context,
+                operation: problem.operation,
+            },
+        );
+    }
+    let trigger_event = match ability.definition {
+        DeclarativeAbilityDef::TriggeredMana(definition)
+        | DeclarativeAbilityDef::Triggered(definition) => Some(definition.event),
+        DeclarativeAbilityDef::Spell(_)
+        | DeclarativeAbilityDef::ActivatedMana(_)
+        | DeclarativeAbilityDef::Activated(_)
+        | DeclarativeAbilityDef::Static(_)
+        | DeclarativeAbilityDef::Replacement(_)
+        | DeclarativeAbilityDef::AlternativeCast(_)
+        | DeclarativeAbilityDef::SpecialAction(_)
+        | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::Legacy => None,
+    };
+    validate_ability_program_targets(targets, ability.effect.definition, trigger_event)?;
     Ok(())
 }
 
@@ -478,13 +500,10 @@ fn validate_entry_replacement_program(effect: ReplacementEffectDef) -> Result<()
             Ok(())
         }
         ReplacementEffectDef::PayOr {
-            payment,
             if_paid,
             if_declined,
+            ..
         } => {
-            if !entry_replacement_payment_supported(payment) {
-                return Err("PayOr with unsupported payment");
-            }
             for effect in if_paid.iter().chain(if_declined.iter()) {
                 validate_entry_replacement_program(*effect)?;
             }
@@ -495,21 +514,6 @@ fn validate_entry_replacement_program(effect: ReplacementEffectDef) -> Result<()
         | ReplacementEffectDef::Perform(_)
         | ReplacementEffectDef::MultiplyEventAmount(_) => Err(replacement_operation_name(effect)),
     }
-}
-
-fn entry_replacement_payment_supported(payment: EffectPaymentDef) -> bool {
-    let EffectPaymentDef::Costs(payment) = payment else {
-        return false;
-    };
-    let payable_life = payment.costs.iter().try_fold(0_u32, |total, cost| {
-        let CostDef::PayLife(amount) = cost else {
-            return None;
-        };
-        total.checked_add(u32::from(*amount))
-    });
-    payment.payer != PlayerRelation::Any
-        && !payment.costs.is_empty()
-        && payable_life.is_some_and(|amount| amount > 0 && i16::try_from(amount).is_ok())
 }
 
 fn validate_begin_turn_replacement_program(
@@ -701,6 +705,22 @@ fn top_level_ability_error(
                 ability,
             }
         }
+        GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect => {
+            CatalogError::UnsupportedResolvingAppliedEffect {
+                definition: definition.id,
+                part,
+                ability,
+            }
+        }
+        GrantedAbilityValidationError::UnsupportedEffectProgramContext { context, operation } => {
+            CatalogError::UnsupportedAbilityEffectProgramContext {
+                definition: definition.id,
+                part,
+                ability,
+                context,
+                operation,
+            }
+        }
         GrantedAbilityValidationError::TooManyTargets { count } => {
             CatalogError::TooManyAbilityTargets {
                 definition: definition.id,
@@ -731,6 +751,54 @@ fn top_level_ability_error(
             target: *target,
             target_count: *target_count,
         },
+        GrantedAbilityValidationError::TargetReferenceKindMismatch {
+            target,
+            predicate,
+            expected,
+        } => CatalogError::AbilityTargetReferenceKindMismatch {
+            definition: definition.id,
+            part,
+            ability,
+            target: *target,
+            predicate: *predicate,
+            expected: *expected,
+        },
+        GrantedAbilityValidationError::TargetReferenceRequiresSingular { target, maximum } => {
+            CatalogError::AbilityTargetReferenceRequiresSingular {
+                definition: definition.id,
+                part,
+                ability,
+                target: *target,
+                maximum: *maximum,
+            }
+        }
+        GrantedAbilityValidationError::EffectRecipientKindMismatch {
+            recipient,
+            expected,
+        } => CatalogError::AbilityEffectRecipientKindMismatch {
+            definition: definition.id,
+            part,
+            ability,
+            recipient: *recipient,
+            expected: *expected,
+        },
+        GrantedAbilityValidationError::InvalidScalarChoice { list, destination } => {
+            CatalogError::InvalidAbilityScalarChoice {
+                definition: definition.id,
+                part,
+                ability,
+                list: *list,
+                destination: *destination,
+            }
+        }
+        GrantedAbilityValidationError::UnsupportedStaticPlayerRecipient { recipient } => {
+            CatalogError::UnsupportedStaticAbilityPlayerRecipient {
+                definition: definition.id,
+                part,
+                ability,
+                recipient: *recipient,
+            }
+        }
         GrantedAbilityValidationError::InvalidObjectChoiceBounds {
             binding,
             minimum,
@@ -749,6 +817,14 @@ fn top_level_ability_error(
                 part,
                 ability,
                 role: *role,
+                players: *players,
+            }
+        }
+        GrantedAbilityValidationError::InvalidPaymentPayer { players } => {
+            CatalogError::InvalidAbilityPaymentPayer {
+                definition: definition.id,
+                part,
+                ability,
                 players: *players,
             }
         }
@@ -860,6 +936,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::AddPoisonCounters { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
+        | EffectDef::DiscardCards { .. }
         | EffectDef::ShuffleLibrary { .. }
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
@@ -869,11 +946,9 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::RemoveFromCombat { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
-        | EffectDef::DoesNotUntapWhileSourceTapped { .. }
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventDamage { .. }
-        | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
         | EffectDef::Attach { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
@@ -881,7 +956,6 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::Mill { .. }
-        | EffectDef::LookAtTopAndMayTake { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
@@ -894,17 +968,12 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
-        | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
-        | EffectDef::CannotRegenerateThisTurn { .. }
-        | EffectDef::MakeUnblockableThisTurn { .. }
-        | EffectDef::GainControlWhileSourceRemains { .. }
-        | EffectDef::GainControlThisTurn { .. }
+        | EffectDef::GainControl { .. }
         | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::MoveToZone { .. }
@@ -955,22 +1024,7 @@ fn collect_applied_ability_grants(effect: AppliedEffectDef, grants: &mut Vec<&Ab
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
             AbilityOperationDef::Add(ability),
         )) => grants.push(ability),
-        AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventDamage(_)
-        | AppliedEffectDef::Characteristic(_)
-        | AppliedEffectDef::Special(_) => {}
+        AppliedEffectDef::Rule(_) | AppliedEffectDef::Characteristic(_) => {}
     }
 }
 
@@ -1030,6 +1084,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::AddPoisonCounters { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
+        | EffectDef::DiscardCards { .. }
         | EffectDef::ShuffleLibrary { .. }
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
@@ -1039,11 +1094,9 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::RemoveFromCombat { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
-        | EffectDef::DoesNotUntapWhileSourceTapped { .. }
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventDamage { .. }
-        | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
         | EffectDef::Attach { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
@@ -1051,7 +1104,6 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::Mill { .. }
-        | EffectDef::LookAtTopAndMayTake { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
@@ -1064,17 +1116,12 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
-        | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
-        | EffectDef::CannotRegenerateThisTurn { .. }
-        | EffectDef::MakeUnblockableThisTurn { .. }
-        | EffectDef::GainControlWhileSourceRemains { .. }
-        | EffectDef::GainControlThisTurn { .. }
+        | EffectDef::GainControl { .. }
         | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::MoveToZone { .. }
@@ -1123,21 +1170,6 @@ fn applied_ability_grant_sites(effect: AppliedEffectDef) -> usize {
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
             AbilityOperationDef::Add(_),
         )) => 1,
-        AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventDamage(_)
-        | AppliedEffectDef::Characteristic(_)
-        | AppliedEffectDef::Special(_) => 0,
+        AppliedEffectDef::Rule(_) | AppliedEffectDef::Characteristic(_) => 0,
     }
 }

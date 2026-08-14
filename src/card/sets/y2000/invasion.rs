@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    PlayerRelation, TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::mana_cost;
 
@@ -48,8 +49,10 @@ static OPT_DRAW: EffectDef = EffectDef::DrawCards {
 
 static OPT_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     count: ValueDef::Constant(1),
+    object: None,
     minimum: 0,
     maximum: 1,
+    reveal_selected: false,
     selected_zone: ZoneKind::Library,
     selected_placement: ZonePlacement::Bottom,
     rest_zone: ZoneKind::Library,
@@ -94,7 +97,7 @@ pub(in crate::card::sets) static TSABOS_WEB: CardRecord = CardRecord::new(
                         ObjectPredicateDef::HasType(CardType::Land),
                         ObjectPredicateDef::HasNonManaActivatedAbility,
                     ]), &[ZoneKind::Battlefield], PlayerRelation::Any),
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
     ]),

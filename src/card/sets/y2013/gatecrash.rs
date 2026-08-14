@@ -3,13 +3,15 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
-    CardRules, CardSet, CardSupertype, CardType, ComparisonDef, CostDef, CounterKind,
-    DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, DividedTotal, EffectDef,
-    EffectRecipientDef, HybridPair, InstalledTriggerDef, KeywordAbility, ManaColor, ManaCost,
-    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef, PlayerRelation, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
-    TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
+    DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef,
+    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -26,17 +28,15 @@ static EXTORT_DRAIN: EffectDef = EffectDef::Sequence(&[
         amount: ValueDef::Constant(1),
     },
 ]);
-static EXTORT_COSTS: [CostDef; 1] = [CostDef::Mana(ManaCost::hybrid_pair(
-    HybridPair::WhiteBlack,
-    1,
-))];
-
 const fn extort() -> AbilityDef {
     AbilityDef::triggered(
         "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)",
         TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
         EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(PlayerRelation::You, &EXTORT_COSTS),
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{W/B}"),
+            ),
             &EXTORT_DRAIN,
         )),
     )
@@ -1212,8 +1212,9 @@ pub(in crate::card::sets) static ACT_OF_TREASON: CardRecord = CardRecord::new(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControlThisTurn {
+                EffectDef::GainControl {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    duration: ControlDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -1310,7 +1311,7 @@ pub(in crate::card::sets) static FIREFIST_STRIKER: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::CannotBlock,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
                 duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -1454,8 +1455,9 @@ pub(in crate::card::sets) static MOLTEN_PRIMORDIAL: CardRecord = CardRecord::new
                 1,
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControlThisTurn {
+                EffectDef::GainControl {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    duration: ControlDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -1924,11 +1926,11 @@ pub(in crate::card::sets) static SPIRE_TRACER: CardRecord = CardRecord::new(
             "This creature can't be blocked except by creatures with flying or reach.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
-                    &ObjectPredicateDef::AnyOf(&[
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
                         ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
                         ObjectPredicateDef::HasKeyword(KeywordAbility::Reach),
-                    ]),
+                    ])),
                 )),
             },
         ),
@@ -2111,10 +2113,17 @@ pub(in crate::card::sets) static AURELIAS_FURY: CardRecord = CardRecord::new(
                     amount: ValueDef::DividedAmongTargets,
                 },
                 EffectDef::Tap {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    object: EffectRecipientDef::target_objects(TargetIndex::PRIMARY),
                 },
-                EffectDef::CannotCastNoncreatureSpellsThisTurn {
-                    player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::target_players(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                        PlayRestrictionDef::new(
+                            PlayActionMatcherDef::CastSpell,
+                            ObjectPredicateDef::NoncreatureSpell,
+                        ),
+                    )),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ]),
         )
@@ -2299,9 +2308,20 @@ static DOMRI_ABILITIES: [AbilityDef; 3] = [
     AbilityDef::activated(
         "+1: Look at the top card of your library. If it's a creature card, you may reveal it and put it into your hand.",
         &[AbilityCostDef::Loyalty(1)],
-        EffectDef::LookAtTopAndMayTake {
+        EffectDef::LookAtTopAndSelect {
             player: EffectRecipientDef::Controller,
-            object: ObjectPredicateDef::HasType(CardType::Creature),
+            selection: &TopCardSelectionDef {
+                count: ValueDef::Constant(1),
+                object: Some(ObjectPredicateDef::HasType(CardType::Creature)),
+                minimum: 0,
+                maximum: 1,
+                reveal_selected: true,
+                selected_zone: ZoneKind::Hand,
+                selected_placement: ZonePlacement::Top,
+                rest_zone: ZoneKind::Library,
+                rest_placement: ZonePlacement::Top,
+                then: None,
+            },
         },
     ),
     AbilityDef::activated_with_targets(
@@ -2570,7 +2590,7 @@ pub(in crate::card::sets) static HIGH_PRIEST_OF_PENANCE: CardRecord = CardRecord
 );
 
 // GTC 172 — Hydroform
-// Audit: blocked — Animation can add Elemental while retaining land subtypes, but cannot replace prior creature subtypes without also erasing the retained land subtypes.
+// Audit: blocked — Needs its target-land animation authored from the shared card-type, creature-type, power/toughness, and ability operations.
 
 // GTC 173 — Kingpin's Pet
 pub(in crate::card::sets) static KINGPINS_PET: CardRecord = CardRecord::new(
@@ -2879,7 +2899,7 @@ pub(in crate::card::sets) static SIMIC_CHARM: CardRecord = CardRecord::new(
 );
 
 // GTC 196 — Skarrg Guildmage
-// Audit: blocked — Its land animation cannot replace prior creature subtypes while retaining land subtypes; selective subtype replacement is unavailable.
+// Audit: blocked — Needs its land animation migrated to the shared card-type, creature-type, and power/toughness operations.
 
 // GTC 197 — Skyknight Legionnaire
 pub(in crate::card::sets) static SKYKNIGHT_LEGIONNAIRE: CardRecord = CardRecord::new(
@@ -3203,8 +3223,8 @@ pub(in crate::card::sets) static DEATHCULT_ROGUE: CardRecord = CardRecord::new(
             "This creature can't be blocked except by Rogues.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
-                    &ObjectPredicateDef::Subtype("Rogue"),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Rogue")),
                 )),
             },
         ),
@@ -3313,16 +3333,16 @@ pub(in crate::card::sets) static SHATTERING_BLOW: CardRecord = CardRecord::new(
 // Audit: blocked — Damage prevention cannot select only creatures currently blocking this source.
 
 // GTC 227 — Boros Keyrune
-// Audit: blocked — Animation cannot set the keyrune's red-white colors while retaining its printed mana ability and exact subtype behavior.
+// Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
 
 // GTC 228 — Dimir Keyrune
-// Audit: blocked — Animation cannot set blue-black colors while retaining printed abilities, and the temporary unblockable clause must be part of that animation.
+// Audit: blocked — Needs its characteristic animation and temporary unblockable rule authored as one end-of-turn composite.
 
 // GTC 229 — Glaring Spotlight
 // Audit: blocked — Needs a rule override that lets your effects target opposing hexproof creatures as though they lacked hexproof.
 
 // GTC 230 — Gruul Keyrune
-// Audit: blocked — Animation cannot set the keyrune's red-green colors while retaining its printed mana ability and exact subtype behavior.
+// Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
 
 // GTC 231 — Illusionist's Bracers
 // Audit: blocked — Needs the equip procedure plus copying a nonmana activated ability of the equipped creature with optional new targets.
@@ -3338,7 +3358,7 @@ pub(in crate::card::sets) static MILLENNIAL_GARGOYLE: CardRecord = CardRecord::n
 );
 
 // GTC 233 — Orzhov Keyrune
-// Audit: blocked — Animation cannot set the keyrune's white-black colors while retaining its printed mana ability and exact subtype behavior.
+// Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
 
 // GTC 234 — Prophetic Prism
 // Audit: blocked — The mana-ability procedure cannot combine a mana payment with a tap cost before choosing one of five output colors.
@@ -3369,11 +3389,13 @@ pub(in crate::card::sets) static RAZORTIP_WHIP: CardRecord = CardRecord::new(
 // Audit: blocked — Equipment attachment and the equip special action are unavailable.
 
 // GTC 237 — Simic Keyrune
-// Audit: blocked — Animation cannot set the keyrune's green-blue colors while retaining its printed mana ability and exact subtype behavior.
+// Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
 
 static SKYBLINDER_STAFF_BONUS: [AppliedEffectDef; 2] = [
     AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
-    AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::HasKeyword(KeywordAbility::Flying)),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+    )),
 ];
 
 // GTC 238 — Skyblinder Staff

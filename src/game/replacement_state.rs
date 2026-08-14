@@ -23,6 +23,7 @@ pub(super) struct ApplicableReplacement {
     pub(super) context: ReplacementEffectContext,
     pub(super) definition: CardDefinitionId,
     pub(super) text: &'static str,
+    pub(super) optional: bool,
     pub(super) effect: ReplacementEffectDef,
 }
 

@@ -2,11 +2,12 @@ use super::{CardRecord, PrintingRecord};
 use crate::Format;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardChoiceSourceDef,
-    CardRules, CardSet, CardType, ComparisonDef, CounterKind, DamageEventMatcherDef,
-    DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectRecipientDef,
-    InstalledTriggerDef, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, PayOrDef, PaymentDef, PlayerRelation, ResolvedEffectDurationDef,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
+    CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef, ControlDurationDef,
+    CounterKind, DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef,
+    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, LikelihoodDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
 };
@@ -240,7 +241,7 @@ pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord:
             "This creature doesn't untap during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::triggered(
@@ -250,9 +251,9 @@ pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord:
                 player: PlayerRelation::You,
             },
             EffectDef::PayOr(PayOrDef::optional(
-                PaymentDef::new(
-                    PlayerRelation::You,
-                    &[AbilityCostDef::Mana(mana_cost!("{U}{U}{U}"))],
+                EffectPaymentDef::mana(
+                    PlayerSetDef::Related(PlayerRelation::You),
+                    mana_cost!("{U}{U}{U}"),
                 ),
                 &EffectDef::Untap {
                     object: EffectRecipientDef::Source,
@@ -405,9 +406,9 @@ static GUARDIAN_BEAST_PROTECTION: EffectDef = EffectDef::StaticApply {
         PlayerRelation::You,
     ),
     effect: AppliedEffectDef::Composite(&[
-        AppliedEffectDef::CannotBecomeEnchanted,
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBecomeEnchanted),
         AppliedEffectDef::add_ability(&abilities::indestructible()),
-        AppliedEffectDef::CannotChangeController,
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotChangeController),
     ]),
 };
 
@@ -559,9 +560,11 @@ pub(in crate::card::sets) static ALADDIN: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Artifact),
             )],
-            EffectDef::GainControlWhileSourceRemains {
+            EffectDef::GainControl {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                while_tapped: false,
+                duration: ControlDurationDef::WhileSourceRemains {
+                    while_tapped: false,
+                },
             },
         ),
     ),
@@ -616,8 +619,10 @@ pub(in crate::card::sets) static HURR_JACKAL: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
-            EffectDef::CannotRegenerateThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotRegenerate),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -906,7 +911,7 @@ pub(in crate::card::sets) static BRASS_MAN: CardRecord = CardRecord::new(
             "This creature doesn't untap during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::triggered(
@@ -916,9 +921,9 @@ pub(in crate::card::sets) static BRASS_MAN: CardRecord = CardRecord::new(
                 player: PlayerRelation::You,
             },
             EffectDef::PayOr(PayOrDef::optional(
-                PaymentDef::new(
-                    PlayerRelation::You,
-                    &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+                EffectPaymentDef::mana(
+                    PlayerSetDef::Related(PlayerRelation::You),
+                    mana_cost!("{1}"),
                 ),
                 &EffectDef::Untap {
                     object: EffectRecipientDef::Source,
@@ -945,7 +950,12 @@ pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new(
         ),
         AbilityDef::static_ability(
             "Players can't cast spells or play lands with a name originally printed in the Arabian Nights expansion.",
-            EffectDef::PlayersCantPlay(&FROM_THE_BOTTLE),
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::EachPlayer,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                    PlayRestrictionDef::new(PlayActionMatcherDef::Any, FROM_THE_BOTTLE),
+                )),
+            },
         ),
     ]),
 );

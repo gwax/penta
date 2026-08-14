@@ -8,7 +8,9 @@ pub(super) use nested_definitions::*;
 pub(super) use stack_effects::shared_stack_effect;
 
 use crate::Game;
-use crate::card::{ActivatedAbilityDef, ReplacementConditionDef, SpellAdditionalCostDef};
+use crate::card::{
+    ActivatedAbilityDef, AppliedRuleDef, ReplacementConditionDef, SpellAdditionalCostDef,
+};
 
 use super::*;
 
@@ -80,7 +82,10 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
         }
         EffectRecipientSetDef::LegalTargets(_)
         | EffectRecipientSetDef::Objects(
-            ObjectSetDef::One(_) | ObjectSetDef::Binding(_) | ObjectSetDef::SharingNameWith(_),
+            ObjectSetDef::One(_)
+            | ObjectSetDef::Binding(_)
+            | ObjectSetDef::LegalTargets(_)
+            | ObjectSetDef::SharingNameWith(_),
         )
         | EffectRecipientSetDef::Players(_) => true,
     }
@@ -152,21 +157,10 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
                     .copied()
                     .all(shared_cannot_be_countered_effect)
         }
-        AppliedEffectDef::CannotBeCountered | AppliedEffectDef::CannotBeEnchanted => true,
-        AppliedEffectDef::Characteristic(_)
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventDamage(_)
-        | AppliedEffectDef::Special(_) => false,
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::CannotBeCountered | AppliedRuleDef::CannotBeEnchanted,
+        ) => true,
+        AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
 }
 
@@ -202,78 +196,52 @@ pub(super) fn shared_resolving_apply(
     effect: AppliedEffectDef,
     duration: ResolvedEffectDurationDef,
 ) -> bool {
-    // Stored characteristic operations share one duration-aware path. Other
-    // resolving rules modifiers still end with the turn.
-    let characteristic_change = resolving_effect_is_only_characteristic_changes(effect);
-    // "For as long as this artifact remains tapped" is recorded against its
-    // source rather than a deadline, which only power/toughness changes use.
-    let power_toughness_change = resolving_effect_is_only_power_toughness_changes(effect);
+    // "For as long as this source remains tapped" is recorded against its
+    // source rather than a deadline. Only the two effect families whose
+    // runtime readers consult that source-tapped expiration belong here.
+    let while_source_tapped = resolving_effect_supports_while_source_tapped(effect);
+    // Long-lived effects must consist entirely of leaves the permanent can
+    // store. Until-end-of-turn retains the nonbattlefield ability-grant case.
+    let long_lived = resolving_effect_supports_long_duration(effect);
     let duration_is_supported = duration == ResolvedEffectDurationDef::UntilEndOfTurn
-        || duration == ResolvedEffectDurationDef::UntilYourNextUpkeep && characteristic_change
+        || duration == ResolvedEffectDurationDef::UntilYourNextUpkeep && long_lived
         || matches!(
             duration,
             ResolvedEffectDurationDef::UntilYourNextTurn | ResolvedEffectDurationDef::Permanent
-        ) && characteristic_change
-        || duration == ResolvedEffectDurationDef::WhileSourceTapped && power_toughness_change;
+        ) && long_lived
+        || duration == ResolvedEffectDurationDef::WhileSourceTapped && while_source_tapped;
     if !duration_is_supported || !shared_effect_recipient(recipient) {
         return false;
     }
     shared_resolving_applied_effect(effect)
 }
 
-fn resolving_effect_is_only_characteristic_changes(effect: AppliedEffectDef) -> bool {
+fn resolving_effect_supports_long_duration(effect: AppliedEffectDef) -> bool {
     match effect {
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty()
                 && effects
                     .iter()
                     .copied()
-                    .all(resolving_effect_is_only_characteristic_changes)
+                    .all(resolving_effect_supports_long_duration)
         }
         AppliedEffectDef::Characteristic(_) => true,
-        AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventDamage(_)
-        | AppliedEffectDef::Special(_) => false,
+        AppliedEffectDef::Rule(rule) => rule != AppliedRuleDef::CannotBeCountered,
     }
 }
 
-fn resolving_effect_is_only_power_toughness_changes(effect: AppliedEffectDef) -> bool {
+fn resolving_effect_supports_while_source_tapped(effect: AppliedEffectDef) -> bool {
     match effect {
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty()
                 && effects
                     .iter()
                     .copied()
-                    .all(resolving_effect_is_only_power_toughness_changes)
+                    .all(resolving_effect_supports_while_source_tapped)
         }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(_)) => true,
-        AppliedEffectDef::Characteristic(_)
-        | AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::PreventDamage(_)
-        | AppliedEffectDef::Special(_) => false,
+        AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep) => true,
+        AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
 }
 
@@ -282,9 +250,6 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty() && effects.iter().copied().all(shared_resolving_applied_effect)
         }
-        // These resolving rules modifiers join stored characteristic
-        // operations: several cards print them as until-end-of-turn riders.
-        AppliedEffectDef::CannotBlock | AppliedEffectDef::CannotBeBlocked => true,
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
             AbilityOperationDef::Add(ability),
         )) => match ability.definition {
@@ -306,21 +271,10 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
             | DeclarativeAbilityDef::Legacy => false,
         },
         AppliedEffectDef::Characteristic(_) => true,
-        // The rest are continuous, not an until-end-of-turn rider a spell
-        // hands out.
-        AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventDamage(_)
-        | AppliedEffectDef::Special(_) => false,
+        // Stack-object rules use `AppliedStackEffect`; every other typed rule
+        // is stored on a permanent with this Apply's timestamp and duration.
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => false,
+        AppliedEffectDef::Rule(_) => true,
     }
 }
 
@@ -433,8 +387,12 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             return false;
         };
         return match definition.event {
-            ReplacementEventDef::SourceEntersBattlefield
-            | ReplacementEventDef::ObjectEntersBattlefield { .. } => {
+            ReplacementEventDef::SourceEntersBattlefield => {
+                battlefield_only(definition.source_zones)
+                    && shared_replacement_event(definition.event)
+                    && shared_entry_replacement_effect(effect)
+            }
+            ReplacementEventDef::ObjectEntersBattlefield { .. } => {
                 !definition.optional
                     && definition.condition.is_none()
                     && battlefield_only(definition.source_zones)
@@ -566,6 +524,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::AddPoisonCounters { .. }
                     | EffectDef::DrawCards { .. }
                     | EffectDef::Discard { .. }
+                    | EffectDef::DiscardCards { .. }
                     | EffectDef::ShuffleLibrary { .. }
                     | EffectDef::EmptyManaPool { .. }
                     | EffectDef::LoseLife { .. }
@@ -575,10 +534,8 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::RemoveFromCombat { .. }
                     | EffectDef::DestroyAtEndOfCombat { .. }
                     | EffectDef::SkipNextUntapSteps { .. }
-                    | EffectDef::DoesNotUntapWhileSourceTapped { .. }
                     | EffectDef::RemoveAllCounters { .. }
                     | EffectDef::Untap { .. }
-                    | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
                     | EffectDef::Attach { .. }
                     | EffectDef::CreateToken { .. }
                     | EffectDef::CreateTokenCopyOf { .. }
@@ -586,7 +543,6 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Sacrifice { .. }
                     | EffectDef::SacrificeOfChoice { .. }
                     | EffectDef::Mill { .. }
-                    | EffectDef::LookAtTopAndMayTake { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
                     | EffectDef::SearchZone { .. }
@@ -602,19 +558,14 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Transform { .. }
                     | EffectDef::ScheduleTurnPhases(_)
                     | EffectDef::TakeExtraTurn { .. }
-                    | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                     | EffectDef::GrantFlashToNextSorcery
                     | EffectDef::ExileLinkedToSource { .. }
                     | EffectDef::ReturnLinkedExiles { .. }
                     | EffectDef::Detain { .. }
-                    | EffectDef::CannotRegenerateThisTurn { .. }
-                    | EffectDef::MakeUnblockableThisTurn { .. }
-                    | EffectDef::GainControlWhileSourceRemains { .. }
-                    | EffectDef::GainControlThisTurn { .. }
+                    | EffectDef::GainControl { .. }
                     | EffectDef::InstallTrigger(_)
                     | EffectDef::IfCondition { .. }
                     | EffectDef::ReduceGenericCostBy(_)
-                    | EffectDef::PlayersCantPlay(_)
                     | EffectDef::LandwalkCanBeBlocked(_)
                     | EffectDef::CannotAttackUnless(_)
                     | EffectDef::MoveToZone { .. }

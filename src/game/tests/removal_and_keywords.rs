@@ -53,7 +53,7 @@ fn wrath_and_supreme_verdict_use_equivalent_declarative_creature_sweepers() {
                     ability.effect.definition,
                     AbilityProgramDef::Effects(EffectDef::StaticApply {
                         recipient: EffectRecipientDef::Source,
-                        effect: AppliedEffectDef::CannotBeCountered,
+                        effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
                     })
                 )
             }),
@@ -749,20 +749,34 @@ fn sign_in_blood_draws_two_and_costs_two_life_without_dealing_damage() {
 #[test]
 fn duress_takes_a_noncreature_nonland_card_of_the_casters_choosing() {
     let mut game = ready_game();
+    let duress = card(10_000, cards::DURESS, PlayerId::One);
+    game.players[0].hand.push(duress.clone());
+    game.players[0].mana_pool.black = 1;
     game.players[1].hand.extend([
         card(10_001, cards::SAVANNAH_LIONS, PlayerId::Two), // creature: off limits
         card(10_002, cards::MOUNTAIN, PlayerId::Two),       // land: off limits
         card(10_003, cards::LIGHTNING_BOLT, PlayerId::Two), // fair game
+        card(10_004, cards::BLACK_LOTUS, PlayerId::Two),    // fair game
     ]);
 
-    let cast = spell_with_targets(
-        10_000,
-        cards::DURESS,
+    game.apply(
         PlayerId::One,
-        vec![Target::Player(PlayerId::Two)],
-        0,
-    );
-    game.resolve_spell_effect(&cast, CardBehavior::Duress);
+        cast_action(
+            duress.id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("Duress can target the opponent");
+    pass_priority_pair(&mut game);
+
+    let seen = game
+        .observe(PlayerId::One)
+        .last_seen_hand
+        .expect("Duress reveals the complete hand to its controller");
+    assert_eq!(seen.0, PlayerId::Two);
+    assert_eq!(seen.1.len(), 4, "the observation includes excluded cards");
 
     let decision = game
         .observe(PlayerId::One)
@@ -770,13 +784,22 @@ fn duress_takes_a_noncreature_nonland_card_of_the_casters_choosing() {
         .expect("the caster chooses");
     assert_eq!(
         decision.options.len(),
-        1,
-        "only the instant is a legal choice"
+        2,
+        "both noncreature, nonland cards are legal choices"
     );
     // The hand is revealed, so the choice is public rather than hidden.
     assert_eq!(decision.visibility, DecisionVisibility::Public);
 
-    let choice = decision.options[0].id;
+    let choice = decision
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(_, definition)| definition == cards::LIGHTNING_BOLT)
+        })
+        .expect("the Bolt is a legal choice")
+        .id;
     game.apply(
         PlayerId::One,
         Action::ChooseDecision {
@@ -786,7 +809,7 @@ fn duress_takes_a_noncreature_nonland_card_of_the_casters_choosing() {
     )
     .expect("choosing the revealed card is legal");
 
-    assert_eq!(game.players[1].hand.len(), 2, "one card was discarded");
+    assert_eq!(game.players[1].hand.len(), 3, "one card was discarded");
     assert!(
         !game.players[1]
             .hand
@@ -795,6 +818,147 @@ fn duress_takes_a_noncreature_nonland_card_of_the_casters_choosing() {
         "and it was the one the caster named"
     );
     assert_eq!(game.players[1].graveyard.len(), 1);
+    assert!(game.events.iter().any(|event| matches!(
+        event,
+        GameEvent::CardsDiscarded {
+            player: PlayerId::Two,
+            cards,
+        } if cards.iter().any(|(_, definition)| *definition == cards::LIGHTNING_BOLT)
+    )));
+}
+
+#[test]
+fn duress_observes_the_hand_without_asking_when_nothing_can_be_discarded() {
+    let mut game = ready_game();
+    let duress = card(10_010, cards::DURESS, PlayerId::One);
+    game.players[0].hand.push(duress.clone());
+    game.players[0].mana_pool.black = 1;
+    game.players[1].hand.extend([
+        card(10_011, cards::SAVANNAH_LIONS, PlayerId::Two),
+        card(10_012, cards::MOUNTAIN, PlayerId::Two),
+    ]);
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            duress.id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.pending_decisions.is_empty());
+    assert_eq!(
+        game.observe(PlayerId::One)
+            .last_seen_hand
+            .expect("the full hand was still observed")
+            .1
+            .len(),
+        2
+    );
+    assert!(game.players[1].graveyard.is_empty());
+}
+
+#[test]
+fn a_thoughtseize_shaped_sequence_loses_life_after_the_generic_hand_choice() {
+    static DISCARD_CHOSEN: EffectDef = EffectDef::DiscardCards {
+        object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    };
+    static CHOOSE_NONLAND: EffectDef = EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            &[ZoneKind::Hand],
+            PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+        )),
+        exclude: None,
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
+        then: &DISCARD_CHOSEN,
+    });
+    static THOUGHTSEIZE_SHAPED: [EffectDef; 3] = [
+        EffectDef::LookAtHand {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+        CHOOSE_NONLAND,
+        EffectDef::LoseLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(2),
+        },
+    ];
+
+    let mut game = ready_game();
+    game.players[1].hand.extend([
+        card(10_001, cards::MOUNTAIN, PlayerId::Two),
+        card(10_002, cards::LIGHTNING_BOLT, PlayerId::Two),
+        card(10_003, cards::BLACK_LOTUS, PlayerId::Two),
+    ]);
+    let source = spell_with_targets(
+        10_000,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+        vec![Target::Player(PlayerId::Two)],
+        0,
+    );
+
+    game.resolve_effect_def(
+        ScopedEffect::primary(EffectDef::Sequence(&THOUGHTSEIZE_SHAPED)),
+        &source,
+        TriggerContext::empty(),
+    );
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the caster chooses a legal card from the revealed hand");
+    assert_eq!(game.players[0].life, 20, "the sequence tail is suspended");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decision.options[0].id],
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        game.players[0].life, 18,
+        "the tail resumes after discarding"
+    );
+    assert_eq!(game.players[1].graveyard.len(), 1);
+    assert_eq!(
+        game.players[1].graveyard[0].definition,
+        cards::LIGHTNING_BOLT,
+    );
+
+    let mut no_match = ready_game();
+    no_match.players[1]
+        .hand
+        .push(card(10_011, cards::MOUNTAIN, PlayerId::Two));
+    let source = spell_with_targets(
+        10_010,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+        vec![Target::Player(PlayerId::Two)],
+        0,
+    );
+    no_match.resolve_effect_def(
+        ScopedEffect::primary(EffectDef::Sequence(&THOUGHTSEIZE_SHAPED)),
+        &source,
+        TriggerContext::empty(),
+    );
+
+    assert!(no_match.pending_decisions.is_empty());
+    assert_eq!(
+        no_match.players[0].life, 18,
+        "the independent life-loss instruction still resolves when no card qualifies",
+    );
+    assert!(no_match.players[1].graveyard.is_empty());
 }
 
 #[test]

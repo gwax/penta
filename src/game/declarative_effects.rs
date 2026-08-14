@@ -1,12 +1,13 @@
 use super::{
     AbilityProcedureDef, AbilitySourceRef, AddManaEffectDef, BattlefieldArrival, CardPartId,
-    CharacteristicSource, CopiableAbility, CostDef, CounteredSpellZone, DeclarativeAbilityDef,
+    CharacteristicSource, CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef,
     DiscardSelectionDef, DrawReplacement, EffectDef, EffectResolutionContext, Game, GameResult,
     InstalledTrigger, InstalledTriggerLifetime, Mana, ManaPool, ManaSelectionDef, ManaSource,
-    Permanent, SacrificeFollowup, ScopedEffect, StackAbilityResolver, StackObject, Target,
-    TriggerCapture, ValueDef, WinReason, ZoneKind, ZoneMoveCause, public_cards,
+    Permanent, ResolvedEffectPayment, SacrificeFollowup, ScopedEffect, StackAbilityResolver,
+    StackObject, Target, TriggerCapture, ValueDef, WinReason, ZoneKind, ZoneMoveCause,
+    public_cards,
 };
-use crate::card::{EffectPaymentDef, InstalledTriggerLifetimeDef};
+use crate::card::{EffectPaymentCostDef, InstalledTriggerLifetimeDef};
 
 mod permanent_state;
 mod prevention;
@@ -49,44 +50,31 @@ impl Game {
                 self.queue_effect_choice(definition, object, context, scoped);
             }
             EffectDef::PayOr(definition) => {
-                let (player, cost) = match definition.payment {
-                    EffectPaymentDef::Costs(payment) => {
-                        let [CostDef::Mana(cost)] = payment.costs else {
-                            return;
-                        };
-                        let Some(player) =
-                            self.payment_player(object.controller, context.trigger, payment)
-                        else {
-                            return;
-                        };
-                        (player, *cost)
+                let payers =
+                    self.effect_players(definition.payment.payer, object, &context, scoped);
+                let [player] = payers.as_slice() else {
+                    if let Some(otherwise) = definition.otherwise {
+                        self.resolve_effect_def(scoped.with_effect(*otherwise), object, context);
                     }
-                    EffectPaymentDef::Mana { payer, cost } => {
-                        let Some(player) =
-                            self.effect_player_reference(payer, object, &context, scoped)
-                        else {
-                            return;
-                        };
-                        (player, cost)
-                    }
-                    EffectPaymentDef::GenericMana { payer, amount } => {
-                        let Some(player) =
-                            self.effect_player_reference(payer, object, &context, scoped)
-                        else {
-                            return;
-                        };
+                    return;
+                };
+                let payment = match definition.payment.cost {
+                    EffectPaymentCostDef::Mana(cost) => ResolvedEffectPayment::Mana(cost),
+                    EffectPaymentCostDef::GenericMana(amount) => {
                         let amount = self
                             .effect_value(amount, object, &context, scoped)
                             .max(0)
                             .try_into()
                             .unwrap_or(u16::MAX);
-                        (player, crate::ManaCost::new(amount, 0))
+                        ResolvedEffectPayment::Mana(crate::ManaCost::new(amount, 0))
                     }
+                    EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
                 };
                 self.queue_pay_or(
-                    player,
-                    cost,
+                    *player,
+                    payment,
                     definition.visibility,
+                    scoped,
                     object,
                     context,
                     definition.if_paid.map(|effect| scoped.with_effect(*effect)),
@@ -187,8 +175,7 @@ impl Game {
             }
             EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::RemoveAllCounters { .. }
-            | EffectDef::SkipNextUntapSteps { .. }
-            | EffectDef::SetColor { .. } => {
+            | EffectDef::SkipNextUntapSteps { .. } => {
                 self.resolve_permanent_state_effect(scoped, object, &context);
             }
             EffectDef::AddPoisonCounters { recipient, amount } => {
@@ -286,6 +273,28 @@ impl Game {
                     }
                 }
             }
+            EffectDef::DiscardCards { object: recipient } => {
+                let recipients = self.effect_recipients(recipient, object, &context, scoped);
+                let cause = ZoneMoveCause::Effect {
+                    controller: object.controller,
+                };
+                for player in [self.active_player, self.active_player.opponent()] {
+                    let cards = recipients
+                        .iter()
+                        .filter_map(|target| match target {
+                            Target::Card(card) => Some(*card),
+                            Target::Player(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                        })
+                        .filter(|card| {
+                            self.players[player.index()]
+                                .hand
+                                .iter()
+                                .any(|candidate| candidate.id == *card)
+                        })
+                        .collect::<Vec<_>>();
+                    self.discard_cards_with_cause(player, &cards, cause);
+                }
+            }
             EffectDef::LoseLife { recipient, amount } => {
                 let amount = self
                     .effect_value(amount, object, &context, scoped)
@@ -298,9 +307,7 @@ impl Game {
                     }
                 }
             }
-            EffectDef::Tap { .. }
-            | EffectDef::Untap { .. }
-            | EffectDef::DoesNotUntapWhileSourceTapped { .. } => {
+            EffectDef::Tap { .. } | EffectDef::Untap { .. } => {
                 self.resolve_tap_effect(scoped, object, &context);
             }
             EffectDef::RemoveFromCombat { object: recipient } => {
@@ -351,9 +358,6 @@ impl Game {
             }
             EffectDef::PreventDamage { .. } => {
                 self.resolve_prevention_effect(scoped, object, &context);
-            }
-            EffectDef::RedirectTargetDamageToSourceThisTurn { .. } => {
-                self.resolve_damage_redirect(scoped, object, &context);
             }
             EffectDef::Destroy {
                 object: recipient,
@@ -430,17 +434,6 @@ impl Game {
                     if let Target::Player(seen) = target {
                         self.last_seen_hands[object.controller.index()] =
                             Some((seen, public_cards(&self.players[seen.index()].hand)));
-                    }
-                }
-            }
-            EffectDef::LookAtTopAndMayTake {
-                player: recipient,
-                object: predicate,
-            } => {
-                let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.queue_top_card_offer(player, predicate, source);
                     }
                 }
             }
@@ -601,13 +594,6 @@ impl Game {
                     });
                 self.schedule_extra_turns(players);
             }
-            EffectDef::CannotCastNoncreatureSpellsThisTurn { player: recipient } => {
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.noncreature_casts_locked[player.index()] = true;
-                    }
-                }
-            }
             EffectDef::GrantFlashToNextSorcery => {
                 let grants = &mut self.sorcery_flash_grants[object.controller.index()];
                 *grants = grants.saturating_add(1);
@@ -654,22 +640,6 @@ impl Game {
                     self.return_exiled_card(card, zone, grant);
                 }
             }
-            EffectDef::GainControlWhileSourceRemains {
-                object: recipient,
-                while_tapped,
-            } => {
-                let source = object.source.unwrap_or(object.id);
-                self.take_control_of(
-                    recipient,
-                    object,
-                    &context,
-                    scoped,
-                    Some((source, while_tapped)),
-                );
-            }
-            EffectDef::GainControlThisTurn { object: recipient } => {
-                self.take_control_of(recipient, object, &context, scoped, None);
-            }
             EffectDef::Detain { object: recipient } => {
                 let controller = object.controller;
                 let created = self.turns_started[controller.index()];
@@ -684,29 +654,11 @@ impl Game {
                     }
                 }
             }
-            EffectDef::CannotRegenerateThisTurn { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Permanent(id) = target
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|permanent| permanent.card.id == id)
-                    {
-                        permanent.cannot_regenerate_this_turn = true;
-                    }
-                }
-            }
-            EffectDef::MakeUnblockableThisTurn { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Permanent(id) = target
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|permanent| permanent.card.id == id)
-                    {
-                        permanent.unblockable_this_turn = true;
-                    }
-                }
+            EffectDef::GainControl {
+                object: recipient,
+                duration,
+            } => {
+                self.take_control_of(recipient, object, &context, scoped, duration);
             }
             EffectDef::IfCondition { condition, then } => {
                 if self.trigger_condition_holds(
@@ -939,7 +891,6 @@ impl Game {
             })
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
-            | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
             | EffectDef::StaticApply { .. }

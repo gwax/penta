@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, cards,
+    AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, ResolvedEffectDurationDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, cards,
 };
 use crate::{PlayerRelation, TargetIndex, TurnStepDef, mana_cost};
 
@@ -71,7 +71,7 @@ pub(in crate::card::sets) static GOBLIN_SHARPSHOOTER: CardRecord = CardRecord::n
             "This creature doesn't untap during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::triggered(

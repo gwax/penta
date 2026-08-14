@@ -1,13 +1,13 @@
 use super::{
-    AbilitySourceRef, ApplicableZoneMoveReplacement, BattlefieldArrival, BattlefieldExit,
-    BattlefieldExitCompletion, CardInstance, CardPartId, CommittedTriggerEvent, CounterKind,
-    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    DeclarativeAbilityDef, EffectDef, EntryCompletion, FrozenZoneMoveReplacement, Game, GameEvent,
-    GameObjectId, KeywordAbility, PendingBattlefieldEntry, PendingBattlefieldExitBatch,
-    PendingBattlefieldExitMove, Permanent, PlayerId, ReplacementConditionDef,
-    ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef, RetiredObject,
-    ScopedEffect, StackObject, StackObjectKind, Step, Target, TargetSlotId, TriggerContext,
-    ZoneKind, ZoneMoveCauseDef, ZonePlacement, remove_card,
+    AbilitySourceRef, ApplicableZoneMoveReplacement, AppliedRuleDef, BattlefieldArrival,
+    BattlefieldExit, BattlefieldExitCompletion, CardInstance, CardPartId, CommittedTriggerEvent,
+    CounterKind, DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility,
+    DecisionZone, DeclarativeAbilityDef, EffectDef, EntryCompletion, FrozenZoneMoveReplacement,
+    Game, GameEvent, GameObjectId, KeywordAbility, PendingBattlefieldEntry,
+    PendingBattlefieldExitBatch, PendingBattlefieldExitMove, Permanent, PlayerId,
+    ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef,
+    RetiredObject, ScopedEffect, StackObject, StackObjectKind, Step, Target, TargetSlotId,
+    TriggerContext, ZoneKind, ZoneMoveCauseDef, ZonePlacement, remove_card,
 };
 
 impl Game {
@@ -168,7 +168,7 @@ impl Game {
             }
             if can_regenerate
                 && permanent.regeneration_shields > 0
-                && !permanent.cannot_regenerate_this_turn
+                && !self.has_applied_rule(permanent, AppliedRuleDef::CannotRegenerate)
             {
                 self.regenerate_permanent(id);
             } else {

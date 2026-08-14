@@ -4,13 +4,13 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::sets::y1993::alpha;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, ComparisonDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
-    DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    PayOrDef, PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardRules, CardSet,
+    CardSupertype, CardType, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
+    DamagePreventionDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef,
+    ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -765,8 +765,12 @@ pub(in crate::card::sets) static GHOSTFORM: CardRecord = CardRecord::new(
             },
             2,
         )],
-        EffectDef::MakeUnblockableThisTurn {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                ObjectPredicateDef::Any,
+            )),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -843,7 +847,9 @@ pub(in crate::card::sets) static LATCH_SEEKER: CardRecord = CardRecord::new(
             "This creature can't be blocked.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Any),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
             },
         ),
     ),
@@ -866,9 +872,9 @@ pub(in crate::card::sets) static LUNAR_MYSTIC: CardRecord = CardRecord::new(
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
             EffectDef::PayOr(PayOrDef::optional(
-                crate::card::PaymentDef::new(
-                    PlayerRelation::You,
-                    &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+                EffectPaymentDef::mana(
+                    PlayerSetDef::Related(PlayerRelation::You),
+                    mana_cost!("{1}"),
                 ),
                 &EffectDef::DrawCards {
                     recipient: EffectRecipientDef::Controller,
@@ -1009,7 +1015,9 @@ pub(in crate::card::sets) static ROTCROWN_GHOUL: CardRecord = CardRecord::new(
 /// "This creature can block only creatures with flying."
 static BLOCKS_ONLY_FLYERS: EffectDef = EffectDef::StaticApply {
     recipient: EffectRecipientDef::Source,
-    effect: AppliedEffectDef::CanBlockOnly(ObjectPredicateDef::HasKeyword(KeywordAbility::Flying)),
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(
+        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+    )),
 };
 
 // AVR 73 — Scrapskin Drake
@@ -1273,7 +1281,7 @@ pub(in crate::card::sets) static DEMONIC_TASKMASTER: CardRecord = CardRecord::ne
 // Audit: blocked — Needs each player to choose a counter-derived number of permanents and/or hand cards to exile in one resolving choice.
 
 // AVR 98 — Dread Slaver
-// Audit: blocked — The damaged-creature death event and reanimation are available, but adding black and Zombie to the returned creature's characteristics is not.
+// Audit: blocked — Reanimation and permanent color/subtype changes exist, but the continuation cannot bind the newly created battlefield object to receive them.
 
 // AVR 99 — Driver of the Dead
 pub(in crate::card::sets) static DRIVER_OF_THE_DEAD: CardRecord = CardRecord::new(
@@ -2254,8 +2262,9 @@ pub(in crate::card::sets) static ZEALOUS_CONSCRIPTS: CardRecord = CardRecord::ne
         )], // Control first: the untap and the haste are worth having only
             // on a permanent that is already yours to use.
             EffectDef::Sequence(&[
-                EffectDef::GainControlThisTurn {
+                EffectDef::GainControl {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    duration: ControlDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -2368,8 +2377,8 @@ pub(in crate::card::sets) static BOWER_PASSAGE: CardRecord = CardRecord::new(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             ),
-            effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::HasKeyword(
-                KeywordAbility::Flying,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
             )),
         },
     )),
@@ -2517,7 +2526,9 @@ pub(in crate::card::sets) static HOWLGEIST: CardRecord = CardRecord::new(
             "Creatures with power less than this creature's power can't block it.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(WEAKER_THAN_SOURCE),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    WEAKER_THAN_SOURCE,
+                )),
             },
         ),
         abilities::undying(),
@@ -2774,7 +2785,9 @@ pub(in crate::card::sets) static WANDERING_WOLF: CardRecord = CardRecord::new(
             "Creatures with power less than this creature's power can't block it.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(WEAKER_THAN_SOURCE),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    WEAKER_THAN_SOURCE,
+                )),
             },
         ),
     ]),
@@ -2856,7 +2869,7 @@ pub(in crate::card::sets) static SIGARDA_HOST_OF_HERONS: CardRecord = CardRecord
 );
 
 // AVR 211 — Angel's Tomb
-// Audit: blocked — Resolving animation cannot currently set an artifact creature's white color exactly; the animation payload only applies colors when replacing printed characteristics.
+// Audit: blocked — Needs its optional creature-entry trigger authored as one end-of-turn composite characteristic effect.
 
 // AVR 212 — Angelic Armaments
 // Audit: blocked — Needs Equipment attach actions and attachment-scoped color and subtype changes.
@@ -3020,7 +3033,7 @@ static CAVERN_COLORED_MANA_RESTRICTIONS: [ManaRestrictionDef; 1] =
 
 static CAVERN_COLORED_MANA_SPEND_EFFECTS: [ManaSpendEffectDef; 1] =
     [ManaSpendEffectDef::ApplyToPaidSpell(
-        AppliedEffectDef::CannotBeCountered,
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
     )];
 
 // AVR 226 — Cavern of Souls
@@ -3032,7 +3045,9 @@ pub(in crate::card::sets) static CAVERN_OF_SOULS: CardRecord = CardRecord::new(
     CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::replacement(
             "As this land enters, choose a creature type.",
-            ReplacementEffectDef::Choose(ReplacementChoiceDef::CreatureType),
+            ReplacementEffectDef::Choose(ReplacementChoiceDef::Scalar(
+                crate::card::BattlefieldEntryScalarChoiceDef::CREATURE_TYPE,
+            )),
         ),
         abilities::tap_for(ManaColor::Colorless),
         AbilityDef::activated_mana(

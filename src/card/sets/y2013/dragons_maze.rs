@@ -5,15 +5,17 @@ use crate::ManaCost;
 use crate::card::sets::y2012::return_to_ravnica;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus, CardPart,
-    CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet, ColorSet,
-    ComparisonDef, CostDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef,
-    DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectRecipientDef,
-    InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef,
-    PlayOptionDef, PlayerRelation, ResolvedEffectDurationDef, SpellForm, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet,
+    ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
+    CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef,
+    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayOptionDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SpellForm,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
-use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
+use crate::ids::{CardPartId, ObjectBindingIndex, PlayOptionId, TargetIndex};
 use crate::mana_cost;
 
 static MULTICOLORED: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
@@ -89,7 +91,10 @@ pub(in crate::card::sets) static HAAZDA_SNARE_SQUAD: CardRecord = CardRecord::ne
                 },
             )],
             EffectDef::PayOr(PayOrDef::optional(
-                PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{W}"))]),
+                EffectPaymentDef::mana(
+                    PlayerSetDef::Related(PlayerRelation::You),
+                    mana_cost!("{W}"),
+                ),
                 &EffectDef::Tap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },
@@ -265,8 +270,12 @@ pub(in crate::card::sets) static AETHERLING: CardRecord = CardRecord::new(
         AbilityDef::activated(
             "{U}: This creature can't be blocked this turn.",
             &[AbilityCostDef::Mana(mana_cost!("{U}"))],
-            EffectDef::MakeUnblockableThisTurn {
-                object: EffectRecipientDef::Source,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::activated(
@@ -400,7 +409,9 @@ pub(in crate::card::sets) static RUNNERS_BANE: CardRecord = CardRecord::new(
                 "Enchanted creature doesn't untap during its controller's untap step.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                    effect: AppliedEffectDef::Rule(
+                        AppliedRuleDef::DoesNotUntapDuringUntapStep,
+                    ),
                 },
             ),
         ]),
@@ -684,8 +695,9 @@ pub(in crate::card::sets) static SMELT_WARD_GATEKEEPERS: CardRecord = CardRecord
                 },
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControlThisTurn {
+                EffectDef::GainControl {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    duration: ControlDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -1052,7 +1064,7 @@ pub(in crate::card::sets) static DEPUTY_OF_ACQUITTALS: CardRecord = CardRecord::
 );
 
 // DGM 66 — Dragonshift
-// Audit: blocked — Needs composable type-changing layers so its animation preserves card types granted by earlier continuous effects while replacing creature subtypes and abilities.
+// Audit: blocked — Needs its targeted and overload programs migrated to one composite type, color, ability, power/toughness, and flying effect.
 
 static DROWN_IN_FILTH_LANDS: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::HasType(CardType::Land),
@@ -1544,6 +1556,36 @@ pub(in crate::card::sets) static SHOWSTOPPER: CardRecord = CardRecord::new(
     )),
 );
 
+static SIN_COLLECTOR_EXILE: EffectDef = EffectDef::MoveToZone {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    zone: ZoneKind::Exile,
+    placement: ZonePlacement::Top,
+    controller: None,
+};
+
+static SIN_COLLECTOR_EFFECTS: [EffectDef; 2] = [
+    EffectDef::LookAtHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Instant),
+                ObjectPredicateDef::HasType(CardType::Sorcery),
+            ]),
+            &[ZoneKind::Hand],
+            PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+        )),
+        exclude: None,
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
+        then: &SIN_COLLECTOR_EXILE,
+    }),
+];
+
 // DGM 103 — Sin Collector
 pub(in crate::card::sets) static SIN_COLLECTOR: CardRecord = CardRecord::new(
     cards::SIN_COLLECTOR,
@@ -1558,11 +1600,7 @@ pub(in crate::card::sets) static SIN_COLLECTOR: CardRecord = CardRecord::new(
     )
     .with_abilities(&[AbilityDef::triggered_with_targets("When this creature enters, target opponent reveals their hand. You choose an instant or sorcery card from it and exile that card.", TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)), &[AbilityTargetDef::exactly_one(
             AbilityTargetPredicate::Player(PlayerRelation::Opponent),
-        )], EffectDef::None)
-        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::SinCollector))
-        .with_coverage(AbilityCoverageDef::explained_complete(
-            "The targeted trigger uses the shared stack and a card-local hand-reveal and exile resolver.",
-        )),
+        )], EffectDef::Sequence(&SIN_COLLECTOR_EFFECTS)),
     ]),
 );
 

@@ -4,15 +4,16 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::sets::{y1993::alpha, y2002::onslaught};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPolicyHint, AbilityTargetDef,
-    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType,
+    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardAbilityBinding, CardArt, CardBehavior, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    ComparisonDef, ConditionalValueDef, CostDef, CounterKind, DiscardSelectionDef, DoubleFacedKind,
-    EffectDef, EffectExecutionDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PayOrDef, PaymentDef, PlayOptionDef, PlayerRelation, QuantifierDef,
-    ReplacementConditionDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, SpellForm, TargetConditionDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ComparisonDef, ConditionalValueDef, ControlDurationDef, CounterKind, DiscardSelectionDef,
+    DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayOptionDef, PlayerRelation,
+    PlayerSetDef, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, SpellAdditionalCostDef, SpellForm, TargetConditionDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -932,7 +933,7 @@ pub(in crate::card::sets) static CLAUSTROPHOBIA: CardRecord = CardRecord::new(
                 "Enchanted creature doesn't untap during its controller's untap step.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
                 },
             ),
         ]),
@@ -1028,8 +1029,10 @@ pub(in crate::card::sets) static DREAM_TWIST: CardRecord = CardRecord::new(
 
 static FORBIDDEN_ALCHEMY_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     count: ValueDef::Constant(4),
+    object: None,
     minimum: 1,
     maximum: 1,
+    reveal_selected: false,
     selected_zone: ZoneKind::Hand,
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Graveyard,
@@ -1125,7 +1128,9 @@ pub(in crate::card::sets) static INVISIBLE_STALKER: CardRecord = CardRecord::new
             "This creature can't be blocked.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Any),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
             },
         ),
     ]),
@@ -1992,7 +1997,6 @@ fn two_face_creature_composition(
     }
 }
 
-static SCREECHING_BAT_TRANSFORM_COST: [CostDef; 1] = [CostDef::Mana(mana_cost!("{2}{B}{B}"))];
 static SCREECHING_BAT_TRANSFORM: EffectDef = EffectDef::Transform {
     object: EffectRecipientDef::Source,
 };
@@ -2003,7 +2007,10 @@ static SCREECHING_BAT_UPKEEP_ABILITY: AbilityDef = AbilityDef::triggered(
         player: PlayerRelation::You,
     },
     EffectDef::PayOr(PayOrDef::optional(
-        PaymentDef::new(PlayerRelation::You, &SCREECHING_BAT_TRANSFORM_COST),
+        EffectPaymentDef::mana(
+            PlayerSetDef::Related(PlayerRelation::You),
+            mana_cost!("{2}{B}{B}"),
+        ),
         &SCREECHING_BAT_TRANSFORM,
     )),
 );
@@ -2181,7 +2188,7 @@ pub(in crate::card::sets) static VAMPIRE_INTERLOPER: CardRecord = CardRecord::ne
             "This creature can't block.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBlock,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
             },
         ),
     ]),
@@ -2377,7 +2384,7 @@ pub(in crate::card::sets) static CROSSWAY_VAMPIRE: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::CannotBlock,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
                 duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -2735,7 +2742,7 @@ pub(in crate::card::sets) static NIGHTBIRDS_CLUTCHES: CardRecord = CardRecord::n
             &CLUTCHES_TARGETS,
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::CannotBlock,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
                 duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
@@ -2978,7 +2985,9 @@ pub(in crate::card::sets) static STROMKIRK_NOBLE: CardRecord = CardRecord::new(
             "This creature can't be blocked by Humans.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Subtype("Human")),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Subtype("Human"),
+                )),
             },
         ),
         AbilityDef::triggered(
@@ -3042,8 +3051,9 @@ pub(in crate::card::sets) static TRAITOROUS_BLOOD: CardRecord = CardRecord::new(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControlThisTurn {
+                EffectDef::GainControl {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    duration: ControlDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -3906,11 +3916,11 @@ pub(in crate::card::sets) static ORCHARD_SPIRIT: CardRecord = CardRecord::new(
             "This creature can't be blocked except by creatures with flying or reach.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
-                    &ObjectPredicateDef::AnyOf(&[
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
                         ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
                         ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Reach),
-                    ]),
+                    ])),
                 )),
             },
         ),
@@ -4345,7 +4355,7 @@ pub(in crate::card::sets) static GALVANIC_JUGGERNAUT: CardRecord = CardRecord::n
             "This creature doesn't untap during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::triggered(

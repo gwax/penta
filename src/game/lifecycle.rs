@@ -172,7 +172,7 @@ impl Game {
             sorcery_flash_grants: [0; 2],
             turn_phase_queue: VecDeque::new(),
             turn_phase_resume: None,
-            noncreature_casts_locked: [false; 2],
+            resolved_play_restrictions: Vec::new(),
             emblems: Vec::new(),
             spells_cast_this_turn: [0; 2],
             spells_cast_last_turn: [0; 2],

@@ -7,8 +7,7 @@ use crate::card::{
 };
 use crate::casting::TargetSelection;
 use crate::ids::{
-    CardDefinitionId, ChoiceIndex, GameObjectId, ObjectBindingIndex, ObjectSetBindingIndex,
-    PlayerId,
+    CardDefinitionId, GameObjectId, ObjectBindingIndex, ObjectSetBindingIndex, PlayerId,
 };
 
 use super::StackAbilityResolver;
@@ -52,6 +51,7 @@ impl EffectResolutionContext {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn empty() -> Self {
         Self::new(TriggerContext::empty())
     }
@@ -86,25 +86,6 @@ impl EffectResolutionContext {
 
     pub(super) fn object_groups(&self) -> &[Vec<Target>; ObjectSetBindingIndex::COUNT] {
         &self.object_groups
-    }
-
-    /// Compatibility bridge for the current choice-bearing effect variants.
-    /// Their authored [`ChoiceIndex`] is replaced by `ObjectBindingIndex` in
-    /// the next model migration; keeping that translation here avoids mixing
-    /// the two concepts in stored resolution state.
-    pub(super) fn single_object_for_choice(&self, choice: ChoiceIndex) -> Option<Target> {
-        ObjectBindingIndex::from_index(choice.index())
-            .and_then(|binding| self.single_object(binding))
-    }
-
-    pub(super) fn bind_single_object_for_choice(
-        &mut self,
-        choice: ChoiceIndex,
-        object: Option<Target>,
-    ) {
-        if let Some(binding) = ObjectBindingIndex::from_index(choice.index()) {
-            self.bind_single_object(binding, object);
-        }
     }
 
     pub(super) fn from_bindings(

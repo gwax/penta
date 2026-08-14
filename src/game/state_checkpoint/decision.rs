@@ -1,28 +1,26 @@
 use serde_json::Value;
 
 use crate::card::{
-    CardType, CardTypeSet, ObjectChoiceBindingDef, ReplacementEventDef, TurnKindDef, ZonePlacement,
+    CardType, CardTypeSet, EffectDef, EffectPaymentCostDef, EffectPaymentDef, ReplacementChoiceDef,
+    ReplacementEventDef, TurnKindDef, ZonePlacement,
 };
-use crate::{
-    CardDefinitionId, ChoiceIndex, GameObjectId, ManaCost, ObjectBindingIndex,
-    ObjectSetBindingIndex, PlayerId,
-};
+use crate::{CardDefinitionId, GameObjectId, ManaCost, PlayerId};
 
+use super::super::decision_offers::effect_choice_visibility;
 use super::super::{
     AbilitySourceRef, ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask,
-    CounteredSpellZone, DecisionContinuation, DecisionKind, DecisionObservation, DecisionOption,
+    DecisionContinuation, DecisionKind, DecisionObservation, DecisionOption,
     DecisionOrderSemantics, DecisionPreference, DecisionVisibility, DecisionZone,
     DeferredBeginTurnEffect, PendingDecision, PendingTrigger, PileSplit, SacrificeFollowup,
     ScopedEffect, Target, TriggerPlacementBatch,
 };
 use super::model::{
-    AbilitySourceSnapshot, ApplicableBeginTurnReplacementSnapshot, BalanceActionSnapshot,
-    BalancePhaseSnapshot, BalanceTaskSnapshot, CounteredSpellZoneSnapshot,
-    DecisionCardOriginSnapshot, DecisionCardSnapshot, DecisionContinuationSnapshot,
-    DecisionOptionSnapshot, DecisionPreferenceSnapshot, DecisionStateSnapshot,
-    DecisionZoneSnapshot, DeferredBeginTurnEffectSnapshot, DetachedCardSnapshot,
-    DiscardChoiceSnapshot, EffectContinuationSnapshot, ManaCostSnapshot,
-    ObjectChoiceBindingSnapshot, PendingTriggerSnapshot, PileSplitSnapshot,
+    AbilityLocator, AbilitySourceSnapshot, ApplicableBeginTurnReplacementSnapshot,
+    BalanceActionSnapshot, BalancePhaseSnapshot, BalanceTaskSnapshot, DecisionCardOriginSnapshot,
+    DecisionCardSnapshot, DecisionContinuationSnapshot, DecisionOptionSnapshot,
+    DecisionPreferenceSnapshot, DecisionStateSnapshot, DecisionZoneSnapshot,
+    DeferredBeginTurnEffectSnapshot, DetachedCardSnapshot, DiscardChoiceSnapshot,
+    EffectContinuationSnapshot, PendingTriggerSnapshot, PileSplitSnapshot,
     ReplacementEffectContextSnapshot, ReplacementEffectLocator, TriggerPlacementBatchSnapshot,
     TurnKindSnapshot, ZoneMoveCauseSnapshot, ZonePlacementSnapshot,
 };
@@ -32,7 +30,8 @@ use option::parse_option;
 use super::procedure::{draw_replacement_snapshot_allowing, parse_draw_replacement};
 use super::semantics::{
     ability_locator, ability_target_defs, catalog_ability, catalog_replacement_effect,
-    catalog_scoped_effect, replacement_effect_locator, replacement_effects, scoped_effect_snapshot,
+    catalog_scoped_effect, replacement_effect_locator_matches_source, replacement_effects,
+    resolved_replacement_effect_locator, scoped_effect_snapshot,
 };
 use super::stack::{
     detached_stack_snapshot_allowing, effect_resolution_context_snapshot,
@@ -117,11 +116,12 @@ fn visible_decision_card_origins(
         {
             continue;
         }
-        if let Some((seat, zone)) = hidden_card_origin(game, object) {
+        if let Some((seat, zone, index)) = hidden_card_origin(game, object) {
             origins.push(DecisionCardOriginSnapshot {
                 object_id: object.0,
                 seat: seat.index(),
                 zone,
+                index,
             });
         }
     }
@@ -131,7 +131,7 @@ fn visible_decision_card_origins(
 fn hidden_card_origin(
     game: &Game,
     object: GameObjectId,
-) -> Option<(PlayerId, DecisionZoneSnapshot)> {
+) -> Option<(PlayerId, DecisionZoneSnapshot, usize)> {
     for seat in [PlayerId::One, PlayerId::Two] {
         let player = &game.players[seat.index()];
         for (zone, cards) in [
@@ -139,8 +139,8 @@ fn hidden_card_origin(
             (DecisionZoneSnapshot::Library, &player.library),
             (DecisionZoneSnapshot::OutsideGame, &player.outside_game),
         ] {
-            if cards.iter().any(|card| card.id == object) {
-                return Some((seat, zone));
+            if let Some(index) = cards.iter().position(|card| card.id == object) {
+                return Some((seat, zone, index));
             }
         }
     }
@@ -248,11 +248,6 @@ fn continuation_snapshot(
                 target: target_snapshot(*target),
             }
         }
-        DecisionContinuation::ExileFromHand { victim } => {
-            DecisionContinuationSnapshot::ExileFromHand {
-                victim: victim.index(),
-            }
-        }
         DecisionContinuation::GrislySalvage { player, revealed } => {
             DecisionContinuationSnapshot::GrislySalvage {
                 player: player.index(),
@@ -268,78 +263,22 @@ fn continuation_snapshot(
         DecisionContinuation::TopCardSelection {
             player,
             revealed,
-            selected_zone,
-            selected_placement,
-            rest_zone,
-            rest_placement,
-            followup,
+            object,
+            context,
+            effect,
+            ..
         } => DecisionContinuationSnapshot::TopCardSelection {
             player: player.index(),
             revealed: revealed.iter().map(detached_card_snapshot).collect(),
-            selected_zone: zone_kind_snapshot(*selected_zone),
-            selected_placement: zone_placement_snapshot(*selected_placement),
-            rest_zone: zone_kind_snapshot(*rest_zone),
-            rest_placement: zone_placement_snapshot(*rest_placement),
-            followup: match followup {
-                Some((object, context, effect)) => Some(effect_continuation_snapshot(
-                    game,
-                    viewer,
-                    object,
-                    context,
-                    *effect,
-                    visible_rebindings,
-                )?),
-                None => None,
-            },
+            continuation: effect_continuation_snapshot(
+                game,
+                viewer,
+                object,
+                context,
+                *effect,
+                visible_rebindings,
+            )?,
         },
-        DecisionContinuation::OptionalManaPayment {
-            player,
-            cost,
-            object,
-            context,
-            effect,
-        } => {
-            let continuation = effect_continuation_snapshot(
-                game,
-                viewer,
-                object,
-                context,
-                *effect,
-                visible_rebindings,
-            )?;
-            DecisionContinuationSnapshot::OptionalManaPayment {
-                player: player.index(),
-                cost: mana_cost_snapshot(*cost),
-                object: continuation.object,
-                ability: continuation.ability,
-                context: continuation.context,
-                effect: continuation.effect,
-            }
-        }
-        DecisionContinuation::ManaPaymentOrElse {
-            player,
-            cost,
-            object,
-            context,
-            effect,
-        } => {
-            let continuation = effect_continuation_snapshot(
-                game,
-                viewer,
-                object,
-                context,
-                *effect,
-                visible_rebindings,
-            )?;
-            DecisionContinuationSnapshot::ManaPaymentOrElse {
-                player: player.index(),
-                cost: mana_cost_snapshot(*cost),
-                object: continuation.object,
-                ability: continuation.ability,
-                context: continuation.context,
-                effect: continuation.effect,
-            }
-        }
         DecisionContinuation::ChainLightning {
             player,
             spell,
@@ -381,49 +320,33 @@ fn continuation_snapshot(
                 effect: continuation.effect,
             }
         }
-        DecisionContinuation::ChoosePermanentForEffect {
-            choice,
-            object,
-            context,
-            candidates,
-            effect,
-        } => DecisionContinuationSnapshot::ChoosePermanentForEffect {
-            choice: u8::try_from(choice.index()).ok()?,
-            continuation: effect_continuation_snapshot(
-                game,
-                viewer,
-                object,
-                context,
-                *effect,
-                visible_rebindings,
-            )?,
-            candidates: candidates.iter().copied().map(target_snapshot).collect(),
-        },
         DecisionContinuation::ChooseForEffect {
-            binding,
+            definition,
             object,
             context,
-            candidates,
-            effect,
-        } => DecisionContinuationSnapshot::ChooseForEffect {
-            binding: object_choice_binding_snapshot(*binding),
-            continuation: effect_continuation_snapshot(
-                game,
-                viewer,
-                object,
-                context,
-                *effect,
-                visible_rebindings,
-            )?,
-            candidates: candidates.iter().copied().map(target_snapshot).collect(),
-        },
+            ..
+        } => {
+            if !matches!(definition.effect, EffectDef::Choose(_)) {
+                return None;
+            }
+            DecisionContinuationSnapshot::ChooseForEffect {
+                continuation: effect_continuation_snapshot(
+                    game,
+                    viewer,
+                    object,
+                    context,
+                    *definition,
+                    visible_rebindings,
+                )?,
+            }
+        }
         DecisionContinuation::PayOr {
             player,
-            cost,
+            payment,
+            definition: scoped,
             object,
             context,
-            if_paid,
-            otherwise,
+            ..
         } => {
             if trigger_capture_has_unrebindable_hidden_reference_except(
                 game,
@@ -440,78 +363,70 @@ fn continuation_snapshot(
             let definition = catalog_ability(&game.catalog, &ability)?;
             DecisionContinuationSnapshot::PayOr {
                 player: player.index(),
-                cost: mana_cost_snapshot(*cost),
+                payment: resolved_effect_payment_snapshot(*payment),
                 object: detached_stack_snapshot_allowing(game, viewer, object, visible_rebindings)?,
                 ability,
                 context: effect_resolution_context_snapshot(context),
-                if_paid: match if_paid {
-                    Some(effect) => Some(scoped_effect_snapshot(&definition, *effect)?),
-                    None => None,
-                },
-                otherwise: match otherwise {
-                    Some(effect) => Some(scoped_effect_snapshot(&definition, *effect)?),
-                    None => None,
-                },
+                definition: scoped_effect_snapshot(&definition, *scoped)?,
             }
         }
         DecisionContinuation::SplitForEffect {
-            chooser,
-            items,
-            chosen,
-            unchosen,
+            definition,
             object,
             context,
-            effect,
-        } => DecisionContinuationSnapshot::SplitForEffect {
-            chooser: chooser.index(),
-            items: items.iter().copied().map(target_snapshot).collect(),
-            chosen: u8::try_from(chosen.index()).ok()?,
-            unchosen: u8::try_from(unchosen.index()).ok()?,
-            continuation: effect_continuation_snapshot(
-                game,
-                viewer,
-                object,
-                context,
-                *effect,
-                visible_rebindings,
-            )?,
-        },
+            ..
+        } => {
+            if !matches!(definition.effect, EffectDef::SplitIntoPiles(_)) {
+                return None;
+            }
+            DecisionContinuationSnapshot::SplitForEffect {
+                continuation: effect_continuation_snapshot(
+                    game,
+                    viewer,
+                    object,
+                    context,
+                    *definition,
+                    visible_rebindings,
+                )?,
+            }
+        }
         DecisionContinuation::ChoosePileForEffect {
+            definition,
             first,
             second,
-            chosen,
-            unchosen,
             object,
             context,
-            effect,
-        } => DecisionContinuationSnapshot::ChoosePileForEffect {
-            first: first.iter().copied().map(target_snapshot).collect(),
-            second: second.iter().copied().map(target_snapshot).collect(),
-            chosen: u8::try_from(chosen.index()).ok()?,
-            unchosen: u8::try_from(unchosen.index()).ok()?,
-            continuation: effect_continuation_snapshot(
-                game,
-                viewer,
-                object,
-                context,
-                *effect,
-                visible_rebindings,
-            )?,
-        },
+            ..
+        } => {
+            if !matches!(definition.effect, EffectDef::SplitIntoPiles(_)) {
+                return None;
+            }
+            DecisionContinuationSnapshot::ChoosePileForEffect {
+                first: first.iter().copied().map(target_snapshot).collect(),
+                second: second.iter().copied().map(target_snapshot).collect(),
+                continuation: effect_continuation_snapshot(
+                    game,
+                    viewer,
+                    object,
+                    context,
+                    *definition,
+                    visible_rebindings,
+                )?,
+            }
+        }
         DecisionContinuation::BattlefieldEntryPayment {
             context,
+            player,
             payment,
-            if_paid,
-            if_declined,
+            definition,
         } => DecisionContinuationSnapshot::BattlefieldEntryPayment {
             context: replacement_context_snapshot(*context),
-            effect: replacement_effect_locator(
+            player: player.index(),
+            payment: resolved_effect_payment_snapshot(*payment),
+            effect: resolved_replacement_effect_locator(
                 &game.catalog,
-                ReplacementEffectDef::PayOr {
-                    payment: *payment,
-                    if_paid,
-                    if_declined,
-                },
+                context.source,
+                *definition,
             )?,
         },
         DecisionContinuation::BattlefieldEntryReplacement { candidates } => {
@@ -522,16 +437,29 @@ fn continuation_snapshot(
                     .collect::<Option<Vec<_>>>()?,
             }
         }
-        DecisionContinuation::BattlefieldEntryCardName { choices } => {
-            DecisionContinuationSnapshot::BattlefieldEntryCardName {
-                choices: choices.clone(),
+        DecisionContinuation::BattlefieldEntryOptional { context, effect } => {
+            DecisionContinuationSnapshot::BattlefieldEntryOptional {
+                context: replacement_context_snapshot(*context),
+                effect: resolved_replacement_effect_locator(
+                    &game.catalog,
+                    context.source,
+                    *effect,
+                )?,
             }
         }
-        DecisionContinuation::BattlefieldEntryCreatureType { choices } => {
-            DecisionContinuationSnapshot::BattlefieldEntryCreatureType {
-                choices: choices.clone(),
-            }
-        }
+        DecisionContinuation::BattlefieldEntryScalarChoice {
+            context,
+            choice,
+            choices,
+        } => DecisionContinuationSnapshot::BattlefieldEntryScalarChoice {
+            context: replacement_context_snapshot(*context),
+            effect: resolved_replacement_effect_locator(
+                &game.catalog,
+                context.source,
+                ReplacementEffectDef::Choose(ReplacementChoiceDef::Scalar(*choice)),
+            )?,
+            choices: choices.clone(),
+        },
         DecisionContinuation::BattlefieldEntryCopy {
             choices,
             added_types,
@@ -568,39 +496,6 @@ fn continuation_snapshot(
         DecisionContinuation::MiracleReveal { card } => {
             DecisionContinuationSnapshot::MiracleReveal { card: card.0 }
         }
-        DecisionContinuation::PileSplit { owner } => DecisionContinuationSnapshot::PileSplit {
-            owner: owner.index(),
-        },
-        DecisionContinuation::RevealedPileSplit {
-            player,
-            revealed,
-            rest,
-            placement,
-        } => DecisionContinuationSnapshot::RevealedPileSplit {
-            player: player.index(),
-            revealed: revealed.iter().map(detached_card_snapshot).collect(),
-            rest: zone_kind_snapshot(*rest),
-            placement: zone_placement_snapshot(*placement),
-        },
-        DecisionContinuation::RevealedPileChoice {
-            player,
-            first,
-            second,
-            rest,
-            placement,
-        } => DecisionContinuationSnapshot::RevealedPileChoice {
-            player: player.index(),
-            first: first.iter().map(detached_card_snapshot).collect(),
-            second: second.iter().map(detached_card_snapshot).collect(),
-            rest: zone_kind_snapshot(*rest),
-            placement: zone_placement_snapshot(*placement),
-        },
-        DecisionContinuation::PileChoice { first, second } => {
-            DecisionContinuationSnapshot::PileChoice {
-                first: ids(first),
-                second: ids(second),
-            }
-        }
         DecisionContinuation::SeparateIntoPiles {
             resolving_controller,
             subject,
@@ -634,22 +529,6 @@ fn continuation_snapshot(
                 optional: *optional,
             }
         }
-        DecisionContinuation::DestroyOfChoice { can_regenerate } => {
-            DecisionContinuationSnapshot::DestroyOfChoice {
-                can_regenerate: *can_regenerate,
-            }
-        }
-        DecisionContinuation::CounterUnlessPaid {
-            spell,
-            player,
-            cost,
-            zone,
-        } => DecisionContinuationSnapshot::CounterUnlessPaid {
-            spell: spell.0,
-            player: player.index(),
-            cost: mana_cost_snapshot(*cost),
-            zone: countered_spell_zone_snapshot(*zone),
-        },
         DecisionContinuation::RecallDiscard { player } => {
             DecisionContinuationSnapshot::RecallDiscard {
                 player: player.index(),
@@ -660,10 +539,6 @@ fn continuation_snapshot(
                 player: player.index(),
             }
         }
-        DecisionContinuation::Duress { victim, cause } => DecisionContinuationSnapshot::Duress {
-            victim: victim.index(),
-            cause: cause_snapshot(*cause),
-        },
         DecisionContinuation::Balance {
             controller,
             phase,
@@ -725,9 +600,11 @@ pub(super) fn parse_pending_decision(
         return Ok(None);
     };
     let state = state.ok_or("decision continuation lacks a semantic checkpoint encoding")?;
+    let observation = parse_decision_observation(visible, &state.preference)?;
+    let continuation = parse_continuation(&state.continuation, &observation, hidden, game)?;
     Ok(Some(PendingDecision {
-        observation: parse_decision_observation(visible, &state.preference)?,
-        continuation: parse_continuation(&state.continuation, hidden, game)?,
+        observation,
+        continuation,
     }))
 }
 
@@ -772,6 +649,7 @@ fn parse_decision_observation(
 #[allow(clippy::too_many_lines)]
 fn parse_continuation(
     value: &DecisionContinuationSnapshot,
+    observation: &DecisionObservation,
     hidden: &Value,
     game: &Game,
 ) -> Result<DecisionContinuation, String> {
@@ -865,11 +743,6 @@ fn parse_continuation(
                 target: parse_target(*target),
             }
         }
-        DecisionContinuationSnapshot::ExileFromHand { victim } => {
-            DecisionContinuation::ExileFromHand {
-                victim: player(*victim)?,
-            }
-        }
         DecisionContinuationSnapshot::GrislySalvage {
             player: owner,
             revealed,
@@ -887,56 +760,49 @@ fn parse_continuation(
         DecisionContinuationSnapshot::TopCardSelection {
             player: owner,
             revealed,
-            selected_zone,
-            selected_placement,
-            rest_zone,
-            rest_placement,
-            followup,
-        } => DecisionContinuation::TopCardSelection {
-            player: player(*owner)?,
-            revealed: parse_detached_cards(revealed, game)?,
-            selected_zone: parse_zone_kind(*selected_zone),
-            selected_placement: parse_zone_placement(*selected_placement),
-            rest_zone: parse_zone_kind(*rest_zone),
-            rest_placement: parse_zone_placement(*rest_placement),
-            followup: followup
-                .as_ref()
-                .map(|snapshot| {
-                    let followup = parse_effect_continuation(snapshot, game)?;
-                    Ok::<_, String>((followup.object, followup.context, followup.effect))
-                })
-                .transpose()?,
-        },
-        DecisionContinuationSnapshot::OptionalManaPayment {
-            player: owner,
-            cost,
-            object,
-            ability,
-            context,
-            effect,
-        } => DecisionContinuation::OptionalManaPayment {
-            player: player(*owner)?,
-            cost: parse_mana_cost(cost)?,
-            object: Box::new(parse_detached_stack(object, game)?),
-            context: parse_effect_resolution_context(context.clone())?,
-            effect: catalog_scoped_effect(&game.catalog, ability, effect)
-                .ok_or("optional mana payment effect locator is absent from this catalog")?,
-        },
-        DecisionContinuationSnapshot::ManaPaymentOrElse {
-            player: owner,
-            cost,
-            object,
-            ability,
-            context,
-            effect,
-        } => DecisionContinuation::ManaPaymentOrElse {
-            player: player(*owner)?,
-            cost: parse_mana_cost(cost)?,
-            object: Box::new(parse_detached_stack(object, game)?),
-            context: parse_effect_resolution_context(context.clone())?,
-            effect: catalog_scoped_effect(&game.catalog, ability, effect)
-                .ok_or("mana-payment-or-else effect locator is absent from this catalog")?,
-        },
+            continuation,
+        } => {
+            let owner = player(*owner)?;
+            if owner != observation.player {
+                return Err("top-card selection player disagrees with the visible decision".into());
+            }
+            let continuation = parse_effect_continuation(continuation, game)?;
+            let EffectDef::LookAtTopAndSelect {
+                player: recipient,
+                selection,
+            } = continuation.effect.effect
+            else {
+                return Err("top-card selection locator is not a top-card selection".into());
+            };
+            let players = game.effect_recipients(
+                recipient,
+                &continuation.object,
+                &continuation.context,
+                continuation.effect,
+            );
+            if players.as_slice() != [Target::Player(owner)] {
+                return Err("top-card selection player disagrees with its authored effect".into());
+            }
+            let revealed = parse_detached_cards(revealed, game)?;
+            validate_top_card_selection_observation(
+                game,
+                observation,
+                owner,
+                &revealed,
+                selection,
+                &continuation.object,
+                &continuation.context,
+                continuation.effect,
+            )?;
+            DecisionContinuation::TopCardSelection {
+                player: owner,
+                revealed,
+                selection,
+                object: continuation.object,
+                context: continuation.context,
+                effect: continuation.effect,
+            }
+        }
         DecisionContinuationSnapshot::ChainLightning {
             player: owner,
             spell,
@@ -974,119 +840,248 @@ fn parse_continuation(
             effect: catalog_scoped_effect(&game.catalog, ability, effect)
                 .ok_or("optional effect locator is absent from this catalog")?,
         },
-        DecisionContinuationSnapshot::ChoosePermanentForEffect {
-            choice,
-            continuation,
-            candidates,
-        } => {
-            let continuation = parse_effect_continuation(continuation, game)?;
-            DecisionContinuation::ChoosePermanentForEffect {
-                choice: ChoiceIndex::from_index(usize::from(*choice))
-                    .ok_or("choice index is out of range")?,
-                object: continuation.object,
-                context: continuation.context,
-                candidates: candidates.iter().copied().map(parse_target).collect(),
-                effect: continuation.effect,
-            }
-        }
         DecisionContinuationSnapshot::ChooseForEffect {
-            binding,
-            continuation,
-            candidates,
+            continuation: snapshot,
         } => {
-            let continuation = parse_effect_continuation(continuation, game)?;
+            let continuation = parse_effect_continuation(snapshot, game)?;
+            if !ability_locator_matches_origin(&snapshot.ability, &continuation.object) {
+                return Err("object-choice locator disagrees with its resolving ability".into());
+            }
+            let EffectDef::Choose(definition) = continuation.effect.effect else {
+                return Err("object-choice locator does not identify an authored choice".into());
+            };
+            let state = game
+                .effect_choice_decision_state(
+                    definition,
+                    &continuation.object,
+                    &continuation.context,
+                    continuation.effect,
+                )
+                .ok_or("object-choice authored chooser is not singular")?;
+            if definition.minimum > 0 && state.candidates.len() <= definition.minimum {
+                return Err(
+                    "object-choice checkpoint encodes a choice that would resolve automatically"
+                        .into(),
+                );
+            }
+            validate_authored_decision(
+                observation,
+                state.chooser,
+                "Choose objects",
+                effect_choice_visibility(definition.visibility),
+                state.preference,
+                state.minimum,
+                state.maximum,
+                &state.options,
+                "object choice",
+            )?;
             DecisionContinuation::ChooseForEffect {
-                binding: parse_object_choice_binding(*binding)?,
+                definition: continuation.effect,
+                binding: definition.binding,
                 object: continuation.object,
                 context: continuation.context,
-                candidates: candidates.iter().copied().map(parse_target).collect(),
-                effect: continuation.effect,
+                candidates: state.candidates,
+                effect: continuation.effect.with_effect(*definition.then),
             }
         }
         DecisionContinuationSnapshot::PayOr {
             player: payer,
-            cost,
+            payment,
             object,
             ability,
             context,
-            if_paid,
-            otherwise,
-        } => DecisionContinuation::PayOr {
-            player: player(*payer)?,
-            cost: parse_mana_cost(cost)?,
-            object: Box::new(parse_detached_stack(object, game)?),
-            context: parse_effect_resolution_context(context.clone())?,
-            if_paid: if_paid
-                .as_ref()
-                .map(|effect| {
-                    catalog_scoped_effect(&game.catalog, ability, effect)
-                        .ok_or_else(|| "pay-or paid effect is absent from this catalog".to_owned())
-                })
-                .transpose()?,
-            otherwise: otherwise
-                .as_ref()
-                .map(|effect| {
-                    catalog_scoped_effect(&game.catalog, ability, effect).ok_or_else(|| {
-                        "pay-or declined effect is absent from this catalog".to_owned()
-                    })
-                })
-                .transpose()?,
-        },
-        DecisionContinuationSnapshot::SplitForEffect {
-            chooser,
-            items,
-            chosen,
-            unchosen,
-            continuation,
+            definition,
         } => {
-            let continuation = parse_effect_continuation(continuation, game)?;
+            let payer = player(*payer)?;
+            if payer != observation.player {
+                return Err("pay-or payer disagrees with the visible decision".into());
+            }
+            let payment = parse_resolved_effect_payment(payment)?;
+            let object = Box::new(parse_detached_stack(object, game)?);
+            let context = parse_effect_resolution_context(context.clone())?;
+            if !ability_locator_matches_origin(ability, &object) {
+                return Err("pay-or locator disagrees with its resolving ability".into());
+            }
+            let scoped = catalog_scoped_effect(&game.catalog, ability, definition)
+                .ok_or("pay-or locator is absent from this catalog")?;
+            let EffectDef::PayOr(authored) = scoped.effect else {
+                return Err("pay-or locator does not identify an optional payment".into());
+            };
+            let expected =
+                resolved_effect_payment(game, authored.payment, &object, &context, scoped)
+                    .ok_or("pay-or authored payment no longer has exactly one payer")?;
+            if expected != (payer, payment) {
+                return Err("pay-or payer or payment disagrees with its authored effect".into());
+            }
+            let can_pay = game.can_pay_effect_payment(payer, payment);
+            if authored.if_paid.is_none() && authored.otherwise.is_none()
+                || (!can_pay && authored.otherwise.is_some())
+            {
+                return Err(
+                    "pay-or checkpoint encodes a choice that would resolve automatically".into(),
+                );
+            }
+            let options = payment_decision_options(payment, can_pay, "Decline");
+            validate_authored_decision(
+                observation,
+                payer,
+                object.ability_text().unwrap_or("Pay the cost?"),
+                effect_choice_visibility(authored.visibility),
+                DecisionPreference::Neutral,
+                1,
+                1,
+                &options,
+                "pay-or",
+            )?;
+            DecisionContinuation::PayOr {
+                player: payer,
+                payment,
+                definition: scoped,
+                object,
+                context,
+                if_paid: authored.if_paid.map(|effect| scoped.with_effect(*effect)),
+                otherwise: authored.otherwise.map(|effect| scoped.with_effect(*effect)),
+            }
+        }
+        DecisionContinuationSnapshot::SplitForEffect {
+            continuation: snapshot,
+        } => {
+            let continuation = parse_effect_continuation(snapshot, game)?;
+            if !ability_locator_matches_origin(&snapshot.ability, &continuation.object) {
+                return Err("pile-split locator disagrees with its resolving ability".into());
+            }
+            let EffectDef::SplitIntoPiles(definition) = continuation.effect.effect else {
+                return Err("pile-split locator does not identify an authored partition".into());
+            };
+            let state = game
+                .effect_pile_split_state(
+                    definition,
+                    &continuation.object,
+                    &continuation.context,
+                    continuation.effect,
+                )
+                .ok_or("pile-split authored divider or chooser is not singular")?;
+            validate_authored_decision(
+                observation,
+                state.divider,
+                "Separate the objects into two piles",
+                DecisionVisibility::Public,
+                DecisionPreference::BalancedPartition,
+                0,
+                state.items.len(),
+                &state.options,
+                "pile split",
+            )?;
             DecisionContinuation::SplitForEffect {
-                chooser: player(*chooser)?,
-                items: items.iter().copied().map(parse_target).collect(),
-                chosen: ObjectSetBindingIndex::from_index(usize::from(*chosen))
-                    .ok_or("chosen object-set binding index is out of range")?,
-                unchosen: ObjectSetBindingIndex::from_index(usize::from(*unchosen))
-                    .ok_or("unchosen object-set binding index is out of range")?,
+                definition: continuation.effect,
+                chooser: state.chooser,
+                items: state.items,
                 object: continuation.object,
                 context: continuation.context,
-                effect: continuation.effect,
             }
         }
         DecisionContinuationSnapshot::ChoosePileForEffect {
             first,
             second,
-            chosen,
-            unchosen,
-            continuation,
+            continuation: snapshot,
         } => {
-            let continuation = parse_effect_continuation(continuation, game)?;
+            let continuation = parse_effect_continuation(snapshot, game)?;
+            if !ability_locator_matches_origin(&snapshot.ability, &continuation.object) {
+                return Err("pile-choice locator disagrees with its resolving ability".into());
+            }
+            let EffectDef::SplitIntoPiles(definition) = continuation.effect.effect else {
+                return Err("pile-choice locator does not identify an authored partition".into());
+            };
+            let authored = game
+                .effect_pile_split_state(
+                    definition,
+                    &continuation.object,
+                    &continuation.context,
+                    continuation.effect,
+                )
+                .ok_or("pile-choice authored divider or chooser is not singular")?;
+            let first = first.iter().copied().map(parse_target).collect::<Vec<_>>();
+            let second = second.iter().copied().map(parse_target).collect::<Vec<_>>();
+            validate_exact_partition(&authored.items, &first, &second)?;
+            let state =
+                game.effect_pile_choice_state(&first, &second, definition, continuation.effect);
+            validate_authored_decision(
+                observation,
+                authored.chooser,
+                "Choose a pile",
+                DecisionVisibility::Public,
+                state.preference,
+                1,
+                1,
+                &state.options,
+                "pile choice",
+            )?;
             DecisionContinuation::ChoosePileForEffect {
-                first: first.iter().copied().map(parse_target).collect(),
-                second: second.iter().copied().map(parse_target).collect(),
-                chosen: ObjectSetBindingIndex::from_index(usize::from(*chosen))
-                    .ok_or("chosen object-set binding index is out of range")?,
-                unchosen: ObjectSetBindingIndex::from_index(usize::from(*unchosen))
-                    .ok_or("unchosen object-set binding index is out of range")?,
+                definition: continuation.effect,
+                first,
+                second,
+                chosen: definition.chosen,
+                unchosen: definition.unchosen,
                 object: continuation.object,
                 context: continuation.context,
-                effect: continuation.effect,
+                effect: continuation.effect.with_effect(*definition.then),
             }
         }
-        DecisionContinuationSnapshot::BattlefieldEntryPayment { context, effect } => {
-            let ReplacementEffectDef::PayOr {
-                payment,
-                if_paid,
-                if_declined,
-            } = catalog_replacement_effect(&game.catalog, effect)
-                .ok_or("battlefield entry payment locator is absent from this catalog")?
-            else {
+        DecisionContinuationSnapshot::BattlefieldEntryPayment {
+            context,
+            player: payer,
+            payment,
+            effect,
+        } => {
+            let context = parse_replacement_context(*context)?;
+            validate_entry_decision_context(game, context, effect)?;
+            let definition = catalog_replacement_effect(&game.catalog, effect)
+                .ok_or("battlefield entry payment locator is absent from this catalog")?;
+            let ReplacementEffectDef::PayOr { .. } = definition else {
                 return Err("battlefield entry payment locator is not an optional payment".into());
             };
+            let payer = player(*payer)?;
+            let payment = parse_resolved_effect_payment(payment)?;
+            let pending = game
+                .pending_events
+                .front()
+                .ok_or("battlefield entry payment lacks its pending event")?;
+            if payer != observation.player
+                || game.pending_resolved_payment(
+                    pending,
+                    context,
+                    match definition {
+                        ReplacementEffectDef::PayOr { payment, .. } => payment,
+                        _ => unreachable!(),
+                    },
+                ) != Some((payer, payment))
+            {
+                return Err(
+                    "battlefield entry payer or payment disagrees with its authored effect".into(),
+                );
+            }
+            if !game.can_pay_effect_payment(payer, payment) {
+                return Err("battlefield entry payment is no longer payable".into());
+            }
+            let name = game.pending_entry_name(pending);
+            let payment_label = Game::effect_payment_label(payment);
+            let options = payment_decision_options(payment, true, "Do not pay");
+            validate_authored_decision(
+                observation,
+                payer,
+                &format!("{payment_label} as {name} enters the battlefield?"),
+                DecisionVisibility::Public,
+                DecisionPreference::Neutral,
+                1,
+                1,
+                &options,
+                "battlefield entry payment",
+            )?;
             DecisionContinuation::BattlefieldEntryPayment {
-                context: parse_replacement_context(*context)?,
+                context,
+                player: payer,
                 payment,
-                if_paid,
-                if_declined,
+                definition,
             }
         }
         DecisionContinuationSnapshot::BattlefieldEntryReplacement { candidates } => {
@@ -1097,13 +1092,95 @@ fn parse_continuation(
                     .collect::<Result<Vec<_>, _>>()?,
             }
         }
-        DecisionContinuationSnapshot::BattlefieldEntryCardName { choices } => {
-            DecisionContinuation::BattlefieldEntryCardName {
-                choices: choices.clone(),
+        DecisionContinuationSnapshot::BattlefieldEntryOptional { context, effect } => {
+            let context = parse_replacement_context(*context)?;
+            validate_entry_decision_context(game, context, effect)?;
+            let definition = catalog_replacement_effect(&game.catalog, effect)
+                .ok_or("optional entry replacement locator is absent from this catalog")?;
+            let pending = game
+                .pending_events
+                .front()
+                .ok_or("optional entry replacement lacks its pending event")?;
+            let mut before_selection = pending.clone();
+            before_selection
+                .applied
+                .retain(|source| *source != context.source);
+            let candidate = game
+                .applicable_replacements(&before_selection)
+                .into_iter()
+                .find(|candidate| candidate.context == context && candidate.effect == definition)
+                .ok_or("optional entry replacement is not applicable to its pending event")?;
+            if !candidate.optional {
+                return Err("optional entry replacement locator names a mandatory ability".into());
+            }
+            let owner = Game::pending_event_controller(pending);
+            let name = game.pending_entry_name(pending);
+            validate_authored_decision(
+                observation,
+                owner,
+                &format!("Apply the optional replacement for {name}?"),
+                DecisionVisibility::Public,
+                DecisionPreference::Neutral,
+                1,
+                1,
+                &Game::optional_entry_replacement_options(),
+                "optional entry replacement",
+            )?;
+            DecisionContinuation::BattlefieldEntryOptional {
+                context,
+                effect: definition,
             }
         }
-        DecisionContinuationSnapshot::BattlefieldEntryCreatureType { choices } => {
-            DecisionContinuation::BattlefieldEntryCreatureType {
+        DecisionContinuationSnapshot::BattlefieldEntryScalarChoice {
+            context,
+            effect,
+            choices,
+        } => {
+            let context = parse_replacement_context(*context)?;
+            validate_entry_decision_context(game, context, effect)?;
+            let ReplacementEffectDef::Choose(ReplacementChoiceDef::Scalar(choice)) =
+                catalog_replacement_effect(&game.catalog, effect)
+                    .ok_or("entry scalar choice locator is absent from this catalog")?
+            else {
+                return Err("entry scalar choice locator is not a scalar choice".into());
+            };
+            let pending = game
+                .pending_events
+                .front()
+                .ok_or("entry scalar choice lacks its pending event")?;
+            let owner = Game::pending_event_controller(pending);
+            let (prompt, authored_choices) = game.entry_scalar_choices(owner, choice);
+            if *choices != authored_choices {
+                return Err(
+                    "entry scalar choice vocabulary disagrees with its authored choice".into(),
+                );
+            }
+            let options = authored_choices
+                .iter()
+                .enumerate()
+                .map(|(index, label)| DecisionOption {
+                    id: u32::try_from(index).unwrap_or(u32::MAX),
+                    label: label.clone(),
+                    card: None,
+                    members: Vec::new(),
+                    ability_text: None,
+                    zone: DecisionZone::None,
+                })
+                .collect::<Vec<_>>();
+            validate_authored_decision(
+                observation,
+                owner,
+                prompt,
+                DecisionVisibility::Public,
+                DecisionPreference::Neutral,
+                1,
+                1,
+                &options,
+                "entry scalar choice",
+            )?;
+            DecisionContinuation::BattlefieldEntryScalarChoice {
+                context,
+                choice,
                 choices: choices.clone(),
             }
         }
@@ -1145,39 +1222,6 @@ fn parse_continuation(
                 card: GameObjectId(*card),
             }
         }
-        DecisionContinuationSnapshot::PileSplit { owner } => DecisionContinuation::PileSplit {
-            owner: player(*owner)?,
-        },
-        DecisionContinuationSnapshot::RevealedPileSplit {
-            player: owner,
-            revealed,
-            rest,
-            placement,
-        } => DecisionContinuation::RevealedPileSplit {
-            player: player(*owner)?,
-            revealed: parse_detached_cards(revealed, game)?,
-            rest: parse_zone_kind(*rest),
-            placement: parse_zone_placement(*placement),
-        },
-        DecisionContinuationSnapshot::RevealedPileChoice {
-            player: owner,
-            first,
-            second,
-            rest,
-            placement,
-        } => DecisionContinuation::RevealedPileChoice {
-            player: player(*owner)?,
-            first: parse_detached_cards(first, game)?,
-            second: parse_detached_cards(second, game)?,
-            rest: parse_zone_kind(*rest),
-            placement: parse_zone_placement(*placement),
-        },
-        DecisionContinuationSnapshot::PileChoice { first, second } => {
-            DecisionContinuation::PileChoice {
-                first: game_ids(first),
-                second: game_ids(second),
-            }
-        }
         DecisionContinuationSnapshot::SeparateIntoPiles {
             resolving_controller,
             subject,
@@ -1206,22 +1250,6 @@ fn parse_continuation(
                 optional: *optional,
             }
         }
-        DecisionContinuationSnapshot::DestroyOfChoice { can_regenerate } => {
-            DecisionContinuation::DestroyOfChoice {
-                can_regenerate: *can_regenerate,
-            }
-        }
-        DecisionContinuationSnapshot::CounterUnlessPaid {
-            spell,
-            player: owner,
-            cost,
-            zone,
-        } => DecisionContinuation::CounterUnlessPaid {
-            spell: GameObjectId(*spell),
-            player: player(*owner)?,
-            cost: parse_mana_cost(cost)?,
-            zone: parse_countered_spell_zone(*zone),
-        },
         DecisionContinuationSnapshot::RecallDiscard { player: owner } => {
             DecisionContinuation::RecallDiscard {
                 player: player(*owner)?,
@@ -1232,10 +1260,6 @@ fn parse_continuation(
                 player: player(*owner)?,
             }
         }
-        DecisionContinuationSnapshot::Duress { victim, cause } => DecisionContinuation::Duress {
-            victim: player(*victim)?,
-            cause: parse_cause(*cause)?,
-        },
         DecisionContinuationSnapshot::Balance {
             controller,
             phase,
@@ -1288,32 +1312,252 @@ fn parse_continuation(
     })
 }
 
-fn object_choice_binding_snapshot(binding: ObjectChoiceBindingDef) -> ObjectChoiceBindingSnapshot {
-    match binding {
-        ObjectChoiceBindingDef::Object(index) => ObjectChoiceBindingSnapshot::Object {
-            index: u8::try_from(index.index()).unwrap_or(u8::MAX),
-        },
-        ObjectChoiceBindingDef::Objects(index) => ObjectChoiceBindingSnapshot::Objects {
-            index: u8::try_from(index.index()).unwrap_or(u8::MAX),
-        },
-    }
+fn resolved_effect_payment(
+    game: &Game,
+    payment: EffectPaymentDef,
+    object: &super::super::StackObject,
+    context: &super::super::EffectResolutionContext,
+    scoped: ScopedEffect,
+) -> Option<(PlayerId, super::super::ResolvedEffectPayment)> {
+    let payers = game.effect_players(payment.payer, object, context, scoped);
+    let [player] = payers.as_slice() else {
+        return None;
+    };
+    let payment = match payment.cost {
+        EffectPaymentCostDef::Mana(cost) => super::super::ResolvedEffectPayment::Mana(cost),
+        EffectPaymentCostDef::GenericMana(amount) => {
+            let amount = game
+                .effect_value(amount, object, context, scoped)
+                .max(0)
+                .try_into()
+                .unwrap_or(u16::MAX);
+            super::super::ResolvedEffectPayment::Mana(ManaCost::new(amount, 0))
+        }
+        EffectPaymentCostDef::Life(amount) => super::super::ResolvedEffectPayment::Life(amount),
+    };
+    Some((*player, payment))
 }
 
-fn parse_object_choice_binding(
-    binding: ObjectChoiceBindingSnapshot,
-) -> Result<ObjectChoiceBindingDef, String> {
-    match binding {
-        ObjectChoiceBindingSnapshot::Object { index } => {
-            ObjectBindingIndex::from_index(usize::from(index))
-                .map(ObjectChoiceBindingDef::Object)
-                .ok_or_else(|| "object binding index is out of range".into())
-        }
-        ObjectChoiceBindingSnapshot::Objects { index } => {
-            ObjectSetBindingIndex::from_index(usize::from(index))
-                .map(ObjectChoiceBindingDef::Objects)
-                .ok_or_else(|| "object-set binding index is out of range".into())
-        }
+fn payment_decision_options(
+    payment: super::super::ResolvedEffectPayment,
+    can_pay: bool,
+    decline: &str,
+) -> Vec<DecisionOption> {
+    let mut options = vec![DecisionOption {
+        id: 0,
+        label: decline.into(),
+        card: None,
+        members: Vec::new(),
+        ability_text: None,
+        zone: DecisionZone::None,
+    }];
+    if can_pay {
+        options.push(DecisionOption {
+            id: 1,
+            label: Game::effect_payment_label(payment),
+            card: None,
+            members: Vec::new(),
+            ability_text: None,
+            zone: DecisionZone::None,
+        });
     }
+    options
+}
+
+#[allow(clippy::too_many_arguments)]
+fn validate_top_card_selection_observation(
+    game: &Game,
+    observation: &DecisionObservation,
+    player: PlayerId,
+    revealed: &[super::super::CardInstance],
+    selection: &'static crate::card::TopCardSelectionDef,
+    object: &super::super::StackObject,
+    context: &super::super::EffectResolutionContext,
+    scoped: ScopedEffect,
+) -> Result<(), String> {
+    let requested = game
+        .effect_value(selection.count, object, context, scoped)
+        .max(0);
+    let requested = usize::try_from(requested).unwrap_or(usize::MAX);
+    let available_before_inspection = game.players[player.index()]
+        .library
+        .len()
+        .saturating_add(revealed.len());
+    if revealed.len() != requested.min(available_before_inspection) {
+        return Err("top-card selection inspected count disagrees with its authored effect".into());
+    }
+    let source = object.source.unwrap_or(object.id);
+    let eligible = revealed
+        .iter()
+        .filter(|card| {
+            selection.object.is_none_or(|predicate| {
+                game.card_object_matches(predicate, card, crate::card::ZoneKind::Library, source)
+            })
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    let inspected = revealed
+        .iter()
+        .map(|card| (card.id, card.definition))
+        .collect::<Vec<_>>();
+    let mut expected = game.card_decision_options(&eligible, DecisionZone::Library);
+    for option in &mut expected {
+        option.members = inspected.clone();
+    }
+    let no_selection = expected.is_empty();
+    if no_selection {
+        expected.push(DecisionOption {
+            id: 0,
+            label: "No inspected card is eligible".into(),
+            card: None,
+            members: inspected,
+            ability_text: None,
+            zone: DecisionZone::Library,
+        });
+    }
+    let (minimum, maximum, preference) = if no_selection {
+        (0, 0, DecisionPreference::Neutral)
+    } else {
+        (
+            usize::from(selection.minimum).min(expected.len()),
+            usize::from(selection.maximum),
+            if selection.selected_zone == crate::card::ZoneKind::Hand {
+                DecisionPreference::HigherCardValue
+            } else {
+                DecisionPreference::LowerCardValue
+            },
+        )
+    };
+    validate_authored_decision(
+        observation,
+        player,
+        "Choose cards from the top of the library",
+        DecisionVisibility::Private,
+        preference,
+        minimum,
+        maximum,
+        &expected,
+        "top-card selection",
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn validate_authored_decision(
+    observation: &DecisionObservation,
+    player: PlayerId,
+    prompt: &str,
+    visibility: DecisionVisibility,
+    preference: DecisionPreference,
+    minimum: usize,
+    maximum: usize,
+    options: &[DecisionOption],
+    description: &str,
+) -> Result<(), String> {
+    let expected_minimum = minimum.min(options.len());
+    let expected_maximum = maximum.max(expected_minimum);
+    let mismatch = if observation.player != player {
+        "player"
+    } else if observation.kind != DecisionKind::Choice || observation.order_semantics.is_some() {
+        "kind"
+    } else if observation.prompt != prompt {
+        "prompt"
+    } else if observation.visibility != visibility {
+        "visibility"
+    } else if observation.preference != preference {
+        "preference"
+    } else if observation.minimum != expected_minimum || observation.maximum != expected_maximum {
+        "bounds"
+    } else if observation.cancellable {
+        "cancellability"
+    } else if observation.options != options {
+        return Err(format!(
+            "{description} decision options disagree with its authored effect: observed {:?}, expected {options:?}",
+            observation.options,
+        ));
+    } else {
+        return Ok(());
+    };
+    Err(format!(
+        "{description} decision {mismatch} disagrees with its authored effect"
+    ))
+}
+
+fn validate_exact_partition(
+    authored: &[Target],
+    first: &[Target],
+    second: &[Target],
+) -> Result<(), String> {
+    let combined = first.iter().chain(second).copied().collect::<Vec<_>>();
+    if combined.len() != authored.len()
+        || combined
+            .iter()
+            .enumerate()
+            .any(|(index, item)| combined[..index].contains(item))
+        || combined.iter().any(|item| !authored.contains(item))
+        || authored.iter().any(|item| !combined.contains(item))
+    {
+        return Err(
+            "pile-choice checkpoint is not an exact disjoint partition of authored items".into(),
+        );
+    }
+    let canonical_first = authored
+        .iter()
+        .filter(|item| first.contains(item))
+        .copied()
+        .collect::<Vec<_>>();
+    let canonical_second = authored
+        .iter()
+        .filter(|item| second.contains(item))
+        .copied()
+        .collect::<Vec<_>>();
+    if canonical_first != first || canonical_second != second {
+        return Err("pile-choice checkpoint changed the authored item order".into());
+    }
+    Ok(())
+}
+
+fn ability_locator_matches_origin(
+    locator: &AbilityLocator,
+    object: &super::super::StackObject,
+) -> bool {
+    let Some(payload) = &object.ability else {
+        return false;
+    };
+    let expected = match payload.origin {
+        super::super::AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        super::super::AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        super::super::AbilityOrigin::IntrinsicBasicLand(_) => return false,
+    };
+    (locator.definition, locator.part_id, locator.ability_id) == expected
+}
+
+fn validate_entry_decision_context(
+    game: &Game,
+    context: ReplacementEffectContext,
+    locator: &ReplacementEffectLocator,
+) -> Result<(), String> {
+    if !replacement_effect_locator_matches_source(locator, context.source) {
+        return Err("entry decision locator disagrees with its replacement source".into());
+    }
+    let pending = game
+        .pending_events
+        .front()
+        .ok_or("entry decision lacks its pending event")?;
+    if !pending.applied.contains(&context.source)
+        || Game::pending_event_controller(pending) != context.controller
+    {
+        return Err("entry decision context disagrees with its pending event".into());
+    }
+    Ok(())
 }
 
 mod begin_turn;

@@ -515,7 +515,7 @@ fn explicitly_tagged_triggered_mana_ability_resolves_without_the_stack() {
 #[test]
 fn a_mana_spend_rider_attaches_to_the_paid_spell_with_its_source() {
     static RIDERS: [ManaSpendEffectDef; 1] = [ManaSpendEffectDef::ApplyToPaidSpell(
-        crate::AppliedEffectDef::CannotBeCountered,
+        crate::AppliedEffectDef::Rule(crate::AppliedRuleDef::CannotBeCountered),
     )];
     let mut object = spell(77, cards::SAVANNAH_LIONS, PlayerId::One, 0);
     let mana = Mana::from_ability(
@@ -538,6 +538,6 @@ fn a_mana_spend_rider_attaches_to_the_paid_spell_with_its_source() {
     assert_eq!(object.applied_effects[0].source, mana.source);
     assert_eq!(
         object.applied_effects[0].effect,
-        crate::AppliedEffectDef::CannotBeCountered
+        crate::AppliedEffectDef::Rule(crate::AppliedRuleDef::CannotBeCountered)
     );
 }

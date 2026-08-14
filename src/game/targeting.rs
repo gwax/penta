@@ -160,7 +160,7 @@ impl Game {
         player: PlayerId,
         exact_count: Option<usize>,
     ) -> Vec<Vec<Target>> {
-        self.printed_target_lists(behavior, player, exact_count)
+        self.printed_target_lists(behavior, exact_count)
             .into_iter()
             .filter(|choice| {
                 choice.iter().all(|target| match target {
@@ -186,11 +186,9 @@ impl Game {
     pub(super) fn printed_target_lists(
         &self,
         behavior: CardBehavior,
-        player: PlayerId,
         exact_count: Option<usize>,
     ) -> Vec<Vec<Target>> {
         match behavior {
-            CardBehavior::Duress => vec![vec![Target::Player(player.opponent())]],
             CardBehavior::ChainLightning
             | CardBehavior::PillarOfFlame
             | CardBehavior::GoblinGrenade => self

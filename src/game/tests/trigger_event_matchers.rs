@@ -206,7 +206,7 @@ fn damage_matching_uses_frozen_source_and_recipient_characteristics() {
         amount: 1,
         combat: false,
     };
-    assert!(game.trigger_event_matches(
+    assert!(game.trigger_event_matches_for_controller(
         TriggerEventDef::DamageDealt(DamageEventMatcherDef {
             kind: DamageKindDef::Any,
             source: DamageSourceMatcherDef::Matching(ObjectPredicateDef::ControlledBy(
@@ -218,6 +218,7 @@ fn damage_matching_uses_frozen_source_and_recipient_characteristics() {
         }),
         &event,
         watcher_id,
+        game.controller_of_object(watcher_id),
     ));
 }
 
@@ -249,13 +250,19 @@ fn damage_source_matching_uses_frozen_spell_status() {
         amount: 3,
         combat: false,
     };
-    assert!(game.trigger_event_matches(matcher(ObjectPredicateDef::Spell), &event, watcher_id,));
-    assert!(game.trigger_event_matches(
+    assert!(game.trigger_event_matches_for_controller(
+        matcher(ObjectPredicateDef::Spell),
+        &event,
+        watcher_id,
+        game.controller_of_object(watcher_id),
+    ));
+    assert!(game.trigger_event_matches_for_controller(
         matcher(ObjectPredicateDef::NoncreatureSpell),
         &event,
         watcher_id,
+        game.controller_of_object(watcher_id),
     ));
-    assert!(!game.trigger_event_matches(
+    assert!(!game.trigger_event_matches_for_controller(
         matcher(ObjectPredicateDef::Spell),
         &CommittedTriggerEvent::DamageDealt {
             source: Some(source),
@@ -266,6 +273,7 @@ fn damage_source_matching_uses_frozen_spell_status() {
             combat: false,
         },
         watcher_id,
+        game.controller_of_object(watcher_id),
     ));
 }
 
@@ -351,51 +359,58 @@ fn attack_tap_and_transform_matchers_read_committed_event_facts() {
         attack_number: 1,
     };
     game.battlefield[0].attacks_this_turn = 2;
-    assert!(game.trigger_event_matches(
+    assert!(game.trigger_event_matches_for_controller(
         TriggerEventDef::attacks_first_time_this_turn(ObjectPredicateDef::Source),
         &attack,
         permanent_id,
+        game.controller_of_object(permanent_id),
     ));
-    assert!(game.trigger_event_matches(
+    assert!(game.trigger_event_matches_for_controller(
         TriggerEventDef::attacks_in_declaration(ObjectPredicateDef::Source, 3, None),
         &attack,
         permanent_id,
+        game.controller_of_object(permanent_id),
     ));
 
     let ordinary_tap = CommittedTriggerEvent::Tapped {
         object: object.clone(),
         for_mana: false,
     };
-    assert!(game.trigger_event_matches(
+    assert!(game.trigger_event_matches_for_controller(
         TriggerEventDef::tapped(ObjectPredicateDef::Source),
         &ordinary_tap,
         permanent_id,
+        game.controller_of_object(permanent_id),
     ));
-    assert!(!game.trigger_event_matches(
+    assert!(!game.trigger_event_matches_for_controller(
         TriggerEventDef::tapped_for_mana(ObjectPredicateDef::Source),
         &ordinary_tap,
         permanent_id,
+        game.controller_of_object(permanent_id),
     ));
     let mana_tap = CommittedTriggerEvent::Tapped {
         object: object.clone(),
         for_mana: true,
     };
-    assert!(game.trigger_event_matches(
+    assert!(game.trigger_event_matches_for_controller(
         TriggerEventDef::tapped_for_mana(ObjectPredicateDef::Source),
         &mana_tap,
         permanent_id,
+        game.controller_of_object(permanent_id),
     ));
 
     let transformed = CommittedTriggerEvent::Transformed { object };
-    assert!(game.trigger_event_matches(
+    assert!(game.trigger_event_matches_for_controller(
         TriggerEventDef::transforms(ObjectPredicateDef::HasType(CardType::Creature)),
         &transformed,
         GameObjectId(99_999),
+        None,
     ));
-    assert!(!game.trigger_event_matches(
+    assert!(!game.trigger_event_matches_for_controller(
         TriggerEventDef::transforms(ObjectPredicateDef::HasType(CardType::Land)),
         &transformed,
         GameObjectId(99_999),
+        None,
     ));
 }
 
@@ -729,7 +744,7 @@ fn simultaneous_exit_predicates_use_source_and_object_lki() {
         ObjectPredicateDef::SharesNameWithSource,
     ] {
         assert!(
-            game.trigger_event_matches(
+            game.trigger_event_matches_for_controller(
                 TriggerEventDef::zone_changed(
                     predicate,
                     Some(ZoneKind::Battlefield),
@@ -737,6 +752,7 @@ fn simultaneous_exit_predicates_use_source_and_object_lki() {
                 ),
                 &event,
                 source_id,
+                game.controller_of_object(source_id),
             ),
             "{predicate:?} reads the simultaneous-exit snapshot/LKI",
         );

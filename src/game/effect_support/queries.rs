@@ -143,6 +143,17 @@ impl Game {
             }
             PlayerSetDef::One(PlayerRefDef::EffectController) => candidate == evaluation_controller,
             PlayerSetDef::One(PlayerRefDef::EventPlayer) => context.event_player == Some(candidate),
+            PlayerSetDef::LegalTargets(target) => {
+                effect_context.is_some_and(|(object, scoped, resolution)| {
+                    self.players_in_set(
+                        PlayerSetDef::LegalTargets(target),
+                        object,
+                        resolution,
+                        scoped,
+                    )
+                    .contains(&candidate)
+                })
+            }
             PlayerSetDef::One(reference) => {
                 effect_context.is_some_and(|(object, scoped, resolution)| {
                     self.player_reference(reference, object, resolution, scoped) == Some(candidate)

@@ -39,6 +39,25 @@ impl Drop for StaticAbilityLayerGuard {
 }
 
 impl Game {
+    /// Whether one printed or copied ability remains after rules-text removal
+    /// and already-resolved layer-6 operations. Static layer-6 dependencies
+    /// still use the documented one-level model, but a resolved "loses all
+    /// abilities" effect must immediately stop this ability from supplying a
+    /// live static rule.
+    pub(super) fn ability_survives_resolved_operations(
+        &self,
+        permanent: &Permanent,
+        origin: AbilityOrigin,
+    ) -> bool {
+        let mut abilities = self.collect_base_effective_abilities(permanent, None);
+        for operation in Self::resolved_ability_layer_operations(permanent) {
+            Self::apply_ability_layer_operation(&mut abilities, &operation);
+        }
+        abilities
+            .into_iter()
+            .any(|effective| effective.origin == origin)
+    }
+
     /// Whether an object has a nonmana activated ability, reading printed and
     /// copied abilities plus already-resolved grants and removals. The one
     /// predicate that asks — Rising Waters' recipient query — is itself a
@@ -292,22 +311,8 @@ impl Game {
                 AbilityOperationDef::Remove(predicate),
             )) => AbilityLayerOperationKind::Remove(predicate),
             AppliedEffectDef::Characteristic(_)
-            | AppliedEffectDef::CannotBeCountered
-            | AppliedEffectDef::DoesNotUntapDuringUntapStep
-            | AppliedEffectDef::MayChooseNotToUntap
-            | AppliedEffectDef::CannotBlock
-            | AppliedEffectDef::CannotAttack
-            | AppliedEffectDef::CannotBeBlocked
-            | AppliedEffectDef::CannotBeEnchanted
-            | AppliedEffectDef::CannotBecomeEnchanted
-            | AppliedEffectDef::CannotChangeController
-            | AppliedEffectDef::RemainsAttachedThroughProtection
-            | AppliedEffectDef::CannotBeBlockedBy(_)
-            | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventDamage(_)
-            | AppliedEffectDef::Composite(_)
-            | AppliedEffectDef::Special(_) => return None,
+            | AppliedEffectDef::Rule(_)
+            | AppliedEffectDef::Composite(_) => return None,
         };
         Some(AbilityLayerOperation {
             timestamp: applied.timestamp,

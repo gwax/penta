@@ -6,8 +6,7 @@
 
 use super::*;
 
-/// The two static effects that are not an `Apply`: a prohibition read off
-/// the battlefield, and a cost reduction read out of hand.
+/// The remaining static effects that are not an `Apply`.
 pub(in super::super) fn shared_static_non_apply_effect(
     source_zones: &[ZoneKind],
     effect: EffectDef,
@@ -25,11 +24,6 @@ pub(in super::super) fn shared_static_non_apply_effect(
                 && query.zones == [ZoneKind::Battlefield]
                 && shared_object_predicate(query.object)
                 && shared_static_query(*query)
-        }
-        // The prohibition is read off the battlefield while play options
-        // are offered, and only against a card's printed shape.
-        EffectDef::PlayersCantPlay(predicate) => {
-            battlefield_only(source_zones) && shared_object_predicate(*predicate)
         }
         EffectDef::ReduceGenericCostBy(value) => {
             source_zones == [ZoneKind::Hand]
@@ -55,7 +49,6 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
     match effect {
         EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::Sequence(_) => shared_static_non_apply_effect(source_zones, effect),
@@ -78,9 +71,21 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                         | ObjectRefDef::TriggeringObject,
                     )
                     | ObjectSetDef::Binding(_)
+                    | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::SharingNameWith(_),
                 )
-                | EffectRecipientSetDef::Players(_) => false,
+                | EffectRecipientSetDef::Players(PlayerSetDef::LegalTargets(_))
+                | EffectRecipientSetDef::Players(PlayerSetDef::One(
+                    PlayerRefDef::EventPlayer
+                    | PlayerRefDef::Target(_)
+                    | PlayerRefDef::ControllerOf(_)
+                    | PlayerRefDef::OwnerOf(_),
+                )) => false,
+                EffectRecipientSetDef::Players(
+                    PlayerSetDef::All
+                    | PlayerSetDef::One(PlayerRefDef::EffectController)
+                    | PlayerSetDef::Related(_),
+                ) => true,
             };
             let battlefield_effect_is_supported = shared_static_applied_effect(recipient, effect);
             let battlefield_effect = battlefield_only(source_zones)
@@ -108,10 +113,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
-        | EffectDef::CannotRegenerateThisTurn { .. }
-        | EffectDef::MakeUnblockableThisTurn { .. }
-        | EffectDef::GainControlWhileSourceRemains { .. }
-        | EffectDef::GainControlThisTurn { .. }
+        | EffectDef::GainControl { .. }
         | EffectDef::InstallTrigger(_)
         | EffectDef::None
         | EffectDef::AddMana(_)
@@ -122,6 +124,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::AddPoisonCounters { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
+        | EffectDef::DiscardCards { .. }
         | EffectDef::ShuffleLibrary { .. }
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
@@ -131,10 +134,8 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::RemoveFromCombat { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
-        | EffectDef::DoesNotUntapWhileSourceTapped { .. }
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
-        | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
         | EffectDef::Attach { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
@@ -142,7 +143,6 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::Mill { .. }
-        | EffectDef::LookAtTopAndMayTake { .. }
         | EffectDef::LookAtTopAndSelect { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::SearchZone { .. }
@@ -158,7 +158,6 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
-        | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
         | EffectDef::Special(_) => false,
     }
 }
@@ -221,14 +220,14 @@ pub(in super::super) fn shared_static_applied_effect(
         // self-applied one does: Bower Passage names every creature you
         // control rather than only itself. The other restriction keeps the
         // narrower list because no card applies it to a group.
-        AppliedEffectDef::CannotBeBlockedBy(predicate) => {
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(predicate)) => {
             (matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
             ) || recipient.object_query().is_some())
                 && shared_object_predicate(predicate)
         }
-        AppliedEffectDef::CanBlockOnly(predicate) => {
+        AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(predicate)) => {
             matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
@@ -236,13 +235,13 @@ pub(in super::super) fn shared_static_applied_effect(
         }
         // The redirection names a group rather than a predicate, and it can
         // only be aimed at a permanent whose controller it protects.
-        AppliedEffectDef::RedirectPlayerDamageToThis(_) => {
+        AppliedEffectDef::Rule(AppliedRuleDef::RedirectPlayerDamageToThis(_)) => {
             matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
             ) || recipient.object_query().is_some()
         }
-        AppliedEffectDef::PreventDamage(matcher) => {
+        AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(matcher)) => {
             let recipient_is_supported = matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
@@ -260,19 +259,15 @@ pub(in super::super) fn shared_static_applied_effect(
         }
         // Read only off the Aura whose attachment it is defending, which is
         // the source of the ability granting the protection.
-        AppliedEffectDef::RemainsAttachedThroughProtection => {
+        AppliedEffectDef::Rule(AppliedRuleDef::RemainsAttachedThroughProtection) => {
             recipient == EffectRecipientDef::Source
         }
-        AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController => true,
-        AppliedEffectDef::Special(_) => false,
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(restriction)) => {
+            matches!(recipient.0, EffectRecipientSetDef::Players(_))
+                && shared_object_predicate(restriction.object)
+        }
+        AppliedEffectDef::Rule(AppliedRuleDef::RedirectDamageFromTo { .. }) => false,
+        AppliedEffectDef::Rule(_) => true,
     }
 }
 

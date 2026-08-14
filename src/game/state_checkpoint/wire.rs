@@ -196,22 +196,6 @@ pub(super) fn i16_pair(value: &Value) -> Result<[i16; 2], String> {
     Ok([read_i16(&values[0])?, read_i16(&values[1])?])
 }
 
-fn color_set_from_flags(flags: [bool; 5]) -> ColorSet {
-    let mut colors = ColorSet::empty();
-    for (present, color) in flags.into_iter().zip([
-        ManaColor::White,
-        ManaColor::Blue,
-        ManaColor::Black,
-        ManaColor::Red,
-        ManaColor::Green,
-    ]) {
-        if present {
-            colors = colors.with(color);
-        }
-    }
-    colors
-}
-
 /// Poison counters, which are additive on the wire: an observation written
 /// before poison existed simply has none, and reconstructs with none.
 pub(super) fn poison_pair(observation: &Value) -> Result<[u16; 2], String> {
@@ -527,30 +511,21 @@ fn parse_permanent(
     permanent.timestamp = ContinuousEffectTimestamp(state.timestamp);
     permanent.tapped = shown.tapped;
     permanent.damage = shown.damage;
-    permanent.held_tapped_by = state
-        .held_tapped_by
-        .iter()
-        .map(|source| GameObjectId(*source))
-        .collect();
     permanent.attacking = shown.attacking;
     permanent.attack_defender = shown.attack_defender;
     permanent.blocked = shown.blocked;
     permanent.blocking = shown.blocking;
     permanent.activated_loyalty_this_turn = shown.activated_loyalty_this_turn;
-    permanent.unblockable_this_turn = state.unblockable_this_turn;
-    permanent.cannot_block_this_turn = state.cannot_block_this_turn;
     permanent.detained_until_turn_of = state
         .detained_until_turn_of
         .map(|(player, turns)| player_from_index(player).map(|player| (player, turns)))
         .transpose()?;
     permanent.destroy_at_end_of_combat = state.destroy_at_end_of_combat;
     permanent.skipped_untap_steps = state.skipped_untap_steps;
-    permanent.color_override = state.color_override.map(color_set_from_flags);
     permanent.control_reverts_to = state
         .control_reverts_to
         .map(player_from_index)
         .transpose()?;
-    permanent.cannot_regenerate_this_turn = state.cannot_regenerate_this_turn;
     permanent.control_source = state.control_source.map(GameObjectId);
     permanent.control_requires_source_tapped = state.control_requires_source_tapped;
     permanent.chosen_player = state.chosen_player.map(player_from_index).transpose()?;
@@ -633,14 +608,20 @@ fn parse_resolved_continuous_effect(
     state: &ResolvedContinuousEffectSnapshot,
     catalog: &CardCatalog,
 ) -> Result<ResolvedContinuousEffect, String> {
+    let source = AbilitySourceRef {
+        object: GameObjectId(state.source.object),
+        ability: ability_origin_from_snapshot(state.source.ability),
+    };
+    if !super::semantics::applied_effect_locator_matches_source(&state.definition, source) {
+        return Err(
+            "checkpoint resolved-effect locator disagrees with its source ability".to_owned(),
+        );
+    }
     let definition = catalog_applied_effect(catalog, &state.definition)
         .ok_or("checkpoint resolved-effect locator is absent from this catalog")?;
     Ok(ResolvedContinuousEffect {
         definition,
-        source: AbilitySourceRef {
-            object: GameObjectId(state.source.object),
-            ability: ability_origin_from_snapshot(state.source.ability),
-        },
+        source,
         timestamp: ContinuousEffectTimestamp(state.timestamp),
         component_order: state.component_order,
         expiration: parse_expiration(state.expiration)?,
@@ -699,6 +680,9 @@ fn parse_resolved_operation(
         ) => Ok(ResolvedContinuousEffectKind::CreatureTypes(
             parse_set_operation(value, *operation)?,
         )),
+        (AppliedEffectDef::Rule(rule), ResolvedContinuousOperationSnapshot::Rule) => {
+            Ok(ResolvedContinuousEffectKind::Rule(rule))
+        }
         (
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
                 PowerToughnessOperationDef::SetBase { .. },
@@ -842,8 +826,18 @@ pub(super) fn parse_pending_events(
                     .effects
                     .iter()
                     .map(|effect| {
+                        let context = parse_replacement_context_snapshot(effect.context)?;
+                        if !replacement_effect_locator_matches_source(
+                            &effect.effect,
+                            context.source,
+                        ) {
+                            return Err(
+                                "pending entry replacement locator disagrees with its source"
+                                    .into(),
+                            );
+                        }
                         Ok(PendingReplacementEffect {
-                            context: parse_replacement_context_snapshot(effect.context)?,
+                            context,
                             effect: catalog_entry_replacement_effect(catalog, &effect.effect)?,
                         })
                     })

@@ -1,11 +1,11 @@
 use crate::action::AbilityOrigin;
 use crate::card::{
-    AbilityDef, AbilityPredicateDef, AppliedEffectDef, BasicLandType, CardTypeSet, ColorSet,
-    CreatureTypeSetDef, SetOperationDef,
+    AbilityDef, AbilityPredicateDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardTypeSet,
+    ColorSet, CreatureTypeSetDef, PlayRestrictionDef, SetOperationDef,
 };
 use crate::ids::{AbilityId, CardDefinitionId, CardPartId, GameObjectId, GrantId, PlayerId};
 
-use super::Permanent;
+use super::{AbilitySourceRef, Permanent};
 
 /// Timestamp shared by the continuous-effect slices currently modeled. Static
 /// effects use their source permanent's battlefield timestamp; resolving
@@ -64,6 +64,7 @@ pub(super) enum ResolvedContinuousEffectKind {
     Colors(SetOperationDef<ColorSet>),
     CreatureTypes(SetOperationDef<CreatureTypeSetDef>),
     PowerToughness(ResolvedPowerToughnessOperation),
+    Rule(AppliedRuleDef),
 }
 
 /// One resolved, noncopiable continuous-effect component attached to a
@@ -77,6 +78,19 @@ pub(super) struct ResolvedContinuousEffect {
     pub(super) component_order: u16,
     pub(super) expiration: ContinuousEffectExpiration,
     pub(super) kind: ResolvedContinuousEffectKind,
+}
+
+/// One resolving play prohibition after its player recipient has been frozen.
+/// Static play prohibitions stay source-derived and are not stored here.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct ResolvedPlayRestriction {
+    pub(super) definition: AppliedEffectDef,
+    pub(super) source: AbilitySourceRef,
+    pub(super) affected_player: PlayerId,
+    pub(super) timestamp: ContinuousEffectTimestamp,
+    pub(super) component_order: u16,
+    pub(super) expiration: ContinuousEffectExpiration,
+    pub(super) restriction: PlayRestrictionDef,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -116,6 +130,25 @@ pub(super) struct StaticAppliedEffect {
     pub(super) grant: Option<GrantId>,
     pub(super) component_order: u16,
     pub(super) effect: AppliedEffectDef,
+}
+
+/// One rule leaf after static and resolved continuous effects have converged.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct AppliedRuleEffect {
+    pub(super) source: GameObjectId,
+    pub(super) timestamp: ContinuousEffectTimestamp,
+    pub(super) component_order: u16,
+    pub(super) rule: AppliedRuleDef,
+}
+
+/// One static or resolved play prohibition after source, recipient, and
+/// ordering metadata have converged.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct AppliedPlayRestriction {
+    pub(super) source: GameObjectId,
+    pub(super) timestamp: ContinuousEffectTimestamp,
+    pub(super) component_order: u16,
+    pub(super) restriction: PlayRestrictionDef,
 }
 
 pub(super) struct StaticEffectTraversal<'a> {

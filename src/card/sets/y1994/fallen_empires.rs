@@ -1,10 +1,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
-    CardBehavior, CardRules, CardSet, CardType, ComparisonDef, CounterKind, DamageEventMatcherDef,
-    DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, LikelihoodDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRelation, ReplacementEffectDef,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
+    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
+    DiscardSelectionDef, EffectDef, EffectRecipientDef, LikelihoodDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRelation, ReplacementEffectDef,
     ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
     ZoneKind, abilities, cards,
 };
@@ -436,8 +437,8 @@ pub(in crate::card::sets) static HOMARID_WARRIOR: CardRecord = CardRecord::new(
             EffectDef::Sequence(&[
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::GrantAbility(&SHROUD),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    effect: AppliedEffectDef::add_ability(&SHROUD),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
                 EffectDef::SkipNextUntapSteps {
                     object: EffectRecipientDef::Source,
@@ -810,9 +811,11 @@ pub(in crate::card::sets) static THRULL_CHAMPION: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::Subtype("Thrull"),
             )],
-            EffectDef::GainControlWhileSourceRemains {
+            EffectDef::GainControl {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                while_tapped: false,
+                duration: ControlDurationDef::WhileSourceRemains {
+                    while_tapped: false,
+                },
             },
         ),
     ]),
@@ -1469,10 +1472,9 @@ pub(in crate::card::sets) static SPIRIT_SHIELD: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::static_ability(
             "You may choose not to untap this artifact during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::MayChooseNotToUntap,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
             },
         ),
         AbilityDef::activated_with_targets(
@@ -1487,11 +1489,11 @@ pub(in crate::card::sets) static SPIRIT_SHIELD: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(0),
-                    toughness: ValueDef::Constant(2),
-                },
-                duration: EffectDurationDef::WhileSourceTapped,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::WhileSourceTapped,
             },
         ),
     ]),
@@ -1506,10 +1508,9 @@ pub(in crate::card::sets) static ZELYON_SWORD: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::static_ability(
             "You may choose not to untap this artifact during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::MayChooseNotToUntap,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
             },
         ),
         AbilityDef::activated_with_targets(
@@ -1524,11 +1525,11 @@ pub(in crate::card::sets) static ZELYON_SWORD: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(0),
-                },
-                duration: EffectDurationDef::WhileSourceTapped,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::WhileSourceTapped,
             },
         ),
     ]),

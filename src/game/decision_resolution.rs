@@ -1,10 +1,11 @@
 use super::{
     BalanceAction, BasicLandType, BasicLandTypeChange, BattlefieldArrival,
     BattlefieldExitCompletion, CardRuntime, CounterKind, DecisionContinuation, DecisionOption,
-    FORK_COPY_COLOR, Game, GameEvent, ManaCost, PendingProcedure, PendingReplacementEffect,
-    PileChoice, PileSplit, PlayerId, ReplaceableEvent, Target, TargetSelection, TargetSlotId,
-    ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
+    FORK_COPY_COLOR, Game, GameEvent, ManaCost, PendingProcedure, PileChoice, PileSplit, PlayerId,
+    ReplaceableEvent, Target, TargetSelection, TargetSlotId, ZoneKind, ZoneMoveCause,
+    ZonePlacement, remove_card,
 };
+use crate::card::{BattlefieldEntryChoiceDestinationDef, ReplacementEffectDef};
 
 impl Game {
     #[allow(clippy::too_many_lines)]
@@ -85,21 +86,6 @@ impl Game {
                     Target::Player(_) | Target::Card(_) => {}
                 }
             }
-            DecisionContinuation::ExileFromHand { victim } => {
-                let Some((card, _)) = pending
-                    .observation
-                    .options
-                    .iter()
-                    .find(|option| options.contains(&option.id))
-                    .and_then(|option| option.card)
-                else {
-                    return;
-                };
-                if let Some(card) = remove_card(&mut self.players[victim.index()].hand, card) {
-                    let (card, _zone_change) = self.zone_change_card(card);
-                    self.players[victim.index()].exile.push(card);
-                }
-            }
             DecisionContinuation::AugurOfBolas { player, revealed } => {
                 let kept = pending
                     .observation
@@ -124,11 +110,10 @@ impl Game {
             DecisionContinuation::TopCardSelection {
                 player,
                 revealed,
-                selected_zone,
-                selected_placement,
-                rest_zone,
-                rest_placement,
-                followup,
+                selection,
+                object,
+                context,
+                effect,
             } => {
                 let selected = pending
                     .observation
@@ -140,10 +125,32 @@ impl Game {
                 let (chosen, rest): (Vec<_>, Vec<_>) = revealed
                     .into_iter()
                     .partition(|card| selected.contains(&card.id));
-                self.place_revealed_remainder(player, chosen, selected_zone, selected_placement);
-                self.place_revealed_remainder(player, rest, rest_zone, rest_placement);
-                if let Some((object, context, effect)) = followup {
-                    self.resolve_effect_def(effect, &object, context);
+                if selection.reveal_selected {
+                    self.events
+                        .extend(chosen.iter().map(|card| GameEvent::CardRevealed {
+                            player,
+                            card: card.id,
+                            definition: card.definition,
+                        }));
+                }
+                self.place_revealed_remainder(
+                    player,
+                    chosen,
+                    selection.selected_zone,
+                    selection.selected_placement,
+                );
+                self.place_revealed_remainder(
+                    player,
+                    rest,
+                    selection.rest_zone,
+                    selection.rest_placement,
+                );
+                if let Some(then) = selection.then {
+                    self.resolve_nested_effect_before_later(
+                        effect.with_effect(*then),
+                        &object,
+                        context,
+                    );
                 }
             }
             DecisionContinuation::BattlefieldEntryReplacement { candidates } => {
@@ -152,17 +159,16 @@ impl Game {
                     .and_then(|option| usize::try_from(*option).ok())
                     .and_then(|index| candidates.get(index))
                     .copied();
-                if let (Some(mut pending), Some(selected)) =
-                    (self.pending_events.pop_front(), selected)
+                if let (Some(pending), Some(selected)) = (self.pending_events.pop_front(), selected)
                 {
-                    pending.applied.push(selected.context.source);
-                    pending.effects.push(PendingReplacementEffect {
-                        context: selected.context,
-                        effect: selected.effect,
-                    });
-                    self.pending_events.push_front(pending);
-                    self.continue_pending_events();
+                    if let Some(pending) = self.prepare_entry_replacement(pending, selected) {
+                        self.pending_events.push_front(pending);
+                        self.continue_pending_events();
+                    }
                 }
+            }
+            DecisionContinuation::BattlefieldEntryOptional { context, effect } => {
+                self.resume_optional_entry_replacement(context, effect, options);
             }
             DecisionContinuation::BattlefieldExitReplacement {
                 mut batch,
@@ -180,14 +186,20 @@ impl Game {
             }
             DecisionContinuation::BattlefieldEntryPayment {
                 context,
+                player,
                 payment,
-                if_paid,
-                if_declined,
+                definition,
             } => {
                 if let Some(mut pending) = self.pending_events.pop_front() {
-                    let payment_player = self.pending_payment_player(&pending, context, payment);
-                    let paid = options.contains(&1)
-                        && payment_player.is_some_and(|player| self.pay_payment(player, payment));
+                    let paid = options.contains(&1) && self.pay_effect_payment(player, payment);
+                    let ReplacementEffectDef::PayOr {
+                        if_paid,
+                        if_declined,
+                        ..
+                    } = definition
+                    else {
+                        return;
+                    };
                     Self::push_replacement_effects(
                         &mut pending,
                         context,
@@ -226,7 +238,9 @@ impl Game {
                     self.continue_pending_events();
                 }
             }
-            DecisionContinuation::BattlefieldEntryCardName { choices } => {
+            DecisionContinuation::BattlefieldEntryScalarChoice {
+                choice, choices, ..
+            } => {
                 let Some(selected) = options
                     .first()
                     .and_then(|option| usize::try_from(*option).ok())
@@ -237,66 +251,29 @@ impl Game {
                 };
                 if let Some(mut pending) = self.pending_events.pop_front() {
                     let ReplaceableEvent::BattlefieldEntry(entry) = &mut pending.event;
-                    entry.permanent.chosen_card_name = Some(selected);
+                    match choice.destination {
+                        BattlefieldEntryChoiceDestinationDef::CardName => {
+                            entry.permanent.chosen_card_name = Some(selected);
+                        }
+                        BattlefieldEntryChoiceDestinationDef::CreatureType => {
+                            entry.permanent.chosen_creature_type = Some(selected);
+                        }
+                    }
                     self.pending_events.push_front(pending);
                     self.continue_pending_events();
-                }
-            }
-            DecisionContinuation::BattlefieldEntryCreatureType { choices } => {
-                let Some(selected) = options
-                    .first()
-                    .and_then(|option| usize::try_from(*option).ok())
-                    .and_then(|index| choices.get(index))
-                    .cloned()
-                else {
-                    return;
-                };
-                if let Some(mut pending) = self.pending_events.pop_front() {
-                    let ReplaceableEvent::BattlefieldEntry(entry) = &mut pending.event;
-                    entry.permanent.chosen_creature_type = Some(selected);
-                    self.pending_events.push_front(pending);
-                    self.continue_pending_events();
-                }
-            }
-            DecisionContinuation::OptionalManaPayment {
-                player,
-                cost,
-                object,
-                context,
-                effect,
-            } => {
-                if options.contains(&1) {
-                    self.activate_mana_for_cost(player, cost, 0);
-                    let _ = self.pay_player_cost(player, cost, 0);
-                    self.resolve_effect_def(effect, &object, context);
-                }
-            }
-            DecisionContinuation::ManaPaymentOrElse {
-                player,
-                cost,
-                object,
-                context,
-                effect,
-            } => {
-                if options.contains(&1) {
-                    self.activate_mana_for_cost(player, cost, 0);
-                    let _ = self.pay_player_cost(player, cost, 0);
-                } else {
-                    self.resolve_effect_def(effect, &object, context);
                 }
             }
             DecisionContinuation::PayOr {
                 player,
-                cost,
+                payment,
+                definition: _,
                 object,
                 context,
                 if_paid,
                 otherwise,
             } => {
                 let paid = if options.contains(&1) {
-                    self.activate_mana_for_cost(player, cost, 0);
-                    let _spent = self.pay_player_cost(player, cost, 0);
-                    true
+                    self.pay_effect_payment(player, payment)
                 } else {
                     false
                 };
@@ -358,19 +335,6 @@ impl Game {
                 }
                 self.bury_cards(player, to_graveyard);
             }
-            DecisionContinuation::CounterUnlessPaid {
-                spell,
-                player,
-                cost,
-                zone,
-            } => {
-                if options.contains(&1) {
-                    self.activate_mana_for_cost(player, cost, 0);
-                    let _ = self.pay_player_cost(player, cost, 0);
-                } else {
-                    self.counter_spell_into(spell, zone);
-                }
-            }
             DecisionContinuation::OptionalEffect {
                 object,
                 context,
@@ -380,30 +344,8 @@ impl Game {
                     self.resolve_effect_def(effect, &object, context);
                 }
             }
-            DecisionContinuation::ChoosePermanentForEffect {
-                choice,
-                object,
-                mut context,
-                candidates,
-                effect,
-            } => {
-                let chosen = pending
-                    .observation
-                    .options
-                    .iter()
-                    .find(|option| options.contains(&option.id))
-                    .and_then(|option| usize::try_from(option.id).ok())
-                    .and_then(|index| candidates.get(index))
-                    .copied();
-                context.bind_single_object_for_choice(choice, chosen);
-                // The enclosing sequence tail is already queued behind this
-                // choice. Complete any procedure started by the chosen
-                // permanent's nested effect before restoring that later work.
-                let mut later_procedures = std::mem::take(&mut self.pending_procedures);
-                self.resolve_effect_def(effect, &object, context);
-                self.pending_procedures.append(&mut later_procedures);
-            }
             DecisionContinuation::ChooseForEffect {
+                definition: _,
                 binding,
                 object,
                 mut context,
@@ -423,13 +365,11 @@ impl Game {
                 self.resolve_nested_effect_before_later(effect, &object, context);
             }
             DecisionContinuation::SplitForEffect {
+                definition,
                 chooser,
                 items,
-                chosen,
-                unchosen,
                 object,
                 context,
-                effect,
             } => {
                 let (first, second) = items.into_iter().enumerate().fold(
                     (Vec::new(), Vec::new()),
@@ -442,11 +382,10 @@ impl Game {
                         (first, second)
                     },
                 );
-                self.queue_effect_pile_choice(
-                    chooser, first, second, chosen, unchosen, object, context, effect,
-                );
+                self.queue_effect_pile_choice(chooser, first, second, object, context, definition);
             }
             DecisionContinuation::ChoosePileForEffect {
+                definition: _,
                 first,
                 second,
                 chosen,
@@ -469,73 +408,6 @@ impl Game {
                 if options.contains(&1) {
                     self.miracle_window = Some(card);
                 }
-            }
-            DecisionContinuation::PileSplit { owner } => {
-                let first = pending
-                    .observation
-                    .options
-                    .iter()
-                    .filter(|option| options.contains(&option.id))
-                    .filter_map(|option| option.card.map(|(card, _)| card))
-                    .collect::<Vec<_>>();
-                let second = pending
-                    .observation
-                    .options
-                    .iter()
-                    .filter(|option| !options.contains(&option.id))
-                    .filter_map(|option| option.card.map(|(card, _)| card))
-                    .collect::<Vec<_>>();
-                self.queue_pile_choice(owner, first, second);
-            }
-            DecisionContinuation::RevealedPileSplit {
-                player,
-                revealed,
-                rest,
-                placement,
-            } => {
-                let chosen = pending
-                    .observation
-                    .options
-                    .iter()
-                    .filter(|option| options.contains(&option.id))
-                    .filter_map(|option| option.card.map(|(card, _)| card))
-                    .collect::<Vec<_>>();
-                let (first, second): (Vec<_>, Vec<_>) = revealed
-                    .into_iter()
-                    .partition(|card| chosen.contains(&card.id));
-                self.queue_revealed_pile_choice(player, first, second, rest, placement);
-            }
-            DecisionContinuation::RevealedPileChoice {
-                player,
-                first,
-                second,
-                rest,
-                placement,
-            } => {
-                let (to_hand, to_rest) = if options.contains(&0) {
-                    (first, second)
-                } else {
-                    (second, first)
-                };
-                for card in to_hand {
-                    let (card, _zone_change) = self.zone_change_card(card);
-                    self.players[player.index()].hand.push(card);
-                }
-                self.place_revealed_remainder(player, to_rest, rest, placement);
-            }
-            DecisionContinuation::PileChoice { first, second } => {
-                let chosen = if options.contains(&0) { first } else { second };
-                self.move_permanents_to_graveyard(&chosen);
-            }
-            DecisionContinuation::DestroyOfChoice { can_regenerate } => {
-                let doomed = pending
-                    .observation
-                    .options
-                    .iter()
-                    .filter(|option| options.contains(&option.id))
-                    .filter_map(|option| option.card.map(|(card, _)| card))
-                    .collect::<Vec<_>>();
-                self.destroy_permanents(&doomed, can_regenerate);
             }
             DecisionContinuation::SeparateIntoPiles {
                 resolving_controller,
@@ -622,20 +494,6 @@ impl Game {
                 } else {
                     self.move_permanents_to_graveyard(&sacrificed);
                 }
-            }
-            DecisionContinuation::Duress { victim, cause } => {
-                let Some(option) = pending
-                    .observation
-                    .options
-                    .iter()
-                    .find(|option| options.contains(&option.id))
-                else {
-                    return;
-                };
-                let Some((card, _)) = option.card else {
-                    return;
-                };
-                self.discard_cards_with_cause(victim, &[card], cause);
             }
             DecisionContinuation::SearchZone {
                 controller,

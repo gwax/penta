@@ -60,7 +60,7 @@ distinguishes snapshots of the covered source and build inputs.
   fixes, and different legal-action membership through existing action shapes
   change the automatic `simulationFingerprint` instead. Observations and
   catalogs advertise `protocolCapabilities`; the current reconstruction
-  facility is `reconstruction.checkpoint.v6`. Stable wire tags are explicit
+  facility is `reconstruction.checkpoint.v3`. Stable wire tags are explicit
   mappings rather than Rust `Debug` output. Protocol 22 is the one-time
   transition from the former all-purpose counter to this breaking-only epoch.
 - **Banding, in part.** CR 702.22 gives banding two separate jobs, and the
@@ -369,36 +369,23 @@ distinguishes snapshots of the covered source and build inputs.
   permanent until cleanup. Sightless Ghoul, Markov Warlord, Vampire Interloper,
   Crossway Vampire, Nightbird's Clutches, and Firefist Striker are now
   executable, the last completing battalion.
-- **Checkpoint reconstruction v3.** Suspended declarative effects now store
-  event context separately from typed single-object and object-set bindings.
-  Bound stack spells retain their spell identity, and nested choices,
-  payments, and pile procedures can resume without losing earlier results.
-  This changes only the dedicated checkpoint format and capability; the bot
-  protocol epoch remains 22.
-- **Checkpoint reconstruction v4.** Resolved continuous effects now round-trip
-  as one ordered vector with their authored catalog location, source-ability
-  provenance, expiration, and frozen resolution-time values. This replaces
-  the lossy animation and aggregate power/toughness fields; format-3
-  checkpoints must be regenerated. The dedicated checkpoint capability moves
-  to `reconstruction.checkpoint.v4`, while the bot protocol epoch remains 22.
-- **Checkpoint reconstruction v5.** Damage prevention now round-trips as one
-  ordered collection of typed, expiration-aware rules, and effect-installed
-  triggers retain their full lexical resolution context through pending and
-  stacked trigger states. Replacement continuations now point directly into
-  typed replacement programs rather than compatibility ordinary effects.
-  Format-4 checkpoints must be regenerated; the dedicated capability moves to
-  `reconstruction.checkpoint.v5`, while the bot protocol epoch remains 22.
-- **Checkpoint reconstruction v6 and ordered inserted turn phases.** The
-  additional-combat counter is now a queue of authored major-phase sequences
-  with a frozen ordinary continuation. Multiple schedules at one boundary run
-  newest first without reversing either sequence, nested schedules run after
-  the inserted phase in progress, and `combat, postcombat main` composes as one
-  effect. Per-combat state resets between every combat while per-turn attack
-  history remains intact, and mana empties at every phase boundary.
-  Aurelia uses the shared scheduler rather than a combat-only instruction.
-  The queue and continuation round-trip in checkpoint format 6; format-5
-  checkpoints must be regenerated and the dedicated capability moves to
-  `reconstruction.checkpoint.v6`, while the bot protocol epoch remains 22.
+- **Checkpoint reconstruction v3 consolidates the complete migration from
+  v2.** Suspended declarative effects separate event context from typed object
+  bindings, and shared choice, mana-or-life payment, scalar, top-card, and pile
+  continuations retain every value needed to resume. Disclosed hidden-zone
+  cards carry exact seat, zone, and index provenance. Resolved characteristic
+  and object rules are one ordered, expiration-aware continuous-effect
+  collection with authored locators, source provenance, component order, and
+  frozen values; player play restrictions use a parallel collection. Damage
+  prevention is one ordered typed collection, installed triggers retain full
+  lexical context, and entry replacements use typed replacement-program
+  locators. Inserted combat and postcombat-main phases form an ordered queue
+  with a frozen ordinary continuation. These structures replace the lossy
+  aggregate permanent fields, fragmented prevention state, delayed/floating
+  trigger split, scalar additional-combat counter, and procedure-specific
+  continuation tags. Format-2 checkpoints must be regenerated; the dedicated
+  capability is `reconstruction.checkpoint.v3`, while the bot protocol epoch
+  remains 22.
 - **Battalion**, sharing exalted's event. The attack-declaration event now
   carries how many creatures attacked, and each keyword states the range it
   wants: exactly one for exalted, three or more for battalion. Eight Gatecrash
@@ -445,9 +432,10 @@ distinguishes snapshots of the covered source and build inputs.
   untap step would do it every turn. Untapping stays mandatory for everything
   that does not print otherwise.
 - **Control changes that outlive the turn.** The engine could only take control
-  until cleanup. `EffectDef::GainControlWhileSourceRemains` lasts as long as the
-  permanent holding it stays on the battlefield under the same controller, and
-  ends the moment either stops being true. Aladdin and Thrull Champion are now
+  until cleanup. `EffectDef::GainControl` now carries a typed
+  `ControlDurationDef`; its source-bound form lasts as long as the permanent
+  holding it stays on the battlefield under the same controller, and ends the
+  moment either stops being true. Aladdin and Thrull Champion are now
   executable. The holder is an additive checkpoint member.
 - **A `Blocking` object predicate**, the other half of "attacking or
   blocking", which neither single-sided predicate could express. Tetsuo
@@ -502,11 +490,11 @@ distinguishes snapshots of the covered source and build inputs.
   named source as an additive member. Circle of Protection: Blue, Green, Red,
   White, Black, and Artifacts are now executable, as is Greater Realm of
   Preservation.
-- **A continuous combat-damage prevention.** The two turn-scoped effects write
-  a flag on a permanent that cleanup clears, which is right for a Fog and wrong
-  for an Aura. `AppliedEffectDef::PreventCombatDamage` is asked afresh each time
-  combat damage is dealt, so it holds while the Aura is attached and stops the
-  moment it is not. Gaseous Form is now executable.
+- **A continuous combat-damage prevention.** Static and resolving prevention
+  use the same typed damage-event matchers while retaining their different
+  lifetimes. `AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(...))` is
+  asked afresh each time combat damage is dealt, so it holds while an Aura is
+  attached and stops the moment it is not. Gaseous Form is now executable.
 - **Seven identities behind a prevention line that had already been built.**
   Sixty-six identities cited "a duration-scoped replacement/prevention effect"
   after the prevention shields landed. Conservator, Oasis, Argivian Blacksmith,
@@ -832,9 +820,9 @@ version is unmoved.
   of them; already-attached Auras remain. The card exposes the intended Chaos
   Orb interaction without a card-specific resolver.
 - `EffectDef` now supports floating-point `Randomized` branches driven by the
-  replay-stable seeded RNG and a reusable resolution-time `ChoosePermanent`
-  continuation. `ChosenPermanent` is deliberately distinct from a target and
-  never passes through target legality or fizzle machinery.
+  replay-stable seeded RNG and a reusable resolution-time `Choose(ChooseDef)`
+  operation. Its typed object or object-set binding is deliberately distinct
+  from a target and never passes through target legality or fizzle machinery.
 
 - Extra turns are now a shared declarative effect used by Time Walk, Time
   Vault, and Ugin's Nexus. The scheduler keeps ordinary turns anchored
@@ -953,15 +941,17 @@ version is unmoved.
   `CardBehavior::NevinyrralsDisk` Rust selector has been removed, and the
   handcrafted policy scores the full sweep from the board swing. Protocol JSON
   and legal actions are unchanged.
-- `EffectDef::DiscardCards` and `EffectDef::DiscardAtRandom` are now one
-  `EffectDef::Discard` operation whose `DiscardSelectionDef` attribute is
-  `RecipientChooses` or `Random`. Downstream Rust card definitions must migrate
-  to the unified shape. The chosen and seeded-random resolution paths are
-  unchanged, as are protocol JSON and legal actions.
-- `EffectDef::OptionalManaPayment` is now `EffectDef::OptionalPayment`, using
-  the same `PaymentDef` vocabulary as replacement effects. Rust card definitions
-  should express a mana payment as one `CostDef::Mana` atom and name its payer;
-  protocol JSON and rules behavior are unchanged.
+- Affected-player discard remains one `EffectDef::Discard` operation whose
+  `DiscardSelectionDef` is `RecipientChooses` or `Random`. A separate
+  `EffectDef::DiscardCards` rules action now moves specific card objects that a
+  preceding generic `Choose` bound, without asking their owner to choose again;
+  Duress uses that composition. Protocol JSON and legal actions are unchanged.
+- Optional and unless-paid branches now share `EffectDef::PayOr` and the same
+  `EffectPaymentDef` in ordinary and replacement programs. Its payer is a
+  `PlayerSetDef` that must select at most one player, and its explicit cost is
+  fixed mana, dynamically evaluated generic mana, or life. The ambiguous
+  `PaymentDef` list of general cost atoms has been removed; protocol JSON and
+  legal actions are unchanged.
 - The unfiltered catalog appends `Urborg, Tomb of Yawgmoth` as definition 261
   with debut set `planar-chaos`, and `Yavimaya, Cradle of Growth` as definition
   262 with debut set `modern-horizons-2`. They are cross-format interaction

@@ -73,8 +73,9 @@ fn guardian_beast_stops_an_opponent_from_gaining_control_of_an_artifact() {
         creature(guardian.0, cards::GUARDIAN_BEAST, PlayerId::One),
         creature(orb.0, cards::CHAOS_ORB, PlayerId::One),
     ]);
-    let steal = EffectDef::GainControlThisTurn {
+    let steal = EffectDef::GainControl {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        duration: crate::card::ControlDurationDef::UntilEndOfTurn,
     };
 
     let object = spell_with_targets(

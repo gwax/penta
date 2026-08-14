@@ -3,10 +3,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef,
-    ConditionalValueDef, CounterKind, DiscardSelectionDef, DoubleFacedKind, EffectDef,
-    EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    ComparisonDef, ConditionalValueDef, CounterKind, DiscardSelectionDef, DoubleFacedKind,
+    EffectDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     PlayOptionDef, PlayerRelation, QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef,
     SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
     TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
@@ -364,8 +364,12 @@ pub(in crate::card::sets) static ARTFUL_DODGE: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
-            EffectDef::MakeUnblockableThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         abilities::flashback(mana_cost!("{U}")),
@@ -755,7 +759,9 @@ pub(in crate::card::sets) static SHRIEKGEIST: CardRecord = CardRecord::new(
 /// "This creature can block only creatures with flying."
 static BLOCKS_ONLY_FLYERS: EffectDef = EffectDef::StaticApply {
     recipient: EffectRecipientDef::Source,
-    effect: AppliedEffectDef::CanBlockOnly(ObjectPredicateDef::HasKeyword(KeywordAbility::Flying)),
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(
+        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+    )),
 };
 
 // DKA 51 — Stormbound Geist
@@ -813,8 +819,10 @@ pub(in crate::card::sets) static TOWER_GEIST: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::Controller,
                 selection: &TopCardSelectionDef {
                     count: ValueDef::Constant(2),
+                    object: None,
                     minimum: 1,
                     maximum: 1,
+                    reveal_selected: false,
                     selected_zone: ZoneKind::Hand,
                     selected_placement: ZonePlacement::Top,
                     rest_zone: ZoneKind::Graveyard,
@@ -1011,7 +1019,7 @@ pub(in crate::card::sets) static SIGHTLESS_GHOUL: CardRecord = CardRecord::new(
             "This creature can't block.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBlock,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
             },
         ),
         abilities::undying(),
@@ -1394,7 +1402,7 @@ pub(in crate::card::sets) static MARKOV_WARLORD: CardRecord = CardRecord::new(
             &UP_TO_TWO_CREATURES,
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::CannotBlock,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
                 duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),

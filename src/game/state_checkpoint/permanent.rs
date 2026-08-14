@@ -45,21 +45,12 @@ pub(super) fn permanent_snapshot(
         owner: permanent.card.owner.index(),
         timestamp: permanent.timestamp.0,
         entered_controller_turn: permanent.entered_controller_turn,
-        held_tapped_by: permanent
-            .held_tapped_by
-            .iter()
-            .map(|source| source.0)
-            .collect(),
-        unblockable_this_turn: permanent.unblockable_this_turn,
-        cannot_block_this_turn: permanent.cannot_block_this_turn,
         detained_until_turn_of: permanent
             .detained_until_turn_of
             .map(|(player, turns)| (player.index(), turns)),
         destroy_at_end_of_combat: permanent.destroy_at_end_of_combat,
         skipped_untap_steps: permanent.skipped_untap_steps,
-        color_override: permanent.color_override.map(ColorSet::to_flags),
         control_reverts_to: permanent.control_reverts_to.map(PlayerId::index),
-        cannot_regenerate_this_turn: permanent.cannot_regenerate_this_turn,
         control_source: permanent.control_source.map(|id| id.0),
         control_requires_source_tapped: permanent.control_requires_source_tapped,
         chosen_player: permanent.chosen_player.map(PlayerId::index),
@@ -188,6 +179,11 @@ fn resolved_operation_snapshot(
                 ResolvedPowerToughnessOperation::SetBase { power, toughness },
             ),
         ) => Some(ResolvedContinuousOperationSnapshot::SetBasePowerToughness { power, toughness }),
+        (AppliedEffectDef::Rule(expected), ResolvedContinuousEffectKind::Rule(actual))
+            if expected == actual =>
+        {
+            Some(ResolvedContinuousOperationSnapshot::Rule)
+        }
         (
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
                 PowerToughnessOperationDef::Modify { .. },

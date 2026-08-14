@@ -4,7 +4,7 @@ use super::{
     DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
     Game, GameObjectId, ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit,
     PilesSeparated, PlayerId, SacrificeFollowup, ScopedEffect, StackObject, Step,
-    TopCardSelectionDef, ZoneKind, ZoneMoveCause, ZonePlacement,
+    TopCardSelectionDef, ZoneKind, ZoneMoveCause,
 };
 
 impl Game {
@@ -23,17 +23,44 @@ impl Game {
             return;
         };
         let revealed = self.take_top_of_library(player, count);
-        let followup = selection
-            .then
-            .map(|then| (Box::new(object.clone()), context, scoped.with_effect(*then)));
         if revealed.is_empty() {
-            if let Some((object, context, effect)) = followup {
-                self.resolve_effect_def(effect, &object, context);
+            if let Some(then) = selection.then {
+                self.resolve_effect_def(scoped.with_effect(*then), object, context);
             }
             return;
         }
-        let options = self.card_decision_options(&revealed, DecisionZone::Library);
-        let preference = if selection.selected_zone == ZoneKind::Hand {
+        let source = object.source.unwrap_or(object.id);
+        let eligible = revealed
+            .iter()
+            .filter(|card| {
+                selection.object.is_none_or(|predicate| {
+                    self.card_object_matches(predicate, card, ZoneKind::Library, source)
+                })
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        let inspected = revealed
+            .iter()
+            .map(|card| (card.id, card.definition))
+            .collect::<Vec<_>>();
+        let mut options = self.card_decision_options(&eligible, DecisionZone::Library);
+        for option in &mut options {
+            option.members = inspected.clone();
+        }
+        let no_selection = options.is_empty();
+        if no_selection {
+            options.push(DecisionOption {
+                id: 0,
+                label: "No inspected card is eligible".into(),
+                card: None,
+                members: inspected,
+                ability_text: None,
+                zone: DecisionZone::Library,
+            });
+        }
+        let preference = if no_selection {
+            DecisionPreference::Neutral
+        } else if selection.selected_zone == ZoneKind::Hand {
             DecisionPreference::HigherCardValue
         } else {
             DecisionPreference::LowerCardValue
@@ -43,17 +70,20 @@ impl Game {
             "Choose cards from the top of the library",
             DecisionVisibility::Private,
             preference,
-            usize::from(selection.minimum)..=usize::from(selection.maximum),
+            if no_selection {
+                0..=0
+            } else {
+                usize::from(selection.minimum)..=usize::from(selection.maximum)
+            },
             false,
             options,
             DecisionContinuation::TopCardSelection {
                 player,
                 revealed,
-                selected_zone: selection.selected_zone,
-                selected_placement: selection.selected_placement,
-                rest_zone: selection.rest_zone,
-                rest_placement: selection.rest_placement,
-                followup,
+                selection,
+                object: Box::new(object.clone()),
+                context,
+                effect: scoped,
             },
         );
     }
@@ -102,50 +132,6 @@ impl Game {
                     members: Vec::new(),
                     ability_text: None,
                     zone: DecisionZone::Battlefield,
-                })
-            })
-            .collect()
-    }
-
-    /// The same options for a set that spans the battlefield and the stack.
-    /// An option's zone is what tells a client whether it is pointing at a
-    /// permanent or at a spell still waiting to resolve.
-    pub(super) fn damage_source_decision_options(
-        &self,
-        sources: &[GameObjectId],
-    ) -> Vec<DecisionOption> {
-        sources
-            .iter()
-            .enumerate()
-            .filter_map(|(index, id)| {
-                let (label, card, zone) = if let Some(permanent) = self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == *id)
-                {
-                    (
-                        self.effective_permanent_name(permanent)
-                            .map_or_else(|| "Unknown permanent".into(), str::to_owned),
-                        (permanent.card.id, permanent.card.definition),
-                        DecisionZone::Battlefield,
-                    )
-                } else {
-                    let object = self.stack.iter().find(|object| object.id == *id)?;
-                    (
-                        self.catalog
-                            .get(object.card.definition)
-                            .map_or_else(|| "Unknown spell".into(), |card| card.name.clone()),
-                        (object.id, object.card.definition),
-                        DecisionZone::Stack,
-                    )
-                };
-                Some(DecisionOption {
-                    id: u32::try_from(index).unwrap_or(u32::MAX),
-                    label,
-                    card: Some(card),
-                    members: Vec::new(),
-                    ability_text: None,
-                    zone,
                 })
             })
             .collect()
@@ -385,15 +371,16 @@ impl Game {
     /// more counters than the permanent has.
     /// CR 602.5c as Pithing Needle writes it: a non-mana activated ability
     /// cannot be activated while something has named its source's card. The
-    /// name is matched against the printed card, so a copy answering to the
-    /// same name is locked too.
+    /// name is matched against the object's effective card part, so transformed
+    /// faces and copies answer to the name whose abilities they currently
+    /// present.
     pub(super) fn activated_abilities_are_named(&self, permanent: &Permanent) -> bool {
-        let (definition, _part) = Self::effective_rules_source(permanent);
-        let Some(name) = self
-            .catalog
-            .get(definition)
-            .map(|definition| definition.name.as_str())
-        else {
+        let (definition, part) = Self::effective_rules_source(permanent);
+        let Some(name) = self.catalog.get(definition).map(|definition| {
+            definition
+                .part(part)
+                .map_or(definition.name.as_str(), |part| part.name.as_str())
+        }) else {
             return false;
         };
         self.battlefield.iter().any(|candidate| {
@@ -421,168 +408,6 @@ impl Game {
         i32::from(permanent.counters(CounterKind::Loyalty)) + i32::from(change) >= 0
     }
 
-    /// The ability's controller separates everything the other player
-    /// controls into two piles, then that player sacrifices one. The split is
-    /// recorded as the chosen pile; whatever is left is the other.
-    pub(super) fn queue_pile_split(&mut self, splitter: PlayerId, owner: PlayerId) {
-        let permanents = self
-            .battlefield
-            .iter()
-            .filter(|permanent| permanent.controller == owner)
-            .map(|permanent| permanent.card.clone())
-            .collect::<Vec<_>>();
-        if permanents.is_empty() {
-            return;
-        }
-        let options = self.card_decision_options(&permanents, DecisionZone::Battlefield);
-        let maximum = options.len();
-        self.queue_decision(
-            splitter,
-            "Separate these permanents into two piles",
-            DecisionVisibility::Public,
-            DecisionPreference::Neutral,
-            0..=maximum,
-            false,
-            options,
-            DecisionContinuation::PileSplit { owner },
-        );
-    }
-
-    /// Reveals the top cards and hands the split to an opponent. The reveal
-    /// takes them out of the library up front, so every path from here has to
-    /// put all of them somewhere.
-    pub(super) fn queue_revealed_pile_split(
-        &mut self,
-        player: PlayerId,
-        count: usize,
-        rest: ZoneKind,
-        placement: ZonePlacement,
-    ) {
-        let revealed = self.take_top_of_library(player, count);
-        if revealed.is_empty() {
-            return;
-        }
-        let options = self.card_decision_options(&revealed, DecisionZone::Library);
-        let maximum = options.len();
-        self.queue_decision(
-            player.opponent(),
-            "Separate the revealed cards into two piles",
-            DecisionVisibility::Public,
-            DecisionPreference::Neutral,
-            0..=maximum,
-            false,
-            options,
-            DecisionContinuation::RevealedPileSplit {
-                player,
-                revealed,
-                rest,
-                placement,
-            },
-        );
-    }
-
-    /// Offers the two revealed piles to the player who gets to keep one.
-    pub(super) fn queue_revealed_pile_choice(
-        &mut self,
-        player: PlayerId,
-        first: Vec<CardInstance>,
-        second: Vec<CardInstance>,
-        rest: ZoneKind,
-        placement: ZonePlacement,
-    ) {
-        let describe = |game: &Self, pile: &[CardInstance]| {
-            if pile.is_empty() {
-                return "the empty pile".to_string();
-            }
-            pile.iter()
-                .filter_map(|card| game.catalog.get(card.definition))
-                .map(|definition| definition.name.clone())
-                .collect::<Vec<_>>()
-                .join(", ")
-        };
-        let options = [&first, &second]
-            .into_iter()
-            .enumerate()
-            .map(|(index, pile)| DecisionOption {
-                id: u32::try_from(index).unwrap_or(u32::MAX),
-                label: format!("Take {}", describe(self, pile)),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::Library,
-            })
-            .collect();
-        self.queue_decision(
-            player,
-            "Choose the pile to put into your hand",
-            DecisionVisibility::Public,
-            DecisionPreference::Neutral,
-            1..=1,
-            false,
-            options,
-            DecisionContinuation::RevealedPileChoice {
-                player,
-                first,
-                second,
-                rest,
-                placement,
-            },
-        );
-    }
-
-    /// Offers the split piles to the player who must give one up.
-    pub(super) fn queue_pile_choice(
-        &mut self,
-        owner: PlayerId,
-        first: Vec<GameObjectId>,
-        second: Vec<GameObjectId>,
-    ) {
-        let describe = |game: &Self, pile: &[GameObjectId]| {
-            if pile.is_empty() {
-                return "the empty pile".to_string();
-            }
-            let names = pile
-                .iter()
-                .filter_map(|id| {
-                    game.battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == *id)
-                })
-                .filter_map(|permanent| game.catalog.get(permanent.card.definition))
-                .map(|definition| definition.name.clone())
-                .collect::<Vec<_>>();
-            names.join(", ")
-        };
-        let options = vec![
-            DecisionOption {
-                id: 0,
-                label: format!("Sacrifice {}", describe(self, &first)),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::Battlefield,
-            },
-            DecisionOption {
-                id: 1,
-                label: format!("Sacrifice {}", describe(self, &second)),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::Battlefield,
-            },
-        ];
-        self.queue_decision(
-            owner,
-            "Choose the pile to sacrifice",
-            DecisionVisibility::Public,
-            DecisionPreference::Neutral,
-            1..=1,
-            false,
-            options,
-            DecisionContinuation::PileChoice { first, second },
-        );
-    }
-
     /// Turns a double-faced permanent over. The face is which part the
     /// permanent presents, so transforming is choosing the other one; the
     /// object itself does not change, which is why counters and damage stay.
@@ -608,59 +433,6 @@ impl Game {
         self.capture_battlefield_triggers_from_snapshot(
             &listeners,
             &CommittedTriggerEvent::Transformed { object },
-        );
-    }
-
-    /// The permanents a player controls that an effect could pick out.
-    pub(super) fn chosen_removal_candidates(
-        &self,
-        player: PlayerId,
-        predicate: ObjectPredicateDef,
-        source: GameObjectId,
-    ) -> Vec<CardInstance> {
-        self.battlefield
-            .iter()
-            .filter(|permanent| permanent.controller == player)
-            .filter(|permanent| {
-                self.trigger_object_matches(
-                    predicate,
-                    &self.trigger_event_object(permanent),
-                    source,
-                    false,
-                )
-            })
-            .map(|permanent| permanent.card.clone())
-            .collect()
-    }
-
-    /// "Destroy target creature that player controls of their choice": the
-    /// choice belongs to whoever controls the candidates, so it is asked of
-    /// them rather than of the ability's controller.
-    pub(super) fn queue_chosen_destruction(
-        &mut self,
-        player: PlayerId,
-        predicate: ObjectPredicateDef,
-        source: GameObjectId,
-        can_regenerate: bool,
-    ) {
-        let candidates = self.chosen_removal_candidates(player, predicate, source);
-        if candidates.len() <= 1 {
-            let doomed = candidates.first().map(|only| only.id);
-            if let Some(doomed) = doomed {
-                self.destroy_permanents(&[doomed], can_regenerate);
-            }
-            return;
-        }
-        let options = self.card_decision_options(&candidates, DecisionZone::Battlefield);
-        self.queue_decision(
-            player,
-            "Choose a permanent to destroy",
-            DecisionVisibility::Public,
-            DecisionPreference::LowerCardValue,
-            1..=1,
-            false,
-            options,
-            DecisionContinuation::DestroyOfChoice { can_regenerate },
         );
     }
 

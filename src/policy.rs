@@ -20,8 +20,8 @@ mod tests {
     use super::HandcraftedPolicy;
     use crate::TargetIndex;
     use crate::card::{
-        AbilityDef, CostDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaCost,
-        ObjectPredicateDef, PayOrDef, PaymentDef, PlayerRelation, TargetConditionDef,
+        AbilityDef, EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaCost,
+        ObjectPredicateDef, PayOrDef, PlayerRelation, PlayerSetDef, TargetConditionDef,
         TriggerEventDef, TurnStepDef, ValueDef,
     };
 
@@ -43,8 +43,6 @@ mod tests {
         },
         CONDITIONAL_EFFECT,
     );
-    static OPTIONAL_PAYMENT_COST: [CostDef; 1] = [CostDef::Mana(ManaCost::new(1, 0))];
-
     #[test]
     fn target_condition_search_descends_decision_effects() {
         let may = EffectDef::May {
@@ -52,7 +50,10 @@ mod tests {
             effect: &CONDITIONAL_EFFECT,
         };
         let optional_payment = EffectDef::PayOr(PayOrDef::optional(
-            PaymentDef::new(PlayerRelation::You, &OPTIONAL_PAYMENT_COST),
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                ManaCost::new(1, 0),
+            ),
             &CONDITIONAL_EFFECT,
         ));
         let delayed = EffectDef::InstallTrigger(InstalledTriggerDef::once(&DELAYED_CONDITIONAL));

@@ -1,8 +1,9 @@
 use super::*;
 use crate::card::{
-    AbilityDef, CardComposition, CardDefinition, CardRules, CardSet, DamageEventMatcherDef,
-    DamagePreventionDef, DamageSourceMatcherDef, EffectDef, KeywordAbility, ObjectPredicateDef,
-    PlayerRelation, ResolvedEffectDurationDef, ValueDef,
+    AbilityDef, AppliedRuleDef, CardComposition, CardDefinition, CardRules, CardSet,
+    DamageEventMatcherDef, DamagePreventionDef, DamageSourceMatcherDef, EffectDef, KeywordAbility,
+    ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation,
+    ResolvedEffectDurationDef, ValueDef,
 };
 use crate::game::DecisionContinuation;
 use crate::{Action, ManaColor, ObjectBindingIndex};
@@ -102,6 +103,44 @@ fn source_for_locator(object: GameObjectId, locator: &model::AbilityLocator) -> 
             ability: AbilityId(locator.ability_id),
         },
     }
+}
+
+fn source_without_applied_effect(
+    catalog: &CardCatalog,
+    object: GameObjectId,
+    expected: AppliedEffectDef,
+) -> AbilitySourceRef {
+    for definition in catalog.definitions() {
+        for part in &definition.parts {
+            for attached in part.rules.indexed_abilities() {
+                let locator = model::AbilityLocator {
+                    definition: definition.id.0,
+                    part_id: part.id.0,
+                    ability_id: attached.id.0,
+                    nested: Vec::new(),
+                };
+                let source = source_for_locator(object, &locator);
+                if resolved_applied_effect_locator(catalog, source, expected).is_none() {
+                    return source;
+                }
+            }
+        }
+    }
+    panic!("the catalog has an unrelated source ability");
+}
+
+fn splice_printed_source_ability(value: &mut Value, source: AbilitySourceRef) {
+    let AbilityOrigin::Printed {
+        definition,
+        part,
+        ability,
+    } = source.ability
+    else {
+        panic!("the test splice source is printed");
+    };
+    value["definition"] = json!(definition.0);
+    value["partId"] = json!(part.0);
+    value["abilityId"] = json!(ability.0);
 }
 
 fn composite_modify_and_grant(
@@ -353,6 +392,90 @@ fn resolved_continuous_effect_locator_operation_mismatches_fail_closed() {
 }
 
 #[test]
+fn resolved_continuous_effect_source_splices_fail_closed_on_import_and_export() {
+    let mut game = crate::game::tests::ready_game();
+    let target = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::SAVANNAH_LIONS)
+        .expect("the checkpoint target enters");
+    let (source, definition) = dynamic_modify(&game.catalog, target);
+    let unrelated_source = source_without_applied_effect(&game.catalog, target, definition);
+    let effect = ResolvedContinuousEffect {
+        definition,
+        source,
+        timestamp: ContinuousEffectTimestamp(91_001),
+        component_order: 0,
+        expiration: ContinuousEffectExpiration::EndOfTurn,
+        kind: ResolvedContinuousEffectKind::PowerToughness(
+            ResolvedPowerToughnessOperation::Modify {
+                power: 6,
+                toughness: 2,
+            },
+        ),
+    };
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == target)
+        .expect("the target remains on the battlefield")
+        .resolved_continuous_effects
+        .push(effect);
+
+    let viewer = PlayerId::One;
+    let (mut wire, rebuilt) = rebuild_current_checkpoint(&game, viewer, 60_004);
+    assert_eq!(
+        rebuilt
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == target)
+            .expect("the honest target reconstructs")
+            .resolved_continuous_effects,
+        vec![effect],
+        "honest source-anchored object rules round trip",
+    );
+    let permanent = wire["checkpoint"]["battlefield"]
+        .as_array_mut()
+        .expect("the checkpoint has a battlefield")
+        .iter_mut()
+        .find(|permanent| permanent["objectId"] == target.0)
+        .expect("the target is checkpointed");
+    splice_printed_source_ability(
+        &mut permanent["resolvedContinuousEffects"][0]["source"]["ability"],
+        unrelated_source,
+    );
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &wire,
+        &true_hidden_hypothesis(&game, viewer),
+        60_005,
+    )
+    .expect_err("an object rule locator cannot be spliced onto another source ability");
+    assert!(
+        error.contains("locator disagrees with its source ability"),
+        "unexpected reconstruction error: {error}",
+    );
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == target)
+        .expect("the target remains on the battlefield")
+        .resolved_continuous_effects[0]
+        .source = unrelated_source;
+    let checkpoint = game.checkpoint_json(viewer);
+    assert_eq!(checkpoint["hasDeferredState"], true);
+    let permanent = checkpoint["battlefield"]
+        .as_array()
+        .expect("the checkpoint has a battlefield")
+        .iter()
+        .find(|permanent| permanent["objectId"] == target.0)
+        .expect("the target is checkpointed");
+    assert_eq!(
+        permanent["resolvedContinuousEffects"],
+        json!([]),
+        "an unanchored object rule is omitted rather than attributed catalog-wide",
+    );
+}
+
+#[test]
 fn overlapping_resolved_effect_expirations_round_trip_and_cleanup_independently() {
     let mut game = crate::game::tests::ready_game();
     let target = game
@@ -414,7 +537,7 @@ fn overlapping_resolved_effect_expirations_round_trip_and_cleanup_independently(
 
 fn unlocated_resolved_effect(object: GameObjectId) -> ResolvedContinuousEffect {
     ResolvedContinuousEffect {
-        definition: AppliedEffectDef::Special("uncataloged checkpoint test effect"),
+        definition: AppliedEffectDef::Rule(AppliedRuleDef::CannotRegenerate),
         source: AbilitySourceRef {
             object,
             ability: AbilityOrigin::Printed {
@@ -739,7 +862,7 @@ fn checkpoint_encodes_draw_replacement_and_procedure_state() {
 }
 
 #[test]
-fn resolved_prevention_and_regeneration_prohibition_survive_checkpoint_round_trip() {
+fn resolved_prevention_and_prohibitions_survive_checkpoint_round_trip() {
     let mut game = crate::game::tests::ready_game();
     let source = game
         .put_onto_battlefield(PlayerId::One, crate::card::cards::SAVANNAH_LIONS)
@@ -747,11 +870,25 @@ fn resolved_prevention_and_regeneration_prohibition_survive_checkpoint_round_tri
     let prohibited = game
         .put_onto_battlefield(PlayerId::Two, crate::card::cards::ATOG)
         .expect("prohibited creature enters");
+    let rule = AppliedEffectDef::Rule(AppliedRuleDef::CannotRegenerate);
+    let rule_locator = ability_locator(&game.catalog, |ability| {
+        semantics::applied_effects(ability).contains(&rule)
+    })
+    .expect("the catalog has a cannot-regenerate rule");
+    let rule_source = source_for_locator(source, &rule_locator);
     game.battlefield
         .iter_mut()
         .find(|permanent| permanent.card.id == prohibited)
         .expect("the prohibited creature is present")
-        .cannot_regenerate_this_turn = true;
+        .resolved_continuous_effects
+        .push(ResolvedContinuousEffect {
+            definition: rule,
+            source: rule_source,
+            timestamp: ContinuousEffectTimestamp(16),
+            component_order: 0,
+            expiration: ContinuousEffectExpiration::EndOfTurn,
+            kind: ResolvedContinuousEffectKind::Rule(AppliedRuleDef::CannotRegenerate),
+        });
     let source_ability = AbilitySourceRef {
         object: source,
         ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Plains),
@@ -782,6 +919,27 @@ fn resolved_prevention_and_regeneration_prohibition_survive_checkpoint_round_tri
             expiration: ContinuousEffectExpiration::EndOfTurn,
         },
     ];
+    let play_rule = AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(PlayRestrictionDef::new(
+        PlayActionMatcherDef::CastSpell,
+        ObjectPredicateDef::NoncreatureSpell,
+    )));
+    let play_locator = ability_locator(&game.catalog, |ability| {
+        semantics::applied_effects(ability).contains(&play_rule)
+    })
+    .expect("the catalog has a play prohibition");
+    game.resolved_play_restrictions
+        .push(ResolvedPlayRestriction {
+            definition: play_rule,
+            source: source_for_locator(source, &play_locator),
+            affected_player: PlayerId::Two,
+            timestamp: ContinuousEffectTimestamp(19),
+            component_order: 0,
+            expiration: ContinuousEffectExpiration::EndOfTurn,
+            restriction: PlayRestrictionDef::new(
+                PlayActionMatcherDef::CastSpell,
+                ObjectPredicateDef::NoncreatureSpell,
+            ),
+        });
 
     let viewer = game.decision_player().expect("the game awaits an action");
     let observation = game.observe(viewer);
@@ -802,23 +960,121 @@ fn resolved_prevention_and_regeneration_prohibition_survive_checkpoint_round_tri
     )
     .expect("duration-scoped prevention state reconstructs");
     assert_eq!(rebuilt.damage_preventions, game.damage_preventions);
-    assert!(
-        rebuilt
-            .battlefield
-            .iter()
-            .find(|permanent| permanent.card.id == prohibited)
-            .expect("the prohibited creature reconstructs")
-            .cannot_regenerate_this_turn
+    assert_eq!(
+        rebuilt.resolved_play_restrictions,
+        game.resolved_play_restrictions
     );
+    let rebuilt_prohibited = rebuilt
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == prohibited)
+        .expect("the prohibited creature reconstructs");
+    assert!(rebuilt.has_applied_rule(rebuilt_prohibited, AppliedRuleDef::CannotRegenerate,));
     rebuilt.finish_cleanup();
     assert!(rebuilt.damage_preventions.is_empty());
+    assert!(rebuilt.resolved_play_restrictions.is_empty());
+    let rebuilt_prohibited = rebuilt
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == prohibited)
+        .expect("the creature survives cleanup");
+    assert!(!rebuilt.has_applied_rule(rebuilt_prohibited, AppliedRuleDef::CannotRegenerate,));
+}
+
+#[test]
+fn inconsistent_resolved_play_restrictions_fail_checkpoint_export_closed() {
+    let mut game = crate::game::tests::ready_game();
+    let source = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::SAVANNAH_LIONS)
+        .expect("the restriction source enters");
+    let definition = AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(PlayRestrictionDef::new(
+        PlayActionMatcherDef::CastSpell,
+        ObjectPredicateDef::NoncreatureSpell,
+    )));
+    let locator = ability_locator(&game.catalog, |ability| {
+        semantics::applied_effects(ability).contains(&definition)
+    })
+    .expect("the catalog has a play prohibition");
+    game.resolved_play_restrictions
+        .push(ResolvedPlayRestriction {
+            definition,
+            source: source_for_locator(source, &locator),
+            affected_player: PlayerId::Two,
+            timestamp: ContinuousEffectTimestamp(19),
+            component_order: 0,
+            expiration: ContinuousEffectExpiration::EndOfTurn,
+            restriction: PlayRestrictionDef::new(
+                PlayActionMatcherDef::PlayLand,
+                ObjectPredicateDef::Any,
+            ),
+        });
+
+    assert_eq!(
+        game.checkpoint_json(PlayerId::One)["hasDeferredState"],
+        true,
+        "a frozen rule that disagrees with its authored definition is not reconstructible",
+    );
+}
+
+#[test]
+fn resolved_play_restriction_source_splices_fail_closed_on_import_and_export() {
+    let mut game = crate::game::tests::ready_game();
+    let source_object = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::SAVANNAH_LIONS)
+        .expect("the restriction source enters");
+    let restriction = PlayRestrictionDef::new(
+        PlayActionMatcherDef::CastSpell,
+        ObjectPredicateDef::NoncreatureSpell,
+    );
+    let definition = AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(restriction));
+    let locator = ability_locator(&game.catalog, |ability| {
+        semantics::applied_effects(ability).contains(&definition)
+    })
+    .expect("the catalog has a play prohibition");
+    let source = source_for_locator(source_object, &locator);
+    let unrelated_source = source_without_applied_effect(&game.catalog, source_object, definition);
+    let resolved = ResolvedPlayRestriction {
+        definition,
+        source,
+        affected_player: PlayerId::Two,
+        timestamp: ContinuousEffectTimestamp(19),
+        component_order: 0,
+        expiration: ContinuousEffectExpiration::EndOfTurn,
+        restriction,
+    };
+    game.resolved_play_restrictions.push(resolved);
+
+    let viewer = PlayerId::One;
+    let (mut wire, rebuilt) = rebuild_current_checkpoint(&game, viewer, 60_006);
+    assert_eq!(
+        rebuilt.resolved_play_restrictions,
+        vec![resolved],
+        "honest source-anchored player rules round trip",
+    );
+    splice_printed_source_ability(
+        &mut wire["checkpoint"]["resolvedPlayRestrictions"][0]["source"]["ability"],
+        unrelated_source,
+    );
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &wire,
+        &true_hidden_hypothesis(&game, viewer),
+        60_007,
+    )
+    .expect_err("a player-rule locator cannot be spliced onto another source ability");
     assert!(
-        !rebuilt
-            .battlefield
-            .iter()
-            .find(|permanent| permanent.card.id == prohibited)
-            .expect("the creature survives cleanup")
-            .cannot_regenerate_this_turn
+        error.contains("locator disagrees with its source ability"),
+        "unexpected reconstruction error: {error}",
+    );
+
+    game.resolved_play_restrictions[0].source = unrelated_source;
+    let checkpoint = game.checkpoint_json(viewer);
+    assert_eq!(checkpoint["hasDeferredState"], true);
+    assert_eq!(
+        checkpoint["resolvedPlayRestrictions"],
+        json!([]),
+        "an unanchored player rule is omitted rather than attributed catalog-wide",
     );
 }
 
@@ -1132,6 +1388,121 @@ fn a_supported_pending_decision_rebuilds_and_resumes() {
     let decision = rebuilt.pending_decisions[0].observation.id;
     rebuilt.choose_decision(player, decision, &[1]);
     assert_eq!(rebuilt.miracle_window, Some(card));
+}
+
+#[test]
+fn a_revealing_top_card_selection_round_trips_and_resumes() {
+    let mut game = crate::game::tests::ready_game();
+    game.players[0].library = vec![
+        crate::game::tests::card(81_001, crate::card::cards::LIGHTNING_BOLT, PlayerId::One),
+        crate::game::tests::card(81_002, crate::card::cards::SAVANNAH_LIONS, PlayerId::One),
+    ];
+    let domri = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::DOMRI_RADE)
+        .expect("Domri enters");
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let plus_one = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, .. }
+                if *source == domri
+                    && matches!(ability, crate::AbilityOrigin::Printed { ability, .. }
+                        if *ability == crate::AbilityId::PRIMARY))
+        })
+        .expect("Domri's +1 is offered");
+    game.apply(PlayerId::One, plus_one).unwrap();
+    for _ in 0..4 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority).unwrap();
+    }
+    assert_eq!(game.pending_decisions.len(), 1);
+    assert_eq!(game.decision_player(), Some(PlayerId::One));
+
+    let (wire, mut rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 81_003);
+    let selection_state = &wire["checkpoint"]["decisionState"]["continuation"];
+    assert!(selection_state.get("revealSelected").is_none());
+    assert!(selection_state.get("selectedZone").is_none());
+    assert!(selection_state.get("restZone").is_none());
+    let mut duplicate_detached = wire.clone();
+    let revealed = duplicate_detached["checkpoint"]["decisionState"]["continuation"]["revealed"]
+        .as_array_mut()
+        .expect("top-card continuation carries detached inspected cards");
+    revealed.push(revealed[0].clone());
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &duplicate_detached,
+        &true_hidden_hypothesis(&game, PlayerId::One),
+        81_003,
+    )
+    .expect_err("a top-card continuation cannot repeat one detached object id");
+    assert!(
+        error.contains("detached-card list repeats object id"),
+        "unexpected error: {error}"
+    );
+    let mut spliced = wire.clone();
+    spliced["checkpoint"]["decisionState"]["continuation"]["continuation"]["effect"]["path"] =
+        json!([999]);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &spliced,
+        &true_hidden_hypothesis(&game, PlayerId::One),
+        81_003,
+    )
+    .expect_err("top-card semantics cannot be replaced by edited placement fields or paths");
+    assert!(
+        error.contains("locator is absent") || error.contains("top-card selection locator"),
+        "unexpected error: {error}"
+    );
+    let mut wrong_kind = wire.clone();
+    wrong_kind["decision"]["kind"] = json!("TriggerOrder");
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &wrong_kind,
+        &true_hidden_hypothesis(&game, PlayerId::One),
+        81_003,
+    )
+    .expect_err("top-card selection rejects another decision procedure's kind");
+    assert!(
+        error.contains("decision kind disagrees"),
+        "unexpected error: {error}"
+    );
+    assert!(matches!(
+        rebuilt.pending_decisions[0].continuation,
+        DecisionContinuation::TopCardSelection {
+            selection: crate::card::TopCardSelectionDef {
+                reveal_selected: true,
+                ..
+            },
+            ..
+        }
+    ));
+    let decision = rebuilt.observe(PlayerId::One).decision.unwrap();
+    let choice = decision.options[0].id;
+    rebuilt.choose_decision(PlayerId::One, decision.id, &[choice]);
+
+    assert!(
+        rebuilt.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == crate::card::cards::SAVANNAH_LIONS)
+    );
+    assert!(rebuilt.events.iter().any(|event| matches!(
+        event,
+        GameEvent::CardRevealed {
+            player: PlayerId::One,
+            definition: crate::card::cards::SAVANNAH_LIONS,
+            ..
+        }
+    )));
 }
 
 #[test]
@@ -1495,6 +1866,92 @@ fn installed_trigger_retains_a_retired_lexical_target_and_resumes_from_lki() {
         rebuilt.players[PlayerId::Two.index()].mana_pool.colorless,
         5
     );
+}
+
+#[test]
+fn a_retired_card_direct_target_reconstructs_as_dangling_and_fizzles() {
+    fn pass_priority_pair(game: &mut Game) {
+        for _ in 0..2 {
+            let player = game.priority;
+            game.apply(player, Action::PassPriority)
+                .expect("priority passes");
+        }
+    }
+
+    let mut game = crate::game::tests::ready_game();
+    let ooze = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::SCAVENGING_OOZE)
+        .expect("Scavenging Ooze enters");
+    let food = crate::game::tests::card(95_100, crate::card::cards::SAVANNAH_LIONS, PlayerId::Two);
+    let food_id = food.id;
+    game.players[PlayerId::Two.index()].graveyard.push(food);
+    game.players[PlayerId::One.index()].mana_pool.green = 2;
+
+    for _ in 0..2 {
+        let activation = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, targets, .. }
+                    if *source == ooze
+                        && targets
+                            .iter()
+                            .flat_map(TargetSelection::targets)
+                            .any(|target| *target == Target::Card(food_id)))
+            })
+            .expect("the Ooze can target the same graveyard card twice");
+        game.apply(PlayerId::One, activation)
+            .expect("the Ooze activates");
+    }
+    assert_eq!(game.stack.len(), 2);
+
+    pass_priority_pair(&mut game);
+    assert_eq!(game.stack.len(), 1, "only the lower activation remains");
+    assert!(game.retired_objects.contains_key(&food_id));
+    assert!(game.players[PlayerId::Two.index()].graveyard.is_empty());
+    let life_after_first = game.players[PlayerId::One.index()].life;
+    let counters_after_first = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == ooze)
+        .expect("the Ooze remains")
+        .counters[crate::CounterKind::PlusOnePlusOne.index()];
+
+    let viewer = game.decision_player().expect("the game awaits priority");
+    let (wire, mut rebuilt) = rebuild_current_checkpoint(&game, viewer, 95_101);
+    assert_eq!(
+        wire["checkpoint"]["stack"][0]["requiresRetiredObject"],
+        json!(false),
+        "a direct target that left its zone needs no last-known information",
+    );
+    assert!(
+        wire["checkpoint"]["retiredObjects"]
+            .as_array()
+            .is_some_and(|objects| objects.iter().all(|object| {
+                object["card"]["objectId"].as_u64() != Some(u64::from(food_id.0))
+            })),
+        "the stale direct target must not retain the exiled card's identity",
+    );
+
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut rebuilt);
+    for resolved in [&game, &rebuilt] {
+        assert!(resolved.stack.is_empty());
+        assert_eq!(
+            resolved.players[PlayerId::One.index()].life,
+            life_after_first
+        );
+        assert_eq!(
+            resolved
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == ooze)
+                .expect("the Ooze remains")
+                .counters[crate::CounterKind::PlusOnePlusOne.index()],
+            counters_after_first,
+            "the stale lower activation fizzles instead of using retired-card LKI",
+        );
+    }
 }
 
 #[test]

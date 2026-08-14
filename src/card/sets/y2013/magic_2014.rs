@@ -11,15 +11,16 @@ use crate::card::sets::{
 };
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
-    CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef,
-    CounterKind, CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectExecutionDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, TargetConditionDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatureTypeSetDef,
+    DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // M14 2 — Ajani's Chosen
@@ -571,8 +572,10 @@ pub(in crate::card::sets) static GLIMPSE_THE_FUTURE: CardRecord = CardRecord::ne
             player: EffectRecipientDef::Controller,
             selection: &TopCardSelectionDef {
                 count: ValueDef::Constant(3),
+                object: None,
                 minimum: 1,
                 maximum: 1,
+                reveal_selected: false,
                 selected_zone: ZoneKind::Hand,
                 selected_placement: ZonePlacement::Top,
                 rest_zone: ZoneKind::Graveyard,
@@ -644,7 +647,9 @@ pub(in crate::card::sets) static PHANTOM_WARRIOR: CardRecord = CardRecord::new(
             "This creature can't be blocked.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Any),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
             },
         ),
     ),
@@ -1067,6 +1072,39 @@ pub(in crate::card::sets) static GNAWING_ZOMBIE: CardRecord = CardRecord::new(
 // M14 100 — Grim Return
 // Audit: blocked — Graveyard target predicates cannot inspect whether a card moved there from the battlefield this turn.
 
+static LIFEBANE_EXILE: EffectDef = EffectDef::MoveToZone {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    zone: ZoneKind::Exile,
+    placement: ZonePlacement::Top,
+    controller: None,
+};
+
+static LIFEBANE_EFFECTS: [EffectDef; 2] = [
+    EffectDef::LookAtHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::Color(ManaColor::Green),
+                    ObjectPredicateDef::Color(ManaColor::White),
+                ]),
+            ]),
+            &[ZoneKind::Hand],
+            PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+        )),
+        exclude: None,
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
+        then: &LIFEBANE_EXILE,
+    }),
+];
+
 // M14 101 — Lifebane Zombie
 pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
     cards::LIFEBANE_ZOMBIE,
@@ -1083,11 +1121,7 @@ pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
         abilities::intimidate(),
         AbilityDef::triggered_with_targets("When this creature enters, target opponent reveals their hand. You choose a green or white creature card from it and exile that card.", TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)), &[AbilityTargetDef::exactly_one(
             AbilityTargetPredicate::Player(PlayerRelation::Opponent),
-        )], EffectDef::None)
-        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::LifebaneZombie))
-        .with_coverage(AbilityCoverageDef::explained_complete(
-            "The targeted trigger uses the shared stack and a card-local hand-reveal and exile resolver.",
-        )),
+        )], EffectDef::Sequence(&LIFEBANE_EFFECTS)),
     ]),
 );
 
@@ -1333,7 +1367,7 @@ pub(in crate::card::sets) static SYPHON_SLIVER: CardRecord = CardRecord::new(
 );
 
 // M14 118 — Tenacious Dead
-// Audit: blocked — OptionalPayment cannot make the returned source enter tapped after a death trigger.
+// Audit: blocked — The effect vocabulary cannot make the returned source enter tapped after a death trigger.
 
 // M14 119 — Undead Minotaur
 pub(in crate::card::sets) static UNDEAD_MINOTAUR: CardRecord = CardRecord::new(
@@ -2080,7 +2114,7 @@ pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord
 // Audit: blocked — DealDamage can only attribute damage to the resolving spell, not to each fighting creature.
 
 // M14 180 — Into the Wilds
-// Audit: blocked — LookAtTopAndMayTake can only move a matching card to hand, not put a land onto the battlefield.
+// Audit: blocked — LookAtTopAndSelect cannot put a selected land onto the battlefield.
 
 // M14 181 — Kalonian Hydra
 // Audit: blocked — Counter effects cannot double each creature's existing +1/+1 counter count.
@@ -2519,7 +2553,7 @@ pub(in crate::card::sets) static FIRESHRIEKER: CardRecord = CardRecord::new(
 // Audit: blocked — Attack events cannot match attacks at you or your planeswalker, and abilities cannot permanently remove defender from the source after that trigger.
 
 // M14 212 — Haunted Plate Mail
-// Audit: blocked — Equipment is unsupported, activation restrictions cannot require controlling no creatures, and animation cannot remove the Equipment subtype.
+// Audit: blocked — Equipment is unsupported and activation restrictions cannot require controlling no creatures; the shared characteristic operations now cover its animation.
 
 // M14 214 — Pyromancer's Gauntlet
 // Audit: blocked — Damage replacement cannot filter red instant, sorcery, or planeswalker sources and add a fixed amount to the event.

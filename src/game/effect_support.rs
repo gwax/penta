@@ -1,14 +1,15 @@
 use super::{
     AbilityDef, AbilityId, AbilityOperationDef, AbilityOrigin, AbilitySourceRef,
-    AbilityTargetPredicate, AppliedEffectDef, CardPartId, CastSignature,
-    CharacteristicOperationDef, ComparisonDef, ContinuousEffectExpiration,
+    AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef, CardPartId, CastSignature,
+    CharacteristicOperationDef, ColorSet, ComparisonDef, ContinuousEffectExpiration,
     ContinuousEffectTimestamp, ControlFlow, CounterKind, EffectRecipientDef, EffectRecipientSetDef,
-    EffectResolutionContext, Game, GameObjectId, GrantId, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRefDef, PlayerSetDef,
+    EffectResolutionContext, Game, GameObjectId, GrantId, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRefDef, PlayerSetDef,
     PowerToughnessOperationDef, QuantifierDef, ResolvedAbilityOperation, ResolvedContinuousEffect,
-    ResolvedContinuousEffectKind, ResolvedEffectDurationDef, ResolvedPowerToughnessOperation,
-    ScopedEffect, StackObject, StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId,
-    TemporaryAbilityGrant, TriggerConditionDef, TriggerContext, ZoneKind,
+    ResolvedContinuousEffectKind, ResolvedDamageRedirect, ResolvedEffectDurationDef,
+    ResolvedPlayRestriction, ResolvedPowerToughnessOperation, ScopedEffect, StackObject,
+    StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId, TemporaryAbilityGrant,
+    TriggerConditionDef, TriggerContext, ZoneKind,
 };
 
 #[derive(Clone, Copy)]
@@ -138,36 +139,108 @@ impl Game {
             AppliedEffectDef::Characteristic(operation) => {
                 self.apply_characteristic_component(target, effect, operation, resolution);
             }
-            // A resolved prohibition is recorded on the permanent, the way
-            // the other until-end-of-turn combat riders are; the printed
-            // static form is read from the continuous layer instead.
-            AppliedEffectDef::CannotBlock => {
-                if let Target::Permanent(target) = target
-                    && let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == target)
-                {
-                    permanent.cannot_block_this_turn = true;
-                }
+            AppliedEffectDef::Rule(rule) => {
+                self.apply_rule_component(target, effect, rule, resolution);
             }
-            // Only the printed static forms of these exist. "Can't attack"
-            // is applied from elsewhere and read off the continuous layer;
-            // nothing resolves one onto a permanent for the turn.
-            AppliedEffectDef::CannotAttack
-            | AppliedEffectDef::CannotBeBlocked
-            | AppliedEffectDef::CannotBeCountered
-            | AppliedEffectDef::DoesNotUntapDuringUntapStep
-            | AppliedEffectDef::MayChooseNotToUntap
-            | AppliedEffectDef::CannotBeEnchanted
-            | AppliedEffectDef::CannotBecomeEnchanted
-            | AppliedEffectDef::CannotChangeController
-            | AppliedEffectDef::RemainsAttachedThroughProtection
-            | AppliedEffectDef::CannotBeBlockedBy(_)
-            | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventDamage(_)
-            | AppliedEffectDef::Special(_) => {}
+        }
+    }
+
+    fn apply_rule_component(
+        &mut self,
+        target: Target,
+        definition: AppliedEffectDef,
+        rule: AppliedRuleDef,
+        resolution: ResolvedAppliedEffect<'_>,
+    ) {
+        // `CannotBeCountered` is meaningful on a stack object, whose lifetime
+        // is already represented by `AppliedStackEffect`. A resolving Apply
+        // program cannot honestly give it one of the permanent durations.
+        debug_assert_ne!(rule, AppliedRuleDef::CannotBeCountered);
+        if rule == AppliedRuleDef::CannotBeCountered {
+            return;
+        }
+        let expiration = Self::continuous_effect_expiration(
+            resolution.duration,
+            resolution.object.controller,
+            self.turns_started[resolution.object.controller.index()],
+        );
+        if let AppliedRuleDef::RedirectDamageFromTo {
+            source,
+            destination,
+        } = rule
+        {
+            let Target::Player(player) = target else {
+                return;
+            };
+            let Some(source) = self.effect_object_reference_id(
+                source,
+                resolution.object,
+                resolution.context,
+                resolution.scoped,
+            ) else {
+                return;
+            };
+            let Some(destination) = self.effect_object_reference_id(
+                destination,
+                resolution.object,
+                resolution.context,
+                resolution.scoped,
+            ) else {
+                return;
+            };
+            self.damage_redirects.push(ResolvedDamageRedirect {
+                player,
+                source,
+                destination,
+                expiration,
+            });
+            return;
+        }
+        let source = AbilitySourceRef {
+            object: resolution.object.source.unwrap_or(resolution.object.id),
+            ability: resolution
+                .object
+                .ability_origin()
+                .unwrap_or(AbilityOrigin::Printed {
+                    definition: resolution.object.presentation_definition(),
+                    part: CardPartId::PRIMARY,
+                    ability: AbilityId::PRIMARY,
+                }),
+        };
+        if let AppliedRuleDef::CannotPlay(restriction) = rule {
+            let Target::Player(affected_player) = target else {
+                return;
+            };
+            self.resolved_play_restrictions
+                .push(ResolvedPlayRestriction {
+                    definition,
+                    source,
+                    affected_player,
+                    timestamp: resolution.timestamp,
+                    component_order: resolution.component_order,
+                    expiration,
+                    restriction,
+                });
+            return;
+        }
+        let Target::Permanent(target) = target else {
+            return;
+        };
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == target)
+        {
+            permanent
+                .resolved_continuous_effects
+                .push(ResolvedContinuousEffect {
+                    definition,
+                    source,
+                    timestamp: resolution.timestamp,
+                    component_order: resolution.component_order,
+                    expiration,
+                    kind: ResolvedContinuousEffectKind::Rule(rule),
+                });
         }
     }
 
@@ -182,6 +255,20 @@ impl Game {
             && matches!(target, Target::Card(_))
         {
             self.apply_nonbattlefield_granted_ability(target, ability);
+            return;
+        }
+        if let (Target::Spell(target), CharacteristicOperationDef::Colors(operation)) =
+            (target, operation)
+        {
+            let current = ManaColor::COLORS
+                .into_iter()
+                .zip(self.object_colors(target))
+                .filter_map(|(color, present)| present.then_some(color))
+                .fold(ColorSet::empty(), ColorSet::with);
+            let colors = Self::apply_color_operation(current, operation);
+            if let Some(spell) = self.stack.iter_mut().find(|spell| spell.id == target) {
+                spell.colors = Some(colors);
+            }
             return;
         }
         let Target::Permanent(target) = target else {
@@ -460,6 +547,16 @@ impl Game {
                 .player_reference(reference, object, context, scoped)
                 .into_iter()
                 .collect(),
+            PlayerSetDef::LegalTargets(target) => {
+                let slot = scoped.target_slot(target);
+                Self::chosen_targets(object, slot)
+                    .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
+                    .filter_map(|target| match target {
+                        Target::Player(player) => Some(player),
+                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                    })
+                    .collect()
+            }
             PlayerSetDef::Related(relation) => [object.controller, object.controller.opponent()]
                 .into_iter()
                 .filter(|candidate| {
@@ -564,6 +661,13 @@ impl Game {
                 .object_reference_target(reference, object, context, scoped)
                 .into_iter()
                 .collect(),
+            ObjectSetDef::LegalTargets(target) => {
+                let slot = scoped.target_slot(target);
+                Self::chosen_targets(object, slot)
+                    .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
+                    .filter(|target| !matches!(target, Target::Player(_)))
+                    .collect()
+            }
             ObjectSetDef::Binding(binding) => context.object_group(binding).to_vec(),
             ObjectSetDef::Query(query) => {
                 self.objects_matching_effect_query(query, object, context, scoped)
@@ -871,7 +975,7 @@ impl Game {
                     .iter()
                     .any(|predicate| Self::object_predicate_uses_custom_predicate(*predicate))
             }
-            ObjectPredicateDef::Not(predicate) => {
+            ObjectPredicateDef::Not(predicate) | ObjectPredicateDef::AttachedTo(predicate) => {
                 Self::object_predicate_uses_custom_predicate(*predicate)
             }
             ObjectPredicateDef::Any
@@ -904,23 +1008,12 @@ impl Game {
             | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::BlockedBySource
             | ObjectPredicateDef::Enchanted
-            | ObjectPredicateDef::AttachedTo(_)
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::HasCounter(_)
             | ObjectPredicateDef::HasNonManaActivatedAbility => false,
         }
-    }
-
-    pub(super) fn first_legal_ability_target(&self, object: &StackObject) -> Option<Target> {
-        object.ability.as_ref().and_then(|ability| {
-            ability.targets.iter().find_map(|selection| {
-                selection.targets().iter().copied().find(|target| {
-                    self.stack_ability_target_is_legal(object, selection.slot(), *target)
-                })
-            })
-        })
     }
 }
 

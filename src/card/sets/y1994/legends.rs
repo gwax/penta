@@ -1,16 +1,16 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, CounterKind,
-    DamageEventMatcherDef, DamagePreventionDef, DamageSourceGroupDef, DiscardSelectionDef,
-    DividedTotal, EffectDef, EffectExecutionDef, EffectRecipientDef, InstalledTriggerDef,
-    KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
+    AppliedRuleDef, BasicLandType, BattlefieldEntryModificationDef, CardArt, CardBehavior,
+    CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef,
+    ColorSet, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
+    DamagePreventionDef, DamageSourceGroupDef, DiscardSelectionDef, DividedTotal, EffectDef,
+    EffectExecutionDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -42,7 +42,7 @@ pub(in crate::card::sets) static AKRON_LEGIONNAIRE: CardRecord = CardRecord::new
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
-                effect: AppliedEffectDef::CannotAttack,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
             },
         ),
     ),
@@ -97,7 +97,9 @@ pub(in crate::card::sets) static AMROU_KITHKIN: CardRecord = CardRecord::new(
             "This creature can't be blocked by creatures with power 3 or greater.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::PowerAtLeast(3)),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::PowerAtLeast(3),
+                )),
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -466,11 +468,11 @@ pub(in crate::card::sets) static SEEKER: CardRecord = CardRecord::new(
                 "Enchanted creature can't be blocked except by artifact creatures and/or white creatures.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
-                        &ObjectPredicateDef::AnyOf(&[
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
                             ObjectPredicateDef::HasType(CardType::Artifact),
                             ObjectPredicateDef::Color(ManaColor::White),
-                        ]),
+                        ])),
                     )),
                 },
             ),
@@ -772,10 +774,12 @@ pub(in crate::card::sets) static GASEOUS_FORM: CardRecord = CardRecord::new(
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::PreventDamage(
+                        AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(
                             DamageEventMatcherDef::COMBAT_FROM_AFFECTED,
-                        ),
-                        AppliedEffectDef::PreventDamage(DamageEventMatcherDef::COMBAT_TO_AFFECTED),
+                        )),
+                        AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(
+                            DamageEventMatcherDef::COMBAT_TO_AFFECTED,
+                        )),
                     ]),
                 },
             ),
@@ -1151,16 +1155,16 @@ pub(in crate::card::sets) static DEMONIC_TORMENT: CardRecord = CardRecord::new(
                 "Enchanted creature can't attack.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::CannotAttack,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
                 },
             ),
             AbilityDef::static_ability(
                 "Prevent all combat damage that would be dealt by enchanted creature.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::PreventDamage(
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(
                         DamageEventMatcherDef::COMBAT_FROM_AFFECTED,
-                    ),
+                    )),
                 },
             ),
         ]),
@@ -1184,15 +1188,15 @@ pub(in crate::card::sets) static EVIL_EYE_OF_ORMS_BY_GORE: CardRecord = CardReco
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
-                effect: AppliedEffectDef::CannotAttack,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
             },
         ),
         AbilityDef::static_ability(
             "This creature can't be blocked except by Walls.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
-                    &ObjectPredicateDef::Subtype("Wall"),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Wall")),
                 )),
             },
         ),
@@ -1471,9 +1475,13 @@ pub(in crate::card::sets) static SHIMIAN_NIGHT_STALKER: CardRecord = CardRecord:
                 AbilityCostDef::TapSource,
             ],
             &ATTACKING_CREATURE_TARGET,
-            EffectDef::RedirectTargetDamageToSourceThisTurn {
-                player: EffectRecipientDef::Controller,
-                from: TargetIndex::PRIMARY,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::RedirectDamageFromTo {
+                    source: ObjectRefDef::Target(TargetIndex::PRIMARY),
+                    destination: ObjectRefDef::Source,
+                }),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -2314,11 +2322,11 @@ pub(in crate::card::sets) static ELVEN_RIDERS: CardRecord = CardRecord::new(
             "This creature can't be blocked except by Walls and/or creatures with flying.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Not(
-                    &ObjectPredicateDef::AnyOf(&[
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
                         ObjectPredicateDef::Subtype("Wall"),
                         ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
-                    ]),
+                    ])),
                 )),
             },
         ),
@@ -2721,7 +2729,7 @@ pub(in crate::card::sets) static WILLOW_SATYR: CardRecord = CardRecord::new(
             "You may choose not to untap this creature during your untap step.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::MayChooseNotToUntap,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
             },
         ),
         AbilityDef::activated_with_targets(
@@ -2734,9 +2742,9 @@ pub(in crate::card::sets) static WILLOW_SATYR: CardRecord = CardRecord::new(
                     ObjectPredicateDef::Supertype(CardSupertype::Legendary),
                 ]),
             )],
-            EffectDef::GainControlWhileSourceRemains {
+            EffectDef::GainControl {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                while_tapped: true,
+                duration: ControlDurationDef::WhileSourceRemains { while_tapped: true },
             },
         ),
     ]),
@@ -3451,7 +3459,7 @@ pub(in crate::card::sets) static RUBINIA_SOULSINGER: CardRecord = CardRecord::ne
                 "You may choose not to untap Rubinia Soulsinger during your untap step.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::MayChooseNotToUntap,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
                 },
             ),
             AbilityDef::activated_with_targets(
@@ -3461,9 +3469,9 @@ pub(in crate::card::sets) static RUBINIA_SOULSINGER: CardRecord = CardRecord::ne
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::GainControlWhileSourceRemains {
+                EffectDef::GainControl {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    while_tapped: true,
+                    duration: ControlDurationDef::WhileSourceRemains { while_tapped: true },
                 },
             ),
         ]),
@@ -3523,7 +3531,7 @@ pub(in crate::card::sets) static TETSUO_UMEZAWA: CardRecord = CardRecord::new(
                 "Tetsuo Umezawa can't be the target of Aura spells.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::CannotBeEnchanted,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeEnchanted),
                 },
             ),
             AbilityDef::activated_with_targets(

@@ -222,7 +222,7 @@ fn time_vault_has_four_complete_declarative_abilities() {
         untap_restriction.declarative_effect(),
         Some(EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
         })
     );
     assert_eq!(

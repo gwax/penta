@@ -24,7 +24,7 @@ const REQUIRED_CATEGORIES: &[&str] = &[
     "combat-damage-stage",
     "counters",
     "damage-sources",
-    "delayed-triggers",
+    "installed-triggers",
     "flashback",
     "granted-permanent-abilities",
     "modified-permanents",

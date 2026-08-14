@@ -1,7 +1,9 @@
 #![allow(clippy::wildcard_imports)]
 
+use super::super::model::{ManaCostSnapshot, ResolvedEffectPaymentSnapshot};
 use super::super::procedure::draw_replacement_referenced_object_ids;
 use super::*;
+use crate::game::ResolvedEffectPayment;
 use crate::game::{ApplicableZoneMoveReplacement, PendingBattlefieldExitBatch};
 
 pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
@@ -15,31 +17,15 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             deferred,
             ..
         } => extend_begin_turn_ids(&mut ids, applied, replacements, deferred),
-        DecisionContinuation::OptionalManaPayment {
-            object, context, ..
-        }
-        | DecisionContinuation::ManaPaymentOrElse {
-            object, context, ..
-        }
-        | DecisionContinuation::OptionalEffect {
+        DecisionContinuation::OptionalEffect {
             object, context, ..
         }
         | DecisionContinuation::PayOr {
             object, context, ..
         }
         | DecisionContinuation::TopCardSelection {
-            followup: Some((object, context, _)),
-            ..
+            object, context, ..
         } => extend_stack_continuation_ids(&mut ids, object, context),
-        DecisionContinuation::ChoosePermanentForEffect {
-            object,
-            context,
-            candidates,
-            ..
-        } => {
-            extend_stack_continuation_ids(&mut ids, object, context);
-            ids.extend(candidates.iter().filter_map(target_object_id));
-        }
         DecisionContinuation::ChooseForEffect {
             object,
             context,
@@ -76,7 +62,8 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             followup: Some(followup),
             ..
         } => extend_stack_continuation_ids(&mut ids, &followup.object, &followup.context),
-        DecisionContinuation::BattlefieldEntryPayment { context, .. } => {
+        DecisionContinuation::BattlefieldEntryPayment { context, .. }
+        | DecisionContinuation::BattlefieldEntryOptional { context, .. } => {
             ids.push(context.source.object);
         }
         DecisionContinuation::BattlefieldEntryReplacement { candidates } => {
@@ -114,17 +101,10 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         | DecisionContinuation::BasicLandTypeTextChange { .. }
         | DecisionContinuation::RecallDiscard { .. }
         | DecisionContinuation::RecallReturn { .. }
-        | DecisionContinuation::Duress { .. }
         | DecisionContinuation::MiracleReveal { .. }
-        | DecisionContinuation::PileSplit { .. }
-        | DecisionContinuation::RevealedPileSplit { .. }
-        | DecisionContinuation::RevealedPileChoice { .. }
-        | DecisionContinuation::PileChoice { .. }
         | DecisionContinuation::SeparateIntoPiles { .. }
         | DecisionContinuation::ChoosePile { .. }
         | DecisionContinuation::SacrificeOfChoice { followup: None, .. }
-        | DecisionContinuation::DestroyOfChoice { .. }
-        | DecisionContinuation::CounterUnlessPaid { .. }
         | DecisionContinuation::GrislySalvage { .. }
         | DecisionContinuation::Balance { .. }
         | DecisionContinuation::SylvanOffer { .. }
@@ -132,12 +112,9 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         | DecisionContinuation::SylvanMode { .. }
         | DecisionContinuation::TetravusDetach { .. }
         | DecisionContinuation::TetravusAssemble { .. }
-        | DecisionContinuation::ExileFromHand { .. }
         | DecisionContinuation::AugurOfBolas { .. }
-        | DecisionContinuation::TopCardSelection { followup: None, .. }
-        | DecisionContinuation::BattlefieldEntryCardName { .. }
-        | DecisionContinuation::BattlefieldEntryCopy { .. }
-        | DecisionContinuation::BattlefieldEntryCreatureType { .. } => {}
+        | DecisionContinuation::BattlefieldEntryScalarChoice { .. }
+        | DecisionContinuation::BattlefieldEntryCopy { .. } => {}
     }
     ids
 }
@@ -452,9 +429,16 @@ pub(super) fn parse_detached_cards(
     snapshots: &[DetachedCardSnapshot],
     game: &Game,
 ) -> Result<Vec<super::super::CardInstance>, String> {
+    let mut object_ids = std::collections::BTreeSet::new();
     snapshots
         .iter()
         .map(|snapshot| {
+            if !object_ids.insert(snapshot.object_id) {
+                return Err(format!(
+                    "checkpoint detached-card list repeats object id {}",
+                    snapshot.object_id
+                ));
+            }
             card(
                 GameObjectId(snapshot.object_id),
                 CardDefinitionId(snapshot.definition),
@@ -671,6 +655,28 @@ pub(super) fn parse_mana_cost(value: &ManaCostSnapshot) -> Result<ManaCost, Stri
     })
 }
 
+pub(super) fn resolved_effect_payment_snapshot(
+    payment: ResolvedEffectPayment,
+) -> ResolvedEffectPaymentSnapshot {
+    match payment {
+        ResolvedEffectPayment::Mana(cost) => {
+            ResolvedEffectPaymentSnapshot::Mana(mana_cost_snapshot(cost))
+        }
+        ResolvedEffectPayment::Life(amount) => ResolvedEffectPaymentSnapshot::Life(amount),
+    }
+}
+
+pub(super) fn parse_resolved_effect_payment(
+    payment: &ResolvedEffectPaymentSnapshot,
+) -> Result<ResolvedEffectPayment, String> {
+    Ok(match payment {
+        ResolvedEffectPaymentSnapshot::Mana(cost) => {
+            ResolvedEffectPayment::Mana(parse_mana_cost(cost)?)
+        }
+        ResolvedEffectPaymentSnapshot::Life(amount) => ResolvedEffectPayment::Life(*amount),
+    })
+}
+
 pub(super) const fn cause_snapshot(cause: ZoneMoveCause) -> ZoneMoveCauseSnapshot {
     match cause {
         ZoneMoveCause::Rules => ZoneMoveCauseSnapshot::Rules,
@@ -686,24 +692,6 @@ pub(super) fn parse_cause(cause: ZoneMoveCauseSnapshot) -> Result<ZoneMoveCause,
         ZoneMoveCauseSnapshot::Effect { controller } => Ok(ZoneMoveCause::Effect {
             controller: player(controller)?,
         }),
-    }
-}
-
-pub(super) const fn countered_spell_zone_snapshot(
-    zone: CounteredSpellZone,
-) -> CounteredSpellZoneSnapshot {
-    match zone {
-        CounteredSpellZone::Graveyard => CounteredSpellZoneSnapshot::Graveyard,
-        CounteredSpellZone::Exile => CounteredSpellZoneSnapshot::Exile,
-    }
-}
-
-pub(super) const fn parse_countered_spell_zone(
-    zone: CounteredSpellZoneSnapshot,
-) -> CounteredSpellZone {
-    match zone {
-        CounteredSpellZoneSnapshot::Graveyard => CounteredSpellZone::Graveyard,
-        CounteredSpellZoneSnapshot::Exile => CounteredSpellZone::Exile,
     }
 }
 

@@ -6,47 +6,14 @@ use crate::card::{
 
 use super::super::prevention_state::{
     ResolvedDamagePrevention, ResolvedDamagePreventionCapacity, ResolvedDamagePreventionCoverage,
-    ResolvedDamageRecipientMatcher, ResolvedDamageRedirect, ResolvedDamageSourceMatcher,
+    ResolvedDamageRecipientMatcher, ResolvedDamageSourceMatcher,
 };
 use super::super::{
-    AbilityId, AbilityOrigin, AbilitySourceRef, CardPartId, ContinuousEffectExpiration,
-    EffectResolutionContext, Game, RelationalSourceFilter, ScopedEffect, StackObject, Target,
+    AbilityId, AbilityOrigin, AbilitySourceRef, CardPartId, EffectResolutionContext, Game,
+    RelationalSourceFilter, ScopedEffect, StackObject, Target,
 };
 
 impl Game {
-    /// Freezes the named damage source, guarded player, and destination into
-    /// a turn-long replacement. Redirection stays separate from prevention
-    /// because it changes where damage lands rather than preventing it.
-    pub(super) fn resolve_damage_redirect(
-        &mut self,
-        scoped: ScopedEffect,
-        object: &StackObject,
-        context: &EffectResolutionContext,
-    ) {
-        let EffectDef::RedirectTargetDamageToSourceThisTurn { player, from } = scoped.effect else {
-            unreachable!("resolve_damage_redirect called for a non-redirection effect");
-        };
-        let destination = object.source.unwrap_or(object.id);
-        let Some(source) = Game::chosen_targets(object, scoped.target_slot(from)).find_map(
-            |target| match target {
-                Target::Permanent(id) => Some(id),
-                _ => None,
-            },
-        ) else {
-            return;
-        };
-        for target in self.effect_recipients(player, object, context, scoped) {
-            if let Target::Player(player) = target {
-                self.damage_redirects.push(ResolvedDamageRedirect {
-                    player,
-                    source,
-                    destination,
-                    expiration: ContinuousEffectExpiration::EndOfTurn,
-                });
-            }
-        }
-    }
-
     pub(super) fn resolve_prevention_effect(
         &mut self,
         scoped: ScopedEffect,

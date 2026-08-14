@@ -99,11 +99,11 @@ pub(super) fn applied_effect_locator(
 
 /// Locates a resolved leaf beneath the ability provenance that created it.
 ///
-/// The runtime source identifies the exact top-level printed clause, which is
-/// stronger than the catalog-wide structural fallback used for detached
-/// semantic values. Nested abilities still use the first structurally equal
-/// path because the runtime does not retain a nested catalog path; the exact
-/// simulation fingerprint makes equal definitions interchangeable here.
+/// The runtime source identifies the exact top-level printed clause. Nested
+/// abilities still use the first structurally equal path because the runtime
+/// does not retain a nested catalog path, but the search never falls back to a
+/// different top-level ability: that would make source-relative predicates
+/// reconstruct with different semantics.
 pub(super) fn resolved_applied_effect_locator(
     catalog: &CardCatalog,
     source: AbilitySourceRef,
@@ -121,7 +121,7 @@ pub(super) fn resolved_applied_effect_locator(
             source_ability,
             ..
         } => (source_definition.0, source_part.0, source_ability.0),
-        AbilityOrigin::IntrinsicBasicLand(_) => return applied_effect_locator(catalog, expected),
+        AbilityOrigin::IntrinsicBasicLand(_) => return None,
     };
     let root = AbilityLocator {
         definition,
@@ -133,7 +133,7 @@ pub(super) fn resolved_applied_effect_locator(
     let mut nested = Vec::new();
     let mut contains = |candidate: &AbilityDef| applied_effects(candidate).contains(&expected);
     if !locate_ability(&root_definition, &mut contains, &mut nested) {
-        return applied_effect_locator(catalog, expected);
+        return None;
     }
     let ability = AbilityLocator { nested, ..root };
     let definition = catalog_ability(catalog, &ability)?;
@@ -144,6 +144,31 @@ pub(super) fn resolved_applied_effect_locator(
         ability,
         effect_index,
     })
+}
+
+pub(super) fn applied_effect_locator_matches_source(
+    locator: &AppliedEffectLocator,
+    source: AbilitySourceRef,
+) -> bool {
+    let expected = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return false,
+    };
+    (
+        locator.ability.definition,
+        locator.ability.part_id,
+        locator.ability.ability_id,
+    ) == expected
 }
 
 pub(super) fn catalog_applied_effect(
@@ -325,6 +350,7 @@ pub(super) fn catalog_scoped_effect(
     })
 }
 
+#[cfg(test)]
 pub(super) fn replacement_effect_locator(
     catalog: &CardCatalog,
     expected: ReplacementEffectDef,
@@ -342,6 +368,79 @@ pub(super) fn replacement_effect_locator(
         ability,
         effect_index,
     })
+}
+
+/// Locates a replacement operation beneath the exact printed ability that
+/// supplied the suspended prospective-event procedure.
+pub(super) fn resolved_replacement_effect_locator(
+    catalog: &CardCatalog,
+    source: AbilitySourceRef,
+    expected: ReplacementEffectDef,
+) -> Option<ReplacementEffectLocator> {
+    let (definition, part_id, ability_id) = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return None,
+    };
+    let root = AbilityLocator {
+        definition,
+        part_id,
+        ability_id,
+        nested: Vec::new(),
+    };
+    let root_definition = catalog_ability(catalog, &root)?;
+    let mut nested = Vec::new();
+    let mut contains = |candidate: &AbilityDef| {
+        replacement_effects(candidate)
+            .into_iter()
+            .any(|effect| effect == expected)
+    };
+    if !locate_ability(&root_definition, &mut contains, &mut nested) {
+        return None;
+    }
+    let ability = AbilityLocator { nested, ..root };
+    let definition = catalog_ability(catalog, &ability)?;
+    let effect_index = replacement_effects(&definition)
+        .into_iter()
+        .position(|effect| effect == expected)?;
+    Some(ReplacementEffectLocator {
+        ability,
+        effect_index,
+    })
+}
+
+pub(super) fn replacement_effect_locator_matches_source(
+    locator: &ReplacementEffectLocator,
+    source: AbilitySourceRef,
+) -> bool {
+    let expected = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return false,
+    };
+    (
+        locator.ability.definition,
+        locator.ability.part_id,
+        locator.ability.ability_id,
+    ) == expected
 }
 
 pub(super) fn catalog_replacement_effect(
@@ -587,22 +686,7 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
             AbilityOperationDef::Add(ability),
         )) => abilities.push(ability),
-        AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventDamage(_)
-        | AppliedEffectDef::Characteristic(_)
-        | AppliedEffectDef::Special(_) => {}
+        AppliedEffectDef::Rule(_) | AppliedEffectDef::Characteristic(_) => {}
     }
 }
 

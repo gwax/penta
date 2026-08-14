@@ -408,7 +408,7 @@ fn a_non_executable_cannot_be_countered_clause_does_not_change_gameplay() {
         "This spell can't be countered.",
         EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::CannotBeCountered,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
         },
     )
     .with_source_zones(&[ZoneKind::Stack])
@@ -435,7 +435,8 @@ fn a_non_executable_cannot_be_countered_clause_does_not_change_gameplay() {
 
 #[test]
 fn a_composite_static_clause_can_make_its_source_uncounterable() {
-    static COMPONENTS: [AppliedEffectDef; 1] = [AppliedEffectDef::CannotBeCountered];
+    static COMPONENTS: [AppliedEffectDef; 1] =
+        [AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered)];
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
         "This spell can't be countered.",
         EffectDef::StaticApply {
@@ -464,7 +465,8 @@ fn a_composite_static_clause_can_make_its_source_uncounterable() {
 
 #[test]
 fn a_composite_mana_spend_effect_can_make_a_spell_uncounterable() {
-    static COMPONENTS: [AppliedEffectDef; 1] = [AppliedEffectDef::CannotBeCountered];
+    static COMPONENTS: [AppliedEffectDef; 1] =
+        [AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered)];
     let mut object = spell(20_002, cards::SAVANNAH_LIONS, PlayerId::One, 0);
     object.applied_effects.push(AppliedStackEffect {
         source: None,
