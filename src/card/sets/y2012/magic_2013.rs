@@ -30,7 +30,32 @@ pub(in crate::card::sets) static AJANIS_SUNSTRIKER: CardRecord = CardRecord::new
 );
 
 // M13 4 — Angelic Benediction
-// Audit: blocked — Exalted needs an attacks-alone event and access to the lone attacking creature.
+pub(in crate::card::sets) static ANGELIC_BENEDICTION: CardRecord = CardRecord::new(
+    cards::ANGELIC_BENEDICTION,
+    "Angelic Benediction",
+    CardArt::new("22125507-31e3-424c-9527-d994e4525d75", "Michael Komarck"),
+    CardSet::Magic2013,
+    CardRules::new_enchantment(mana_cost!("{3}{W}")).with_abilities(&[
+        abilities::exalted(),
+        AbilityDef::triggered_with_targets(
+            "Whenever a creature you control attacks alone, you may tap target creature.",
+            TriggerEventDef::AttacksAlone {
+                attacker: ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            },
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &ANGELIC_BENEDICTION_TAP,
+            },
+        ),
+    ]),
+);
+
+static ANGELIC_BENEDICTION_TAP: EffectDef = EffectDef::Tap {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+};
 
 // M13 5 — Attended Knight
 pub(in crate::card::sets) static ATTENDED_KNIGHT: CardRecord = CardRecord::new(
@@ -56,7 +81,14 @@ pub(in crate::card::sets) static ATTENDED_KNIGHT: CardRecord = CardRecord::new(
 );
 
 // M13 6 — Aven Squire
-// Audit: blocked — Exalted needs an attacks-alone event and access to the lone attacking creature.
+pub(in crate::card::sets) static AVEN_SQUIRE: CardRecord = CardRecord::new(
+    cards::AVEN_SQUIRE,
+    "Aven Squire",
+    CardArt::new("e60a0c43-9f47-404a-8acf-508173e7062f", "David Palumbo"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Bird", "Soldier"], 1, 1)
+        .with_abilities(&[abilities::flying(), abilities::exalted()]),
+);
 
 // M13 7 — Battleflight Eagle
 pub(in crate::card::sets) static BATTLEFLIGHT_EAGLE: CardRecord = CardRecord::new(
@@ -328,7 +360,14 @@ pub(in crate::card::sets) static GUARDIAN_LIONS: CardRecord = CardRecord::new(
 );
 
 // M13 18 — Guardians of Akrasa
-// Audit: blocked — Exalted needs an attacks-alone event and access to the lone attacking creature.
+pub(in crate::card::sets) static GUARDIANS_OF_AKRASA: CardRecord = CardRecord::new(
+    cards::GUARDIANS_OF_AKRASA,
+    "Guardians of Akrasa",
+    CardArt::new("383c9aa5-30ad-4a2a-8b64-65d4b333c613", "Alan Pollack"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 0, 4)
+        .with_abilities(&[abilities::defender(), abilities::exalted()]),
+);
 
 // M13 19 — Healer of the Pride
 pub(in crate::card::sets) static HEALER_OF_THE_PRIDE: CardRecord = CardRecord::new(
@@ -1368,7 +1407,14 @@ static SWAMPS_YOU_CONTROL: ValueDef = ValueDef::CountMatchingObjects(&ObjectQuer
 });
 
 // M13 91 — Duskmantle Prowler
-// Audit: blocked — Exalted needs an attacks-alone event and access to the lone attacking creature.
+pub(in crate::card::sets) static DUSKMANTLE_PROWLER: CardRecord = CardRecord::new(
+    cards::DUSKMANTLE_PROWLER,
+    "Duskmantle Prowler",
+    CardArt::new("bcb031da-d41a-496a-b78e-0773f6504303", "Johannes Voss"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Vampire", "Rogue"], 2, 2)
+        .with_abilities(&[abilities::haste(), abilities::exalted()]),
+);
 
 // M13 92 — Duty-Bound Dead
 // Audit: blocked — Needs executable exalted plus a regeneration action.
@@ -1623,7 +1669,14 @@ pub(in crate::card::sets) static RAVENOUS_RATS: CardRecord = CardRecord::new(
 // Audit: blocked — Continuous effects cannot add black color and the Zombie subtype to the reanimated target indefinitely.
 
 // M13 108 — Servant of Nefarox
-// Audit: blocked — Exalted needs an attacks-alone event and access to the lone attacking creature.
+pub(in crate::card::sets) static SERVANT_OF_NEFAROX: CardRecord = CardRecord::new(
+    cards::SERVANT_OF_NEFAROX,
+    "Servant of Nefarox",
+    CardArt::new("e00a2b22-a473-44ae-919f-29bc8be05543", "Igor Kieryluk"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Human", "Cleric"], 3, 1)
+        .with_ability(abilities::exalted()),
+);
 
 // M13 109 — Shimian Specter
 // Audit: blocked — Needs a combat-damage hand reveal and choice, then same-name searches across graveyard, hand, and library.
@@ -2937,7 +2990,21 @@ pub(in crate::card::sets) static STAFF_OF_NIN: CardRecord = CardRecord::new(
 // Audit: blocked — Needs four modes whose costs include unsupported discard or separately chosen sacrifice costs and their linked continuations.
 
 // M13 221 — Cathedral of War
-// Audit: blocked — Exalted needs an attacks-alone event and access to the lone attacking creature.
+pub(in crate::card::sets) static CATHEDRAL_OF_WAR: CardRecord = CardRecord::new(
+    cards::CATHEDRAL_OF_WAR,
+    "Cathedral of War",
+    CardArt::new("dd222c07-0b28-41cb-9237-ad7991ab078f", "Kekai Kotaki"),
+    CardSet::Magic2013,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped("This land enters tapped."),
+        abilities::exalted(),
+        AbilityDef::activated_mana(
+            "{T}: Add {C}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+        ),
+    ]),
+);
 
 // M13 222 — Dragonskull Summit
 pub(in crate::card::sets) static DRAGONSKULL_SUMMIT: CardRecord = CardRecord::new(
@@ -3057,7 +3124,9 @@ pub(in crate::card::sets) static SUNPETAL_GROVE: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AJANIS_SUNSTRIKER,
+    &ANGELIC_BENEDICTION,
     &ATTENDED_KNIGHT,
+    &AVEN_SQUIRE,
     &BATTLEFLIGHT_EAGLE,
     &CAPTAIN_OF_THE_WATCH,
     &CAPTAINS_CALL,
@@ -3068,6 +3137,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GLORIOUS_CHARGE,
     &GRIFFIN_PROTECTOR,
     &GUARDIAN_LIONS,
+    &GUARDIANS_OF_AKRASA,
     &HEALER_OF_THE_PRIDE,
     &OBLIVION_RING,
     &PILLARFIELD_OX,
@@ -3107,6 +3177,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DISCIPLE_OF_BOLAS,
     &DISENTOMB,
     &DURESS,
+    &DUSKMANTLE_PROWLER,
     &ESSENCE_DRAIN,
     &GIANT_SCORPION,
     &HARBOR_BANDIT,
@@ -3116,6 +3187,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MURDER,
     &MUTILATE,
     &RAVENOUS_RATS,
+    &SERVANT_OF_NEFAROX,
     &SIGN_IN_BLOOD,
     &VAMPIRE_NIGHTHAWK,
     &VILE_REBIRTH,
@@ -3170,6 +3242,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PHYREXIAN_HULK,
     &SANDS_OF_DELIRIUM,
     &STAFF_OF_NIN,
+    &CATHEDRAL_OF_WAR,
     &DRAGONSKULL_SUMMIT,
     &DROWNED_CATACOMB,
     &GLACIAL_FORTRESS,

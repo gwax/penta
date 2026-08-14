@@ -926,6 +926,13 @@ pub enum TriggerEventDef {
     DamageDealtBy {
         source: ObjectPredicateDef,
     },
+    /// A matching creature was declared as the only attacker. The attacker is
+    /// the triggering object, so an ability watching this can reach it with
+    /// [`EffectRecipientDef::TriggeringObject`]. This is what exalted is
+    /// written against, and it fires from any permanent, not only a creature.
+    AttacksAlone {
+        attacker: ObjectPredicateDef,
+    },
     /// A creature matching `source` dealt combat damage to a player. The
     /// damaged player is the event player and the amount is available as
     /// [`ValueDef::TriggerEventAmount`]. Only damage dealt in a combat damage

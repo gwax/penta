@@ -429,6 +429,29 @@ pub const fn shield_against_a_chosen_source(
     }
 }
 
+/// Exalted. It is written as a keyword but defined as a triggered ability, so
+/// each printed instance is its own clause and several on one board each
+/// trigger -- which is why this returns an ordinary trigger rather than a
+/// keyword. The permanent carrying it need not be a creature.
+#[must_use]
+pub const fn exalted() -> AbilityDef {
+    AbilityDef::triggered(
+        "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until \
+         end of turn.)",
+        TriggerEventDef::AttacksAlone {
+            attacker: ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        },
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::TriggeringObject,
+            effect: AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(1),
+                toughness: ValueDef::Constant(1),
+            },
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+    )
+}
+
 /// A shared checkland-style entry clause backed by the general object-query
 /// condition vocabulary.
 #[must_use]

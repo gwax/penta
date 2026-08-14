@@ -60,6 +60,14 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Exalted**, and the attacks-alone event it is written against. The event is
+  decided by the attack declaration as a whole, so it is captured there and
+  carries the lone attacker as its triggering object. Exalted is a keyword that
+  is defined as a triggered ability, which matters twice: several instances
+  each trigger, and the permanent carrying it need not be a creature -- one of
+  the six is a land. Angelic Benediction, Aven Squire, Guardians of Akrasa,
+  Duskmantle Prowler, Servant of Nefarox, and Cathedral of War are now
+  executable.
 - **Two Premodern regeneration cards**, with no engine change. Vampire Warlord
   sacrifices another creature -- a cost that has to refuse the source itself --
   and Trollhide grants its host the regeneration ability rather than carrying

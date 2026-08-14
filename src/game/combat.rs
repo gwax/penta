@@ -142,6 +142,19 @@ impl Game {
                     })
             })
             .collect::<Vec<_>>();
+        // CR 506.5-ish: "attacks alone" is decided by the declaration as a
+        // whole, so it is known here and nowhere later.
+        if let [lone] = attackers.as_slice()
+            && let Some(permanent) = self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == *lone)
+        {
+            let alone = CommittedTriggerEvent::AttacksAlone {
+                object: self.trigger_event_object(permanent),
+            };
+            self.capture_battlefield_triggers(&alone);
+        }
         for event in &events {
             self.capture_battlefield_triggers(event);
         }

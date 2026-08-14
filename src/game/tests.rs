@@ -389,6 +389,7 @@ mod damage_dealt_by;
 mod decisions_and_effects;
 mod delayed_triggers;
 mod entry_replacements;
+mod exalted;
 mod exile_source_costs;
 mod extra_turns;
 mod guardian_beast;

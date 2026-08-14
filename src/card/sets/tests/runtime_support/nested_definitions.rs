@@ -37,6 +37,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         TriggerEventDef::CombatDamageDealtToPlayer { source }
         | TriggerEventDef::CombatDamageDealtToSource { source }
         | TriggerEventDef::DamageDealtBy { source }
+        | TriggerEventDef::AttacksAlone { attacker: source }
         | TriggerEventDef::DamageDealtToPlayer { source, .. } => shared_object_predicate(source),
         TriggerEventDef::AbilityActivated(_)
         | TriggerEventDef::ManaAdded(_)

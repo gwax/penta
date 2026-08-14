@@ -562,6 +562,16 @@ impl Game {
             | (
                 TriggerEventDef::BecomesBlocked(predicate),
                 CommittedTriggerEvent::BecomesBlocked { object, .. },
+            )
+            | (
+                TriggerEventDef::AttacksAlone {
+                    attacker: predicate,
+                },
+                CommittedTriggerEvent::AttacksAlone { object },
+            )
+            | (
+                TriggerEventDef::DamageDealtBy { source: predicate },
+                CommittedTriggerEvent::DamageDealt { source: object, .. },
             ) => self.trigger_object_matches(predicate, object, source, false),
             (
                 trigger @ TriggerEventDef::CombatDamageDealtToSource { .. },
@@ -593,12 +603,6 @@ impl Game {
                 },
                 CommittedTriggerEvent::DamageDealt { recipient, .. },
             ) => *recipient == Target::Permanent(source),
-            (
-                TriggerEventDef::DamageDealtBy { source: predicate },
-                CommittedTriggerEvent::DamageDealt {
-                    source: damager, ..
-                },
-            ) => self.trigger_object_matches(predicate, damager, source, false),
             (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },
