@@ -220,6 +220,7 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
             "Polluted Delta",
             "Windswept Heath",
             "Wooded Foothills",
+            "Evolving Wilds",
         ]
     );
 }

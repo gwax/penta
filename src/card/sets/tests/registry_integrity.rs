@@ -165,6 +165,7 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
             destination: ZoneKind::Library,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         }
     );
 
@@ -217,6 +218,7 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
                 destination: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,
                 shuffle: true,
+                enters_tapped: false,
             },
             "{} has the wrong search parameters",
             fetch.name
@@ -243,6 +245,7 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
             destination: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         }
     );
 
@@ -264,6 +267,7 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
             destination: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         }
     );
 }

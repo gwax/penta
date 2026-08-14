@@ -1,8 +1,9 @@
 use super::{
-    BalanceAction, BasicLandType, BasicLandTypeChange, BattlefieldExitCompletion, CardRuntime,
-    CounterKind, DecisionContinuation, DecisionOption, FORK_COPY_COLOR, Game, GameEvent, ManaCost,
-    PendingProcedure, PendingReplacementEffect, PileChoice, PileSplit, PlayerId, ReplaceableEvent,
-    Target, TargetSelection, TargetSlotId, ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
+    BalanceAction, BasicLandType, BasicLandTypeChange, BattlefieldArrival,
+    BattlefieldExitCompletion, CardRuntime, CounterKind, DecisionContinuation, DecisionOption,
+    FORK_COPY_COLOR, Game, GameEvent, ManaCost, PendingProcedure, PendingReplacementEffect,
+    PileChoice, PileSplit, PlayerId, ReplaceableEvent, Target, TargetSelection, TargetSlotId,
+    ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
 };
 
 impl Game {
@@ -562,6 +563,7 @@ impl Game {
                 placement,
                 reveal,
                 shuffle,
+                enters_tapped,
             } => {
                 let selected = options
                     .iter()
@@ -643,7 +645,13 @@ impl Game {
                             source,
                             destination,
                             ZoneMoveCause::Effect { controller },
-                            (destination == ZoneKind::Battlefield).then_some(player),
+                            (destination == ZoneKind::Battlefield).then(|| {
+                                if enters_tapped {
+                                    BattlefieldArrival::tapped_under(player)
+                                } else {
+                                    BattlefieldArrival::under(player)
+                                }
+                            }),
                         );
                     }
                 }
@@ -723,7 +731,8 @@ impl Game {
                             source,
                             destination,
                             ZoneMoveCause::Effect { controller },
-                            (destination == ZoneKind::Battlefield).then_some(player),
+                            (destination == ZoneKind::Battlefield)
+                                .then(|| BattlefieldArrival::under(player)),
                         )
                     else {
                         continue;

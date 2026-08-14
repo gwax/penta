@@ -400,6 +400,7 @@ mod evolve;
 mod exalted;
 mod exile_source_costs;
 mod extra_turns;
+mod fetch_tapped;
 mod guardian_beast;
 mod identity_and_mana;
 mod laces;

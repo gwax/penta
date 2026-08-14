@@ -626,6 +626,9 @@ pub enum EffectDef {
         destination: ZoneKind,
         placement: ZonePlacement,
         shuffle: bool,
+        /// Whether a permanent this search puts onto the battlefield arrives
+        /// tapped, as a fetch land's does.
+        enters_tapped: bool,
     },
     /// Choose owned cards from one or more places without performing the
     /// keyword action "search." Ring of Ma'rûf uses this for outside-game

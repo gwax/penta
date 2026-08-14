@@ -1622,8 +1622,42 @@ pub(in crate::card::sets) static CRUSHING_VINES: CardRecord = CardRecord::new(
     )),
 );
 
+/// "Search your library for a basic land card, put it onto the battlefield
+/// tapped, then shuffle."
+static FETCH_A_BASIC_TAPPED: EffectDef = EffectDef::SearchZone {
+    player: EffectRecipientDef::Controller,
+    source: ZoneKind::Library,
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Land),
+        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+    ]),
+    minimum: 0,
+    maximum: 1,
+    reveal: false,
+    destination: ZoneKind::Battlefield,
+    placement: ZonePlacement::Top,
+    shuffle: true,
+    enters_tapped: true,
+};
+
 // DKA 111 — Dawntreader Elk
-// Audit: blocked — SearchZone cannot make the selected basic land enter tapped.
+pub(in crate::card::sets) static DAWNTREADER_ELK: CardRecord = CardRecord::new(
+    cards::DAWNTREADER_ELK,
+    "Dawntreader Elk",
+    CardArt::new("127c969b-1c9a-4265-af0e-5b9dbe136064", "John Avon"),
+    CardSet::DarkAscension,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Elk"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "{G}, Sacrifice this creature: Search your library for a basic land card, put it \
+             onto the battlefield tapped, then shuffle.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{G}")),
+                AbilityCostDef::SacrificeSource,
+            ],
+            FETCH_A_BASIC_TAPPED,
+        ),
+    ),
+);
 
 // DKA 112 — Deranged Outcast
 pub(in crate::card::sets) static DERANGED_OUTCAST: CardRecord = CardRecord::new(
@@ -2300,7 +2334,18 @@ pub(in crate::card::sets) static HELVAULT: CardRecord = CardRecord::new(
 // Audit: blocked — Needs equipment attachment/equip actions and two distinct tap abilities granted to the equipped creature.
 
 // DKA 155 — Evolving Wilds
-// Audit: blocked — SearchZone cannot make the selected basic land enter tapped.
+pub(in crate::card::sets) static EVOLVING_WILDS: CardRecord = CardRecord::new(
+    cards::EVOLVING_WILDS,
+    "Evolving Wilds",
+    CardArt::new("30066306-f943-44c1-8814-b8b60388c26d", "Cliff Childs"),
+    CardSet::DarkAscension,
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated(
+        "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the \
+         battlefield tapped, then shuffle.",
+        &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+        FETCH_A_BASIC_TAPPED,
+    )),
+);
 
 // DKA 156 — Grim Backwoods
 pub(in crate::card::sets) static GRIM_BACKWOODS: CardRecord = CardRecord::new(
@@ -2434,6 +2479,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TORCH_FIEND,
     &BRIARPACK_ALPHA,
     &CRUSHING_VINES,
+    &DAWNTREADER_ELK,
     &DERANGED_OUTCAST,
     &GHOULTREE,
     &GRIM_FLOWERING,
@@ -2452,6 +2498,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HUNTMASTER_OF_THE_FELLS,
     &STROMKIRK_CAPTAIN,
     &HELVAULT,
+    &EVOLVING_WILDS,
     &GRIM_BACKWOODS,
     &VAULT_OF_THE_ARCHANGEL,
 ];

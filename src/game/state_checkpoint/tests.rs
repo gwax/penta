@@ -495,6 +495,7 @@ fn a_hand_search_checkpoint_preserves_duplicate_card_object_ids() {
         ZoneKind::Graveyard,
         crate::card::ZonePlacement::Top,
         false,
+        false,
         original_ids[0],
         player,
     );

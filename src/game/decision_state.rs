@@ -139,6 +139,7 @@ pub(super) enum DecisionContinuation {
         /// A search shuffles whether or not it found anything. Looking at the
         /// top card does not: the rest of the library was never disturbed.
         shuffle: bool,
+        enters_tapped: bool,
     },
     ChooseCards {
         controller: PlayerId,

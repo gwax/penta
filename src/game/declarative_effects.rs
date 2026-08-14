@@ -1,6 +1,6 @@
 use super::{
-    AbilitySourceRef, AddManaEffectDef, CardPartId, CharacteristicSource, ColorSet,
-    CopiableAbility, CostDef, CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger,
+    AbilitySourceRef, AddManaEffectDef, BattlefieldArrival, CardPartId, CharacteristicSource,
+    ColorSet, CopiableAbility, CostDef, CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger,
     DiscardSelectionDef, DrawReplacement, EffectDef, EffectRecipientDef, FloatingTrigger, Game,
     GameResult, Mana, ManaPool, ManaSelectionDef, ManaSource, Permanent, SacrificeFollowup,
     ScopedEffect, StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason,
@@ -447,6 +447,7 @@ impl Game {
                 destination,
                 placement,
                 shuffle,
+                enters_tapped,
             } => {
                 let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context, scoped) {
@@ -461,6 +462,7 @@ impl Game {
                             destination,
                             placement,
                             shuffle,
+                            enters_tapped,
                             source,
                             object.controller,
                         );
@@ -901,7 +903,7 @@ impl Game {
                         ZoneMoveCause::Effect {
                             controller: object.controller,
                         },
-                        arriving_controller,
+                        arriving_controller.map(BattlefieldArrival::under),
                         placement,
                     );
                 }

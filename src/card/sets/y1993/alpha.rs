@@ -1679,6 +1679,7 @@ pub(in crate::card::sets) static DEMONIC_TUTOR: CardRecord = CardRecord::new(
             destination: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         },
     )]),
 );

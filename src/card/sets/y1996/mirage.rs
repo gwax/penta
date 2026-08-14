@@ -28,6 +28,7 @@ pub(in crate::card::sets) static ENLIGHTENED_TUTOR: CardRecord = CardRecord::new
             destination: ZoneKind::Library,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         },
     )),
 );
@@ -75,6 +76,7 @@ pub(in crate::card::sets) static WORLDLY_TUTOR: CardRecord = CardRecord::new(
             destination: ZoneKind::Library,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         },
     )),
 );

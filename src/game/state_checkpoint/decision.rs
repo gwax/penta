@@ -91,6 +91,7 @@ fn continuation_snapshot(
             placement,
             reveal,
             shuffle,
+            enters_tapped,
         } => DecisionContinuationSnapshot::SearchZone {
             controller: controller.index(),
             source: zone_kind_snapshot(*source),
@@ -98,6 +99,7 @@ fn continuation_snapshot(
             placement: zone_placement_snapshot(*placement),
             reveal: *reveal,
             shuffle: *shuffle,
+            enters_tapped: *enters_tapped,
         },
         DecisionContinuation::ChooseCards {
             controller,
@@ -568,6 +570,7 @@ fn parse_continuation(
             placement,
             reveal,
             shuffle,
+            enters_tapped,
         } => DecisionContinuation::SearchZone {
             controller: player(*controller)?,
             source: parse_zone_kind(*source),
@@ -575,6 +578,7 @@ fn parse_continuation(
             placement: parse_zone_placement(*placement),
             reveal: *reveal,
             shuffle: *shuffle,
+            enters_tapped: *enters_tapped,
         },
         DecisionContinuationSnapshot::ChooseCards {
             controller,

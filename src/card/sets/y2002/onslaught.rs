@@ -134,6 +134,7 @@ const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) ->
             destination: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         },
     ))
 }

@@ -573,6 +573,10 @@ pub(super) enum DecisionContinuationSnapshot {
         placement: ZonePlacementSnapshot,
         reveal: bool,
         shuffle: bool,
+        /// Additive: a checkpoint written before fetch lands existed carries
+        /// no flag and reconstructs as an untapped arrival.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        enters_tapped: bool,
     },
     ChooseCards {
         controller: usize,

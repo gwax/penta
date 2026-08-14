@@ -2363,6 +2363,7 @@ pub(in crate::card::sets) static UNTAMED_WILDS: CardRecord = CardRecord::new(
             destination: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         },
     )),
 );

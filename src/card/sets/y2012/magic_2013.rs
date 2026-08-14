@@ -1556,6 +1556,7 @@ pub(in crate::card::sets) static LILIANAS_SHADE: CardRecord = CardRecord::new(
                     destination: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     shuffle: true,
+                    enters_tapped: false,
                 },
             },
         ),

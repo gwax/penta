@@ -1,9 +1,9 @@
 use super::{
-    CardDefinitionId, CardInstance, CardPartId, CharacteristicContext, CharacteristicSource,
-    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EntryCompletion, Game, GameEvent,
-    GameObjectId, KeywordAbility, ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId,
-    PublicCard, ReplacementEventDef, Target, TriggerContext, ZoneCard, ZoneError, ZoneKind,
-    ZoneMoveCause, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
+    BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId, CharacteristicContext,
+    CharacteristicSource, DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EntryCompletion,
+    Game, GameEvent, GameObjectId, KeywordAbility, ObjectBacking, PendingBattlefieldEntry,
+    Permanent, PlayerId, PublicCard, ReplacementEventDef, Target, TriggerContext, ZoneCard,
+    ZoneError, ZoneKind, ZoneMoveCause, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
 };
 
 impl Game {
@@ -14,7 +14,7 @@ impl Game {
         target: Target,
         zone: ZoneKind,
         cause: ZoneMoveCause,
-        arriving_controller: Option<PlayerId>,
+        arriving_controller: Option<BattlefieldArrival>,
         placement: ZonePlacement,
     ) {
         if let Target::Permanent(id) = target {
@@ -329,9 +329,10 @@ impl Game {
         &mut self,
         card: CardInstance,
         from: ZoneKind,
-        controller: PlayerId,
+        arrival: BattlefieldArrival,
         grant: Option<KeywordAbility>,
     ) -> CardInstance {
+        let controller = arrival.controller;
         let definition = self
             .catalog
             .get(card.definition)
@@ -347,6 +348,9 @@ impl Game {
             controller,
             self.turns_started[controller.index()],
         );
+        // Set before entry replacements run, the same way an as-enters clause
+        // would, so nothing observes the permanent arriving untapped first.
+        permanent.tapped = arrival.tapped;
         self.initialize_battlefield_entry(&mut permanent);
         if let Some(keyword) = grant {
             permanent.temporary_keywords.push(keyword);
@@ -369,10 +373,10 @@ impl Game {
         expected_from: ZoneKind,
         requested_to: ZoneKind,
         cause: ZoneMoveCause,
-        // Who controls the permanent when it arrives on the battlefield.
-        // Reanimation that steals names a player; everything else leaves this
-        // empty and the card arrives under its owner's control.
-        arriving_controller: Option<PlayerId>,
+        // How the permanent arrives, when the destination is the battlefield.
+        // Reanimation that steals names a controller; a fetch land names
+        // tapped. Everything else leaves this empty.
+        arrival: Option<BattlefieldArrival>,
     ) -> Option<(CardInstance, ZoneKind)> {
         let (from, card) = self
             .card_in_nonbattlefield_zone(id)
@@ -400,7 +404,7 @@ impl Game {
             self.put_card_onto_battlefield_from(
                 card,
                 from,
-                arriving_controller.unwrap_or(owner),
+                arrival.unwrap_or_else(|| BattlefieldArrival::under(owner)),
                 None,
             )
         } else {

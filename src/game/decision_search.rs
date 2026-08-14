@@ -35,6 +35,7 @@ impl Game {
                 placement: ZonePlacement::Top,
                 reveal: true,
                 shuffle: false,
+                enters_tapped: false,
             },
         );
     }
@@ -53,6 +54,7 @@ impl Game {
         destination: ZoneKind,
         placement: ZonePlacement,
         shuffle: bool,
+        enters_tapped: bool,
         source: GameObjectId,
         controller: PlayerId,
     ) {
@@ -119,6 +121,7 @@ impl Game {
                 placement,
                 reveal,
                 shuffle,
+                enters_tapped,
             },
         );
     }

@@ -645,6 +645,29 @@ impl StackObject {
     }
 }
 
+/// How a card arrives when an effect puts it onto the battlefield.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct BattlefieldArrival {
+    pub(super) controller: PlayerId,
+    pub(super) tapped: bool,
+}
+
+impl BattlefieldArrival {
+    pub(super) const fn under(controller: PlayerId) -> Self {
+        Self {
+            controller,
+            tapped: false,
+        }
+    }
+
+    pub(super) const fn tapped_under(controller: PlayerId) -> Self {
+        Self {
+            controller,
+            tapped: true,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct PlayerState {
     life: i16,

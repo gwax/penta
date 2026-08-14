@@ -1,13 +1,13 @@
 use super::{
-    AbilitySourceRef, ApplicableZoneMoveReplacement, BattlefieldExit, BattlefieldExitCompletion,
-    CardInstance, CardPartId, CommittedTriggerEvent, CounterKind, DecisionContinuation,
-    DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
-    EffectDef, EffectRecipientDef, EntryCompletion, FrozenZoneMoveReplacement, Game, GameEvent,
-    GameObjectId, KeywordAbility, PendingBattlefieldEntry, PendingBattlefieldExitBatch,
-    PendingBattlefieldExitMove, Permanent, PlayerId, ReplacementConditionDef,
-    ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef, ScopedEffect, StackObject,
-    StackObjectKind, Step, Target, TargetSlotId, TriggerContext, TurnStepDef, ZoneKind,
-    ZoneMoveCauseDef, ZonePlacement, remove_card,
+    AbilitySourceRef, ApplicableZoneMoveReplacement, BattlefieldArrival, BattlefieldExit,
+    BattlefieldExitCompletion, CardInstance, CardPartId, CommittedTriggerEvent, CounterKind,
+    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
+    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EntryCompletion,
+    FrozenZoneMoveReplacement, Game, GameEvent, GameObjectId, KeywordAbility,
+    PendingBattlefieldEntry, PendingBattlefieldExitBatch, PendingBattlefieldExitMove, Permanent,
+    PlayerId, ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef,
+    ReplacementEventDef, ScopedEffect, StackObject, StackObjectKind, Step, Target, TargetSlotId,
+    TriggerContext, TurnStepDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, remove_card,
 };
 
 impl Game {
@@ -851,7 +851,12 @@ impl Game {
             return;
         };
         if zone == ZoneKind::Battlefield {
-            self.put_card_onto_battlefield_from(card, ZoneKind::Exile, owner, grant);
+            self.put_card_onto_battlefield_from(
+                card,
+                ZoneKind::Exile,
+                BattlefieldArrival::under(owner),
+                grant,
+            );
         } else {
             let (card, _zone_change) = self.zone_change_card(card);
             self.players[owner.index()].hand.push(card);

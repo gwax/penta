@@ -1035,6 +1035,7 @@ pub(in crate::card::sets) static DIABOLIC_TUTOR: CardRecord = CardRecord::new(
             destination: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         },
     )),
 );
@@ -2130,6 +2131,7 @@ pub(in crate::card::sets) static LAY_OF_THE_LAND: CardRecord = CardRecord::new(
             destination: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         },
     )),
 );

@@ -2363,6 +2363,7 @@ pub(in crate::card::sets) static GATECREEPER_VINE: CardRecord = CardRecord::new(
                     destination: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     shuffle: true,
+                    enters_tapped: false,
                 },
             },
         ),
@@ -2488,6 +2489,7 @@ pub(in crate::card::sets) static SEEK_THE_HORIZON: CardRecord = CardRecord::new(
             destination: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         },
     )),
 );

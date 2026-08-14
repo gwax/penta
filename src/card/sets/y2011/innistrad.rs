@@ -3525,6 +3525,7 @@ static GARRUK_TUTOR: EffectDef = EffectDef::SearchZone {
     destination: ZoneKind::Hand,
     placement: ZonePlacement::Top,
     shuffle: true,
+    enters_tapped: false,
 };
 
 static GARRUK_TRAMPLE: AbilityDef = abilities::trample();
@@ -4556,6 +4557,7 @@ pub(in crate::card::sets) static TRAVELERS_AMULET: CardRecord = CardRecord::new(
             destination: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             shuffle: true,
+            enters_tapped: false,
         },
     )),
 );
@@ -4655,6 +4657,7 @@ pub(in crate::card::sets) static GHOST_QUARTER: CardRecord = CardRecord::new(
                     destination: ZoneKind::Battlefield,
                     placement: ZonePlacement::Top,
                     shuffle: true,
+                        enters_tapped: false,
                     },
                 },
             ])),
