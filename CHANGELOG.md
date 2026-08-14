@@ -34,6 +34,12 @@ distinguishes snapshots of the covered source and build inputs.
   now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
+- **Legendary landwalk**, which reads a land supertype rather than a basic
+  land type and so needs its own keyword rather than a new `BasicLandType`.
+  Livonya Silone is now executable. Argothian Treefolk joins it: its clause
+  was expressible all along with the existing static source-filtered
+  prevention, and its audit line was simply stale.
+
 - **Spore counters.** A `CounterKind::Spore` was the only thing the Fallen
   Empires Thallid cycle was missing; the upkeep trigger, the
   remove-three-counters cost, and the token creation all existed. Thallid,

@@ -360,7 +360,24 @@ pub(in crate::card::sets) static ARGOTHIAN_PIXIES: CardRecord = CardRecord::new(
 );
 
 // ATQ 30 — Argothian Treefolk
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to this creature by artifact sources”.
+pub(in crate::card::sets) static ARGOTHIAN_TREEFOLK: CardRecord = CardRecord::new(
+    cards::ARGOTHIAN_TREEFOLK,
+    "Argothian Treefolk",
+    CardArt::new("8db8882e-4db6-4e3c-9e9e-8c71d557a071", "Amy Weber"),
+    CardSet::Antiquities,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Treefolk"], 3, 5).with_abilities(&[
+        AbilityDef::static_ability(
+            "Prevent all damage that would be dealt to this creature by artifact sources.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::PreventDamageFrom(ObjectPredicateDef::HasType(
+                    CardType::Artifact,
+                )),
+                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            },
+        ),
+    ]),
+);
 
 // ATQ 31 — Citanul Druid
 pub(in crate::card::sets) static CITANUL_DRUID: CardRecord = CardRecord::new(
@@ -1145,6 +1162,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORCISH_MECHANICS,
     &SHATTERSTORM,
     &ARGOTHIAN_PIXIES,
+    &ARGOTHIAN_TREEFOLK,
     &CITANUL_DRUID,
     &CRUMBLE,
     &AMULET_OF_KROOG,

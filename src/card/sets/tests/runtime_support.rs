@@ -113,6 +113,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::Undying
             | KeywordAbility::Indestructible
             | KeywordAbility::Landwalk(_)
+            | KeywordAbility::LegendaryLandwalk
             | KeywordAbility::AttacksEachCombatIfAble
             | KeywordAbility::ProtectionFrom(_)
     )

@@ -438,7 +438,7 @@ pub(in crate::card::sets) static BIRD_MAIDEN: CardRecord = CardRecord::new(
 );
 
 // ARN 38 — Desert Nomads
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Prevent all damage that would be dealt to this creature by Deserts”.
+// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “Desertwalk”, and no Desert is cataloged for it to read.
 
 // ARN 39 — Hurr Jackal
 // Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “{T}: Target creature can't be regenerated this turn”.

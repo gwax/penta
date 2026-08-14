@@ -520,6 +520,8 @@ pub enum KeywordAbility {
     /// be blocked as long as the defending player controls a land of that
     /// type. The printed variants differ only in which type they name.
     Landwalk(BasicLandType),
+    /// Landwalk naming a land supertype.
+    LegendaryLandwalk,
     ProtectionFrom(ManaColor),
 }
 
@@ -555,6 +557,7 @@ impl KeywordAbility {
             Self::Landwalk(BasicLandType::Swamp) => 22,
             Self::Landwalk(BasicLandType::Mountain) => 23,
             Self::Landwalk(BasicLandType::Forest) => 24,
+            Self::LegendaryLandwalk => 25,
             Self::ProtectionFrom(_) => return None,
         })
     }

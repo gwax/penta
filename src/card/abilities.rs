@@ -208,6 +208,11 @@ pub const fn landwalk(land_type: BasicLandType) -> AbilityDef {
 }
 
 #[must_use]
+pub const fn legendary_landwalk() -> AbilityDef {
+    keyword("Legendary landwalk", KeywordAbility::LegendaryLandwalk)
+}
+
+#[must_use]
 pub const fn mountainwalk() -> AbilityDef {
     landwalk(BasicLandType::Mountain)
 }

@@ -2397,7 +2397,18 @@ pub(in crate::card::sets) static LADY_ORCA: CardRecord = CardRecord::new(
 const NICOL_BOLAS_ENTIRE_HAND: ValueDef = ValueDef::Constant(i32::MAX);
 
 // LEG 242 — Livonya Silone
-// Audit: blocked — Needs the printed landwalk variant and its defending-player land/blocking semantics for “First strike; legendary landwalk”.
+pub(in crate::card::sets) static LIVONYA_SILONE: CardRecord = CardRecord::new(
+    cards::LIVONYA_SILONE,
+    "Livonya Silone",
+    CardArt::new(
+        "b9211949-66a5-4039-ac6d-3e42b008b58e",
+        "Richard Kane Ferguson",
+    ),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{R}{R}{G}{G}"), &["Human", "Warrior"], 4, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[abilities::first_strike(), abilities::legendary_landwalk()]),
+);
 
 // LEG 243 — Lord Magnus
 pub(in crate::card::sets) static LORD_MAGNUS: CardRecord = CardRecord::new(
@@ -3217,6 +3228,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KASIMIR_THE_LONE_WOLF,
     &LADY_CALERIA,
     &LADY_ORCA,
+    &LIVONYA_SILONE,
     &LORD_MAGNUS,
     &MARHAULT_ELSDRAGON,
     &NICOL_BOLAS,

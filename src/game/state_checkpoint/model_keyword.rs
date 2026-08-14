@@ -30,6 +30,7 @@ pub(super) enum KeywordSnapshot {
     Mountainwalk,
     Forestwalk,
     Plainswalk,
+    LegendaryLandwalk,
     Islandwalk,
     Swampwalk,
     ProtectionFromWhite,

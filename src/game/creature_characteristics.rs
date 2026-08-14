@@ -1,7 +1,8 @@
 use super::{
-    AppliedEffectDef, BasicLandType, CardBehavior, CardRules, ControlFlow, CounterKind,
-    DeclarativeAbilityDef, EffectDef, Game, GameObjectId, KeywordAbility, ObjectQueryDef,
-    Permanent, PlayerId, RetiredObject, TriggerContext, ValueDef,
+    AppliedEffectDef, BasicLandType, CardBehavior, CardRules, CardSupertype, CardType, ControlFlow,
+    CounterKind, DeclarativeAbilityDef, EffectDef, Game, GameObjectId, KeywordAbility,
+    ObjectPredicateDef, ObjectQueryDef, Permanent, PlayerId, RetiredObject, TriggerContext,
+    ValueDef,
 };
 
 impl Game {
@@ -212,10 +213,34 @@ impl Game {
     /// a land of the named type. A creature can carry several, and any one of
     /// them is enough, so this asks the question once for all five.
     pub(super) fn landwalk_beats(&self, permanent: &Permanent, defender: PlayerId) -> bool {
-        BasicLandType::ALL.iter().any(|land_type| {
+        let basic = BasicLandType::ALL.iter().any(|land_type| {
             self.permanent_has_executable_keyword(permanent, KeywordAbility::Landwalk(*land_type))
                 && self.controls_land_type(defender, *land_type)
                 && !self.landwalk_can_be_blocked(*land_type)
+        });
+        basic
+            || (self.permanent_has_executable_keyword(permanent, KeywordAbility::LegendaryLandwalk)
+                && self.controls_land_matching(
+                    defender,
+                    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+                ))
+    }
+
+    /// Whether the player controls a land matching this predicate. The two
+    /// non-basic walks name a subtype and a supertype rather than a basic
+    /// land type, so they cannot go through `controls_land_type`.
+    fn controls_land_matching(&self, player: PlayerId, land: ObjectPredicateDef) -> bool {
+        self.battlefield.iter().any(|permanent| {
+            permanent.controller == player
+                && self
+                    .effective_rules(permanent)
+                    .is_some_and(|rules| rules.types().contains(CardType::Land))
+                && self.trigger_object_matches(
+                    land,
+                    &self.trigger_event_object(permanent),
+                    permanent.card.id,
+                    false,
+                )
         })
     }
 

@@ -228,6 +228,33 @@ fn negating_a_walk_does_not_remove_the_keyword() {
 }
 
 #[test]
+fn legendary_landwalk_reads_the_land_supertype() {
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut livonya = creature(10_000, cards::LIVONYA_SILONE, PlayerId::One);
+    livonya.attacking = true;
+    livonya.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+    let livonya_id = livonya.card.id;
+    game.battlefield.push(livonya);
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two));
+
+    game.battlefield
+        .push(creature(10_002, cards::MOUNTAIN, PlayerId::Two));
+    assert!(
+        can_be_blocked(&game, livonya_id),
+        "an ordinary land is not legendary"
+    );
+
+    game.battlefield
+        .push(creature(10_003, cards::KARAKAS, PlayerId::Two));
+    assert!(
+        !can_be_blocked(&game, livonya_id),
+        "a legendary land turns the walk on"
+    );
+}
+
+#[test]
 fn every_newly_unblocked_walker_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
@@ -247,6 +274,8 @@ fn every_newly_unblocked_walker_reports_complete_coverage() {
         cards::GOSTA_DIRK,
         cards::LORD_MAGNUS,
         cards::UR_DRAGO,
+        cards::LIVONYA_SILONE,
+        cards::ARGOTHIAN_TREEFOLK,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
