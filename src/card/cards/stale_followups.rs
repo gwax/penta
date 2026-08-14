@@ -23,3 +23,6 @@ pub const IMPLEMENTS_OF_SACRIFICE: CardDefinitionId = CardDefinitionId(1638);
 pub const WALL_OF_VAPOR: CardDefinitionId = CardDefinitionId(1649);
 pub const WALL_OF_PUTRID_FLESH: CardDefinitionId = CardDefinitionId(1650);
 pub const WALL_OF_SHADOWS: CardDefinitionId = CardDefinitionId(1651);
+pub const PSYCHIC_VENOM: CardDefinitionId = CardDefinitionId(1652);
+pub const BLIGHT: CardDefinitionId = CardDefinitionId(1653);
+pub const SPIRIT_SHACKLE: CardDefinitionId = CardDefinitionId(1654);

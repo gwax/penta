@@ -78,6 +78,12 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Auras that watch their own host being tapped.** Every piece this needs --
+  the becomes-tapped event, the attached-permanent relation, and the host
+  controller as a recipient -- was already built, and the audit lines saying
+  otherwise had gone stale. Psychic Venom, Blight, and Spirit Shackle, the
+  last on a new -0/-2 counter that takes toughness without touching power.
+  The three identities still blocked here now name what actually blocks them.
 - **Prevention that names its source by relationship.** Damage prevention
   could name the source by its characteristics, but not by what it is to the
   permanent being protected. Two predicates fill that in: the attacker a

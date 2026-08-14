@@ -842,7 +842,7 @@ pub(in crate::card::sets) static RECALL: CardRecord = CardRecord::new(
 );
 
 // LEG 71 — Relic Bind
-// Audit: blocked — Needs a trigger relation for the attached permanent becoming tapped and its controller/characteristics for “Whenever enchanted artifact becomes tapped, choose one —”.
+// Audit: blocked — Needs modal triggered abilities: modes are chosen only while casting a spell, so a trigger has no mode selection to make as it resolves. The trigger event and both modes are available.
 
 // LEG 72 — Remove Soul
 pub(in crate::card::sets) static REMOVE_SOUL: CardRecord = CardRecord::new(
@@ -991,7 +991,25 @@ pub(in crate::card::sets) static ABOMINATION: CardRecord = CardRecord::new(
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your upkeep, if this card is exiled with a scream counter on it, remove a scream counter from it. If there are no more scream counters on it, put it into your…”.
 
 // LEG 89 — Blight
-// Audit: blocked — Needs a trigger relation for the attached permanent becoming tapped and its controller/characteristics for “When enchanted land becomes tapped, destroy it”.
+pub(in crate::card::sets) static BLIGHT: CardRecord = CardRecord::new(
+    cards::BLIGHT,
+    "Blight",
+    CardArt::new("9ca19b39-4201-463c-bd40-fbffa31c9eda", "Pete Venters"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{B}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant land", &abilities::ENCHANT_LAND_TARGET),
+            AbilityDef::triggered(
+                "When enchanted land becomes tapped, destroy it.",
+                TriggerEventDef::BecomesTapped(ObjectPredicateDef::AttachedToSource),
+                EffectDef::Destroy {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    can_regenerate: true,
+                },
+            ),
+        ]),
+);
 
 // LEG 90 — Carrion Ants
 pub(in crate::card::sets) static CARRION_ANTS: CardRecord = CardRecord::new(
@@ -1362,7 +1380,29 @@ pub(in crate::card::sets) static QUAGMIRE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{B}, {T}: All damage that would be dealt to you this turn by target attacking creature is dealt to this creature instead”.
 
 // LEG 117 — Spirit Shackle
-// Audit: blocked — Needs a trigger relation for the attached permanent becoming tapped and its controller/characteristics for “Whenever enchanted creature becomes tapped, put a -0/-2 counter on it”.
+pub(in crate::card::sets) static SPIRIT_SHACKLE: CardRecord = CardRecord::new(
+    cards::SPIRIT_SHACKLE,
+    "Spirit Shackle",
+    CardArt::new(
+        "a30bb266-5bd1-4998-ae94-56f0f3354167",
+        "Edward P. Beard, Jr.",
+    ),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{B}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::triggered(
+                "Whenever enchanted creature becomes tapped, put a -0/-2 counter on it.",
+                TriggerEventDef::BecomesTapped(ObjectPredicateDef::AttachedToSource),
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    kind: CounterKind::MinusZeroMinusTwo,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // LEG 118 — Syphon Soul
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Syphon Soul deals 2 damage to each other player. You gain life equal to the damage dealt this way”.
@@ -3815,6 +3855,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WALL_OF_VAPOR,
     &ZEPHYR_FALCON,
     &ABOMINATION,
+    &BLIGHT,
     &CARRION_ANTS,
     &CYCLOPEAN_MUMMY,
     &DARKNESS,
@@ -3830,6 +3871,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NETHER_VOID,
     &PIT_SCORPION,
     &QUAGMIRE,
+    &SPIRIT_SHACKLE,
     &THE_ABYSS,
     &WALKING_DEAD,
     &WALL_OF_PUTRID_FLESH,

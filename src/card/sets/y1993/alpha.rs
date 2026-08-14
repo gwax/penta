@@ -1272,7 +1272,26 @@ pub(in crate::card::sets) static PSIONIC_BLAST: CardRecord = CardRecord::new(
 );
 
 // LEA 75 — Psychic Venom
-// Audit: blocked — Needs a trigger relation for the attached permanent becoming tapped and its controller/characteristics for “Whenever enchanted land becomes tapped, this Aura deals 2 damage to that land's controller”.
+pub(in crate::card::sets) static PSYCHIC_VENOM: CardRecord = CardRecord::new(
+    cards::PSYCHIC_VENOM,
+    "Psychic Venom",
+    CardArt::new("f3f5b68a-6b0e-431e-89f0-ff60f17687a5", "Brian Snõddy"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant land", &abilities::ENCHANT_LAND_TARGET),
+            AbilityDef::triggered(
+                "Whenever enchanted land becomes tapped, this Aura deals 2 damage to that \
+                 land's controller.",
+                TriggerEventDef::BecomesTapped(ObjectPredicateDef::AttachedToSource),
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::ControllerOfAttachedPermanent,
+                    amount: ValueDef::Constant(2),
+                },
+            ),
+        ]),
+);
 
 // LEA 76 — Sea Serpent
 pub(in crate::card::sets) static SEA_SERPENT: CardRecord = CardRecord::new(
@@ -3364,7 +3383,7 @@ pub(in crate::card::sets) static IRONROOT_TREEFOLK: CardRecord = CardRecord::new
 );
 
 // LEA 204 — Kudzu
-// Audit: blocked — Needs a trigger relation for the attached permanent becoming tapped and its controller/characteristics for “When enchanted land becomes tapped, destroy it. That land's controller may attach this Aura to a land of their choice”.
+// Audit: blocked — Needs the destroyed land's controller to choose, as the trigger resolves, a new land to attach this Aura to. The destruction half is available.
 
 // LEA 205 — Ley Druid
 pub(in crate::card::sets) static LEY_DRUID: CardRecord = CardRecord::new(
@@ -4663,6 +4682,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PIRATE_SHIP,
     &PRODIGAL_SORCERER,
     &PSIONIC_BLAST,
+    &PSYCHIC_VENOM,
     &SEA_SERPENT,
     &SPELL_BLAST,
     &STASIS,

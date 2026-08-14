@@ -374,6 +374,7 @@ mod additional_costs;
 mod alternative_costs;
 mod attack_restrictions;
 mod aura_death;
+mod aura_tap_triggers;
 mod aura_upkeep;
 mod banding;
 mod blocking_prevention;

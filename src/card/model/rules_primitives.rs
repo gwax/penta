@@ -19,10 +19,13 @@ pub enum CounterKind {
     PlusOnePlusTwo,
     Credit,
     Tide,
+    /// Spirit Shackle's counter: toughness only, so it does not annihilate
+    /// with a +1/+1 counter the way [`Self::MinusOneMinusOne`] does.
+    MinusZeroMinusTwo,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 10;
+    pub const COUNT: usize = 11;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -35,6 +38,7 @@ impl CounterKind {
         Self::PlusOnePlusTwo,
         Self::Credit,
         Self::Tide,
+        Self::MinusZeroMinusTwo,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -46,6 +50,7 @@ impl CounterKind {
             Self::PlusOnePlusOne => (1, 1),
             Self::MinusOneMinusOne => (-1, -1),
             Self::PlusOnePlusTwo => (1, 2),
+            Self::MinusZeroMinusTwo => (0, -2),
             Self::Javelin
             | Self::Muster
             | Self::Charge
@@ -69,6 +74,7 @@ impl CounterKind {
             Self::PlusOnePlusTwo => 7,
             Self::Credit => 8,
             Self::Tide => 9,
+            Self::MinusZeroMinusTwo => 10,
         }
     }
 
@@ -85,6 +91,7 @@ impl CounterKind {
             Self::PlusOnePlusTwo => "+1/+2",
             Self::Credit => "credit",
             Self::Tide => "tide",
+            Self::MinusZeroMinusTwo => "-0/-2",
         }
     }
 }

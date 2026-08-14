@@ -210,7 +210,7 @@ pub(in crate::card::sets) static SAGE_OF_LAT_NAM: CardRecord = CardRecord::new(
 // Audit: blocked — Needs the complete qualified library-search and post-search continuation for “Sacrifice an artifact. If you do, search your library for an artifact card. If that card's mana value is less than or equal to the sacrificed artifact's mana value, put it onto the…”.
 
 // ATQ 15 — Artifact Possession
-// Audit: blocked — Needs a trigger relation for the attached permanent becoming tapped and its controller/characteristics for “Whenever enchanted artifact becomes tapped or a player activates an ability of enchanted artifact without {T} in its activation cost, this Aura deals 2 damage to that artifact's controller”.
+// Audit: blocked — Needs a trigger event for a player activating an ability of a named permanent, including inspection of whether {T} is among its costs. The tap half is available.
 
 // ATQ 16 — Gate to Phyrexia
 pub(in crate::card::sets) static GATE_TO_PHYREXIA: CardRecord = CardRecord::new(
