@@ -1,10 +1,25 @@
 //! Limited Edition Beta card definitions and printings.
 
 use super::{CardRecord, PrintingRecord, alpha};
-use crate::card::{CardArt, CardRules, CardSet, cards};
+use crate::card::{
+    AbilityCostDef, CardArt, CardRules, CardSet, ManaColor, ObjectPredicateDef, abilities, cards,
+};
+use crate::mana_cost;
 
 // LEB 10 — Circle of Protection: Black
-// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a black source of your choice would deal damage to you this turn, prevent that damage”.
+pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_BLACK: CardRecord = CardRecord::new(
+    cards::CIRCLE_OF_PROTECTION_BLACK,
+    "Circle of Protection: Black",
+    CardArt::new("fa47b4cd-8da4-4544-b011-ba92b7009203", "Jesper Myrfors"),
+    CardSet::Beta,
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        abilities::circle_of_protection(
+            "{1}: The next time a black source of your choice would deal damage to you this turn, prevent that damage.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            ObjectPredicateDef::Color(ManaColor::Black),
+        ),
+    ),
+);
 
 // LEB 287 — Volcanic Island
 pub(in crate::card::sets) static VOLCANIC_ISLAND: CardRecord = CardRecord::new(
@@ -15,7 +30,8 @@ pub(in crate::card::sets) static VOLCANIC_ISLAND: CardRecord = CardRecord::new(
     CardRules::new_land(&["Island", "Mountain"]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&VOLCANIC_ISLAND];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&CIRCLE_OF_PROTECTION_BLACK, &VOLCANIC_ISLAND];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&alpha::ARMAGEDDON),     // LEB 2

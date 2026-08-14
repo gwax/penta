@@ -205,7 +205,22 @@ pub(in crate::card::sets) static GREAT_WALL: CardRecord = CardRecord::new(
 );
 
 // LEG 18 — Greater Realm of Preservation
-// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}{W}: The next time a black or red source of your choice would deal damage to you this turn, prevent that damage”.
+pub(in crate::card::sets) static GREATER_REALM_OF_PRESERVATION: CardRecord = CardRecord::new(
+    cards::GREATER_REALM_OF_PRESERVATION,
+    "Greater Realm of Preservation",
+    CardArt::new("5e236816-0c49-4b48-b18b-03add5a80d72", "NéNé Thomas"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        abilities::circle_of_protection(
+            "{1}{W}: The next time a black or red source of your choice would deal damage to you this turn, prevent that damage.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{W}"))],
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::Color(ManaColor::Black),
+                ObjectPredicateDef::Color(ManaColor::Red),
+            ]),
+        ),
+    ),
+);
 
 // LEG 19 — Heaven's Gate
 // Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become white until end of turn”.
@@ -3311,6 +3326,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DIVINE_TRANSFORMATION,
     &GREAT_DEFENDER,
     &GREAT_WALL,
+    &GREATER_REALM_OF_PRESERVATION,
     &HOLY_DAY,
     &INDESTRUCTIBLE_AURA,
     &KEEPERS_OF_THE_FAITH,

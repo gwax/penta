@@ -233,6 +233,8 @@ impl Game {
             EffectDef::None
             | EffectDef::Randomized { .. }
             | EffectDef::ChoosePermanent { .. }
+            | EffectDef::ChooseDamageSource { .. }
+            | EffectDef::PreventNextDamageFromSource { .. }
             | EffectDef::DealDamage { .. }
             | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }

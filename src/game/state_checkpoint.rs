@@ -337,6 +337,7 @@ impl Game {
                 .map(|shield| model::PreventionShieldSnapshot {
                     recipient: target_snapshot(shield.recipient),
                     remaining: shield.remaining,
+                    source: shield.source.map(|source| source.0),
                 })
                 .collect(),
             pregame: self.pregame.map(|pregame| match pregame {
@@ -643,6 +644,7 @@ impl Game {
                 .map(|shield| PreventionShield {
                     recipient: parse_snapshot_target(shield.recipient),
                     remaining: shield.remaining,
+                    source: shield.source.map(GameObjectId),
                 })
                 .collect(),
             result: None,

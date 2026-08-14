@@ -1,6 +1,7 @@
 use super::{
     AppliedEffectDef, CardType, CommittedTriggerEvent, ControlFlow, CounterKind, Game,
-    GameObjectId, KeywordAbility, Permanent, PlayerId, RetiredObject, Target, TriggerEventObject,
+    GameObjectId, KeywordAbility, Permanent, PlayerId, PreventionShield, RetiredObject, Target,
+    TriggerEventObject,
 };
 
 impl Game {
@@ -41,31 +42,46 @@ impl Game {
     /// is left to deal. `None` means all of it was prevented, so no damage
     /// event happens at all -- prevented damage was never dealt, so nothing
     /// that watches for damage should see it.
-    fn spend_prevention_shields(&mut self, target: Option<Target>, amount: u16) -> Option<u16> {
+    fn spend_prevention_shields(
+        &mut self,
+        target: Option<Target>,
+        amount: u16,
+        source: Option<GameObjectId>,
+    ) -> Option<u16> {
         let Some(target) = target else {
             return Some(amount);
         };
-        if amount == 0
-            || !self
-                .prevention_shields
-                .iter()
-                .any(|s| s.recipient == target)
-        {
+        // A shield naming a source ignores damage from anything else; a
+        // shield naming none answers whatever arrives.
+        let answers = |shield: &PreventionShield| {
+            shield.recipient == target && shield.source.is_none_or(|named| Some(named) == source)
+        };
+        if amount == 0 || !self.prevention_shields.iter().any(answers) {
             return (amount > 0).then_some(amount);
         }
         let mut left = amount;
+        let mut spent_named = Vec::new();
         for shield in &mut self.prevention_shields {
-            if shield.recipient != target || left == 0 {
+            if !answers(shield) || left == 0 {
                 continue;
             }
-            // "Prevent all damage" is never spent; it simply holds.
-            let remaining = shield.remaining.as_mut()?;
+            let Some(remaining) = shield.remaining.as_mut() else {
+                // "Prevent all damage" is never spent; it simply holds. A
+                // shield naming a source instead prevents all of this one
+                // damage and is then gone.
+                shield.source?;
+                spent_named.push(shield.source);
+                left = 0;
+                break;
+            };
             let spent = (*remaining).min(left);
             *remaining -= spent;
             left -= spent;
         }
-        self.prevention_shields
-            .retain(|shield| shield.remaining != Some(0));
+        self.prevention_shields.retain(|shield| {
+            shield.remaining != Some(0)
+                && !(shield.source.is_some() && spent_named.contains(&shield.source))
+        });
         (left > 0).then_some(left)
     }
 
@@ -85,7 +101,7 @@ impl Game {
         amount: u16,
         combat: bool,
     ) {
-        let Some(amount) = self.spend_prevention_shields(target, amount) else {
+        let Some(amount) = self.spend_prevention_shields(target, amount, source) else {
             return;
         };
         let source_colors = source.map_or([false; 5], |source| self.object_colors(source));

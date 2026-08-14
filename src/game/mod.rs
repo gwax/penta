@@ -730,6 +730,13 @@ pub struct Game {
 struct PreventionShield {
     recipient: Target,
     remaining: Option<u16>,
+    /// The one source this shield answers, for "the next time a source of
+    /// your choice would deal damage". `None` covers every source, which is
+    /// what an ordinary "prevent the next N damage" shield does. A shield
+    /// naming a source is spent by the first damage that source deals however
+    /// much it prevents, so it is removed on use even without a remaining
+    /// count.
+    source: Option<GameObjectId>,
 }
 
 #[cfg(test)]

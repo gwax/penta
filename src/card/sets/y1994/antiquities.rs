@@ -84,7 +84,19 @@ pub(in crate::card::sets) static ARGIVIAN_BLACKSMITH: CardRecord = CardRecord::n
 // Audit: blocked — Needs a targeting restriction keyed to the source's card type for “Enchanted creature can't be the target of abilities from artifact sources”; the artifact-source damage prevention and the artifact-creature blocking restriction both exist.
 
 // ATQ 4 — Circle of Protection: Artifacts
-// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{2}: The next time an artifact source of your choice would deal damage to you this turn, prevent that damage”.
+pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_ARTIFACTS: CardRecord = CardRecord::new(
+    cards::CIRCLE_OF_PROTECTION_ARTIFACTS,
+    "Circle of Protection: Artifacts",
+    CardArt::new("22ebd5a3-fef8-4097-b038-89a6cb38227d", "Pete Venters"),
+    CardSet::Antiquities,
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        abilities::circle_of_protection(
+            "{2}: The next time an artifact source of your choice would deal damage to you this turn, prevent that damage.",
+            &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+            ObjectPredicateDef::HasType(CardType::Artifact),
+        ),
+    ),
+);
 
 // ATQ 5 — Damping Field
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “Players can't untap more than one artifact during their untap steps”.
@@ -1174,6 +1186,7 @@ pub(in crate::card::sets) static STRIP_MINE: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGIVIAN_ARCHAEOLOGIST,
     &ARGIVIAN_BLACKSMITH,
+    &CIRCLE_OF_PROTECTION_ARTIFACTS,
     &ENERGY_FLUX,
     &HURKYLS_RECALL,
     &RECONSTRUCTION,

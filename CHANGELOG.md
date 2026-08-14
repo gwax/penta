@@ -42,6 +42,16 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **A prevention shield keyed to a chosen source**, which is what a Circle of
+  Protection is. The existing shields attach to a recipient and spend on the
+  next damage from anything; a Circle names one source and answers that source
+  alone, preventing all of the first damage it deals and then being gone.
+  `EffectDef::ChooseDamageSource` makes the choice as the ability resolves and
+  searches the stack as well as the battlefield, because a Circle that could
+  not name a burn spell would be the wrong card. The checkpoint carries the
+  named source as an additive member. Circle of Protection: Blue, Green, Red,
+  White, Black, and Artifacts are now executable, as is Greater Realm of
+  Preservation.
 - **A continuous combat-damage prevention.** The two turn-scoped effects write
   a flag on a permanent that cleanup clears, which is right for a Fog and wrong
   for an Aura. `AppliedEffectDef::PreventCombatDamage` is asked afresh each time

@@ -199,6 +199,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         }
         | EffectDef::May { effect, .. }
         | EffectDef::ChoosePermanent { then: effect, .. }
+        | EffectDef::ChooseDamageSource { then: effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. } => {
@@ -240,6 +241,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }
         | EffectDef::PreventAllDamageThisTurn { .. }
+        | EffectDef::PreventNextDamageFromSource { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }

@@ -454,6 +454,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         }
         | EffectDef::May { effect, .. }
         | EffectDef::ChoosePermanent { then: effect, .. }
+        | EffectDef::ChooseDamageSource { then: effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. } => {
@@ -494,6 +495,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }
         | EffectDef::PreventAllDamageThisTurn { .. }
+        | EffectDef::PreventNextDamageFromSource { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }
@@ -614,6 +616,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         }
         | EffectDef::May { effect, .. }
         | EffectDef::ChoosePermanent { then: effect, .. }
+        | EffectDef::ChooseDamageSource { then: effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. }
@@ -647,6 +650,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }
         | EffectDef::PreventAllDamageThisTurn { .. }
+        | EffectDef::PreventNextDamageFromSource { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }

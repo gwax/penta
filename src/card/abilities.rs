@@ -11,6 +11,7 @@ use super::model::{
     ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEffectDef, ScaledValueDef,
     TriggerEventDef, ValueDef, ZoneKind,
 };
+use crate::ids::ChoiceIndex;
 
 /// The target an "Enchant creature" Aura spell chooses.
 pub static ENCHANT_CREATURE_TARGET: [AbilityTargetDef; 1] =
@@ -382,6 +383,33 @@ pub const fn regenerate_self(text: &'static str, costs: &'static [AbilityCostDef
         },
     )
 }
+
+/// A Circle of Protection: "the next time a <kind> source of your choice
+/// would deal damage to you this turn, prevent that damage". The source is
+/// chosen as the ability resolves rather than targeted, so it may be a spell
+/// still on the stack, and the shield it leaves answers that source alone.
+#[must_use]
+pub const fn circle_of_protection(
+    text: &'static str,
+    costs: &'static [AbilityCostDef],
+    source: ObjectPredicateDef,
+) -> AbilityDef {
+    AbilityDef::activated(
+        text,
+        costs,
+        EffectDef::ChooseDamageSource {
+            choice: ChoiceIndex::PRIMARY,
+            chooser: EffectRecipientDef::Controller,
+            object: source,
+            then: &SHIELD_AGAINST_THE_CHOSEN_SOURCE,
+        },
+    )
+}
+
+static SHIELD_AGAINST_THE_CHOSEN_SOURCE: EffectDef = EffectDef::PreventNextDamageFromSource {
+    object: EffectRecipientDef::Controller,
+    source: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+};
 
 /// A shared checkland-style entry clause backed by the general object-query
 /// condition vocabulary.

@@ -288,7 +288,51 @@ impl Game {
                     self.prevention_shields.push(PreventionShield {
                         recipient: target,
                         remaining: Some(amount),
+                        source: None,
                     });
+                }
+            }
+            EffectDef::ChooseDamageSource {
+                choice,
+                chooser,
+                object: predicate,
+                then,
+            } => {
+                let choosers = self.effect_recipients(chooser, object, context, scoped);
+                for chooser in choosers {
+                    if let Target::Player(chooser) = chooser {
+                        self.queue_damage_source_choice(
+                            choice,
+                            chooser,
+                            predicate,
+                            object,
+                            context,
+                            scoped.with_effect(*then),
+                        );
+                    }
+                }
+            }
+            EffectDef::PreventNextDamageFromSource {
+                object: recipient,
+                source,
+            } => {
+                // No chosen source means nothing matched, and a shield that
+                // answers nothing is not worth carrying.
+                let named = self
+                    .effect_recipients(source, object, context, scoped)
+                    .into_iter()
+                    .find_map(|target| match target {
+                        Target::Permanent(id) | Target::Spell(id) | Target::Card(id) => Some(id),
+                        Target::Player(_) => None,
+                    });
+                if let Some(named) = named {
+                    for target in self.effect_recipients(recipient, object, context, scoped) {
+                        self.prevention_shields.push(PreventionShield {
+                            recipient: target,
+                            remaining: None,
+                            source: Some(named),
+                        });
+                    }
                 }
             }
             EffectDef::PreventAllDamageThisTurn { object: recipient } => {
@@ -296,6 +340,7 @@ impl Game {
                     self.prevention_shields.push(PreventionShield {
                         recipient: target,
                         remaining: None,
+                        source: None,
                     });
                 }
             }

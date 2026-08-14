@@ -107,6 +107,50 @@ impl Game {
             .collect()
     }
 
+    /// The same options for a set that spans the battlefield and the stack.
+    /// An option's zone is what tells a client whether it is pointing at a
+    /// permanent or at a spell still waiting to resolve.
+    pub(super) fn damage_source_decision_options(
+        &self,
+        sources: &[GameObjectId],
+    ) -> Vec<DecisionOption> {
+        sources
+            .iter()
+            .enumerate()
+            .filter_map(|(index, id)| {
+                let (label, card, zone) = if let Some(permanent) = self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == *id)
+                {
+                    (
+                        self.effective_permanent_name(permanent)
+                            .map_or_else(|| "Unknown permanent".into(), str::to_owned),
+                        (permanent.card.id, permanent.card.definition),
+                        DecisionZone::Battlefield,
+                    )
+                } else {
+                    let object = self.stack.iter().find(|object| object.id == *id)?;
+                    (
+                        self.catalog
+                            .get(object.card.definition)
+                            .map_or_else(|| "Unknown spell".into(), |card| card.name.clone()),
+                        (object.id, object.card.definition),
+                        DecisionZone::Stack,
+                    )
+                };
+                Some(DecisionOption {
+                    id: u32::try_from(index).unwrap_or(u32::MAX),
+                    label,
+                    card: Some(card),
+                    members: Vec::new(),
+                    ability_text: None,
+                    zone,
+                })
+            })
+            .collect()
+    }
+
     pub(super) fn queue_two_pile_partition(
         &mut self,
         resolving_controller: PlayerId,

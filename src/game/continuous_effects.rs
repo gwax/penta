@@ -297,6 +297,8 @@ impl Game {
             EffectDef::None
             | EffectDef::Randomized { .. }
             | EffectDef::ChoosePermanent { .. }
+            | EffectDef::ChooseDamageSource { .. }
+            | EffectDef::PreventNextDamageFromSource { .. }
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::DealDamage { .. }

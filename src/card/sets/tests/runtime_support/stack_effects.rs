@@ -48,7 +48,10 @@ fn shared_decision_effect(effect: EffectDef) -> bool {
                     .then
                     .is_none_or(|effect| shared_stack_effect_at_position(*effect, true))
         }
-        EffectDef::ChoosePermanent {
+        EffectDef::ChooseDamageSource {
+            chooser, object, ..
+        }
+        | EffectDef::ChoosePermanent {
             chooser, object, ..
         } => shared_effect_recipient(chooser) && shared_object_predicate(object),
         _ => false,
@@ -93,7 +96,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             };
             branch_is_shared(*on_success) && branch_is_shared(*on_failure)
         }
-        EffectDef::ChoosePermanent { then, .. } => {
+        EffectDef::PreventNextDamageFromSource { object, source } => {
+            shared_effect_recipient(object) && shared_effect_recipient(source)
+        }
+        EffectDef::ChooseDamageSource { then, .. } | EffectDef::ChoosePermanent { then, .. } => {
             deferred_decision_allowed
                 && shared_decision_effect(effect)
                 && shared_stack_effect_at_position(*then, true)

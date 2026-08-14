@@ -284,6 +284,9 @@ pub(super) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         }
         | EffectDef::ChoosePermanent {
             then: otherwise, ..
+        }
+        | EffectDef::ChooseDamageSource {
+            then: otherwise, ..
         } => vec![*otherwise],
         EffectDef::IfFormat {
             then, otherwise, ..
@@ -371,6 +374,7 @@ fn collect_mana_effects(effect: EffectDef, found: &mut Vec<AddManaEffectDef>) {
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ChoosePermanent { then: effect, .. }
+        | EffectDef::ChooseDamageSource { then: effect, .. }
         | EffectDef::SacrificeOfChoice {
             then: Some(effect), ..
         } => collect_mana_effects(*effect, found),
@@ -445,6 +449,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ChoosePermanent { then: effect, .. }
+        | EffectDef::ChooseDamageSource { then: effect, .. }
         | EffectDef::SacrificeOfChoice {
             then: Some(effect), ..
         } => collect_effect_abilities(*effect, abilities),
@@ -482,6 +487,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::PreventAllCombatDamageThisTurn
         | EffectDef::PreventNextDamage { .. }
         | EffectDef::PreventAllDamageThisTurn { .. }
+        | EffectDef::PreventNextDamageFromSource { .. }
         | EffectDef::PreventCombatDamageThisTurn { .. }
         | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
         | EffectDef::Attach { .. }

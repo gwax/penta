@@ -417,6 +417,8 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         EffectDef::GrantFlashToNextSorcery
         | EffectDef::Randomized { .. }
         | EffectDef::ChoosePermanent { .. }
+        | EffectDef::ChooseDamageSource { .. }
+        | EffectDef::PreventNextDamageFromSource { .. }
         | EffectDef::May { .. }
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
@@ -618,6 +620,8 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     EffectDef::AddManaEqualTo { .. }
                     | EffectDef::Randomized { .. }
                     | EffectDef::ChoosePermanent { .. }
+                    | EffectDef::ChooseDamageSource { .. }
+                    | EffectDef::PreventNextDamageFromSource { .. }
                     | EffectDef::May { .. }
                     | EffectDef::None
                     | EffectDef::DealDamage { .. }

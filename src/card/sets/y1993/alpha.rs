@@ -131,16 +131,64 @@ pub(in crate::card::sets) static BLESSING: CardRecord = CardRecord::new(
 // Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “Untapped creatures you control get +0/+2”.
 
 // LEA 10 — Circle of Protection: Blue
-// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a blue source of your choice would deal damage to you this turn, prevent that damage”.
+pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_BLUE: CardRecord = CardRecord::new(
+    cards::CIRCLE_OF_PROTECTION_BLUE,
+    "Circle of Protection: Blue",
+    CardArt::new("848b1a7f-e8ba-40b5-92b7-af1e963a0319", "Dameon Willich"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        abilities::circle_of_protection(
+            "{1}: The next time a blue source of your choice would deal damage to you this turn, prevent that damage.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            ObjectPredicateDef::Color(ManaColor::Blue),
+        ),
+    ),
+);
 
 // LEA 11 — Circle of Protection: Green
-// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a green source of your choice would deal damage to you this turn, prevent that damage”.
+pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_GREEN: CardRecord = CardRecord::new(
+    cards::CIRCLE_OF_PROTECTION_GREEN,
+    "Circle of Protection: Green",
+    CardArt::new("1ae32d20-b438-4f43-b603-e8f706ecfb03", "Sandra Everingham"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        abilities::circle_of_protection(
+            "{1}: The next time a green source of your choice would deal damage to you this turn, prevent that damage.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            ObjectPredicateDef::Color(ManaColor::Green),
+        ),
+    ),
+);
 
 // LEA 12 — Circle of Protection: Red
-// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a red source of your choice would deal damage to you this turn, prevent that damage”.
+pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_RED: CardRecord = CardRecord::new(
+    cards::CIRCLE_OF_PROTECTION_RED,
+    "Circle of Protection: Red",
+    CardArt::new("b3dd94c5-42f6-4148-be6e-2a3a4226cc0e", "Mark Tedin"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        abilities::circle_of_protection(
+            "{1}: The next time a red source of your choice would deal damage to you this turn, prevent that damage.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            ObjectPredicateDef::Color(ManaColor::Red),
+        ),
+    ),
+);
 
 // LEA 13 — Circle of Protection: White
-// Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a white source of your choice would deal damage to you this turn, prevent that damage”.
+pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_WHITE: CardRecord = CardRecord::new(
+    cards::CIRCLE_OF_PROTECTION_WHITE,
+    "Circle of Protection: White",
+    CardArt::new("92df19c9-e127-42d9-8dd2-7fa5a7095428", "Douglas Shuler"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        abilities::circle_of_protection(
+            "{1}: The next time a white source of your choice would deal damage to you this turn, prevent that damage.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            ObjectPredicateDef::Color(ManaColor::White),
+        ),
+    ),
+);
 
 // LEA 14 — Consecrate Land
 // Audit: blocked — Needs this compound indestructibility and attachment-legality effect for “Enchanted land has indestructible and can't be enchanted by other Auras”.
@@ -4178,6 +4226,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARMAGEDDON,
     &BALANCE,
     &BLESSING,
+    &CIRCLE_OF_PROTECTION_BLUE,
+    &CIRCLE_OF_PROTECTION_GREEN,
+    &CIRCLE_OF_PROTECTION_RED,
+    &CIRCLE_OF_PROTECTION_WHITE,
     &CONVERSION,
     &CRUSADE,
     &DEATH_WARD,

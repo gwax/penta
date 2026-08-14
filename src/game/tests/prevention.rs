@@ -119,6 +119,7 @@ fn a_shield_absorbs_up_to_its_amount_and_is_then_gone() {
     game.prevention_shields.push(PreventionShield {
         recipient: Target::Permanent(target),
         remaining: Some(2),
+        source: None,
     });
 
     game.damage_target(Some(Target::Permanent(target)), 1);
@@ -147,6 +148,7 @@ fn a_prevent_all_shield_is_not_consumed() {
     game.prevention_shields.push(PreventionShield {
         recipient: Target::Permanent(target),
         remaining: None,
+        source: None,
     });
 
     for _ in 0..3 {
@@ -171,6 +173,7 @@ fn a_shield_only_covers_the_recipient_it_names() {
     game.prevention_shields.push(PreventionShield {
         recipient: Target::Permanent(shielded),
         remaining: Some(5),
+        source: None,
     });
 
     game.damage_target(Some(Target::Permanent(other_id)), 1);
@@ -190,6 +193,7 @@ fn a_shield_can_cover_a_player() {
     game.prevention_shields.push(PreventionShield {
         recipient: Target::Player(PlayerId::Two),
         remaining: Some(3),
+        source: None,
     });
 
     game.damage_target(Some(Target::Player(PlayerId::Two)), 2);
@@ -203,6 +207,7 @@ fn shields_do_not_survive_cleanup() {
     game.prevention_shields.push(PreventionShield {
         recipient: Target::Permanent(target),
         remaining: None,
+        source: None,
     });
     game.finish_cleanup();
     assert!(game.prevention_shields.is_empty());
@@ -405,5 +410,152 @@ mod gaseous_form {
             card.rules.implementation_status(),
             crate::ImplementationStatus::Complete,
         );
+    }
+}
+
+/// A shield keyed to one chosen source, which is what a Circle of Protection
+/// needs and what a recipient-keyed shield cannot express. The distinction
+/// only shows when more than one thing is dealing damage, so that is what
+/// these drive.
+mod circle_of_protection {
+    use super::*;
+
+    fn circle_game() -> (Game, GameObjectId) {
+        let mut game = ready_game();
+        let circle = creature(10_000, cards::CIRCLE_OF_PROTECTION_RED, PlayerId::One);
+        let circle_id = circle.card.id;
+        game.battlefield.push(circle);
+        game.players[PlayerId::One.index()].mana_pool.colorless = 4;
+        (game, circle_id)
+    }
+
+    fn activate(game: &mut Game, circle: GameObjectId) {
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == circle)
+            })
+            .expect("the Circle is affordable");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        pass_priority_pair(game);
+    }
+
+    /// With one red source there is nothing to choose, so the shield is
+    /// installed without a decision and answers that source.
+    #[test]
+    fn a_single_red_source_needs_no_decision_and_is_shielded_against() {
+        let (mut game, circle_id) = circle_game();
+        let dragon = creature(10_001, cards::DRAGON_WHELP, PlayerId::Two);
+        let dragon_id = dragon.card.id;
+        game.battlefield.push(dragon);
+
+        activate(&mut game, circle_id);
+        assert!(
+            game.pending_decisions.is_empty(),
+            "one candidate is not a choice"
+        );
+
+        game.damage_target_from(Some(dragon_id), Some(Target::Player(PlayerId::One)), 4);
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            i16::from(rules::STARTING_LIFE),
+            "all of the chosen source's damage was prevented, not just one point"
+        );
+    }
+
+    /// The shield answers its own source and nothing else. A second red
+    /// creature the player did not name still connects -- this is the whole
+    /// difference from a shield that answers any source.
+    #[test]
+    fn the_shield_ignores_a_red_source_it_did_not_name() {
+        let (mut game, circle_id) = circle_game();
+        let named = creature(10_001, cards::DRAGON_WHELP, PlayerId::Two);
+        let named_id = named.card.id;
+        game.battlefield.push(named);
+
+        activate(&mut game, circle_id);
+
+        let other = creature(10_002, cards::DRAGON_WHELP, PlayerId::Two);
+        let other_id = other.card.id;
+        game.battlefield.push(other);
+
+        game.damage_target_from(Some(other_id), Some(Target::Player(PlayerId::One)), 3);
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            i16::from(rules::STARTING_LIFE) - 3,
+            "the unnamed source is not covered"
+        );
+
+        game.damage_target_from(Some(named_id), Some(Target::Player(PlayerId::One)), 3);
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            i16::from(rules::STARTING_LIFE) - 3,
+            "and the named one still is"
+        );
+    }
+
+    /// One activation is one prevention. The shield is spent by the first
+    /// damage its source deals, however much that was.
+    #[test]
+    fn the_shield_is_spent_by_the_first_damage_from_its_source() {
+        let (mut game, circle_id) = circle_game();
+        let dragon = creature(10_001, cards::DRAGON_WHELP, PlayerId::Two);
+        let dragon_id = dragon.card.id;
+        game.battlefield.push(dragon);
+
+        activate(&mut game, circle_id);
+        game.damage_target_from(Some(dragon_id), Some(Target::Player(PlayerId::One)), 2);
+        assert!(game.prevention_shields.is_empty(), "the shield was spent");
+
+        game.damage_target_from(Some(dragon_id), Some(Target::Player(PlayerId::One)), 2);
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            i16::from(rules::STARTING_LIFE) - 2,
+            "the second hit from the same source is not covered"
+        );
+    }
+
+    /// Two red sources is a real choice, and the player is asked. This is the
+    /// decision an ordinary prevention shield never has to make.
+    #[test]
+    fn two_red_sources_ask_the_controller_which_one() {
+        let (mut game, circle_id) = circle_game();
+        game.battlefield
+            .push(creature(10_001, cards::DRAGON_WHELP, PlayerId::Two));
+        game.battlefield
+            .push(creature(10_002, cards::DRAGON_WHELP, PlayerId::Two));
+
+        activate(&mut game, circle_id);
+
+        let decision = game
+            .pending_decisions
+            .first()
+            .expect("the controller is asked which source");
+        assert_eq!(decision.observation.player, PlayerId::One);
+        assert_eq!(decision.observation.options.len(), 2);
+    }
+
+    #[test]
+    fn the_cycle_reports_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [
+            cards::CIRCLE_OF_PROTECTION_BLUE,
+            cards::CIRCLE_OF_PROTECTION_GREEN,
+            cards::CIRCLE_OF_PROTECTION_RED,
+            cards::CIRCLE_OF_PROTECTION_WHITE,
+            cards::CIRCLE_OF_PROTECTION_BLACK,
+            cards::CIRCLE_OF_PROTECTION_ARTIFACTS,
+            cards::GREATER_REALM_OF_PRESERVATION,
+        ] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                crate::ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
     }
 }

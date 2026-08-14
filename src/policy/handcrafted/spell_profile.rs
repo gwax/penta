@@ -265,7 +265,8 @@ impl HandcraftedPolicy {
                 Self::collect_spell_effect_profile(*on_success, x, targets, profile);
                 Self::collect_spell_effect_profile(*on_failure, x, targets, profile);
             }
-            EffectDef::ChoosePermanent { then, .. } => {
+            EffectDef::ChooseDamageSource { then, .. }
+            | EffectDef::ChoosePermanent { then, .. } => {
                 Self::collect_spell_effect_profile(*then, x, targets, profile);
             }
             // An optional effect is worth what it would do if taken.
@@ -314,6 +315,7 @@ impl HandcraftedPolicy {
             | EffectDef::PreventAllCombatDamageThisTurn
             | EffectDef::PreventNextDamage { .. }
             | EffectDef::PreventAllDamageThisTurn { .. }
+            | EffectDef::PreventNextDamageFromSource { .. }
             | EffectDef::PreventCombatDamageThisTurn { .. }
             | EffectDef::PreventCombatDamageDealtByThisTurn { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);

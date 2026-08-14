@@ -171,7 +171,13 @@ fn validate_effect_references(
             validate_effect_references(*on_success, target_count, choices_in_scope)?;
             validate_effect_references(*on_failure, target_count, choices_in_scope)
         }
-        EffectDef::ChoosePermanent {
+        EffectDef::ChooseDamageSource {
+            choice,
+            chooser,
+            then,
+            ..
+        }
+        | EffectDef::ChoosePermanent {
             choice,
             chooser,
             then,
@@ -203,6 +209,7 @@ fn validate_effect_references(
         | EffectDef::Untap { object }
         | EffectDef::PreventNextDamage { object, .. }
         | EffectDef::PreventAllDamageThisTurn { object }
+        | EffectDef::PreventNextDamageFromSource { object, .. }
         | EffectDef::PreventCombatDamageThisTurn { object }
         | EffectDef::PreventCombatDamageDealtByThisTurn { object }
         | EffectDef::Attach { object }
