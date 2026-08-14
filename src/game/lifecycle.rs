@@ -105,6 +105,7 @@ impl Game {
                     mana_pool: ManaPool::default(),
                     mana: Vec::new(),
                     land_played_this_turn: false,
+                    poison: 0,
                 })
             };
 

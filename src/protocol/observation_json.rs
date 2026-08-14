@@ -136,6 +136,7 @@ fn result_json(result: GameResult) -> Value {
                 WinReason::OpponentTriedToDrawFromEmptyLibrary =>
                     "OpponentTriedToDrawFromEmptyLibrary",
                 WinReason::OpponentRanOutOfTime => "OpponentRanOutOfTime",
+                WinReason::OpponentPoisoned => "OpponentPoisoned",
             },
         }),
     }
@@ -227,6 +228,7 @@ pub fn observation_json_for_format(
         "step": step_name(observation.step),
         "regularCombatDamagePending": observation.regular_combat_damage_pending,
         "life": observation.life_totals,
+        "poison": observation.poison_counters,
         "manaPools": [
             mana_pool_json(&observation.mana_pools[0]),
             mana_pool_json(&observation.mana_pools[1]),

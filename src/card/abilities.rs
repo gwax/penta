@@ -229,6 +229,24 @@ pub const fn protection_from(color: ManaColor) -> AbilityDef {
     keyword(text, KeywordAbility::ProtectionFrom(color))
 }
 
+/// "Whenever this creature deals damage to a player, that player gets N
+/// poison counters." Every printed form of this watches damage of any kind,
+/// not only combat damage, and the card supplies its own reminder text.
+#[must_use]
+pub const fn poisonous_damage(amount: i32, text: &'static str) -> AbilityDef {
+    AbilityDef::triggered(
+        text,
+        TriggerEventDef::DamageDealtToPlayer {
+            source: ObjectPredicateDef::Source,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::AddPoisonCounters {
+            recipient: EffectRecipientDef::EventPlayer,
+            amount: ValueDef::Constant(amount),
+        },
+    )
+}
+
 /// The granted protection and the self-retention exception for each printed
 /// Ward. `EffectDef::Sequence` holds its clauses by reference, and a sequence
 /// built from a parameter cannot be promoted to `'static`, so the five are

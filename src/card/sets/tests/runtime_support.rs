@@ -457,6 +457,7 @@ pub(super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef)
         | EffectDef::DealDamage { .. }
         | EffectDef::DrainLife { .. }
         | EffectDef::GainLife { .. }
+        | EffectDef::AddPoisonCounters { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
         | EffectDef::ShuffleLibrary { .. }
@@ -662,6 +663,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::DealDamage { .. }
                     | EffectDef::DrainLife { .. }
                     | EffectDef::GainLife { .. }
+                    | EffectDef::AddPoisonCounters { .. }
                     | EffectDef::DrawCards { .. }
                     | EffectDef::Discard { .. }
                     | EffectDef::ShuffleLibrary { .. }

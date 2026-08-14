@@ -49,6 +49,10 @@ pub enum WinReason {
     /// The opponent did not act inside the time their host allowed. Distinct
     /// from conceding: nobody chose this, it was imposed by a clock.
     OpponentRanOutOfTime,
+    /// The opponent had ten or more poison counters. This is a state-based
+    /// action rather than an effect, so it is not
+    /// [`Self::OpponentLostToAnEffect`].
+    OpponentPoisoned,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

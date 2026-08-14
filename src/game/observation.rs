@@ -124,6 +124,8 @@ pub struct PlayerObservation {
     /// combat-damage steps. Both steps otherwise share [`Step::CombatDamage`].
     pub regular_combat_damage_pending: bool,
     pub life_totals: [i16; 2],
+    /// Poison counters each seat has, in seat order. Ten is a loss.
+    pub poison_counters: [u16; 2],
     pub mana_pools: [ManaPool; 2],
     pub hand: Vec<(GameObjectId, CardDefinitionId)>,
     pub opponent_hand_size: usize,

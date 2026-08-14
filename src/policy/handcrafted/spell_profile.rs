@@ -334,6 +334,7 @@ impl HandcraftedPolicy {
             | EffectDef::ShuffleLibrary { .. }
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::GainLife { .. }
+            | EffectDef::AddPoisonCounters { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Sacrifice { .. }

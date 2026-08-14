@@ -483,6 +483,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::DealDamage { .. }
         | EffectDef::DrainLife { .. }
         | EffectDef::GainLife { .. }
+        | EffectDef::AddPoisonCounters { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
         | EffectDef::ShuffleLibrary { .. }
@@ -650,6 +651,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::DealDamage { .. }
         | EffectDef::DrainLife { .. }
         | EffectDef::GainLife { .. }
+        | EffectDef::AddPoisonCounters { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
         | EffectDef::ShuffleLibrary { .. }

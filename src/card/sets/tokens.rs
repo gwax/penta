@@ -437,6 +437,21 @@ static DOMRI_TRAMPLE: AbilityDef = abilities::trample();
 static DOMRI_HEXPROOF: AbilityDef = abilities::hexproof();
 static DOMRI_HASTE: AbilityDef = abilities::haste();
 
+/// Serpent Generator's Snake, which carries the poison trigger the artifact
+/// prints in quotation marks rather than an ability of its own.
+pub(in crate::card::sets) static SNAKE_TOKEN_1_1_POISONOUS: CardRecord = CardRecord::new(
+    cards::SNAKE_TOKEN_1_1_POISONOUS,
+    "Snake",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Snake"], 1, 1)
+        .with_type(CardType::Artifact)
+        .with_ability(abilities::poisonous_damage(
+            1,
+            "Whenever this creature deals damage to a player, that player gets a poison counter.",
+        )),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BEAST_TOKEN_3_3_GREEN,
     &KNIGHT_TOKEN_2_2_WHITE,
@@ -474,6 +489,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SAPROLING_TOKEN_1_1_GREEN,
     &BIRD_TOKEN_1_1_WHITE,
     &DRAGON_TOKEN_6_6_RED,
+    &SNAKE_TOKEN_1_1_POISONOUS,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -392,6 +392,12 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// Poison counters given to a player. Ten of them is a state-based loss,
+    /// which is why this is not expressible as life loss.
+    AddPoisonCounters {
+        recipient: EffectRecipientDef,
+        amount: ValueDef,
+    },
     DrawCards {
         recipient: EffectRecipientDef,
         amount: ValueDef,

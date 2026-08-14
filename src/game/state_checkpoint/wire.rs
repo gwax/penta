@@ -196,6 +196,26 @@ pub(super) fn i16_pair(value: &Value) -> Result<[i16; 2], String> {
     Ok([read_i16(&values[0])?, read_i16(&values[1])?])
 }
 
+/// Poison counters, which are additive on the wire: an observation written
+/// before poison existed simply has none, and reconstructs with none.
+pub(super) fn poison_pair(observation: &Value) -> Result<[u16; 2], String> {
+    let Some(value) = observation.get("poison") else {
+        return Ok([0, 0]);
+    };
+    let values = array(value)?;
+    if values.len() != 2 {
+        return Err("poison must contain p1 and p2 values".into());
+    }
+    let mut counters = [0_u16; 2];
+    for (slot, value) in counters.iter_mut().zip(values) {
+        *slot = value
+            .as_u64()
+            .and_then(|counters| u16::try_from(counters).ok())
+            .ok_or("poison counters must be unsigned integers")?;
+    }
+    Ok(counters)
+}
+
 pub(super) fn parse_mana_pool(value: &Value) -> Result<super::super::ManaPool, String> {
     Ok(super::super::ManaPool {
         white: u16::try_from(usize_field(value, "white")?).map_err(|_| "white mana too large")?,

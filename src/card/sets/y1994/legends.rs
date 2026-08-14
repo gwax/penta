@@ -1183,7 +1183,19 @@ pub(in crate::card::sets) static NETHER_VOID: CardRecord = CardRecord::new(
 );
 
 // LEG 114 — Pit Scorpion
-// Audit: blocked — Needs player poison counters and the poison-based state check, including this card's counter placement.
+pub(in crate::card::sets) static PIT_SCORPION: CardRecord = CardRecord::new(
+    cards::PIT_SCORPION,
+    "Pit Scorpion",
+    CardArt::new("cc564f84-0d6e-4e09-a58d-a694d918cf12", "Scott Kirschner"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Scorpion"], 1, 1).with_ability(
+        abilities::poisonous_damage(
+            1,
+            "Whenever this creature deals damage to a player, that player gets a poison \
+             counter. (A player with ten or more poison counters loses the game.)",
+        ),
+    ),
+);
 
 // LEG 115 — Quagmire
 pub(in crate::card::sets) static QUAGMIRE: CardRecord = CardRecord::new(
@@ -3365,7 +3377,24 @@ pub(in crate::card::sets) static RELIC_BARRIER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{0}: Change this creature's base toughness to 1 plus the power of target creature blocking or blocked by this creature”.
 
 // LEG 295 — Serpent Generator
-// Audit: blocked — Needs player poison counters and the poison-based state check, including this card's counter placement.
+pub(in crate::card::sets) static SERPENT_GENERATOR: CardRecord = CardRecord::new(
+    cards::SERPENT_GENERATOR,
+    "Serpent Generator",
+    CardArt::new("7c350c38-6cbb-4b8b-823f-45d6a16568cc", "Mark Tedin"),
+    CardSet::Legends,
+    CardRules::new_artifact(mana_cost!("{6}")).with_ability(AbilityDef::activated(
+        "{4}, {T}: Create a 1/1 colorless Snake artifact creature token. It has \"Whenever \
+         this creature deals damage to a player, that player gets a poison counter.\" (A player with ten or more poison counters loses the game.)",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{4}")),
+            AbilityCostDef::TapSource,
+        ],
+        EffectDef::CreateToken {
+            token: cards::SNAKE_TOKEN_1_1_POISONOUS,
+            count: ValueDef::Constant(1),
+        },
+    )),
+);
 
 // LEG 296 — Sword of the Ages
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “{T}, Sacrifice this artifact and any number of creatures you control: This artifact deals X damage to any target, where X is the total power of the creatures sacrificed this way, then…”.
@@ -3566,6 +3595,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HORROR_OF_HORRORS,
     &LOST_SOUL,
     &NETHER_VOID,
+    &PIT_SCORPION,
     &QUAGMIRE,
     &THE_ABYSS,
     &WALKING_DEAD,
@@ -3657,6 +3687,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARENA_OF_THE_ANCIENTS,
     &HORN_OF_DEAFENING,
     &RELIC_BARRIER,
+    &SERPENT_GENERATOR,
     &KARAKAS,
     &PENDELHAVEN,
     &THE_TABERNACLE_AT_PENDRELL_VALE,

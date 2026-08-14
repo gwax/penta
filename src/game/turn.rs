@@ -125,6 +125,16 @@ impl Game {
     /// Commits every life gain in one place so replacement and triggered
     /// abilities observe spells, lifelink, and card-specific drains through
     /// the same event path. Gaining nothing is not a life-gain event.
+    /// Poison counters accumulate; nothing in the supported card pool removes
+    /// them, and reaching ten is checked with the other state-based losses.
+    pub(super) fn add_poison_counters(&mut self, player: PlayerId, amount: u16) {
+        if amount == 0 {
+            return;
+        }
+        self.players[player.index()].poison =
+            self.players[player.index()].poison.saturating_add(amount);
+    }
+
     pub(super) fn gain_life(&mut self, player: PlayerId, amount: u16) {
         if amount == 0 {
             return;

@@ -475,6 +475,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
         | EffectDef::DealDamage { .. }
         | EffectDef::DrainLife { .. }
         | EffectDef::GainLife { .. }
+        | EffectDef::AddPoisonCounters { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
         | EffectDef::ShuffleLibrary { .. }

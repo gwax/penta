@@ -151,6 +151,18 @@ impl Game {
                     }
                 }
             }
+            EffectDef::AddPoisonCounters { recipient, amount } => {
+                let amount = self
+                    .effect_value(amount, object, context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.add_poison_counters(player, amount);
+                    }
+                }
+            }
             EffectDef::DrawCards { recipient, amount } => {
                 let amount = self
                     .effect_value(amount, object, context, scoped)

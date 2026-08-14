@@ -1022,7 +1022,19 @@ pub(in crate::card::sets) static LAND_LEECHES: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't be the target of spells unless it attacked or blocked this turn”.
 
 // DRK 81 — Marsh Viper
-// Audit: blocked — Needs player poison counters and the poison-based state check, including this card's counter placement.
+pub(in crate::card::sets) static MARSH_VIPER: CardRecord = CardRecord::new(
+    cards::MARSH_VIPER,
+    "Marsh Viper",
+    CardArt::new("109cce7a-96f7-4e67-878a-bd5c93ea8643", "Ron Spencer"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Snake"], 1, 2).with_ability(
+        abilities::poisonous_damage(
+            2,
+            "Whenever this creature deals damage to a player, that player gets two poison \
+             counters. (A player with ten or more poison counters loses the game.)",
+        ),
+    ),
+);
 
 // DRK 82 — Niall Silvain
 pub(in crate::card::sets) static NIALL_SILVAIN: CardRecord = CardRecord::new(
@@ -1621,6 +1633,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELVES_OF_DEEP_SHADOW,
     &HIDDEN_PATH,
     &LAND_LEECHES,
+    &MARSH_VIPER,
     &NIALL_SILVAIN,
     &PEOPLE_OF_THE_WOODS,
     &SCARWOOD_HAG,

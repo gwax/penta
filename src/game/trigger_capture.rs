@@ -237,6 +237,7 @@ impl Game {
             | EffectDef::DealDamage { .. }
             | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
+            | EffectDef::AddPoisonCounters { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::Discard { .. }
             | EffectDef::ShuffleLibrary { .. }

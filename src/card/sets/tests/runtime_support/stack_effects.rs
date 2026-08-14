@@ -114,6 +114,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         EffectDef::DealDamage { recipient, .. }
         | EffectDef::DrainLife { recipient, .. }
         | EffectDef::GainLife { recipient, .. }
+        | EffectDef::AddPoisonCounters { recipient, .. }
         | EffectDef::DrawCards { recipient, .. }
         | EffectDef::Discard { recipient, .. }
         | EffectDef::ShuffleLibrary { player: recipient }

@@ -3,6 +3,10 @@ use super::{
     TriggerEventDef, WinReason,
 };
 
+/// CR 704.5c. Ten is a rules constant, not a format setting: no supported
+/// format changes it.
+const LETHAL_POISON: u16 = 10;
+
 impl Game {
     pub(super) fn check_state_based_actions(&mut self) {
         self.close_stale_miracle_window();
@@ -78,28 +82,35 @@ impl Game {
             .players
             .each_mut()
             .map(|player| std::mem::take(&mut player.tried_to_draw_from_empty_library));
-        let lost = [
-            self.players[0].life <= 0 || tried_to_draw_from_empty[0],
-            self.players[1].life <= 0 || tried_to_draw_from_empty[1],
+        let poisoned = [
+            self.players[0].poison >= LETHAL_POISON,
+            self.players[1].poison >= LETHAL_POISON,
         ];
+        let lost = [
+            self.players[0].life <= 0 || tried_to_draw_from_empty[0] || poisoned[0],
+            self.players[1].life <= 0 || tried_to_draw_from_empty[1] || poisoned[1],
+        ];
+        // Life is checked first because it is the ordinary case; poison is
+        // last because a seat that is dead twice over is still just dead.
+        let reason = |loser: PlayerId| {
+            if tried_to_draw_from_empty[loser.index()] {
+                WinReason::OpponentTriedToDrawFromEmptyLibrary
+            } else if self.players[loser.index()].life <= 0 {
+                WinReason::OpponentLostAllLife
+            } else {
+                WinReason::OpponentPoisoned
+            }
+        };
 
         let result = match lost {
             [true, true] => Some(GameResult::Draw),
             [true, false] => Some(GameResult::Winner {
                 winner: PlayerId::Two,
-                reason: if tried_to_draw_from_empty[0] {
-                    WinReason::OpponentTriedToDrawFromEmptyLibrary
-                } else {
-                    WinReason::OpponentLostAllLife
-                },
+                reason: reason(PlayerId::One),
             }),
             [false, true] => Some(GameResult::Winner {
                 winner: PlayerId::One,
-                reason: if tried_to_draw_from_empty[1] {
-                    WinReason::OpponentTriedToDrawFromEmptyLibrary
-                } else {
-                    WinReason::OpponentLostAllLife
-                },
+                reason: reason(PlayerId::Two),
             }),
             [false, false] => None,
         };
