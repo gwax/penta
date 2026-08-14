@@ -355,6 +355,15 @@ impl Game {
                             player: player.index(),
                         }
                     }
+                    RelationalDamagePrevention::RedirectToPermanent {
+                        player,
+                        source,
+                        destination,
+                    } => RelationalDamagePreventionSnapshot::RedirectToPermanent {
+                        player: player.index(),
+                        source: source.0,
+                        destination: destination.0,
+                    },
                     RelationalDamagePrevention::FromAllExcept(source) => {
                         RelationalDamagePreventionSnapshot::FromAllExcept { source: source.0 }
                     }
@@ -719,6 +728,15 @@ impl Game {
                             source,
                         })
                     }
+                    RelationalDamagePreventionSnapshot::RedirectToPermanent {
+                        player,
+                        source,
+                        destination,
+                    } => Ok(RelationalDamagePrevention::RedirectToPermanent {
+                        player: player_from_index(*player)?,
+                        source: GameObjectId(*source),
+                        destination: GameObjectId(*destination),
+                    }),
                     RelationalDamagePreventionSnapshot::FromAllExcept { source } => Ok(
                         RelationalDamagePrevention::FromAllExcept(GameObjectId(*source)),
                     ),

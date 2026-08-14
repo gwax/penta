@@ -100,7 +100,8 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             shared_effect_recipient(object) && shared_effect_recipient(source)
         }
         EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { player }
-        | EffectDef::PreventDamageToPlayerFromThisTurn { player, .. } => {
+        | EffectDef::PreventDamageToPlayerFromThisTurn { player, .. }
+        | EffectDef::RedirectTargetDamageToSourceThisTurn { player, .. } => {
             shared_effect_recipient(player)
         }
         EffectDef::PreventAllCombatDamageExceptSourceThisTurn { source } => {

@@ -116,10 +116,72 @@ fn a_bodyguard_does_not_guard_the_opponent() {
     assert_eq!(damage_on(&game, guard), 0);
 }
 
+/// Shimian Night Stalker names one attacker for the turn rather than a
+/// group, so a second attacker still gets through.
+#[test]
+fn the_night_stalker_guards_against_the_attacker_it_named() {
+    let mut game = ready_game();
+    game.turns_started[PlayerId::One.index()] = 5;
+    let stalker = creature(10_000, cards::SHIMIAN_NIGHT_STALKER, PlayerId::One);
+    let stalker_id = stalker.card.id;
+    game.battlefield.push(stalker);
+    game.players[PlayerId::One.index()].mana_pool.black = 1;
+
+    let mut named = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
+    named.attacking = true;
+    named.attack_defender = Some(AttackDefender::Player(PlayerId::One));
+    let named_id = named.card.id;
+    game.battlefield.push(named);
+    // A different size, so which attacker was redirected is visible in the
+    // numbers rather than being symmetric.
+    let mut other = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two);
+    other.attacking = true;
+    other.attack_defender = Some(AttackDefender::Player(PlayerId::One));
+    game.battlefield.push(other);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == stalker_id
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(named_id))
+            }
+            _ => false,
+        })
+        .expect("the Stalker can name an attacker");
+    game.apply(PlayerId::One, action)
+        .expect("the ability activates");
+    drain_pending(&mut game);
+
+    let before = game.players[PlayerId::One.index()].life;
+    game.deal_combat_damage();
+
+    assert_eq!(
+        before - game.players[PlayerId::One.index()].life,
+        4,
+        "the 4/4 it did not name got through"
+    );
+    assert_eq!(
+        damage_on(&game, stalker_id),
+        2,
+        "and the 2/2 it named hit the Stalker"
+    );
+}
+
 #[test]
 fn every_bodyguard_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::VETERAN_BODYGUARD, cards::MARTYRS_OF_KORLIS] {
+    for definition in [
+        cards::VETERAN_BODYGUARD,
+        cards::MARTYRS_OF_KORLIS,
+        cards::SHIMIAN_NIGHT_STALKER,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

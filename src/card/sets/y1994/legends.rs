@@ -1451,8 +1451,33 @@ pub(in crate::card::sets) static QUAGMIRE: CardRecord = CardRecord::new(
     )]),
 );
 
+static ATTACKING_CREATURE_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::Attacking,
+    )];
+
 // LEG 116 — Shimian Night Stalker
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{B}, {T}: All damage that would be dealt to you this turn by target attacking creature is dealt to this creature instead”.
+pub(in crate::card::sets) static SHIMIAN_NIGHT_STALKER: CardRecord = CardRecord::new(
+    cards::SHIMIAN_NIGHT_STALKER,
+    "Shimian Night Stalker",
+    CardArt::new("4e04a1b9-c561-4e34-86d9-129ea0346631", "Jesper Myrfors"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Nightstalker"], 4, 4).with_ability(
+        AbilityDef::activated_with_targets(
+            "{B}, {T}: All damage that would be dealt to you this turn by target attacking \
+             creature is dealt to this creature instead.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{B}")),
+                AbilityCostDef::TapSource,
+            ],
+            &ATTACKING_CREATURE_TARGET,
+            EffectDef::RedirectTargetDamageToSourceThisTurn {
+                player: EffectRecipientDef::Controller,
+                from: TargetIndex::PRIMARY,
+            },
+        ),
+    ),
+);
 
 // LEG 117 — Spirit Shackle
 pub(in crate::card::sets) static SPIRIT_SHACKLE: CardRecord = CardRecord::new(
@@ -4151,6 +4176,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NETHER_VOID,
     &PIT_SCORPION,
     &QUAGMIRE,
+    &SHIMIAN_NIGHT_STALKER,
     &SPIRIT_SHACKLE,
     &THE_ABYSS,
     &VAMPIRE_BATS,

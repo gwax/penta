@@ -78,6 +78,10 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **A turn-scoped redirection naming one source.** The static bodyguards
+  redirect from a whole group; Shimian Night Stalker names a single attacker
+  for the turn, so the rule carries both ends as object ids rather than a
+  vocabulary word. A second attacker still gets through.
 - **The M13 Rings.** All five were blocked on "Equipment attachment plus an
   upkeep bonus conditioned on the attached creature's color", and both halves
   had since been built -- equip, and the attached-permanent trigger condition.

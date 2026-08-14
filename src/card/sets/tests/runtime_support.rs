@@ -539,6 +539,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
                     | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
                     | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
+                    | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
                     | EffectDef::Attach { .. }
                     | EffectDef::CreateToken { .. }
                     | EffectDef::CreateTokenCopyOf { .. }

@@ -99,6 +99,7 @@ impl Game {
             | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
             | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
             | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
+            | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
             | EffectDef::Attach { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }

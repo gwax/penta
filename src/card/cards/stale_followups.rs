@@ -62,3 +62,4 @@ pub const RING_OF_KALONIA: CardDefinitionId = CardDefinitionId(1687);
 pub const RING_OF_THUNE: CardDefinitionId = CardDefinitionId(1688);
 pub const RING_OF_VALKAS: CardDefinitionId = CardDefinitionId(1689);
 pub const RING_OF_XATHRID: CardDefinitionId = CardDefinitionId(1690);
+pub const SHIMIAN_NIGHT_STALKER: CardDefinitionId = CardDefinitionId(1691);

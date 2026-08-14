@@ -263,6 +263,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
         | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
         | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
+        | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
         | EffectDef::Attach { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }

@@ -40,4 +40,11 @@ pub(super) enum RelationalDamagePreventionSnapshot {
         player: usize,
         source: String,
     },
+    /// A redirection names both ends, so unlike the group above it carries
+    /// object ids rather than a vocabulary word.
+    RedirectToPermanent {
+        player: usize,
+        source: u32,
+        destination: u32,
+    },
 }

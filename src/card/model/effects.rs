@@ -564,6 +564,12 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         source: DamageSourceGroupDef,
     },
+    /// For the rest of the turn, damage the target would deal to the
+    /// recipient player is dealt to this effect's own source instead.
+    RedirectTargetDamageToSourceThisTurn {
+        player: EffectRecipientDef,
+        from: TargetIndex,
+    },
     /// Prevent all combat damage from every source other than the resolved
     /// object for the rest of the turn.
     PreventAllCombatDamageExceptSourceThisTurn {

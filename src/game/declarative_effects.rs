@@ -327,7 +327,8 @@ impl Game {
             | EffectDef::PreventDamageDealtByThisTurn { .. }
             | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
             | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-            | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. } => {
+            | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
+            | EffectDef::RedirectTargetDamageToSourceThisTurn { .. } => {
                 self.resolve_prevention_effect(scoped, object, context);
             }
             EffectDef::Destroy {

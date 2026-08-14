@@ -1,7 +1,7 @@
 use super::super::{
     DamageSourceGroupDef, EffectDef, EffectRecipientDef, Game, PreventionShield,
     RelationalDamagePrevention, RelationalSourceFilter, ScopedEffect, ShieldCoverageDef,
-    StackObject, Target, TriggerContext,
+    StackObject, Target, TargetIndex, TriggerContext,
 };
 
 impl Game {
@@ -59,6 +59,39 @@ impl Game {
                 } else {
                     permanent.combat_damage_dealt_by_prevented = true;
                 }
+            }
+        }
+    }
+
+    /// Records a turn-long redirection naming one source and one
+    /// destination. Both ends are object ids: unlike the group form there is
+    /// no vocabulary word that would describe them.
+    fn redirect_target_damage(
+        &mut self,
+        player: EffectRecipientDef,
+        from: TargetIndex,
+        object: &StackObject,
+        context: TriggerContext,
+        scoped: ScopedEffect,
+    ) {
+        let destination = object.source.unwrap_or(object.id);
+        let Some(source) = Game::chosen_targets(object, scoped.target_slot(from)).find_map(
+            |target| match target {
+                Target::Permanent(id) => Some(id),
+                _ => None,
+            },
+        ) else {
+            return;
+        };
+        for target in self.effect_recipients(player, object, context, scoped) {
+            if let Target::Player(player) = target {
+                self.relational_damage_preventions.push(
+                    RelationalDamagePrevention::RedirectToPermanent {
+                        player,
+                        source,
+                        destination,
+                    },
+                );
             }
         }
     }
@@ -138,6 +171,9 @@ impl Game {
             }
             EffectDef::PreventDamageToPlayerFromThisTurn { player, source } => {
                 self.prevent_player_damage_from_group(player, source, object, context, scoped);
+            }
+            EffectDef::RedirectTargetDamageToSourceThisTurn { player, from } => {
+                self.redirect_target_damage(player, from, object, context, scoped);
             }
             EffectDef::PreventAllCombatDamageExceptSourceThisTurn { source } => {
                 let source = self

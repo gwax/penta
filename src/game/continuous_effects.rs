@@ -360,6 +360,7 @@ impl Game {
                 | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
                 | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
                 | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
+                | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }

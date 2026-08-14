@@ -24,4 +24,12 @@ pub(super) enum RelationalDamagePrevention {
         player: PlayerId,
         source: RelationalSourceFilter,
     },
+    /// Damage one named source would deal to one player lands on a named
+    /// permanent instead. This is the turn-scoped, single-source form of the
+    /// static bodyguard redirection.
+    RedirectToPermanent {
+        player: PlayerId,
+        source: GameObjectId,
+        destination: GameObjectId,
+    },
 }

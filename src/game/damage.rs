@@ -203,6 +203,9 @@ impl Game {
                         && source
                             .is_some_and(|source| self.damage_source_is_in_group(source, *group))
                 }
+                // A redirection moves the damage rather than stopping it, and
+                // has already been applied by the time this is asked.
+                super::RelationalDamagePrevention::RedirectToPermanent { .. } => false,
             })
     }
 
@@ -229,6 +232,20 @@ impl Game {
         let Some(source) = source else {
             return target;
         };
+        if let Some(destination) =
+            self.relational_damage_preventions
+                .iter()
+                .find_map(|rule| match rule {
+                    super::RelationalDamagePrevention::RedirectToPermanent {
+                        player: guarded,
+                        source: from,
+                        destination,
+                    } if *guarded == player && *from == source => Some(*destination),
+                    _ => None,
+                })
+        {
+            return Some(Target::Permanent(destination));
+        }
         for candidate in &self.battlefield {
             if candidate.controller != player {
                 continue;
