@@ -105,6 +105,7 @@ fn validate_value_target_references(
         ValueDef::Constant(_)
         | ValueDef::ChosenX
         | ValueDef::SourcePower
+        | ValueDef::TriggeringObjectPower
         | ValueDef::SourceToughness
         | ValueDef::TriggerEventAmount
         | ValueDef::CardsInHandAbove { .. }

@@ -26,6 +26,10 @@ impl Game {
             // Resolved per target by the divided-damage path; anything else
             // reading it has no target in hand and so no share.
             ValueDef::DividedAmongTargets => 0,
+            ValueDef::TriggeringObjectPower => context
+                .object
+                .and_then(|object| self.current_or_last_known_power(object))
+                .map_or(0, i32::from),
             ValueDef::TargetPower(target) => {
                 Self::chosen_targets(object, scoped.target_slot(target))
                     .find_map(|target| match target {

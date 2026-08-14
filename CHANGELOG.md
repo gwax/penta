@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **An Aura triggering on its host's death**, reading the dead creature's
+  power. The trigger is the attached permanent's move from battlefield to
+  graveyard, which the predicate vocabulary already described; the amount is
+  new, and comes from last known information because the creature is gone by
+  the time it resolves. Murder Investigation.
 - **Morbid**, and with it entry replacements that read a condition. A
   replacement ability could carry one, but the entry path never looked at it,
   so "enters with two +1/+1 counters if a creature died this turn" had nowhere

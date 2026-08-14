@@ -377,8 +377,45 @@ pub(in crate::card::sets) static LUMINATE_PRIMORDIAL: CardRecord = CardRecord::n
     ]),
 );
 
+/// "Enchant creature you control."
+static ENCHANT_YOUR_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+/// "When enchanted creature dies ..." -- the attached permanent moving from
+/// the battlefield to a graveyard, whatever caused it.
+static ENCHANTED_CREATURE_DIES: TriggerEventDef = TriggerEventDef::ZoneChanged {
+    object: ObjectPredicateDef::AttachedToSource,
+    from: Some(ZoneKind::Battlefield),
+    to: Some(ZoneKind::Graveyard),
+};
+
 // GTC 21 — Murder Investigation
-// Audit: blocked — Needs an Aura trigger keyed to the attached permanent dying and its last-known power.
+pub(in crate::card::sets) static MURDER_INVESTIGATION: CardRecord = CardRecord::new(
+    cards::MURDER_INVESTIGATION,
+    "Murder Investigation",
+    CardArt::new("1f3bb284-d10e-4265-92a4-8dcaf118f3c8", "Igor Kieryluk"),
+    CardSet::Gatecrash,
+    CardRules::new_enchantment(mana_cost!("{1}{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature you control", &ENCHANT_YOUR_CREATURE),
+            AbilityDef::triggered(
+                "When enchanted creature dies, create X 1/1 white Soldier creature tokens, \
+                 where X is its power.",
+                ENCHANTED_CREATURE_DIES,
+                EffectDef::CreateToken {
+                    token: cards::SOLDIER_TOKEN_1_1_WHITE,
+                    count: ValueDef::TriggeringObjectPower,
+                },
+            ),
+        ]),
+);
 
 // GTC 22 — Nav Squad Commandos
 pub(in crate::card::sets) static NAV_SQUAD_COMMANDOS: CardRecord = CardRecord::new(
@@ -861,7 +898,7 @@ pub(in crate::card::sets) static CRYPT_GHAST: CardRecord = CardRecord::new(
 // Audit: blocked — The sacrifice-choice continuation exposes the sacrificed creature's power, not its last-known toughness.
 
 // GTC 64 — Dying Wish
-// Audit: blocked — Needs an Aura trigger keyed to the attached permanent dying and its last-known power.
+// Audit: blocked — Needs the triggering object's power to survive a target decision: the value reads zero on a trigger that takes a target, while the same value is correct on an untargeted one.
 
 // GTC 65 — Gateway Shade
 // Audit: blocked — Costs can tap only the ability source, not a chosen untapped Gate you control.
@@ -3437,6 +3474,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KNIGHT_OF_OBLIGATION,
     &KNIGHT_WATCH,
     &LUMINATE_PRIMORDIAL,
+    &MURDER_INVESTIGATION,
     &NAV_SQUAD_COMMANDOS,
     &RIGHTEOUS_CHARGE,
     &SHIELDED_PASSAGE,

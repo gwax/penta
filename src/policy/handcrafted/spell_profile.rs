@@ -400,6 +400,7 @@ impl HandcraftedPolicy {
             // Board-dependent values are not knowable from the definition
             // alone, so the caller falls back to its own heuristics.
             ValueDef::SourcePower
+            | ValueDef::TriggeringObjectPower
             | ValueDef::SourceToughness
             | ValueDef::TriggerEventAmount
             | ValueDef::CardsInHandAbove { .. }

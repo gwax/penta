@@ -80,6 +80,10 @@ pub enum ValueDef {
     DividedAmongTargets,
     /// The power of what a target slot points at, for "damage equal to its
     /// power".
+    /// The triggering object's power, read with last-known information. A
+    /// death trigger asks this about a creature that has already left, which
+    /// is the only time it is interesting.
+    TriggeringObjectPower,
     TargetPower(TargetIndex),
     /// The mana value of what a target slot points at, read from last-known
     /// information after a permanent or spell has left its zone.
