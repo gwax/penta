@@ -78,6 +78,9 @@ distinguishes snapshots of the covered source and build inputs.
   equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
   Accorder's Shield, and Fireshrieker; Mask of Avacyn and Rakdos Drake join
   them.
+- **Standing Stones.** Three cost kinds on one mana ability -- mana, a tap,
+  and a life payment -- which the mana-cost work made expressible; its audit
+  line had gone stale since.
 - **Holding a permanent down while the source stays tapped.** The same
   deadline-free shape as the tapped-artifact stat bonus, applied to untapping:
   the source is recorded and the question asked afresh at each untap step, so

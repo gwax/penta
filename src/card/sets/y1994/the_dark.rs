@@ -1578,7 +1578,21 @@ pub(in crate::card::sets) static SKULL_OF_ORM: CardRecord = CardRecord::new(
 );
 
 // DRK 110 — Standing Stones
-// Audit: blocked — Needs cost/mana provenance or dynamic payment support for “{1}, {T}, Pay 1 life: Add one mana of any color”.
+pub(in crate::card::sets) static STANDING_STONES: CardRecord = CardRecord::new(
+    cards::STANDING_STONES,
+    "Standing Stones",
+    CardArt::new("6d4c853e-2231-4af2-bcb0-1781c18ec3be", "Sandra Everingham"),
+    CardSet::TheDark,
+    CardRules::new_artifact(mana_cost!("{3}")).with_ability(AbilityDef::activated_mana(
+        "{1}, {T}, Pay 1 life: Add one mana of any color.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{1}")),
+            AbilityCostDef::TapSource,
+            AbilityCostDef::PayLife(1),
+        ],
+        EffectDef::AddMana(AddManaEffectDef::any_color()),
+    )),
+);
 
 // DRK 111 — Stone Calendar
 // Audit: blocked — Needs a battlefield-wide static spell-cost reduction; the available generic cost reducer applies only to the source card in hand.
@@ -1775,6 +1789,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FOUNTAIN_OF_YOUTH,
     &SCARECROW,
     &SKULL_OF_ORM,
+    &STANDING_STONES,
     &TORMODS_CRYPT,
     &TOWER_OF_COIREALL,
     &MAZE_OF_ITH,
