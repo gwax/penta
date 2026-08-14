@@ -378,6 +378,7 @@ mod control_duration;
 mod copy_effects;
 mod counted_bodies;
 mod countering_and_mana;
+mod damage_dealt_by;
 mod decisions_and_effects;
 mod delayed_triggers;
 mod entry_replacements;

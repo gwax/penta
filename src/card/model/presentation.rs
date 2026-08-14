@@ -79,6 +79,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -116,6 +117,7 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -155,6 +157,7 @@ fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -194,6 +197,7 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -237,6 +241,7 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -282,6 +287,7 @@ fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -319,6 +325,7 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -358,6 +365,7 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -400,6 +408,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell

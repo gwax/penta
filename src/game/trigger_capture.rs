@@ -594,6 +594,12 @@ impl Game {
                 CommittedTriggerEvent::DamageDealt { recipient, .. },
             ) => *recipient == Target::Permanent(source),
             (
+                TriggerEventDef::DamageDealtBy { source: predicate },
+                CommittedTriggerEvent::DamageDealt {
+                    source: damager, ..
+                },
+            ) => self.trigger_object_matches(predicate, damager, source, false),
+            (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },
             ) => {
@@ -766,6 +772,12 @@ impl Game {
             ObjectPredicateDef::AttackedThisTurn => {
                 object.types.contains(CardType::Creature) && object.attacked_this_turn
             }
+            ObjectPredicateDef::AttachedToSource => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+                .and_then(|permanent| permanent.attached_to)
+                .is_some_and(|host| host == object.id),
             ObjectPredicateDef::Blocking => {
                 object.types.contains(CardType::Creature)
                     && object.attacking_or_blocking

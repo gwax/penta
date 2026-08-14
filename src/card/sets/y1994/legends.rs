@@ -430,7 +430,27 @@ static SPIRITUAL_SANCTUARY_PLAINS: TriggerConditionDef = TriggerConditionDef::Ob
 };
 
 // LEG 37 — Spirit Link
-// Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Whenever enchanted creature deals damage, you gain that much life”.
+pub(in crate::card::sets) static SPIRIT_LINK: CardRecord = CardRecord::new(
+    cards::SPIRIT_LINK,
+    "Spirit Link",
+    CardArt::new("5e2d35f8-3cf6-4843-9030-0e9a885d836c", "Kaja Foglio"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::triggered(
+                "Whenever enchanted creature deals damage, you gain that much life.",
+                TriggerEventDef::DamageDealtBy {
+                    source: ObjectPredicateDef::AttachedToSource,
+                },
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::TriggerEventAmount,
+                },
+            ),
+        ]),
+);
 
 // LEG 38 — Spiritual Sanctuary
 pub(in crate::card::sets) static SPIRITUAL_SANCTUARY: CardRecord = CardRecord::new(
@@ -3518,6 +3538,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RIGHTEOUS_AVENGERS,
     &SEEKER,
     &SHIELD_WALL,
+    &SPIRIT_LINK,
     &SPIRITUAL_SANCTUARY,
     &THUNDER_SPIRIT,
     &TUNDRA_WOLVES,

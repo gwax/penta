@@ -288,7 +288,24 @@ pub(in crate::card::sets) static SERENDIB_EFREET: CardRecord = CardRecord::new(
 // Audit: blocked — Needs resolution to pause for an opponent-controlled second target choice after the controller's target is fixed.
 
 // ARN 24 — El-Hajjâj
-// Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Whenever this creature deals damage, you gain that much life”.
+pub(in crate::card::sets) static EL_HAJJAJ: CardRecord = CardRecord::new(
+    cards::EL_HAJJAJ,
+    "El-Hajjâj",
+    CardArt::new("c4b610d3-2005-4347-bcda-c30b5b7972e5", "Dameon Willich"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Human", "Wizard"], 1, 1).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature deals damage, you gain that much life.",
+            TriggerEventDef::DamageDealtBy {
+                source: ObjectPredicateDef::Source,
+            },
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::TriggerEventAmount,
+            },
+        ),
+    ),
+);
 
 // ARN 25 — Erg Raiders
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “At the beginning of your end step, if this creature didn't attack this turn, it deals 2 damage to you unless it came under your control this turn”.
@@ -1097,6 +1114,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FLYING_MEN,
     &ISLAND_FISH_JASCONIUS,
     &SERENDIB_EFREET,
+    &EL_HAJJAJ,
     &GUARDIAN_BEAST,
     &HASRAN_OGRESS,
     &JUNUN_EFREET,

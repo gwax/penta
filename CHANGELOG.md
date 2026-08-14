@@ -60,6 +60,12 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **A "whenever this deals damage" trigger**, carrying the amount. The existing
+  damage trigger only ever matched damage arriving at the ability's own source,
+  whatever predicate it named, so the other direction had no event at all.
+  `ObjectPredicateDef::AttachedToSource` lets an Aura watch its host rather
+  than itself. El-Hajjâj and Spirit Link are now executable, and Spirit Link is
+  not lifelink: the life goes to the Aura's controller, not the creature's.
 - **"Can't be regenerated" as a standalone effect**, rather than only a
   property of a destroy. CR 701.15 draws a distinction the implementation
   keeps: a shield already armed is not removed, it stops applying, and no new

@@ -42,6 +42,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
         | ObjectPredicateDef::Blocking
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn => true,
     }
 }

@@ -919,6 +919,13 @@ pub enum TriggerEventDef {
         source: ObjectPredicateDef,
         recipient: EffectRecipientDef,
     },
+    /// A matching object dealt damage to anything at all. The amount is
+    /// available as [`ValueDef::TriggerEventAmount`]. This is the other
+    /// direction from [`Self::DamageDealt`], which only watches damage
+    /// arriving at the ability's own source.
+    DamageDealtBy {
+        source: ObjectPredicateDef,
+    },
     /// A creature matching `source` dealt combat damage to a player. The
     /// damaged player is the event player and the amount is available as
     /// [`ValueDef::TriggerEventAmount`]. Only damage dealt in a combat damage
