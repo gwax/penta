@@ -111,6 +111,17 @@ pub(in crate::card::sets) static WOLF_TOKEN_1_1_BLACK: CardRecord = CardRecord::
         .with_abilities(&[abilities::deathtouch()]),
 );
 
+/// Bottle of Suleiman's reward for winning its flip.
+pub(in crate::card::sets) static DJINN_TOKEN_5_5_COLORLESS: CardRecord = CardRecord::new(
+    cards::DJINN_TOKEN_5_5_COLORLESS,
+    "Djinn",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Djinn"], 5, 5)
+        .with_type(CardType::Artifact)
+        .with_abilities(&[abilities::flying()]),
+);
+
 /// Tetravus detaches these, and can exile its own back to rebuild itself.
 pub(in crate::card::sets) static TETRAVITE_TOKEN: CardRecord = CardRecord::new(
     cards::TETRAVITE_TOKEN,
@@ -436,6 +447,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOLF_TOKEN_2_2_GREEN,
     &WOLF_TOKEN_1_1_BLACK,
     &DOMRI_RADE_EMBLEM,
+    &DJINN_TOKEN_5_5_COLORLESS,
     &TETRAVITE_TOKEN,
     &ASSASSIN_TOKEN_1_1_BLACK,
     &BIRD_TOKEN_4_4_RED,

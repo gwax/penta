@@ -4,7 +4,7 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior,
     CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef, DiscardSelectionDef,
-    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
+    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, LikelihoodDef, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation, TriggerConditionDef,
     TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
@@ -767,7 +767,36 @@ pub(in crate::card::sets) static ALADDINS_RING: CardRecord = CardRecord::new(
 );
 
 // ARN 58 — Bottle of Suleiman
-// Audit: blocked — Needs a deterministic recorded coin-flip choice and both result branches for “{1}, Sacrifice this artifact: Flip a coin. If you win the flip, create a 5/5 colorless Djinn artifact creature token with flying. If you lose the flip, this artifact deals 5 damage to you”.
+pub(in crate::card::sets) static BOTTLE_OF_SULEIMAN: CardRecord = CardRecord::new(
+    cards::BOTTLE_OF_SULEIMAN,
+    "Bottle of Suleiman",
+    CardArt::new("c474cd6b-5610-49eb-ac98-918d900efe8b", "Jesper Myrfors"),
+    CardSet::ArabianNights,
+    CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::activated(
+        "{1}, Sacrifice this artifact: Flip a coin. If you win the flip, create a 5/5 colorless \
+         Djinn artifact creature token with flying. If you lose the flip, this artifact deals 5 \
+         damage to you.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{1}")),
+            AbilityCostDef::SacrificeSource,
+        ],
+        EffectDef::Randomized {
+            likelihood: LikelihoodDef::new(0.5),
+            on_success: &BOTTLE_OF_SULEIMAN_WON,
+            on_failure: &BOTTLE_OF_SULEIMAN_LOST,
+        },
+    )),
+);
+
+static BOTTLE_OF_SULEIMAN_WON: EffectDef = EffectDef::CreateToken {
+    token: cards::DJINN_TOKEN_5_5_COLORLESS,
+    count: ValueDef::Constant(1),
+};
+
+static BOTTLE_OF_SULEIMAN_LOST: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::Constant(5),
+};
 
 // ARN 59 — Brass Man
 pub(in crate::card::sets) static BRASS_MAN: CardRecord = CardRecord::new(
@@ -1132,6 +1161,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SANDSTORM,
     &WYLULI_WOLF,
     &ALADDINS_RING,
+    &BOTTLE_OF_SULEIMAN,
     &BRASS_MAN,
     &CITY_IN_A_BOTTLE,
     &DANCING_SCIMITAR,

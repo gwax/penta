@@ -4,9 +4,9 @@ use crate::card::{
     AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
     ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef, EffectDurationDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ReplacementEffectDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    abilities, cards,
+    EffectRecipientDef, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, ReplacementEffectDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -699,7 +699,48 @@ pub(in crate::card::sets) static GOBLIN_GRENADE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs an activated cost that selects and sacrifices two Goblins; only one chosen permanent can currently be sacrificed as a cost.
 
 // FEM 60 — Orcish Captain
-// Audit: blocked — Needs a deterministic recorded coin-flip choice and both result branches for “{1}: Flip a coin. If you win the flip, target Orc creature gets +2/+0 until end of turn. If you lose the flip, it gets -0/-2 until end of turn”.
+pub(in crate::card::sets) static ORCISH_CAPTAIN: CardRecord = CardRecord::new(
+    cards::ORCISH_CAPTAIN,
+    "Orcish Captain",
+    CardArt::new("e43cf61d-b4d6-4461-a228-47fd8b026d33", "Mark Tedin"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{R}"), &["Orc", "Warrior"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{1}: Flip a coin. If you win the flip, target Orc creature gets +2/+0 until end of \
+             turn. If you lose the flip, it gets -0/-2 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Subtype("Orc"),
+                ]),
+            )],
+            EffectDef::Randomized {
+                likelihood: COIN_FLIP,
+                on_success: &ORCISH_CAPTAIN_WON,
+                on_failure: &ORCISH_CAPTAIN_LOST,
+            },
+        ),
+    ),
+);
+
+/// A coin is an even chance, which is the whole of what "flip a coin" means
+/// to the seeded randomiser.
+const COIN_FLIP: LikelihoodDef = LikelihoodDef::new(0.5);
+
+static ORCISH_CAPTAIN_WON: EffectDef = orcish_captain_pump(2, 0);
+static ORCISH_CAPTAIN_LOST: EffectDef = orcish_captain_pump(0, -2);
+
+const fn orcish_captain_pump(power: i32, toughness: i32) -> EffectDef {
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::ModifyPowerToughness {
+            power: ValueDef::Constant(power),
+            toughness: ValueDef::Constant(toughness),
+        },
+        duration: EffectDurationDef::UntilEndOfTurn,
+    }
+}
 
 // FEM 61a — Orcish Spy
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “{T}: Look at the top three cards of target player's library”.
@@ -1297,6 +1338,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DWARVEN_LIEUTENANT,
     &GOBLIN_CHIRURGEON,
     &GOBLIN_GRENADE,
+    &ORCISH_CAPTAIN,
     &ELVEN_FORTRESS,
     &ELVISH_FARMER,
     &FERAL_THALLID,

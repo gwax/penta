@@ -94,8 +94,14 @@ static TEST_OPPONENT_ENCHANTMENTS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] =
     )];
 
 pub(super) fn ready_game() -> Game {
+    ready_game_with_seed(0)
+}
+
+/// The same board with a chosen seed, for the effects that consult the
+/// replay-stable randomiser.
+pub(super) fn ready_game_with_seed(seed: u64) -> Game {
     let deck = poc::mono_red_atog();
-    let mut game = Game::new(poc::catalog().unwrap(), [deck.clone(), deck], 0).unwrap();
+    let mut game = Game::new(poc::catalog().unwrap(), [deck.clone(), deck], seed).unwrap();
     game.pregame = None;
     game.step = Step::PrecombatMain;
     game.active_player = PlayerId::One;
@@ -370,6 +376,7 @@ mod banding;
 mod casting_and_targets;
 mod casting_modes;
 mod chaos_orb;
+mod coin_flips;
 mod combat;
 mod combat_and_life;
 mod combat_keywords;
