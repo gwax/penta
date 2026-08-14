@@ -142,10 +142,68 @@ fn equipping_a_second_creature_moves_it() {
     );
 }
 
+/// "As long as equipped creature is a Human" follows the Equipment, so the
+/// same Pitchfork gives +1/+1 on one creature and nothing on another.
+#[test]
+fn a_conditional_bonus_follows_the_attachment() {
+    let mut game = ready_game();
+    let pitchfork = creature(10_000, cards::SHARPENED_PITCHFORK, PlayerId::One);
+    let pitchfork_id = pitchfork.card.id;
+    game.battlefield.push(pitchfork);
+    // Savannah Lions is a Cat, and Icatian Moneychanger is a Human.
+    let cat = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One);
+    let cat_id = cat.card.id;
+    game.battlefield.push(cat);
+    let human = creature(10_002, cards::ICATIAN_MONEYCHANGER, PlayerId::One);
+    let human_id = human.card.id;
+    game.battlefield.push(human);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 6;
+
+    equip(&mut game, pitchfork_id, cat_id);
+    let cat = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == cat_id)
+        .expect("there");
+    assert_eq!(
+        (game.power(cat), game.toughness(cat)),
+        (Some(2), Some(1)),
+        "a Cat is not a Human, so it gets only first strike"
+    );
+
+    equip(&mut game, pitchfork_id, human_id);
+    let human = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == human_id)
+        .expect("there");
+    assert_eq!(
+        (game.power(human), game.toughness(human)),
+        (Some(1), Some(3)),
+        "a 0/2 Human with the conditional +1/+1"
+    );
+    let cat = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == cat_id)
+        .expect("there");
+    assert_eq!(
+        (game.power(cat), game.toughness(cat)),
+        (Some(2), Some(1)),
+        "and the Cat is back to printed"
+    );
+}
+
 #[test]
 fn every_equipment_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::COBBLED_WINGS, cards::SKYBLINDER_STAFF] {
+    for definition in [
+        cards::COBBLED_WINGS,
+        cards::SKYBLINDER_STAFF,
+        cards::BUTCHERS_CLEAVER,
+        cards::SHARPENED_PITCHFORK,
+        cards::SILVER_INLAID_DAGGER,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

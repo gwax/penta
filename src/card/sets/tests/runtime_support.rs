@@ -586,7 +586,10 @@ pub(super) fn shared_static_applied_effect(
 pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
     match condition {
         TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
-        TriggerConditionDef::TargetMatches { object, .. } => shared_object_predicate(object),
+        TriggerConditionDef::TargetMatches { object, .. }
+        | TriggerConditionDef::AttachedPermanentMatches { object } => {
+            shared_object_predicate(object)
+        }
         TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::ActivePlayer(_)
@@ -610,6 +613,9 @@ fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::SourceOnBattlefield
             | TriggerConditionDef::SourceUntapped
             | TriggerConditionDef::SourceCounters { .. }
+            // Reachable from the source by following its attachment, which
+            // is exactly the input a static clause has.
+            | TriggerConditionDef::AttachedPermanentMatches { .. }
     )
 }
 

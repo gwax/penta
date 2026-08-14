@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Clauses conditioned on what an Equipment is attached to**, which is what
+  "as long as equipped creature is a Human" asks. It is read live rather than
+  frozen when the Equipment moved, so the same Pitchfork gives its bonus on
+  one creature and nothing on the next. Butcher's Cleaver, Sharpened
+  Pitchfork, and Silver-Inlaid Dagger.
 - **Equip**, and with it attachment as something an ability does rather than
   only something an Aura spell does. `EffectDef::Attach` was a no-op because
   an Aura attaches as it enters and nothing else needed it. Telling the two

@@ -595,6 +595,23 @@ impl Game {
                         QuantifierDef::Any => matching.any(satisfies),
                     }
                 }
+                // Follows the attachment rather than being frozen when the
+                // Equipment moved, so the answer is about where it is now.
+                TriggerConditionDef::AttachedPermanentMatches { object: predicate } => self
+                    .current_or_last_known_attached_host(source)
+                    .and_then(|host| {
+                        self.battlefield
+                            .iter()
+                            .find(|permanent| permanent.card.id == host)
+                    })
+                    .is_some_and(|host| {
+                        self.trigger_object_matches(
+                            *predicate,
+                            &self.trigger_event_object(host),
+                            source,
+                            false,
+                        )
+                    }),
                 // Read live off the source, so a card whose counters change
                 // during a turn answers differently each time it is asked.
                 TriggerConditionDef::SourceCounters {

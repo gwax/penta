@@ -4242,8 +4242,69 @@ pub(in crate::card::sets) static WREATH_OF_GEISTS: CardRecord = CardRecord::new(
 // ISD 216 — Blazing Torch
 // Audit: blocked — Needs the equip procedure, attachment-granted activated abilities, and a sacrifice of the Equipment from another permanent's ability.
 
+static EQUIPPED_CREATURE_IS_HUMAN: TriggerConditionDef =
+    TriggerConditionDef::AttachedPermanentMatches {
+        object: ObjectPredicateDef::Subtype("Human"),
+    };
+
+static BUTCHERS_CLEAVER_LIFELINK: AbilityDef = abilities::lifelink();
+
+static BUTCHERS_CLEAVER_HUMAN: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::AttachedPermanent,
+    effect: AppliedEffectDef::GrantAbility(&BUTCHERS_CLEAVER_LIFELINK),
+    duration: EffectDurationDef::WhileSourceRemainsInZone,
+};
+
+static SHARPENED_PITCHFORK_FIRST_STRIKE: AbilityDef = abilities::first_strike();
+
+static SHARPENED_PITCHFORK_HUMAN: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::AttachedPermanent,
+    effect: AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::Constant(1),
+        toughness: ValueDef::Constant(1),
+    },
+    duration: EffectDurationDef::WhileSourceRemainsInZone,
+};
+
+static SILVER_INLAID_DAGGER_HUMAN: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::AttachedPermanent,
+    effect: AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::Constant(1),
+        toughness: ValueDef::Constant(0),
+    },
+    duration: EffectDurationDef::WhileSourceRemainsInZone,
+};
+
 // ISD 217 — Butcher's Cleaver
-// Audit: blocked — Needs the equip procedure and a Human-conditional lifelink grant.
+pub(in crate::card::sets) static BUTCHERS_CLEAVER: CardRecord = CardRecord::new(
+    cards::BUTCHERS_CLEAVER,
+    "Butcher's Cleaver",
+    CardArt::new("e141fe62-515e-4fe4-b032-81f169ec58d6", "Jason Felix"),
+    CardSet::Innistrad,
+    CardRules::new_artifact(mana_cost!("{3}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +3/+0.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(3),
+                        toughness: ValueDef::Constant(0),
+                    },
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::static_ability(
+                "As long as equipped creature is a Human, it has lifelink.",
+                EffectDef::IfCondition {
+                    condition: &EQUIPPED_CREATURE_IS_HUMAN,
+                    then: &BUTCHERS_CLEAVER_HUMAN,
+                },
+            ),
+            abilities::equip(mana_cost!("{3}"), "Equip {3}"),
+        ]),
+);
 
 // ISD 218 — Cellar Door
 // Audit: blocked — Needs moving the bottom library card and branching on that moved card's creature type.
@@ -4412,10 +4473,63 @@ pub(in crate::card::sets) static ONE_EYED_SCARECROW: CardRecord = CardRecord::ne
 // Audit: blocked — Needs the equip procedure and a dynamic count of instant and sorcery cards in your graveyard.
 
 // ISD 232 — Sharpened Pitchfork
-// Audit: blocked — Needs the equip procedure and a Human-conditional additional P/T bonus.
+pub(in crate::card::sets) static SHARPENED_PITCHFORK: CardRecord = CardRecord::new(
+    cards::SHARPENED_PITCHFORK,
+    "Sharpened Pitchfork",
+    CardArt::new("4ce20f19-a159-40e6-bb67-6108872ac1e0", "Winona Nelson"),
+    CardSet::Innistrad,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has first strike.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&SHARPENED_PITCHFORK_FIRST_STRIKE),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::static_ability(
+                "As long as equipped creature is a Human, it gets +1/+1.",
+                EffectDef::IfCondition {
+                    condition: &EQUIPPED_CREATURE_IS_HUMAN,
+                    then: &SHARPENED_PITCHFORK_HUMAN,
+                },
+            ),
+            abilities::equip(mana_cost!("{1}"), "Equip {1}"),
+        ]),
+);
 
 // ISD 233 — Silver-Inlaid Dagger
-// Audit: blocked — Needs the equip procedure and a Human-conditional additional power bonus.
+pub(in crate::card::sets) static SILVER_INLAID_DAGGER: CardRecord = CardRecord::new(
+    cards::SILVER_INLAID_DAGGER,
+    "Silver-Inlaid Dagger",
+    CardArt::new("f8b8162a-68f0-45df-bb25-8fd4487257a4", "Austin Hsu"),
+    CardSet::Innistrad,
+    CardRules::new_artifact(mana_cost!("{1}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +2/+0.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::ModifyPowerToughness {
+                        power: ValueDef::Constant(2),
+                        toughness: ValueDef::Constant(0),
+                    },
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            AbilityDef::static_ability(
+                "As long as equipped creature is a Human, it gets an additional +1/+0.",
+                EffectDef::IfCondition {
+                    condition: &EQUIPPED_CREATURE_IS_HUMAN,
+                    then: &SILVER_INLAID_DAGGER_HUMAN,
+                },
+            ),
+            abilities::equip(mana_cost!("{2}"), "Equip {2}"),
+        ]),
+);
 
 // ISD 234 — Traveler's Amulet
 pub(in crate::card::sets) static TRAVELERS_AMULET: CardRecord = CardRecord::new(
@@ -4876,11 +4990,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ULVENWALD_MYSTICS,
     &VILLAGERS_OF_ESTWALD,
     &WREATH_OF_GEISTS,
+    &BUTCHERS_CLEAVER,
     &COBBLED_WINGS,
     &GALVANIC_JUGGERNAUT,
     &GEISTCATCHERS_RIG,
     &GHOULCALLERS_BELL,
     &ONE_EYED_SCARECROW,
+    &SHARPENED_PITCHFORK,
+    &SILVER_INLAID_DAGGER,
     &TRAVELERS_AMULET,
     &CLIFFTOP_RETREAT,
     &GAVONY_TOWNSHIP,

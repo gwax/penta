@@ -260,6 +260,10 @@ pub enum TriggerConditionDef {
     /// Whether the ability's own source is tapped, using last-known
     /// information if it has left the battlefield.
     SourceIsTapped,
+    /// Whether what the ability's source is attached to matches. This is what
+    /// "as long as equipped creature is a Human" asks, and it is read live so
+    /// the answer follows the Equipment as it moves.
+    AttachedPermanentMatches { object: ObjectPredicateDef },
     /// How many counters of one kind the ability's own source carries. This
     /// is what "as long as there are exactly three tide counters on this
     /// creature" asks, and it is read live rather than captured.
