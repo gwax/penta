@@ -17,11 +17,11 @@ pub(in crate::card::sets) static MONK_REALIST: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Monk", "Cleric"], 1, 1).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature enters, destroy target enchantment.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Enchantment),
             )],

@@ -1,5 +1,6 @@
 use super::{
-    EffectRecipientDef, Game, PlayerId, ScopedEffect, StackObject, Target, TriggerContext, ValueDef,
+    EffectRecipientDef, EffectResolutionContext, Game, PlayerId, ScopedEffect, StackObject, Target,
+    ValueDef,
 };
 
 impl Game {
@@ -8,7 +9,7 @@ impl Game {
         &self,
         value: ValueDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) -> i32 {
         match value {
@@ -22,11 +23,12 @@ impl Game {
                 .source
                 .and_then(|source| self.current_or_last_known_toughness(source))
                 .map_or(0, i32::from),
-            ValueDef::TriggerEventAmount => context.amount.unwrap_or(0),
+            ValueDef::TriggerEventAmount => context.trigger.amount.unwrap_or(0),
             // Resolved per target by the divided-damage path; anything else
             // reading it has no target in hand and so no share.
             ValueDef::DividedAmongTargets => 0,
             ValueDef::TriggeringObjectPower => context
+                .trigger
                 .object
                 .and_then(|object| self.current_or_last_known_power(object))
                 .map_or(0, i32::from),
@@ -55,7 +57,12 @@ impl Game {
                 let player = [PlayerId::One, PlayerId::Two]
                     .into_iter()
                     .find(|candidate| {
-                        self.player_relation_matches(*candidate, player, object.controller, context)
+                        self.player_relation_matches(
+                            *candidate,
+                            player,
+                            object.controller,
+                            context.trigger,
+                        )
                     })
                     .unwrap_or(object.controller);
                 i32::try_from(
@@ -66,18 +73,11 @@ impl Game {
                 )
                 .unwrap_or(i32::MAX)
             }
-            ValueDef::CountMatchingObjects(query) => {
-                let recipient = EffectRecipientDef::MatchingObjects {
-                    object: query.object,
-                    zones: query.zones,
-                    controller: query.controller,
-                };
-                i32::try_from(
-                    self.effect_recipients(recipient, object, context, scoped)
-                        .len(),
-                )
-                .unwrap_or(i32::MAX)
-            }
+            ValueDef::CountMatchingObjects(query) => i32::try_from(
+                self.objects_matching_effect_query(*query, object, context, scoped)
+                    .len(),
+            )
+            .unwrap_or(i32::MAX),
             ValueDef::AnyMatchingObject(query) => i32::from(self.any_battlefield_object_matches(
                 query,
                 object.source.unwrap_or(object.id),
@@ -103,7 +103,7 @@ impl Game {
         &self,
         value: ValueDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) -> i32 {
         match value {

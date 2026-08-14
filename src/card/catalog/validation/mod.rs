@@ -1,6 +1,7 @@
 mod abilities;
 mod composition;
 mod presentation;
+mod program_context;
 mod targeting;
 
 use std::collections::HashSet;
@@ -12,7 +13,7 @@ use self::composition::{
 };
 pub(super) use self::presentation::validate_semantic_spell_presentation;
 #[cfg(test)]
-pub(super) use self::targeting::validate_ability_targets;
+pub(super) use self::targeting::{validate_ability_targets, validate_replacement_ability_targets};
 use crate::card::CardDefinition;
 use crate::card::catalog::CatalogError;
 

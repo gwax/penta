@@ -141,19 +141,17 @@ fn direct_and_composite_land_type_effects_grant_intrinsic_mana_in_order() {
     static FIRST_COMPOSITE_TYPES: [BasicLandType; 1] = [BasicLandType::Forest];
     static SECOND_COMPOSITE_TYPES: [BasicLandType; 1] = [BasicLandType::Island];
     static COMPONENTS: [AppliedEffectDef; 2] = [
-        AppliedEffectDef::AddLandTypes(&FIRST_COMPOSITE_TYPES),
-        AppliedEffectDef::AddLandTypes(&SECOND_COMPOSITE_TYPES),
+        AppliedEffectDef::add_basic_land_types(&FIRST_COMPOSITE_TYPES),
+        AppliedEffectDef::add_basic_land_types(&SECOND_COMPOSITE_TYPES),
     ];
     static EFFECTS: [EffectDef; 2] = [
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::AttachedPermanent,
-            effect: AppliedEffectDef::AddLandTypes(&DIRECT_TYPES),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
+            effect: AppliedEffectDef::add_basic_land_types(&DIRECT_TYPES),
         },
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::AttachedPermanent,
             effect: AppliedEffectDef::Composite(&COMPONENTS),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     ];
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(

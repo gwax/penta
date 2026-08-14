@@ -1,9 +1,10 @@
 use super::{
-    AbilityEffectExpiration, Action, AlternativeCastKindDef, CardBehavior, CardDefinitionId,
-    CardType, CombatDamageStage, CommittedTriggerEvent, DecisionContinuation, DecisionOption,
+    Action, AlternativeCastKindDef, CardBehavior, CardDefinitionId, CardType, CombatDamageStage,
+    CommittedTriggerEvent, ContinuousEffectExpiration, DecisionContinuation, DecisionOption,
     DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
-    DeferredBeginTurnEffect, EffectDef, Game, GameEvent, GameObjectId, GameResult, ManaPool,
-    PendingProcedure, PlayerId, ReplacementEventDef, Step, TriggerContext, TurnStepDef,
+    DeferredBeginTurnEffect, EffectResolutionContext, Game, GameEvent, GameObjectId, GameResult,
+    InstalledTriggerLifetime, ManaPool, PendingProcedure, PlayerId, ReplacementEffectDef,
+    ReplacementEventDef, Step, TriggerContext, TurnPhaseDef, TurnPhaseResume, TurnStepDef,
     one_or_none,
 };
 
@@ -11,12 +12,7 @@ mod begin_turn;
 
 impl Game {
     fn skips_turn_based_untap(&self, permanent: &super::Permanent) -> bool {
-        permanent.skipped_untap_steps > 0
-            || self.does_not_untap_during_untap_step(permanent)
-            || permanent
-                .held_tapped_by
-                .iter()
-                .any(|source| self.permanent_is_tapped(*source))
+        permanent.skipped_untap_steps > 0 || self.does_not_untap_during_untap_step(permanent)
     }
 
     /// Spends one owed untap step for each of the active player's permanents.
@@ -178,7 +174,8 @@ impl Game {
                 let ReplacementEventDef::WouldGainLife(relation) = definition.event else {
                     return;
                 };
-                let Some(EffectDef::MultiplyEventAmount(factor)) = ability.declarative_effect()
+                let Some(ReplacementEffectDef::MultiplyEventAmount(factor)) =
+                    ability.declarative_replacement()
                 else {
                     return;
                 };
@@ -211,8 +208,8 @@ impl Game {
         self.events.push(GameEvent::DamageDealt { player, amount });
     }
 
-    pub(super) const fn turn_step_def(step: Step) -> TurnStepDef {
-        match step {
+    pub(super) const fn turn_step_def(step: Step) -> Option<TurnStepDef> {
+        Some(match step {
             Step::Upkeep => TurnStepDef::Upkeep,
             Step::Draw => TurnStepDef::Draw,
             Step::PrecombatMain => TurnStepDef::PrecombatMain,
@@ -223,8 +220,8 @@ impl Game {
             Step::EndOfCombat => TurnStepDef::EndOfCombat,
             Step::PostcombatMain => TurnStepDef::PostcombatMain,
             Step::End => TurnStepDef::End,
-            Step::Cleanup => TurnStepDef::Cleanup,
-        }
+            Step::Cleanup => return None,
+        })
     }
 
     /// A miracle window belongs to one card sitting in hand. Once that card
@@ -261,8 +258,16 @@ impl Game {
                     }
                 }
             }
-            Step::Draw => self.step = Step::PrecombatMain,
-            Step::PrecombatMain => self.step = Step::BeginningOfCombat,
+            Step::Draw => {
+                if self.advance_after_turn_phase(TurnPhaseResume::Step(Step::PrecombatMain)) {
+                    return;
+                }
+            }
+            Step::PrecombatMain => {
+                if self.advance_after_turn_phase(TurnPhaseResume::Step(Step::BeginningOfCombat)) {
+                    return;
+                }
+            }
             Step::BeginningOfCombat => {
                 self.step = Step::DeclareAttackers;
                 self.attackers_declared = false;
@@ -279,18 +284,14 @@ impl Game {
             Step::EndOfCombat => {
                 self.destroy_end_of_combat_permanents();
                 self.clear_combat();
-                // An extra combat phase replaces the move to the second main,
-                // which still happens once the extra combats are spent.
-                if self.additional_combat_phases > 0 {
-                    self.additional_combat_phases -= 1;
-                    self.step = Step::BeginningOfCombat;
-                } else {
-                    self.step = Step::PostcombatMain;
+                if self.advance_after_turn_phase(TurnPhaseResume::Step(Step::PostcombatMain)) {
+                    return;
                 }
             }
             Step::PostcombatMain => {
-                self.step = Step::End;
-                self.handle_end_step();
+                if self.advance_after_turn_phase(TurnPhaseResume::Step(Step::End)) {
+                    return;
+                }
             }
             Step::End => {
                 self.step = Step::Cleanup;
@@ -300,12 +301,52 @@ impl Game {
                 }
             }
             Step::Cleanup => {
-                self.start_next_turn();
-                return;
+                if self.advance_after_turn_phase(TurnPhaseResume::NextTurn) {
+                    return;
+                }
             }
         }
 
         self.finish_step_advance();
+    }
+
+    /// Starts the next additional phase, or resumes the ordinary turn once
+    /// the queue is empty. The first boundary displaced by a schedule is
+    /// frozen so an inserted combat created after the postcombat main resumes
+    /// at the end step rather than manufacturing another ordinary main phase.
+    ///
+    /// Returns `true` when progression began the next turn, whose startup path
+    /// publishes its own step change.
+    fn advance_after_turn_phase(&mut self, ordinary_resume: TurnPhaseResume) -> bool {
+        let next = if let Some(phase) = self.turn_phase_queue.pop_front() {
+            self.turn_phase_resume.get_or_insert(ordinary_resume);
+            TurnPhaseResume::Step(match phase {
+                TurnPhaseDef::Combat => Step::BeginningOfCombat,
+                TurnPhaseDef::PostcombatMain => Step::PostcombatMain,
+            })
+        } else {
+            self.turn_phase_resume.take().unwrap_or(ordinary_resume)
+        };
+
+        match next {
+            TurnPhaseResume::Step(step) => {
+                self.step = step;
+                if step == Step::End {
+                    self.handle_end_step();
+                }
+                false
+            }
+            TurnPhaseResume::NextTurn => {
+                self.start_next_turn();
+                true
+            }
+        }
+    }
+
+    pub(super) fn schedule_turn_phases(&mut self, phases: &[TurnPhaseDef]) {
+        for phase in phases.iter().rev() {
+            self.turn_phase_queue.push_front(*phase);
+        }
     }
 
     fn finish_step_advance(&mut self) {
@@ -331,28 +372,7 @@ impl Game {
         }
     }
 
-    /// Drops the granted and removed abilities whose window closed with the
-    /// turn that just began.
-    fn expire_turn_scoped_ability_changes(&mut self) {
-        let turns_started = self.turns_started;
-        let active = self.active_player;
-        let expired = |expiration: AbilityEffectExpiration| match expiration {
-            AbilityEffectExpiration::UpkeepOf(player) => player != active,
-            AbilityEffectExpiration::TurnOf { player, turn } => {
-                turns_started[player.index()] < turn
-            }
-            AbilityEffectExpiration::EndOfTurn | AbilityEffectExpiration::Never => true,
-        };
-        for permanent in &mut self.battlefield {
-            permanent
-                .temporary_granted_abilities
-                .retain(|grant| expired(grant.expiration));
-            permanent
-                .temporary_removed_abilities
-                .retain(|removal| expired(removal.expiration));
-        }
-    }
-
+    #[allow(clippy::too_many_lines)]
     pub(super) fn commit_next_turn(
         &mut self,
         next_player: PlayerId,
@@ -365,11 +385,33 @@ impl Game {
         self.turn += 1;
         self.active_player = next_player;
         self.turns_started[self.active_player.index()] += 1;
-        self.expire_turn_scoped_ability_changes();
+        let turns_started = self.turns_started;
+        self.damage_preventions.retain(|prevention| {
+            prevention
+                .expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
+        self.damage_redirects.retain(|redirect| {
+            redirect
+                .expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
+        self.resolved_play_restrictions.retain(|restriction| {
+            restriction
+                .expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
+        for permanent in &mut self.battlefield {
+            permanent.resolved_continuous_effects.retain(|effect| {
+                effect
+                    .expiration
+                    .survives_turn_start(self.active_player, turns_started)
+            });
+        }
         self.creature_died_this_turn = false;
         self.sorcery_flash_grants = [0; 2];
-        self.additional_combat_phases = 0;
-        self.noncreature_casts_locked = [false; 2];
+        self.turn_phase_queue.clear();
+        self.turn_phase_resume = None;
         self.spells_cast_last_turn = self.spells_cast_this_turn;
         self.spells_cast_this_turn = [0; 2];
         self.cards_drawn_this_turn = [0; 2];
@@ -377,19 +419,23 @@ impl Game {
         self.miracle_window = None;
         self.step = Step::Upkeep;
         self.players[self.active_player.index()].land_played_this_turn = false;
-        // "Until your next turn" means the one now beginning, not the one the
-        // ability resolved during.
         let started = self.turns_started[self.active_player.index()];
         let active = self.active_player;
-        self.floating_triggers.retain(|floating| {
-            floating.until_turn_of != self.active_player || started <= floating.created_after_turns
-        });
+        // The lifetime freezes both the referenced player and the exact turn
+        // at installation, so extra turns and skipped turns have ordinary
+        // turn-engine semantics rather than being re-evaluated later.
+        self.installed_triggers
+            .retain(|installed| match installed.lifetime {
+                InstalledTriggerLifetime::Once => true,
+                InstalledTriggerLifetime::UntilTurn { player, turn } => {
+                    player != self.active_player || self.turns_started[player.index()] < turn
+                }
+            });
         for permanent in &mut self.battlefield {
             permanent
                 .keywords_until_upkeep_of
                 .retain(|(player, _)| *player != self.active_player);
-            // Detain ends when its controller's next turn begins, the same
-            // reading the floating triggers above take.
+            // Detain ends when its controller's next turn begins.
             if permanent
                 .detained_until_turn_of
                 .is_some_and(|(player, created)| player == active && started > created)
@@ -399,6 +445,11 @@ impl Game {
             // One loyalty ability per planeswalker per turn, so the allowance
             // returns as the turn does.
             permanent.activated_loyalty_this_turn = false;
+            permanent.activations_this_turn.clear();
+            permanent.dealt_damage_to_opponent_this_turn = false;
+            permanent.attacked_this_turn = false;
+            permanent.attacks_this_turn = 0;
+            permanent.damage_sources.clear();
         }
         let winter_orb = self.winter_orb_active();
         let smoke = self.count_behavior(CardBehavior::Smoke) > 0;
@@ -457,7 +508,6 @@ impl Game {
             step: TurnStepDef::Upkeep,
             player,
         });
-        self.fire_delayed_triggers(TurnStepDef::Upkeep);
     }
 
     /// CR 510.4-adjacent: "destroy that creature at end of combat" resolves
@@ -499,24 +549,33 @@ impl Game {
     }
 
     pub(super) fn complete_cleanup(&mut self) {
-        self.channel_active[self.active_player.index()] = false;
         self.finish_cleanup();
         self.empty_mana_pools();
-        if self.result.is_none() {
-            self.start_next_turn();
+        if self.result.is_none() && !self.advance_after_turn_phase(TurnPhaseResume::NextTurn) {
+            self.finish_step_advance();
         }
     }
 
     pub(super) fn finish_cleanup(&mut self) {
         self.temporary_ability_grants.clear();
-        self.all_combat_damage_prevented = false;
-        self.prevention_shields.clear();
-        self.relational_damage_preventions.clear();
+        // These resolving permissions and restrictions last only until the
+        // cleanup step. A later phase can still be inserted into this turn,
+        // but it must not revive an expired Quicken or Aurelia's Fury effect.
+        self.sorcery_flash_grants = [0; 2];
+        self.resolved_play_restrictions
+            .retain(|restriction| restriction.expiration.survives_cleanup());
+        self.channel_active = [false; 2];
+        self.miracle_window = None;
+        self.damage_preventions
+            .retain(|prevention| prevention.expiration.survives_cleanup());
+        self.damage_redirects
+            .retain(|redirect| redirect.expiration.survives_cleanup());
         for replacements in &mut self.draw_replacements {
             replacements.clear();
         }
-        // A bonus whose source has untapped or left is spent; dropping it at
-        // cleanup keeps the list from growing without bound.
+        // A source-tapped effect survives cleanup only while its recorded
+        // source is still present and tapped. Once spent, remove the ordered
+        // component so tapping that source again cannot revive it.
         let still_tapped: Vec<_> = self
             .battlefield
             .iter()
@@ -524,27 +583,17 @@ impl Game {
             .map(|permanent| permanent.card.id)
             .collect();
         for permanent in &mut self.battlefield {
-            permanent
-                .while_source_tapped
-                .retain(|bonus| still_tapped.contains(&bonus.source));
-            permanent
-                .held_tapped_by
-                .retain(|source| still_tapped.contains(source));
-        }
-        for permanent in &mut self.battlefield {
             permanent.damage = 0;
             permanent.exile_instead_of_dying = false;
-            permanent.damage_sources.clear();
             permanent.deathtouch_damage = false;
-            permanent.power_bonus = 0;
-            permanent.toughness_bonus = 0;
             permanent.temporary_keywords.clear();
-            permanent
-                .temporary_granted_abilities
-                .retain(|grant| grant.expiration != AbilityEffectExpiration::EndOfTurn);
-            permanent
-                .temporary_removed_abilities
-                .retain(|removal| removal.expiration != AbilityEffectExpiration::EndOfTurn);
+            permanent.resolved_continuous_effects.retain(|effect| {
+                effect.expiration.survives_cleanup()
+                    && (!matches!(
+                        effect.expiration,
+                        ContinuousEffectExpiration::WhileSourceTapped
+                    ) || still_tapped.contains(&effect.source.object))
+            });
             // A control change held by a permanent outlives the turn; only
             // the turn-scoped form is ended here.
             if permanent.control_source.is_none()
@@ -552,19 +601,8 @@ impl Game {
             {
                 permanent.controller = owner;
             }
-            permanent.unblockable_this_turn = false;
-            permanent.cannot_block_this_turn = false;
-            permanent.combat_damage_prevented = false;
-            permanent.combat_damage_dealt_by_prevented = false;
-            permanent.damage_dealt_by_prevented = false;
             permanent.destroy_at_end = false;
-            permanent.animation = None;
-            permanent.activations_this_turn.clear();
-            permanent.dealt_damage_to_opponent_this_turn = false;
             permanent.regeneration_shields = 0;
-            permanent.cannot_regenerate_this_turn = false;
-            permanent.attacked_this_turn = false;
-            permanent.attacks_this_turn = 0;
         }
     }
 
@@ -797,13 +835,14 @@ impl Game {
         &mut self,
         mut effects: Vec<super::ScopedEffect>,
         object: &super::StackObject,
-        context: TriggerContext,
+        context: impl Into<EffectResolutionContext>,
         custom_followup: Option<CardBehavior>,
     ) {
+        let context = context.into();
         let mut later_procedures = std::mem::take(&mut self.pending_procedures);
         while !effects.is_empty() {
             let effect = effects.remove(0);
-            self.resolve_effect_def(effect, object, context);
+            self.resolve_effect_def(effect, object, context.clone());
             if !self.pending_decisions.is_empty()
                 || !self.pending_events.is_empty()
                 || !self.pending_procedures.is_empty()

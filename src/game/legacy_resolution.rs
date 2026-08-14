@@ -90,39 +90,6 @@ impl Game {
                 }
             }
             CardBehavior::Channel => self.channel_active[object.controller.index()] = true,
-            CardBehavior::Duress => {
-                if let Some(Target::Player(victim)) = object.first_target() {
-                    let eligible = self.players[victim.index()]
-                        .hand
-                        .iter()
-                        .filter(|card| {
-                            self.catalog.get(card.definition).is_some_and(|definition| {
-                                !definition.rules.has_type(CardType::Creature)
-                                    && !definition.rules.has_type(CardType::Land)
-                            })
-                        })
-                        .cloned()
-                        .collect::<Vec<_>>();
-                    let options = self.card_decision_options(&eligible, DecisionZone::Hand);
-                    // The hand is revealed, so the caster picking from it is
-                    // public information rather than a hidden choice.
-                    self.queue_decision(
-                        object.controller,
-                        "Choose a card for them to discard",
-                        DecisionVisibility::Public,
-                        DecisionPreference::HigherCardValue,
-                        1..=1,
-                        false,
-                        options,
-                        DecisionContinuation::Duress {
-                            victim,
-                            cause: ZoneMoveCause::Effect {
-                                controller: object.controller,
-                            },
-                        },
-                    );
-                }
-            }
             CardBehavior::Mulch => {
                 let player = object.controller;
                 let revealed = self.take_top_of_library(player, 4);
@@ -234,7 +201,6 @@ impl Game {
         cards
     }
 
-    /// Sends cards to their owner's graveyard in the order given.
     /// Where the pile the controller did not take ends up. The library end
     /// that counts as the top is the back of the vector, so bottoming inserts
     /// at the front.
@@ -254,7 +220,6 @@ impl Game {
             }
             ZoneKind::Library => {
                 for card in cards {
-                    let (card, _zone_change) = self.zone_change_card(card);
                     match placement {
                         ZonePlacement::Top => self.players[player.index()].library.push(card),
                         ZonePlacement::Bottom => {

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     AbilityLocator, AbilityOriginSnapshot, AppliedEffectLocator, BasicLandTypeSnapshot,
-    ManaSourceSnapshot, TargetSelectionSnapshot, TriggerContextSnapshot,
+    EffectResolutionContextSnapshot, ManaSourceSnapshot, TargetSelectionSnapshot,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -37,9 +37,10 @@ pub(in crate::game::state_checkpoint) struct BasicLandTypeChangeSnapshot {
 #[serde(rename_all = "camelCase")]
 pub(in crate::game::state_checkpoint) struct StackAbilitySnapshot {
     pub(in crate::game::state_checkpoint) ability_locator: Option<AbilityLocator>,
+    pub(in crate::game::state_checkpoint) target_definition_locator: Option<AbilityLocator>,
     pub(in crate::game::state_checkpoint) origin: AbilityOriginSnapshot,
     pub(in crate::game::state_checkpoint) target_selections: Vec<TargetSelectionSnapshot>,
-    pub(in crate::game::state_checkpoint) context: TriggerContextSnapshot,
+    pub(in crate::game::state_checkpoint) context: EffectResolutionContextSnapshot,
     pub(in crate::game::state_checkpoint) mode_effects: Vec<ScopedEffectSnapshot>,
     pub(in crate::game::state_checkpoint) x: u16,
 }

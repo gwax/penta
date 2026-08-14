@@ -260,12 +260,15 @@ fn sin_collector_exiles_an_instant_or_sorcery_from_the_revealed_hand() {
     let mut game = ready_game();
     let lions = card(12_000, cards::SAVANNAH_LIONS, PlayerId::Two);
     let bolt = card(12_001, cards::LIGHTNING_BOLT, PlayerId::Two);
-    game.players[1].hand.extend([lions.clone(), bolt.clone()]);
+    let sinkhole = card(12_002, cards::SINKHOLE, PlayerId::Two);
+    game.players[1]
+        .hand
+        .extend([lions.clone(), bolt.clone(), sinkhole.clone()]);
     cast_and_place_reveal_trigger(&mut game, 12_100, cards::SIN_COLLECTOR);
 
     pass_priority_pair(&mut game);
 
-    // Only the Bolt qualifies; the creature is not offered.
+    // The instant and sorcery qualify; the creature is not offered.
     let decision = game.observe(PlayerId::One).decision.unwrap();
     assert_eq!(decision.visibility, DecisionVisibility::Public);
     let offered: Vec<_> = decision
@@ -273,12 +276,16 @@ fn sin_collector_exiles_an_instant_or_sorcery_from_the_revealed_hand() {
         .iter()
         .filter_map(|option| option.card.map(|(_, definition)| definition))
         .collect();
-    assert_eq!(offered, vec![cards::LIGHTNING_BOLT]);
+    assert_eq!(offered, vec![cards::LIGHTNING_BOLT, cards::SINKHOLE]);
     assert_eq!(
         game.observe(PlayerId::One).last_seen_hand,
         Some((
             PlayerId::Two,
-            vec![(lions.id, lions.definition), (bolt.id, bolt.definition)],
+            vec![
+                (lions.id, lions.definition),
+                (bolt.id, bolt.definition),
+                (sinkhole.id, sinkhole.definition),
+            ],
         )),
         "revealing the hand exposes ineligible cards too",
     );
@@ -287,13 +294,24 @@ fn sin_collector_exiles_an_instant_or_sorcery_from_the_revealed_hand() {
         PlayerId::One,
         Action::ChooseDecision {
             decision: decision.id,
-            options: vec![decision.options[0].id],
+            options: vec![
+                decision
+                    .options
+                    .iter()
+                    .find(|option| {
+                        option
+                            .card
+                            .is_some_and(|(_, card)| card == cards::LIGHTNING_BOLT)
+                    })
+                    .expect("the Bolt is a legal choice")
+                    .id,
+            ],
         },
     )
     .unwrap();
 
     assert_eq!(game.players[1].exile[0].definition, cards::LIGHTNING_BOLT);
-    assert_eq!(game.players[1].hand.len(), 1, "the creature stays");
+    assert_eq!(game.players[1].hand.len(), 2, "the other cards stay");
     assert!(
         game.players[1].graveyard.is_empty(),
         "exiled, not discarded"
@@ -563,11 +581,11 @@ fn state_based_actions_repeat_after_static_toughness_bonuses_disappear() {
 fn simultaneous_deaths_use_the_pre_exit_trigger_listener_snapshot() {
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered(
         "Whenever a creature dies, you gain 1 life.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::HasType(CardType::Creature),
-            from: Some(ZoneKind::Battlefield),
-            to: Some(ZoneKind::Graveyard),
-        },
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            Some(ZoneKind::Battlefield),
+            Some(ZoneKind::Graveyard),
+        ),
         EffectDef::GainLife {
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(1),
@@ -610,11 +628,11 @@ fn simultaneous_deaths_use_the_pre_exit_trigger_listener_snapshot() {
 fn simultaneous_exits_keep_pre_exit_characteristics_for_trigger_matching() {
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered(
         "Whenever a Mountain leaves the battlefield, you gain 1 life.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::Subtype("Mountain"),
-            from: Some(ZoneKind::Battlefield),
-            to: Some(ZoneKind::Graveyard),
-        },
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Subtype("Mountain"),
+            Some(ZoneKind::Battlefield),
+            Some(ZoneKind::Graveyard),
+        ),
         EffectDef::GainLife {
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(1),
@@ -650,5 +668,8 @@ fn simultaneous_exits_keep_pre_exit_characteristics_for_trigger_matching() {
     game.move_permanents_to_graveyard(&[moon_id, taiga_id]);
 
     assert_eq!(game.pending_triggers.len(), 1);
-    assert_eq!(game.pending_triggers[0].context.object, Some(taiga_id));
+    assert_eq!(
+        game.pending_triggers[0].context.trigger.object,
+        Some(taiga_id)
+    );
 }

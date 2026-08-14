@@ -153,11 +153,12 @@ in the [Foundations rules update][foundations-update].
 Targets and choices are separate rules constructs. Targets are bound to stable
 slots when a spell or ability is put on the stack, are constrained by targeting
 restrictions such as hexproof, shroud, and protection, and are rechecked as the
-object resolves. A declarative `ChoosePermanent` effect instead asks its named
-player during resolution and makes the selected object available to its
-continuation as `ChosenPermanent`; it does not create a target slot, trigger
-target-fizzle rules, or re-run target legality. Chaos Orb uses that
-non-targeting path.
+object resolves. A declarative `Choose(ChooseDef)` effect instead asks its named
+player during resolution, binds the selected object or object set in the typed
+resolution context, and resumes its nested continuation. It does not create a
+target slot, trigger target-fizzle rules, or re-run target legality. Chaos Orb
+uses that non-targeting path, while the same operation can choose a spell on the
+stack or a card in another zone when its candidate query permits one.
 
 Spell choices bind targets to stable target slots. Fireball's legacy behavior
 uses one variable-cardinality slot: it enumerates affordable, distinct target

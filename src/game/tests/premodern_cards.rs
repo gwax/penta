@@ -1,5 +1,5 @@
 use super::*;
-use crate::ImplementationStatus;
+use crate::{AbilityProgramDef, ImplementationStatus};
 
 #[test]
 fn mogg_fanatic_and_seal_of_fire_pay_sacrifice_before_dealing_damage() {
@@ -111,10 +111,10 @@ fn hydroblast_and_pyroblast_are_complete_opposite_color_modal_answers() {
         );
         assert!(matches!(
             modes[1].effect.definition,
-            EffectDef::Destroy {
+            AbilityProgramDef::Effects(EffectDef::Destroy {
                 can_regenerate: true,
                 ..
-            }
+            })
         ));
     }
 }

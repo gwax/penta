@@ -11,12 +11,11 @@ mod triggers;
 pub(in crate::game::state_checkpoint) use stack::*;
 pub(in crate::game::state_checkpoint) use triggers::*;
 
-use super::model_keyword::KeywordSnapshot;
+use super::model_keyword::{KeywordSnapshot, UpkeepKeywordSnapshot};
 pub(super) use super::model_prevention::*;
 
-use super::model_animation::{AnimationSnapshot, UpkeepKeywordSnapshot};
 use super::model_procedure::{DrawReplacementSnapshot, PendingProcedureSnapshot};
-use super::model_trigger::{DelayedTriggerSnapshot, FloatingTriggerSnapshot};
+use super::model_trigger::InstalledTriggerSnapshot;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -40,8 +39,10 @@ pub(super) struct GameSnapshot {
     pub(super) creature_died_this_turn: bool,
     pub(super) linked_exiles: Vec<[u32; 2]>,
     pub(super) sorcery_flash_grants: [u8; 2],
-    pub(super) additional_combat_phases: u8,
-    pub(super) noncreature_casts_locked: [bool; 2],
+    pub(super) turn_phase_queue: Vec<TurnPhaseSnapshot>,
+    pub(super) turn_phase_resume: Option<TurnPhaseResumeSnapshot>,
+    /// Resolving play prohibitions. Static restrictions remain source-derived.
+    pub(super) resolved_play_restrictions: Vec<ResolvedPlayRestrictionSnapshot>,
     pub(super) spells_cast_this_turn: [u16; 2],
     pub(super) spells_cast_last_turn: [u16; 2],
     pub(super) cards_drawn_this_turn: [u16; 2],
@@ -54,19 +55,12 @@ pub(super) struct GameSnapshot {
     pub(super) extra_turns: Vec<usize>,
     pub(super) next_regular_player: usize,
     pub(super) channel_active: [bool; 2],
-    /// A Fog resolved this turn. Defaulted so a checkpoint written before
-    /// this field existed still decodes, which is what the open-world
-    /// contract asks of an additive member.
-    #[serde(default)]
-    pub(super) all_combat_damage_prevented: bool,
-    /// Prevention shields still waiting for damage. Additive for the same
-    /// reason the Fog flag is.
-    #[serde(default)]
-    pub(super) prevention_shields: Vec<PreventionShieldSnapshot>,
-    /// Turn-scoped prevention rules whose covered objects are determined when
-    /// damage would be dealt instead of when the effect resolves.
-    #[serde(default)]
-    pub(super) relational_damage_preventions: Vec<RelationalDamagePreventionSnapshot>,
+    /// Resolved damage-prevention rules in creation order. Static prevention
+    /// remains source-derived and therefore is not checkpointed here.
+    pub(super) damage_preventions: Vec<ResolvedDamagePreventionSnapshot>,
+    /// Resolved damage redirections in creation order. Static group
+    /// redirection remains source-derived and is not checkpointed here.
+    pub(super) damage_redirects: Vec<ResolvedDamageRedirectSnapshot>,
     pub(super) pregame: Option<PregameSnapshot>,
     pub(super) combat_damage_stage: CombatDamageStageSnapshot,
     pub(super) battlefield: Vec<PermanentSnapshot>,
@@ -75,13 +69,30 @@ pub(super) struct GameSnapshot {
     pub(super) retired_objects: Vec<RetiredObjectSnapshot>,
     pub(super) pending_events: Vec<PendingEventSnapshot>,
     pub(super) temporary_ability_grants: Vec<TemporaryAbilityGrantSnapshot>,
-    pub(super) delayed_triggers: Vec<DelayedTriggerSnapshot>,
-    pub(super) floating_triggers: Vec<FloatingTriggerSnapshot>,
+    pub(super) next_installed_trigger_id: u32,
+    pub(super) installed_triggers: Vec<InstalledTriggerSnapshot>,
     pub(super) pending_triggers: Vec<PendingTriggerSnapshot>,
     pub(super) pending_procedures: Vec<PendingProcedureSnapshot>,
     pub(super) decision_state: Option<DecisionStateSnapshot>,
     pub(super) has_deferred_state: bool,
     pub(super) viewer: usize,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) enum TurnPhaseSnapshot {
+    Combat,
+    PostcombatMain,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) enum TurnPhaseResumeSnapshot {
+    PrecombatMain,
+    BeginningOfCombat,
+    PostcombatMain,
+    End,
+    NextTurn,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -187,20 +198,6 @@ pub(super) struct PermanentSnapshot {
     pub(super) owner: usize,
     pub(super) timestamp: u64,
     pub(super) entered_controller_turn: u32,
-    pub(super) power_bonus: i16,
-    pub(super) toughness_bonus: i16,
-    /// Modifications that end when the permanent that made them untaps, as
-    /// (source object, power, toughness). Absent from checkpoints that
-    /// predate them.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub(super) while_source_tapped: Vec<(u32, i16, i16)>,
-    /// Permanents whose staying tapped keeps this one from untapping. Absent
-    /// from checkpoints that predate them.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub(super) held_tapped_by: Vec<u32>,
-    pub(super) unblockable_this_turn: bool,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub(super) cannot_block_this_turn: bool,
     /// Detained until this seat's next turn, with the turn count it landed on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) detained_until_turn_of: Option<(usize, u32)>,
@@ -210,20 +207,7 @@ pub(super) struct PermanentSnapshot {
     /// Untap steps this permanent still owes before it untaps normally.
     #[serde(default, skip_serializing_if = "is_zero_u8")]
     pub(super) skipped_untap_steps: u8,
-    /// Colours painted over the printed ones, in WUBRG order, when a Lace
-    /// has resolved onto this permanent.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(super) color_override: Option<[bool; 5]>,
-    pub(super) combat_damage_prevented: bool,
-    pub(super) combat_damage_dealt_by_prevented: bool,
-    /// Absent from checkpoints that predate the all-damage form.
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub(super) damage_dealt_by_prevented: bool,
     pub(super) control_reverts_to: Option<usize>,
-    /// Whether a "can't be regenerated" effect covers this permanent for the
-    /// rest of the turn.
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub(super) cannot_regenerate_this_turn: bool,
     /// The permanent sustaining a duration-scoped control change, absent for
     /// the turn-scoped form and for everything untouched.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -244,11 +228,9 @@ pub(super) struct PermanentSnapshot {
     pub(super) dealt_damage_to_opponent_this_turn: bool,
     pub(super) deathtouch_damage: bool,
     pub(super) created_by: Option<u32>,
-    pub(super) animation: Option<AnimationSnapshot>,
     pub(super) temporary_keywords: Vec<KeywordSnapshot>,
     pub(super) keywords_until_upkeep_of: Vec<UpkeepKeywordSnapshot>,
-    pub(super) temporary_granted_abilities: Vec<TemporaryGrantedAbilitySnapshot>,
-    pub(super) temporary_removed_abilities: Vec<TemporaryRemovedAbilitySnapshot>,
+    pub(super) resolved_continuous_effects: Vec<ResolvedContinuousEffectSnapshot>,
     pub(super) activations_this_turn: Vec<AbilityActivationSnapshot>,
     pub(super) copy_effect: Option<CopiableCharacteristicsSnapshot>,
     pub(super) copied_from: Option<CopiedFromSnapshot>,
@@ -258,25 +240,50 @@ pub(super) struct PermanentSnapshot {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct TemporaryGrantedAbilitySnapshot {
-    pub(super) ability: AbilityLocator,
-    pub(super) source: u32,
-    pub(super) source_definition: u16,
-    pub(super) source_part_id: u8,
-    pub(super) source_ability_id: u8,
-    pub(super) grant_id: u8,
+pub(super) struct ResolvedContinuousEffectSnapshot {
+    pub(super) definition: AppliedEffectLocator,
+    pub(super) source: AbilitySourceSnapshot,
     pub(super) timestamp: u64,
-    pub(super) order: u16,
-    pub(super) expiration: AbilityEffectExpirationSnapshot,
+    pub(super) component_order: u16,
+    pub(super) expiration: ContinuousEffectExpirationSnapshot,
+    pub(super) operation: ResolvedContinuousOperationSnapshot,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct TemporaryRemovedAbilitySnapshot {
-    pub(super) effect: AppliedEffectLocator,
+pub(super) struct ResolvedPlayRestrictionSnapshot {
+    pub(super) definition: AppliedEffectLocator,
+    pub(super) source: AbilitySourceSnapshot,
+    pub(super) affected_seat: usize,
     pub(super) timestamp: u64,
-    pub(super) order: u16,
-    pub(super) expiration: AbilityEffectExpirationSnapshot,
+    pub(super) component_order: u16,
+    pub(super) expiration: ContinuousEffectExpirationSnapshot,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) enum SetOperationSnapshot {
+    Add,
+    Remove,
+    Set,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub(super) enum ResolvedContinuousOperationSnapshot {
+    AbilityAdd { grant_id: u8 },
+    AbilityRemove,
+    BasicLandTypes { operation: SetOperationSnapshot },
+    CardTypes { operation: SetOperationSnapshot },
+    Colors { operation: SetOperationSnapshot },
+    CreatureTypes { operation: SetOperationSnapshot },
+    ModifyPowerToughness { power: i16, toughness: i16 },
+    Rule,
+    SetBasePowerToughness { power: i16, toughness: i16 },
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -315,10 +322,11 @@ pub(super) struct CopiedFromSnapshot {
     rename_all = "camelCase",
     rename_all_fields = "camelCase"
 )]
-pub(super) enum AbilityEffectExpirationSnapshot {
+pub(super) enum ContinuousEffectExpirationSnapshot {
     EndOfTurn,
     UpkeepOf { seat: usize },
     TurnOf { seat: usize, turn: u32 },
+    WhileSourceTapped,
     Never,
 }
 
@@ -395,6 +403,13 @@ pub(super) struct EmblemSnapshot {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(tag = "kind", content = "value", rename_all = "camelCase")]
+pub(super) enum ResolvedEffectPaymentSnapshot {
+    Mana(ManaCostSnapshot),
+    Life(u16),
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct ReplacementEffectLocator {
     pub(super) ability: AbilityLocator,
@@ -420,20 +435,14 @@ pub(super) struct PendingEventSnapshot {
 #[serde(rename_all = "camelCase")]
 pub(super) struct PendingReplacementEffectSnapshot {
     pub(super) context: ReplacementEffectContextSnapshot,
-    pub(super) effect: EntryReplacementLocator,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct EntryReplacementLocator {
-    pub(super) ability: AbilityLocator,
+    pub(super) effect: ReplacementEffectLocator,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct ApplicableReplacementSnapshot {
     pub(super) context: ReplacementEffectContextSnapshot,
-    pub(super) effect: EntryReplacementLocator,
+    pub(super) effect: ReplacementEffectLocator,
     pub(super) definition: u16,
 }
 
@@ -522,14 +531,38 @@ pub(super) struct TriggerContextSnapshot {
     pub(super) object_controller: Option<usize>,
     pub(super) event_player: Option<usize>,
     pub(super) amount: Option<i32>,
-    pub(super) chosen_objects: [Option<u32>; crate::ChoiceIndex::COUNT],
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct EffectResolutionContextSnapshot {
+    pub(super) trigger: TriggerContextSnapshot,
+    pub(super) single_objects: [Option<TargetSnapshot>; crate::ObjectBindingIndex::COUNT],
+    pub(super) object_groups: [Vec<TargetSnapshot>; crate::ObjectSetBindingIndex::COUNT],
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct DecisionStateSnapshot {
     pub(super) preference: DecisionPreferenceSnapshot,
+    /// Hidden-zone locations for cards whose identities are visible in the
+    /// current decision. Reconstruction mints fresh hidden objects before it
+    /// parses the continuation, so these origins let it preserve the public
+    /// object ids without guessing that the deciding seat owns the zone.
+    pub(super) card_origins: Vec<DecisionCardOriginSnapshot>,
     pub(super) continuation: DecisionContinuationSnapshot,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct DecisionCardOriginSnapshot {
+    pub(super) object_id: u32,
+    pub(super) seat: usize,
+    pub(super) zone: DecisionZoneSnapshot,
+    /// Exact index within the named hidden collection. This keeps disclosed
+    /// duplicate definitions and visible option order stable under a hidden
+    /// hypothesis whose otherwise-unseen cards may be permuted.
+    pub(super) index: usize,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -605,9 +638,6 @@ pub(super) enum DecisionContinuationSnapshot {
     BasicLandTypeTextChange {
         target: TargetSnapshot,
     },
-    ExileFromHand {
-        victim: usize,
-    },
     DiscardForEffect {
         player: usize,
         amount: usize,
@@ -626,27 +656,7 @@ pub(super) enum DecisionContinuationSnapshot {
     TopCardSelection {
         player: usize,
         revealed: Vec<DetachedCardSnapshot>,
-        selected_zone: ZoneKindSnapshot,
-        selected_placement: ZonePlacementSnapshot,
-        rest_zone: ZoneKindSnapshot,
-        rest_placement: ZonePlacementSnapshot,
-        followup: Option<EffectContinuationSnapshot>,
-    },
-    OptionalManaPayment {
-        player: usize,
-        cost: ManaCostSnapshot,
-        object: DetachedStackSnapshot,
-        ability: AbilityLocator,
-        context: TriggerContextSnapshot,
-        effect: ScopedEffectSnapshot,
-    },
-    ManaPaymentOrElse {
-        player: usize,
-        cost: ManaCostSnapshot,
-        object: DetachedStackSnapshot,
-        ability: AbilityLocator,
-        context: TriggerContextSnapshot,
-        effect: ScopedEffectSnapshot,
+        continuation: EffectContinuationSnapshot,
     },
     ChainLightning {
         player: usize,
@@ -661,27 +671,44 @@ pub(super) enum DecisionContinuationSnapshot {
     OptionalEffect {
         object: DetachedStackSnapshot,
         ability: AbilityLocator,
-        context: TriggerContextSnapshot,
+        context: EffectResolutionContextSnapshot,
         effect: ScopedEffectSnapshot,
     },
-    ChoosePermanentForEffect {
-        choice: u8,
+    ChooseForEffect {
+        continuation: EffectContinuationSnapshot,
+    },
+    PayOr {
+        player: usize,
+        payment: ResolvedEffectPaymentSnapshot,
+        object: DetachedStackSnapshot,
+        ability: AbilityLocator,
+        context: EffectResolutionContextSnapshot,
+        definition: ScopedEffectSnapshot,
+    },
+    SplitForEffect {
+        continuation: EffectContinuationSnapshot,
+    },
+    ChoosePileForEffect {
+        first: Vec<TargetSnapshot>,
+        second: Vec<TargetSnapshot>,
         continuation: EffectContinuationSnapshot,
     },
     BattlefieldEntryPayment {
         context: ReplacementEffectContextSnapshot,
+        player: usize,
+        payment: ResolvedEffectPaymentSnapshot,
         effect: ReplacementEffectLocator,
     },
     BattlefieldEntryReplacement {
         candidates: Vec<ApplicableReplacementSnapshot>,
     },
-    BattlefieldEntryCardName {
-        choices: Vec<String>,
-    },
     BattlefieldEntryOptional {
         context: ReplacementEffectContextSnapshot,
+        effect: ReplacementEffectLocator,
     },
-    BattlefieldEntryCreatureType {
+    BattlefieldEntryScalarChoice {
+        context: ReplacementEffectContextSnapshot,
+        effect: ReplacementEffectLocator,
         choices: Vec<String>,
     },
     BattlefieldEntryCopy {
@@ -701,26 +728,6 @@ pub(super) enum DecisionContinuationSnapshot {
     MiracleReveal {
         card: u32,
     },
-    PileSplit {
-        owner: usize,
-    },
-    RevealedPileSplit {
-        player: usize,
-        revealed: Vec<DetachedCardSnapshot>,
-        rest: ZoneKindSnapshot,
-        placement: ZonePlacementSnapshot,
-    },
-    RevealedPileChoice {
-        player: usize,
-        first: Vec<DetachedCardSnapshot>,
-        second: Vec<DetachedCardSnapshot>,
-        rest: ZoneKindSnapshot,
-        placement: ZonePlacementSnapshot,
-    },
-    PileChoice {
-        first: Vec<u32>,
-        second: Vec<u32>,
-    },
     SeparateIntoPiles {
         resolving_controller: usize,
         subject: usize,
@@ -735,24 +742,11 @@ pub(super) enum DecisionContinuationSnapshot {
         followup: Option<EffectContinuationSnapshot>,
         optional: bool,
     },
-    DestroyOfChoice {
-        can_regenerate: bool,
-    },
-    CounterUnlessPaid {
-        spell: u32,
-        player: usize,
-        cost: ManaCostSnapshot,
-        zone: CounteredSpellZoneSnapshot,
-    },
     RecallDiscard {
         player: usize,
     },
     RecallReturn {
         player: usize,
-    },
-    Duress {
-        victim: usize,
-        cause: ZoneMoveCauseSnapshot,
     },
     Balance {
         controller: usize,
@@ -836,7 +830,7 @@ pub(super) enum BalanceActionSnapshot {
     Discard,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) enum DecisionZoneSnapshot {
     Hand,
@@ -858,19 +852,12 @@ pub(super) enum ZonePlacementSnapshot {
     Bottom,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) enum CounteredSpellZoneSnapshot {
-    Graveyard,
-    Exile,
-}
-
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct EffectContinuationSnapshot {
     pub(super) object: DetachedStackSnapshot,
     pub(super) ability: AbilityLocator,
-    pub(super) context: TriggerContextSnapshot,
+    pub(super) context: EffectResolutionContextSnapshot,
     pub(super) effect: ScopedEffectSnapshot,
 }
 

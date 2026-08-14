@@ -12,7 +12,7 @@ impl Game {
         &mut self,
         scoped: ScopedEffect,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
     ) {
         match scoped.effect {
             EffectDef::DestroyAtEndOfCombat { object: recipient } => {
@@ -64,26 +64,6 @@ impl Game {
                         // told twice to sit out sits out twice.
                         permanent.skipped_untap_steps =
                             permanent.skipped_untap_steps.saturating_add(count);
-                    }
-                }
-            }
-            EffectDef::SetColor {
-                object: recipient,
-                color,
-            } => {
-                let colors = ColorSet::empty().with(color);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    let (Target::Permanent(id) | Target::Spell(id)) = target else {
-                        continue;
-                    };
-                    if let Some(permanent) = self
-                        .battlefield
-                        .iter_mut()
-                        .find(|permanent| permanent.card.id == id)
-                    {
-                        permanent.color_override = Some(colors);
-                    } else if let Some(spell) = self.stack.iter_mut().find(|spell| spell.id == id) {
-                        spell.colors = Some(colors);
                     }
                 }
             }

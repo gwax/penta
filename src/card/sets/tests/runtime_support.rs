@@ -8,7 +8,9 @@ pub(super) use nested_definitions::*;
 pub(super) use stack_effects::shared_stack_effect;
 
 use crate::Game;
-use crate::card::{ActivatedAbilityDef, ReplacementConditionDef, SpellAdditionalCostDef};
+use crate::card::{
+    ActivatedAbilityDef, AppliedRuleDef, ReplacementConditionDef, SpellAdditionalCostDef,
+};
 
 use super::*;
 
@@ -17,7 +19,9 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
             predicates.iter().copied().all(shared_object_predicate)
         }
-        ObjectPredicateDef::Not(predicate) => shared_object_predicate(*predicate),
+        ObjectPredicateDef::Not(predicate) | ObjectPredicateDef::AttachedTo(predicate) => {
+            shared_object_predicate(*predicate)
+        }
         ObjectPredicateDef::Special(_) => false,
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
@@ -53,14 +57,14 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::Enchanted
-        | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttackedThisTurn => true,
     }
 }
 
 pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
-    match recipient {
-        EffectRecipientDef::MatchingObjects { object, zones, .. } => {
+    match recipient.0 {
+        EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
+            let ObjectQueryDef { object, zones, .. } = query;
             !zones.is_empty()
                 && zones.iter().all(|zone| {
                     matches!(
@@ -76,36 +80,31 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
                 })
                 && shared_object_predicate(object)
         }
-        // The sweep is over the battlefield, so only the predicate
-        // needs checking.
-        EffectRecipientDef::ObjectsControlledByTarget { object, .. }
-        | EffectRecipientDef::ObjectsOwnedByTarget { object, .. } => {
-            shared_object_predicate(object)
-        }
-        EffectRecipientDef::CardsOwnedByTarget { object, zones, .. } => {
-            !zones.is_empty()
-                && zones.iter().all(|zone| {
-                    matches!(
-                        zone,
-                        ZoneKind::Library | ZoneKind::Hand | ZoneKind::Graveyard | ZoneKind::Exile
-                    )
-                })
-                && shared_object_predicate(object)
-        }
-        EffectRecipientDef::ObjectsSharingNameWithTarget(_)
-        | EffectRecipientDef::Source
-        | EffectRecipientDef::ChosenPermanent(_)
-        | EffectRecipientDef::AttachedPermanent
-        | EffectRecipientDef::Controller
-        | EffectRecipientDef::Opponent
-        | EffectRecipientDef::EachPlayer
-        | EffectRecipientDef::Target(_)
-        | EffectRecipientDef::ControllerOfTarget(_)
-        | EffectRecipientDef::TriggeringObject
-        | EffectRecipientDef::ControllerOfTriggeringObject
-        | EffectRecipientDef::ControllerOfAttachedPermanent
-        | EffectRecipientDef::EventPlayer => true,
+        EffectRecipientSetDef::LegalTargets(_)
+        | EffectRecipientSetDef::Objects(
+            ObjectSetDef::One(_)
+            | ObjectSetDef::Binding(_)
+            | ObjectSetDef::LegalTargets(_)
+            | ObjectSetDef::SharingNameWith(_),
+        )
+        | EffectRecipientSetDef::Players(_) => true,
     }
+}
+
+fn shared_static_player_set(players: PlayerSetDef) -> bool {
+    matches!(
+        players,
+        PlayerSetDef::All
+            | PlayerSetDef::Related(_)
+            | PlayerSetDef::One(PlayerRefDef::EffectController)
+    )
+}
+
+fn shared_static_query(query: ObjectQueryDef) -> bool {
+    [query.related_player, query.controller, query.owner]
+        .into_iter()
+        .flatten()
+        .all(shared_static_player_set)
 }
 
 pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
@@ -158,29 +157,10 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
                     .copied()
                     .all(shared_cannot_be_countered_effect)
         }
-        AppliedEffectDef::CannotBeCountered | AppliedEffectDef::CannotBeEnchanted => true,
-        AppliedEffectDef::ModifyPowerToughness { .. }
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::PreventDamageFrom(_)
-        | AppliedEffectDef::PreventCombatDamageFrom(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventCombatDamage
-        | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::RemoveAbilities(_)
-        | AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::GrantAbility(_)
-        | AppliedEffectDef::Special(_) => false,
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::CannotBeCountered | AppliedRuleDef::CannotBeEnchanted,
+        ) => true,
+        AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
 }
 
@@ -214,59 +194,54 @@ pub(super) fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool)
 pub(super) fn shared_resolving_apply(
     recipient: EffectRecipientDef,
     effect: AppliedEffectDef,
-    duration: EffectDurationDef,
+    duration: ResolvedEffectDurationDef,
 ) -> bool {
-    // Resolved ability additions and removals share one duration-aware
-    // operation path. Other applied effects still end with the turn.
-    let ability_change = resolving_effect_is_only_ability_changes(effect);
-    // "For as long as this artifact remains tapped" is recorded against its
-    // source rather than a deadline, which only the stat modification does.
-    let stat_change = matches!(effect, AppliedEffectDef::ModifyPowerToughness { .. });
-    let duration_is_supported = duration == EffectDurationDef::UntilEndOfTurn
-        || duration == EffectDurationDef::UntilYourNextUpkeep && ability_change
+    // "For as long as this source remains tapped" is recorded against its
+    // source rather than a deadline. Only the two effect families whose
+    // runtime readers consult that source-tapped expiration belong here.
+    let while_source_tapped = resolving_effect_supports_while_source_tapped(effect);
+    // Long-lived effects must consist entirely of leaves the permanent can
+    // store. Until-end-of-turn retains the nonbattlefield ability-grant case.
+    let long_lived = resolving_effect_supports_long_duration(effect);
+    let duration_is_supported = duration == ResolvedEffectDurationDef::UntilEndOfTurn
+        || duration == ResolvedEffectDurationDef::UntilYourNextUpkeep && long_lived
         || matches!(
             duration,
-            EffectDurationDef::UntilYourNextTurn | EffectDurationDef::Permanent
-        ) && ability_change
-        || duration == EffectDurationDef::WhileSourceTapped && stat_change;
+            ResolvedEffectDurationDef::UntilYourNextTurn | ResolvedEffectDurationDef::Permanent
+        ) && long_lived
+        || duration == ResolvedEffectDurationDef::WhileSourceTapped && while_source_tapped;
     if !duration_is_supported || !shared_effect_recipient(recipient) {
         return false;
     }
     shared_resolving_applied_effect(effect)
 }
 
-fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
+fn resolving_effect_supports_long_duration(effect: AppliedEffectDef) -> bool {
     match effect {
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty()
                 && effects
                     .iter()
                     .copied()
-                    .all(resolving_effect_is_only_ability_changes)
+                    .all(resolving_effect_supports_long_duration)
         }
-        AppliedEffectDef::GrantAbility(_) | AppliedEffectDef::RemoveAbilities(_) => true,
-        AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::PreventDamageFrom(_)
-        | AppliedEffectDef::PreventCombatDamageFrom(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventCombatDamage
-        | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::ModifyPowerToughness { .. }
-        | AppliedEffectDef::Special(_) => false,
+        AppliedEffectDef::Characteristic(_) => true,
+        AppliedEffectDef::Rule(rule) => rule != AppliedRuleDef::CannotBeCountered,
+    }
+}
+
+fn resolving_effect_supports_while_source_tapped(effect: AppliedEffectDef) -> bool {
+    match effect {
+        AppliedEffectDef::Composite(effects) => {
+            !effects.is_empty()
+                && effects
+                    .iter()
+                    .copied()
+                    .all(resolving_effect_supports_while_source_tapped)
+        }
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(_))
+        | AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep) => true,
+        AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
 }
 
@@ -275,16 +250,9 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty() && effects.iter().copied().all(shared_resolving_applied_effect)
         }
-        // These operations are executed directly by the shared apply
-        // path; animation reads the whole creature off the definition.
-        // "Can't block this turn" joins these: several cards print it as a
-        // resolving rider, so the shared apply path has to place it.
-        AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::ModifyPowerToughness { .. }
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::RemoveAbilities(_) => true,
-        AppliedEffectDef::GrantAbility(ability) => match ability.definition {
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        )) => match ability.definition {
             DeclarativeAbilityDef::ActivatedMana(definition)
             | DeclarativeAbilityDef::Activated(definition) => {
                 battlefield_only(definition.source_zones) && shared_definition_ability(ability)
@@ -302,26 +270,10 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
             | DeclarativeAbilityDef::SpecialAction(_)
             | DeclarativeAbilityDef::Legacy => false,
         },
-        // The rest are continuous, not an until-end-of-turn rider a spell
-        // hands out.
-        AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::PreventDamageFrom(_)
-        | AppliedEffectDef::PreventCombatDamageFrom(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventCombatDamage
-        | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::Special(_) => false,
+        // Stack-object rules use `AppliedStackEffect`; every other typed rule
+        // is stored on a permanent with this Apply's timestamp and duration.
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => false,
+        AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => true,
     }
 }
 
@@ -429,6 +381,59 @@ pub(super) fn battlefield_only(zones: &[ZoneKind]) -> bool {
 
 #[allow(clippy::too_many_lines)]
 pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
+    if let DeclarativeAbilityDef::Replacement(definition) = ability.definition {
+        let Some(effect) = ability.declarative_replacement() else {
+            return false;
+        };
+        return match definition.event {
+            ReplacementEventDef::SourceEntersBattlefield => {
+                battlefield_only(definition.source_zones)
+                    && shared_replacement_event(definition.event)
+                    && shared_entry_replacement_effect(effect)
+            }
+            ReplacementEventDef::ObjectEntersBattlefield { .. } => {
+                !definition.optional
+                    && definition.condition.is_none()
+                    && battlefield_only(definition.source_zones)
+                    && shared_replacement_event(definition.event)
+                    && shared_entry_replacement_effect(effect)
+            }
+            ReplacementEventDef::WouldMove { from, to, cause } => {
+                !definition.optional
+                    && definition.condition.is_none()
+                    && definition.source_zones == [from]
+                    && ((from == ZoneKind::Hand
+                        && to == ZoneKind::Graveyard
+                        && shared_zone_move_cause(cause)
+                        && effect == ReplacementEffectDef::MoveToZone(ZoneKind::Battlefield))
+                        || (from == ZoneKind::Battlefield
+                            && to == ZoneKind::Graveyard
+                            && cause == ZoneMoveCauseDef::Any
+                            && shared_battlefield_exit_replacement_effect(effect)))
+            }
+            ReplacementEventDef::AnyObjectWouldMove { .. } => {
+                !definition.optional
+                    && definition.condition.is_none()
+                    && battlefield_only(definition.source_zones)
+                    && shared_replacement_event(definition.event)
+                    && effect == ReplacementEffectDef::MoveToZone(ZoneKind::Exile)
+            }
+            ReplacementEventDef::WouldGainLife(_) => {
+                !definition.optional
+                    && definition.condition.is_none()
+                    && battlefield_only(definition.source_zones)
+                    && matches!(effect, ReplacementEffectDef::MultiplyEventAmount(_))
+            }
+            ReplacementEventDef::WouldBeginTurn { .. } => {
+                definition
+                    .condition
+                    .is_none_or(|condition| condition == ReplacementConditionDef::SourceTapped)
+                    && battlefield_only(definition.source_zones)
+                    && shared_begin_turn_replacement_effect(effect)
+            }
+            ReplacementEventDef::Special(_) => false,
+        };
+    }
     let Some(effect) = ability.declarative_effect() else {
         return false;
     };
@@ -506,9 +511,10 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     // resolving it, which this one is not.
                     EffectDef::AddManaEqualTo { .. }
                     | EffectDef::Randomized { .. }
-                    | EffectDef::ChoosePermanent { .. }
-                    | EffectDef::ChooseDamageSource { .. }
-                    | EffectDef::PreventNextDamageFromSource { .. }
+                    | EffectDef::Choose(_)
+                    | EffectDef::PayOr(_)
+                    | EffectDef::SplitIntoPiles(_)
+                    | EffectDef::PreventDamage { .. }
                     | EffectDef::May { .. }
                     | EffectDef::None
                     | EffectDef::DealDamage { .. }
@@ -517,6 +523,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::AddPoisonCounters { .. }
                     | EffectDef::DrawCards { .. }
                     | EffectDef::Discard { .. }
+                    | EffectDef::DiscardCards { .. }
                     | EffectDef::ShuffleLibrary { .. }
                     | EffectDef::EmptyManaPool { .. }
                     | EffectDef::LoseLife { .. }
@@ -524,33 +531,17 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Regenerate { .. }
                     | EffectDef::Tap { .. }
                     | EffectDef::RemoveFromCombat { .. }
-                    | EffectDef::SetColor { .. }
                     | EffectDef::DestroyAtEndOfCombat { .. }
                     | EffectDef::SkipNextUntapSteps { .. }
-                    | EffectDef::DoesNotUntapWhileSourceTapped { .. }
                     | EffectDef::RemoveAllCounters { .. }
                     | EffectDef::Untap { .. }
-                    | EffectDef::PreventAllCombatDamageThisTurn
-                    | EffectDef::PreventNextDamage { .. }
-                    | EffectDef::PreventAllDamageThisTurn { .. }
-                    | EffectDef::PreventCombatDamageThisTurn { .. }
-                    | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-                    | EffectDef::PreventDamageDealtByThisTurn { .. }
-                    | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-                    | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-                    | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
-                    | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
                     | EffectDef::Attach { .. }
                     | EffectDef::CreateToken { .. }
                     | EffectDef::CreateTokenCopyOf { .. }
                     | EffectDef::Destroy { .. }
                     | EffectDef::Sacrifice { .. }
                     | EffectDef::SacrificeOfChoice { .. }
-                    | EffectDef::DestroyOfChoice { .. }
-                    | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-                    | EffectDef::RevealAndSplitIntoPiles { .. }
                     | EffectDef::Mill { .. }
-                    | EffectDef::LookAtTopAndMayTake { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
                     | EffectDef::SearchZone { .. }
@@ -558,40 +549,26 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ReplaceNextDrawThisTurn { .. }
                     | EffectDef::IfFormat { .. }
                     | EffectDef::Counter { .. }
-                    | EffectDef::CounterUnlessPaid { .. }
                     | EffectDef::AddCounters { .. }
                     | EffectDef::ChangeTextBasicLandType { .. }
                     | EffectDef::BecomeCopyOf { .. }
-                    | EffectDef::OptionalPayment { .. }
-                    | EffectDef::UnlessPaid { .. }
                     | EffectDef::CannotBeForcedToSacrifice
                     | EffectDef::CreateEmblem { .. }
                     | EffectDef::Transform { .. }
-                    | EffectDef::AdditionalCombatPhase
+                    | EffectDef::ScheduleTurnPhases(_)
                     | EffectDef::TakeExtraTurn { .. }
-                    | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
                     | EffectDef::GrantFlashToNextSorcery
                     | EffectDef::ExileLinkedToSource { .. }
                     | EffectDef::ReturnLinkedExiles { .. }
                     | EffectDef::Detain { .. }
-                    | EffectDef::CannotRegenerateThisTurn { .. }
-                    | EffectDef::MakeUnblockableThisTurn { .. }
-                    | EffectDef::GainControlWhileSourceRemains { .. }
-                    | EffectDef::GainControlThisTurn { .. }
-                    | EffectDef::AtNextStep { .. }
+                    | EffectDef::GainControl { .. }
+                    | EffectDef::InstallTrigger(_)
                     | EffectDef::IfCondition { .. }
-                    | EffectDef::TriggerUntilYourNextTurn { .. }
                     | EffectDef::ReduceGenericCostBy(_)
-                    | EffectDef::PlayersCantPlay(_)
                     | EffectDef::LandwalkCanBeBlocked(_)
                     | EffectDef::CannotAttackUnless(_)
-                    | EffectDef::MultiplyEventAmount(_)
-                    | EffectDef::Replacement(_)
                     | EffectDef::MoveToZone { .. }
-                    | EffectDef::ChooseCardName { .. }
-                    | EffectDef::ChoosePlayer { .. }
-                    | EffectDef::CopyPermanentAsItEnters { .. }
-                    | EffectDef::ChooseCreatureType { .. }
+                    | EffectDef::StaticApply { .. }
                     | EffectDef::Apply { .. }
                     | EffectDef::Special(_) => false,
                 }
@@ -599,6 +576,11 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             definition.condition.is_none()
                 && definition.procedure == AbilityProcedureDef::Shared
                 && battlefield_only(definition.source_zones)
+                && matches!(
+                    definition.event,
+                    TriggerEventDef::Tapped(matcher)
+                        if matcher.purpose == crate::card::TapPurposeDef::Mana
+                )
                 && shared_trigger_event(definition.event)
                 && immediate_mana_effect(effect)
         }
@@ -637,95 +619,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                 && ability.coverage.explanation.is_some())
                 || shared_static_effect(definition.source_zones, effect)
         }
-        DeclarativeAbilityDef::Replacement(definition) => match definition.event {
-            // A permanent's own entry replacement may be optional: the entry
-            // path asks its controller. Only its own -- an optional
-            // replacement watching another object is still unsupported.
-            // Only a permanent's own entry replacement reads a condition.
-            // The two below watch another object and have no source to ask.
-            ReplacementEventDef::SourceEntersBattlefield => {
-                battlefield_only(definition.source_zones)
-                    && shared_replacement_event(definition.event)
-                    && matches!(effect, EffectDef::Replacement(effect) if shared_entry_replacement_effect(effect))
-            }
-            ReplacementEventDef::ObjectEntersBattlefield { .. } => {
-                !definition.optional
-                    && definition.condition.is_none()
-                    && battlefield_only(definition.source_zones)
-                    && shared_replacement_event(definition.event)
-                    && matches!(effect, EffectDef::Replacement(effect) if shared_entry_replacement_effect(effect))
-            }
-            ReplacementEventDef::EntersBattlefield => {
-                !definition.optional
-                    && definition.condition.is_none()
-                    && battlefield_only(definition.source_zones)
-                    && matches!(
-                        effect,
-                        EffectDef::ChooseCreatureType {
-                            object: EffectRecipientDef::Source,
-                        } | EffectDef::ChooseCardName {
-                            object: EffectRecipientDef::Source,
-                        } | EffectDef::ChoosePlayer {
-                            object: EffectRecipientDef::Source,
-                            ..
-                        } | EffectDef::CopyPermanentAsItEnters { .. }
-                    )
-            }
-            ReplacementEventDef::WouldMove { from, to, cause } => {
-                !definition.optional
-                    && definition.condition.is_none()
-                    && definition.source_zones == [from]
-                    && ((from == ZoneKind::Hand
-                        && to == ZoneKind::Graveyard
-                        && shared_zone_move_cause(cause)
-                        && effect
-                            == EffectDef::MoveToZone {
-                                object: EffectRecipientDef::Source,
-                                zone: ZoneKind::Battlefield,
-                                controller: None,
-                                placement: ZonePlacement::Top,
-                            })
-                        || (from == ZoneKind::Battlefield
-                            && to == ZoneKind::Graveyard
-                            && cause == ZoneMoveCauseDef::Any
-                            && matches!(
-                                effect,
-                                EffectDef::Replacement(effect)
-                                    if shared_battlefield_exit_replacement_effect(effect)
-                            )))
-            }
-            ReplacementEventDef::AnyObjectWouldMove { .. } => {
-                !definition.optional
-                    && definition.condition.is_none()
-                    && battlefield_only(definition.source_zones)
-                    && shared_replacement_event(definition.event)
-                    && effect
-                        == EffectDef::MoveToZone {
-                            object: EffectRecipientDef::Source,
-                            zone: ZoneKind::Exile,
-                            controller: None,
-                            placement: ZonePlacement::Top,
-                        }
-            }
-            ReplacementEventDef::WouldGainLife(_) => {
-                !definition.optional
-                    && definition.condition.is_none()
-                    && battlefield_only(definition.source_zones)
-                    && matches!(effect, EffectDef::MultiplyEventAmount(_))
-            }
-            ReplacementEventDef::WouldBeginTurn { .. } => {
-                definition
-                    .condition
-                    .is_none_or(|condition| condition == ReplacementConditionDef::SourceTapped)
-                    && battlefield_only(definition.source_zones)
-                    && matches!(
-                        effect,
-                        EffectDef::Replacement(effect)
-                            if shared_begin_turn_replacement_effect(effect)
-                    )
-            }
-            ReplacementEventDef::Special(_) => false,
-        },
+        DeclarativeAbilityDef::Replacement(_) => unreachable!("handled before ordinary effects"),
         DeclarativeAbilityDef::AlternativeCast(definition) => match definition.kind {
             // Both are permission to cast rather than effects of their
             // own; the card's spell clause does the work.

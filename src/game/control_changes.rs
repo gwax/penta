@@ -6,22 +6,27 @@
 //! turn-scoped form, state-based actions for the held one.
 
 use super::{
-    EffectRecipientDef, Game, GameObjectId, ScopedEffect, StackObject, Target, TriggerContext,
+    ControlDurationDef, EffectRecipientDef, EffectResolutionContext, Game, ScopedEffect,
+    StackObject, Target,
 };
 
 impl Game {
-    /// The shared body of both control-change effects. `holder` is the
-    /// permanent whose presence sustains the change and whether it also has
-    /// to stay tapped, or `None` for the turn-scoped form cleanup ends.
+    /// The shared body of both control-change durations.
     pub(super) fn take_control_of(
         &mut self,
         recipient: EffectRecipientDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
-        holder: Option<(GameObjectId, bool)>,
+        duration: ControlDurationDef,
     ) {
         let controller = object.controller;
+        let holder = match duration {
+            ControlDurationDef::UntilEndOfTurn => None,
+            ControlDurationDef::WhileSourceRemains { while_tapped } => {
+                Some((object.source.unwrap_or(object.id), while_tapped))
+            }
+        };
         for target in self.effect_recipients(recipient, object, context, scoped) {
             let Target::Permanent(id) = target else {
                 continue;

@@ -469,6 +469,25 @@ fn city_in_a_bottle_stops_arabian_nights_cards_being_played() {
         .is_err(),
         "and submitting the cast directly is refused too"
     );
+
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_000),
+        &[AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any)],
+        ContinuousEffectExpiration::Never,
+    );
+    let playable = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, .. } | Action::PlayLand { card, .. } => Some(card),
+            _ => None,
+        })
+        .collect::<std::collections::HashSet<_>>();
+    assert!(
+        playable.contains(&GameObjectId(10_001)),
+        "removing the source's static ability removes its live player restriction",
+    );
 }
 
 #[test]

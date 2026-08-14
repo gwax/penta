@@ -30,6 +30,7 @@ pub(super) struct BasicLandTypeChange {
 pub(super) enum LandTypeOperation {
     SetTo(&'static [BasicLandType]),
     Add(&'static [BasicLandType]),
+    Remove(&'static [BasicLandType]),
 }
 
 /// An ability added as an exception while copying an object. Unlike an

@@ -1,4 +1,5 @@
 use super::*;
+use crate::AbilityProgramDef;
 
 /// Casts a modal spell by picking one mode. A selected mode's clause-local
 /// primary target becomes runtime slot zero.
@@ -163,22 +164,27 @@ fn selesnya_charm_pumps_and_grants_trample() {
         panic!("Selesnya Charm should have a spell ability")
     };
     let mode = spell.mode(ModeId(0)).unwrap();
-    let EffectDef::Apply {
-        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    let AbilityProgramDef::Effects(EffectDef::Apply {
+        recipient,
         effect: AppliedEffectDef::Composite(components),
-        duration: EffectDurationDef::UntilEndOfTurn,
-    } = mode.effect.definition
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    }) = mode.effect.definition
     else {
         panic!("Selesnya Charm should apply one composite effect until end of turn")
     };
+    assert_eq!(recipient.legal_target(), Some(TargetIndex::PRIMARY));
     assert!(matches!(
         components,
         [
-            AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(2),
-                toughness: ValueDef::Constant(2),
-            },
-            AppliedEffectDef::GrantAbility(ability),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::Modify {
+                    power: ValueDef::Constant(2),
+                    toughness: ValueDef::Constant(2),
+                },
+            )),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Add(ability),
+            )),
         ] if ability.definition == DeclarativeAbilityDef::Keyword(KeywordAbility::Trample)
     ));
 
@@ -272,9 +278,17 @@ fn selesnya_charm_reads_current_power_not_printed_power() {
     // A 4/4 pumped to 6/6 by the charm's own first mode qualifies for the
     // second, which is why the predicate reads live power.
     let mut game = ready_game();
-    let mut angel = creature(10_000, cards::SERRA_ANGEL, PlayerId::Two);
-    angel.power_bonus = 2;
+    let angel = creature(10_000, cards::SERRA_ANGEL, PlayerId::Two);
     game.battlefield.push(angel);
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_000),
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(2),
+            ValueDef::Constant(0),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
     let charm = card(10_001, cards::SELESNYA_CHARM, PlayerId::One);
     game.players[0].hand.push(charm.clone());
     game.players[0].mana_pool.green = 1;

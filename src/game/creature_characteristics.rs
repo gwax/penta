@@ -1,47 +1,81 @@
+use std::cell::Cell;
+
 use super::{
-    AppliedEffectDef, BasicLandType, CardBehavior, CardRules, CardSupertype, CardType, ControlFlow,
-    CounterKind, DeclarativeAbilityDef, EffectDef, Game, GameObjectId, KeywordAbility,
-    ObjectPredicateDef, ObjectQueryDef, Permanent, PlayerId, RetiredObject, TriggerContext,
-    ValueDef,
+    AppliedEffectDef, BasicLandType, CardBehavior, CardRules, CardSupertype, CardType,
+    CharacteristicOperationDef, ControlFlow, CounterKind, DeclarativeAbilityDef, EffectDef, Game,
+    GameObjectId, KeywordAbility, ObjectPredicateDef, ObjectQueryDef, Permanent, PlayerId,
+    PowerToughnessOperationDef, ResolvedContinuousEffectKind, ResolvedPowerToughnessOperation,
+    RetiredObject, TriggerContext, ValueDef,
 };
+
+thread_local! {
+    /// Guards the live layer-7 walk when a static recipient predicate asks for
+    /// power or toughness while that same walk is being assembled.
+    static STATIC_POWER_TOUGHNESS_LAYER_PASS: Cell<bool> = const { Cell::new(false) };
+}
+
+struct StaticPowerToughnessLayerGuard;
+
+impl StaticPowerToughnessLayerGuard {
+    fn enter() -> Option<Self> {
+        STATIC_POWER_TOUGHNESS_LAYER_PASS
+            .with(|pass| if pass.replace(true) { None } else { Some(Self) })
+    }
+}
+
+impl Drop for StaticPowerToughnessLayerGuard {
+    fn drop(&mut self) {
+        STATIC_POWER_TOUGHNESS_LAYER_PASS.with(|pass| pass.set(false));
+    }
+}
 
 impl Game {
     pub(super) fn base_stats(&self, permanent: &Permanent) -> Option<crate::CreatureStats> {
-        // Once Factory's animation ability resolves, removing its printed
-        // abilities does not end the continuous animation effect. In
-        // particular, Blood Moon changes its land subtype and abilities but
-        // leaves the active artifact-creature types and 2/2 base stats intact.
-        if let Some(animation) = self.effective_animation(permanent) {
-            Some(crate::CreatureStats {
-                power: animation.power,
-                toughness: animation.toughness,
+        if !self
+            .permanent_types(permanent)?
+            .contains(CardType::Creature)
+        {
+            return None;
+        }
+        let mut setters = permanent
+            .resolved_continuous_effects
+            .iter()
+            .filter(|effect| self.resolved_continuous_effect_is_active(effect))
+            .filter_map(|effect| match effect.kind {
+                ResolvedContinuousEffectKind::PowerToughness(
+                    ResolvedPowerToughnessOperation::SetBase { power, toughness },
+                ) => Some((effect.timestamp, effect.component_order, power, toughness)),
+                _ => None,
             })
+            .collect::<Vec<_>>();
+        if let Some(_pass) = StaticPowerToughnessLayerGuard::enter() {
+            let result = self.visit_static_applied_effects(permanent, |applied| {
+                if let AppliedEffectDef::Characteristic(
+                    CharacteristicOperationDef::PowerToughness(
+                        PowerToughnessOperationDef::SetBase { power, toughness },
+                    ),
+                ) = applied.effect
+                {
+                    setters.push((
+                        applied.timestamp,
+                        applied.component_order,
+                        self.static_power_toughness_value(permanent, applied.source, power),
+                        self.static_power_toughness_value(permanent, applied.source, toughness),
+                    ));
+                }
+                ControlFlow::Continue(())
+            });
+            debug_assert!(result.is_continue());
+        }
+        if let Some((_, _, power, toughness)) = setters
+            .into_iter()
+            .max_by_key(|(timestamp, order, _, _)| (*timestamp, *order))
+        {
+            Some(crate::CreatureStats { power, toughness })
         } else {
             self.effective_rules(permanent)
                 .and_then(CardRules::creature_stats)
         }
-    }
-
-    /// What the "for as long as this artifact remains tapped" bonuses on this
-    /// permanent currently add. A bonus whose source has untapped or left the
-    /// battlefield contributes nothing; cleanup drops it.
-    fn while_source_tapped_bonus(&self, permanent: &Permanent) -> (i16, i16) {
-        permanent
-            .while_source_tapped
-            .iter()
-            .filter(|bonus| self.permanent_is_tapped(bonus.source))
-            .fold((0, 0), |total, bonus| {
-                (
-                    total.0.saturating_add(bonus.power),
-                    total.1.saturating_add(bonus.toughness),
-                )
-            })
-    }
-
-    pub(super) fn permanent_is_tapped(&self, id: GameObjectId) -> bool {
-        self.battlefield
-            .iter()
-            .any(|permanent| permanent.card.id == id && permanent.tapped)
     }
 
     pub(super) fn controls_land_type(&self, player: PlayerId, land_type: BasicLandType) -> bool {
@@ -78,11 +112,13 @@ impl Game {
         controller: PlayerId,
     ) -> bool {
         self.battlefield.iter().any(|permanent| {
-            self.player_relation_matches(
-                permanent.controller,
-                query.controller,
+            self.query_player_constraints_match(
+                Some(permanent.controller),
+                permanent.card.owner,
+                *query,
                 controller,
                 TriggerContext::empty(),
+                None,
             ) && self.trigger_object_matches(
                 query.object,
                 &self.trigger_event_object(permanent),
@@ -123,28 +159,64 @@ impl Game {
     }
 
     pub(super) fn static_power_toughness_bonus(&self, permanent: &Permanent) -> (i16, i16) {
+        let Some(_pass) = StaticPowerToughnessLayerGuard::enter() else {
+            return (0, 0);
+        };
         let mut total = (0_i16, 0_i16);
         let result = self.visit_static_applied_effects(permanent, |applied| {
-            if let AppliedEffectDef::ModifyPowerToughness { power, toughness } = applied.effect {
-                // A static bonus is measured from its own source's controller,
-                // not from whoever it is being applied to.
-                let controller = self
-                    .controller_of_object(applied.source)
-                    .unwrap_or(permanent.controller);
-                let bonus = |value: ValueDef| -> i16 {
-                    let amount = self.static_stat_value(value, applied.source, controller);
-                    i16::try_from(amount.clamp(i32::from(i16::MIN), i32::from(i16::MAX)))
-                        .expect("the static bonus was clamped to i16")
-                };
+            if let AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::Modify { power, toughness },
+            )) = applied.effect
+            {
                 total = (
-                    total.0.saturating_add(bonus(power)),
-                    total.1.saturating_add(bonus(toughness)),
+                    total.0.saturating_add(self.static_power_toughness_value(
+                        permanent,
+                        applied.source,
+                        power,
+                    )),
+                    total.1.saturating_add(self.static_power_toughness_value(
+                        permanent,
+                        applied.source,
+                        toughness,
+                    )),
                 );
             }
             ControlFlow::Continue(())
         });
         debug_assert!(result.is_continue());
         total
+    }
+
+    fn static_power_toughness_value(
+        &self,
+        permanent: &Permanent,
+        source: GameObjectId,
+        value: ValueDef,
+    ) -> i16 {
+        // A static amount is measured from its own source's controller, not
+        // from whoever it is being applied to.
+        let controller = self
+            .controller_of_object(source)
+            .unwrap_or(permanent.controller);
+        let amount = self.static_stat_value(value, source, controller);
+        i16::try_from(amount.clamp(i32::from(i16::MIN), i32::from(i16::MAX)))
+            .expect("the static amount was clamped to i16")
+    }
+
+    fn resolved_power_toughness_bonus(&self, permanent: &Permanent) -> (i16, i16) {
+        permanent
+            .resolved_continuous_effects
+            .iter()
+            .filter(|effect| self.resolved_continuous_effect_is_active(effect))
+            .fold((0_i16, 0_i16), |total, effect| match effect.kind {
+                ResolvedContinuousEffectKind::PowerToughness(
+                    ResolvedPowerToughnessOperation::Modify { power, toughness },
+                ) => (
+                    total.0.saturating_add(power),
+                    total.1.saturating_add(toughness),
+                ),
+                _ => total,
+            })
     }
 
     /// Power without continuous static bonuses.
@@ -214,19 +286,17 @@ impl Game {
             0
         };
         let counter_bonus = Self::counter_stat_bonus(permanent);
-        let while_tapped = self.while_source_tapped_bonus(permanent);
+        let resolved_bonus = self.resolved_power_toughness_bonus(permanent);
         crate::CreatureStats {
             power: base.power
                 + ascended
-                + while_tapped.0
-                + permanent.power_bonus
+                + resolved_bonus.0
                 + static_bonus.0
                 + conditional_bonus.0
                 + counter_bonus.0,
             toughness: base.toughness
                 + ascended
-                + while_tapped.1
-                + permanent.toughness_bonus
+                + resolved_bonus.1
                 + static_bonus.1
                 + conditional_bonus.1
                 + counter_bonus.1,
@@ -302,13 +372,18 @@ impl Game {
     /// can be blocked anyway. The keyword itself is untouched, so anything
     /// else that reads it still sees it; only blocking ignores it.
     fn landwalk_can_be_blocked(&self, land_type: BasicLandType) -> bool {
-        self.battlefield
-            .iter()
-            .filter_map(|permanent| self.effective_rules(permanent))
-            .flat_map(CardRules::ability_clauses)
-            .filter(|ability| ability.is_executable())
-            .filter_map(|ability| ability.declarative_effect())
-            .any(|effect| effect == EffectDef::LandwalkCanBeBlocked(land_type))
+        self.battlefield.iter().any(|permanent| {
+            self.find_effective_ability(permanent, |effective| {
+                effective.ability.is_executable()
+                    && matches!(
+                        effective.ability.definition,
+                        DeclarativeAbilityDef::Static(_)
+                    )
+                    && effective.ability.declarative_effect()
+                        == Some(EffectDef::LandwalkCanBeBlocked(land_type))
+            })
+            .is_some()
+        })
     }
 
     pub(super) fn permanent_has_executable_keyword(

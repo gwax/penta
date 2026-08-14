@@ -10,10 +10,13 @@ use self::validation::validate_composition;
 use super::{CardDefinition, CardPrinting, CardPrintingId, CardSet};
 use crate::{CardDefinitionId, Format};
 
-pub use self::error::{CatalogError, GrantedAbilityValidationError};
+pub use self::error::{CatalogError, EffectSubjectKind, GrantedAbilityValidationError};
 
 #[cfg(test)]
-use self::validation::{validate_ability_targets, validate_semantic_spell_presentation};
+use self::validation::{
+    validate_ability_targets, validate_replacement_ability_targets,
+    validate_semantic_spell_presentation,
+};
 
 /// A catalog is immutable once built, and callers pass it around by value —
 /// a game, a policy, and the protocol facade each hold one. Sharing the maps

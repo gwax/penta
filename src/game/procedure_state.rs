@@ -1,6 +1,6 @@
 use crate::ids::PlayerId;
 
-use super::{CardBehavior, ScopedEffect, StackObject, TriggerContext};
+use super::{CardBehavior, EffectResolutionContext, ScopedEffect, StackObject};
 
 /// A duration-limited replacement for one player's next draw.
 ///
@@ -10,13 +10,14 @@ use super::{CardBehavior, ScopedEffect, StackObject, TriggerContext};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct DrawReplacement {
     pub(super) object: Box<StackObject>,
-    pub(super) context: TriggerContext,
+    pub(super) context: EffectResolutionContext,
     pub(super) effect: ScopedEffect,
 }
 
 /// Rules procedures that paused behind a decision and must finish before
 /// state-based actions, trigger placement, or priority.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[allow(clippy::large_enum_variant)]
 pub(super) enum PendingProcedure {
     DrawCards {
         player: PlayerId,
@@ -25,7 +26,7 @@ pub(super) enum PendingProcedure {
     ResolveEffects {
         effects: Vec<ScopedEffect>,
         object: Box<StackObject>,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         custom_followup: Option<CardBehavior>,
     },
     SylvanAfterDraw {

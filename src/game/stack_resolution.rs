@@ -3,7 +3,6 @@ use super::{
     DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
     EntryCompletion, Game, GameEvent, GameObjectId, PendingBattlefieldEntry, Permanent, PlayerId,
     ResolvedAbility, StackAbilityResolver, StackObject, StackObjectKind, Target, ZoneKind,
-    public_cards,
 };
 
 impl Game {
@@ -202,62 +201,6 @@ impl Game {
         false
     }
 
-    /// Sin Collector and Lifebane Zombie reveal the targeted player's hand,
-    /// then choose and exile one card matching the source's printed filter.
-    pub(super) fn queue_reveal_and_exile(
-        &mut self,
-        controller: PlayerId,
-        victim: PlayerId,
-        behavior: CardBehavior,
-    ) {
-        self.last_seen_hands[controller.index()] =
-            Some((victim, public_cards(&self.players[victim.index()].hand)));
-        let eligible = self.players[victim.index()]
-            .hand
-            .iter()
-            .filter(|card| {
-                self.catalog
-                    .get(card.definition)
-                    .is_some_and(|definition| match behavior {
-                        CardBehavior::LifebaneZombie => {
-                            let colors = definition.rules.colors();
-                            definition.rules.has_type(CardType::Creature)
-                                && (colors[0] || colors[4])
-                        }
-                        CardBehavior::SinCollector => {
-                            definition.rules.has_type(CardType::Instant)
-                                || definition.rules.has_type(CardType::Sorcery)
-                        }
-                        _ => false,
-                    })
-            })
-            .cloned()
-            .collect::<Vec<_>>();
-        if eligible.is_empty() {
-            // The hand is revealed and holds nothing this card can take. A
-            // prompt with no options is answerable, but there is nothing to
-            // ask.
-            return;
-        }
-        let options = self.card_decision_options(&eligible, DecisionZone::Hand);
-        let prompt = if behavior == CardBehavior::LifebaneZombie {
-            "Exile a green or white creature card from their hand"
-        } else {
-            "Exile an instant or sorcery card from their hand"
-        };
-        // The hand is revealed, so the choice is public rather than hidden.
-        self.queue_decision(
-            controller,
-            prompt,
-            DecisionVisibility::Public,
-            DecisionPreference::HigherCardValue,
-            1..=1,
-            false,
-            options,
-            DecisionContinuation::ExileFromHand { victim },
-        );
-    }
-
     pub(super) fn resolve_stack_ability(&mut self, object: &StackObject) -> bool {
         if self.stack_ability_fizzles(object) {
             return false;
@@ -271,7 +214,7 @@ impl Game {
                 condition,
                 object.source.unwrap_or(object.id),
                 object.controller,
-                ability.context,
+                ability.context.trigger,
                 Some(ability.origin),
                 None,
             )
@@ -284,7 +227,7 @@ impl Game {
             .map(|ability| {
                 (
                     ability.resolver,
-                    ability.context,
+                    ability.context.clone(),
                     ability.mode_effects.as_slice(),
                 )
             })
@@ -461,15 +404,6 @@ impl Game {
     ) {
         if behavior == CardBehavior::SylvanLibrary {
             self.queue_sylvan_offer(object.controller);
-            return;
-        }
-        if matches!(
-            behavior,
-            CardBehavior::SinCollector | CardBehavior::LifebaneZombie
-        ) {
-            if let Some(Target::Player(victim)) = self.first_legal_ability_target(object) {
-                self.queue_reveal_and_exile(object.controller, victim, behavior);
-            }
             return;
         }
         if matches!(

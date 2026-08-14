@@ -2,14 +2,15 @@ use super::model::{
     AbilityLocator, AppliedEffectLocator, ManaPayloadLocator, ReplacementEffectLocator,
     ScopedEffectSnapshot,
 };
-use super::model_animation::AnimationSnapshot;
 use super::model_keyword::KeywordSnapshot;
-use super::{Mana, ScopedEffect};
+use super::model_prevention::DamagePreventionLocator;
+use super::{AbilityOrigin, AbilitySourceRef, Mana, ScopedEffect};
 use crate::CardCatalog;
 use crate::card::{
-    AbilityDef, AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType,
-    DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor, ManaSpendEffectDef,
-    ReplacementEffectDef, SpellAbilityDef,
+    AbilityDef, AbilityOperationDef, AbilityProgramDef, AbilityTargetDef, AddManaEffectDef,
+    AppliedEffectDef, BasicLandType, CharacteristicOperationDef, DamagePreventionDef,
+    DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor,
+    ManaSpendEffectDef, ObjectPredicateDef, ReplacementEffectDef, SpellAbilityDef,
 };
 
 pub(super) fn ability_locator(
@@ -96,6 +97,80 @@ pub(super) fn applied_effect_locator(
     })
 }
 
+/// Locates a resolved leaf beneath the ability provenance that created it.
+///
+/// The runtime source identifies the exact top-level printed clause. Nested
+/// abilities still use the first structurally equal path because the runtime
+/// does not retain a nested catalog path, but the search never falls back to a
+/// different top-level ability: that would make source-relative predicates
+/// reconstruct with different semantics.
+pub(super) fn resolved_applied_effect_locator(
+    catalog: &CardCatalog,
+    source: AbilitySourceRef,
+    expected: AppliedEffectDef,
+) -> Option<AppliedEffectLocator> {
+    let (definition, part_id, ability_id) = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return None,
+    };
+    let root = AbilityLocator {
+        definition,
+        part_id,
+        ability_id,
+        nested: Vec::new(),
+    };
+    let root_definition = catalog_ability(catalog, &root)?;
+    let mut nested = Vec::new();
+    let mut contains = |candidate: &AbilityDef| applied_effects(candidate).contains(&expected);
+    if !locate_ability(&root_definition, &mut contains, &mut nested) {
+        return None;
+    }
+    let ability = AbilityLocator { nested, ..root };
+    let definition = catalog_ability(catalog, &ability)?;
+    let effect_index = applied_effects(&definition)
+        .iter()
+        .position(|effect| *effect == expected)?;
+    Some(AppliedEffectLocator {
+        ability,
+        effect_index,
+    })
+}
+
+pub(super) fn applied_effect_locator_matches_source(
+    locator: &AppliedEffectLocator,
+    source: AbilitySourceRef,
+) -> bool {
+    let expected = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return false,
+    };
+    (
+        locator.ability.definition,
+        locator.ability.part_id,
+        locator.ability.ability_id,
+    ) == expected
+}
+
 pub(super) fn catalog_applied_effect(
     catalog: &CardCatalog,
     locator: &AppliedEffectLocator,
@@ -104,9 +179,99 @@ pub(super) fn catalog_applied_effect(
     applied_effects(&ability).get(locator.effect_index).copied()
 }
 
+pub(super) fn resolved_damage_prevention_locator(
+    catalog: &CardCatalog,
+    source: AbilitySourceRef,
+    predicate: ObjectPredicateDef,
+) -> Option<DamagePreventionLocator> {
+    let expected = DamageSourceMatcherDef::Matching(predicate);
+    let (definition, part_id, ability_id) = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return None,
+    };
+    let root = AbilityLocator {
+        definition,
+        part_id,
+        ability_id,
+        nested: Vec::new(),
+    };
+    let root_definition = catalog_ability(catalog, &root)?;
+    let mut nested = Vec::new();
+    let mut contains = |candidate: &AbilityDef| {
+        damage_prevention_defs(candidate)
+            .iter()
+            .any(|prevention| prevention.matcher.source == expected)
+    };
+    if !locate_ability(&root_definition, &mut contains, &mut nested) {
+        return None;
+    }
+    let ability = AbilityLocator { nested, ..root };
+    let definition = catalog_ability(catalog, &ability)?;
+    let effect_index = damage_prevention_defs(&definition)
+        .iter()
+        .position(|prevention| prevention.matcher.source == expected)?;
+    Some(DamagePreventionLocator {
+        ability,
+        effect_index,
+    })
+}
+
+pub(super) fn catalog_damage_prevention(
+    catalog: &CardCatalog,
+    locator: &DamagePreventionLocator,
+) -> Option<DamagePreventionDef> {
+    let ability = catalog_ability(catalog, &locator.ability)?;
+    damage_prevention_defs(&ability)
+        .get(locator.effect_index)
+        .copied()
+}
+
+fn damage_prevention_defs(ability: &AbilityDef) -> Vec<DamagePreventionDef> {
+    let mut found = Vec::new();
+    match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => {
+            collect_damage_prevention_defs(effect, &mut found);
+        }
+        AbilityProgramDef::Replacement(effect) => {
+            for child in replacement_child_effects(effect) {
+                collect_damage_prevention_defs(child, &mut found);
+            }
+        }
+    }
+    found
+}
+
+fn collect_damage_prevention_defs(effect: EffectDef, found: &mut Vec<DamagePreventionDef>) {
+    if let EffectDef::PreventDamage { prevention, .. } = effect {
+        found.push(prevention);
+    }
+    for child in child_effects(effect) {
+        collect_damage_prevention_defs(child, found);
+    }
+}
+
 pub(super) fn applied_effects(ability: &AbilityDef) -> Vec<AppliedEffectDef> {
     let mut found = Vec::new();
-    collect_applied_effects_from_effect(ability.effect.definition, &mut found);
+    match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => {
+            collect_applied_effects_from_effect(effect, &mut found);
+        }
+        AbilityProgramDef::Replacement(effect) => {
+            for child in replacement_child_effects(effect) {
+                collect_applied_effects_from_effect(child, &mut found);
+            }
+        }
+    }
     for mana in mana_effects(ability) {
         for spend in mana.spend_effects {
             if let ManaSpendEffectDef::ApplyToPaidSpell(effect) = *spend {
@@ -140,12 +305,27 @@ pub(super) fn scoped_effect_snapshot(
     effect: ScopedEffect,
 ) -> Option<ScopedEffectSnapshot> {
     let mut path = Vec::new();
-    locate_effect(ability.effect.definition, effect.effect, &mut path).then_some(
-        ScopedEffectSnapshot {
-            path,
-            target_base: effect.target_base,
-        },
-    )
+    let found = match ability.effect.definition {
+        AbilityProgramDef::Effects(definition) => {
+            locate_effect(definition, effect.effect, &mut path)
+        }
+        AbilityProgramDef::Replacement(replacement) => replacement_child_effects(replacement)
+            .into_iter()
+            .enumerate()
+            .any(|(index, root)| {
+                path.push(index);
+                if locate_effect(root, effect.effect, &mut path) {
+                    true
+                } else {
+                    path.pop();
+                    false
+                }
+            }),
+    };
+    found.then_some(ScopedEffectSnapshot {
+        path,
+        target_base: effect.target_base,
+    })
 }
 
 pub(super) fn catalog_scoped_effect(
@@ -154,8 +334,14 @@ pub(super) fn catalog_scoped_effect(
     snapshot: &ScopedEffectSnapshot,
 ) -> Option<ScopedEffect> {
     let ability = catalog_ability(catalog, ability)?;
-    let mut effect = ability.effect.definition;
-    for &index in &snapshot.path {
+    let (mut effect, path) = match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => (effect, snapshot.path.as_slice()),
+        AbilityProgramDef::Replacement(replacement) => {
+            let (&root, path) = snapshot.path.split_first()?;
+            (*replacement_child_effects(replacement).get(root)?, path)
+        }
+    };
+    for &index in path {
         effect = *child_effects(effect).get(index)?;
     }
     Some(ScopedEffect {
@@ -164,6 +350,7 @@ pub(super) fn catalog_scoped_effect(
     })
 }
 
+#[cfg(test)]
 pub(super) fn replacement_effect_locator(
     catalog: &CardCatalog,
     expected: ReplacementEffectDef,
@@ -183,6 +370,79 @@ pub(super) fn replacement_effect_locator(
     })
 }
 
+/// Locates a replacement operation beneath the exact printed ability that
+/// supplied the suspended prospective-event procedure.
+pub(super) fn resolved_replacement_effect_locator(
+    catalog: &CardCatalog,
+    source: AbilitySourceRef,
+    expected: ReplacementEffectDef,
+) -> Option<ReplacementEffectLocator> {
+    let (definition, part_id, ability_id) = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return None,
+    };
+    let root = AbilityLocator {
+        definition,
+        part_id,
+        ability_id,
+        nested: Vec::new(),
+    };
+    let root_definition = catalog_ability(catalog, &root)?;
+    let mut nested = Vec::new();
+    let mut contains = |candidate: &AbilityDef| {
+        replacement_effects(candidate)
+            .into_iter()
+            .any(|effect| effect == expected)
+    };
+    if !locate_ability(&root_definition, &mut contains, &mut nested) {
+        return None;
+    }
+    let ability = AbilityLocator { nested, ..root };
+    let definition = catalog_ability(catalog, &ability)?;
+    let effect_index = replacement_effects(&definition)
+        .into_iter()
+        .position(|effect| effect == expected)?;
+    Some(ReplacementEffectLocator {
+        ability,
+        effect_index,
+    })
+}
+
+pub(super) fn replacement_effect_locator_matches_source(
+    locator: &ReplacementEffectLocator,
+    source: AbilitySourceRef,
+) -> bool {
+    let expected = match source.ability {
+        AbilityOrigin::Printed {
+            definition,
+            part,
+            ability,
+        } => (definition.0, part.0, ability.0),
+        AbilityOrigin::Granted {
+            source_definition,
+            source_part,
+            source_ability,
+            ..
+        } => (source_definition.0, source_part.0, source_ability.0),
+        AbilityOrigin::IntrinsicBasicLand(_) => return false,
+    };
+    (
+        locator.ability.definition,
+        locator.ability.part_id,
+        locator.ability.ability_id,
+    ) == expected
+}
+
 pub(super) fn catalog_replacement_effect(
     catalog: &CardCatalog,
     locator: &ReplacementEffectLocator,
@@ -195,20 +455,10 @@ pub(super) fn catalog_replacement_effect(
 
 pub(super) fn replacement_effects(ability: &AbilityDef) -> Vec<ReplacementEffectDef> {
     let mut effects = Vec::new();
-    collect_replacement_effects_from_effect(ability.effect.definition, &mut effects);
+    if let AbilityProgramDef::Replacement(effect) = ability.effect.definition {
+        collect_replacement_effects(effect, &mut effects);
+    }
     effects
-}
-
-fn collect_replacement_effects_from_effect(
-    effect: EffectDef,
-    found: &mut Vec<ReplacementEffectDef>,
-) {
-    if let EffectDef::Replacement(replacement) = effect {
-        collect_replacement_effects(replacement, found);
-    }
-    for child in child_effects(effect) {
-        collect_replacement_effects_from_effect(child, found);
-    }
 }
 
 fn collect_replacement_effects(
@@ -229,7 +479,7 @@ fn collect_replacement_effects(
                 collect_replacement_effects(*effect, found);
             }
         }
-        ReplacementEffectDef::OptionalPayment {
+        ReplacementEffectDef::PayOr {
             if_paid,
             if_declined,
             ..
@@ -238,11 +488,13 @@ fn collect_replacement_effects(
                 collect_replacement_effects(*effect, found);
             }
         }
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
+        ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::Perform(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => {}
+        | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::Choose(_)
+        | ReplacementEffectDef::CopyEntering { .. } => {}
     }
 }
 
@@ -268,24 +520,22 @@ pub(super) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
             on_failure,
             ..
         } => vec![*on_success, *on_failure],
-        EffectDef::OptionalPayment { if_paid, .. } => vec![*if_paid],
-        EffectDef::UnlessPaid { otherwise, .. }
-        | EffectDef::May {
+        EffectDef::Choose(choice) => vec![*choice.then],
+        EffectDef::PayOr(payment) => payment
+            .if_paid
+            .iter()
+            .chain(payment.otherwise.iter())
+            .copied()
+            .copied()
+            .collect(),
+        EffectDef::SplitIntoPiles(partition) => vec![*partition.then],
+        EffectDef::May {
             effect: otherwise, ..
         }
         | EffectDef::ReplaceNextDrawThisTurn {
             effect: otherwise, ..
         }
         | EffectDef::IfCondition {
-            then: otherwise, ..
-        }
-        | EffectDef::AtNextStep {
-            effect: otherwise, ..
-        }
-        | EffectDef::ChoosePermanent {
-            then: otherwise, ..
-        }
-        | EffectDef::ChooseDamageSource {
             then: otherwise, ..
         } => vec![*otherwise],
         EffectDef::IfFormat {
@@ -297,12 +547,11 @@ pub(super) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         EffectDef::LookAtTopAndSelect { selection, .. } => {
             selection.then.into_iter().copied().collect()
         }
-        EffectDef::Replacement(effect) => replacement_child_effects(effect),
         _ => Vec::new(),
     }
 }
 
-fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<EffectDef> {
+pub(super) fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<EffectDef> {
     match effect {
         ReplacementEffectDef::Sequence(effects) => effects
             .iter()
@@ -316,7 +565,7 @@ fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<EffectDef> {
             .chain(if_false.iter())
             .flat_map(|effect| replacement_child_effects(*effect))
             .collect(),
-        ReplacementEffectDef::OptionalPayment {
+        ReplacementEffectDef::PayOr {
             if_paid,
             if_declined,
             ..
@@ -325,10 +574,12 @@ fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<EffectDef> {
             .chain(if_declined.iter())
             .flat_map(|effect| replacement_child_effects(*effect))
             .collect(),
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
+        ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => Vec::new(),
+        | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::Choose(_)
+        | ReplacementEffectDef::CopyEntering { .. } => Vec::new(),
     }
 }
 
@@ -343,53 +594,23 @@ fn mana_effect_matches(effect: AddManaEffectDef, mana: Mana) -> bool {
 
 pub(super) fn mana_effects(ability: &AbilityDef) -> Vec<AddManaEffectDef> {
     let mut effects = Vec::new();
-    collect_mana_effects(ability.effect.definition, &mut effects);
+    match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => collect_mana_effects(effect, &mut effects),
+        AbilityProgramDef::Replacement(effect) => {
+            for child in replacement_child_effects(effect) {
+                collect_mana_effects(child, &mut effects);
+            }
+        }
+    }
     effects
 }
 
 fn collect_mana_effects(effect: EffectDef, found: &mut Vec<AddManaEffectDef>) {
-    match effect {
-        EffectDef::AddMana(mana) => found.push(mana),
-        EffectDef::Sequence(effects) => {
-            for effect in effects {
-                collect_mana_effects(*effect, found);
-            }
-        }
-        EffectDef::Randomized {
-            on_success,
-            on_failure,
-            ..
-        } => {
-            collect_mana_effects(*on_success, found);
-            collect_mana_effects(*on_failure, found);
-        }
-        EffectDef::OptionalPayment {
-            if_paid: effect, ..
-        }
-        | EffectDef::UnlessPaid {
-            otherwise: effect, ..
-        }
-        | EffectDef::May { effect, .. }
-        | EffectDef::ReplaceNextDrawThisTurn { effect, .. }
-        | EffectDef::IfCondition { then: effect, .. }
-        | EffectDef::AtNextStep { effect, .. }
-        | EffectDef::ChoosePermanent { then: effect, .. }
-        | EffectDef::ChooseDamageSource { then: effect, .. }
-        | EffectDef::SacrificeOfChoice {
-            then: Some(effect), ..
-        } => collect_mana_effects(*effect, found),
-        EffectDef::IfFormat {
-            then, otherwise, ..
-        } => {
-            collect_mana_effects(*then, found);
-            collect_mana_effects(*otherwise, found);
-        }
-        EffectDef::LookAtTopAndSelect { selection, .. } => {
-            if let Some(effect) = selection.then {
-                collect_mana_effects(*effect, found);
-            }
-        }
-        _ => {}
+    if let EffectDef::AddMana(mana) = effect {
+        found.push(mana);
+    }
+    for child in child_effects(effect) {
+        collect_mana_effects(child, found);
     }
 }
 
@@ -416,170 +637,43 @@ pub(super) fn child_abilities(ability: &AbilityDef) -> Vec<&AbilityDef> {
     if let DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) = ability.definition {
         children.extend(modal.modes);
     }
-    collect_effect_abilities(ability.effect.definition, &mut children);
+    match ability.effect.definition {
+        AbilityProgramDef::Effects(effect) => collect_effect_abilities(effect, &mut children),
+        AbilityProgramDef::Replacement(effect) => {
+            for child in replacement_child_effects(effect) {
+                collect_effect_abilities(child, &mut children);
+            }
+        }
+    }
     children
 }
 
-// Long because the effect vocabulary is wide, not because the function
-// does several things: every arm is one variant walked the same way.
-#[allow(clippy::too_many_lines)]
-fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static AbilityDef>) {
-    match effect {
-        EffectDef::Sequence(effects) => {
-            for effect in effects {
-                collect_effect_abilities(*effect, abilities);
-            }
-        }
-        EffectDef::Randomized {
-            on_success,
-            on_failure,
-            ..
-        } => {
-            collect_effect_abilities(*on_success, abilities);
-            collect_effect_abilities(*on_failure, abilities);
-        }
-        EffectDef::OptionalPayment {
-            if_paid: effect, ..
-        }
-        | EffectDef::UnlessPaid {
-            otherwise: effect, ..
-        }
-        | EffectDef::May { effect, .. }
-        | EffectDef::ReplaceNextDrawThisTurn { effect, .. }
-        | EffectDef::IfCondition { then: effect, .. }
-        | EffectDef::AtNextStep { effect, .. }
-        | EffectDef::ChoosePermanent { then: effect, .. }
-        | EffectDef::ChooseDamageSource { then: effect, .. }
-        | EffectDef::SacrificeOfChoice {
-            then: Some(effect), ..
-        } => collect_effect_abilities(*effect, abilities),
-        EffectDef::LookAtTopAndSelect { selection, .. } => {
-            if let Some(effect) = selection.then {
-                collect_effect_abilities(*effect, abilities);
-            }
-        }
-        EffectDef::IfFormat {
-            then, otherwise, ..
-        } => {
-            collect_effect_abilities(*then, abilities);
-            collect_effect_abilities(*otherwise, abilities);
-        }
-        EffectDef::Apply { effect, .. } => collect_applied_abilities(effect, abilities),
-        EffectDef::TriggerUntilYourNextTurn { ability } => abilities.push(ability),
-        EffectDef::Replacement(effect) => {
-            collect_replacement_effect_abilities(effect, abilities);
-        }
-        EffectDef::None
-        | EffectDef::AddMana(_)
-        | EffectDef::AddManaEqualTo { .. }
-        | EffectDef::DealDamage { .. }
-        | EffectDef::DrainLife { .. }
-        | EffectDef::GainLife { .. }
-        | EffectDef::AddPoisonCounters { .. }
-        | EffectDef::DrawCards { .. }
-        | EffectDef::Discard { .. }
-        | EffectDef::ShuffleLibrary { .. }
-        | EffectDef::EmptyManaPool { .. }
-        | EffectDef::LoseLife { .. }
-        | EffectDef::LoseTheGame { .. }
-        | EffectDef::Regenerate { .. }
-        | EffectDef::Tap { .. }
-        | EffectDef::RemoveFromCombat { .. }
-        | EffectDef::SetColor { .. }
-        | EffectDef::DestroyAtEndOfCombat { .. }
-        | EffectDef::SkipNextUntapSteps { .. }
-        | EffectDef::DoesNotUntapWhileSourceTapped { .. }
-        | EffectDef::RemoveAllCounters { .. }
-        | EffectDef::Untap { .. }
-        | EffectDef::PreventAllCombatDamageThisTurn
-        | EffectDef::PreventNextDamage { .. }
-        | EffectDef::PreventAllDamageThisTurn { .. }
-        | EffectDef::PreventNextDamageFromSource { .. }
-        | EffectDef::PreventCombatDamageThisTurn { .. }
-        | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-        | EffectDef::PreventDamageDealtByThisTurn { .. }
-        | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-        | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-        | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
-        | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
-        | EffectDef::Attach { .. }
-        | EffectDef::CreateToken { .. }
-        | EffectDef::CreateTokenCopyOf { .. }
-        | EffectDef::Destroy { .. }
-        | EffectDef::Sacrifice { .. }
-        | EffectDef::SacrificeOfChoice { then: None, .. }
-        | EffectDef::DestroyOfChoice { .. }
-        | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-        | EffectDef::RevealAndSplitIntoPiles { .. }
-        | EffectDef::Mill { .. }
-        | EffectDef::LookAtTopAndMayTake { .. }
-        | EffectDef::LookAtHand { .. }
-        | EffectDef::SearchZone { .. }
-        | EffectDef::ChooseCards { .. }
-        | EffectDef::Counter { .. }
-        | EffectDef::CounterUnlessPaid { .. }
-        | EffectDef::AddCounters { .. }
-        | EffectDef::ChangeTextBasicLandType { .. }
-        | EffectDef::BecomeCopyOf { .. }
-        | EffectDef::CannotBeForcedToSacrifice
-        | EffectDef::CreateEmblem { .. }
-        | EffectDef::Transform { .. }
-        | EffectDef::AdditionalCombatPhase
-        | EffectDef::TakeExtraTurn { .. }
-        | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
-        | EffectDef::GrantFlashToNextSorcery
-        | EffectDef::ExileLinkedToSource { .. }
-        | EffectDef::ReturnLinkedExiles { .. }
-        | EffectDef::Detain { .. }
-        | EffectDef::CannotRegenerateThisTurn { .. }
-        | EffectDef::MakeUnblockableThisTurn { .. }
-        | EffectDef::GainControlWhileSourceRemains { .. }
-        | EffectDef::GainControlThisTurn { .. }
-        | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::PlayersCantPlay(_)
-        | EffectDef::LandwalkCanBeBlocked(_)
-        | EffectDef::CannotAttackUnless(_)
-        | EffectDef::MultiplyEventAmount(_)
-        | EffectDef::MoveToZone { .. }
-        | EffectDef::ChooseCardName { .. }
-        | EffectDef::ChoosePlayer { .. }
-        | EffectDef::CopyPermanentAsItEnters { .. }
-        | EffectDef::ChooseCreatureType { .. }
-        | EffectDef::Special(_) => {}
+pub(super) const fn ability_target_defs(ability: &AbilityDef) -> &'static [AbilityTargetDef] {
+    match ability.definition {
+        DeclarativeAbilityDef::Spell(spell) => spell.targets(),
+        DeclarativeAbilityDef::ActivatedMana(activated)
+        | DeclarativeAbilityDef::Activated(activated) => activated.targets,
+        DeclarativeAbilityDef::TriggeredMana(triggered)
+        | DeclarativeAbilityDef::Triggered(triggered) => triggered.targets,
+        DeclarativeAbilityDef::Static(_)
+        | DeclarativeAbilityDef::Replacement(_)
+        | DeclarativeAbilityDef::AlternativeCast(_)
+        | DeclarativeAbilityDef::SpecialAction(_)
+        | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::Legacy => &[],
     }
 }
 
-fn collect_replacement_effect_abilities(
-    effect: ReplacementEffectDef,
-    abilities: &mut Vec<&'static AbilityDef>,
-) {
+fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static AbilityDef>) {
     match effect {
-        ReplacementEffectDef::Sequence(effects) => {
-            for effect in effects {
-                collect_replacement_effect_abilities(*effect, abilities);
-            }
+        EffectDef::Apply { effect, .. } | EffectDef::StaticApply { effect, .. } => {
+            collect_applied_abilities(effect, abilities);
         }
-        ReplacementEffectDef::Perform(effect) => collect_effect_abilities(*effect, abilities),
-        ReplacementEffectDef::Conditional {
-            if_true, if_false, ..
-        } => {
-            for effect in if_true.iter().chain(if_false.iter()) {
-                collect_replacement_effect_abilities(*effect, abilities);
-            }
-        }
-        ReplacementEffectDef::OptionalPayment {
-            if_paid,
-            if_declined,
-            ..
-        } => {
-            for effect in if_paid.iter().chain(if_declined.iter()) {
-                collect_replacement_effect_abilities(*effect, abilities);
-            }
-        }
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
-        | ReplacementEffectDef::MoveToZone(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => {}
+        EffectDef::InstallTrigger(installed) => abilities.push(installed.ability),
+        _ => {}
+    }
+    for child in child_effects(effect) {
+        collect_effect_abilities(child, abilities);
     }
 }
 fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'static AbilityDef>) {
@@ -589,47 +683,10 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
                 collect_applied_abilities(*effect, abilities);
             }
         }
-        AppliedEffectDef::GrantAbility(ability) => abilities.push(ability),
-        AppliedEffectDef::CannotBeCountered
-        | AppliedEffectDef::DoesNotUntapDuringUntapStep
-        | AppliedEffectDef::MayChooseNotToUntap
-        | AppliedEffectDef::CannotBlock
-        | AppliedEffectDef::CannotAttack
-        | AppliedEffectDef::CannotBeBlocked
-        | AppliedEffectDef::CannotBeEnchanted
-        | AppliedEffectDef::CannotBecomeEnchanted
-        | AppliedEffectDef::CannotChangeController
-        | AppliedEffectDef::RemainsAttachedThroughProtection
-        | AppliedEffectDef::CannotBeBlockedBy(_)
-        | AppliedEffectDef::CanBlockOnly(_)
-        | AppliedEffectDef::PreventDamageFrom(_)
-        | AppliedEffectDef::PreventCombatDamageFrom(_)
-        | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-        | AppliedEffectDef::PreventCombatDamage
-        | AppliedEffectDef::PreventCombatDamageDealtBy
-        | AppliedEffectDef::AddLandTypes(_)
-        | AppliedEffectDef::SetLandTypes(_)
-        | AppliedEffectDef::RemoveAbilities(_)
-        | AppliedEffectDef::Animate(_)
-        | AppliedEffectDef::ModifyPowerToughness { .. }
-        | AppliedEffectDef::Special(_) => {}
-    }
-}
-
-pub(super) fn animation_snapshot(animation: &AnimationDef) -> AnimationSnapshot {
-    AnimationSnapshot {
-        power: animation.power,
-        toughness: animation.toughness,
-        types: animation.types.type_name().clone(),
-        subtypes: animation
-            .subtypes
-            .iter()
-            .map(|value| (*value).to_owned())
-            .collect(),
-        all_creature_types: animation.all_creature_types,
-        replaces_subtypes: animation.replaces_subtypes,
-        loses_abilities: animation.loses_abilities,
-        colors: animation.colors.map(crate::card::ColorSet::to_flags),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        )) => abilities.push(ability),
+        AppliedEffectDef::Rule(_) | AppliedEffectDef::Characteristic(_) => {}
     }
 }
 
@@ -709,149 +766,33 @@ pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
     }
 }
 
-pub(super) fn catalog_animation(
-    catalog: &CardCatalog,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    catalog
-        .definitions()
-        .into_iter()
-        .flat_map(|definition| &definition.parts)
-        .flat_map(|part| part.rules.indexed_abilities())
-        .find_map(|attached| animation_in_ability(&attached.definition, key))
-}
-
-fn animation_in_ability(
-    ability: &AbilityDef,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    if let DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) = ability.definition
-        && let Some(animation) = modal
-            .modes
-            .iter()
-            .find_map(|mode| animation_in_ability(mode, key))
-    {
-        return Some(animation);
-    }
-    animation_in_effect(ability.effect.definition, key)
-}
-
-fn animation_in_effect(
-    effect: EffectDef,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    match effect {
-        EffectDef::Sequence(effects) => effects
-            .iter()
-            .find_map(|effect| animation_in_effect(*effect, key)),
-        EffectDef::SacrificeOfChoice { then, .. } => {
-            then.and_then(|effect| animation_in_effect(*effect, key))
-        }
-        EffectDef::LookAtTopAndSelect { selection, .. } => selection
-            .then
-            .and_then(|effect| animation_in_effect(*effect, key)),
-        EffectDef::OptionalPayment { if_paid, .. } => animation_in_effect(*if_paid, key),
-        EffectDef::UnlessPaid { otherwise, .. }
-        | EffectDef::May {
-            effect: otherwise, ..
-        }
-        | EffectDef::ReplaceNextDrawThisTurn {
-            effect: otherwise, ..
-        }
-        | EffectDef::IfCondition {
-            then: otherwise, ..
-        }
-        | EffectDef::AtNextStep {
-            effect: otherwise, ..
-        } => animation_in_effect(*otherwise, key),
-        EffectDef::IfFormat {
-            then, otherwise, ..
-        } => animation_in_effect(*then, key).or_else(|| animation_in_effect(*otherwise, key)),
-        EffectDef::TriggerUntilYourNextTurn { ability } => animation_in_ability(ability, key),
-        EffectDef::Apply { effect, .. } => animation_in_applied(effect, key),
-        EffectDef::Replacement(effect) => animation_in_replacement_effect(effect, key),
-        _ => None,
-    }
-}
-
-fn animation_in_replacement_effect(
-    effect: ReplacementEffectDef,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    match effect {
-        ReplacementEffectDef::Sequence(effects) => effects
-            .iter()
-            .find_map(|effect| animation_in_replacement_effect(*effect, key)),
-        ReplacementEffectDef::Perform(effect) => animation_in_effect(*effect, key),
-        ReplacementEffectDef::Conditional {
-            if_true, if_false, ..
-        } => if_true
-            .iter()
-            .chain(if_false.iter())
-            .find_map(|effect| animation_in_replacement_effect(*effect, key)),
-        ReplacementEffectDef::OptionalPayment {
-            if_paid,
-            if_declined,
-            ..
-        } => if_paid
-            .iter()
-            .chain(if_declined.iter())
-            .find_map(|effect| animation_in_replacement_effect(*effect, key)),
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
-        | ReplacementEffectDef::MoveToZone(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => None,
-    }
-}
-
-fn animation_in_applied(
-    effect: AppliedEffectDef,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    match effect {
-        AppliedEffectDef::Animate(animation) if animation_snapshot(animation) == *key => {
-            Some(animation)
-        }
-        AppliedEffectDef::Composite(effects) => effects
-            .iter()
-            .find_map(|effect| animation_in_applied(*effect, key)),
-        AppliedEffectDef::GrantAbility(ability) => animation_in_ability(ability, key),
-        _ => None,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::card::{EffectDurationDef, EffectRecipientDef};
+    use crate::card::{EffectRecipientDef, ResolvedEffectDurationDef, ValueDef};
 
-    static ANIMATION: AnimationDef = AnimationDef::new(3, 3);
     static GRANTED: AbilityDef = AbilityDef::not_implemented(
         "A nested ability.",
         "Only structural checkpoint traversal matters in this fixture.",
     );
     static APPLIED: [AppliedEffectDef; 2] = [
-        AppliedEffectDef::GrantAbility(&GRANTED),
-        AppliedEffectDef::Animate(&ANIMATION),
+        AppliedEffectDef::add_ability(&GRANTED),
+        AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(3), ValueDef::Constant(3)),
     ];
     static PERFORM: EffectDef = EffectDef::Apply {
         recipient: EffectRecipientDef::Source,
         effect: AppliedEffectDef::Composite(&APPLIED),
-        duration: EffectDurationDef::UntilEndOfTurn,
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     };
     static PROGRAM: [ReplacementEffectDef; 1] = [ReplacementEffectDef::Perform(&PERFORM)];
     static OUTER: AbilityDef = AbilityDef::replacement(
         "Perform nested definitions while replacing an event.",
-        EffectDef::Replacement(ReplacementEffectDef::Sequence(&PROGRAM)),
+        ReplacementEffectDef::Sequence(&PROGRAM),
     );
 
     #[test]
     fn checkpoint_semantic_walkers_descend_replacement_programs() {
         assert_eq!(child_abilities(&OUTER), vec![&GRANTED]);
-        let key = animation_snapshot(&ANIMATION);
-        assert_eq!(
-            animation_in_effect(OUTER.effect.definition, &key),
-            Some(&ANIMATION),
-        );
+        assert!(applied_effects(&OUTER).contains(&APPLIED[1]));
     }
 }

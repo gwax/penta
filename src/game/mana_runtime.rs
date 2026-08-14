@@ -6,6 +6,7 @@ use super::{
     ManaSource, ManaSpendEffectDef, Permanent, PlayerId, RetiredObject, StackObject,
     TriggerEventObject, ZoneKind, fold_restricted_x, pay_cost_with_orders,
 };
+use crate::AbilityProgramDef;
 
 impl Game {
     pub(super) fn mana_ability_is_usable(
@@ -144,7 +145,7 @@ impl Game {
         {
             return None;
         }
-        let EffectDef::AddMana(effect) = ability.effect.definition else {
+        let Some(EffectDef::AddMana(effect)) = ability.declarative_effect() else {
             return None;
         };
         Some(effect)
@@ -155,7 +156,10 @@ impl Game {
         ability: &AbilityDef,
     ) -> bool {
         definition.procedure == AbilityProcedureDef::Legacy
-            && matches!(ability.effect.definition, EffectDef::Special(_))
+            && matches!(
+                ability.effect.definition,
+                AbilityProgramDef::Effects(EffectDef::Special(_))
+            )
             && ability.custom_behavior() == Some(CardBehavior::FellwarStone)
     }
 

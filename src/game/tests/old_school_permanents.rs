@@ -354,6 +354,7 @@ fn vraskas_ultimate_makes_three_assassins() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
     let mut game = ready_game();
     let mut jace = creature(10_000, cards::JACE_ARCHITECT_OF_THOUGHT, PlayerId::One);
@@ -393,8 +394,8 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
         break;
     }
 
-    // The opponent separates the three revealed cards: the Angel alone
-    // against the other two.
+    // The opponent separates the three revealed cards: the Angel and Lions
+    // against the Bolt.
     let split = game.observe(PlayerId::Two).decision.expect("they split");
     assert_eq!(split.options.len(), 3, "only the top three were revealed");
     let angel = split
@@ -407,28 +408,38 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
         })
         .expect("the angel was revealed")
         .id;
+    let lions = split
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(id, _)| id == GameObjectId(10_002))
+        })
+        .expect("the lions were revealed")
+        .id;
     game.apply(
         PlayerId::Two,
         Action::ChooseDecision {
             decision: split.id,
-            options: vec![angel],
+            options: vec![angel, lions],
         },
     )
     .unwrap();
 
-    // Jace's controller takes the two-card pile.
+    // Jace's controller takes the one-card pile.
     let choice = game.observe(PlayerId::One).decision.expect("he chooses");
-    let bigger = choice
+    let bolt = choice
         .options
         .iter()
-        .find(|option| option.label.contains("Savannah Lions"))
-        .expect("one pile holds the other two")
+        .find(|option| option.label.contains("Lightning Bolt"))
+        .expect("one pile holds the Bolt")
         .id;
     game.apply(
         PlayerId::One,
         Action::ChooseDecision {
             decision: choice.id,
-            options: vec![bigger],
+            options: vec![bolt],
         },
     )
     .unwrap();
@@ -441,17 +452,21 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
             .iter()
             .map(|card| card.definition)
             .collect::<Vec<_>>(),
-        vec![cards::SAVANNAH_LIONS, cards::LIGHTNING_BOLT],
+        vec![cards::LIGHTNING_BOLT],
         "the chosen pile went to hand"
     );
+    let mut bottom = game.players[0].library[..2]
+        .iter()
+        .map(|card| card.definition)
+        .collect::<Vec<_>>();
+    bottom.sort_unstable();
+    let mut expected = vec![cards::SERRA_ANGEL, cards::SAVANNAH_LIONS];
+    expected.sort_unstable();
+    assert_eq!(bottom, expected, "both losing cards went to the bottom");
     assert_eq!(
-        game.players[0]
-            .library
-            .iter()
-            .map(|card| card.definition)
-            .collect::<Vec<_>>(),
-        vec![cards::SERRA_ANGEL, cards::PLAINS],
-        "the angel went under the one card that was left"
+        game.players[0].library[2].definition,
+        cards::PLAINS,
+        "the card outside the split remains above both losing cards"
     );
     let jace = game
         .battlefield
@@ -521,7 +536,7 @@ fn jaces_first_ability_taxes_attackers_until_his_controller_comes_back_around() 
     game.start_next_turn();
     assert_eq!(game.active_player, PlayerId::One);
     assert!(
-        game.floating_triggers.is_empty(),
+        game.installed_triggers.is_empty(),
         "his next turn began, so the ability stopped listening"
     );
 }
@@ -534,7 +549,15 @@ fn pendelhaven_only_pumps_something_that_is_still_a_one_one_when_it_resolves() {
     // A 1/1 and a 2/1: only the first is a legal target.
     game.battlefield
         .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
-    game.battlefield[1].power_bonus = -1;
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_001),
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(-1),
+            ValueDef::Constant(0),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
     game.battlefield
         .push(creature(10_002, cards::SAVANNAH_LIONS, PlayerId::One));
 
@@ -563,7 +586,15 @@ fn pendelhaven_only_pumps_something_that_is_still_a_one_one_when_it_resolves() {
     // The ability is on the stack. Growing the target before it resolves
     // makes the target illegal, and the whole ability does nothing.
     assert_eq!(game.stack.len(), 1, "it waits on the stack");
-    game.battlefield[1].power_bonus += 1;
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_001),
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(1),
+            ValueDef::Constant(0),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
     drain_pending(&mut game);
 
     let lions = game
@@ -585,7 +616,15 @@ fn pendelhaven_pumps_a_one_one_that_stays_one() {
         .push(creature(10_000, cards::PENDELHAVEN, PlayerId::One));
     game.battlefield
         .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
-    game.battlefield[1].power_bonus = -1;
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_001),
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(-1),
+            ValueDef::Constant(0),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
 
     game.apply(
         PlayerId::One,
@@ -688,7 +727,7 @@ fn dragon_whelp_only_burns_itself_out_on_the_fourth_activation() {
         .expect("still here");
     assert_eq!(game.power(whelp), Some(5), "2/3 pumped three times");
     assert!(
-        game.delayed_triggers.is_empty(),
+        game.installed_triggers.is_empty(),
         "three activations schedule nothing"
     );
 
@@ -697,7 +736,7 @@ fn dragon_whelp_only_burns_itself_out_on_the_fourth_activation() {
     game.apply(PlayerId::One, action).unwrap();
     drain_pending(&mut game);
     assert_eq!(
-        game.delayed_triggers.len(),
+        game.installed_triggers.len(),
         1,
         "the fourth one signs its own death warrant"
     );
@@ -758,7 +797,7 @@ fn dragon_whelps_activation_count_resets_with_the_turn() {
     drain_pending(&mut game);
 
     assert!(
-        game.delayed_triggers.is_empty(),
+        game.installed_triggers.is_empty(),
         "a new turn makes it the first activation again, not the fourth"
     );
 }
@@ -815,6 +854,14 @@ fn stone_giant_throws_only_what_it_can_lift_and_the_landing_kills_it() {
         "it is in the air"
     );
 
+    let lions = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == GameObjectId(10_001))
+        .expect("still the same permanent");
+    lions.controller = PlayerId::Two;
+    lions.temporary_keywords.push(KeywordAbility::Hexproof);
+
     game.step = Step::End;
     game.begin_step_triggers();
     drain_pending(&mut game);
@@ -823,7 +870,7 @@ fn stone_giant_throws_only_what_it_can_lift_and_the_landing_kills_it() {
             .battlefield
             .iter()
             .any(|permanent| permanent.card.id == GameObjectId(10_001)),
-        "and the end step is where it lands"
+        "the delayed reference is not a new target, so later control and hexproof do not save it"
     );
     assert!(
         game.battlefield

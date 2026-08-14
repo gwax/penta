@@ -2,27 +2,15 @@ use std::borrow::Cow;
 
 use crate::action::{AbilityOrigin, Target};
 use crate::card::{
-    AbilityTargetDef, CardSupertype, CardTypeSet, EffectDef, PlayerRelation, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ZoneKind,
+    AbilityTargetDef, CardSupertype, CardTypeSet, EffectDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ZoneKind,
 };
 use crate::casting::TargetSelection;
-use crate::ids::{CardDefinitionId, ChoiceIndex, GameObjectId, PlayerId};
+use crate::ids::{
+    CardDefinitionId, GameObjectId, ObjectBindingIndex, ObjectSetBindingIndex, PlayerId,
+};
 
-use super::{ScopedEffect, StackAbilityResolver, StackObject};
-
-/// An effect queued for the next time a step begins. Whatever queued it has
-/// usually left by then, so the entry carries its own source and controller.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) struct DelayedTrigger {
-    /// The object that queued this, kept whole so the effect resolves with
-    /// the same source and controller it would have had at the time.
-    pub(super) object: Box<StackObject>,
-    /// Trigger-event information captured when the effect was scheduled.
-    pub(super) context: TriggerContext,
-    pub(super) step: TurnStepDef,
-    pub(super) player: PlayerRelation,
-    pub(super) effect: ScopedEffect,
-}
+use super::StackAbilityResolver;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct TriggerContext {
@@ -30,9 +18,6 @@ pub(super) struct TriggerContext {
     pub(super) object_controller: Option<PlayerId>,
     pub(super) event_player: Option<PlayerId>,
     pub(super) amount: Option<i32>,
-    /// Non-targeting object choices made during this resolution, indexed in
-    /// the authored effect tree rather than stored on the stack as targets.
-    pub(super) chosen_objects: [Option<GameObjectId>; ChoiceIndex::COUNT],
 }
 
 impl TriggerContext {
@@ -42,16 +27,83 @@ impl TriggerContext {
             object_controller: None,
             event_player: None,
             amount: None,
-            chosen_objects: [None; ChoiceIndex::COUNT],
+        }
+    }
+}
+
+/// State local to one declarative effect resolution. Trigger information is
+/// kept separate and copyable because it is also captured by abilities before
+/// they ever resolve; bindings belong only to a particular continuation of an
+/// effect program.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct EffectResolutionContext {
+    pub(super) trigger: TriggerContext,
+    single_objects: [Option<Target>; ObjectBindingIndex::COUNT],
+    object_groups: [Vec<Target>; ObjectSetBindingIndex::COUNT],
+}
+
+impl EffectResolutionContext {
+    pub(super) fn new(trigger: TriggerContext) -> Self {
+        Self {
+            trigger,
+            single_objects: [None; ObjectBindingIndex::COUNT],
+            object_groups: std::array::from_fn(|_| Vec::new()),
         }
     }
 
-    pub(super) const fn chosen_object(self, choice: ChoiceIndex) -> Option<GameObjectId> {
-        self.chosen_objects[choice.index()]
+    #[cfg(test)]
+    pub(super) fn empty() -> Self {
+        Self::new(TriggerContext::empty())
     }
 
-    pub(super) fn bind_choice(&mut self, choice: ChoiceIndex, object: Option<GameObjectId>) {
-        self.chosen_objects[choice.index()] = object;
+    pub(super) const fn single_object(&self, binding: ObjectBindingIndex) -> Option<Target> {
+        self.single_objects[binding.index()]
+    }
+
+    pub(super) fn bind_single_object(
+        &mut self,
+        binding: ObjectBindingIndex,
+        object: Option<Target>,
+    ) {
+        self.single_objects[binding.index()] = object;
+    }
+
+    pub(super) fn object_group(&self, binding: ObjectSetBindingIndex) -> &[Target] {
+        &self.object_groups[binding.index()]
+    }
+
+    pub(super) fn bind_object_group(
+        &mut self,
+        binding: ObjectSetBindingIndex,
+        objects: Vec<Target>,
+    ) {
+        self.object_groups[binding.index()] = objects;
+    }
+
+    pub(super) fn single_objects(&self) -> &[Option<Target>; ObjectBindingIndex::COUNT] {
+        &self.single_objects
+    }
+
+    pub(super) fn object_groups(&self) -> &[Vec<Target>; ObjectSetBindingIndex::COUNT] {
+        &self.object_groups
+    }
+
+    pub(super) fn from_bindings(
+        trigger: TriggerContext,
+        single_objects: [Option<Target>; ObjectBindingIndex::COUNT],
+        object_groups: [Vec<Target>; ObjectSetBindingIndex::COUNT],
+    ) -> Self {
+        Self {
+            trigger,
+            single_objects,
+            object_groups,
+        }
+    }
+}
+
+impl From<TriggerContext> for EffectResolutionContext {
+    fn from(trigger: TriggerContext) -> Self {
+        Self::new(trigger)
     }
 }
 
@@ -100,20 +152,22 @@ pub(super) enum CommittedTriggerEvent {
         object: TriggerEventObject,
         from: ZoneKind,
         to: ZoneKind,
+        /// Damage sources recorded on the departing battlefield object. This
+        /// is frozen with the exit event and empty for all other moves.
+        damage_sources: Vec<GameObjectId>,
     },
-    BecomesTapped {
+    Tapped {
         object: TriggerEventObject,
+        for_mana: bool,
     },
     LifeGained {
         player: PlayerId,
         amount: u16,
     },
-    AttacksInGroup {
-        object: TriggerEventObject,
-        total: u8,
-    },
     Attacks {
         object: TriggerEventObject,
+        declaration_size: u8,
+        attack_number: u8,
     },
     BecomesBlocked {
         object: TriggerEventObject,
@@ -133,24 +187,16 @@ pub(super) enum CommittedTriggerEvent {
         creature: TriggerEventObject,
         other: TriggerEventObject,
     },
-    TappedForMana {
-        object: TriggerEventObject,
-    },
     DamageDealt {
-        source: TriggerEventObject,
+        source: Option<TriggerEventObject>,
+        /// Whether the source snapshot represents a spell on the stack.
+        /// Object characteristics alone cannot distinguish a spell from the
+        /// same card in another zone, so this fact is frozen separately.
+        source_is_spell: bool,
         recipient: Target,
+        recipient_object: Option<TriggerEventObject>,
         amount: u16,
         combat: bool,
-    },
-    CombatDamageDealtToPlayer {
-        object: TriggerEventObject,
-        player: PlayerId,
-        amount: u16,
-    },
-    DamageDealtToPlayer {
-        object: TriggerEventObject,
-        player: PlayerId,
-        amount: u16,
     },
     SpellCast {
         object: TriggerEventObject,
@@ -162,27 +208,25 @@ pub(super) enum CommittedTriggerEvent {
         step: TurnStepDef,
         player: PlayerId,
     },
-    DamagedCreatureDied {
-        object: TriggerEventObject,
-        source: GameObjectId,
-    },
 }
 
 impl CommittedTriggerEvent {
     pub(super) fn context(&self) -> TriggerContext {
         match self {
             Self::ZoneChanged { object, .. }
-            | Self::BecomesTapped { object }
-            | Self::AttacksInGroup { object, .. }
-            | Self::Attacks { object }
+            | Self::Attacks { object, .. }
             | Self::Transformed { object }
-            | Self::DamagedCreatureDied { object, .. }
             | Self::AttacksAndIsNotBlocked { object } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: None,
-                chosen_objects: [None; ChoiceIndex::COUNT],
+            },
+            Self::Tapped { object, for_mana } => TriggerContext {
+                object: Some(object.id),
+                object_controller: Some(object.controller),
+                event_player: for_mana.then_some(object.controller),
+                amount: None,
             },
             Self::DamageDealt {
                 source,
@@ -190,37 +234,19 @@ impl CommittedTriggerEvent {
                 amount,
                 ..
             } => TriggerContext {
-                object: Some(source.id),
-                object_controller: Some(source.controller),
+                object: source.as_ref().map(|source| source.id),
+                object_controller: source.as_ref().map(|source| source.controller),
                 event_player: match recipient {
                     Target::Player(player) => Some(*player),
                     Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
                 },
                 amount: Some(i32::from(*amount)),
-                chosen_objects: [None; ChoiceIndex::COUNT],
-            },
-            Self::CombatDamageDealtToPlayer {
-                object,
-                player,
-                amount,
-            }
-            | Self::DamageDealtToPlayer {
-                object,
-                player,
-                amount,
-            } => TriggerContext {
-                object: Some(object.id),
-                object_controller: Some(object.controller),
-                event_player: Some(*player),
-                amount: Some(i32::from(*amount)),
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::BlocksOrBecomesBlocked { other, .. } => TriggerContext {
                 object: Some(other.id),
                 object_controller: Some(other.controller),
                 event_player: None,
                 amount: None,
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::BecomesBlocked {
                 object,
@@ -230,30 +256,24 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: Some(i32::from(*blockers_beyond_first)),
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::LifeGained { player, amount } => TriggerContext {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
-            // The player who tapped a permanent for mana is its controller,
-            // which is the same shape a cast spell has.
-            Self::TappedForMana { object } | Self::SpellCast { object } => TriggerContext {
+            Self::SpellCast { object } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: Some(object.controller),
                 amount: None,
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::StepBegins { player, .. } => TriggerContext {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),
                 amount: None,
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
         }
     }
@@ -273,55 +293,70 @@ pub(super) struct PendingTrigger {
     pub(super) owner: PlayerId,
     pub(super) controller: PlayerId,
     pub(super) text: &'static str,
-    pub(super) target_defs: &'static [AbilityTargetDef],
+    pub(super) target_defs: Vec<AbilityTargetDef>,
     pub(super) targets: Vec<TargetSelection>,
     pub(super) effect: EffectDef,
     pub(super) resolver: StackAbilityResolver,
-    pub(super) context: TriggerContext,
+    pub(super) context: EffectResolutionContext,
     pub(super) condition: Option<&'static TriggerConditionDef>,
+    pub(super) x: u16,
 }
 
 /// The immutable declaration captured when one event matches one source
 /// ability. The game assigns the ephemeral trigger ID when it accepts this
 /// record into the pending-trigger queue.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct TriggerCapture {
     pub(super) source: AbilitySourceRef,
     pub(super) definition: CardDefinitionId,
     pub(super) owner: PlayerId,
     pub(super) controller: PlayerId,
     pub(super) text: &'static str,
-    pub(super) target_defs: &'static [AbilityTargetDef],
+    pub(super) target_defs: Vec<AbilityTargetDef>,
+    pub(super) targets: Vec<TargetSelection>,
     pub(super) effect: EffectDef,
     pub(super) resolver: StackAbilityResolver,
-    pub(super) context: TriggerContext,
+    pub(super) context: EffectResolutionContext,
     /// The intervening-if condition this trigger reads, checked both when the
     /// ability would go on the stack and again when it resolves.
     pub(super) condition: Option<&'static TriggerConditionDef>,
+    /// The X chosen for the installing ability. Installed triggers retain the
+    /// same resolving context as the effect that created them.
+    pub(super) x: u16,
 }
 
-/// A triggered ability with no object behind it, installed by an effect and
-/// listening until its controller's next turn begins. Everything the trigger
-/// needs is frozen here, because the ability that created it has finished
-/// resolving and its source may be long gone.
+/// How long a trigger installed outside every zone continues listening.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct FloatingTrigger {
+pub(super) enum InstalledTriggerLifetime {
+    /// Consume the listener on the first matching event, before checking an
+    /// intervening-if condition or putting its ability on the stack.
+    Once,
+    /// Stop listening when this player's frozen future turn begins.
+    UntilTurn { player: PlayerId, turn: u32 },
+}
+
+/// A triggered ability installed by a resolved effect. Everything needed to
+/// construct its stack object is frozen here because its source may be gone
+/// by the time an event matches.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct InstalledTrigger {
+    pub(super) id: u32,
     pub(super) event: TriggerEventDef,
     pub(super) capture: TriggerCapture,
-    pub(super) until_turn_of: PlayerId,
-    /// How many turns that player had already started, so the turn the
-    /// ability resolved during does not count as their next one.
-    pub(super) created_after_turns: u32,
+    pub(super) lifetime: InstalledTriggerLifetime,
 }
 
 /// One battlefield trigger listener frozen at the start of an atomic event.
 /// A simultaneous zone change can remove the source before another object in
 /// the same event is published, so listener discovery cannot consult the
 /// incrementally-mutated battlefield.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct BattlefieldTriggerListener {
     pub(super) event: TriggerEventDef,
     pub(super) uses_stack: bool,
+    /// Identifies an effect-installed listener. Battlefield listeners have no
+    /// ID because their source's zone presence determines their lifetime.
+    pub(super) installed: Option<u32>,
     pub(super) capture: TriggerCapture,
 }
 

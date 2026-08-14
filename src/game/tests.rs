@@ -1,5 +1,8 @@
 use super::*;
-use crate::card::abilities;
+use crate::card::{
+    ChoiceVisibilityDef, ChooseDef, EffectPaymentDef, ObjectChoiceBindingDef, PayOrDef,
+    PlayerSetDef, abilities,
+};
 use crate::mana_cost;
 use crate::poc::{self, cards};
 use crate::{
@@ -7,14 +10,21 @@ use crate::{
     AdditionalCostId, AlternativeCastManaCostDef, AlternativeCostDef, AlternativeCostId,
     BattlefieldEntryModificationDef, CardComposition, CardDefinition, CardEffectStatus,
     CardInstanceId, CardPart, CardPartId, CardPrinting, CardRules, CardStructure, CastChoices,
-    DoubleFacedKind, EffectExecutionDef, ManaSpendEffectDef, ModeDef, ModeSetDef, PlayOptionDef,
-    PlayOptionId, PlayerRelation, ReplacementEffectDef, ReplacementEventDef, SpellForm,
-    StackObjectId, TargetIndex, TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId,
-    ZonePlacement,
+    DoubleFacedKind, EffectExecutionDef, ManaSpendEffectDef, ModeDef, ModeSetDef,
+    ObjectBindingIndex, ObjectSetDef, PlayOptionDef, PlayOptionId, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, SpellForm, StackObjectId, TargetIndex,
+    TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId, ZonePlacement,
 };
 
 static TEST_FLYING_ABILITY: [AbilityDef; 1] = [abilities::flying()];
 static TEST_FLYING_TRAMPLE_ABILITIES: [AbilityDef; 2] = [abilities::flying(), abilities::trample()];
+pub(super) static TEST_MISHRAS_FACTORY_CHARACTERISTICS: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::add_card_types(
+        CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
+    ),
+    AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Assembly-Worker"])),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+];
 static CARD_COST_FLASHBACK: AbilityDef = abilities::flashback_for_card_mana_cost();
 const TEST_OPPONENT_LAND_ENTRY_TEXT: &str = "Lands your opponents control enter tapped.";
 static TEST_OPPONENT_LANDS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement_for(
@@ -23,17 +33,14 @@ static TEST_OPPONENT_LANDS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::
         object: ObjectPredicateDef::HasType(CardType::Land),
         controller: PlayerRelation::Opponent,
     },
-    EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
-        BattlefieldEntryModificationDef::Tapped,
-    )),
+    ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
 )];
-static TEST_EXTERNAL_PAYMENT_COST: [CostDef; 1] = [CostDef::PayLife(2)];
 static TEST_EXTERNAL_ENTER_TAPPED: [ReplacementEffectDef; 1] =
     [ReplacementEffectDef::ModifyBattlefieldEntry(
         BattlefieldEntryModificationDef::Tapped,
     )];
-static TEST_EXTERNAL_PAYMENT: [ReplacementEffectDef; 1] = [ReplacementEffectDef::OptionalPayment {
-    payment: PaymentDef::new(PlayerRelation::You, &TEST_EXTERNAL_PAYMENT_COST),
+static TEST_EXTERNAL_PAYMENT: [ReplacementEffectDef; 1] = [ReplacementEffectDef::PayOr {
+    payment: EffectPaymentDef::life(PlayerSetDef::Related(PlayerRelation::You), 2),
     if_paid: &[],
     if_declined: &TEST_EXTERNAL_ENTER_TAPPED,
 }];
@@ -43,32 +50,30 @@ static TEST_EXTERNAL_CONTEXT_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement
         object: ObjectPredicateDef::HasType(CardType::Land),
         controller: PlayerRelation::Opponent,
     },
-    EffectDef::Replacement(ReplacementEffectDef::Conditional {
-        condition: ConditionDef::Exists(ObjectQueryDef {
-            object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
-            zones: &[ZoneKind::Battlefield],
-            controller: PlayerRelation::You,
-        }),
+    ReplacementEffectDef::Conditional {
+        condition: ConditionDef::Exists(ObjectQueryDef::matching(
+            ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::You,
+        )),
         if_true: &TEST_EXTERNAL_PAYMENT,
         if_false: &TEST_EXTERNAL_ENTER_TAPPED,
-    }),
+    },
 )];
 static TEST_GRANTED_ENTRY_REPLACEMENT: AbilityDef =
     abilities::enters_tapped("This permanent enters tapped.");
 static TEST_SELF_GRANTED_ENTRY_ABILITY: [AbilityDef; 1] = [AbilityDef::static_ability(
     "This permanent has \"This permanent enters tapped.\"",
-    EffectDef::Apply {
+    EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::GrantAbility(&TEST_GRANTED_ENTRY_REPLACEMENT),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
+        effect: AppliedEffectDef::add_ability(&TEST_GRANTED_ENTRY_REPLACEMENT),
     },
 )];
 static TEST_SELF_PLAINS_ABILITY: [AbilityDef; 1] = [AbilityDef::static_ability(
     "This land is a Plains in addition to its other types.",
-    EffectDef::Apply {
+    EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::AddLandTypes(&[BasicLandType::Plains]),
-        duration: EffectDurationDef::WhileSourceRemainsInZone,
+        effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Plains]),
     },
 )];
 static TEST_PLAINS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement_for(
@@ -77,9 +82,7 @@ static TEST_PLAINS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::replacem
         object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
         controller: PlayerRelation::Opponent,
     },
-    EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
-        BattlefieldEntryModificationDef::Tapped,
-    )),
+    ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
 )];
 static TEST_OPPONENT_ENCHANTMENTS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] =
     [AbilityDef::replacement_for(
@@ -88,9 +91,7 @@ static TEST_OPPONENT_ENCHANTMENTS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] =
             object: ObjectPredicateDef::HasType(CardType::Enchantment),
             controller: PlayerRelation::Opponent,
         },
-        EffectDef::Replacement(ReplacementEffectDef::ModifyBattlefieldEntry(
-            BattlefieldEntryModificationDef::Tapped,
-        )),
+        ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
     )];
 
 pub(super) fn ready_game() -> Game {
@@ -141,6 +142,135 @@ pub(super) fn creature(id: u32, definition: CardDefinitionId, controller: Player
         controller,
         0,
     )
+}
+
+/// Attach constant resolved characteristic leaves to one permanent as a
+/// single timestamped effect. Test setup uses this instead of recreating the
+/// fragmented animation, ability, and power/toughness state this model
+/// replaced.
+#[allow(clippy::too_many_lines)]
+pub(super) fn attach_constant_resolved_characteristics(
+    game: &mut Game,
+    permanent: GameObjectId,
+    effects: &[AppliedEffectDef],
+    expiration: ContinuousEffectExpiration,
+) -> ContinuousEffectTimestamp {
+    fn flatten(effect: AppliedEffectDef, leaves: &mut Vec<AppliedEffectDef>) {
+        match effect {
+            AppliedEffectDef::Composite(components) => {
+                for component in components {
+                    flatten(*component, leaves);
+                }
+            }
+            leaf => leaves.push(leaf),
+        }
+    }
+
+    let timestamp = game.allocate_continuous_effect_timestamp();
+    let target = game
+        .battlefield
+        .iter()
+        .find(|candidate| candidate.card.id == permanent)
+        .expect("the resolved characteristic target is on the battlefield");
+    let source = AbilitySourceRef {
+        object: permanent,
+        ability: AbilityOrigin::Printed {
+            definition: target.card.definition,
+            part: target.presented,
+            ability: AbilityId::PRIMARY,
+        },
+    };
+    let mut leaves = Vec::new();
+    for effect in effects {
+        flatten(*effect, &mut leaves);
+    }
+    let mut used_grants = [false; 256];
+    for grant in target
+        .resolved_continuous_effects
+        .iter()
+        .filter_map(|effect| match effect.kind {
+            ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add {
+                grant,
+                ..
+            }) => Some(grant),
+            _ => None,
+        })
+    {
+        used_grants[grant.index()] = true;
+    }
+    let target = game
+        .battlefield
+        .iter_mut()
+        .find(|candidate| candidate.card.id == permanent)
+        .expect("the resolved characteristic target is on the battlefield");
+    for (component_order, definition) in leaves.into_iter().enumerate() {
+        let AppliedEffectDef::Characteristic(operation) = definition else {
+            panic!("resolved characteristic fixtures accept only characteristic leaves");
+        };
+        let kind = match operation {
+            CharacteristicOperationDef::Abilities(AbilityOperationDef::Add(ability)) => {
+                let grant = used_grants
+                    .iter()
+                    .position(|used| !used)
+                    .and_then(GrantId::from_index)
+                    .expect("one fixture permanent has at most 256 resolved grants");
+                used_grants[grant.index()] = true;
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add {
+                    ability: *ability,
+                    grant,
+                })
+            }
+            CharacteristicOperationDef::Abilities(AbilityOperationDef::Remove(predicate)) => {
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Remove(predicate))
+            }
+            CharacteristicOperationDef::BasicLandTypes(operation) => {
+                ResolvedContinuousEffectKind::BasicLandTypes(operation)
+            }
+            CharacteristicOperationDef::CardTypes(operation) => {
+                ResolvedContinuousEffectKind::CardTypes(operation)
+            }
+            CharacteristicOperationDef::Colors(operation) => {
+                ResolvedContinuousEffectKind::Colors(operation)
+            }
+            CharacteristicOperationDef::CreatureTypes(operation) => {
+                ResolvedContinuousEffectKind::CreatureTypes(operation)
+            }
+            CharacteristicOperationDef::PowerToughness(operation) => {
+                let constant = |value| {
+                    let ValueDef::Constant(value) = value else {
+                        panic!("resolved characteristic fixtures require constant P/T values");
+                    };
+                    i16::try_from(value).expect("fixture P/T fits in i16")
+                };
+                ResolvedContinuousEffectKind::PowerToughness(match operation {
+                    PowerToughnessOperationDef::SetBase { power, toughness } => {
+                        ResolvedPowerToughnessOperation::SetBase {
+                            power: constant(power),
+                            toughness: constant(toughness),
+                        }
+                    }
+                    PowerToughnessOperationDef::Modify { power, toughness } => {
+                        ResolvedPowerToughnessOperation::Modify {
+                            power: constant(power),
+                            toughness: constant(toughness),
+                        }
+                    }
+                })
+            }
+        };
+        target
+            .resolved_continuous_effects
+            .push(ResolvedContinuousEffect {
+                definition,
+                source,
+                timestamp,
+                component_order: u16::try_from(component_order)
+                    .expect("one fixture effect has at most 65,536 components"),
+                expiration,
+                kind,
+            });
+    }
+    timestamp
 }
 
 fn copied_characteristics(definition: CardDefinitionId) -> CopiableCharacteristics {
@@ -455,6 +585,7 @@ mod static_animation;
 mod static_keyword_predicates;
 mod targeted_answers;
 mod targeting_characteristics;
+mod trigger_event_matchers;
 mod triggers_and_stack;
 mod triumphs;
 mod turn_and_loyalty;
@@ -471,7 +602,7 @@ use copy_effects::{
     copied_grant_origin, copied_grant_source_game, resolve_copy_artifact, sole_granted_origin,
 };
 use countering_and_mana::{acceptance_attempt_counterspell, acceptance_cast_action_targeting};
-use delayed_triggers::drain_pending;
+use delayed_triggers::{drain_pending, installing_object};
 use modal_effects::cast_mode;
 use old_school_spells::game_with_test_fused_split;
 use removal_and_keywords::dust_to_dust_targets;

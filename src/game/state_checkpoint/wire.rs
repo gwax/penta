@@ -196,22 +196,6 @@ pub(super) fn i16_pair(value: &Value) -> Result<[i16; 2], String> {
     Ok([read_i16(&values[0])?, read_i16(&values[1])?])
 }
 
-fn color_set_from_flags(flags: [bool; 5]) -> ColorSet {
-    let mut colors = ColorSet::empty();
-    for (present, color) in flags.into_iter().zip([
-        ManaColor::White,
-        ManaColor::Blue,
-        ManaColor::Black,
-        ManaColor::Red,
-        ManaColor::Green,
-    ]) {
-        if present {
-            colors = colors.with(color);
-        }
-    }
-    colors
-}
-
 /// Poison counters, which are additive on the wire: an observation written
 /// before poison existed simply has none, and reconstructs with none.
 pub(super) fn poison_pair(observation: &Value) -> Result<[u16; 2], String> {
@@ -527,57 +511,26 @@ fn parse_permanent(
     permanent.timestamp = ContinuousEffectTimestamp(state.timestamp);
     permanent.tapped = shown.tapped;
     permanent.damage = shown.damage;
-    permanent.power_bonus = state.power_bonus;
-    permanent.toughness_bonus = state.toughness_bonus;
-    permanent.while_source_tapped = state
-        .while_source_tapped
-        .iter()
-        .map(|(source, power, toughness)| TappedSourceStatBonus {
-            source: GameObjectId(*source),
-            power: *power,
-            toughness: *toughness,
-        })
-        .collect();
-    permanent.held_tapped_by = state
-        .held_tapped_by
-        .iter()
-        .map(|source| GameObjectId(*source))
-        .collect();
     permanent.attacking = shown.attacking;
     permanent.attack_defender = shown.attack_defender;
     permanent.blocked = shown.blocked;
     permanent.blocking = shown.blocking;
     permanent.activated_loyalty_this_turn = shown.activated_loyalty_this_turn;
-    permanent.unblockable_this_turn = state.unblockable_this_turn;
-    permanent.cannot_block_this_turn = state.cannot_block_this_turn;
     permanent.detained_until_turn_of = state
         .detained_until_turn_of
         .map(|(player, turns)| player_from_index(player).map(|player| (player, turns)))
         .transpose()?;
     permanent.destroy_at_end_of_combat = state.destroy_at_end_of_combat;
     permanent.skipped_untap_steps = state.skipped_untap_steps;
-    permanent.color_override = state.color_override.map(color_set_from_flags);
-    permanent.combat_damage_prevented = state.combat_damage_prevented;
-    permanent.combat_damage_dealt_by_prevented = state.combat_damage_dealt_by_prevented;
-    permanent.damage_dealt_by_prevented = state.damage_dealt_by_prevented;
     permanent.control_reverts_to = state
         .control_reverts_to
         .map(player_from_index)
         .transpose()?;
-    permanent.cannot_regenerate_this_turn = state.cannot_regenerate_this_turn;
     permanent.control_source = state.control_source.map(GameObjectId);
     permanent.control_requires_source_tapped = state.control_requires_source_tapped;
     permanent.chosen_player = state.chosen_player.map(player_from_index).transpose()?;
     permanent.chosen_creature_type = shown.chosen_creature_type;
     permanent.chosen_card_name = shown.chosen_card_name;
-    permanent.animation = state
-        .animation
-        .as_ref()
-        .map(|value| {
-            catalog_animation(catalog, value)
-                .ok_or_else(|| "checkpoint animation is absent from this catalog".to_owned())
-        })
-        .transpose()?;
     permanent.temporary_keywords = state
         .temporary_keywords
         .iter()
@@ -589,45 +542,10 @@ fn parse_permanent(
         .iter()
         .map(|entry| Ok((player_from_index(entry.seat)?, parse_keyword(entry.keyword))))
         .collect::<Result<Vec<_>, String>>()?;
-    permanent.temporary_granted_abilities = state
-        .temporary_granted_abilities
+    permanent.resolved_continuous_effects = state
+        .resolved_continuous_effects
         .iter()
-        .map(|grant| {
-            Ok(TemporaryGrantedAbility {
-                ability: catalog_ability(catalog, &grant.ability).ok_or_else(|| {
-                    "checkpoint granted ability locator is absent from this catalog".to_owned()
-                })?,
-                source: GameObjectId(grant.source),
-                source_definition: CardDefinitionId(grant.source_definition),
-                source_part: CardPartId(grant.source_part_id),
-                source_ability: AbilityId(grant.source_ability_id),
-                grant: GrantId(grant.grant_id),
-                timestamp: ContinuousEffectTimestamp(grant.timestamp),
-                order: grant.order,
-                expiration: parse_expiration(grant.expiration)?,
-            })
-        })
-        .collect::<Result<Vec<_>, String>>()?;
-    permanent.temporary_removed_abilities = state
-        .temporary_removed_abilities
-        .iter()
-        .map(|removal| {
-            let AppliedEffectDef::RemoveAbilities(predicate) =
-                catalog_applied_effect(catalog, &removal.effect).ok_or_else(|| {
-                    "checkpoint removed-ability locator is absent from this catalog".to_owned()
-                })?
-            else {
-                return Err(
-                    "checkpoint removed-ability locator is not a remove-abilities effect".into(),
-                );
-            };
-            Ok(TemporaryRemovedAbilities {
-                predicate,
-                timestamp: ContinuousEffectTimestamp(removal.timestamp),
-                order: removal.order,
-                expiration: parse_expiration(removal.expiration)?,
-            })
-        })
+        .map(|effect| parse_resolved_continuous_effect(effect, catalog))
         .collect::<Result<Vec<_>, String>>()?;
     permanent.activations_this_turn = state
         .activations_this_turn
@@ -684,6 +602,125 @@ fn parse_permanent(
         })
         .collect();
     Ok(permanent)
+}
+
+fn parse_resolved_continuous_effect(
+    state: &ResolvedContinuousEffectSnapshot,
+    catalog: &CardCatalog,
+) -> Result<ResolvedContinuousEffect, String> {
+    let source = AbilitySourceRef {
+        object: GameObjectId(state.source.object),
+        ability: ability_origin_from_snapshot(state.source.ability),
+    };
+    if !super::semantics::applied_effect_locator_matches_source(&state.definition, source) {
+        return Err(
+            "checkpoint resolved-effect locator disagrees with its source ability".to_owned(),
+        );
+    }
+    let definition = catalog_applied_effect(catalog, &state.definition)
+        .ok_or("checkpoint resolved-effect locator is absent from this catalog")?;
+    Ok(ResolvedContinuousEffect {
+        definition,
+        source,
+        timestamp: ContinuousEffectTimestamp(state.timestamp),
+        component_order: state.component_order,
+        expiration: parse_expiration(state.expiration)?,
+        kind: parse_resolved_operation(definition, &state.operation)?,
+    })
+}
+
+fn parse_resolved_operation(
+    definition: AppliedEffectDef,
+    state: &ResolvedContinuousOperationSnapshot,
+) -> Result<ResolvedContinuousEffectKind, String> {
+    let mismatch = || {
+        Err("checkpoint resolved-effect operation does not match its authored locator".to_owned())
+    };
+    match (definition, state) {
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Add(ability),
+            )),
+            ResolvedContinuousOperationSnapshot::AbilityAdd { grant_id },
+        ) => Ok(ResolvedContinuousEffectKind::Abilities(
+            ResolvedAbilityOperation::Add {
+                ability: *ability,
+                grant: GrantId(*grant_id),
+            },
+        )),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Remove(predicate),
+            )),
+            ResolvedContinuousOperationSnapshot::AbilityRemove,
+        ) => Ok(ResolvedContinuousEffectKind::Abilities(
+            ResolvedAbilityOperation::Remove(predicate),
+        )),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(value)),
+            ResolvedContinuousOperationSnapshot::BasicLandTypes { operation },
+        ) => Ok(ResolvedContinuousEffectKind::BasicLandTypes(
+            parse_set_operation(value, *operation)?,
+        )),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(value)),
+            ResolvedContinuousOperationSnapshot::CardTypes { operation },
+        ) => Ok(ResolvedContinuousEffectKind::CardTypes(
+            parse_set_operation(value, *operation)?,
+        )),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(value)),
+            ResolvedContinuousOperationSnapshot::Colors { operation },
+        ) => Ok(ResolvedContinuousEffectKind::Colors(parse_set_operation(
+            value, *operation,
+        )?)),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::CreatureTypes(value)),
+            ResolvedContinuousOperationSnapshot::CreatureTypes { operation },
+        ) => Ok(ResolvedContinuousEffectKind::CreatureTypes(
+            parse_set_operation(value, *operation)?,
+        )),
+        (AppliedEffectDef::Rule(rule), ResolvedContinuousOperationSnapshot::Rule) => {
+            Ok(ResolvedContinuousEffectKind::Rule(rule))
+        }
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::SetBase { .. },
+            )),
+            ResolvedContinuousOperationSnapshot::SetBasePowerToughness { power, toughness },
+        ) => Ok(ResolvedContinuousEffectKind::PowerToughness(
+            ResolvedPowerToughnessOperation::SetBase {
+                power: *power,
+                toughness: *toughness,
+            },
+        )),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::Modify { .. },
+            )),
+            ResolvedContinuousOperationSnapshot::ModifyPowerToughness { power, toughness },
+        ) => Ok(ResolvedContinuousEffectKind::PowerToughness(
+            ResolvedPowerToughnessOperation::Modify {
+                power: *power,
+                toughness: *toughness,
+            },
+        )),
+        _ => mismatch(),
+    }
+}
+
+fn parse_set_operation<T: Copy>(
+    definition: SetOperationDef<T>,
+    state: SetOperationSnapshot,
+) -> Result<SetOperationDef<T>, String> {
+    match (definition, state) {
+        (SetOperationDef::Add(value), SetOperationSnapshot::Add) => Ok(SetOperationDef::Add(value)),
+        (SetOperationDef::Remove(value), SetOperationSnapshot::Remove) => {
+            Ok(SetOperationDef::Remove(value))
+        }
+        (SetOperationDef::Set(value), SetOperationSnapshot::Set) => Ok(SetOperationDef::Set(value)),
+        _ => Err("checkpoint set operation does not match its authored locator".into()),
+    }
 }
 
 pub(super) fn parse_copiable_characteristics(
@@ -789,8 +826,18 @@ pub(super) fn parse_pending_events(
                     .effects
                     .iter()
                     .map(|effect| {
+                        let context = parse_replacement_context_snapshot(effect.context)?;
+                        if !replacement_effect_locator_matches_source(
+                            &effect.effect,
+                            context.source,
+                        ) {
+                            return Err(
+                                "pending entry replacement locator disagrees with its source"
+                                    .into(),
+                            );
+                        }
                         Ok(PendingReplacementEffect {
-                            context: parse_replacement_context_snapshot(effect.context)?,
+                            context,
                             effect: catalog_entry_replacement_effect(catalog, &effect.effect)?,
                         })
                     })
@@ -798,16 +845,6 @@ pub(super) fn parse_pending_events(
             })
         })
         .collect()
-}
-
-pub(super) fn catalog_entry_replacement_effect(
-    catalog: &CardCatalog,
-    locator: &EntryReplacementLocator,
-) -> Result<BattlefieldEntryReplacementEffect, String> {
-    let ability = catalog_ability(catalog, &locator.ability)
-        .ok_or("entry replacement ability locator is absent from this catalog")?;
-    entry_replacement_effect(&ability)
-        .ok_or_else(|| "locator does not identify an entry replacement effect".into())
 }
 
 pub(super) const fn parse_zone_kind(zone: ZoneKindSnapshot) -> ZoneKind {
@@ -893,80 +930,4 @@ pub(super) fn parse_attack_defender(value: &Value) -> Result<AttackDefender, Str
     }
 }
 
-pub(super) fn parse_cast_signature(value: &Value) -> Result<CastSignature, String> {
-    let form_value = field(value, "form")?;
-    let form = match str_field(form_value, "kind")? {
-        "part" => SpellForm::Part(CardPartId(
-            u8::try_from(usize_field(form_value, "partId")?).map_err(|_| "part id too large")?,
-        )),
-        "combined" => SpellForm::Combined(
-            array(field(form_value, "partIds")?)?
-                .iter()
-                .map(|part| read_u8(part).map(CardPartId))
-                .collect::<Result<Vec<_>, _>>()?,
-        ),
-        other => return Err(format!("unknown spell form {other}")),
-    };
-    let alternative = value
-        .get("alternativeCostId")
-        .filter(|v| !v.is_null())
-        .map(|v| read_u8(v).map(AlternativeCostId))
-        .transpose()?;
-    let additional = array(field(value, "additionalCostIds")?)?
-        .iter()
-        .map(|v| read_u8(v).map(AdditionalCostId))
-        .collect::<Result<Vec<_>, _>>()?;
-    let modes = array(field(value, "modeIds")?)?
-        .iter()
-        .map(|v| read_u8(v).map(ModeId))
-        .collect::<Result<Vec<_>, _>>()?;
-    let selections = array(field(value, "targetSelections")?)?
-        .iter()
-        .map(parse_target_selection)
-        .collect::<Result<Vec<_>, _>>()?;
-    let choices = CastChoices::new(PlayOptionId(
-        u8::try_from(usize_field(value, "playOptionId")?).map_err(|_| "play option too large")?,
-    ))
-    .with_modes(modes)
-    .with_costs(CostConfiguration::new(alternative, additional))
-    .with_x(u16::try_from(usize_field(value, "x")?).map_err(|_| "x too large")?)
-    .with_targets(selections);
-    Ok(CastSignature::from_validated_choices(form, choices))
-}
-
-pub(super) fn parse_target_selection(value: &Value) -> Result<TargetSelection, String> {
-    let slot = TargetSlotId(
-        u8::try_from(usize_field(value, "slotId")?).map_err(|_| "target slot too large")?,
-    );
-    let targets = array(field(value, "targets")?)?
-        .iter()
-        .map(parse_target)
-        .collect::<Result<Vec<_>, _>>()?;
-    let amounts = array(field(value, "amounts")?)?
-        .iter()
-        .map(read_u16)
-        .collect::<Result<Vec<_>, _>>()?;
-    if amounts.is_empty() {
-        Ok(TargetSelection::new(slot, targets))
-    } else if amounts.len() == targets.len() {
-        Ok(TargetSelection::divided(slot, targets, amounts))
-    } else {
-        Err("divided target amounts do not match targets".into())
-    }
-}
-
-pub(super) fn parse_target(value: &Value) -> Result<Target, String> {
-    match str_field(value, "type")? {
-        "player" => Ok(Target::Player(seat_value(field(value, "seat")?)?)),
-        "card" => Ok(Target::Card(PublicGameObjectId(u32_field(
-            value, "objectId",
-        )?))),
-        "permanent" => Ok(Target::Permanent(PublicGameObjectId(u32_field(
-            value, "objectId",
-        )?))),
-        "spell" => Ok(Target::Spell(PublicGameObjectId(u32_field(
-            value, "objectId",
-        )?))),
-        other => Err(format!("unknown target type {other}")),
-    }
-}
+include!("wire_cast.rs");

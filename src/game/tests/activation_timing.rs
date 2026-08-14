@@ -185,8 +185,9 @@ mod once_each_turn {
         assert_eq!(game.power(drake), Some(2), "and the one activation landed");
     }
 
-    /// The cap is per turn, so cleanup returns it. This is the half that a
-    /// naive "used" flag with no clearing would get wrong.
+    /// The cap is per turn, so the next turn returns it. Cleanup alone cannot
+    /// erase turn history because an effect may insert another phase before
+    /// the next turn actually begins.
     #[test]
     fn the_allowance_returns_with_the_turn() {
         let (mut game, drake_id) = drake_game();
@@ -194,6 +195,8 @@ mod once_each_turn {
         assert!(!offers(&game, PlayerId::One, drake_id));
 
         game.finish_cleanup();
+        game.start_next_turn();
+        game.priority = PlayerId::One;
         game.players[PlayerId::One.index()].mana_pool.red = 5;
 
         assert!(

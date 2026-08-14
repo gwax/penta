@@ -21,31 +21,41 @@ pub(crate) mod sets;
 pub(crate) use record::{AbilityPolicyHint, CardAbilityBinding};
 
 pub use behavior::CardBehavior;
-pub use catalog::{CardCatalog, CatalogError, GrantedAbilityValidationError};
+pub use catalog::{CardCatalog, CatalogError, EffectSubjectKind, GrantedAbilityValidationError};
 pub use characteristics::{CharacteristicContext, CharacteristicError, applicable_part_ids};
 pub use creature_types::CREATURE_TYPES;
 pub use model::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityEffectDef,
-    AbilityPredicateDef, AbilityProcedureDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivatedAbilityDef, ActivationTimingDef, AddManaEffectDef, AdditionalCostDef,
-    AlternateSpellKind, AlternativeCastAbilityDef, AlternativeCastKindDef,
-    AlternativeCastManaCostDef, AlternativeCostDef, AnimationDef, AppliedEffectDef,
-    AttachedAbilityDef, BasicLandType, BattlefieldEntryModificationDef, CardAbilityList, CardArt,
-    CardChoiceSourceDef, CardComposition, CardDefinition, CardEffectStatus, CardPart, CardPrinting,
-    CardPrintingId, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet,
-    ColorSet, ComparisonDef, ConditionDef, ConditionalValueDef, CostDef, CountConditionDef,
-    CounterKind, CreatureStats, DamageSourceGroupDef, DeclarativeAbilityDef, DiscardSelectionDef,
-    DividedTotal, DoubleFacedKind, EffectDef, EffectDurationDef, EffectExecutionDef,
-    EffectRecipientDef, HybridPair, ImplementationStatus, KeywordAbility, LikelihoodDef, ManaColor,
-    ManaCost, ManaCostParseError, ManaCostParseErrorKind, ManaRestrictionDef, ManaSelectionDef,
-    ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef, MeldResultDef, ModalSpellDef, ModeDef,
-    ModeSetDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind, PlayOptionDef,
-    PlayRestriction, PlayerRelation, PrintedManaCost, QuantifierDef, ReplacementAbilityDef,
-    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ScaledValueDef,
-    ShieldCoverageDef, SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, SpellForm,
-    StaticAbilityDef, TargetConditionDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnKindDef, TurnStepDef, ValueDef,
-    ZoneKind, ZoneMoveCauseDef, ZonePlacement,
+    AbilityOperationDef, AbilityPredicateDef, AbilityProcedureDef, AbilityProgramDef,
+    AbilityTargetDef, AbilityTargetPredicate, ActivatedAbilityDef, ActivationTimingDef,
+    AddManaEffectDef, AdditionalCostDef, AlternateSpellKind, AlternativeCastAbilityDef,
+    AlternativeCastKindDef, AlternativeCastManaCostDef, AlternativeCostDef, AppliedEffectDef,
+    AppliedRuleDef, AttachedAbilityDef, AttackDeclarationRangeDef, AttackEventMatcherDef,
+    BasicLandType, BattlefieldEntryChoiceDestinationDef, BattlefieldEntryModificationDef,
+    BattlefieldEntryScalarChoiceDef, CardAbilityList, CardArt, CardChoiceSourceDef,
+    CardComposition, CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId,
+    CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet,
+    CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef,
+    ConditionDef, ConditionalValueDef, ControlDurationDef, CostDef, CountConditionDef, CounterKind,
+    CreatureStats, CreatureTypeSetDef, DamageCoverageDef, DamageEventMatcherDef, DamageKindDef,
+    DamagePreventionCapacityDef, DamagePreventionDef, DamagePreventionFollowUpDef,
+    DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DeclarativeAbilityDef,
+    DiscardSelectionDef, DividedTotal, DoubleFacedKind, EffectDef, EffectExecutionDef,
+    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, HybridPair,
+    ImplementationStatus, InstalledTriggerDef, InstalledTriggerLifetimeDef, KeywordAbility,
+    LikelihoodDef, ManaColor, ManaCost, ManaCostParseError, ManaCostParseErrorKind,
+    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, MeldComponentDef, MeldRecipeDef,
+    MeldResultDef, ModalSpellDef, ModeDef, ModeSetDef, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef, PlayActionKind,
+    PlayActionMatcherDef, PlayOptionDef, PlayRestriction, PlayRestrictionDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, PrintedManaCost, QuantifierDef,
+    ReplacementAbilityDef, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, ScalarChoiceListDef, ScaledValueDef,
+    SetOperationDef, SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, SpellForm,
+    SplitIntoPilesDef, StaticAbilityDef, TapEventMatcherDef, TapPurposeDef, TargetConditionDef,
+    TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TriggeredAbilityDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
+    ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

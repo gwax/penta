@@ -9,27 +9,30 @@ use crate::action::{
 #[cfg(test)]
 use crate::card::AbilityPredicateDef;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityProcedureDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivatedAbilityDef, ActivationTimingDef, AddManaEffectDef, AlternativeCastAbilityDef,
-    AlternativeCastKindDef, AnimationDef, AppliedEffectDef, BasicLandType,
-    BattlefieldEntryModificationDef, CREATURE_TYPES, CardBehavior, CardCatalog,
+    AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityProcedureDef, AbilityTargetDef,
+    AbilityTargetPredicate, ActivatedAbilityDef, ActivationTimingDef, AddManaEffectDef,
+    AlternativeCastAbilityDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
+    BasicLandType, BattlefieldEntryModificationDef, CREATURE_TYPES, CardBehavior, CardCatalog,
     CardChoiceSourceDef, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
-    CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext, ColorSet,
-    ComparisonDef, ConditionDef, CostDef, CounterKind, DamageSourceGroupDef, DeclarativeAbilityDef,
-    DiscardSelectionDef, DividedTotal, DoubleFacedKind, EffectDef, EffectDurationDef,
-    EffectRecipientDef, HybridPair, KeywordAbility, ManaCost, ManaRestrictionDef, ManaSelectionDef,
-    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayActionKind,
-    PlayOptionDef, PlayRestriction, PlayerRelation, QuantifierDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, ShieldCoverageDef, TargetPredicate, TargetSlotDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef,
+    CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext,
+    CharacteristicOperationDef, ColorSet, ComparisonDef, ConditionDef, ControlDurationDef,
+    CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DeclarativeAbilityDef, DiscardSelectionDef,
+    DividedTotal, DoubleFacedKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, EffectRecipientSetDef, HybridPair, KeywordAbility, ManaCost,
+    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef, ReplacementChoiceDef,
+    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SetOperationDef, TapPurposeDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
     ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;
 use crate::ids::{
-    AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, ChoiceIndex,
-    GameObjectId, GrantId, ModeId, PhysicalCardId, PlayOptionId, PlayerId, TargetIndex,
-    TargetSlotId,
+    AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, GameObjectId,
+    GrantId, ModeId, PhysicalCardId, PlayOptionId, PlayerId, TargetIndex, TargetSlotId,
 };
 use crate::rng::ReplayRng;
 #[cfg(test)]
@@ -93,13 +96,18 @@ mod trigger_state;
 mod turn;
 mod zones;
 
-use prevention_state::{RelationalDamagePrevention, RelationalSourceFilter};
+use prevention_state::{
+    RelationalSourceFilter, ResolvedDamagePrevention, ResolvedDamagePreventionCapacity,
+    ResolvedDamagePreventionCoverage, ResolvedDamageRecipientMatcher, ResolvedDamageRedirect,
+    ResolvedDamageSourceMatcher,
+};
 
 pub use decision::{
     DecisionKind, DecisionObservation, DecisionOption, DecisionOrderSemantics, DecisionPreference,
     DecisionVisibility, DecisionZone,
 };
 pub use error::GameError;
+use event::TurnPhaseResume;
 pub use event::{BattlefieldExit, GameEvent, GameResult, StackObjectKind, Step, WinReason};
 pub use mana::{Mana, ManaPool, ManaSource};
 pub use observation::{
@@ -122,14 +130,16 @@ use characteristic_state::{
 };
 use combat_state::CombatDamageStage;
 use continuous_state::{
-    AbilityEffectExpiration, AbilityLayerOperation, AbilityLayerOperationKind,
-    ContinuousEffectTimestamp, StaticAppliedEffect, StaticEffectTraversal, TemporaryAbilityGrant,
-    TemporaryGrantedAbility, TemporaryRemovedAbilities,
+    AbilityLayerOperation, AbilityLayerOperationKind, AppliedPlayRestriction, AppliedRuleEffect,
+    ContinuousEffectExpiration, ContinuousEffectTimestamp, ResolvedAbilityOperation,
+    ResolvedContinuousEffect, ResolvedContinuousEffectKind, ResolvedPlayRestriction,
+    ResolvedPowerToughnessOperation, StaticAppliedEffect, StaticEffectTraversal,
+    TemporaryAbilityGrant,
 };
 use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
     DecisionContinuation, DeferredBeginTurnEffect, FORK_COPY_COLOR, PendingDecision, Pregame,
-    SacrificeFollowup, ZoneMoveCause,
+    ResolvedEffectPayment, SacrificeFollowup, ZoneMoveCause,
 };
 use mana_state::{
     AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaPaymentPurpose,
@@ -137,15 +147,15 @@ use mana_state::{
 };
 use procedure_state::{DrawReplacement, PendingProcedure};
 use replacement_state::{
-    ApplicableReplacement, ApplicableZoneMoveReplacement, BattlefieldEntryReplacementEffect,
-    BattlefieldExitCompletion, EntryCompletion, FrozenZoneMoveReplacement, PendingBattlefieldEntry,
+    ApplicableReplacement, ApplicableZoneMoveReplacement, BattlefieldExitCompletion,
+    EntryCompletion, FrozenZoneMoveReplacement, PendingBattlefieldEntry,
     PendingBattlefieldExitBatch, PendingBattlefieldExitMove, PendingEvent,
     PendingReplacementEffect, ReplaceableEvent, ReplacementEffectContext,
 };
 use trigger_state::{
-    AbilitySourceRef, BattlefieldTriggerListener, CommittedTriggerEvent, DelayedTrigger,
-    FloatingTrigger, PendingTrigger, TriggerCapture, TriggerContext, TriggerEventObject,
-    TriggerPlacementBatch,
+    AbilitySourceRef, BattlefieldTriggerListener, CommittedTriggerEvent, EffectResolutionContext,
+    InstalledTrigger, InstalledTriggerLifetime, PendingTrigger, TriggerCapture, TriggerContext,
+    TriggerEventObject, TriggerPlacementBatch,
 };
 
 #[cfg(test)]
@@ -193,16 +203,6 @@ struct CardInstance {
     characteristics: CharacteristicSource,
 }
 
-/// A power/toughness modification that lasts while a named permanent
-/// remains tapped. The source is recorded rather than the deadline, since
-/// there is no deadline to record.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct TappedSourceStatBonus {
-    source: GameObjectId,
-    power: i16,
-    toughness: i16,
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 struct Permanent {
@@ -215,28 +215,12 @@ struct Permanent {
     tapped: bool,
     entered_controller_turn: u32,
     damage: u16,
-    /// Loyalty counters are distinct from marked creature damage and persist
-    power_bonus: i16,
-    toughness_bonus: i16,
-    /// Modifications that end when the permanent that made them untaps,
-    /// rather than at cleanup with `power_bonus`.
-    while_source_tapped: Vec<TappedSourceStatBonus>,
-    /// Permanents whose staying tapped keeps this one from untapping. Like
-    /// `while_source_tapped` the rule has no deadline; the sources do.
-    held_tapped_by: Vec<GameObjectId>,
     attacking: bool,
     attack_defender: Option<crate::AttackDefender>,
     emblem_source: Option<AbilityOrigin>,
     /// Whether a loyalty ability has already been activated this turn. CR
     /// 606.3 allows one per planeswalker per turn.
     activated_loyalty_this_turn: bool,
-    /// Whether nothing may block this creature for the rest of the turn.
-    /// Cleared in cleanup with the other until-end-of-turn state.
-    unblockable_this_turn: bool,
-    /// Whether a resolved effect has taken this permanent's blocking away for
-    /// the rest of the turn. The printed static form is read from the
-    /// continuous layer instead.
-    cannot_block_this_turn: bool,
     /// Detained until this player's next turn begins, recorded with how many
     /// turns they had taken when it landed so "next" means the one after.
     detained_until_turn_of: Option<(PlayerId, u32)>,
@@ -245,26 +229,9 @@ struct Permanent {
     /// How many of this permanent's controller's untap steps it still has to
     /// sit out. Counted rather than flagged because Telekinesis names two.
     skipped_untap_steps: u8,
-    /// Colours a resolved effect painted over the printed ones. The Lace
-    /// cycle's change lasts indefinitely, so this is permanent state rather
-    /// than a continuous effect with a duration to expire.
-    color_override: Option<ColorSet>,
-    /// Whether combat damage to and from this permanent is prevented for the
-    /// rest of the turn. Maze of Ith sets it; the creature stays an attacker
-    /// so its attack triggers and its blockers are unaffected.
-    combat_damage_prevented: bool,
-    /// Whether combat damage from this permanent is prevented without also
-    /// preventing combat damage to it. Kor Haven uses this narrower marker.
-    combat_damage_dealt_by_prevented: bool,
-    /// Every kind of damage this permanent would deal is prevented for the
-    /// rest of the turn, not only its combat damage.
-    damage_dealt_by_prevented: bool,
     /// Who controls this permanent again once the turn ends, set while a
     /// control-changing effect holds it. Cleanup restores it.
     control_reverts_to: Option<PlayerId>,
-    /// Whether a "can't be regenerated" effect is covering this permanent
-    /// for the rest of the turn.
-    cannot_regenerate_this_turn: bool,
     /// The permanent whose continued presence is holding this one's control
     /// change. When it leaves the battlefield or changes hands, control goes
     /// back to `control_reverts_to`.
@@ -282,14 +249,12 @@ struct Permanent {
     chosen_card_name: Option<String>,
     destroy_at_end: bool,
     temporary_keywords: Vec<KeywordAbility>,
-    temporary_granted_abilities: Vec<TemporaryGrantedAbility>,
-    temporary_removed_abilities: Vec<TemporaryRemovedAbilities>,
-    /// The creature this permanent has become for the turn, if a manland's
-    /// animation ability has resolved.
-    animation: Option<&'static AnimationDef>,
+    /// Resolved noncopiable characteristic changes and rules modifications,
+    /// in creation order.
+    resolved_continuous_effects: Vec<ResolvedContinuousEffect>,
     /// How many times each of this permanent's activated abilities has been
     /// activated this turn, for the cards that count their own activations.
-    /// Cleared with the rest of the once-a-turn state.
+    /// Cleared when the next turn begins, after any inserted phases.
     activations_this_turn: Vec<(AbilityOrigin, u8)>,
     /// Every kind of counter this permanent carries, indexed by
     /// [`CounterKind::index`]. Only +1/+1 counters have rules meaning on their
@@ -330,8 +295,8 @@ struct Permanent {
     /// death trigger can use the live source or its retired LKI snapshot.
     damage_sources: Vec<GameObjectId>,
     /// Whether this permanent has dealt damage to an opponent of its
-    /// controller this turn, by any means. Cleared in cleanup with the rest
-    /// of the once-a-turn state.
+    /// controller this turn, by any means. Cleared when the next turn begins,
+    /// after any inserted phases.
     dealt_damage_to_opponent_this_turn: bool,
     /// Whether any damage still marked on this permanent came from a source
     /// with deathtouch. The source may leave before state-based actions are
@@ -363,25 +328,14 @@ impl Permanent {
             tapped: false,
             entered_controller_turn,
             damage: 0,
-            power_bonus: 0,
-            toughness_bonus: 0,
-            while_source_tapped: Vec::new(),
-            held_tapped_by: Vec::new(),
             attacking: false,
             attack_defender: None,
             emblem_source: None,
             activated_loyalty_this_turn: false,
-            unblockable_this_turn: false,
-            cannot_block_this_turn: false,
             detained_until_turn_of: None,
             destroy_at_end_of_combat: false,
             skipped_untap_steps: 0,
-            color_override: None,
-            combat_damage_prevented: false,
-            combat_damage_dealt_by_prevented: false,
-            damage_dealt_by_prevented: false,
             control_reverts_to: None,
-            cannot_regenerate_this_turn: false,
             control_source: None,
             control_requires_source_tapped: false,
             blocked: false,
@@ -391,9 +345,7 @@ impl Permanent {
             chosen_card_name: None,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
-            temporary_granted_abilities: Vec::new(),
-            temporary_removed_abilities: Vec::new(),
-            animation: None,
+            resolved_continuous_effects: Vec::new(),
             activations_this_turn: Vec::new(),
             counters: [0; CounterKind::COUNT],
             attached_to: None,
@@ -472,9 +424,9 @@ struct StackObject {
     /// They transfer to a resolving permanent but are not copied by spell-copy
     /// effects.
     text_changes: Vec<BasicLandTypeChange>,
-    /// Colours the copy effect that made this object imposed on it, for
-    /// "except that the copy is red". Nothing else changes an object's
-    /// colour on the stack.
+    /// Colours imposed on this object by a copy effect or a resolving
+    /// characteristic effect, such as "except that the copy is red" or a
+    /// Lace. The override lasts for this stack incarnation.
     colors: Option<ColorSet>,
     /// Flashback replaces every destination this physical card would use when
     /// leaving the stack. This is frozen at cast time because the permission
@@ -499,7 +451,7 @@ struct StackAbilityPayload {
     text: Option<&'static str>,
     target_defs: Vec<AbilityTargetDef>,
     targets: Vec<TargetSelection>,
-    context: TriggerContext,
+    context: EffectResolutionContext,
     resolver: StackAbilityResolver,
     /// The intervening-if condition, re-read as this ability resolves.
     condition: Option<&'static TriggerConditionDef>,
@@ -653,6 +605,27 @@ impl StackObject {
         self.iter_targets().copied().collect()
     }
 
+    /// Targets announced for this spell or ability. Installed abilities may
+    /// retain an earlier ability's selections as lexical references for
+    /// resolution, but those are not targets of the triggered ability and
+    /// must not be presented publicly as though they were chosen again.
+    fn declared_targets(&self) -> Vec<Target> {
+        if let Some(signature) = &self.signature {
+            return signature.iter_targets().copied().collect();
+        }
+        self.ability
+            .iter()
+            .flat_map(|ability| {
+                ability
+                    .targets
+                    .iter()
+                    .take(ability.target_defs.len())
+                    .flat_map(TargetSelection::targets)
+            })
+            .copied()
+            .collect()
+    }
+
     fn first_target(&self) -> Option<Target> {
         self.iter_targets().next().copied()
     }
@@ -748,12 +721,16 @@ pub struct Game {
     /// How many of each player's next sorceries may be cast as though they
     /// had flash. Quicken grants one, and the grant lapses with the turn.
     sorcery_flash_grants: [u8; 2],
-    /// Combat phases still owed this turn, added by an effect rather than by
-    /// the ordinary turn structure.
-    additional_combat_phases: u8,
-    /// Whether each player has been stopped from casting noncreature spells
-    /// for the rest of the turn.
-    noncreature_casts_locked: [bool; 2],
+    /// Additional major phases that will happen after the current phase. New
+    /// sequences are prepended, matching the newest-first ordering rule for
+    /// multiple effects that add phases after the same boundary.
+    turn_phase_queue: VecDeque<TurnPhaseDef>,
+    /// The ordinary continuation displaced when the first queued phase starts.
+    /// It stays frozen while nested phase schedules prepend more work.
+    turn_phase_resume: Option<TurnPhaseResume>,
+    /// Resolving play prohibitions in creation/component order. Static
+    /// prohibitions remain source-derived from battlefield abilities.
+    resolved_play_restrictions: Vec<ResolvedPlayRestriction>,
     /// Emblems, which are objects with abilities and no zone. They are kept
     /// beside the battlefield rather than on it: only the static-effect walk
     /// reads them, and nothing can target, tap, or destroy one.
@@ -775,18 +752,20 @@ pub struct Game {
     defer_empty_library_loss: bool,
     /// One-shot draw replacements, in creation order for each player.
     draw_replacements: [VecDeque<DrawReplacement>; 2],
-    /// Prevention rules that inspect control or source identity when damage
-    /// would be dealt rather than freezing a set of permanents at resolution.
-    relational_damage_preventions: Vec<RelationalDamagePrevention>,
+    /// Resolved damage-prevention rules in creation order. Static prevention
+    /// is derived live from the ability that creates it and is not stored.
+    damage_preventions: Vec<ResolvedDamagePrevention>,
+    /// Resolved damage-redirection replacements in creation order. These are
+    /// applied before prevention and remain separate from prevention state.
+    damage_redirects: Vec<ResolvedDamageRedirect>,
     /// The revealed card a miracle cost may currently be paid for. The window
     /// belongs to one card and closes as soon as its controller does anything
     /// else.
     miracle_window: Option<GameObjectId>,
-    /// Effects waiting for a step to begin. Obzedat's return is one.
-    delayed_triggers: Vec<DelayedTrigger>,
-    /// Triggered abilities listening from nowhere until their controller's
-    /// next turn. Jace's first ability installs one.
-    floating_triggers: Vec<FloatingTrigger>,
+    /// Triggered abilities installed by resolved effects and listening from
+    /// outside every zone.
+    installed_triggers: Vec<InstalledTrigger>,
+    next_installed_trigger_id: u32,
     blockers_declared: bool,
     untap_pending: bool,
     pregame: Option<Pregame>,
@@ -807,39 +786,8 @@ pub struct Game {
     next_regular_player: PlayerId,
     extra_turns: Vec<PlayerId>,
     channel_active: [bool; 2],
-    /// A Fog: all combat damage this turn is prevented. This is game state
-    /// rather than permanent state because it outlives any particular
-    /// creature, and applies to combatants that were not on the battlefield
-    /// when it resolved.
-    all_combat_damage_prevented: bool,
-    /// Prevention shields waiting for damage this turn. Each is spent as the
-    /// damage it covers is dealt, and whatever is left is discarded in
-    /// cleanup, so a shield never outlives the turn that made it.
-    prevention_shields: Vec<PreventionShield>,
     result: Option<GameResult>,
     events: Vec<GameEvent>,
-}
-
-/// One "prevent the next N damage" promise. `remaining` of `None` is the
-/// "prevent all damage" form, which is never spent and simply lasts the turn.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct PreventionShield {
-    recipient: Target,
-    remaining: Option<u16>,
-    /// The one source this shield answers, for "the next time a source of
-    /// your choice would deal damage". `None` covers every source, which is
-    /// what an ordinary "prevent the next N damage" shield does. A shield
-    /// naming a source is spent by the first damage that source deals however
-    /// much it prevents, so it is removed on use even without a remaining
-    /// count.
-    source: Option<GameObjectId>,
-    /// How much of a covered hit this shield stops. Only a shield naming a
-    /// source uses anything but the whole of it.
-    coverage: ShieldCoverageDef,
-    /// Whether the recipient's controller gains life equal to what this
-    /// shield actually prevented, which Reverse Damage does and an ordinary
-    /// shield does not.
-    gain_life: bool,
 }
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 use super::{
-    CardSupertype, CardType, CounterKind, Game, GameObjectId, GameResult, PlayerId,
+    AppliedRuleDef, CardSupertype, CardType, CounterKind, Game, GameObjectId, GameResult, PlayerId,
     TriggerEventDef, WinReason,
 };
 
@@ -54,7 +54,9 @@ impl Game {
                 if !lethal_damage || self.has_indestructible(permanent) {
                     continue;
                 }
-                if permanent.regeneration_shields > 0 && !permanent.cannot_regenerate_this_turn {
+                if permanent.regeneration_shields > 0
+                    && !self.has_applied_rule(permanent, AppliedRuleDef::CannotRegenerate)
+                {
                     regenerate.push(permanent.card.id);
                 } else {
                     die.push(permanent.card.id);

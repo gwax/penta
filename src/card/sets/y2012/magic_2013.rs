@@ -6,14 +6,16 @@ use crate::card::sets::{
 };
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, ComparisonDef, CounterKind, DiscardSelectionDef, DividedTotal,
-    EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEventDef,
-    SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
+    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
+    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
+    DiscardSelectionDef, DividedTotal, EffectDef, EffectExecutionDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // M13 1 — Ajani, Caller of the Pride
@@ -39,11 +41,11 @@ pub(in crate::card::sets) static ANGELIC_BENEDICTION: CardRecord = CardRecord::n
         abilities::exalted(),
         AbilityDef::triggered_with_targets(
             "Whenever a creature you control attacks alone, you may tap target creature.",
-            TriggerEventDef::AttacksInGroup {
-                attacker: ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                minimum_total: 1,
-                maximum_total: Some(1),
-            },
+            TriggerEventDef::attacks_in_declaration(
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                1,
+                Some(1),
+            ),
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
@@ -69,11 +71,11 @@ pub(in crate::card::sets) static ATTENDED_KNIGHT: CardRecord = CardRecord::new(
         abilities::first_strike(),
         AbilityDef::triggered(
             "When this creature enters, create a 1/1 white Soldier creature token.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::CreateToken {
                 token: cards::SOLDIER_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
@@ -103,24 +105,17 @@ pub(in crate::card::sets) static BATTLEFLIGHT_EAGLE: CardRecord = CardRecord::ne
         abilities::flying(),
         AbilityDef::triggered_with_targets(
             "When this creature enters, target creature gets +2/+2 and gains flying until end of turn.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::Composite(&[
-                    AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(2),
-                        toughness: ValueDef::Constant(2),
-                    },
-                    AppliedEffectDef::GrantAbility(&abilities::flying()),
+                    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+                    AppliedEffectDef::add_ability(&abilities::flying()),
                 ]),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -137,33 +132,32 @@ pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::
             abilities::vigilance(),
             AbilityDef::static_ability(
                 "Other Soldier creatures you control get +1/+1 and have vigilance.",
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::All(&[
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
                             ObjectPredicateDef::Subtype("Soldier"),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::You,
-                    },
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::ModifyPowerToughness {
-                            power: ValueDef::Constant(1),
-                            toughness: ValueDef::Constant(1),
-                        },
-                        AppliedEffectDef::GrantAbility(&abilities::vigilance()),
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(1),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::vigilance()),
                     ]),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
             AbilityDef::triggered(
                 "When this creature enters, create three 1/1 white Soldier creature tokens.",
-                TriggerEventDef::ZoneChanged {
-                    object: ObjectPredicateDef::Source,
-                    from: None,
-                    to: Some(ZoneKind::Battlefield),
-                },
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
                 EffectDef::CreateToken {
                     token: cards::SOLDIER_TOKEN_1_1_WHITE,
                     count: ValueDef::Constant(3),
@@ -190,11 +184,11 @@ pub(in crate::card::sets) static CAPTAINS_CALL: CardRecord = CardRecord::new(
     )),
 );
 
-static CRUSADER_CREATURES: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static CRUSADER_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M13 10 — Crusader of Odric
 pub(in crate::card::sets) static CRUSADER_OF_ODRIC: CardRecord = CardRecord::new(
@@ -205,13 +199,9 @@ pub(in crate::card::sets) static CRUSADER_OF_ODRIC: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 0, 0).with_ability(
         AbilityDef::static_ability(
             "Crusader of Odric's power and toughness are each equal to the number of creatures you control.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::CountMatchingObjects(&CRUSADER_CREATURES),
-                    toughness: ValueDef::CountMatchingObjects(&CRUSADER_CREATURES),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(ValueDef::CountMatchingObjects(&CRUSADER_CREATURES), ValueDef::CountMatchingObjects(&CRUSADER_CREATURES)),
             },
         ),
     ),
@@ -237,11 +227,11 @@ pub(in crate::card::sets) static DIVINE_FAVOR: CardRecord = CardRecord::new(
             ),
             AbilityDef::triggered(
                 "When this Aura enters, you gain 3 life.",
-                TriggerEventDef::ZoneChanged {
-                    object: ObjectPredicateDef::Source,
-                    from: None,
-                    to: Some(ZoneKind::Battlefield),
-                },
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
                 EffectDef::GainLife {
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(3),
@@ -249,13 +239,12 @@ pub(in crate::card::sets) static DIVINE_FAVOR: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +1/+3.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(1),
-                        toughness: ValueDef::Constant(3),
-                    },
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(3),
+                    ),
                 },
             ),
         ]),
@@ -309,16 +298,16 @@ pub(in crate::card::sets) static GLORIOUS_CHARGE: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell(
         "Creatures you control get +1/+1 until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(1),
-                toughness: ValueDef::Constant(1),
-            },
-            duration: EffectDurationDef::UntilEndOfTurn,
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(1),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -333,22 +322,15 @@ pub(in crate::card::sets) static GRIFFIN_PROTECTOR: CardRecord = CardRecord::new
         abilities::flying(),
         AbilityDef::triggered(
             "Whenever another creature you control enters, this creature gets +1/+1 until end of turn.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::All(&[
+            TriggerEventDef::zone_changed(ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                ]),
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+                ]), None, Some(ZoneKind::Battlefield)),
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -386,15 +368,15 @@ pub(in crate::card::sets) static HEALER_OF_THE_PRIDE: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Cat", "Cleric"], 2, 3).with_ability(
         AbilityDef::triggered(
             "Whenever another creature you control enters, you gain 2 life.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::All(&[
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                 ]),
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(2),
@@ -425,11 +407,7 @@ pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
     CardArt::new("1e2a73ec-39be-4d23-8c25-17d7c174dcee", "Franz Vohwinkel"),
     CardSet::Magic2013,
     CardRules::new_enchantment(mana_cost!("{2}{W}")).with_abilities(&[
-        AbilityDef::triggered_with_targets("When this enchantment enters, exile another target nonland permanent.", TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            }, &[AbilityTargetDef::exactly_one(
+        AbilityDef::triggered_with_targets("When this enchantment enters, exile another target nonland permanent.", TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)), &[AbilityTargetDef::exactly_one(
             AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
@@ -444,11 +422,7 @@ pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
             }),
         AbilityDef::triggered(
             "When this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: None,
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), None),
             EffectDef::ReturnLinkedExiles {
                 zone: ZoneKind::Battlefield,
                 grant: None,
@@ -481,21 +455,21 @@ pub(in crate::card::sets) static PLANAR_CLEANSING: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{3}{W}{W}{W}")).with_ability(AbilityDef::spell(
         "Destroy all nonland permanents.",
         EffectDef::Destroy {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             can_regenerate: true,
         },
     )),
 );
 
-static PRIZED_ELEPHANT_FORESTS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static PRIZED_ELEPHANT_FORESTS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M13 27 — Prized Elephant
 pub(in crate::card::sets) static PRIZED_ELEPHANT: CardRecord = CardRecord::new(
@@ -506,13 +480,12 @@ pub(in crate::card::sets) static PRIZED_ELEPHANT: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Elephant"], 3, 3).with_abilities(&[
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control a Forest.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::AnyMatchingObject(&PRIZED_ELEPHANT_FORESTS),
-                    toughness: ValueDef::AnyMatchingObject(&PRIZED_ELEPHANT_FORESTS),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::AnyMatchingObject(&PRIZED_ELEPHANT_FORESTS),
+                    ValueDef::AnyMatchingObject(&PRIZED_ELEPHANT_FORESTS),
+                ),
             },
         ),
         AbilityDef::activated(
@@ -520,8 +493,8 @@ pub(in crate::card::sets) static PRIZED_ELEPHANT: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{G}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&abilities::trample()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::add_ability(&abilities::trample()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -536,11 +509,11 @@ pub(in crate::card::sets) static RAIN_OF_BLADES: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell(
         "Rain of Blades deals 1 damage to each attacking creature.",
         EffectDef::DealDamage {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::Attacking,
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Attacking,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             amount: ValueDef::Constant(1),
         },
     )),
@@ -557,7 +530,7 @@ pub(in crate::card::sets) static RHOX_FAITHMENDER: CardRecord = CardRecord::new(
         AbilityDef::replacement_for(
             "If you would gain life, you gain twice that much life instead.",
             ReplacementEventDef::WouldGainLife(PlayerRelation::You),
-            EffectDef::MultiplyEventAmount(2),
+            ReplacementEffectDef::MultiplyEventAmount(2),
         ),
     ]),
 );
@@ -573,8 +546,13 @@ pub(in crate::card::sets) static SAFE_PASSAGE: CardRecord = CardRecord::new(
     CardSet::Magic2013,
     CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
         "Prevent all damage that would be dealt to you and creatures you control this turn.",
-        EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn {
-            player: EffectRecipientDef::Controller,
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::unlimited(
+                DamageEventMatcherDef::to_player_and_creatures_controlled_by(
+                    PlayerRefDef::EffectController,
+                ),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -598,11 +576,11 @@ pub(in crate::card::sets) static SHOW_OF_VALOR: CardRecord = CardRecord::new(
         )],
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(2),
-                toughness: ValueDef::Constant(4),
-            },
-            duration: EffectDurationDef::UntilEndOfTurn,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(2),
+                ValueDef::Constant(4),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -634,11 +612,11 @@ pub(in crate::card::sets) static WAR_PRIEST_OF_THUNE: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Cleric"], 2, 2).with_abilities(&[
         AbilityDef::triggered_with_targets(
             "When this creature enters, you may destroy target enchantment.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef {
                 predicate: AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::HasType(CardType::Enchantment),
@@ -678,11 +656,7 @@ pub(in crate::card::sets) static ARCHAEOMANCER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Human", "Wizard"], 1, 2).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature enters, return target instant or sorcery card from your graveyard to your hand.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
             &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::AnyOf(&[
                     ObjectPredicateDef::HasType(CardType::Instant),
@@ -702,11 +676,11 @@ pub(in crate::card::sets) static ARCHAEOMANCER: CardRecord = CardRecord::new(
     ),
 );
 
-static PLAINS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static PLAINS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M13 42 — Arctic Aven
 pub(in crate::card::sets) static ARCTIC_AVEN: CardRecord = CardRecord::new(
@@ -718,13 +692,12 @@ pub(in crate::card::sets) static ARCTIC_AVEN: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control a Plains.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::AnyMatchingObject(&PLAINS_YOU_CONTROL),
-                    toughness: ValueDef::AnyMatchingObject(&PLAINS_YOU_CONTROL),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::AnyMatchingObject(&PLAINS_YOU_CONTROL),
+                    ValueDef::AnyMatchingObject(&PLAINS_YOU_CONTROL),
+                ),
             },
         ),
         AbilityDef::activated(
@@ -732,8 +705,8 @@ pub(in crate::card::sets) static ARCTIC_AVEN: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{W}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&abilities::lifelink()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::add_ability(&abilities::lifelink()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -754,11 +727,7 @@ pub(in crate::card::sets) static AUGUR_OF_BOLAS: CardRecord = CardRecord::new(
     .with_abilities(&[
         AbilityDef::triggered(
             "When this creature enters, look at the top three cards of your library. You may reveal an instant or sorcery card from among them and put it into your hand. Put the rest on the bottom of your library in any order.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
             EffectDef::None,
         )
         .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::AugurOfBolas))
@@ -769,11 +738,11 @@ pub(in crate::card::sets) static AUGUR_OF_BOLAS: CardRecord = CardRecord::new(
 );
 
 static BATTLE_OF_WITS_CONDITION: TriggerConditionDef = TriggerConditionDef::ObjectCount {
-    query: ObjectQueryDef {
-        object: ObjectPredicateDef::Any,
-        zones: &[ZoneKind::Library],
-        controller: PlayerRelation::You,
-    },
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::Any,
+        &[ZoneKind::Library],
+        PlayerRelation::You,
+    ),
     comparison: ComparisonDef::GreaterOrEqual,
     amount: 200,
 };
@@ -870,11 +839,11 @@ pub(in crate::card::sets) static HYDROSURGE: CardRecord = CardRecord::new(
         )],
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(-5),
-                toughness: ValueDef::Constant(0),
-            },
-            duration: EffectDurationDef::UntilEndOfTurn,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-5),
+                ValueDef::Constant(0),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1018,9 +987,7 @@ pub(in crate::card::sets) static SCROLL_THIEF: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Merfolk", "Rogue"], 1, 3).with_ability(
         AbilityDef::triggered(
             "Whenever this creature deals combat damage to a player, draw a card.",
-            TriggerEventDef::CombatDamageDealtToPlayer {
-                source: ObjectPredicateDef::Source,
-            },
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -1035,6 +1002,21 @@ pub(in crate::card::sets) static SCROLL_THIEF: CardRecord = CardRecord::new(
 // M13 68 — Spelltwine
 // Audit: blocked — Needs linked graveyard choices, spell copies, and permission to cast both copies without paying their costs.
 
+static SPHINX_OF_UTHUUN_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        object: abilities::CHOSEN_PILE,
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+    EffectDef::MoveToZone {
+        object: abilities::UNCHOSEN_PILE,
+        zone: ZoneKind::Graveyard,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+]);
+
 // M13 69 — Sphinx of Uthuun
 pub(in crate::card::sets) static SPHINX_OF_UTHUUN: CardRecord = CardRecord::new(
     cards::SPHINX_OF_UTHUUN,
@@ -1045,16 +1027,11 @@ pub(in crate::card::sets) static SPHINX_OF_UTHUUN: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::triggered(
             "When this creature enters, reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
-            EffectDef::RevealAndSplitIntoPiles {
-                count: ValueDef::Constant(5),
-                rest: ZoneKind::Graveyard,
-                placement: ZonePlacement::Top,
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
+            abilities::split_top_of_library_into_piles(
+                ValueDef::Constant(5),
+                &SPHINX_OF_UTHUUN_PILE_MOVES,
+            ),
         ),
     ]),
 );
@@ -1131,16 +1108,17 @@ pub(in crate::card::sets) static TRICKS_OF_THE_TRADE: CardRecord = CardRecord::n
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/+0 and can't be blocked.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::ModifyPowerToughness {
-                            power: ValueDef::Constant(2),
-                            toughness: ValueDef::Constant(0),
-                        },
-                        AppliedEffectDef::CannotBeBlockedBy(ObjectPredicateDef::Any),
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(2),
+                            ValueDef::Constant(0),
+                        ),
+                        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                            ObjectPredicateDef::Any,
+                        )),
                     ]),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1185,11 +1163,11 @@ pub(in crate::card::sets) static WATERCOURSER: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{U}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(-1),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(-1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1216,7 +1194,7 @@ pub(in crate::card::sets) static BLOOD_RECKONING: CardRecord = CardRecord::new(
     CardSet::Magic2013,
     CardRules::new_enchantment(mana_cost!("{3}{B}")).with_ability(AbilityDef::triggered(
         "Whenever a creature attacks you or a planeswalker you control, that creature's controller loses 1 life.",
-        TriggerEventDef::Attacks(ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent)),
+        TriggerEventDef::attacks(ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent)),
         EffectDef::LoseLife {
             recipient: EffectRecipientDef::ControllerOfTriggeringObject,
             amount: ValueDef::Constant(1),
@@ -1234,11 +1212,11 @@ pub(in crate::card::sets) static BLOODHUNTER_BAT: CardRecord = CardRecord::new(
         abilities::flying(),
         AbilityDef::triggered_with_targets(
             "When this creature enters, target player loses 2 life and you gain 2 life.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Player(PlayerRelation::Any),
             )],
@@ -1271,11 +1249,11 @@ pub(in crate::card::sets) static BLOODTHRONE_VAMPIRE: CardRecord = CardRecord::n
             }],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(2),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -1290,16 +1268,16 @@ pub(in crate::card::sets) static COWER_IN_FEAR: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{1}{B}{B}")).with_ability(AbilityDef::spell(
         "Creatures your opponents control get -1/-1 until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Opponent,
-            },
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(-1),
-                toughness: ValueDef::Constant(-1),
-            },
-            duration: EffectDurationDef::UntilEndOfTurn,
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Opponent,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-1),
+                ValueDef::Constant(-1),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1327,11 +1305,11 @@ pub(in crate::card::sets) static DARK_FAVOR: CardRecord = CardRecord::new(
             ),
             AbilityDef::triggered(
                 "When this Aura enters, you lose 1 life.",
-                TriggerEventDef::ZoneChanged {
-                    object: ObjectPredicateDef::Source,
-                    from: None,
-                    to: Some(ZoneKind::Battlefield),
-                },
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
                 EffectDef::LoseLife {
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(1),
@@ -1339,13 +1317,12 @@ pub(in crate::card::sets) static DARK_FAVOR: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +3/+1.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(3),
-                        toughness: ValueDef::Constant(1),
-                    },
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(3),
+                        ValueDef::Constant(1),
+                    ),
                 },
             ),
         ]),
@@ -1368,11 +1345,7 @@ pub(in crate::card::sets) static DISCIPLE_OF_BOLAS: CardRecord = CardRecord::new
     )
     .with_ability(AbilityDef::triggered(
         "When this creature enters, sacrifice another creature. You gain X life and draw X cards, where X is that creature's power.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::Source,
-            from: None,
-            to: Some(ZoneKind::Battlefield),
-        },
+        TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
         EffectDef::SacrificeOfChoice {
             player: EffectRecipientDef::Controller,
             object: ObjectPredicateDef::All(&[
@@ -1414,27 +1387,52 @@ pub(in crate::card::sets) static DISENTOMB: CardRecord = CardRecord::new(
     )),
 );
 
+static DURESS_DISCARD: EffectDef = EffectDef::DiscardCards {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+};
+
 // M13 90 — Duress
 pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new(
     cards::DURESS,
     "Duress",
     CardArt::new("f7201d43-ae2e-4faa-a508-8555079c3bc7", "Steven Belledin"),
     CardSet::Magic2013,
-    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(
-        AbilityDef::custom_full(
-            "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card.",
-            CardBehavior::Duress,
-            "Implemented by the named card-local special behavior.",
-        ),
-    ),
+    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card.",
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+            PlayerRelation::Opponent,
+        ))],
+        EffectDef::Sequence(&[
+            EffectDef::LookAtHand {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::Choose(ChooseDef {
+                binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                chooser: PlayerRefDef::EffectController,
+                candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    ]),
+                    &[ZoneKind::Hand],
+                    PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+                )),
+                exclude: None,
+                minimum: 1,
+                maximum: 1,
+                visibility: ChoiceVisibilityDef::Public,
+                then: &DURESS_DISCARD,
+            }),
+        ]),
+    )),
 );
 
 /// Mutilate scales with your Swamps, and reads the same count twice.
-static SWAMPS_YOU_CONTROL: ValueDef = ValueDef::CountMatchingObjects(&ObjectQueryDef {
-    object: ObjectPredicateDef::Subtype("Swamp"),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-});
+static SWAMPS_YOU_CONTROL: ValueDef = ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Swamp"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+));
 
 // M13 91 — Duskmantle Prowler
 pub(in crate::card::sets) static DUSKMANTLE_PROWLER: CardRecord = CardRecord::new(
@@ -1483,11 +1481,11 @@ pub(in crate::card::sets) static GIANT_SCORPION: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::deathtouch()]),
 );
 
-static HARBOR_BANDIT_ISLANDS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static HARBOR_BANDIT_ISLANDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M13 95 — Harbor Bandit
 pub(in crate::card::sets) static HARBOR_BANDIT: CardRecord = CardRecord::new(
@@ -1498,20 +1496,23 @@ pub(in crate::card::sets) static HARBOR_BANDIT: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Human", "Rogue"], 2, 2).with_abilities(&[
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control an Island.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::AnyMatchingObject(&HARBOR_BANDIT_ISLANDS),
-                    toughness: ValueDef::AnyMatchingObject(&HARBOR_BANDIT_ISLANDS),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::AnyMatchingObject(&HARBOR_BANDIT_ISLANDS),
+                    ValueDef::AnyMatchingObject(&HARBOR_BANDIT_ISLANDS),
+                ),
             },
         ),
         AbilityDef::activated(
             "{1}{U}: This creature can't be blocked this turn.",
             &[AbilityCostDef::Mana(mana_cost!("{1}{U}"))],
-            EffectDef::MakeUnblockableThisTurn {
-                object: EffectRecipientDef::Source,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1544,11 +1545,7 @@ pub(in crate::card::sets) static LILIANAS_SHADE: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Shade"], 1, 1).with_abilities(&[
         AbilityDef::triggered(
             "When this creature enters, you may search your library for a Swamp card, reveal it, put it into your hand, then shuffle.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
@@ -1570,11 +1567,8 @@ pub(in crate::card::sets) static LILIANAS_SHADE: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{B}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1600,16 +1594,15 @@ pub(in crate::card::sets) static MARK_OF_THE_VAMPIRE: CardRecord = CardRecord::n
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/+2 and has lifelink.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::ModifyPowerToughness {
-                            power: ValueDef::Constant(2),
-                            toughness: ValueDef::Constant(2),
-                        },
-                        AppliedEffectDef::GrantAbility(&abilities::lifelink()),
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(2),
+                            ValueDef::Constant(2),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::lifelink()),
                     ]),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
                 },
             ),
         ]),
@@ -1656,16 +1649,16 @@ pub(in crate::card::sets) static MUTILATE: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{2}{B}{B}")).with_abilities(&[AbilityDef::spell(
         "All creatures get -1/-1 until end of turn for each Swamp you control.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Negate(&SWAMPS_YOU_CONTROL),
-                toughness: ValueDef::Negate(&SWAMPS_YOU_CONTROL),
-            },
-            duration: EffectDurationDef::UntilEndOfTurn,
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Negate(&SWAMPS_YOU_CONTROL),
+                ValueDef::Negate(&SWAMPS_YOU_CONTROL),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )]),
 );
@@ -1688,11 +1681,11 @@ pub(in crate::card::sets) static RAVENOUS_RATS: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Rat"], 1, 1).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature enters, target opponent discards a card.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Player(PlayerRelation::Opponent),
             )],
@@ -1706,7 +1699,7 @@ pub(in crate::card::sets) static RAVENOUS_RATS: CardRecord = CardRecord::new(
 );
 
 // M13 107 — Rise from the Grave
-// Audit: blocked — Continuous effects cannot add black color and the Zombie subtype to the reanimated target indefinitely.
+// Audit: blocked — Reanimation and permanent color/subtype changes exist, but the continuation cannot bind the newly created battlefield object to receive them.
 
 // M13 108 — Servant of Nefarox
 pub(in crate::card::sets) static SERVANT_OF_NEFAROX: CardRecord = CardRecord::new(
@@ -1899,10 +1892,7 @@ pub(in crate::card::sets) static CHANDRAS_FURY: CardRecord = CardRecord::new(
                     amount: ValueDef::Constant(4),
                 },
                 EffectDef::DealDamage {
-                    recipient: EffectRecipientDef::ObjectsControlledByTarget {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        slot: TargetIndex::PRIMARY,
-                    },
+                    recipient: EffectRecipientDef::objects_controlled_by_target(ObjectPredicateDef::HasType(CardType::Creature), TargetIndex::PRIMARY),
                     amount: ValueDef::Constant(1),
                 },
             ]),
@@ -1919,13 +1909,13 @@ pub(in crate::card::sets) static CLEAVER_RIOT: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{4}{R}")).with_ability(AbilityDef::spell(
         "Creatures you control gain double strike until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
-            effect: AppliedEffectDef::GrantAbility(&abilities::double_strike()),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&abilities::double_strike()),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -1943,11 +1933,11 @@ pub(in crate::card::sets) static CRATERIZE: CardRecord = CardRecord::new(
     )),
 );
 
-static CRIMSON_MUCKWADER_SWAMPS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static CRIMSON_MUCKWADER_SWAMPS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M13 127 — Crimson Muckwader
 pub(in crate::card::sets) static CRIMSON_MUCKWADER: CardRecord = CardRecord::new(
@@ -1958,13 +1948,12 @@ pub(in crate::card::sets) static CRIMSON_MUCKWADER: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Lizard"], 2, 1).with_abilities(&[
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control a Swamp.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::AnyMatchingObject(&CRIMSON_MUCKWADER_SWAMPS),
-                    toughness: ValueDef::AnyMatchingObject(&CRIMSON_MUCKWADER_SWAMPS),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::AnyMatchingObject(&CRIMSON_MUCKWADER_SWAMPS),
+                    ValueDef::AnyMatchingObject(&CRIMSON_MUCKWADER_SWAMPS),
+                ),
             },
         ),
         abilities::regenerate_self(
@@ -1987,11 +1976,11 @@ pub(in crate::card::sets) static DRAGON_HATCHLING: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -2005,14 +1994,13 @@ pub(in crate::card::sets) static FERVOR: CardRecord = CardRecord::new(
     CardSet::Magic2013,
     CardRules::new_enchantment(mana_cost!("{2}{R}")).with_ability(AbilityDef::static_ability(
         "Creatures you control have haste.",
-        EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
-            effect: AppliedEffectDef::GrantAbility(&abilities::haste()),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&abilities::haste()),
         },
     )),
 );
@@ -2065,11 +2053,11 @@ pub(in crate::card::sets) static FURNACE_WHELP: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -2084,11 +2072,11 @@ pub(in crate::card::sets) static GOBLIN_ARSONIST: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{R}"), &["Goblin", "Shaman"], 1, 1).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature dies, you may have it deal 1 damage to any target.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::AnyTarget,
             )],
@@ -2123,25 +2111,25 @@ pub(in crate::card::sets) static KINDLED_FURY: CardRecord = CardRecord::new(
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             effect: AppliedEffectDef::Composite(&[
-                AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
-                AppliedEffectDef::GrantAbility(&abilities::first_strike()),
+                AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                AppliedEffectDef::add_ability(&abilities::first_strike()),
             ]),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
 
-static KRENKO_GOBLINS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::All(&[
+static KRENKO_GOBLINS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
         ObjectPredicateDef::HasType(CardType::Creature),
         ObjectPredicateDef::Subtype("Goblin"),
     ]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M13 138 — Krenko, Mob Boss
 pub(in crate::card::sets) static KRENKO_MOB_BOSS: CardRecord = CardRecord::new(
@@ -2194,8 +2182,8 @@ pub(in crate::card::sets) static MAGMAQUAKE: CardRecord = CardRecord::new(
         // One sweep rather than two, so a permanent that is both a nonflying
         // creature and a planeswalker is dealt X once.
         EffectDef::DealDamage {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::AnyOf(&[
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::AnyOf(&[
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::HasKeyword(
@@ -2204,9 +2192,9 @@ pub(in crate::card::sets) static MAGMAQUAKE: CardRecord = CardRecord::new(
                     ]),
                     ObjectPredicateDef::HasType(CardType::Planeswalker),
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             amount: ValueDef::ChosenX,
         },
     )),
@@ -2224,8 +2212,9 @@ pub(in crate::card::sets) static MARK_OF_MUTINY: CardRecord = CardRecord::new(
             ObjectPredicateDef::HasType(CardType::Creature),
         )],
         EffectDef::Sequence(&[
-            EffectDef::GainControlThisTurn {
+            EffectDef::GainControl {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                duration: ControlDurationDef::UntilEndOfTurn,
             },
             EffectDef::AddCounters {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -2237,8 +2226,8 @@ pub(in crate::card::sets) static MARK_OF_MUTINY: CardRecord = CardRecord::new(
             },
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::GrantAbility(&abilities::haste()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ]),
     )),
@@ -2331,26 +2320,14 @@ pub(in crate::card::sets) static THUNDERMAW_HELLKITE: CardRecord = CardRecord::n
         abilities::haste(),
         AbilityDef::triggered(
             "When this creature enters, it deals 1 damage to each creature with flying your opponents control. Tap those creatures.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
             EffectDef::Sequence(&[
                 EffectDef::DealDamage {
-                    recipient: EffectRecipientDef::MatchingObjects {
-                        object: OPPOSING_FLIERS,
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::Opponent,
-                    },
+                    recipient: EffectRecipientDef::matching_objects(OPPOSING_FLIERS, &[ZoneKind::Battlefield], PlayerRelation::Opponent),
                     amount: ValueDef::Constant(1),
                 },
                 EffectDef::Tap {
-                    object: EffectRecipientDef::MatchingObjects {
-                        object: OPPOSING_FLIERS,
-                        zones: &[ZoneKind::Battlefield],
-                        controller: PlayerRelation::Opponent,
-                    },
+                    object: EffectRecipientDef::matching_objects(OPPOSING_FLIERS, &[ZoneKind::Battlefield], PlayerRelation::Opponent),
                 },
             ]),
         ),
@@ -2366,16 +2343,16 @@ pub(in crate::card::sets) static TRUMPET_BLAST: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{2}{R}")).with_ability(AbilityDef::spell(
         "Attacking creatures get +2/+0 until end of turn.",
         EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::Attacking,
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(2),
-                toughness: ValueDef::Constant(0),
-            },
-            duration: EffectDurationDef::UntilEndOfTurn,
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Attacking,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(2),
+                ValueDef::Constant(0),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -2423,18 +2400,13 @@ pub(in crate::card::sets) static VOLCANIC_STRENGTH: CardRecord = CardRecord::new
         AbilityDef::static_ability(
             "Enchanted creature gets +2/+2 and has mountainwalk. (It can't be blocked as long as defending player controls a Mountain.)",
             EffectDef::Sequence(&[
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(2),
-                        toughness: ValueDef::Constant(2),
-                    },
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
                 },
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&abilities::mountainwalk()),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::add_ability(&abilities::mountainwalk()),
                 },
             ]),
         ),
@@ -2479,11 +2451,11 @@ pub(in crate::card::sets) static ACIDIC_SLIME: CardRecord = CardRecord::new(
         abilities::deathtouch(),
         AbilityDef::triggered_with_targets(
             "When this creature enters, destroy target artifact, enchantment, or land.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::AnyOf(&[
                     ObjectPredicateDef::HasType(CardType::Artifact),
@@ -2526,11 +2498,11 @@ pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new(
 
 /// A second Mountain does not make the bonus bigger, so this is asked as a
 /// condition rather than counted.
-static MOUNTAIN_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::Subtype("Mountain"),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static MOUNTAIN_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Mountain"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M13 161 — Bond Beetle
 pub(in crate::card::sets) static BOND_BEETLE: CardRecord = CardRecord::new(
@@ -2541,11 +2513,11 @@ pub(in crate::card::sets) static BOND_BEETLE: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{G}"), &["Insect"], 0, 1).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature enters, put a +1/+1 counter on target creature.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
@@ -2561,11 +2533,11 @@ pub(in crate::card::sets) static BOND_BEETLE: CardRecord = CardRecord::new(
 // M13 162 — Boundless Realms
 // Audit: blocked — SearchZone has a static maximum and cannot make the selected lands enter tapped.
 
-static BOUNTIFUL_HARVEST_LANDS: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Land),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static BOUNTIFUL_HARVEST_LANDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M13 163 — Bountiful Harvest
 pub(in crate::card::sets) static BOUNTIFUL_HARVEST: CardRecord = CardRecord::new(
@@ -2629,11 +2601,11 @@ pub(in crate::card::sets) static ELVISH_VISIONARY: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Shaman"], 1, 1).with_ability(
         AbilityDef::triggered(
             "When this creature enters, draw a card.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -2654,13 +2626,12 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Boar"], 2, 2).with_abilities(&[
         AbilityDef::static_ability(
             "This creature gets +1/+1 as long as you control a Mountain.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::AnyMatchingObject(&MOUNTAIN_YOU_CONTROL),
-                    toughness: ValueDef::AnyMatchingObject(&MOUNTAIN_YOU_CONTROL),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::AnyMatchingObject(&MOUNTAIN_YOU_CONTROL),
+                    ValueDef::AnyMatchingObject(&MOUNTAIN_YOU_CONTROL),
+                ),
             },
         ),
         AbilityDef::activated(
@@ -2668,8 +2639,8 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::GrantAbility(&abilities::haste()),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -2696,11 +2667,11 @@ pub(in crate::card::sets) static MWONVULI_BEAST_TRACKER: CardRecord = CardRecord
     CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Human", "Scout"], 2, 1).with_ability(
         AbilityDef::triggered(
             "When this creature enters, search your library for a creature card with deathtouch, hexproof, reach, or trample, reveal it, then shuffle your library and put that card on top of it.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::SearchZone {
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
@@ -2819,8 +2790,8 @@ pub(in crate::card::sets) static SERPENTS_GIFT: CardRecord = CardRecord::new(
         )],
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            effect: AppliedEffectDef::GrantAbility(&abilities::deathtouch()),
-            duration: EffectDurationDef::UntilEndOfTurn,
+            effect: AppliedEffectDef::add_ability(&abilities::deathtouch()),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -2837,14 +2808,14 @@ pub(in crate::card::sets) static SILKLASH_SPIDER: CardRecord = CardRecord::new(
             "{X}{G}{G}: This creature deals X damage to each creature with flying.",
             &[AbilityCostDef::Mana(mana_cost!("{X}{G}{G}"))],
             EffectDef::DealDamage {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
                 amount: ValueDef::ChosenX,
             },
         ),
@@ -2870,11 +2841,11 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{4}{G}"), &["Beast"], 5, 3).with_abilities(&[
         AbilityDef::triggered(
             "When this creature enters, you gain 5 life.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(5),
@@ -2882,11 +2853,11 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
         ),
         AbilityDef::triggered(
             "When this creature leaves the battlefield, create a 3/3 green Beast creature token.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: None,
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                None,
+            ),
             EffectDef::CreateToken {
                 token: cards::BEAST_TOKEN_3_3_GREEN,
                 count: ValueDef::Constant(1),
@@ -2896,15 +2867,15 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
     ]),
 );
 
-static OTHER_TIMBERPACK_WOLVES: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::All(&[
+static OTHER_TIMBERPACK_WOLVES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
         ObjectPredicateDef::HasType(CardType::Creature),
         ObjectPredicateDef::SharesNameWithSource,
         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
     ]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 // M13 194 — Timberpack Wolf
 pub(in crate::card::sets) static TIMBERPACK_WOLF: CardRecord = CardRecord::new(
@@ -2915,13 +2886,12 @@ pub(in crate::card::sets) static TIMBERPACK_WOLF: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Wolf"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "This creature gets +1/+1 for each other creature you control named Timberpack Wolf.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::CountMatchingObjects(&OTHER_TIMBERPACK_WOLVES),
-                    toughness: ValueDef::CountMatchingObjects(&OTHER_TIMBERPACK_WOLVES),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::CountMatchingObjects(&OTHER_TIMBERPACK_WOLVES),
+                    ValueDef::CountMatchingObjects(&OTHER_TIMBERPACK_WOLVES),
+                ),
             },
         ),
     ),
@@ -2940,11 +2910,11 @@ pub(in crate::card::sets) static TITANIC_GROWTH: CardRecord = CardRecord::new(
         )],
         EffectDef::Apply {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(4),
-                toughness: ValueDef::Constant(4),
-            },
-            duration: EffectDurationDef::UntilEndOfTurn,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(4),
+                ValueDef::Constant(4),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
@@ -2970,21 +2940,21 @@ pub(in crate::card::sets) static YEVAS_FORCEMAGE: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{G}"), &["Elf", "Shaman"], 2, 2).with_ability(
         AbilityDef::triggered_with_targets(
             "When this creature enters, target creature gets +2/+2 until end of turn.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(2),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),
@@ -3006,22 +2976,17 @@ pub(in crate::card::sets) static AKROMAS_MEMORIAL: CardRecord = CardRecord::new(
         .with_supertype(CardSupertype::Legendary)
         .with_ability(AbilityDef::static_ability(
             "Creatures you control have flying, first strike, vigilance, trample, haste, and protection from black and from red.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::You,
-                },
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
                 effect: AppliedEffectDef::Composite(&[
-                    AppliedEffectDef::GrantAbility(&abilities::flying()),
-                    AppliedEffectDef::GrantAbility(&abilities::first_strike()),
-                    AppliedEffectDef::GrantAbility(&abilities::vigilance()),
-                    AppliedEffectDef::GrantAbility(&abilities::trample()),
-                    AppliedEffectDef::GrantAbility(&abilities::haste()),
-                    AppliedEffectDef::GrantAbility(&abilities::protection_from(ManaColor::Black)),
-                    AppliedEffectDef::GrantAbility(&abilities::protection_from(ManaColor::Red)),
+                    AppliedEffectDef::add_ability(&abilities::flying()),
+                    AppliedEffectDef::add_ability(&abilities::first_strike()),
+                    AppliedEffectDef::add_ability(&abilities::vigilance()),
+                    AppliedEffectDef::add_ability(&abilities::trample()),
+                    AppliedEffectDef::add_ability(&abilities::haste()),
+                    AppliedEffectDef::add_ability(&abilities::protection_from(ManaColor::Black)),
+                    AppliedEffectDef::add_ability(&abilities::protection_from(ManaColor::Red)),
                 ]),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         )),
 );
@@ -3131,8 +3096,8 @@ pub(in crate::card::sets) static RING_OF_EVOS_ISLE: CardRecord = CardRecord::new
                 &[AbilityCostDef::Mana(mana_cost!("{2}"))],
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&EVOS_ISLE_HEXPROOF),
-                    duration: EffectDurationDef::UntilEndOfTurn,
+                    effect: AppliedEffectDef::add_ability(&EVOS_ISLE_HEXPROOF),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ),
             AbilityDef::triggered_if(
@@ -3171,10 +3136,9 @@ pub(in crate::card::sets) static RING_OF_KALONIA: CardRecord = CardRecord::new(
         .with_abilities(&[
             AbilityDef::static_ability(
                 "Equipped creature has trample.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&KALONIA_TRAMPLE),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::add_ability(&KALONIA_TRAMPLE),
                 },
             ),
             AbilityDef::triggered_if(
@@ -3213,10 +3177,9 @@ pub(in crate::card::sets) static RING_OF_THUNE: CardRecord = CardRecord::new(
         .with_abilities(&[
             AbilityDef::static_ability(
                 "Equipped creature has vigilance.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&THUNE_VIGILANCE),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::add_ability(&THUNE_VIGILANCE),
                 },
             ),
             AbilityDef::triggered_if(
@@ -3254,10 +3217,9 @@ pub(in crate::card::sets) static RING_OF_VALKAS: CardRecord = CardRecord::new(
         .with_abilities(&[
             AbilityDef::static_ability(
                 "Equipped creature has haste.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::GrantAbility(&VALKAS_HASTE),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::add_ability(&VALKAS_HASTE),
                 },
             ),
             AbilityDef::triggered_if(

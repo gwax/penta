@@ -3,8 +3,7 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    ZoneKind, cards,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ZoneKind, cards,
 };
 
 // MH2 261 — Yavimaya, Cradle of Growth
@@ -17,14 +16,13 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRec
         .with_supertype(CardSupertype::Legendary)
         .with_ability(AbilityDef::static_ability(
             "Each land is a Forest in addition to its other land types.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::HasType(CardType::Land),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
-                effect: AppliedEffectDef::AddLandTypes(&[BasicLandType::Forest]),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Forest]),
             },
         )),
 );

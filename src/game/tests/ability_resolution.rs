@@ -262,10 +262,9 @@ fn granted_ability_keeps_its_frozen_resolver_when_the_source_changes() {
     ));
     static SOURCE_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
         "This permanent has the test ability.",
-        EffectDef::Apply {
+        EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::GrantAbility(&GRANTED_ABILITY),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
+            effect: AppliedEffectDef::add_ability(&GRANTED_ABILITY),
         },
     )];
     let definition_id = CardDefinitionId(10_061);
@@ -704,11 +703,11 @@ fn resolving_ability_masks_an_illegal_target_in_each_frozen_slot() {
             ],
             context: TriggerContext {
                 object: None,
-                chosen_objects: [None; 8],
                 object_controller: None,
                 event_player: None,
                 amount: None,
-            },
+            }
+            .into(),
             resolver: StackAbilityResolver::Declarative(ScopedEffect::primary(
                 EffectDef::Sequence(&EFFECTS),
             )),

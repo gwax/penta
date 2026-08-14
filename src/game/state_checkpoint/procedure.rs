@@ -3,19 +3,35 @@
 use super::model::{EffectContinuationSnapshot, ScopedEffectSnapshot};
 use super::model_procedure::{DrawReplacementSnapshot, PendingProcedureSnapshot};
 use super::semantics::{catalog_scoped_effect, scoped_effect_snapshot};
-use super::stack::{parse_trigger_context, trigger_context_snapshot};
+use super::stack::{
+    detached_stack_snapshot_allowing, effect_resolution_context_snapshot,
+    parse_effect_resolution_context, resolution_context_referenced_object_ids,
+    stack_ability_snapshot_allowing, trigger_capture_has_unrebindable_hidden_reference_except,
+};
 use super::*;
 
 pub(super) fn draw_replacement_snapshot(
     game: &Game,
+    viewer: PlayerId,
     replacement: &super::super::DrawReplacement,
+) -> Option<DrawReplacementSnapshot> {
+    draw_replacement_snapshot_allowing(game, viewer, replacement, &[])
+}
+
+pub(super) fn draw_replacement_snapshot_allowing(
+    game: &Game,
+    viewer: PlayerId,
+    replacement: &super::super::DrawReplacement,
+    visible_rebindings: &[GameObjectId],
 ) -> Option<DrawReplacementSnapshot> {
     Some(DrawReplacementSnapshot {
         continuation: effect_continuation_snapshot(
             game,
+            viewer,
             &replacement.object,
-            replacement.context,
+            &replacement.context,
             replacement.effect,
+            visible_rebindings,
         )?,
     })
 }
@@ -34,6 +50,7 @@ pub(super) fn parse_draw_replacement(
 
 pub(super) fn pending_procedure_snapshot(
     game: &Game,
+    viewer: PlayerId,
     procedure: &super::super::PendingProcedure,
 ) -> Option<PendingProcedureSnapshot> {
     Some(match procedure {
@@ -49,7 +66,10 @@ pub(super) fn pending_procedure_snapshot(
             context,
             custom_followup,
         } => {
-            let ability = stack_ability_snapshot(game, object)?.ability_locator?;
+            if trigger_capture_has_unrebindable_hidden_reference(game, viewer, &[], context) {
+                return None;
+            }
+            let ability = stack_ability_snapshot(game, viewer, object)?.ability_locator?;
             let definition = catalog_ability(&game.catalog, &ability)?;
             let effects = effects
                 .iter()
@@ -64,9 +84,9 @@ pub(super) fn pending_procedure_snapshot(
             };
             PendingProcedureSnapshot::ResolveEffects {
                 effects,
-                object: Box::new(detached_stack_snapshot(game, object)?),
+                object: Box::new(detached_stack_snapshot(game, viewer, object)?),
                 ability,
-                context: trigger_context_snapshot(*context),
+                context: effect_resolution_context_snapshot(context),
                 custom_followup,
             }
         }
@@ -135,7 +155,7 @@ pub(super) fn parse_pending_procedure(
             super::super::PendingProcedure::ResolveEffects {
                 effects,
                 object: Box::new(parse_detached_stack(object, game)?),
-                context: parse_trigger_context(*context)?,
+                context: parse_effect_resolution_context(context.clone())?,
                 custom_followup,
             }
         }
@@ -167,7 +187,7 @@ pub(super) fn parse_pending_procedure(
 pub(super) fn draw_replacement_referenced_object_ids(
     replacement: &super::super::DrawReplacement,
 ) -> Vec<GameObjectId> {
-    continuation_referenced_object_ids(&replacement.object, replacement.context)
+    continuation_referenced_object_ids(&replacement.object, &replacement.context)
 }
 
 pub(super) fn pending_procedure_referenced_object_ids(
@@ -176,7 +196,7 @@ pub(super) fn pending_procedure_referenced_object_ids(
     match procedure {
         super::super::PendingProcedure::ResolveEffects {
             object, context, ..
-        } => continuation_referenced_object_ids(object, *context),
+        } => continuation_referenced_object_ids(object, context),
         super::super::PendingProcedure::DrawCards { .. }
         | super::super::PendingProcedure::SylvanAfterDraw { .. }
         | super::super::PendingProcedure::SimultaneousDraws { .. }
@@ -187,16 +207,28 @@ pub(super) fn pending_procedure_referenced_object_ids(
 
 fn effect_continuation_snapshot(
     game: &Game,
+    viewer: PlayerId,
     object: &StackObject,
-    context: TriggerContext,
+    context: &EffectResolutionContext,
     effect: ScopedEffect,
+    visible_rebindings: &[GameObjectId],
 ) -> Option<EffectContinuationSnapshot> {
-    let ability = stack_ability_snapshot(game, object)?.ability_locator?;
+    if trigger_capture_has_unrebindable_hidden_reference_except(
+        game,
+        viewer,
+        &[],
+        context,
+        visible_rebindings,
+    ) {
+        return None;
+    }
+    let ability = stack_ability_snapshot_allowing(game, viewer, object, visible_rebindings)?
+        .ability_locator?;
     let definition = catalog_ability(&game.catalog, &ability)?;
     Some(EffectContinuationSnapshot {
-        object: detached_stack_snapshot(game, object)?,
+        object: detached_stack_snapshot_allowing(game, viewer, object, visible_rebindings)?,
         ability,
-        context: trigger_context_snapshot(context),
+        context: effect_resolution_context_snapshot(context),
         effect: scoped_effect_snapshot(&definition, effect)?,
     })
 }
@@ -207,7 +239,7 @@ fn parse_effect_continuation(
 ) -> Result<super::super::SacrificeFollowup, String> {
     Ok(super::super::SacrificeFollowup {
         object: Box::new(parse_detached_stack(&snapshot.object, game)?),
-        context: parse_trigger_context(snapshot.context)?,
+        context: parse_effect_resolution_context(snapshot.context.clone())?,
         effect: catalog_scoped_effect(&game.catalog, &snapshot.ability, &snapshot.effect)
             .ok_or("draw replacement effect locator is absent from this catalog")?,
     })
@@ -215,10 +247,9 @@ fn parse_effect_continuation(
 
 fn continuation_referenced_object_ids(
     object: &StackObject,
-    context: TriggerContext,
+    context: &EffectResolutionContext,
 ) -> Vec<GameObjectId> {
-    referenced_object_ids(object)
-        .chain(context.object)
-        .chain(context.chosen_objects.iter().flatten().copied())
-        .collect()
+    let mut ids = referenced_object_ids(object).collect::<Vec<_>>();
+    ids.extend(resolution_context_referenced_object_ids(context));
+    ids
 }

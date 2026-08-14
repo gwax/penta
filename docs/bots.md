@@ -216,7 +216,7 @@ A clone forks the *true* state, hidden zones included. That is right for
 self-play but wrong for a search bot in a hosted match: its rollouts must use
 worlds consistent with its observation, not cards only the host knows.
 
-The optional `reconstruction.checkpoint.v2` capability advertises a hidden-safe
+The optional `reconstruction.checkpoint.v3` capability advertises a hidden-safe
 current-state checkpoint in each observation. The checkpoint was introduced in
 protocol 19, expanded in protocol 21 into the complete typed snapshot described
 below, and given its own nested format version in protocol 22. Supply a
@@ -291,17 +291,27 @@ same open-world schema before building a `Game`. Catalog-owned executable data
 is represented by semantic locators, while hidden-zone identities are supplied
 only by the separate hypothesis above.
 
-Checkpoint format 2 covers every ordinary action boundary emitted by the
+A private pending decision is reconstructible only from its choosing seat's
+observation. Other seats receive neither the decision nor its continuation in
+their checkpoint; `hasDeferredState` is true, so importing that checkpoint
+fails closed instead of exposing private candidates or effect-local bindings.
+An installed or pending trigger likewise fails closed when its retained
+lexical targets or bindings name a card in a hidden zone that has no stable
+public object ID; the checkpoint omits that trigger rather than serializing a
+host-only identity.
+
+Checkpoint format 3 covers every ordinary action boundary emitted by the
 hosted formats: pregame and turn/combat progression; complete permanent,
 emblem, stack, and combat state; restricted/source-specific mana; copied and
 temporarily modified characteristics; retired-object last-known information;
-pending battlefield-entry replacement programs; delayed, floating, and
-pending triggers; and every pending decision continuation emitted by the hosted
-formats, including prospective begin-turn replacement choices. Active
-turn-scoped relational damage prevention is an additive checkpoint-v2 member
-and defaults to empty when reading an earlier payload. Stack payloads
-retain target-slot groupings, divided amounts, modes, X, trigger context,
-flashback/copy state, text and color changes, and mana-carried effects.
+pending battlefield-entry replacement programs; installed and pending
+triggers; ordered resolved damage-prevention, characteristic, object-rule, and
+player play-restriction effects; ordered inserted-turn-phase queues and their
+frozen ordinary continuation; and every pending decision
+continuation emitted by the hosted formats, including prospective begin-turn
+replacement choices. Stack payloads retain target-slot groupings, divided
+amounts, modes, X, complete lexical resolution context, flashback/copy state,
+text and color changes, and mana-carried effects.
 Card-owned pile callbacks use stable registry keys rather than serialized
 function pointers. Public object IDs remain unchanged, including those needed
 by suspended continuations, while hypothesized private cards are rebound to
@@ -344,7 +354,7 @@ world it can search.
 | field | meaning |
 | --- | --- |
 | `protocolVersion` | the breaking bot-wire epoch; protocol 22 objects are open-world, but an epoch mismatch requires migration |
-| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v2`; ignore unknown entries |
+| `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v3`; ignore unknown entries |
 | `simulationFingerprint` | a conservative identity of simulation source and build requirements; pin it for training and require it for reconstruction |
 | `engineVersion` | package-release provenance; it is not an exact simulation identity |
 | `format` | the rules/deck profile slug, such as `"old-school-93-94"` or `"isd-rtr-standard"` |
@@ -691,10 +701,54 @@ which preserves ordinary-turn order around the newest-first extra-turn queue.
 It also gives pending prospective begin-turn replacements a typed continuation,
 so a Time Vault choice can reconstruct before the proposed turn commits.
 Consumers of reconstruction should require
-`reconstruction.checkpoint.v2` and continue checking both the nested checkpoint
-version and exact simulation fingerprint. A pending battlefield-exit
-replacement-order choice remains explicitly deferred and fails reconstruction
-closed as described above.
+`reconstruction.checkpoint.v2` for that historical format and continue checking
+both the nested checkpoint version and exact simulation fingerprint. A pending
+battlefield-exit replacement-order choice remains explicitly deferred and fails
+reconstruction closed as described above.
+
+### Migrating checkpoint format 2 to 3
+
+Protocol 22 remains in place. Checkpoint format 3 separates event-only trigger
+context from the typed single-object and object-set bindings accumulated while
+a declarative effect resolves. Suspended choices, mana-or-life payments, and
+pile procedures retain those bindings through shared typed continuations.
+Battlefield-entry scalar choices use the same destination-tagged continuation,
+and private top-card selections retain whether the chosen card must be
+revealed. Each disclosed hidden-zone card records its exact seat, zone, and
+index, preserving public object identity, duplicate definitions, and visible
+option order under a hidden-zone hypothesis.
+
+Resolved characteristic and object-rule modifications are one ordered,
+expiration-aware continuous-effect collection. Every entry retains its exact
+authored catalog location, source-ability provenance, timestamp and component
+order, and frozen resolution-time values; resolved player play restrictions
+use a parallel ordered collection. These replace the separate animation,
+aggregate power/toughness, granted-ability, removed-ability, unblockable,
+can't-block, and can't-regenerate fields.
+
+Resolved damage prevention is likewise one ordered typed collection, replacing
+the separate Fog flag, prevention shields, relational rules, and per-permanent
+combat-prevention flags while retaining concrete matchers, remaining point or
+event capacity, coverage, life-gain recipient, provenance, timestamp, and
+expiration. Effect-scheduled instructions and floating listeners are unified
+as installed triggers with their lexical targets and bindings; pending and
+stacked triggers carry the same complete resolution context. Entry-replacement
+continuations use typed replacement-program locators, including nested
+branches.
+
+The scalar additional-combat counter is now an ordered queue of inserted major
+phases with a frozen ordinary continuation. Authored `combat, postcombat main`
+sequences stay intact, later and nested schedules retain their ordering, and
+the continuation distinguishes resuming ordinary combat from proceeding to the
+end step. Legacy card-, payment-, destruction-, and pile-specific continuation
+tags are replaced by the shared choice, PayOr, and partition procedures.
+
+Format-2 checkpoints do not contain the individual ordering, provenance,
+duration, trigger identity, lexical context, phase sequence, displaced
+continuation, payment kind, reveal instruction, or exact hidden-zone positions
+needed to recover this state. They cannot be upgraded by guessing. Current
+reconstruction consumers should require `reconstruction.checkpoint.v3` and
+regenerate checkpoints with the current engine.
 
 ### Migrating from protocol 21
 
@@ -723,7 +777,7 @@ Protocol 22 splits wire compatibility from conservative source identity:
   `requiredSimulationFingerprint` to refuse a different simulation before it
   is listed or assigned.
 
-The current optional capability is `reconstruction.checkpoint.v2`. An ordinary
+The current optional capability is `reconstruction.checkpoint.v3`. An ordinary
 hosted bot that only reads `legalActions` should declare an empty capability
 list; do not copy the server's advertised capabilities without implementing
 them.

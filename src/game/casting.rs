@@ -9,6 +9,7 @@ use super::{
     TargetPredicate, TargetSlotDef, TargetSlotId, TriggerContext, ZoneKind, add_generic,
     extra_target_cost, reduce_generic, remove_card,
 };
+use crate::card::{BattlefieldEntryScalarChoiceDef, CardSet, ScalarChoiceListDef};
 
 impl Game {
     pub(super) fn play_land(
@@ -82,9 +83,6 @@ impl Game {
         choices.into_iter().map(|(name, _)| name).collect()
     }
 
-    /// Offers the card names worth naming. Naming a card with no activated
-    /// ability does nothing at all, so leaving those out of the list changes
-    /// no outcome and keeps the choice readable.
     /// "You may have this enter as a copy of ...": the copy is picked as the
     /// permanent enters, and entering as itself is always an option.
     pub(super) fn queue_entry_copy_choice(
@@ -134,68 +132,19 @@ impl Game {
         );
     }
 
-    pub(super) fn queue_card_name_choice(&mut self, player: PlayerId) {
-        let mut names = self
-            .catalog
-            .definitions()
-            .into_iter()
-            .filter(|definition| {
-                definition.parts.iter().any(|part| {
-                    part.rules.ability_clauses().iter().any(|ability| {
-                        matches!(
-                            ability.definition,
-                            DeclarativeAbilityDef::Activated(_)
-                                | DeclarativeAbilityDef::ActivatedMana(_)
-                        )
-                    })
-                })
-            })
-            .map(|definition| definition.name.clone())
-            .collect::<Vec<_>>();
-        names.sort();
-        names.dedup();
-        // A catalog with nothing to name would strand the entry procedure.
-        if names.is_empty() {
-            names.push("Black Lotus".into());
-        }
-        let options = names
-            .iter()
-            .enumerate()
-            .map(|(index, name)| DecisionOption {
-                id: u32::try_from(index).unwrap_or(u32::MAX),
-                label: name.clone(),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::None,
-            })
-            .collect();
-        self.queue_decision(
-            player,
-            "Choose a card name",
-            DecisionVisibility::Public,
-            DecisionPreference::Neutral,
-            1..=1,
-            false,
-            options,
-            DecisionContinuation::BattlefieldEntryCardName { choices: names },
-        );
-    }
-
-    pub(super) fn queue_creature_type_choice(&mut self, player: PlayerId) {
-        let mut choices = self.creature_type_choices(player);
-        // The complete game vocabulary always contains creature types. Keep a
-        // legal fallback so a deliberately tiny test catalog cannot strand
-        // the land in an unfinished entry procedure.
-        if choices.is_empty() {
-            choices.push("Human".into());
-        }
+    pub(super) fn queue_entry_scalar_choice(
+        &mut self,
+        player: PlayerId,
+        context: super::ReplacementEffectContext,
+        choice: BattlefieldEntryScalarChoiceDef,
+    ) {
+        let (prompt, choices) = self.entry_scalar_choices(player, choice);
         let options = choices
             .iter()
             .enumerate()
-            .map(|(index, creature_type)| DecisionOption {
+            .map(|(index, value)| DecisionOption {
                 id: u32::try_from(index).unwrap_or(u32::MAX),
-                label: creature_type.clone(),
+                label: value.clone(),
                 card: None,
                 members: Vec::new(),
                 ability_text: None,
@@ -204,14 +153,49 @@ impl Game {
             .collect();
         self.queue_decision(
             player,
-            "Choose a creature type",
+            prompt,
             DecisionVisibility::Public,
             DecisionPreference::Neutral,
             1..=1,
             false,
             options,
-            DecisionContinuation::BattlefieldEntryCreatureType { choices },
+            DecisionContinuation::BattlefieldEntryScalarChoice {
+                context,
+                choice,
+                choices,
+            },
         );
+    }
+
+    pub(super) fn entry_scalar_choices(
+        &self,
+        player: PlayerId,
+        choice: BattlefieldEntryScalarChoiceDef,
+    ) -> (&'static str, Vec<String>) {
+        let (prompt, mut choices, fallback) = match choice.list {
+            ScalarChoiceListDef::CardNames => {
+                let mut names = self
+                    .catalog
+                    .definitions()
+                    .into_iter()
+                    .filter(|definition| definition.debut_set != CardSet::Token)
+                    .flat_map(|definition| definition.parts.iter().map(|part| part.name.clone()))
+                    .collect::<Vec<_>>();
+                names.sort();
+                names.dedup();
+                ("Choose a card name", names, "Black Lotus")
+            }
+            ScalarChoiceListDef::CreatureTypes => (
+                "Choose a creature type",
+                self.creature_type_choices(player),
+                "Human",
+            ),
+        };
+        // A deliberately tiny catalog must not strand an entry procedure.
+        if choices.is_empty() {
+            choices.push(fallback.into());
+        }
+        (prompt, choices)
     }
 
     pub(super) fn activate_mana_source(
@@ -231,20 +215,9 @@ impl Game {
         for cost in activation.costs.as_slice() {
             match cost {
                 AbilityCostDef::TapSource => {
-                    // Captured before the tap so the land's own characteristics
-                    // are the ones a watcher sees, and only here: a mana
-                    // ability with no tap cost never taps anything for mana.
-                    let tapped_for_mana = self
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == source)
-                        .map(|permanent| CommittedTriggerEvent::TappedForMana {
-                            object: self.trigger_event_object(permanent),
-                        });
-                    let _ = self.tap_permanent(source);
-                    if let Some(event) = tapped_for_mana {
-                        self.capture_battlefield_triggers(&event);
-                    }
+                    // The tap transition carries its purpose, so ordinary
+                    // tap triggers and mana-tap triggers scan one event.
+                    let _ = self.tap_permanent_for_mana(source);
                 }
                 AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource => {}
                 AbilityCostDef::RemoveCountersFromSource { kind, amount } => {
@@ -422,12 +395,12 @@ impl Game {
                     .map(|card| (card, CastSourceZone::Graveyard))
             })?;
         let definition = self.catalog.get(card.definition)?;
-        if self.play_is_prohibited(card, player) {
-            return None;
-        }
         let option = definition
             .play_option(choices.play_option())
             .filter(|option| option.action == PlayActionKind::CastSpell)?;
+        if self.play_is_prohibited(card, player, option) {
+            return None;
+        }
         if source_zone == CastSourceZone::Graveyard
             && option.restriction == PlayRestriction::FromHandOnly
         {
@@ -506,7 +479,10 @@ impl Game {
         } else if !self.declared_slot_selection_is_valid(&declared_slots, choices) {
             return None;
         }
-        cost = reduce_generic(cost, self.spell_cost_reduction(definition.id, player));
+        cost = reduce_generic(
+            cost,
+            self.spell_cost_reduction(definition.id, player, card_id),
+        );
         let payment_purpose = ManaPaymentPurpose::Spell {
             object: card_id,
             definition: definition.id,

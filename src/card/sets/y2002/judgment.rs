@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    abilities, cards,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    ResolvedEffectDurationDef, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -31,8 +31,8 @@ pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::GrantAbility(&SAFEKEEPER_SHROUD),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::add_ability(&SAFEKEEPER_SHROUD),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ),

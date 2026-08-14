@@ -5,41 +5,6 @@ use super::{
 };
 
 impl Game {
-    /// Offers the top card of a library to its owner when it matches. Only a
-    /// matching card is ever shown, because a non-matching card stays secret.
-    pub(super) fn queue_top_card_offer(
-        &mut self,
-        player: PlayerId,
-        predicate: ObjectPredicateDef,
-        source: GameObjectId,
-    ) {
-        let Some(top) = self.players[player.index()].library.last() else {
-            return;
-        };
-        if !self.card_object_matches(predicate, top, ZoneKind::Library, source) {
-            return;
-        }
-        let options = self.card_decision_options(std::slice::from_ref(top), DecisionZone::Library);
-        self.queue_decision(
-            player,
-            "Reveal the top card and put it into your hand?",
-            DecisionVisibility::Private,
-            DecisionPreference::HigherCardValue,
-            0..=1,
-            false,
-            options,
-            DecisionContinuation::SearchZone {
-                controller: player,
-                source: ZoneKind::Library,
-                destination: ZoneKind::Hand,
-                placement: ZonePlacement::Top,
-                reveal: true,
-                shuffle: false,
-                enters_tapped: false,
-            },
-        );
-    }
-
     /// Offers a search over the cards a predicate admits. Hidden-zone choices
     /// stay private; graveyards and exile are already public information.
     #[allow(clippy::too_many_arguments)]

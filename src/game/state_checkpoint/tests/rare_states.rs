@@ -8,8 +8,8 @@
 
 use super::super::*;
 use super::{determinized, true_hidden_hypothesis};
-use crate::game::DecisionContinuation;
 use crate::game::tests::{card, creature, mana_ability_for, ready_game};
+use crate::game::{DecisionContinuation, ResolvedEffectPayment};
 use crate::{Action, CardDefinitionId, CounterKind, ManaColor, TargetSelection};
 use serde_json::Value;
 
@@ -77,6 +77,10 @@ fn rebuild_from_truth(game: &Game, seed: u64) -> Game {
     let viewer = game
         .decision_player()
         .expect("the position must await an action");
+    rebuild_from_truth_for_viewer(game, viewer, seed)
+}
+
+fn rebuild_from_truth_for_viewer(game: &Game, viewer: PlayerId, seed: u64) -> Game {
     let observation = game.observe(viewer);
     let actions = crate::protocol::protocol_actions(&observation);
     let wire = crate::protocol::observation_json_for_format(
@@ -294,6 +298,30 @@ fn answer_with_first_option(game: &mut Game) {
     .expect("the first option is answerable");
 }
 
+fn answer_with_label(game: &mut Game, label: &str) {
+    let pending = game
+        .pending_decisions
+        .first()
+        .expect("a decision is pending");
+    let player = pending.observation.player;
+    let decision = pending.observation.id;
+    let option = pending
+        .observation
+        .options
+        .iter()
+        .find(|option| option.label == label)
+        .unwrap_or_else(|| panic!("the decision does not offer {label}"))
+        .id;
+    game.apply(
+        player,
+        Action::ChooseDecision {
+            decision,
+            options: vec![option],
+        },
+    )
+    .unwrap_or_else(|error| panic!("the {label} option is answerable: {error}"));
+}
+
 /// Casts `source` at `target` by finding the action the seat is actually
 /// offered, so target-slot bookkeeping stays the engine's business.
 fn cast_targeting(game: &mut Game, player: PlayerId, source: GameObjectId, target: Target) {
@@ -343,312 +371,270 @@ fn answer_with_option_naming(game: &mut Game, object: GameObjectId) {
     .expect("the named option is answerable");
 }
 
-/// Liliana's +1 asks both players at once. Between the two answers the engine
-/// holds one seat's committed discard while the other is still choosing, which
-/// is a choice the waiting seat must not be able to read out of its own
-/// checkpoint -- and which the host must still be able to hand back.
-#[test]
-fn a_multi_player_discard_reconstructs_while_one_choice_is_still_hidden() {
-    let mut game = staged_modern_game();
-    let walker_id = GameObjectId(10_000);
-    let mut walker = creature(
-        walker_id.0,
-        crate::card::cards::LILIANA_OF_THE_VEIL,
-        PlayerId::One,
-    );
-    walker.set_counters(CounterKind::Loyalty, 3);
-    game.battlefield.push(walker);
-    for (player, base) in [(PlayerId::One, 11_000), (PlayerId::Two, 12_000)] {
-        for offset in 0..2 {
-            let card = card(base + offset, crate::card::cards::MOUNTAIN, player);
-            game.players[player.index()].hand.push(card);
-        }
-    }
+include!("rare_states/decisions.rs");
 
+#[test]
+fn battlefield_entry_payment_freezes_and_authenticates_its_payer_and_cost() {
+    let mut game = staged_modern_game();
+    let land = card(11_200, crate::card::cards::HALLOWED_FOUNTAIN, PlayerId::One);
+    let land_id = land.id;
+    game.players[PlayerId::One.index()].hand.push(land);
     game.apply(
         PlayerId::One,
-        loyalty_action(
-            walker_id,
-            crate::card::cards::LILIANA_OF_THE_VEIL,
-            0,
-            Vec::new(),
-        ),
+        Action::PlayLand {
+            card: land_id,
+            option: crate::PlayOptionId::DEFAULT,
+        },
     )
-    .expect("Liliana's plus ability activates");
-    resolve_top_of_stack(&mut game);
+    .expect("the shock land is playable");
 
-    assert_eq!(
-        game.decision_player(),
-        Some(PlayerId::One),
-        "the active player discards first"
-    );
-    assert_reconstructs(&game, "a multi-player discard before any choice");
-
-    answer_with_first_option(&mut game);
-    assert_eq!(
-        game.decision_player(),
-        Some(PlayerId::Two),
-        "the opposing seat still owes a discard"
-    );
-    let chosen = matches!(
-        game.pending_decisions[0].continuation,
-        DecisionContinuation::DiscardForEffect { ref chosen, .. }
-            if chosen.iter().any(|(player, cards)| *player == PlayerId::One && !cards.is_empty())
-    );
-    assert!(chosen, "the first seat's discard must already be recorded");
-    assert_reconstructs(&game, "a multi-player discard holding a hidden choice");
-}
-
-/// Liliana's ultimate is the only card-owned pile program in the catalog and
-/// it never fires in sampled play. Its two continuations carry a callback,
-/// which the snapshot must address by registry key rather than by pointer.
-#[test]
-fn a_card_owned_pile_program_reconstructs_at_both_of_its_boundaries() {
-    let mut game = staged_modern_game();
-    let walker_id = GameObjectId(10_000);
-    let mut walker = creature(
-        walker_id.0,
-        crate::card::cards::LILIANA_OF_THE_VEIL,
-        PlayerId::One,
-    );
-    walker.set_counters(CounterKind::Loyalty, 6);
-    game.battlefield.push(walker);
-    for offset in 0..3 {
-        game.battlefield.push(creature(
-            12_000 + offset,
-            crate::card::cards::WALKING_CORPSE,
-            PlayerId::Two,
-        ));
-    }
-
-    game.apply(
-        PlayerId::One,
-        loyalty_action(
-            walker_id,
-            crate::card::cards::LILIANA_OF_THE_VEIL,
-            2,
-            vec![TargetSelection::single(
-                TargetSlotId(0),
-                Target::Player(PlayerId::Two),
-            )],
-        ),
-    )
-    .expect("Liliana's ultimate activates");
-    resolve_top_of_stack(&mut game);
-
-    assert!(
-        matches!(
-            game.pending_decisions
-                .first()
-                .map(|pending| &pending.continuation),
-            Some(DecisionContinuation::SeparateIntoPiles { .. })
-        ),
-        "the ultimate must be waiting on a pile split, not {:?}",
+    assert!(matches!(
         game.pending_decisions
             .first()
-            .map(|pending| &pending.continuation)
-    );
-    assert_reconstructs(&game, "a card-owned pile split");
-
-    answer_with_first_option(&mut game);
-    assert!(
-        matches!(
-            game.pending_decisions
-                .first()
-                .map(|pending| &pending.continuation),
-            Some(DecisionContinuation::ChoosePile { .. })
-        ),
-        "splitting must lead to the pile choice"
-    );
-    assert_reconstructs(&game, "a card-owned pile choice");
-}
-
-/// A floating trigger belongs to no object: its source has already resolved,
-/// and it watches the game until a named player's next turn. Sampled play
-/// never installed one, and it is the clearest case of executable state with
-/// nowhere obvious to live in a snapshot.
-#[test]
-fn a_floating_trigger_installed_by_a_resolved_ability_reconstructs() {
-    let mut game = staged_modern_game();
-    let walker_id = GameObjectId(10_000);
-    let mut walker = creature(
-        walker_id.0,
-        crate::card::cards::JACE_ARCHITECT_OF_THOUGHT,
-        PlayerId::One,
-    );
-    walker.set_counters(CounterKind::Loyalty, 4);
-    game.battlefield.push(walker);
-
-    game.apply(
-        PlayerId::One,
-        loyalty_action(
-            walker_id,
-            crate::card::cards::JACE_ARCHITECT_OF_THOUGHT,
-            0,
-            Vec::new(),
-        ),
-    )
-    .expect("Jace's plus ability activates");
-    resolve_top_of_stack(&mut game);
-
-    assert_eq!(
-        game.floating_triggers.len(),
-        1,
-        "the resolved ability must leave a floating trigger behind"
-    );
-    assert_reconstructs(&game, "a floating trigger watching the game");
-}
-
-/// The opposing seat splits cards it has just been shown, and those cards are
-/// in no zone at all while it decides. Both halves of the program have to
-/// survive a round trip, including the placement instructions for whichever
-/// pile is not kept.
-#[test]
-fn a_revealed_pile_split_reconstructs_at_both_of_its_boundaries() {
-    let mut game = staged_modern_game();
-    let walker_id = GameObjectId(10_000);
-    let mut walker = creature(
-        walker_id.0,
-        crate::card::cards::JACE_ARCHITECT_OF_THOUGHT,
-        PlayerId::One,
-    );
-    walker.set_counters(CounterKind::Loyalty, 4);
-    game.battlefield.push(walker);
-
-    game.apply(
-        PlayerId::One,
-        loyalty_action(
-            walker_id,
-            crate::card::cards::JACE_ARCHITECT_OF_THOUGHT,
-            1,
-            Vec::new(),
-        ),
-    )
-    .expect("Jace's minus ability activates");
-    resolve_top_of_stack(&mut game);
-
-    assert!(
-        matches!(
-            game.pending_decisions
-                .first()
-                .map(|pending| &pending.continuation),
-            Some(DecisionContinuation::RevealedPileSplit { .. })
-        ),
-        "the ability must be waiting on a revealed pile split, not {:?}",
-        game.pending_decisions
-            .first()
-            .map(|pending| &pending.continuation)
-    );
-    assert_reconstructs(&game, "a revealed pile split");
-
-    answer_with_first_option(&mut game);
-    assert!(
-        matches!(
-            game.pending_decisions
-                .first()
-                .map(|pending| &pending.continuation),
-            Some(DecisionContinuation::RevealedPileChoice { .. })
-        ),
-        "splitting must lead to the pile choice"
-    );
-    assert_reconstructs(&game, "a revealed pile choice");
-}
-
-/// Copy Artifact chooses what to be as it enters, so the seat sees a
-/// replacement decision whose options are permanents, and then a permanent
-/// whose characteristics come from a frozen copy rather than its own card.
-#[test]
-fn an_entering_copy_reconstructs_while_choosing_and_after_it_has_copied() {
-    let mut game = staged_game();
-    game.battlefield.push(creature(
-        12_000,
-        crate::card::cards::ORNITHOPTER,
-        PlayerId::Two,
+            .map(|pending| &pending.continuation),
+        Some(DecisionContinuation::BattlefieldEntryPayment {
+            player: PlayerId::One,
+            payment: ResolvedEffectPayment::Life(2),
+            definition: crate::card::ReplacementEffectDef::PayOr { .. },
+            ..
+        })
     ));
-    let copy = card(11_000, crate::card::cards::COPY_ARTIFACT, PlayerId::One);
-    let copy_id = copy.id;
-    game.players[PlayerId::One.index()].hand.push(copy);
-    fill_mana(&mut game, PlayerId::One, 4);
+    assert_reconstructs(&game, "a frozen battlefield-entry payment");
 
-    game.apply(
-        PlayerId::One,
-        Action::CastSpell {
-            card: copy_id,
-            choices: crate::CastChoices::default(),
-            sacrifices: Vec::new(),
-        },
-    )
-    .expect("Copy Artifact is castable");
-    resolve_top_of_stack(&mut game);
-
-    assert!(
-        matches!(
-            game.pending_decisions
-                .first()
-                .map(|pending| &pending.continuation),
-            Some(DecisionContinuation::BattlefieldEntryCopy { .. })
-        ),
-        "entering must ask what to copy, not {:?}",
-        game.pending_decisions
-            .first()
-            .map(|pending| &pending.continuation)
+    let observation = game.observe(PlayerId::One);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
     );
-    assert_reconstructs(&game, "a permanent choosing what to enter as");
-
-    answer_with_option_naming(&mut game, GameObjectId(12_000));
-    assert!(
-        game.battlefield
-            .iter()
-            .any(|permanent| permanent.copy_effect.is_some()),
-        "the choice must leave a copied permanent behind"
-    );
-    assert_reconstructs(&game, "a permanent that entered as a copy");
+    let hidden = true_hidden_hypothesis(&game, PlayerId::One);
+    for (label, mut edited) in [
+        ("payer", wire.clone()),
+        ("payment", wire.clone()),
+        ("source", wire.clone()),
+        ("schema", wire.clone()),
+    ] {
+        if label == "payer" {
+            edited["checkpoint"]["decisionState"]["continuation"]["player"] =
+                Value::from(PlayerId::Two.index());
+        } else if label == "payment" {
+            edited["checkpoint"]["decisionState"]["continuation"]["payment"]["value"] =
+                Value::from(3);
+        } else if label == "source" {
+            edited["checkpoint"]["decisionState"]["continuation"]["effect"]["ability"]["definition"] =
+                Value::from(crate::card::cards::STEAM_VENTS.0);
+        } else {
+            edited["decision"]["orderSemantics"] = Value::String("resolution".into());
+        }
+        let error = Game::from_observation_checkpoint(
+            game.catalog.clone(),
+            game.format,
+            &edited,
+            &hidden,
+            4_244,
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("payer or payment disagrees")
+                || error.contains("locator disagrees with its replacement source")
+                || error.contains("decision kind disagrees"),
+            "unexpected {label} error: {error}",
+        );
+    }
 }
 
-/// A permanent that named a card as it entered carries that name for the rest
-/// of the game. The name is free text rather than a catalog id, so it is the
-/// one piece of permanent state a locator cannot address.
 #[test]
-fn a_permanent_that_named_a_card_reconstructs_while_naming_and_after() {
-    let mut game = staged_modern_game();
-    let needle = card(11_000, crate::card::cards::PITHING_NEEDLE, PlayerId::One);
-    let needle_id = needle.id;
-    game.players[PlayerId::One.index()].hand.push(needle);
-    fill_mana(&mut game, PlayerId::One, 4);
+fn ordinary_pay_or_rejects_payer_and_payment_splices() {
+    let mut game = staged_game();
+    let mut vault = creature(11_300, crate::card::cards::MANA_VAULT, PlayerId::One);
+    vault.tapped = true;
+    game.battlefield.push(vault);
+    for id in 11_301..11_305 {
+        game.battlefield
+            .push(creature(id, crate::card::cards::MOUNTAIN, PlayerId::One));
+    }
+    game.step = crate::Step::Upkeep;
+    game.handle_upkeep_triggers();
+    game.finish_rules_procedure();
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        game.apply(priority, Action::PassPriority)
+            .expect("priority passes while Mana Vault resolves");
+    }
+    assert!(matches!(
+        game.pending_decisions
+            .first()
+            .map(|pending| &pending.continuation),
+        Some(DecisionContinuation::PayOr {
+            player: PlayerId::One,
+            payment: ResolvedEffectPayment::Mana(_),
+            ..
+        })
+    ));
+    assert_reconstructs(&game, "an ordinary frozen pay-or choice");
 
+    let observation = game.observe(PlayerId::One);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
+    );
+    let hidden = true_hidden_hypothesis(&game, PlayerId::One);
+    for (label, mut edited) in [
+        ("payer", wire.clone()),
+        ("payment", wire.clone()),
+        ("definition", wire.clone()),
+        ("schema", wire.clone()),
+    ] {
+        if label == "payer" {
+            edited["checkpoint"]["decisionState"]["continuation"]["player"] =
+                Value::from(PlayerId::Two.index());
+        } else if label == "payment" {
+            edited["checkpoint"]["decisionState"]["continuation"]["payment"]["value"]["generic"] =
+                Value::from(5);
+        } else if label == "definition" {
+            edited["checkpoint"]["decisionState"]["continuation"]["definition"]["path"] =
+                serde_json::json!([999]);
+        } else {
+            edited["decision"]["orderSemantics"] = Value::String("resolution".into());
+        }
+        let error = Game::from_observation_checkpoint(
+            game.catalog.clone(),
+            game.format,
+            &edited,
+            &hidden,
+            4_245,
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("payer")
+                || error.contains("payment")
+                || error.contains("locator is absent")
+                || error.contains("decision kind disagrees"),
+            "unexpected {label} error: {error}",
+        );
+    }
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn duress_choice_checkpoint_rejects_ineligible_hand_card_splices() {
+    let mut game = staged_modern_game();
+    let duress = card(11_400, crate::card::cards::DURESS, PlayerId::One);
+    let duress_id = duress.id;
+    game.players[0].hand.push(duress);
+    game.players[1].hand.extend([
+        card(11_401, crate::card::cards::SAVANNAH_LIONS, PlayerId::Two),
+        card(11_402, crate::card::cards::MOUNTAIN, PlayerId::Two),
+        card(11_403, crate::card::cards::LIGHTNING_BOLT, PlayerId::Two),
+        card(11_404, crate::card::cards::BLACK_LOTUS, PlayerId::Two),
+    ]);
+    fill_mana(&mut game, PlayerId::One, 1);
     game.apply(
         PlayerId::One,
         Action::CastSpell {
-            card: needle_id,
-            choices: crate::CastChoices::default(),
+            card: duress_id,
+            choices: crate::CastChoices::default().with_targets(vec![TargetSelection::single(
+                crate::TargetSlotId(0),
+                Target::Player(PlayerId::Two),
+            )]),
             sacrifices: Vec::new(),
         },
     )
-    .expect("Pithing Needle is castable");
+    .expect("Duress is castable");
     resolve_top_of_stack(&mut game);
-
-    assert!(
-        matches!(
-            game.pending_decisions
-                .first()
-                .map(|pending| &pending.continuation),
-            Some(DecisionContinuation::BattlefieldEntryCardName { .. })
-        ),
-        "entering must ask for a card name, not {:?}",
+    assert!(matches!(
         game.pending_decisions
             .first()
-            .map(|pending| &pending.continuation)
-    );
-    assert_reconstructs(&game, "a permanent choosing a card name");
+            .map(|pending| &pending.continuation),
+        Some(DecisionContinuation::ChooseForEffect { .. })
+    ));
+    assert_reconstructs(&game, "Duress's authored object choice");
 
-    answer_with_first_option(&mut game);
-    assert!(
-        game.battlefield
-            .iter()
-            .any(|permanent| permanent.chosen_card_name.is_some()),
-        "the choice must leave a named permanent behind"
+    let viewer = PlayerId::One;
+    let observation = game.observe(viewer);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
     );
-    assert_reconstructs(&game, "a permanent holding a chosen card name");
+    let hidden = true_hidden_hypothesis(&game, viewer);
+
+    let mut missing_origin = wire.clone();
+    missing_origin["checkpoint"]["decisionState"]["cardOrigins"] = serde_json::json!([]);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &missing_origin,
+        &hidden,
+        4_246,
+    )
+    .expect_err("a disclosed hidden-hand option requires its origin");
+    assert!(
+        error.contains("lacks a card origin"),
+        "unexpected error: {error}"
+    );
+
+    let mut wrong_origin = wire.clone();
+    wrong_origin["checkpoint"]["decisionState"]["cardOrigins"][0]["zone"] =
+        Value::String("library".into());
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &wrong_origin,
+        &hidden,
+        4_247,
+    )
+    .expect_err("a disclosed hand option rejects a library origin");
+    assert!(
+        error.contains("disagrees with its option zone"),
+        "unexpected error: {error}",
+    );
+
+    let savannah = game.players[1]
+        .hand
+        .iter()
+        .find(|card| card.definition == crate::card::cards::SAVANNAH_LIONS)
+        .expect("the excluded creature remains in hand");
+    let mut spliced = wire.clone();
+    let old_object = spliced["decision"]["options"][0]["card"]["objectId"]
+        .as_u64()
+        .expect("the eligible option has an object id");
+    spliced["decision"]["options"][0]["label"] = Value::String("Savannah Lions".into());
+    spliced["decision"]["options"][0]["card"]["objectId"] = Value::from(savannah.id.0);
+    spliced["decision"]["options"][0]["card"]["definition"] = Value::from(savannah.definition.0);
+    let origins = spliced["checkpoint"]["decisionState"]["cardOrigins"]
+        .as_array_mut()
+        .expect("card origins are an array");
+    let origin = origins
+        .iter_mut()
+        .find(|origin| origin["objectId"].as_u64() == Some(old_object))
+        .expect("the edited option has an origin");
+    origin["objectId"] = Value::from(savannah.id.0);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &spliced,
+        &hidden,
+        4_248,
+    )
+    .expect_err("Duress cannot be edited to choose a creature");
+    assert!(
+        error.contains("object choice decision options disagree"),
+        "unexpected error: {error}",
+    );
 }
 
 /// Mishra's Workshop pays for artifacts and nothing else. Unspent restricted

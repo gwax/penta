@@ -160,17 +160,12 @@ impl HandcraftedPolicy {
         loyalty_score + i32::from(cost) * 100
     }
 
-    /// What a card's own policy hint is worth here. Liliana's ultimate is the
-    /// only one so far: splitting an opponent's board is good, splitting your
-    /// own is not.
-    /// What one decision option is worth. A pile option stands for the cards
-    /// it groups, so its value is theirs together; an ordinary option is worth
-    /// its own card.
+    /// What one decision option is worth. An ordinary card option is worth
+    /// that card even when `members` disclose other inspected cards. A pile
+    /// option has no single `card`, so it is worth its members together.
     pub(super) fn option_value(&self, option: &DecisionOption) -> i32 {
-        if option.members.is_empty() {
-            return option
-                .card
-                .map_or(0, |(_, definition)| self.card_value(definition));
+        if let Some((_, definition)) = option.card {
+            return self.card_value(definition);
         }
         option
             .members

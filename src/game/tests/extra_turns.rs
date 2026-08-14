@@ -1,5 +1,4 @@
 use super::*;
-use crate::ReplacementAbilityDef;
 
 const TIME_VAULT_TURN_REPLACEMENT_TEXT: &str = "If you would begin your turn while this artifact is tapped, you may skip that turn instead. If you do, untap this artifact.";
 static EXPECTED_TIME_VAULT_UNTAP: EffectDef = EffectDef::Untap {
@@ -9,15 +8,13 @@ static EXPECTED_TIME_VAULT_TURN_REPLACEMENT: [ReplacementEffectDef; 2] = [
     ReplacementEffectDef::ReplaceEventWithNothing,
     ReplacementEffectDef::Perform(&EXPECTED_TIME_VAULT_UNTAP),
 ];
-static TEST_EXTRA_TURN_REPLACEMENT_ABILITIES: [AbilityDef; 1] = [AbilityDef::defined(
+static TEST_EXTRA_TURN_REPLACEMENT_ABILITIES: [AbilityDef; 1] = [AbilityDef::replacement_for(
     "If a player would begin an extra turn, that player skips that turn instead.",
-    DeclarativeAbilityDef::Replacement(ReplacementAbilityDef::new().with_event(
-        ReplacementEventDef::WouldBeginTurn {
-            player: PlayerRelation::Any,
-            kind: TurnKindDef::Extra,
-        },
-    )),
-    EffectDef::Replacement(ReplacementEffectDef::ReplaceEventWithNothing),
+    ReplacementEventDef::WouldBeginTurn {
+        player: PlayerRelation::Any,
+        kind: TurnKindDef::Extra,
+    },
+    ReplacementEffectDef::ReplaceEventWithNothing,
 )];
 
 fn install_extra_turn_replacement(game: &mut Game, id: u32) -> GameObjectId {
@@ -216,17 +213,16 @@ fn time_vault_has_four_complete_declarative_abilities() {
             )
     );
     assert_eq!(
-        enters_tapped.declarative_effect(),
-        Some(EffectDef::Replacement(
-            ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped,),
+        enters_tapped.declarative_replacement(),
+        Some(ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::Tapped,
         ))
     );
     assert_eq!(
         untap_restriction.declarative_effect(),
-        Some(EffectDef::Apply {
+        Some(EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
         })
     );
     assert_eq!(
@@ -249,10 +245,10 @@ fn time_vault_has_four_complete_declarative_abilities() {
     );
     assert!(replacement.optional);
     assert_eq!(
-        turn_replacement.declarative_effect(),
-        Some(EffectDef::Replacement(ReplacementEffectDef::Sequence(
-            &EXPECTED_TIME_VAULT_TURN_REPLACEMENT
-        ),))
+        turn_replacement.declarative_replacement(),
+        Some(ReplacementEffectDef::Sequence(
+            &EXPECTED_TIME_VAULT_TURN_REPLACEMENT,
+        ))
     );
     let DeclarativeAbilityDef::Activated(definition) = activation.definition else {
         panic!("Time Vault's fourth clause is an activated ability")
@@ -717,16 +713,14 @@ fn multiple_time_vaults_share_one_choice_and_only_one_replaces_each_turn() {
 fn removing_time_vaults_abilities_removes_the_begin_turn_replacement() {
     let mut game = ready_game();
     game.step = Step::Cleanup;
-    let mut vault = tapped_time_vault(10_000, PlayerId::Two);
-    vault
-        .temporary_removed_abilities
-        .push(TemporaryRemovedAbilities {
-            predicate: AbilityPredicateDef::Any,
-            timestamp: ContinuousEffectTimestamp(1),
-            order: 0,
-            expiration: AbilityEffectExpiration::Never,
-        });
+    let vault = tapped_time_vault(10_000, PlayerId::Two);
     game.battlefield.push(vault);
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_000),
+        &[AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any)],
+        ContinuousEffectExpiration::Never,
+    );
     assert!(game.effective_abilities(&game.battlefield[0]).is_empty());
 
     game.start_next_turn();

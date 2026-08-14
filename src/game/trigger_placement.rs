@@ -1,9 +1,9 @@
 use super::{
     CardDefinitionId, CharacteristicSource, DecisionContinuation, DecisionKind,
     DecisionObservation, DecisionOption, DecisionOrderSemantics, DecisionPreference,
-    DecisionVisibility, DecisionZone, EffectDef, EffectRecipientDef, Game, GameEvent, GameObjectId,
-    PendingDecision, PendingTrigger, StackAbilityPayload, StackObject, StackObjectKind, Target,
-    TargetSelection, TargetSlotId, TriggerPlacementBatch, ZoneKind,
+    DecisionVisibility, DecisionZone, EffectDef, Game, GameEvent, GameObjectId, PendingDecision,
+    PendingTrigger, StackAbilityPayload, StackObject, StackObjectKind, Target, TargetSelection,
+    TargetSlotId, TriggerPlacementBatch, ZoneKind,
 };
 
 impl Game {
@@ -72,7 +72,7 @@ impl Game {
             target.predicate,
             trigger.controller,
             trigger.source.object,
-            trigger.context,
+            trigger.context.trigger,
         );
         if candidates.len() < usize::from(target.minimum) {
             // A triggered ability with no legal choice for a required target
@@ -127,9 +127,10 @@ impl Game {
         };
         let preference = if matches!(
             target_effect,
-            EffectDef::ExileLinkedToSource {
-                object: EffectRecipientDef::Target(slot),
-            } if slot.index() == trigger.targets.len()
+            EffectDef::ExileLinkedToSource { object }
+                if object
+                    .legal_target()
+                    .is_some_and(|slot| slot.index() == trigger.targets.len())
         ) {
             DecisionPreference::LinkedExileTargets
         } else {
@@ -271,13 +272,13 @@ impl Game {
                 definition: None,
                 presentation_definition: trigger.definition,
                 text: Some(trigger.text),
-                target_defs: trigger.target_defs.to_vec(),
+                target_defs: trigger.target_defs,
                 targets: trigger.targets,
                 context: trigger.context,
                 resolver: trigger.resolver,
                 condition: trigger.condition,
                 mode_effects: Vec::new(),
-                x: 0,
+                x: trigger.x,
             }),
             controller: trigger.controller,
             signature: None,

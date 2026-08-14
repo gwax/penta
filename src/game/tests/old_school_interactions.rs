@@ -558,6 +558,32 @@ fn mana_drain_pays_out_at_its_controllers_next_main_phase() {
     assert_eq!(game.active_player, PlayerId::Two);
     game.step = Step::Draw;
     game.advance_step();
+    game.finish_rules_procedure();
+    assert_eq!(
+        game.players[1].mana_pool.colorless, 0,
+        "the delayed ability is respondable rather than resolving at the step boundary",
+    );
+    let payload = game
+        .stack
+        .last()
+        .and_then(|object| object.ability.as_ref())
+        .expect("Mana Drain's installed trigger is on the stack");
+    assert!(
+        payload.target_defs.is_empty(),
+        "the countered spell is a lexical reference, not a new target",
+    );
+    assert_eq!(payload.targets[0].targets(), &[Target::Spell(on_stack)]);
+    assert_eq!(
+        payload.context.trigger,
+        TriggerContext {
+            object: None,
+            object_controller: None,
+            event_player: Some(PlayerId::Two),
+            amount: None,
+        },
+        "the installed trigger still receives the fresh main-phase event context",
+    );
+    pass_priority_pair(&mut game);
     assert_eq!(
         game.players[1].mana_pool.colorless, 5,
         "five for the Angel's mana value"

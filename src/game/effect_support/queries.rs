@@ -26,6 +26,23 @@ impl Game {
         )
     }
 
+    pub(in crate::game) fn objects_matching_effect_query(
+        &self,
+        query: ObjectQueryDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> Vec<Target> {
+        self.objects_matching_query_with_context(
+            query,
+            object.controller,
+            object.source.unwrap_or(object.id),
+            context.trigger,
+            None,
+            Some((object, scoped, context)),
+        )
+    }
+
     pub(in crate::game) fn objects_matching_query_with_prospective(
         &self,
         query: ObjectQueryDef,
@@ -34,13 +51,33 @@ impl Game {
         context: TriggerContext,
         prospective: Option<&Permanent>,
     ) -> Vec<Target> {
-        let mut recipients = Vec::new();
-        let result = self.visit_objects_matching_query_with_prospective(
+        self.objects_matching_query_with_context(
             query,
             evaluation_controller,
             source,
             context,
             prospective,
+            None,
+        )
+    }
+
+    fn objects_matching_query_with_context(
+        &self,
+        query: ObjectQueryDef,
+        evaluation_controller: PlayerId,
+        source: GameObjectId,
+        context: TriggerContext,
+        prospective: Option<&Permanent>,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+    ) -> Vec<Target> {
+        let mut recipients = Vec::new();
+        let result = self.visit_objects_matching_query_with_context(
+            query,
+            evaluation_controller,
+            source,
+            context,
+            prospective,
+            effect_context,
             |recipient| {
                 recipients.push(recipient);
                 ControlFlow::Continue(())
@@ -58,17 +95,19 @@ impl Game {
         context: TriggerContext,
         prospective: Option<&Permanent>,
     ) -> bool {
-        self.visit_objects_matching_query_with_prospective(
+        self.visit_objects_matching_query_with_context(
             query,
             evaluation_controller,
             source,
             context,
             prospective,
+            None,
             |_| ControlFlow::Break(()),
         )
         .is_break()
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(in crate::game) fn visit_objects_matching_query_with_prospective(
         &self,
         query: ObjectQueryDef,
@@ -76,15 +115,112 @@ impl Game {
         source: GameObjectId,
         context: TriggerContext,
         prospective: Option<&Permanent>,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        visitor: impl FnMut(Target) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
+        self.visit_objects_matching_query_with_context(
+            query,
+            evaluation_controller,
+            source,
+            context,
+            prospective,
+            effect_context,
+            visitor,
+        )
+    }
+
+    fn player_matches_set(
+        &self,
+        candidate: PlayerId,
+        players: PlayerSetDef,
+        evaluation_controller: PlayerId,
+        context: TriggerContext,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+    ) -> bool {
+        match players {
+            PlayerSetDef::All => true,
+            PlayerSetDef::Related(relation) => {
+                self.player_relation_matches(candidate, relation, evaluation_controller, context)
+            }
+            PlayerSetDef::One(PlayerRefDef::EffectController) => candidate == evaluation_controller,
+            PlayerSetDef::One(PlayerRefDef::EventPlayer) => context.event_player == Some(candidate),
+            PlayerSetDef::LegalTargets(target) => {
+                effect_context.is_some_and(|(object, scoped, resolution)| {
+                    self.players_in_set(
+                        PlayerSetDef::LegalTargets(target),
+                        object,
+                        resolution,
+                        scoped,
+                    )
+                    .contains(&candidate)
+                })
+            }
+            PlayerSetDef::One(reference) => {
+                effect_context.is_some_and(|(object, scoped, resolution)| {
+                    self.player_reference(reference, object, resolution, scoped) == Some(candidate)
+                })
+            }
+        }
+    }
+
+    pub(in crate::game) fn query_player_constraints_match(
+        &self,
+        controller: Option<PlayerId>,
+        owner: PlayerId,
+        query: ObjectQueryDef,
+        evaluation_controller: PlayerId,
+        context: TriggerContext,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+    ) -> bool {
+        query.related_player.is_none_or(|players| {
+            self.player_matches_set(
+                controller.unwrap_or(owner),
+                players,
+                evaluation_controller,
+                context,
+                effect_context,
+            )
+        }) && query.controller.is_none_or(|players| {
+            controller.is_some_and(|candidate| {
+                self.player_matches_set(
+                    candidate,
+                    players,
+                    evaluation_controller,
+                    context,
+                    effect_context,
+                )
+            })
+        }) && query.owner.is_none_or(|players| {
+            self.player_matches_set(
+                owner,
+                players,
+                evaluation_controller,
+                context,
+                effect_context,
+            )
+        })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn visit_objects_matching_query_with_context(
+        &self,
+        query: ObjectQueryDef,
+        evaluation_controller: PlayerId,
+        source: GameObjectId,
+        context: TriggerContext,
+        prospective: Option<&Permanent>,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
         mut visitor: impl FnMut(Target) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         if query.zones.contains(&ZoneKind::Battlefield) {
             for permanent in &self.battlefield {
-                if !self.player_relation_matches(
-                    permanent.controller,
-                    query.controller,
+                if !self.query_player_constraints_match(
+                    Some(permanent.controller),
+                    permanent.card.owner,
+                    query,
                     evaluation_controller,
                     context,
+                    effect_context,
                 ) {
                     continue;
                 }
@@ -104,11 +240,13 @@ impl Game {
         if query.zones.contains(&ZoneKind::Stack) {
             for candidate in self.stack.iter() {
                 if candidate.kind != StackObjectKind::Spell
-                    || !self.player_relation_matches(
-                        candidate.controller,
-                        query.controller,
+                    || !self.query_player_constraints_match(
+                        Some(candidate.controller),
+                        candidate.card.owner,
+                        query,
                         evaluation_controller,
                         context,
+                        effect_context,
                     )
                 {
                     continue;
@@ -136,11 +274,13 @@ impl Game {
                 continue;
             }
             for card in self.cards_in_zone(zone) {
-                if self.player_relation_matches(
+                if self.query_player_constraints_match(
+                    None,
                     card.owner,
-                    query.controller,
+                    query,
                     evaluation_controller,
                     context,
+                    effect_context,
                 ) && self.card_object_matches(query.object, card, zone, source)
                     && visitor(Target::Card(card.id)).is_break()
                 {

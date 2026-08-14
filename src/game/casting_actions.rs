@@ -92,14 +92,12 @@ impl Game {
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
             };
-            if self.play_is_prohibited(card, player) {
-                continue;
-            }
             actions.extend(
                 definition
                     .play_options
                     .iter()
                     .filter(|option| option.action == PlayActionKind::PlayLand)
+                    .filter(|option| !self.play_is_prohibited(card, player, option))
                     .filter(|option| match &option.form {
                         crate::card::SpellForm::Part(part) => definition
                             .part(*part)
@@ -131,14 +129,14 @@ impl Game {
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
             };
-            if self.play_is_prohibited(card, player) {
-                continue;
-            }
             for option in definition
                 .play_options
                 .iter()
                 .filter(|option| option.action == PlayActionKind::CastSpell)
             {
+                if self.play_is_prohibited(card, player, option) {
+                    continue;
+                }
                 if source_zone == CastSourceZone::Graveyard
                     && option.restriction == PlayRestriction::FromHandOnly
                 {
@@ -159,11 +157,6 @@ impl Game {
                 // metadata-only noncreature spell or modal branch must not be
                 // exposed as a legal action that would silently do nothing.
                 if option.effect_status == CardEffectStatus::MetadataOnly && !types.is_creature() {
-                    continue;
-                }
-                // A player stopped from casting noncreature spells this turn
-                // keeps their creatures.
-                if self.noncreature_casts_locked[player.index()] && !types.is_creature() {
                     continue;
                 }
                 let part_has_flash = match &option.form {
@@ -261,7 +254,7 @@ impl Game {
                                             cost,
                                             extra_target_cost(definition, target_count),
                                         ),
-                                        self.spell_cost_reduction(definition.id, player),
+                                        self.spell_cost_reduction(definition.id, player, card.id),
                                     );
                                     if !self.can_pay_cost_for(
                                         player,
@@ -546,7 +539,7 @@ impl Game {
                 text: alternative_cast.stack_text.or(Some(ability.text)),
                 target_defs: Vec::new(),
                 targets: signature.targets().to_vec(),
-                context: TriggerContext::empty(),
+                context: TriggerContext::empty().into(),
                 resolver: Self::ability_resolver(origin, &ability),
                 condition: None,
                 mode_effects: Vec::new(),
@@ -574,7 +567,7 @@ impl Game {
             text: Some(ability.text),
             target_defs: plan.target_defs,
             targets: signature.targets().to_vec(),
-            context: TriggerContext::empty(),
+            context: TriggerContext::empty().into(),
             condition: None,
             resolver: match (ability.declarative_effect(), followup) {
                 (Some(effect), Some(behavior)) => {

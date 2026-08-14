@@ -11,9 +11,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
-    EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AbilityCoverageDef, AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
+    CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 
 pub(in crate::card::sets) static BEAST_TOKEN_3_3_GREEN: CardRecord = CardRecord::new(
@@ -66,22 +67,18 @@ pub(in crate::card::sets) static ELEMENTAL_TOKEN_GREEN_WHITE: CardRecord = CardR
         .printed_colors(&[ManaColor::Green, ManaColor::White])
         .with_ability(AbilityDef::static_ability(
             "This token's power and toughness are each equal to the number of creatures you control.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
-                    toughness: ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL), ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL)),
             },
         )),
 );
 
-static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::You,
-};
+static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
 
 pub(in crate::card::sets) static SPIRIT_TOKEN_1_1_WHITE: CardRecord = CardRecord::new(
     cards::SPIRIT_TOKEN_1_1_WHITE,
@@ -134,10 +131,9 @@ pub(in crate::card::sets) static TETRAVITE_TOKEN: CardRecord = CardRecord::new(
             abilities::flying(),
             AbilityDef::static_ability(
                 "This token can't be enchanted.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::CannotBeEnchanted,
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeEnchanted),
                 },
             )
             .with_coverage(AbilityCoverageDef::explained_complete(
@@ -157,9 +153,7 @@ pub(in crate::card::sets) static ASSASSIN_TOKEN_1_1_BLACK: CardRecord = CardReco
         .printed_colors(&[ManaColor::Black])
         .with_ability(AbilityDef::triggered(
             "Whenever this token deals combat damage to a player, that player loses the game.",
-            TriggerEventDef::CombatDamageDealtToPlayer {
-                source: ObjectPredicateDef::Source,
-            },
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
             EffectDef::LoseTheGame {
                 player: EffectRecipientDef::EventPlayer,
             },
@@ -356,11 +350,11 @@ pub(in crate::card::sets) static DRAGON_TOKEN_2_2_RED: CardRecord = CardRecord::
             &[crate::card::AbilityCostDef::Mana(crate::mana_cost!("{R}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )),
 );
@@ -413,23 +407,22 @@ pub(in crate::card::sets) static DOMRI_RADE_EMBLEM: CardRecord = CardRecord::new
     CardSet::Token,
     CardRules::new_emblem().with_ability(AbilityDef::static_ability(
         "Creatures you control have double strike, trample, hexproof, and haste.",
-        EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::You,
-            },
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
             effect: AppliedEffectDef::Composite(&DOMRI_EMBLEM_KEYWORDS),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
         },
     )),
 );
 
 static DOMRI_EMBLEM_KEYWORDS: [AppliedEffectDef; 4] = [
-    AppliedEffectDef::GrantAbility(&DOMRI_DOUBLE_STRIKE),
-    AppliedEffectDef::GrantAbility(&DOMRI_TRAMPLE),
-    AppliedEffectDef::GrantAbility(&DOMRI_HEXPROOF),
-    AppliedEffectDef::GrantAbility(&DOMRI_HASTE),
+    AppliedEffectDef::add_ability(&DOMRI_DOUBLE_STRIKE),
+    AppliedEffectDef::add_ability(&DOMRI_TRAMPLE),
+    AppliedEffectDef::add_ability(&DOMRI_HEXPROOF),
+    AppliedEffectDef::add_ability(&DOMRI_HASTE),
 ];
 
 static DOMRI_DOUBLE_STRIKE: AbilityDef = abilities::double_strike();

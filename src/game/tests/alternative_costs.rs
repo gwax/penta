@@ -1,4 +1,5 @@
 use super::*;
+use crate::AbilityProgramDef;
 
 fn alternative_cast_action(
     game: &Game,
@@ -31,11 +32,14 @@ fn snapcaster_grants_an_ordinary_card_cost_flashback_ability() {
     let catalog = poc::catalog().unwrap();
     let snapcaster = catalog.get(cards::SNAPCASTER_MAGE).unwrap();
     let trigger = snapcaster.rules.ability(AbilityId(1)).unwrap();
-    let EffectDef::Apply {
-        effect: AppliedEffectDef::GrantAbility(granted),
-        duration: EffectDurationDef::UntilEndOfTurn,
+    let AbilityProgramDef::Effects(EffectDef::Apply {
+        effect:
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Add(granted),
+            )),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         ..
-    } = trigger.effect.definition
+    }) = trigger.effect.definition
     else {
         panic!("Snapcaster's trigger should use the generic ability-grant effect")
     };
@@ -591,22 +595,27 @@ fn ghor_clan_rampager_uses_one_shared_bloodrush_effect() {
             AbilityCostDef::DiscardSource,
         ],
     );
-    let EffectDef::Apply {
-        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    let AbilityProgramDef::Effects(EffectDef::Apply {
+        recipient,
         effect: AppliedEffectDef::Composite(components),
-        duration: EffectDurationDef::UntilEndOfTurn,
-    } = bloodrush.effect.definition
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    }) = bloodrush.effect.definition
     else {
         panic!("Rampager should apply one composite effect until end of turn")
     };
+    assert_eq!(recipient.legal_target(), Some(TargetIndex::PRIMARY));
     assert!(matches!(
         components,
         [
-            AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(4),
-                toughness: ValueDef::Constant(4),
-            },
-            AppliedEffectDef::GrantAbility(ability),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::Modify {
+                    power: ValueDef::Constant(4),
+                    toughness: ValueDef::Constant(4),
+                },
+            )),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Add(ability),
+            )),
         ] if ability.definition == DeclarativeAbilityDef::Keyword(KeywordAbility::Trample)
     ));
 }

@@ -1,7 +1,10 @@
+use crate::card::AppliedRuleDef;
+
 use super::{
-    AbilityCostDef, AbilityOrigin, CardDefinitionId, DeclarativeAbilityDef,
-    DeclarativeSpellProfile, EffectDef, EffectRecipientDef, GameObjectId, HandcraftedPolicy,
-    ObjectPredicateDef, PlayerObservation, PlayerRelation, Step, Target, ValueDef,
+    AbilityCostDef, AbilityOrigin, AppliedEffectDef, CardDefinitionId, CharacteristicOperationDef,
+    DeclarativeAbilityDef, DeclarativeSpellProfile, EffectDef, EffectRecipientDef, GameObjectId,
+    HandcraftedPolicy, ObjectPredicateDef, PlayerObservation, PlayerRelation,
+    PowerToughnessOperationDef, SetOperationDef, Step, Target, ValueDef,
 };
 
 impl HandcraftedPolicy {
@@ -91,16 +94,33 @@ impl HandcraftedPolicy {
             .get(definition)
             .and_then(|card| card.part(part))
             .and_then(|part| part.rules.ability(ability))
-            .is_some_and(|ability| {
-                matches!(
-                    ability.declarative_effect(),
-                    Some(EffectDef::Apply {
-                        recipient: EffectRecipientDef::Source,
-                        effect: crate::card::AppliedEffectDef::Animate(_),
-                        ..
-                    })
-                )
-            })
+            .and_then(|ability| ability.declarative_effect())
+            .is_some_and(Self::effect_animates_source)
+    }
+
+    pub(super) fn effect_animates_source(effect: EffectDef) -> bool {
+        let EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect,
+            ..
+        } = effect
+        else {
+            return false;
+        };
+        Self::applied_effect_adds_creature_type(effect)
+    }
+
+    fn applied_effect_adds_creature_type(effect: AppliedEffectDef) -> bool {
+        match effect {
+            AppliedEffectDef::Composite(effects) => effects
+                .iter()
+                .copied()
+                .any(Self::applied_effect_adds_creature_type),
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+                SetOperationDef::Add(types) | SetOperationDef::Set(types),
+            )) => types.contains(crate::card::CardType::Creature),
+            AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
+        }
     }
 
     /// Whether a battlefield permanent satisfies a cost's predicate. Only the
@@ -162,11 +182,13 @@ impl HandcraftedPolicy {
         let Some(EffectDef::Apply {
             recipient: EffectRecipientDef::Source,
             effect:
-                crate::card::AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(power),
-                    ..
-                },
-            duration: crate::card::EffectDurationDef::UntilEndOfTurn,
+                AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                    PowerToughnessOperationDef::Modify {
+                        power: ValueDef::Constant(power),
+                        ..
+                    },
+                )),
+            duration: crate::card::ResolvedEffectDurationDef::UntilEndOfTurn,
         }) = ability.declarative_effect()
         else {
             return None;
@@ -272,17 +294,25 @@ impl HandcraftedPolicy {
                 on_failure,
                 ..
             } => Self::effect_is_a_wash(*on_success) || Self::effect_is_a_wash(*on_failure),
-            EffectDef::ChoosePermanent { then, .. } => Self::effect_is_a_wash(*then),
+            EffectDef::Choose(choice) => Self::effect_is_a_wash(*choice.then),
+            EffectDef::PayOr(payment) => payment
+                .if_paid
+                .iter()
+                .chain(payment.otherwise.iter())
+                .any(|effect| Self::effect_is_a_wash(**effect)),
+            EffectDef::SplitIntoPiles(partition) => Self::effect_is_a_wash(*partition.then),
             EffectDef::ExileLinkedToSource {
                 object: EffectRecipientDef::Source,
             } => true,
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect:
-                    crate::card::AppliedEffectDef::ModifyPowerToughness {
-                        power: ValueDef::Constant(power),
-                        toughness: ValueDef::Constant(toughness),
-                    },
+                    AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                        PowerToughnessOperationDef::Modify {
+                            power: ValueDef::Constant(power),
+                            toughness: ValueDef::Constant(toughness),
+                        },
+                    )),
                 ..
             } => power + toughness == 0,
             _ => false,
@@ -314,8 +344,12 @@ impl HandcraftedPolicy {
             .is_some_and(|ability| {
                 matches!(
                     ability.declarative_effect(),
-                    Some(EffectDef::MakeUnblockableThisTurn {
-                        object: EffectRecipientDef::Source
+                    Some(EffectDef::Apply {
+                        recipient: EffectRecipientDef::Source,
+                        effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                            ObjectPredicateDef::Any
+                        )),
+                        ..
                     })
                 )
             })
@@ -374,18 +408,110 @@ impl HandcraftedPolicy {
                 ..
             } => Self::target_condition_in(*on_success)
                 .or_else(|| Self::target_condition_in(*on_failure)),
-            EffectDef::OptionalPayment {
-                if_paid: effect, ..
+            EffectDef::Choose(choice) => Self::target_condition_in_object_set(choice.candidates)
+                .or_else(|| Self::target_condition_in(*choice.then)),
+            EffectDef::PayOr(payment) => {
+                let payment_condition = match payment.payment.cost {
+                    crate::card::EffectPaymentCostDef::GenericMana(amount) => {
+                        Self::target_condition_in_value(amount)
+                    }
+                    crate::card::EffectPaymentCostDef::Mana(_)
+                    | crate::card::EffectPaymentCostDef::Life(_) => None,
+                };
+                payment_condition.or_else(|| {
+                    payment
+                        .if_paid
+                        .iter()
+                        .chain(payment.otherwise.iter())
+                        .find_map(|effect| Self::target_condition_in(**effect))
+                })
             }
-            | EffectDef::May { effect, .. }
-            | EffectDef::ChoosePermanent { then: effect, .. }
-            | EffectDef::IfCondition { then: effect, .. }
-            | EffectDef::AtNextStep { effect, .. } => Self::target_condition_in(*effect),
-            EffectDef::AddCounters { amount, .. } | EffectDef::GainLife { amount, .. } => {
-                match amount {
-                    ValueDef::IfTargetMatches(condition) => Some(condition),
-                    _ => None,
+            EffectDef::SplitIntoPiles(partition) => {
+                let item_condition = match partition.items {
+                    crate::card::PartitionItemsDef::Objects(objects) => {
+                        Self::target_condition_in_object_set(objects)
+                    }
+                    crate::card::PartitionItemsDef::TopOfLibrary { count, .. } => {
+                        Self::target_condition_in_value(count)
+                    }
+                };
+                item_condition.or_else(|| Self::target_condition_in(*partition.then))
+            }
+            EffectDef::May { effect, .. } | EffectDef::IfCondition { then: effect, .. } => {
+                Self::target_condition_in(*effect)
+            }
+            EffectDef::InstallTrigger(trigger) => trigger
+                .ability
+                .declarative_effect()
+                .and_then(Self::target_condition_in),
+            EffectDef::PreventDamage { prevention, .. } => match prevention.capacity {
+                crate::card::DamagePreventionCapacityDef::Amount(amount) => {
+                    Self::target_condition_in_value(amount)
                 }
+                crate::card::DamagePreventionCapacityDef::Events(_)
+                | crate::card::DamagePreventionCapacityDef::Unlimited => None,
+            },
+            EffectDef::AddCounters { amount, .. } | EffectDef::GainLife { amount, .. } => {
+                Self::target_condition_in_value(amount)
+            }
+            _ => None,
+        }
+    }
+
+    fn target_condition_in_object_set(
+        objects: crate::card::ObjectSetDef,
+    ) -> Option<&'static crate::card::TargetConditionDef> {
+        match objects {
+            crate::card::ObjectSetDef::Query(query) => {
+                Self::target_condition_in_object_predicate(query.object)
+            }
+            crate::card::ObjectSetDef::One(_)
+            | crate::card::ObjectSetDef::Binding(_)
+            | crate::card::ObjectSetDef::LegalTargets(_)
+            | crate::card::ObjectSetDef::SharingNameWith(_) => None,
+        }
+    }
+
+    fn target_condition_in_object_predicate(
+        object: ObjectPredicateDef,
+    ) -> Option<&'static crate::card::TargetConditionDef> {
+        match object {
+            ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
+                predicates
+                    .iter()
+                    .copied()
+                    .find_map(Self::target_condition_in_object_predicate)
+            }
+            ObjectPredicateDef::Not(predicate) => {
+                Self::target_condition_in_object_predicate(*predicate)
+            }
+            ObjectPredicateDef::ManaValueEqualTo(value)
+            | ObjectPredicateDef::ManaValueAtMostValue(value)
+            | ObjectPredicateDef::ToughnessLessThan(value) => {
+                Self::target_condition_in_value(value)
+            }
+            _ => None,
+        }
+    }
+
+    fn target_condition_in_value(
+        value: ValueDef,
+    ) -> Option<&'static crate::card::TargetConditionDef> {
+        match value {
+            ValueDef::IfTargetMatches(condition) => Some(condition),
+            ValueDef::Negate(value) => Self::target_condition_in_value(*value),
+            ValueDef::Scaled(value) => Self::target_condition_in_value(value.value),
+            ValueDef::IfCreatureDiedThisTurn(condition) => {
+                Self::target_condition_in_value(condition.then)
+                    .or_else(|| Self::target_condition_in_value(condition.otherwise))
+            }
+            ValueDef::IfMatchingObjectCount(condition) => {
+                Self::target_condition_in_object_predicate(condition.query.object)
+                    .or_else(|| Self::target_condition_in_value(condition.then))
+                    .or_else(|| Self::target_condition_in_value(condition.otherwise))
+            }
+            ValueDef::CountMatchingObjects(query) | ValueDef::AnyMatchingObject(query) => {
+                Self::target_condition_in_object_predicate(query.object)
             }
             _ => None,
         }

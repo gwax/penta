@@ -9,8 +9,10 @@ use crate::{TargetIndex, mana_cost};
 
 static SLEIGHT_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     count: ValueDef::Constant(2),
+    object: None,
     minimum: 1,
     maximum: 1,
+    reveal_selected: false,
     selected_zone: ZoneKind::Hand,
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Library,

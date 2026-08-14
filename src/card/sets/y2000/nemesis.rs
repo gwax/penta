@@ -3,7 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    CardSet, CardSupertype, CardType, DamageEventMatcherDef, DamagePreventionDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, ResolvedEffectDurationDef,
     ValueDef, ZoneKind, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
@@ -79,8 +80,13 @@ pub(in crate::card::sets) static KOR_HAVEN: CardRecord = CardRecord::new(
                     controller: None,
                     owner: None,
                 })],
-                EffectDef::PreventCombatDamageDealtByThisTurn {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                EffectDef::PreventDamage {
+                    prevention: DamagePreventionDef::unlimited(
+                        DamageEventMatcherDef::combat_from(ObjectRefDef::Target(
+                            TargetIndex::PRIMARY,
+                        )),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
             ),
         ]),

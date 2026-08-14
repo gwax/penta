@@ -4,7 +4,7 @@ use super::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AlternativeCostDef,
     BasicLandType, CardBehavior, CounterKind, EffectDef, ImplementationStatus, ManaColor, ManaCost,
     ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementConditionDef,
-    ReplacementEventDef, TriggerEventDef, ZoneKind,
+    ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ZoneKind,
 };
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -513,7 +513,7 @@ impl ReplacementAbilityDef {
     pub const fn new() -> Self {
         Self {
             source_zones: &[ZoneKind::Battlefield],
-            event: ReplacementEventDef::EntersBattlefield,
+            event: ReplacementEventDef::SourceEntersBattlefield,
             condition: None,
             optional: false,
         }
@@ -714,8 +714,19 @@ pub enum EffectExecutionDef {
 /// migration target, but the shared resolver must not execute that definition
 /// until the execution kind becomes [`EffectExecutionDef::Declarative`].
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AbilityProgramDef {
+    Effects(EffectDef),
+    Replacement(ReplacementEffectDef),
+}
+
+/// The structured program and the resolver responsible for executing it.
+///
+/// Replacement programs are typed separately because they mutate a
+/// prospective event and preserve that event across any decisions they make;
+/// they are not resolving stack effects.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AbilityEffectDef {
-    pub definition: EffectDef,
+    pub definition: AbilityProgramDef,
     pub execution: EffectExecutionDef,
 }
 
@@ -723,7 +734,15 @@ impl AbilityEffectDef {
     #[must_use]
     pub const fn declarative(definition: EffectDef) -> Self {
         Self {
-            definition,
+            definition: AbilityProgramDef::Effects(definition),
+            execution: EffectExecutionDef::Declarative,
+        }
+    }
+
+    #[must_use]
+    pub const fn replacement_program(definition: ReplacementEffectDef) -> Self {
+        Self {
+            definition: AbilityProgramDef::Replacement(definition),
             execution: EffectExecutionDef::Declarative,
         }
     }
@@ -736,9 +755,23 @@ impl AbilityEffectDef {
 
     #[must_use]
     pub const fn declarative_definition(self) -> Option<EffectDef> {
-        match self.execution {
-            EffectExecutionDef::Declarative => Some(self.definition),
-            EffectExecutionDef::Custom(_) | EffectExecutionDef::CardOwned => None,
+        match (self.execution, self.definition) {
+            (EffectExecutionDef::Declarative, AbilityProgramDef::Effects(definition)) => {
+                Some(definition)
+            }
+            (EffectExecutionDef::Declarative, AbilityProgramDef::Replacement(_))
+            | (EffectExecutionDef::Custom(_) | EffectExecutionDef::CardOwned, _) => None,
+        }
+    }
+
+    #[must_use]
+    pub const fn declarative_replacement(self) -> Option<ReplacementEffectDef> {
+        match (self.execution, self.definition) {
+            (EffectExecutionDef::Declarative, AbilityProgramDef::Replacement(definition)) => {
+                Some(definition)
+            }
+            (EffectExecutionDef::Declarative, AbilityProgramDef::Effects(_))
+            | (EffectExecutionDef::Custom(_) | EffectExecutionDef::CardOwned, _) => None,
         }
     }
 

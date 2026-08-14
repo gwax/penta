@@ -3,21 +3,24 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use serde_json::Value;
 
 use super::{
-    AbilityEffectExpiration, AbilitySourceRef, ApplicableReplacement, AppliedStackEffect,
-    BasicLandTypeChange, BattlefieldEntryReplacementEffect, CardInstance, CharacteristicSource,
-    CombatDamageStage, ContinuousEffectTimestamp, CopiableAbility, CopiableCharacteristics,
-    CounterKind, EntryCompletion, Game, GameEvent, GameObjectId, GameStack, Mana, ManaSource,
-    ObjectBacking, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent,
-    PlayerId, PlayerState, Pregame, PreventionShield, RelationalDamagePrevention,
-    RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext, ReplayRng, RetiredObject,
-    ScopedEffect, ShieldCoverageDef, StackAbilityPayload, StackObject, StackObjectKind, Step,
-    TappedSourceStatBonus, TemporaryAbilityGrant, TemporaryGrantedAbility,
-    TemporaryRemovedAbilities, TriggerContext, ZoneMoveCause,
+    AbilitySourceRef, ApplicableReplacement, AppliedStackEffect, BasicLandTypeChange, CardInstance,
+    CharacteristicSource, CombatDamageStage, ContinuousEffectExpiration, ContinuousEffectTimestamp,
+    CopiableAbility, CopiableCharacteristics, CounterKind, EffectResolutionContext,
+    EntryCompletion, Game, GameEvent, GameObjectId, GameStack, InstalledTrigger,
+    InstalledTriggerLifetime, Mana, ManaSource, ObjectBacking, PendingBattlefieldEntry,
+    PendingEvent, PendingReplacementEffect, Permanent, PlayerId, PlayerState, Pregame,
+    RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext, ReplayRng,
+    ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
+    ResolvedDamagePrevention, ResolvedDamagePreventionCapacity, ResolvedDamagePreventionCoverage,
+    ResolvedDamageRecipientMatcher, ResolvedDamageRedirect, ResolvedDamageSourceMatcher,
+    ResolvedPlayRestriction, ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect,
+    StackAbilityPayload, StackAbilityResolver, StackObject, StackObjectKind, Step,
+    TemporaryAbilityGrant, TriggerCapture, TriggerContext, TurnPhaseResume, ZoneMoveCause,
 };
 use crate::card::{
-    AppliedEffectDef, BasicLandType, CardType, CardTypeSet, ColorSet, DeclarativeAbilityDef,
-    EffectDef, EffectRecipientDef, ManaColor, ReplacementEffectDef, ReplacementEventDef, SpellForm,
-    ZoneKind,
+    AbilityOperationDef, AppliedEffectDef, BasicLandType, CardType, CardTypeSet,
+    CharacteristicOperationDef, DeclarativeAbilityDef, PowerToughnessOperationDef,
+    ReplacementEffectDef, ReplacementEventDef, SetOperationDef, SpellForm, TurnPhaseDef, ZoneKind,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::{
@@ -30,12 +33,13 @@ mod decision;
 mod emblem;
 mod event;
 mod model;
-mod model_animation;
 mod model_keyword;
 mod model_prevention;
 mod model_procedure;
 mod model_trigger;
 mod permanent;
+mod play_restriction;
+mod prevention;
 mod procedure;
 mod semantics;
 mod stack;
@@ -48,46 +52,45 @@ use decision::{
     parse_pending_trigger, pending_trigger_snapshot,
 };
 use emblem::{emblem_snapshot, parse_emblems};
-#[cfg(test)]
-use event::entry_replacement_locator;
 use event::{
-    applicable_replacement_snapshot, entry_replacement_effect, parse_applicable_replacement,
-    parse_replacement_context_snapshot, pending_event_referenced_object_ids,
-    pending_event_snapshot,
+    applicable_replacement_snapshot, catalog_entry_replacement_effect,
+    parse_applicable_replacement, parse_replacement_context_snapshot,
+    pending_event_referenced_object_ids, pending_event_snapshot,
 };
 use model::{
-    AbilityActivationSnapshot, AbilityEffectExpirationSnapshot, AbilityOriginSnapshot,
-    AbilitySourceSnapshot, ApplicableReplacementSnapshot, AttackDefenderSnapshot,
-    BasicLandTypeSnapshot, CombatDamageAssignmentSnapshot, CombatDamageStageSnapshot,
+    AbilityActivationSnapshot, AbilityOriginSnapshot, AbilitySourceSnapshot,
+    ApplicableReplacementSnapshot, AttackDefenderSnapshot, BasicLandTypeSnapshot,
+    CombatDamageAssignmentSnapshot, CombatDamageStageSnapshot, ContinuousEffectExpirationSnapshot,
     CopiableAbilitySnapshot, CopiableCharacteristicsSnapshot, CopiedFromSnapshot,
-    DetachedCardSnapshot, DetachedPermanentSnapshot, EntryCompletionSnapshot,
-    EntryReplacementLocator, GameSnapshot, ManaColorSnapshot, ManaSnapshot, ManaSourceSnapshot,
-    PendingBattlefieldEntrySnapshot, PendingEventSnapshot, PendingReplacementEffectSnapshot,
-    PermanentSnapshot, PregameSnapshot, RelationalDamagePreventionSnapshot,
-    ReplacementEffectContextSnapshot, RetiredObjectSnapshot, StackSnapshot,
-    TemporaryAbilityGrantSnapshot, TemporaryGrantedAbilitySnapshot,
-    TemporaryRemovedAbilitySnapshot, ZoneKindSnapshot,
+    DetachedCardSnapshot, DetachedPermanentSnapshot, EntryCompletionSnapshot, GameSnapshot,
+    ManaColorSnapshot, ManaSnapshot, ManaSourceSnapshot, PendingBattlefieldEntrySnapshot,
+    PendingEventSnapshot, PendingReplacementEffectSnapshot, PermanentSnapshot, PregameSnapshot,
+    ReplacementEffectContextSnapshot, ReplacementEffectLocator, ResolvedContinuousEffectSnapshot,
+    ResolvedContinuousOperationSnapshot, RetiredObjectSnapshot, SetOperationSnapshot,
+    StackSnapshot, TemporaryAbilityGrantSnapshot, TurnPhaseResumeSnapshot, TurnPhaseSnapshot,
+    ZoneKindSnapshot,
 };
-use model_animation::UpkeepKeywordSnapshot;
+use model_keyword::UpkeepKeywordSnapshot;
 use permanent::{detached_permanent_snapshot, permanent_snapshot};
 use procedure::{
     draw_replacement_referenced_object_ids, draw_replacement_snapshot, parse_draw_replacement,
     parse_pending_procedure, pending_procedure_referenced_object_ids, pending_procedure_snapshot,
 };
 use semantics::{
-    ability_locator, animation_snapshot, applied_effect_locator, catalog_ability,
-    catalog_animation, catalog_applied_effect, catalog_mana_payload, keyword_snapshot,
-    mana_payload_locator, parse_keyword,
+    ability_locator, ability_target_defs, catalog_ability, catalog_applied_effect,
+    catalog_mana_payload, catalog_replacement_effect, keyword_snapshot, mana_payload_locator,
+    parse_keyword, replacement_effect_locator_matches_source, resolved_applied_effect_locator,
+    resolved_replacement_effect_locator,
 };
 use stack::{
     applied_stack_effect_snapshots, detached_stack_snapshot, parse_detached_stack, parse_stack,
-    parse_target as parse_snapshot_target, referenced_object_ids, stack_ability_snapshot,
-    stack_object_requires_retired, target_snapshot,
+    parse_target as parse_snapshot_target, referenced_object_ids,
+    resolution_context_referenced_object_ids, stack_ability_snapshot,
+    stack_object_has_unrebindable_hidden_reference, stack_object_requires_retired,
+    target_selections_referenced_object_ids, target_snapshot,
+    trigger_capture_has_unrebindable_hidden_reference,
 };
-use trigger::{
-    delayed_trigger_snapshot, floating_trigger_snapshot, parse_delayed_trigger,
-    parse_floating_trigger,
-};
+use trigger::{installed_trigger_snapshot, parse_installed_trigger};
 #[allow(clippy::wildcard_imports)]
 use wire::*;
 use wire_decision::rebind_visible_decision_cards;
@@ -131,38 +134,53 @@ impl Game {
         let retired_ids = self
             .stack
             .iter()
+            .filter(|object| !stack_object_has_unrebindable_hidden_reference(self, viewer, object))
             .flat_map(referenced_object_ids)
             .chain(
                 self.battlefield
                     .iter()
                     .flat_map(|permanent| permanent.damage_sources.iter().copied()),
             )
-            .chain(self.delayed_triggers.iter().flat_map(|trigger| {
-                referenced_object_ids(&trigger.object)
-                    .chain(trigger.context.object)
-                    .chain(trigger.context.chosen_objects.iter().flatten().copied())
-                    .collect::<Vec<_>>()
-            }))
-            .chain(self.floating_triggers.iter().flat_map(|trigger| {
-                [trigger.capture.source.object]
-                    .into_iter()
-                    .chain(trigger.capture.context.object)
-                    .chain(
-                        trigger
-                            .capture
-                            .context
-                            .chosen_objects
-                            .iter()
-                            .flatten()
-                            .copied(),
-                    )
-            }))
-            .chain(self.pending_triggers.iter().flat_map(|trigger| {
-                [trigger.source.object]
-                    .into_iter()
-                    .chain(trigger.context.object)
-                    .chain(trigger.context.chosen_objects.iter().flatten().copied())
-            }))
+            .chain(
+                self.installed_triggers
+                    .iter()
+                    .filter(|trigger| {
+                        !trigger_capture_has_unrebindable_hidden_reference(
+                            self,
+                            viewer,
+                            &trigger.capture.targets,
+                            &trigger.capture.context,
+                        )
+                    })
+                    .flat_map(|trigger| {
+                        [trigger.capture.source.object]
+                            .into_iter()
+                            .chain(target_selections_referenced_object_ids(
+                                &trigger.capture.targets,
+                            ))
+                            .chain(resolution_context_referenced_object_ids(
+                                &trigger.capture.context,
+                            ))
+                    }),
+            )
+            .chain(
+                self.pending_triggers
+                    .iter()
+                    .filter(|trigger| {
+                        !trigger_capture_has_unrebindable_hidden_reference(
+                            self,
+                            viewer,
+                            &trigger.targets,
+                            &trigger.context,
+                        )
+                    })
+                    .flat_map(|trigger| {
+                        [trigger.source.object]
+                            .into_iter()
+                            .chain(target_selections_referenced_object_ids(&trigger.targets))
+                            .chain(resolution_context_referenced_object_ids(&trigger.context))
+                    }),
+            )
             .chain(
                 self.pending_events
                     .iter()
@@ -171,18 +189,53 @@ impl Game {
             .chain(
                 self.pending_decisions
                     .iter()
+                    .filter(|pending| {
+                        decision_state.is_some()
+                            && (pending.observation.visibility == crate::DecisionVisibility::Public
+                                || pending.observation.player == viewer)
+                    })
                     .flat_map(|pending| decision_referenced_object_ids(&pending.continuation)),
             )
             .chain(
                 self.draw_replacements
                     .iter()
                     .flatten()
+                    .filter(|replacement| {
+                        draw_replacement_snapshot(self, viewer, replacement).is_some()
+                    })
                     .flat_map(draw_replacement_referenced_object_ids),
             )
             .chain(
                 self.pending_procedures
                     .iter()
+                    .filter(|procedure| {
+                        pending_procedure_snapshot(self, viewer, procedure).is_some()
+                    })
                     .flat_map(pending_procedure_referenced_object_ids),
+            )
+            .chain(
+                self.damage_preventions
+                    .iter()
+                    .copied()
+                    .filter(|prevention| {
+                        !prevention::damage_prevention_has_unrebindable_hidden_reference(
+                            self,
+                            viewer,
+                            *prevention,
+                        )
+                    })
+                    .flat_map(prevention::damage_prevention_referenced_object_ids),
+            )
+            .chain(
+                self.resolved_play_restrictions
+                    .iter()
+                    .map(|restriction| restriction.source.object),
+            )
+            .chain(
+                self.damage_redirects
+                    .iter()
+                    .copied()
+                    .flat_map(prevention::damage_redirect_referenced_object_ids),
             )
             .filter(|id| self.retired_objects.contains_key(id))
             .collect::<BTreeSet<_>>();
@@ -211,7 +264,7 @@ impl Game {
                     },
                 }),
                 RetiredObject::Stack(object) => Some(RetiredObjectSnapshot::Stack {
-                    object: Box::new(detached_stack_snapshot(self, object)?),
+                    object: Box::new(detached_stack_snapshot(self, viewer, object)?),
                 }),
             })
             .collect::<Vec<_>>();
@@ -234,29 +287,23 @@ impl Game {
             .collect::<Vec<_>>();
         let has_unlocated_temporary_ability_grant =
             temporary_ability_grants.len() != self.temporary_ability_grants.len();
-        let delayed_triggers = self
-            .delayed_triggers
+        let installed_triggers = self
+            .installed_triggers
             .iter()
-            .filter_map(|trigger| delayed_trigger_snapshot(self, trigger))
+            .filter_map(|trigger| installed_trigger_snapshot(self, viewer, trigger))
             .collect::<Vec<_>>();
-        let has_unlocated_delayed_trigger = delayed_triggers.len() != self.delayed_triggers.len();
-        let floating_triggers = self
-            .floating_triggers
-            .iter()
-            .filter_map(|trigger| floating_trigger_snapshot(self, trigger))
-            .collect::<Vec<_>>();
-        let has_unlocated_floating_trigger =
-            floating_triggers.len() != self.floating_triggers.len();
+        let has_unlocated_installed_trigger =
+            installed_triggers.len() != self.installed_triggers.len();
         let pending_triggers = self
             .pending_triggers
             .iter()
-            .filter_map(|trigger| pending_trigger_snapshot(self, trigger))
+            .filter_map(|trigger| pending_trigger_snapshot(self, viewer, trigger))
             .collect::<Vec<_>>();
         let has_unlocated_pending_trigger = pending_triggers.len() != self.pending_triggers.len();
         let draw_replacements = [PlayerId::One, PlayerId::Two].map(|player| {
             self.draw_replacements[player.index()]
                 .iter()
-                .filter_map(|replacement| draw_replacement_snapshot(self, replacement))
+                .filter_map(|replacement| draw_replacement_snapshot(self, viewer, replacement))
                 .collect::<Vec<_>>()
         });
         let has_unlocated_draw_replacement =
@@ -267,10 +314,89 @@ impl Game {
         let pending_procedures = self
             .pending_procedures
             .iter()
-            .filter_map(|procedure| pending_procedure_snapshot(self, procedure))
+            .filter_map(|procedure| pending_procedure_snapshot(self, viewer, procedure))
             .collect::<Vec<_>>();
         let has_unlocated_pending_procedure =
             pending_procedures.len() != self.pending_procedures.len();
+        let damage_preventions = self
+            .damage_preventions
+            .iter()
+            .copied()
+            .filter_map(|prevention| {
+                prevention::damage_prevention_snapshot(self, viewer, prevention)
+            })
+            .collect::<Vec<_>>();
+        let has_unlocated_damage_prevention =
+            damage_preventions.len() != self.damage_preventions.len();
+        let damage_redirects = self
+            .damage_redirects
+            .iter()
+            .copied()
+            .map(prevention::damage_redirect_snapshot)
+            .collect();
+        let resolved_play_restrictions = self
+            .resolved_play_restrictions
+            .iter()
+            .copied()
+            .filter_map(|restriction| {
+                play_restriction::resolved_play_restriction_snapshot(&self.catalog, restriction)
+            })
+            .collect::<Vec<_>>();
+        let has_unlocated_play_restriction =
+            resolved_play_restrictions.len() != self.resolved_play_restrictions.len();
+        let battlefield = self
+            .battlefield
+            .iter()
+            .map(|permanent| permanent_snapshot(&self.catalog, permanent))
+            .collect::<Vec<_>>();
+        let has_unlocated_battlefield_characteristics = battlefield
+            .iter()
+            .any(|permanent| permanent.has_dynamic_characteristics);
+        let has_unlocated_pending_characteristics = pending_events
+            .iter()
+            .any(|pending| pending.entry.permanent.state.has_dynamic_characteristics);
+        let has_unlocated_retired_characteristics = retired_objects.iter().any(|retired| {
+            matches!(
+                retired,
+                RetiredObjectSnapshot::Permanent { permanent, .. }
+                    if permanent.state.has_dynamic_characteristics
+            )
+        });
+        let stack = self
+            .stack
+            .iter()
+            .map(|object| {
+                let ability_payload = (object.kind != StackObjectKind::Spell)
+                    .then(|| stack_ability_snapshot(self, viewer, object))
+                    .flatten();
+                let has_unlocated_ability_payload = object.kind != StackObjectKind::Spell
+                    && object.ability.is_some()
+                    && ability_payload.is_none();
+                let (applied_effects, has_unlocated_applied_effect) =
+                    applied_stack_effect_snapshots(self, object);
+                StackSnapshot {
+                    object_id: object.id.0,
+                    owner: object.card.owner.index(),
+                    ability_payload,
+                    requires_retired_object: stack_object_requires_retired(self, object),
+                    has_runtime_overrides: has_unlocated_ability_payload
+                        || has_unlocated_applied_effect,
+                    applied_effects,
+                    text_changes: object
+                        .text_changes
+                        .iter()
+                        .map(|change| model::BasicLandTypeChangeSnapshot {
+                            from: basic_land_type_snapshot(change.from),
+                            to: basic_land_type_snapshot(change.to),
+                        })
+                        .collect(),
+                    colors: object.colors.map(crate::card::ColorSet::to_flags),
+                    cast_via_flashback: object.cast_via_flashback,
+                    is_copy: object.is_copy,
+                }
+            })
+            .collect::<Vec<_>>();
+        let has_unlocated_stack_state = stack.iter().any(|object| object.has_runtime_overrides);
         GameSnapshot {
             version: crate::protocol::CHECKPOINT_VERSION,
             simulation_fingerprint: crate::protocol::SIMULATION_FINGERPRINT.to_owned(),
@@ -300,8 +426,14 @@ impl Game {
                 .map(|(source, card)| [source.0, card.0])
                 .collect(),
             sorcery_flash_grants: self.sorcery_flash_grants,
-            additional_combat_phases: self.additional_combat_phases,
-            noncreature_casts_locked: self.noncreature_casts_locked,
+            turn_phase_queue: self
+                .turn_phase_queue
+                .iter()
+                .copied()
+                .map(turn_phase_snapshot)
+                .collect(),
+            turn_phase_resume: self.turn_phase_resume.map(turn_phase_resume_snapshot),
+            resolved_play_restrictions,
             spells_cast_this_turn: self.spells_cast_this_turn,
             spells_cast_last_turn: self.spells_cast_last_turn,
             cards_drawn_this_turn: self.cards_drawn_this_turn,
@@ -334,57 +466,8 @@ impl Game {
                 .collect(),
             next_regular_player: self.next_regular_player.index(),
             channel_active: self.channel_active,
-            all_combat_damage_prevented: self.all_combat_damage_prevented,
-            prevention_shields: self
-                .prevention_shields
-                .iter()
-                .map(|shield| model::PreventionShieldSnapshot {
-                    recipient: target_snapshot(shield.recipient),
-                    remaining: shield.remaining,
-                    source: shield.source.map(|source| source.0),
-                    half_rounded_down: shield.coverage == ShieldCoverageDef::HalfRoundedDown,
-                    gain_life: shield.gain_life,
-                })
-                .collect(),
-            relational_damage_preventions: self
-                .relational_damage_preventions
-                .iter()
-                .map(|effect| match effect {
-                    RelationalDamagePrevention::ToPlayerAndControlledCreatures(player) => {
-                        RelationalDamagePreventionSnapshot::ToPlayerAndControlledCreatures {
-                            player: player.index(),
-                        }
-                    }
-                    RelationalDamagePrevention::RedirectToPermanent {
-                        player,
-                        source,
-                        destination,
-                    } => RelationalDamagePreventionSnapshot::RedirectToPermanent {
-                        player: player.index(),
-                        source: source.0,
-                        destination: destination.0,
-                    },
-                    RelationalDamagePrevention::FromAllExcept(source) => {
-                        RelationalDamagePreventionSnapshot::FromAllExcept { source: source.0 }
-                    }
-                    RelationalDamagePrevention::ToPlayerFrom { player, source } => {
-                        RelationalDamagePreventionSnapshot::ToPlayerFrom {
-                            player: player.index(),
-                            source: match source {
-                                RelationalSourceFilter::CreaturesWithFlying => {
-                                    "creaturesWithFlying"
-                                }
-                                RelationalSourceFilter::AttackingCreaturesWithoutFlying => {
-                                    "attackingCreaturesWithoutFlying"
-                                }
-                                RelationalSourceFilter::Artifacts => "artifacts",
-                                RelationalSourceFilter::UnblockedCreatures => "unblockedCreatures",
-                            }
-                            .into(),
-                        }
-                    }
-                })
-                .collect(),
+            damage_preventions,
+            damage_redirects,
             pregame: self.pregame.map(|pregame| match pregame {
                 Pregame::Mulligan(player) => PregameSnapshot::Mulligan {
                     seat: player.index(),
@@ -407,64 +490,32 @@ impl Game {
                     combatants: strike_wave_combatants.iter().map(|id| id.0).collect(),
                 },
             },
-            battlefield: self
-                .battlefield
-                .iter()
-                .map(|permanent| permanent_snapshot(&self.catalog, permanent))
-                .collect(),
+            battlefield,
             emblems: self.emblems.iter().map(emblem_snapshot).collect(),
-            stack: self
-                .stack
-                .iter()
-                .map(|object| {
-                    let ability_payload = (object.kind != StackObjectKind::Spell)
-                        .then(|| stack_ability_snapshot(self, object))
-                        .flatten();
-                    let has_unlocated_ability_payload = object.kind != StackObjectKind::Spell
-                        && object.ability.is_some()
-                        && ability_payload.is_none();
-                    let (applied_effects, has_unlocated_applied_effect) =
-                        applied_stack_effect_snapshots(self, object);
-                    StackSnapshot {
-                        object_id: object.id.0,
-                        owner: object.card.owner.index(),
-                        ability_payload,
-                        requires_retired_object: stack_object_requires_retired(self, object),
-                        has_runtime_overrides: has_unlocated_ability_payload
-                            || has_unlocated_applied_effect,
-                        applied_effects,
-                        text_changes: object
-                            .text_changes
-                            .iter()
-                            .map(|change| model::BasicLandTypeChangeSnapshot {
-                                from: basic_land_type_snapshot(change.from),
-                                to: basic_land_type_snapshot(change.to),
-                            })
-                            .collect(),
-                        colors: object.colors.map(crate::card::ColorSet::to_flags),
-                        cast_via_flashback: object.cast_via_flashback,
-                        is_copy: object.is_copy,
-                    }
-                })
-                .collect(),
+            stack,
             retired_objects,
             pending_events,
             temporary_ability_grants,
-            delayed_triggers,
-            floating_triggers,
+            next_installed_trigger_id: self.next_installed_trigger_id,
+            installed_triggers,
             pending_triggers,
             pending_procedures,
             decision_state,
             has_deferred_state: has_unlocated_temporary_ability_grant
-                || has_unlocated_delayed_trigger
-                || has_unlocated_floating_trigger
+                || has_unlocated_installed_trigger
                 || has_unsupported_decision
                 || has_unsupported_event
                 || has_unlocated_pending_trigger
                 || has_unlocated_retired_object
+                || has_unlocated_battlefield_characteristics
+                || has_unlocated_pending_characteristics
+                || has_unlocated_retired_characteristics
                 || has_unlocated_mana
                 || has_unlocated_draw_replacement
-                || has_unlocated_pending_procedure,
+                || has_unlocated_pending_procedure
+                || has_unlocated_damage_prevention
+                || has_unlocated_play_restriction
+                || has_unlocated_stack_state,
             // Makes accidental reuse with another seat fail closed in the
             // importer without revealing anything about that other seat.
             viewer: viewer.index(),
@@ -622,6 +673,24 @@ impl Game {
                 })
             })
             .collect::<Result<Vec<_>, String>>()?;
+        let damage_preventions = checkpoint
+            .damage_preventions
+            .iter()
+            .map(|prevention| prevention::parse_damage_prevention(&catalog, prevention))
+            .collect::<Result<Vec<_>, _>>()?;
+        let damage_redirects = checkpoint
+            .damage_redirects
+            .iter()
+            .copied()
+            .map(prevention::parse_damage_redirect)
+            .collect::<Result<Vec<_>, _>>()?;
+        let resolved_play_restrictions = checkpoint
+            .resolved_play_restrictions
+            .iter()
+            .map(|restriction| {
+                play_restriction::parse_resolved_play_restriction(&catalog, restriction)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         let mut game = Self {
             format,
             seed: rollout_seed,
@@ -649,8 +718,14 @@ impl Game {
                 .map(|pair| (GameObjectId(pair[0]), GameObjectId(pair[1])))
                 .collect(),
             sorcery_flash_grants: checkpoint.sorcery_flash_grants,
-            additional_combat_phases: checkpoint.additional_combat_phases,
-            noncreature_casts_locked: checkpoint.noncreature_casts_locked,
+            turn_phase_queue: checkpoint
+                .turn_phase_queue
+                .iter()
+                .copied()
+                .map(parse_turn_phase)
+                .collect(),
+            turn_phase_resume: checkpoint.turn_phase_resume.map(parse_turn_phase_resume),
+            resolved_play_restrictions,
             emblems: Vec::new(),
             spells_cast_this_turn: checkpoint.spells_cast_this_turn,
             spells_cast_last_turn: checkpoint.spells_cast_last_turn,
@@ -659,8 +734,8 @@ impl Game {
             defer_empty_library_loss: checkpoint.defer_empty_library_loss,
             draw_replacements: std::array::from_fn(|_| VecDeque::new()),
             miracle_window: parse_miracle_window(&checkpoint, hidden, viewer, &checkpoint_hands)?,
-            delayed_triggers: Vec::new(),
-            floating_triggers: Vec::new(),
+            installed_triggers: Vec::new(),
+            next_installed_trigger_id: checkpoint.next_installed_trigger_id,
             blockers_declared: checkpoint.blockers_declared,
             untap_pending: checkpoint.untap_pending,
             pregame: parse_pregame(checkpoint.pregame)?,
@@ -684,64 +759,8 @@ impl Game {
                 .collect::<Result<Vec<_>, _>>()?,
             next_regular_player: player_from_index(checkpoint.next_regular_player)?,
             channel_active: checkpoint.channel_active,
-            all_combat_damage_prevented: checkpoint.all_combat_damage_prevented,
-            prevention_shields: checkpoint
-                .prevention_shields
-                .iter()
-                .map(|shield| PreventionShield {
-                    recipient: parse_snapshot_target(shield.recipient),
-                    remaining: shield.remaining,
-                    source: shield.source.map(GameObjectId),
-                    coverage: if shield.half_rounded_down {
-                        ShieldCoverageDef::HalfRoundedDown
-                    } else {
-                        ShieldCoverageDef::All
-                    },
-                    gain_life: shield.gain_life,
-                })
-                .collect(),
-            relational_damage_preventions: checkpoint
-                .relational_damage_preventions
-                .iter()
-                .map(|effect| match effect {
-                    RelationalDamagePreventionSnapshot::ToPlayerAndControlledCreatures {
-                        player,
-                    } => Ok(RelationalDamagePrevention::ToPlayerAndControlledCreatures(
-                        player_from_index(*player)?,
-                    )),
-                    RelationalDamagePreventionSnapshot::ToPlayerFrom { player, source } => {
-                        let source = match source.as_str() {
-                            "creaturesWithFlying" => RelationalSourceFilter::CreaturesWithFlying,
-                            "attackingCreaturesWithoutFlying" => {
-                                RelationalSourceFilter::AttackingCreaturesWithoutFlying
-                            }
-                            "artifacts" => RelationalSourceFilter::Artifacts,
-                            "unblockedCreatures" => RelationalSourceFilter::UnblockedCreatures,
-                            _ => {
-                                return Err(
-                                    "unknown relational prevention source group".to_string()
-                                );
-                            }
-                        };
-                        Ok(RelationalDamagePrevention::ToPlayerFrom {
-                            player: player_from_index(*player)?,
-                            source,
-                        })
-                    }
-                    RelationalDamagePreventionSnapshot::RedirectToPermanent {
-                        player,
-                        source,
-                        destination,
-                    } => Ok(RelationalDamagePrevention::RedirectToPermanent {
-                        player: player_from_index(*player)?,
-                        source: GameObjectId(*source),
-                        destination: GameObjectId(*destination),
-                    }),
-                    RelationalDamagePreventionSnapshot::FromAllExcept { source } => Ok(
-                        RelationalDamagePrevention::FromAllExcept(GameObjectId(*source)),
-                    ),
-                })
-                .collect::<Result<Vec<_>, String>>()?,
+            damage_preventions,
+            damage_redirects,
             result: None,
             events: vec![GameEvent::GameStarted { seed: rollout_seed }],
         };
@@ -750,15 +769,10 @@ impl Game {
         game.retired_objects = parse_retired_objects(&checkpoint.retired_objects, &game)?;
         game.stack = parse_stack(observation, &checkpoint.stack, &game)?;
         game.pending_events = parse_pending_events(&checkpoint.pending_events, &game.catalog)?;
-        game.delayed_triggers = checkpoint
-            .delayed_triggers
+        game.installed_triggers = checkpoint
+            .installed_triggers
             .iter()
-            .map(|trigger| parse_delayed_trigger(trigger, &game))
-            .collect::<Result<Vec<_>, _>>()?;
-        game.floating_triggers = checkpoint
-            .floating_triggers
-            .iter()
-            .map(|trigger| parse_floating_trigger(trigger, &game))
+            .map(|trigger| parse_installed_trigger(trigger, &game))
             .collect::<Result<Vec<_>, _>>()?;
         game.pending_triggers = checkpoint
             .pending_triggers
@@ -800,186 +814,20 @@ impl Game {
         {
             return Err("checkpoint next trigger id does not follow its pending triggers".into());
         }
+        if game.installed_triggers.iter().any(|trigger| {
+            trigger.id >= game.next_installed_trigger_id
+                && game.next_installed_trigger_id != u32::MAX
+        }) {
+            return Err(
+                "checkpoint next installed trigger id does not follow its installed triggers"
+                    .into(),
+            );
+        }
         Ok(game)
     }
 }
 
-const fn zone_kind_snapshot(zone: ZoneKind) -> ZoneKindSnapshot {
-    match zone {
-        ZoneKind::Library => ZoneKindSnapshot::Library,
-        ZoneKind::Hand => ZoneKindSnapshot::Hand,
-        ZoneKind::Battlefield => ZoneKindSnapshot::Battlefield,
-        ZoneKind::Graveyard => ZoneKindSnapshot::Graveyard,
-        ZoneKind::Stack => ZoneKindSnapshot::Stack,
-        ZoneKind::Exile => ZoneKindSnapshot::Exile,
-        ZoneKind::Command => ZoneKindSnapshot::Command,
-    }
-}
-
-const fn completion_snapshot(completion: EntryCompletion) -> EntryCompletionSnapshot {
-    match completion {
-        EntryCompletion::LandPlayed { player } => EntryCompletionSnapshot::LandPlayed {
-            seat: player.index(),
-        },
-        EntryCompletion::SpellResolved { card, definition } => {
-            EntryCompletionSnapshot::SpellResolved {
-                card: card.0,
-                definition: definition.0,
-            }
-        }
-        EntryCompletion::Setup => EntryCompletionSnapshot::Setup,
-        EntryCompletion::None => EntryCompletionSnapshot::None,
-    }
-}
-
-fn mana_snapshot(catalog: &CardCatalog, mana: Mana) -> ManaSnapshot {
-    ManaSnapshot {
-        color: mana_color_snapshot(mana.color),
-        source: mana.source.map(|source| ManaSourceSnapshot {
-            object: source.object.0,
-            ability: ability_origin_snapshot(source.ability),
-        }),
-        payload: mana_payload_locator(catalog, mana),
-    }
-}
-
-const fn mana_color_snapshot(color: crate::ManaColor) -> ManaColorSnapshot {
-    match color {
-        crate::ManaColor::White => ManaColorSnapshot::White,
-        crate::ManaColor::Blue => ManaColorSnapshot::Blue,
-        crate::ManaColor::Black => ManaColorSnapshot::Black,
-        crate::ManaColor::Red => ManaColorSnapshot::Red,
-        crate::ManaColor::Green => ManaColorSnapshot::Green,
-        crate::ManaColor::Colorless => ManaColorSnapshot::Colorless,
-    }
-}
-
-const fn parse_mana_color(color: ManaColorSnapshot) -> crate::ManaColor {
-    match color {
-        ManaColorSnapshot::White => crate::ManaColor::White,
-        ManaColorSnapshot::Blue => crate::ManaColor::Blue,
-        ManaColorSnapshot::Black => crate::ManaColor::Black,
-        ManaColorSnapshot::Red => crate::ManaColor::Red,
-        ManaColorSnapshot::Green => crate::ManaColor::Green,
-        ManaColorSnapshot::Colorless => crate::ManaColor::Colorless,
-    }
-}
-
-const fn expiration_snapshot(
-    expiration: AbilityEffectExpiration,
-) -> AbilityEffectExpirationSnapshot {
-    match expiration {
-        AbilityEffectExpiration::EndOfTurn => AbilityEffectExpirationSnapshot::EndOfTurn,
-        AbilityEffectExpiration::UpkeepOf(player) => AbilityEffectExpirationSnapshot::UpkeepOf {
-            seat: player.index(),
-        },
-        AbilityEffectExpiration::TurnOf { player, turn } => {
-            AbilityEffectExpirationSnapshot::TurnOf {
-                seat: player.index(),
-                turn,
-            }
-        }
-        AbilityEffectExpiration::Never => AbilityEffectExpirationSnapshot::Never,
-    }
-}
-
-fn parse_expiration(
-    expiration: AbilityEffectExpirationSnapshot,
-) -> Result<AbilityEffectExpiration, String> {
-    match expiration {
-        AbilityEffectExpirationSnapshot::EndOfTurn => Ok(AbilityEffectExpiration::EndOfTurn),
-        AbilityEffectExpirationSnapshot::UpkeepOf { seat } => {
-            Ok(AbilityEffectExpiration::UpkeepOf(player_from_index(seat)?))
-        }
-        AbilityEffectExpirationSnapshot::TurnOf { seat, turn } => {
-            Ok(AbilityEffectExpiration::TurnOf {
-                player: player_from_index(seat)?,
-                turn,
-            })
-        }
-        AbilityEffectExpirationSnapshot::Never => Ok(AbilityEffectExpiration::Never),
-    }
-}
-
-const fn ability_origin_snapshot(origin: AbilityOrigin) -> AbilityOriginSnapshot {
-    match origin {
-        AbilityOrigin::Printed {
-            definition,
-            part,
-            ability,
-        } => AbilityOriginSnapshot::Printed {
-            definition: definition.0,
-            part_id: part.0,
-            ability_id: ability.0,
-        },
-        AbilityOrigin::IntrinsicBasicLand(land_type) => AbilityOriginSnapshot::IntrinsicBasicLand {
-            land_type: basic_land_type_snapshot(land_type),
-        },
-        AbilityOrigin::Granted {
-            source,
-            source_definition,
-            source_part,
-            source_ability,
-            grant,
-        } => AbilityOriginSnapshot::Granted {
-            source: source.0,
-            source_definition: source_definition.0,
-            source_part_id: source_part.0,
-            source_ability_id: source_ability.0,
-            grant_id: grant.0,
-        },
-    }
-}
-
-const fn ability_origin_from_snapshot(origin: AbilityOriginSnapshot) -> AbilityOrigin {
-    match origin {
-        AbilityOriginSnapshot::Printed {
-            definition,
-            part_id,
-            ability_id,
-        } => AbilityOrigin::Printed {
-            definition: CardDefinitionId(definition),
-            part: CardPartId(part_id),
-            ability: AbilityId(ability_id),
-        },
-        AbilityOriginSnapshot::IntrinsicBasicLand { land_type } => {
-            AbilityOrigin::IntrinsicBasicLand(parse_basic_land_type(land_type))
-        }
-        AbilityOriginSnapshot::Granted {
-            source,
-            source_definition,
-            source_part_id,
-            source_ability_id,
-            grant_id,
-        } => AbilityOrigin::Granted {
-            source: GameObjectId(source),
-            source_definition: CardDefinitionId(source_definition),
-            source_part: CardPartId(source_part_id),
-            source_ability: AbilityId(source_ability_id),
-            grant: GrantId(grant_id),
-        },
-    }
-}
-
-const fn basic_land_type_snapshot(value: BasicLandType) -> BasicLandTypeSnapshot {
-    match value {
-        BasicLandType::Plains => BasicLandTypeSnapshot::Plains,
-        BasicLandType::Island => BasicLandTypeSnapshot::Island,
-        BasicLandType::Swamp => BasicLandTypeSnapshot::Swamp,
-        BasicLandType::Mountain => BasicLandTypeSnapshot::Mountain,
-        BasicLandType::Forest => BasicLandTypeSnapshot::Forest,
-    }
-}
-
-const fn parse_basic_land_type(value: BasicLandTypeSnapshot) -> BasicLandType {
-    match value {
-        BasicLandTypeSnapshot::Plains => BasicLandType::Plains,
-        BasicLandTypeSnapshot::Island => BasicLandType::Island,
-        BasicLandTypeSnapshot::Swamp => BasicLandType::Swamp,
-        BasicLandTypeSnapshot::Mountain => BasicLandType::Mountain,
-        BasicLandTypeSnapshot::Forest => BasicLandType::Forest,
-    }
-}
+include!("state_checkpoint/support.rs");
 
 #[cfg(test)]
 mod tests;

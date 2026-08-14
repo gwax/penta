@@ -1,13 +1,10 @@
-use crate::card::{
-    CardTypeSet, EffectDef, ObjectPredicateDef, PlayerRelation, ReplacementAbilityDef,
-    ReplacementEffectDef, ZoneKind,
-};
+use crate::card::{ReplacementAbilityDef, ReplacementEffectDef, ZoneKind};
 use crate::ids::{CardDefinitionId, GameObjectId, PlayerId};
 
 use super::{
-    AbilitySourceRef, BalancePhase, BalanceTask, CardInstance, FrozenActivatedAbility, Game, Mana,
-    ManaAbilityActivation, Permanent, SacrificeFollowup, ScopedEffect, StackObject, Target,
-    TargetSelection, TriggerContext,
+    AbilitySourceRef, BalancePhase, BalanceTask, CardInstance, EffectResolutionContext,
+    FrozenActivatedAbility, Game, Mana, ManaAbilityActivation, Permanent, SacrificeFollowup,
+    ScopedEffect, StackObject, Target, TargetSelection,
 };
 
 /// One replacement effect that currently applies to a prospective event.
@@ -21,35 +18,19 @@ pub(super) struct ReplacementEffectContext {
     pub(super) controller: PlayerId,
 }
 
-/// The procedures the battlefield-entry engine can order and apply. Most are
-/// declarative modifications; choosing a creature type is still a dedicated
-/// decision procedure, but participates in the same replacement ordering.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum BattlefieldEntryReplacementEffect {
-    Declarative(ReplacementEffectDef),
-    /// The same, from an ability its controller may decline.
-    OptionalDeclarative(ReplacementEffectDef),
-    ChooseCreatureType,
-    ChooseCardName,
-    ChoosePlayer(PlayerRelation),
-    CopyAsItEnters {
-        object: ObjectPredicateDef,
-        added_types: CardTypeSet,
-    },
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct ApplicableReplacement {
     pub(super) context: ReplacementEffectContext,
     pub(super) definition: CardDefinitionId,
     pub(super) text: &'static str,
-    pub(super) effect: BattlefieldEntryReplacementEffect,
+    pub(super) optional: bool,
+    pub(super) effect: ReplacementEffectDef,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct PendingReplacementEffect {
     pub(super) context: ReplacementEffectContext,
-    pub(super) effect: BattlefieldEntryReplacementEffect,
+    pub(super) effect: ReplacementEffectDef,
 }
 
 /// One replacement that currently applies to one member of a simultaneous
@@ -61,7 +42,7 @@ pub(super) struct ApplicableZoneMoveReplacement {
     pub(super) context: ReplacementEffectContext,
     pub(super) definition: CardDefinitionId,
     pub(super) text: &'static str,
-    pub(super) effect: EffectDef,
+    pub(super) effect: ReplacementEffectDef,
 }
 
 /// Event-local state accumulated while replacement effects change one
@@ -87,7 +68,7 @@ pub(super) struct FrozenZoneMoveReplacement {
     pub(super) definition: CardDefinitionId,
     pub(super) text: &'static str,
     pub(super) replacement: ReplacementAbilityDef,
-    pub(super) effect: EffectDef,
+    pub(super) effect: ReplacementEffectDef,
 }
 
 #[derive(Clone, Debug)]
@@ -110,7 +91,7 @@ pub(super) enum BattlefieldExitCompletion {
     Completions(Vec<BattlefieldExitCompletion>),
     ResolveEffects {
         object: Box<StackObject>,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         effects: Vec<ScopedEffect>,
     },
     FinishStackResolution {
@@ -154,19 +135,19 @@ impl Game {
         &mut self,
         effects: Vec<ScopedEffect>,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
     ) {
         let mut effects = effects.into_iter();
         while let Some(effect) = effects.next() {
             let pending_before = self.pending_decisions.len();
-            self.resolve_effect_def(effect, object, context);
+            self.resolve_effect_def(effect, object, context.clone());
             let remaining = effects.as_slice();
             if !remaining.is_empty()
                 && self.defer_after_battlefield_exit(
                     pending_before,
                     BattlefieldExitCompletion::ResolveEffects {
                         object: Box::new(object.clone()),
-                        context,
+                        context: context.clone(),
                         effects: remaining.to_vec(),
                     },
                 )

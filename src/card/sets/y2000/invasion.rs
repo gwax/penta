@@ -2,12 +2,27 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardType, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
     PlayerRelation, TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
 };
 use crate::mana_cost;
+
+static FACT_OR_FICTION_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        object: abilities::CHOSEN_PILE,
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+    EffectDef::MoveToZone {
+        object: abilities::UNCHOSEN_PILE,
+        zone: ZoneKind::Graveyard,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+]);
 
 // INV 57 — Fact or Fiction
 pub(in crate::card::sets) static FACT_OR_FICTION: CardRecord = CardRecord::new(
@@ -20,11 +35,10 @@ pub(in crate::card::sets) static FACT_OR_FICTION: CardRecord = CardRecord::new(
     CardSet::Invasion,
     CardRules::new_instant(mana_cost!("{3}{U}")).with_ability(AbilityDef::spell(
         "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard.",
-        EffectDef::RevealAndSplitIntoPiles {
-            count: ValueDef::Constant(5),
-            rest: ZoneKind::Graveyard,
-            placement: ZonePlacement::Top,
-        },
+        abilities::split_top_of_library_into_piles(
+            ValueDef::Constant(5),
+            &FACT_OR_FICTION_PILE_MOVES,
+        ),
     )),
 );
 
@@ -35,8 +49,10 @@ static OPT_DRAW: EffectDef = EffectDef::DrawCards {
 
 static OPT_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     count: ValueDef::Constant(1),
+    object: None,
     minimum: 0,
     maximum: 1,
+    reveal_selected: false,
     selected_zone: ZoneKind::Library,
     selected_placement: ZonePlacement::Bottom,
     rest_zone: ZoneKind::Library,
@@ -68,11 +84,7 @@ pub(in crate::card::sets) static TSABOS_WEB: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::triggered(
             "When this artifact enters, draw a card.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -80,17 +92,12 @@ pub(in crate::card::sets) static TSABOS_WEB: CardRecord = CardRecord::new(
         ),
         AbilityDef::static_ability(
             "Each land with an activated ability that isn't a mana ability doesn't untap during its controller's untap step.",
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Land),
                         ObjectPredicateDef::HasNonManaActivatedAbility,
-                    ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    ]), &[ZoneKind::Battlefield], PlayerRelation::Any),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
     ]),

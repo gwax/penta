@@ -27,7 +27,7 @@ pub(in crate::card::sets) static UGINS_NEXUS: CardRecord = CardRecord::new(
                     player: PlayerRelation::Any,
                     kind: TurnKindDef::Extra,
                 },
-                EffectDef::Replacement(ReplacementEffectDef::ReplaceEventWithNothing),
+                ReplacementEffectDef::ReplaceEventWithNothing,
             ),
             AbilityDef::replacement_for(
                 "If Ugin's Nexus would be put into a graveyard from the battlefield, instead exile it and take an extra turn after this one.",
@@ -36,10 +36,10 @@ pub(in crate::card::sets) static UGINS_NEXUS: CardRecord = CardRecord::new(
                     to: ZoneKind::Graveyard,
                     cause: ZoneMoveCauseDef::Any,
                 },
-                EffectDef::Replacement(ReplacementEffectDef::Sequence(&[
+                ReplacementEffectDef::Sequence(&[
                     ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
                     ReplacementEffectDef::Perform(&TAKE_EXTRA_TURN_CONTROLLER),
-                ])),
+                ]),
             ),
         ]),
 );

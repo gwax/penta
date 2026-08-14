@@ -1,16 +1,84 @@
 use super::*;
-use crate::{CostDef, PaymentDef};
+use crate::card::{
+    ChooseDef, EffectPaymentDef, ObjectChoiceBindingDef, PartitionItemsDef, SplitIntoPilesDef,
+};
 
 pub(in super::super) fn shared_stack_effect(effect: EffectDef) -> bool {
     shared_stack_effect_at_position(effect, true)
 }
 
-fn shared_optional_payment(payment: PaymentDef, if_paid: &'static EffectDef) -> bool {
+fn shared_effect_payment(payment: EffectPaymentDef) -> bool {
     !matches!(
         payment.payer,
-        PlayerRelation::Any | PlayerRelation::ChosenPlayer | PlayerRelation::EventPlayer
-    ) && matches!(payment.costs, [CostDef::Mana(_)])
-        && shared_stack_effect_at_position(*if_paid, true)
+        PlayerSetDef::All | PlayerSetDef::Related(PlayerRelation::Any)
+    ) && shared_effect_recipient(EffectRecipientDef::players(payment.payer))
+}
+
+fn shared_choose(choice: ChooseDef) -> bool {
+    choice.maximum > 0
+        && choice.minimum <= choice.maximum
+        && match choice.binding {
+            ObjectChoiceBindingDef::Object(_) => choice.maximum == 1,
+            ObjectChoiceBindingDef::Objects(_) => true,
+        }
+        && shared_effect_recipient(EffectRecipientDef::player(choice.chooser))
+        && shared_effect_recipient(EffectRecipientDef::objects(choice.candidates))
+        && choice
+            .exclude
+            .is_none_or(|object| shared_effect_recipient(EffectRecipientDef::object(object)))
+}
+
+fn shared_partition(partition: SplitIntoPilesDef) -> bool {
+    let items_are_shared = match partition.items {
+        PartitionItemsDef::Objects(objects) => {
+            shared_effect_recipient(EffectRecipientDef::objects(objects))
+        }
+        PartitionItemsDef::TopOfLibrary { player, .. } => {
+            shared_effect_recipient(EffectRecipientDef::player(player))
+        }
+    };
+    items_are_shared
+        && !matches!(
+            partition.divider,
+            PlayerSetDef::All | PlayerSetDef::Related(PlayerRelation::Any)
+        )
+        && !matches!(
+            partition.chooser,
+            PlayerSetDef::All | PlayerSetDef::Related(PlayerRelation::Any)
+        )
+        && shared_effect_recipient(EffectRecipientDef::players(partition.divider))
+        && shared_effect_recipient(EffectRecipientDef::players(partition.chooser))
+}
+
+fn shared_damage_prevention(prevention: crate::card::DamagePreventionDef) -> bool {
+    let source_is_shared = match prevention.matcher.source {
+        DamageSourceMatcherDef::Any | DamageSourceMatcherDef::Group(_) => true,
+        DamageSourceMatcherDef::Object(source) | DamageSourceMatcherDef::Except(source) => {
+            shared_effect_recipient(EffectRecipientDef::object(source))
+        }
+        DamageSourceMatcherDef::Matching(source) => shared_object_predicate(source),
+        DamageSourceMatcherDef::AffectedObject => false,
+    };
+    let recipient_is_shared = match prevention.matcher.recipient {
+        DamageRecipientMatcherDef::Any => true,
+        DamageRecipientMatcherDef::Recipients(recipient) => shared_effect_recipient(recipient),
+        DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
+            shared_effect_recipient(EffectRecipientDef::player(player))
+        }
+        DamageRecipientMatcherDef::AffectedObject => false,
+    };
+    let capacity_is_shared = match prevention.capacity {
+        DamagePreventionCapacityDef::Amount(_) | DamagePreventionCapacityDef::Unlimited => true,
+        DamagePreventionCapacityDef::Events(events) => events > 0,
+    };
+    let follow_up_is_shared = prevention
+        .follow_up
+        .is_none_or(|follow_up| match follow_up {
+            DamagePreventionFollowUpDef::GainLife(player) => {
+                shared_effect_recipient(EffectRecipientDef::player(player))
+            }
+        });
+    source_is_shared && recipient_is_shared && capacity_is_shared && follow_up_is_shared
 }
 
 /// Resolving sequences preserve their unprocessed tail, so a queued decision
@@ -21,18 +89,6 @@ fn shared_optional_payment(payment: PaymentDef, if_paid: &'static EffectDef) -> 
 /// decision is allowed where they sit; this checks only their arguments.
 fn shared_decision_effect(effect: EffectDef) -> bool {
     match effect {
-        // Both halves of the split are asked for, so only the player
-        // needs checking.
-        EffectDef::SplitPermanentsAndSacrificeAPile { player } => shared_effect_recipient(player),
-        // The reveal, the split, and the choice are all asked for, and
-        // the library is the resolving object's controller's own.
-        EffectDef::RevealAndSplitIntoPiles { .. } => true,
-        // Looking is private and the offer is the only visible part, and
-        // a chosen destruction reaches only the chooser's own battlefield.
-        EffectDef::LookAtTopAndMayTake { player, object }
-        | EffectDef::DestroyOfChoice { player, object, .. } => {
-            shared_effect_recipient(player) && shared_object_predicate(object)
-        }
         EffectDef::LookAtTopAndSelect { player, selection } => {
             let supported_zone = |zone| {
                 matches!(
@@ -41,6 +97,7 @@ fn shared_decision_effect(effect: EffectDef) -> bool {
                 )
             };
             shared_effect_recipient(player)
+                && selection.object.is_none_or(shared_object_predicate)
                 && selection.minimum <= selection.maximum
                 && supported_zone(selection.selected_zone)
                 && supported_zone(selection.rest_zone)
@@ -48,12 +105,6 @@ fn shared_decision_effect(effect: EffectDef) -> bool {
                     .then
                     .is_none_or(|effect| shared_stack_effect_at_position(*effect, true))
         }
-        EffectDef::ChooseDamageSource {
-            chooser, object, ..
-        }
-        | EffectDef::ChoosePermanent {
-            chooser, object, ..
-        } => shared_effect_recipient(chooser) && shared_object_predicate(object),
         _ => false,
     }
 }
@@ -96,21 +147,26 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             };
             branch_is_shared(*on_success) && branch_is_shared(*on_failure)
         }
-        EffectDef::PreventNextDamageFromSource { object, source, .. } => {
-            shared_effect_recipient(object) && shared_effect_recipient(source)
-        }
-        EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { player }
-        | EffectDef::PreventDamageToPlayerFromThisTurn { player, .. }
-        | EffectDef::RedirectTargetDamageToSourceThisTurn { player, .. } => {
-            shared_effect_recipient(player)
-        }
-        EffectDef::PreventAllCombatDamageExceptSourceThisTurn { source } => {
-            shared_effect_recipient(source)
-        }
-        EffectDef::ChooseDamageSource { then, .. } | EffectDef::ChoosePermanent { then, .. } => {
+        EffectDef::PreventDamage { prevention, .. } => shared_damage_prevention(prevention),
+        EffectDef::Choose(choice) => {
             deferred_decision_allowed
-                && shared_decision_effect(effect)
-                && shared_stack_effect_at_position(*then, true)
+                && shared_choose(choice)
+                && shared_stack_effect_at_position(*choice.then, true)
+        }
+        EffectDef::PayOr(payment) => {
+            deferred_decision_allowed
+                && shared_effect_payment(payment.payment)
+                && (payment.if_paid.is_some() || payment.otherwise.is_some())
+                && payment
+                    .if_paid
+                    .iter()
+                    .chain(payment.otherwise.iter())
+                    .all(|effect| shared_stack_effect_at_position(**effect, true))
+        }
+        EffectDef::SplitIntoPiles(partition) => {
+            deferred_decision_allowed
+                && shared_partition(partition)
+                && shared_stack_effect_at_position(*partition.then, true)
         }
         EffectDef::AddMana(_) => shared_mana_effect(effect, false),
         EffectDef::DealDamage { recipient, .. }
@@ -126,18 +182,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Mill {
             player: recipient, ..
         }
-        | EffectDef::CannotCastNoncreatureSpellsThisTurn { player: recipient }
         | EffectDef::LoseTheGame { player: recipient }
         | EffectDef::LookAtHand { player: recipient } => shared_effect_recipient(recipient),
         EffectDef::SacrificeOfChoice { .. } => shared_sacrifice_of_choice(effect),
-        // The choice is asked of whoever controls the candidates, and the
-        // candidates are their own battlefield, so only the player and
-        // the predicate need checking.
-        EffectDef::DestroyOfChoice { .. }
-        | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-        | EffectDef::RevealAndSplitIntoPiles { .. }
-        | EffectDef::LookAtTopAndMayTake { .. }
-        | EffectDef::LookAtTopAndSelect { .. } => {
+        EffectDef::LookAtTopAndSelect { .. } => {
             deferred_decision_allowed && shared_decision_effect(effect)
         }
         EffectDef::SearchZone {
@@ -212,30 +260,21 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
         | EffectDef::RemoveFromCombat { object }
-        | EffectDef::SetColor { object, .. }
         | EffectDef::DestroyAtEndOfCombat { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }
-        | EffectDef::DoesNotUntapWhileSourceTapped { object }
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
-        | EffectDef::PreventNextDamage { object, .. }
-        | EffectDef::PreventAllDamageThisTurn { object }
-        | EffectDef::PreventCombatDamageThisTurn { object }
-        | EffectDef::PreventCombatDamageDealtByThisTurn { object }
-        | EffectDef::PreventDamageDealtByThisTurn { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
+        | EffectDef::DiscardCards { object }
         | EffectDef::ExileLinkedToSource { object }
         | EffectDef::Detain { object }
-        | EffectDef::CannotRegenerateThisTurn { object }
-        | EffectDef::MakeUnblockableThisTurn { object }
-        | EffectDef::GainControlWhileSourceRemains { object, .. }
-        | EffectDef::GainControlThisTurn { object }
+        | EffectDef::GainControl { object, .. }
         | EffectDef::AddCounters { object, .. }
         | EffectDef::Attach { object }
         | EffectDef::ChangeTextBasicLandType { object }
         | EffectDef::BecomeCopyOf { object, .. } => shared_effect_recipient(object),
-        EffectDef::Counter { object, zone } | EffectDef::CounterUnlessPaid { object, zone, .. } => {
+        EffectDef::Counter { object, zone } => {
             matches!(zone, ZoneKind::Graveyard | ZoneKind::Exile) && shared_effect_recipient(object)
         }
         // Neither needs a recipient: both concern the resolving controller.
@@ -245,8 +284,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
-        | EffectDef::AdditionalCombatPhase
-        | EffectDef::PreventAllCombatDamageThisTurn
+        | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::GrantFlashToNextSorcery => true,
         // Each of these asks a question and then runs an inner effect,
         // so the question has to be allowed here and the answer has to be
@@ -256,22 +294,15 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                 && shared_effect_recipient(player)
                 && shared_stack_effect_at_position(*effect, true)
         }
-        EffectDef::UnlessPaid {
-            otherwise: effect, ..
-        } => deferred_decision_allowed && shared_stack_effect_at_position(*effect, true),
-        EffectDef::OptionalPayment { payment, if_paid } => {
-            deferred_decision_allowed && shared_optional_payment(payment, if_paid)
-        }
         // Scheduling creates a fresh resolution boundary. A decision may
         // therefore be the delayed effect's root even when scheduling it
         // is itself one component of a sequence.
         EffectDef::IfCondition { then: effect, .. } => {
             shared_stack_effect_at_position(*effect, deferred_decision_allowed)
         }
-        EffectDef::AtNextStep { effect, .. } => shared_stack_effect_at_position(*effect, true),
         // Installing an ability is a resolution like any other; what it
         // installs has to be an ability the shared runtime can fire.
-        EffectDef::TriggerUntilYourNextTurn { ability } => shared_definition_ability(ability),
+        EffectDef::InstallTrigger(trigger) => shared_definition_ability(trigger.ability),
         EffectDef::Apply {
             recipient,
             effect,
@@ -290,17 +321,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             ) && shared_effect_recipient(object)
         }
         EffectDef::None
+        | EffectDef::StaticApply { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::PlayersCantPlay(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
-        | EffectDef::MultiplyEventAmount(_)
-        | EffectDef::Replacement(_)
-        | EffectDef::ChooseCardName { .. }
-        | EffectDef::ChoosePlayer { .. }
-        | EffectDef::CopyPermanentAsItEnters { .. }
-        | EffectDef::ChooseCreatureType { .. }
         | EffectDef::Special(_) => false,
     }
 }

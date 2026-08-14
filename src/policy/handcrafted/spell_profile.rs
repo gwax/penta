@@ -4,6 +4,7 @@ use super::{
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, HandcraftedPolicy, ObjectPredicateDef,
     PlayerRelation, SpellForm, ValueDef, ZoneKind,
 };
+use crate::PlayerSetDef;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub(super) struct DeclarativeSpellProfile {
@@ -161,14 +162,18 @@ impl HandcraftedPolicy {
     /// Whether a recipient names every creature an opponent controls, which
     /// is what makes a damage or counter effect a one-sided sweep.
     pub(super) fn hits_every_opposing_creature(recipient: EffectRecipientDef) -> bool {
-        matches!(
-            recipient,
-            EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(crate::CardType::Creature),
-                zones: [ZoneKind::Battlefield],
-                controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
-            }
-        )
+        recipient.object_query().is_some_and(|query| {
+            query.object == ObjectPredicateDef::HasType(crate::CardType::Creature)
+                && query.zones == [ZoneKind::Battlefield]
+                && query.controller.is_none()
+                && query.owner.is_none()
+                && matches!(
+                    query.related_player,
+                    Some(PlayerSetDef::Related(
+                        PlayerRelation::Opponent | PlayerRelation::NotYou
+                    ))
+                )
+        })
     }
 
     /// A destroy is removal; a destroy aimed at every creature on the
@@ -178,15 +183,13 @@ impl HandcraftedPolicy {
         profile: &mut DeclarativeSpellProfile,
     ) {
         profile.mark(DeclarativeSpellProfile::REMOVES);
-        if let EffectRecipientDef::MatchingObjects {
-            object,
-            zones,
-            controller,
-        } = object
-            && zones == [ZoneKind::Battlefield]
-            && controller == PlayerRelation::Any
+        if let Some(query) = object.object_query()
+            && query.zones == [ZoneKind::Battlefield]
+            && query.controller.is_none()
+            && query.owner.is_none()
+            && query.related_player == Some(PlayerSetDef::Related(PlayerRelation::Any))
         {
-            let destroyed_types = Self::globally_destroyed_types(object);
+            let destroyed_types = Self::globally_destroyed_types(query.object);
             profile.global_destroy_types = profile.global_destroy_types.union(destroyed_types);
             if destroyed_types.contains(CardType::Creature) {
                 profile.mark(DeclarativeSpellProfile::SWEEPS_CREATURES);
@@ -265,9 +268,16 @@ impl HandcraftedPolicy {
                 Self::collect_spell_effect_profile(*on_success, x, targets, profile);
                 Self::collect_spell_effect_profile(*on_failure, x, targets, profile);
             }
-            EffectDef::ChooseDamageSource { then, .. }
-            | EffectDef::ChoosePermanent { then, .. } => {
-                Self::collect_spell_effect_profile(*then, x, targets, profile);
+            EffectDef::Choose(choice) => {
+                Self::collect_spell_effect_profile(*choice.then, x, targets, profile);
+            }
+            EffectDef::PayOr(payment) => {
+                for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
+                    Self::collect_spell_effect_profile(**effect, x, targets, profile);
+                }
+            }
+            EffectDef::SplitIntoPiles(partition) => {
+                Self::collect_spell_effect_profile(*partition.then, x, targets, profile);
             }
             // An optional effect is worth what it would do if taken.
             EffectDef::May { effect, .. } => {
@@ -290,48 +300,42 @@ impl HandcraftedPolicy {
             }
             EffectDef::Counter { object, .. } => {
                 profile.mark(DeclarativeSpellProfile::COUNTERS);
-                profile.opponent_spell_sweep |= matches!(
-                    object,
-                    EffectRecipientDef::MatchingObjects {
-                        object: ObjectPredicateDef::Spell,
-                        zones: [ZoneKind::Stack],
-                        controller: PlayerRelation::Opponent | PlayerRelation::NotYou,
-                    }
-                );
-            }
-            EffectDef::CounterUnlessPaid { .. } => {
-                profile.mark(DeclarativeSpellProfile::COUNTERS);
+                profile.opponent_spell_sweep |= object.object_query().is_some_and(|query| {
+                    query.object == ObjectPredicateDef::Spell
+                        && query.zones == [ZoneKind::Stack]
+                        && query.controller.is_none()
+                        && query.owner.is_none()
+                        && matches!(
+                            query.related_player,
+                            Some(PlayerSetDef::Related(
+                                PlayerRelation::Opponent | PlayerRelation::NotYou
+                            ))
+                        )
+                });
             }
             EffectDef::Destroy { object, .. } => Self::collect_destroy_profile(object, profile),
             EffectDef::MoveToZone {
-                object: EffectRecipientDef::Target(target),
+                object,
                 zone: ZoneKind::Exile,
                 ..
-            } if Self::target_slot_is_on_battlefield(targets, target.index()) => {
+            } if object.legal_target().is_some_and(|target| {
+                Self::target_slot_is_on_battlefield(targets, target.index())
+            }) =>
+            {
                 profile.mark(DeclarativeSpellProfile::REMOVES);
             }
             EffectDef::Tap { .. }
             | EffectDef::RemoveFromCombat { .. }
-            | EffectDef::SetColor { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::SkipNextUntapSteps { .. }
-            | EffectDef::DoesNotUntapWhileSourceTapped { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
-            | EffectDef::PreventAllCombatDamageThisTurn
-            | EffectDef::PreventNextDamage { .. }
-            | EffectDef::PreventAllDamageThisTurn { .. }
-            | EffectDef::PreventNextDamageFromSource { .. }
-            | EffectDef::PreventCombatDamageThisTurn { .. }
-            | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageDealtByThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-            | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-            | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
-            | EffectDef::RedirectTargetDamageToSourceThisTurn { .. } => {
+            | EffectDef::PreventDamage { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);
             }
-            EffectDef::Apply { .. } => profile.mark(DeclarativeSpellProfile::APPLIES),
+            EffectDef::StaticApply { .. } | EffectDef::Apply { .. } => {
+                profile.mark(DeclarativeSpellProfile::APPLIES);
+            }
             EffectDef::TakeExtraTurn {
                 player: EffectRecipientDef::Controller,
             } => profile.mark(DeclarativeSpellProfile::EXTRA_TURN),
@@ -348,11 +352,8 @@ impl HandcraftedPolicy {
             | EffectDef::Regenerate { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
-            | EffectDef::DestroyOfChoice { .. }
-            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-            | EffectDef::RevealAndSplitIntoPiles { .. }
+            | EffectDef::DiscardCards { .. }
             | EffectDef::Mill { .. }
-            | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::SearchZone { .. }
@@ -362,39 +363,25 @@ impl HandcraftedPolicy {
             | EffectDef::AddCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
-            | EffectDef::OptionalPayment { .. }
-            | EffectDef::UnlessPaid { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
-            | EffectDef::AdditionalCombatPhase
+            | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
-            | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::Detain { .. }
-            | EffectDef::CannotRegenerateThisTurn { .. }
-            | EffectDef::MakeUnblockableThisTurn { .. }
-            | EffectDef::GainControlWhileSourceRemains { .. }
-            | EffectDef::GainControlThisTurn { .. }
-            | EffectDef::AtNextStep { .. }
+            | EffectDef::GainControl { .. }
+            | EffectDef::InstallTrigger(_)
             | EffectDef::IfCondition { .. }
-            | EffectDef::TriggerUntilYourNextTurn { .. }
             | EffectDef::ReduceGenericCostBy(_)
-            | EffectDef::PlayersCantPlay(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
-            | EffectDef::MultiplyEventAmount(_)
-            | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateTokenCopyOf { .. }
-            | EffectDef::ChooseCardName { .. }
-            | EffectDef::ChoosePlayer { .. }
-            | EffectDef::CopyPermanentAsItEnters { .. }
-            | EffectDef::ChooseCreatureType { .. }
             | EffectDef::Special(_) => {}
         }
     }

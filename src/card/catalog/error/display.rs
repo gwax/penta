@@ -178,6 +178,75 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "mana ability {ability:?} on part {part:?} of card definition {definition:?} declares targets"
             ),
+            Self::ReplacementAbilityRequiresReplacementProgram {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "replacement ability {ability:?} on part {part:?} of card definition {definition:?} does not define a replacement program"
+            ),
+            Self::ReplacementProgramRequiresReplacementAbility {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} defines a replacement program but is not a replacement ability"
+            ),
+            Self::UnsupportedReplacementProgram {
+                definition,
+                part,
+                ability,
+                event,
+                operation,
+            } => write!(
+                formatter,
+                "replacement ability {ability:?} on part {part:?} of card definition {definition:?} uses unsupported operation {operation} for event {event:?}"
+            ),
+            Self::UnsupportedInstalledTriggerAbility {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} installs an ability that is not a targetless shared declarative triggered ability"
+            ),
+            Self::UnsupportedTriggerEvent {
+                definition,
+                part,
+                ability,
+                event,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses unsupported trigger event {event:?}"
+            ),
+            Self::UnsupportedTriggeredManaProgram {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "triggered mana ability {ability:?} on part {part:?} of card definition {definition:?} cannot resolve its program immediately"
+            ),
+            Self::UnsupportedResolvingAppliedEffect {
+                definition,
+                part,
+                ability,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses a resolving applied effect that cannot be stored on its recipient"
+            ),
+            Self::UnsupportedAbilityEffectProgramContext {
+                definition,
+                part,
+                ability,
+                context,
+                operation,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {operation} in a {context} effect program, where that operation is not interpreted"
+            ),
             Self::TooManyAbilityTargets {
                 definition,
                 part,
@@ -208,23 +277,121 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "ability {ability:?} on part {part:?} of card definition {definition:?} references target {target:?}, but defines only {target_count} target slots"
             ),
-            Self::AbilityChoiceReferenceOutOfScope {
+            Self::AbilityTargetReferenceKindMismatch {
                 definition,
                 part,
                 ability,
-                choice,
+                target,
+                predicate,
+                expected,
             } => write!(
                 formatter,
-                "ability {ability:?} on part {part:?} of card definition {definition:?} references choice {choice:?} outside its binding scope"
+                "ability {ability:?} on part {part:?} of card definition {definition:?} references target {target:?} as an {expected:?}, but its predicate is {predicate:?}"
             ),
-            Self::AbilityChoiceBindingAlreadyInScope {
+            Self::AbilityTargetReferenceRequiresSingular {
                 definition,
                 part,
                 ability,
-                choice,
+                target,
+                maximum,
             } => write!(
                 formatter,
-                "ability {ability:?} on part {part:?} of card definition {definition:?} binds choice {choice:?} more than once in the same scope"
+                "ability {ability:?} on part {part:?} of card definition {definition:?} reads one value from target {target:?}, but that slot allows up to {maximum} targets"
+            ),
+            Self::AbilityEffectRecipientKindMismatch {
+                definition,
+                part,
+                ability,
+                recipient,
+                expected,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {recipient:?} where the effect requires an {expected:?} recipient"
+            ),
+            Self::InvalidAbilityScalarChoice {
+                definition,
+                part,
+                ability,
+                list,
+                destination,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} stores a {list:?} choice in the incompatible {destination:?} destination"
+            ),
+            Self::UnsupportedStaticAbilityPlayerRecipient {
+                definition,
+                part,
+                ability,
+                recipient,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {recipient:?} for a static player rule, but it cannot be resolved from the static source"
+            ),
+            Self::InvalidAbilityObjectChoiceBounds {
+                definition,
+                part,
+                ability,
+                binding,
+                minimum,
+                maximum,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} binds {binding:?} from a choice requiring at least {minimum} objects and allowing at most {maximum}"
+            ),
+            Self::InvalidAbilityPileRole {
+                definition,
+                part,
+                ability,
+                role,
+                players,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {players:?} for pile {role}, but that role must select at most one player"
+            ),
+            Self::InvalidAbilityPaymentPayer {
+                definition,
+                part,
+                ability,
+                players,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {players:?} for an effect payment, but a payment must select at most one player"
+            ),
+            Self::AbilityObjectBindingReferenceOutOfScope {
+                definition,
+                part,
+                ability,
+                binding,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} references object binding {binding:?} outside its scope"
+            ),
+            Self::AbilityObjectBindingAlreadyInScope {
+                definition,
+                part,
+                ability,
+                binding,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} binds object slot {binding:?} more than once in the same scope"
+            ),
+            Self::AbilityObjectSetBindingReferenceOutOfScope {
+                definition,
+                part,
+                ability,
+                binding,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} references object-set binding {binding:?} outside its scope"
+            ),
+            Self::AbilityObjectSetBindingAlreadyInScope {
+                definition,
+                part,
+                ability,
+                binding,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} binds object-set slot {binding:?} more than once in the same scope"
             ),
             Self::DuplicateStructurePart { definition, part } => write!(
                 formatter,

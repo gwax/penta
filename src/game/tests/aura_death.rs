@@ -11,10 +11,18 @@ use crate::ImplementationStatus;
 /// An Aura on a creature, both controlled by player one.
 fn enchanted(aura: CardDefinitionId, pump: i16) -> (Game, GameObjectId) {
     let mut game = ready_game();
-    let mut host = creature(10_000, cards::SEDGE_TROLL, PlayerId::One);
-    host.power_bonus = pump;
+    let host = creature(10_000, cards::SEDGE_TROLL, PlayerId::One);
     let host_id = host.card.id;
     game.battlefield.push(host);
+    attach_constant_resolved_characteristics(
+        &mut game,
+        host_id,
+        &[AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(i32::from(pump)),
+            ValueDef::Constant(0),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
 
     let mut enchantment = creature(10_001, aura, PlayerId::One);
     enchantment.attached_to = Some(host_id);

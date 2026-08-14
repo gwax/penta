@@ -151,8 +151,8 @@ fn built_in_catalog_indexes_definitions_and_printings_separately() {
 fn tutors_and_fetch_lands_use_declarative_zone_searches() {
     let enlightened = y1996::mirage::ENLIGHTENED_TUTOR.rules.ability_clauses()[0];
     assert_eq!(
-        enlightened.effect.definition,
-        EffectDef::SearchZone {
+        enlightened.declarative_effect(),
+        Some(EffectDef::SearchZone {
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::AnyOf(&[
@@ -166,7 +166,7 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
-        }
+        })
     );
 
     let fetches: [(&CardRecord, &[BasicLandType]); 5] = [
@@ -207,8 +207,8 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
             fetch.name
         );
         assert_eq!(
-            ability.effect.definition,
-            EffectDef::SearchZone {
+            ability.declarative_effect(),
+            Some(EffectDef::SearchZone {
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasAnyBasicLandType(basic_land_types),
@@ -219,7 +219,7 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
                 placement: ZonePlacement::Top,
                 shuffle: true,
                 enters_tapped: false,
-            },
+            }),
             "{} has the wrong search parameters",
             fetch.name
         );
@@ -229,7 +229,7 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
 #[test]
 fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
     let liliana = y2012::magic_2013::LILIANAS_SHADE.rules.ability_clauses()[0];
-    let EffectDef::May { player, effect } = liliana.effect.definition else {
+    let Some(EffectDef::May { player, effect }) = liliana.declarative_effect() else {
         panic!("Liliana's Shade should make the entire search optional");
     };
     assert_eq!(player, EffectRecipientDef::Controller);
@@ -253,8 +253,8 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
         .rules
         .ability_clauses()[0];
     assert_eq!(
-        seek.effect.definition,
-        EffectDef::SearchZone {
+        seek.declarative_effect(),
+        Some(EffectDef::SearchZone {
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -268,7 +268,7 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
-        }
+        })
     );
 }
 
@@ -286,7 +286,8 @@ fn ring_uses_declarative_format_and_draw_replacement_constructs() {
             AbilityCostDef::ExileSource,
         ]
     );
-    let EffectDef::ReplaceNextDrawThisTurn { player, effect } = ability.effect.definition else {
+    let Some(EffectDef::ReplaceNextDrawThisTurn { player, effect }) = ability.declarative_effect()
+    else {
         panic!("Ring should install a shared next-draw replacement");
     };
     assert_eq!(player, EffectRecipientDef::Controller);

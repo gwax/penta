@@ -9,114 +9,108 @@ pub use triggers::*;
 pub use values::*;
 
 use crate::Format;
-use crate::ids::{CardDefinitionId, ChoiceIndex, TargetIndex};
+use crate::ids::{CardDefinitionId, ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
 use super::{
-    AbilityDef, AddManaEffectDef, BasicLandType, CardType, CardTypeSet, ColorSet, CostDef,
-    CounterKind, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation,
+    AbilityDef, AddManaEffectDef, BasicLandType, CardTypeSet, ColorSet, CounterKind,
+    KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, PlayActionKind, PlayerRelation,
     TriggerConditionDef, ZoneKind, ZonePlacement,
 };
 
-/// An object or player affected by an effect. Targets are chosen when a spell
-/// or stack ability is formed; triggering subjects come from captured events.
+// Effect subjects, lifetimes, and event matchers form the shared vocabulary
+// consumed by both resolving and continuously applied effects below.
+include!("effects/recipients_and_matchers.rs");
+/// An add, remove, or set operation over one set-valued characteristic.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum EffectRecipientDef {
-    Source,
-    /// The permanent selected by a resolving [`EffectDef::ChoosePermanent`].
-    /// This is a choice, not a target: hexproof and protection do not apply,
-    /// and no target-legality check is repeated when the inner effect runs.
-    ChosenPermanent(ChoiceIndex),
-    /// What this permanent is attached to, for an Aura's own static clauses.
-    AttachedPermanent,
-    /// Whoever controls what this permanent is attached to. "That player" in
-    /// an Aura's upkeep trigger names them rather than the Aura's controller.
-    ControllerOfAttachedPermanent,
-    /// Every battlefield permanent sharing a name with the chosen target,
-    /// including the target itself. "And each other one with the same name"
-    /// names the same set.
-    ObjectsSharingNameWithTarget(TargetIndex),
-    Controller,
-    Opponent,
-    /// Every player in turn order, starting with the ability's controller.
-    /// This keeps effects such as Liliana's +1 simultaneous rather than
-    /// resolving one player's discard before the other chooses.
-    EachPlayer,
-    Target(TargetIndex),
-    TriggeringObject,
-    /// The triggering object's controller when this effect resolves, using
-    /// last-known information if that object is no longer live.
-    ControllerOfTriggeringObject,
-    /// Everything a query matches among the permanents controlled by whoever
-    /// controls a target slot, for "each creature that player controls".
-    ObjectsControlledByTarget {
-        object: ObjectPredicateDef,
-        slot: TargetIndex,
+pub enum SetOperationDef<T> {
+    Add(T),
+    Remove(T),
+    Set(T),
+}
+
+/// Creature subtypes named by one layer-4 operation.
+///
+/// `all` remains semantic rather than expanding to the engine's current list,
+/// so a permanent with all creature types also matches types added later.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct CreatureTypeSetDef {
+    pub named: &'static [&'static str],
+    pub all: bool,
+}
+
+impl CreatureTypeSetDef {
+    #[must_use]
+    pub const fn named(named: &'static [&'static str]) -> Self {
+        Self { named, all: false }
+    }
+
+    pub const ALL: Self = Self {
+        named: &[],
+        all: true,
+    };
+}
+
+/// One layer-6 operation over the affected object's abilities.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AbilityOperationDef {
+    Add(&'static AbilityDef),
+    Remove(AbilityPredicateDef),
+}
+
+/// One layer-7 operation over power and toughness.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PowerToughnessOperationDef {
+    /// Set base power and toughness in layer 7b.
+    SetBase {
+        power: ValueDef,
+        toughness: ValueDef,
     },
-    /// Everything a query matches among the permanents *owned* by the player
-    /// a target slot names. Ownership survives a control-changing effect, so
-    /// this is a different set from [`Self::ObjectsControlledByTarget`]
-    /// whenever anything has changed hands.
-    ObjectsOwnedByTarget {
-        object: ObjectPredicateDef,
-        slot: TargetIndex,
-    },
-    /// Every matching card owned by the player a target slot names in the
-    /// listed nonbattlefield zones, for effects such as "exile target
-    /// player's graveyard."
-    CardsOwnedByTarget {
-        object: ObjectPredicateDef,
-        zones: &'static [ZoneKind],
-        slot: TargetIndex,
-    },
-    /// The controller of what a target slot points at, for "its controller".
-    /// Read when the effect resolves, using last-known information if that
-    /// object has already left the battlefield.
-    ControllerOfTarget(TargetIndex),
-    /// The player named directly by the event, such as the player whose
-    /// upkeep began or who cast the triggering spell.
-    EventPlayer,
-    MatchingObjects {
-        object: ObjectPredicateDef,
-        zones: &'static [ZoneKind],
-        controller: PlayerRelation,
+    /// Modify power and toughness in layer 7c.
+    Modify {
+        power: ValueDef,
+        toughness: ValueDef,
     },
 }
 
+/// A typed continuous-effect leaf applied in its characteristic's rules
+/// layer. Compound transformations use [`AppliedEffectDef::Composite`] so
+/// each leaf keeps its own Add, Remove, or Set semantics.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum EffectDurationDef {
-    Permanent,
-    UntilEndOfTurn,
-    /// Until the beginning of the resolving ability's controller's next
-    /// upkeep, which outlives the cleanup that ends an until-end-of-turn
-    /// effect.
-    UntilYourNextUpkeep,
-    /// Until the next turn of the effect's controller begins. The affected
-    /// turn is captured when the resolving effect is created.
-    UntilYourNextTurn,
-    WhileSourceRemainsInZone,
-    UntilSourceLeavesZone,
-    /// For as long as the effect's own source stays tapped. Unlike every
-    /// other resolving duration this one has no deadline: the artifact that
-    /// tapped to make it decides when it ends by untapping.
-    WhileSourceTapped,
+pub enum CharacteristicOperationDef {
+    Abilities(AbilityOperationDef),
+    /// Basic land-subtype operations in layer 4. `Set` additionally has the
+    /// rules consequences of CR 305.7; `Add` and `Remove` do not.
+    BasicLandTypes(SetOperationDef<&'static [BasicLandType]>),
+    CardTypes(SetOperationDef<CardTypeSet>),
+    Colors(SetOperationDef<ColorSet>),
+    CreatureTypes(SetOperationDef<CreatureTypeSetDef>),
+    PowerToughness(PowerToughnessOperationDef),
 }
 
-/// A continuous or rules-modifying effect applied to a game object.
+/// A continuous or rules-modifying effect applied to an object or player.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AppliedEffectDef {
     /// Components applied to the same recipient for the same duration as one
     /// continuous effect.
     Composite(&'static [AppliedEffectDef]),
+    /// One typed operation in the characteristic layer named by the leaf.
+    Characteristic(CharacteristicOperationDef),
+    /// One prohibition, permission, or prevention rule. Static rules are
+    /// derived live from their source; resolving rules are stored with the
+    /// authored duration alongside resolved characteristic changes.
+    Rule(AppliedRuleDef),
+}
+
+/// A continuous rule modification applied to one object or player.
+///
+/// Keeping these leaves separate from characteristic operations makes their
+/// layer-independent nature explicit without giving every printed wording a
+/// top-level effect variant.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AppliedRuleDef {
     CannotBeCountered,
-    /// The affected permanent's controller may choose to leave it tapped
-    /// during their untap step. Unlike
-    /// [`Self::DoesNotUntapDuringUntapStep`] this is a choice rather than a
-    /// prohibition, so declining is what the printed cards are paying for.
-    MayChooseNotToUntap,
-    /// The affected permanent is skipped by its controller's ordinary
-    /// turn-based untap procedure. Other spells and abilities can still
-    /// untap it.
-    DoesNotUntapDuringUntapStep,
+    /// A creature matching this predicate cannot block the affected creature.
+    CannotBeBlockedBy(ObjectPredicateDef),
     /// No Aura may attach to the affected permanent. This restricts both the
     /// Aura spell's targeting and whether an existing attachment stays legal,
     /// so an Aura already on the permanent falls off.
@@ -124,75 +118,185 @@ pub enum AppliedEffectDef {
     /// No new Aura may attach to the affected permanent, but an Aura already
     /// attached remains legal. Guardian Beast needs this narrower prohibition.
     CannotBecomeEnchanted,
+    /// The affected creature cannot block at all.
+    CannotBlock,
     /// Another player cannot gain control of the affected permanent.
     CannotChangeController,
     /// The affected Aura stays attached even when protection would otherwise
-    /// make its host an illegal one. This is the printed "This effect doesn't
-    /// remove this Aura" exception, which an Aura granting protection from
-    /// its own color needs in order to survive granting it.
+    /// make its host an illegal one. This is the printed exception that lets
+    /// an Aura grant protection from its own color without falling off.
     RemainsAttachedThroughProtection,
-    /// A creature matching this predicate cannot block the affected creature.
-    CannotBeBlockedBy(ObjectPredicateDef),
-    /// The affected creature cannot block at all. This is the blocker's own
-    /// prohibition, the other side of [`Self::CannotBeBlockedBy`], and it is
-    /// what "can't block" and "can't block this turn" both say.
-    CannotBlock,
     /// The affected creature may block only creatures matching this
-    /// predicate. This is the blocker's own restriction, and it narrows what
-    /// it may block rather than who may block it.
+    /// predicate.
     CanBlockOnly(ObjectPredicateDef),
-    /// The affected creature cannot be declared as an attacker. Unlike
-    /// [`EffectDef::CannotAttackUnless`], which a creature prints about
-    /// itself, this is applied from elsewhere and so can cover a whole group.
+    /// The affected creature cannot be declared as an attacker.
     CannotAttack,
-    /// Nothing can block the affected creature. The turn-scoped form of this
-    /// is a resolving effect; this is the printed static one, so it holds for
-    /// as long as its source does.
+    /// Nothing can block the affected creature.
     CannotBeBlocked,
-    /// No combat damage is dealt to or by the affected permanent. Unlike the
-    /// turn-scoped [`EffectDef::PreventCombatDamageThisTurn`] this holds for
-    /// as long as the effect applies, which is what an Aura needs.
-    PreventCombatDamage,
-    /// Only the combat damage the affected permanent would deal is
-    /// prevented. Unlike [`Self::PreventCombatDamage`] this is one direction,
-    /// so the permanent still takes what its blockers deal it.
-    PreventCombatDamageDealtBy,
     /// Damage a matching source would deal to the affected permanent's
     /// controller is dealt to that permanent instead. The redirection is read
     /// live, so a condition on the recipient -- "as long as this creature is
     /// untapped" -- turns it off without the permanent being touched.
     RedirectPlayerDamageToThis(DamageSourceGroupDef),
-    /// Damage from a source matching this predicate is prevented before it
-    /// touches the affected permanent. Only a permanent can be the source
-    /// today, which is all "damage from artifact creatures" needs.
-    PreventDamageFrom(ObjectPredicateDef),
-    /// As [`Self::PreventDamageFrom`], but only for combat damage. A card
-    /// that names combat means combat: a burn spell from the same source
-    /// still lands.
-    PreventCombatDamageFrom(ObjectPredicateDef),
-    /// Adds land subtypes without removing the object's existing subtypes.
-    AddLandTypes(&'static [BasicLandType]),
-    /// Sets the object's land subtypes, removing its existing land subtypes and
-    /// abilities supplied by its rules text or copiable values under CR 305.7.
-    /// Independently granted abilities are not part of that removal.
-    SetLandTypes(&'static [BasicLandType]),
-    ModifyPowerToughness {
-        power: ValueDef,
-        toughness: ValueDef,
+    /// Damage the named source would deal to the affected player is dealt to
+    /// the named destination instead. Resolving this rule freezes both object
+    /// references for the authored duration.
+    RedirectDamageFromTo {
+        source: ObjectRefDef,
+        destination: ObjectRefDef,
     },
-    /// Give the affected object an ordinary ability. The granted definition
-    /// carries its own keyword, activation, or alternative-casting procedure.
-    GrantAbility(&'static AbilityDef),
-    /// Remove each ability matching the predicate. Unlike
-    /// [`Self::SetLandTypes`], this is an ordinary ability-layer operation and
-    /// can remove intrinsic or independently granted abilities.
-    RemoveAbilities(AbilityPredicateDef),
-    /// Turn the affected permanent into a creature. This is what a manland's
-    /// activated ability does, and it keeps the permanent's other types.
-    Animate(&'static AnimationDef),
-    Special(&'static str),
+    /// The affected player cannot take matching cast or land-play actions.
+    /// The recipient and lifetime live on `StaticApply` or `Apply`, just as
+    /// they do for object-facing applied rules.
+    CannotPlay(PlayRestrictionDef),
+    /// Regeneration shields can still be created, but cannot replace a
+    /// destruction while this rule applies. CR 701.19c.
+    CannotRegenerate,
+    /// The affected permanent is skipped by its controller's ordinary
+    /// turn-based untap procedure. Other spells and abilities can still
+    /// untap it.
+    DoesNotUntapDuringUntapStep,
+    /// The affected permanent's controller may choose to leave it tapped
+    /// during their untap step. Unlike
+    /// [`Self::DoesNotUntapDuringUntapStep`] this is a choice rather than a
+    /// prohibition, so declining is what the printed cards are paying for.
+    MayChooseNotToUntap,
+    /// An unlimited prevention rule derived live while this static applied
+    /// effect exists. Two-sided prevention is an
+    /// [`AppliedEffectDef::Composite`] of source and recipient matchers.
+    PreventDamage(DamageEventMatcherDef),
 }
 
+/// Which kind of play action a restriction matches.
+///
+/// Keeping this axis separate from the object predicate lets one rule cover
+/// both halves of text such as City in a Bottle while a cast-only rule such as
+/// Aurelia's Fury leaves land plays untouched.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PlayActionMatcherDef {
+    Any,
+    CastSpell,
+    PlayLand,
+}
+
+impl PlayActionMatcherDef {
+    #[must_use]
+    pub const fn matches(self, action: PlayActionKind) -> bool {
+        matches!(self, Self::Any)
+            || matches!(
+                (self, action),
+                (Self::CastSpell, PlayActionKind::CastSpell)
+                    | (Self::PlayLand, PlayActionKind::PlayLand)
+            )
+    }
+}
+
+/// A prohibition over one play-action family and one object predicate.
+///
+/// This deliberately models prohibition rather than a per-turn quota. A
+/// future Deafening Silence-style limit can share these two match axes, but
+/// also needs matching cast history rather than being approximated as a
+/// boolean prohibition.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct PlayRestrictionDef {
+    pub action: PlayActionMatcherDef,
+    pub object: ObjectPredicateDef,
+}
+
+impl PlayRestrictionDef {
+    #[must_use]
+    pub const fn new(action: PlayActionMatcherDef, object: ObjectPredicateDef) -> Self {
+        Self { action, object }
+    }
+}
+
+impl AppliedEffectDef {
+    #[must_use]
+    pub const fn add_ability(ability: &'static AbilityDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        ))
+    }
+
+    #[must_use]
+    pub const fn remove_abilities(predicate: AbilityPredicateDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Remove(predicate),
+        ))
+    }
+
+    #[must_use]
+    pub const fn add_basic_land_types(types: &'static [BasicLandType]) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::BasicLandTypes(
+            SetOperationDef::Add(types),
+        ))
+    }
+
+    #[must_use]
+    pub const fn set_basic_land_types(types: &'static [BasicLandType]) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::BasicLandTypes(
+            SetOperationDef::Set(types),
+        ))
+    }
+
+    #[must_use]
+    pub const fn add_card_types(types: CardTypeSet) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Add(
+            types,
+        )))
+    }
+
+    #[must_use]
+    pub const fn add_creature_types(types: CreatureTypeSetDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::CreatureTypes(
+            SetOperationDef::Add(types),
+        ))
+    }
+
+    #[must_use]
+    pub const fn set_creature_types(types: CreatureTypeSetDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::CreatureTypes(
+            SetOperationDef::Set(types),
+        ))
+    }
+
+    #[must_use]
+    pub const fn set_colors(colors: ColorSet) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::Colors(SetOperationDef::Set(
+            colors,
+        )))
+    }
+
+    #[must_use]
+    pub const fn set_base_power_toughness(power: ValueDef, toughness: ValueDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::SetBase { power, toughness },
+        ))
+    }
+
+    #[must_use]
+    pub const fn modify_power_toughness(power: ValueDef, toughness: ValueDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::Modify { power, toughness },
+        ))
+    }
+
+    #[must_use]
+    pub const fn prevent_damage_from(source: ObjectPredicateDef) -> Self {
+        Self::Rule(AppliedRuleDef::PreventDamage(
+            DamageEventMatcherDef::from_matching_to_affected(source),
+        ))
+    }
+
+    #[must_use]
+    pub const fn prevent_combat_damage_from(source: ObjectPredicateDef) -> Self {
+        Self::Rule(AppliedRuleDef::PreventDamage(DamageEventMatcherDef {
+            kind: DamageKindDef::Combat,
+            source: DamageSourceMatcherDef::Matching(source),
+            recipient: DamageRecipientMatcherDef::AffectedObject,
+        }))
+    }
+}
 /// A reusable selector for ability-removing continuous effects.
 ///
 /// `Any` supports ordinary "loses all abilities" effects. The keyword form is
@@ -203,84 +307,6 @@ pub enum AbilityPredicateDef {
     Any,
     Keyword(KeywordAbility),
 }
-
-/// The creature a permanent becomes while an animation effect is active. A
-/// manland stays a land, so these types and subtypes are added rather than
-/// replacing what is printed.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct AnimationDef {
-    pub power: i16,
-    pub toughness: i16,
-    /// Added on top of the printed types. `Creature` belongs here; a card
-    /// that becomes an artifact creature names both.
-    pub types: CardTypeSet,
-    pub subtypes: &'static [&'static str],
-    /// "With all creature types", which no fixed subtype list can express
-    /// because changelings must keep matching types printed later.
-    pub all_creature_types: bool,
-    /// Whether the printed subtypes are replaced rather than added to, for
-    /// "becomes a Weird" as opposed to "becomes an Assembly-Worker as well".
-    pub replaces_subtypes: bool,
-    /// Whether the permanent loses its printed abilities.
-    pub loses_abilities: bool,
-    /// The colours the permanent becomes, when the animation repaints it.
-    pub colors: Option<ColorSet>,
-}
-
-impl AnimationDef {
-    #[must_use]
-    pub const fn new(power: i16, toughness: i16) -> Self {
-        Self {
-            power,
-            toughness,
-            types: CardTypeSet::single(CardType::Creature),
-            subtypes: &[],
-            all_creature_types: false,
-            replaces_subtypes: false,
-            loses_abilities: false,
-            colors: None,
-        }
-    }
-
-    /// "Loses all abilities and becomes a ..." — the printed subtypes,
-    /// abilities, and colours all give way to what the effect names.
-    #[must_use]
-    pub const fn becoming(mut self, subtypes: &'static [&'static str], colors: ColorSet) -> Self {
-        self.subtypes = subtypes;
-        self.replaces_subtypes = true;
-        self.loses_abilities = true;
-        self.colors = Some(colors);
-        self
-    }
-
-    #[must_use]
-    pub const fn with_types(mut self, types: CardTypeSet) -> Self {
-        self.types = types;
-        self
-    }
-
-    #[must_use]
-    pub const fn with_subtypes(mut self, subtypes: &'static [&'static str]) -> Self {
-        self.subtypes = subtypes;
-        self
-    }
-
-    #[must_use]
-    pub const fn with_all_creature_types(mut self) -> Self {
-        self.all_creature_types = true;
-        self
-    }
-
-    /// Repaints the permanent without otherwise disturbing it, for "all
-    /// Swamps are 1/1 black creatures that are still lands": the colour
-    /// changes, the printed subtypes and abilities do not.
-    #[must_use]
-    pub const fn with_colors(mut self, colors: ColorSet) -> Self {
-        self.colors = Some(colors);
-        self
-    }
-}
-
 /// An event that a replacement ability can modify before it is committed.
 ///
 /// Replacement events deliberately have their own vocabulary rather than
@@ -307,16 +333,6 @@ impl TurnKindDef {
     }
 }
 
-/// A player and the costs that player may choose to pay.
-///
-/// The rules procedure interpreting the surrounding effect decides which
-/// cost atoms it can offer and how a successful payment resumes that effect.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct PaymentDef {
-    pub payer: PlayerRelation,
-    pub costs: &'static [CostDef],
-}
-
 /// One place an effect may choose an owned card from.
 ///
 /// Outside the game is deliberately not a [`ZoneKind`]: Magic's zones include
@@ -328,13 +344,6 @@ pub enum CardChoiceSourceDef {
     OutsideGame,
 }
 
-impl PaymentDef {
-    #[must_use]
-    pub const fn new(payer: PlayerRelation, costs: &'static [CostDef]) -> Self {
-        Self { payer, costs }
-    }
-}
-
 /// A reusable condition evaluated in an effect's source and event context.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ConditionDef {
@@ -342,7 +351,6 @@ pub enum ConditionDef {
     Exists(ObjectQueryDef),
 }
 
-/// A condition checked while deciding whether a replacement ability applies
 /// How cards are selected for a discard effect.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum DiscardSelectionDef {
@@ -359,8 +367,14 @@ pub enum DiscardSelectionDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TopCardSelectionDef {
     pub count: ValueDef,
+    /// Restrict the cards that may be selected while still looking at and
+    /// placing every card in the inspected group.
+    pub object: Option<ObjectPredicateDef>,
     pub minimum: u8,
     pub maximum: u8,
+    /// Reveal selected cards before moving them, for effects that instruct
+    /// the player to reveal what they took.
+    pub reveal_selected: bool,
     pub selected_zone: ZoneKind,
     pub selected_placement: ZonePlacement,
     pub rest_zone: ZoneKind,
@@ -368,94 +382,193 @@ pub struct TopCardSelectionDef {
     pub then: Option<&'static EffectDef>,
 }
 
-/// How much of a covered hit a prevention shield stops. Most shields stop the
-/// whole thing; a few printed cards stop a computed part of it and let the
-/// rest through.
+/// Who may observe a pending choice and its available options.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ShieldCoverageDef {
-    All,
-    /// Half the damage, rounded down, which lets an odd point through.
-    HalfRoundedDown,
+pub enum ChoiceVisibilityDef {
+    Public,
+    Private,
+}
+
+/// The context slot populated by an object choice.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ObjectChoiceBindingDef {
+    Object(ObjectBindingIndex),
+    Objects(ObjectSetBindingIndex),
+}
+
+/// Choose a bounded number of non-targeted objects, save them in the resolving
+/// context, then continue the effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ChooseDef {
+    pub binding: ObjectChoiceBindingDef,
+    pub chooser: PlayerRefDef,
+    pub candidates: ObjectSetDef,
+    pub exclude: Option<ObjectRefDef>,
+    pub minimum: usize,
+    pub maximum: usize,
+    pub visibility: ChoiceVisibilityDef,
+    pub then: &'static EffectDef,
+}
+
+/// The supported cost of an optional effect payment.
+///
+/// This is deliberately narrower than casting and activation costs: those
+/// procedures can plan compound costs atomically, while a resolving effect
+/// currently offers exactly one mana or life payment.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum EffectPaymentCostDef {
+    Mana(ManaCost),
+    /// A generic mana payment whose amount is evaluated at resolution.
+    GenericMana(ValueDef),
+    Life(u16),
+}
+
+/// A payment offered while an effect or replacement procedure resolves.
+///
+/// The payer uses the same compositional player-set vocabulary as the rest of
+/// the effect model. Payment procedures require that it resolve to exactly one
+/// player; a missing or non-singleton payer cannot pay and takes the declined
+/// branch.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct EffectPaymentDef {
+    pub payer: PlayerSetDef,
+    pub cost: EffectPaymentCostDef,
+}
+
+impl EffectPaymentDef {
+    #[must_use]
+    pub const fn mana(payer: PlayerSetDef, cost: ManaCost) -> Self {
+        Self {
+            payer,
+            cost: EffectPaymentCostDef::Mana(cost),
+        }
+    }
+
+    #[must_use]
+    pub const fn generic_mana(payer: PlayerSetDef, amount: ValueDef) -> Self {
+        Self {
+            payer,
+            cost: EffectPaymentCostDef::GenericMana(amount),
+        }
+    }
+
+    #[must_use]
+    pub const fn life(payer: PlayerSetDef, amount: u16) -> Self {
+        Self {
+            payer,
+            cost: EffectPaymentCostDef::Life(amount),
+        }
+    }
+}
+
+/// Offer a payment and continue through the branch selected by its result.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct PayOrDef {
+    pub payment: EffectPaymentDef,
+    pub if_paid: Option<&'static EffectDef>,
+    pub otherwise: Option<&'static EffectDef>,
+    pub visibility: ChoiceVisibilityDef,
+}
+
+impl PayOrDef {
+    /// Offer an optional payment and continue only when it is paid.
+    #[must_use]
+    pub const fn optional(payment: EffectPaymentDef, if_paid: &'static EffectDef) -> Self {
+        Self {
+            payment,
+            if_paid: Some(if_paid),
+            otherwise: None,
+            visibility: ChoiceVisibilityDef::Private,
+        }
+    }
+
+    /// Continue unless the resolving effect's controller pays a fixed mana
+    /// cost.
+    #[must_use]
+    pub const fn unless_mana(cost: ManaCost, otherwise: &'static EffectDef) -> Self {
+        Self {
+            payment: EffectPaymentDef::mana(
+                PlayerSetDef::One(PlayerRefDef::EffectController),
+                cost,
+            ),
+            if_paid: None,
+            otherwise: Some(otherwise),
+            visibility: ChoiceVisibilityDef::Private,
+        }
+    }
+}
+
+/// The objects divided by a pile-splitting procedure.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PartitionItemsDef {
+    Objects(ObjectSetDef),
+    TopOfLibrary {
+        player: PlayerRefDef,
+        count: ValueDef,
+    },
+}
+
+/// Divide objects into two piles, choose one pile, bind both results, and then
+/// continue the effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SplitIntoPilesDef {
+    pub items: PartitionItemsDef,
+    pub divider: PlayerSetDef,
+    pub chooser: PlayerSetDef,
+    pub chosen: ObjectSetBindingIndex,
+    pub unchosen: ObjectSetBindingIndex,
+    pub then: &'static EffectDef,
+}
+
+/// How long an effect-created triggered ability listens from outside every
+/// zone.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum InstalledTriggerLifetimeDef {
+    Once,
+    UntilNextTurn(PlayerRefDef),
+}
+
+/// A triggered ability installed by a resolving effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct InstalledTriggerDef {
+    pub ability: &'static AbilityDef,
+    pub lifetime: InstalledTriggerLifetimeDef,
+}
+
+impl InstalledTriggerDef {
+    #[must_use]
+    pub const fn once(ability: &'static AbilityDef) -> Self {
+        Self {
+            ability,
+            lifetime: InstalledTriggerLifetimeDef::Once,
+        }
+    }
+
+    #[must_use]
+    pub const fn until_next_turn(ability: &'static AbilityDef, player: PlayerRefDef) -> Self {
+        Self {
+            ability,
+            lifetime: InstalledTriggerLifetimeDef::UntilNextTurn(player),
+        }
+    }
 }
 
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
-    None,
-    Sequence(&'static [EffectDef]),
-    /// Select one branch using the game's replay-stable seeded RNG.
-    Randomized {
-        likelihood: LikelihoodDef,
-        on_success: &'static EffectDef,
-        on_failure: &'static EffectDef,
-    },
-    /// A mandatory non-targeting permanent choice made while this effect
-    /// resolves. The selected object is available to `then` through
-    /// [`EffectRecipientDef::ChosenPermanent`].
-    ChoosePermanent {
-        choice: ChoiceIndex,
-        chooser: EffectRecipientDef,
-        object: ObjectPredicateDef,
-        controller: PlayerRelation,
-        then: &'static EffectDef,
-    },
-    /// A mandatory non-targeting choice of one damage source made while this
-    /// effect resolves, for "a source of your choice". Unlike
-    /// [`Self::ChoosePermanent`] the candidates include spells on the stack,
-    /// because a Circle of Protection has to be able to name a burn spell.
-    /// The selection reaches `then` through
-    /// [`EffectRecipientDef::ChosenPermanent`].
-    ChooseDamageSource {
-        choice: ChoiceIndex,
-        chooser: EffectRecipientDef,
-        object: ObjectPredicateDef,
-        then: &'static EffectDef,
-    },
-    /// Prevent the next damage one named source would deal to the recipient
-    /// this turn. The shield answers that source only, and the first damage it
-    /// covers spends it however much that damage was.
-    PreventNextDamageFromSource {
-        object: EffectRecipientDef,
-        source: EffectRecipientDef,
-        coverage: ShieldCoverageDef,
-        /// Whether the recipient's controller gains life equal to the damage
-        /// this shield actually prevented.
-        gain_life: bool,
-    },
-    AddMana(AddManaEffectDef),
-    DealDamage {
-        recipient: EffectRecipientDef,
-        amount: ValueDef,
-    },
-    GainLife {
-        recipient: EffectRecipientDef,
-        amount: ValueDef,
-    },
-    /// Removes every counter of one kind from the recipient, however many
-    /// there are.
-    RemoveAllCounters {
+    AddCounters {
         object: EffectRecipientDef,
         kind: CounterKind,
+        amount: ValueDef,
     },
-    /// The object sits out that many of its controller's untap steps,
-    /// starting with their next one. Unlike the continuous prohibition this
-    /// is spent as those steps arrive.
-    SkipNextUntapSteps {
-        object: EffectRecipientDef,
-        count: u8,
-    },
-    /// The object is destroyed when this combat phase ends. Unlike an
-    /// end-step destruction this happens while the combat that caused it is
-    /// still the current phase.
-    DestroyAtEndOfCombat {
-        object: EffectRecipientDef,
-    },
-    /// Repaint an object's colours, replacing whatever it was. The Lace cycle
-    /// says "becomes", not "in addition to", and prints no duration: the
-    /// change lasts as long as the object does.
-    SetColor {
-        object: EffectRecipientDef,
+    AddMana(AddManaEffectDef),
+    /// Adds mana of one colour, however much a value says. Mana abilities use
+    /// [`Self::AddMana`] with a fixed amount so the mana planner can read
+    /// them without resolving anything; this is for the effects that cannot
+    /// know their amount until they resolve.
+    AddManaEqualTo {
         color: ManaColor,
+        amount: ValueDef,
     },
     /// Poison counters given to a player. Ten of them is a state-based loss,
     /// which is why this is not expressible as life loss.
@@ -463,21 +576,91 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
-    DrawCards {
+    Apply {
+        recipient: EffectRecipientDef,
+        effect: AppliedEffectDef,
+        duration: ResolvedEffectDurationDef,
+    },
+    /// An Aura spell attaching itself to what it enchants. The permanent the
+    /// spell becomes is what attaches, so this is only meaningful on the spell
+    /// clause of an Aura.
+    Attach {
+        object: EffectRecipientDef,
+    },
+    /// Replaces the source permanent's copiable values with the target's.
+    /// Some copy effects, such as Thespian's Stage, retain the resolving
+    /// ability as an exception to the copied values.
+    BecomeCopyOf {
+        object: EffectRecipientDef,
+        retain_source_ability: bool,
+    },
+    /// A static attack restriction: this creature cannot be declared as an
+    /// attacker unless the query matches. The query carries its own controller
+    /// relation, so "unless defending player controls an Island" is an
+    /// opponent-relative battlefield query rather than a special case.
+    CannotAttackUnless(&'static ObjectQueryDef),
+    /// A static prohibition: no spell or ability an opponent controls can
+    /// make this ability's controller sacrifice a permanent.
+    CannotBeForcedToSacrifice,
+    /// On resolution, choose two different basic land-type words and apply
+    /// the resulting indefinite, noncopiable text change to the object.
+    ChangeTextBasicLandType {
+        object: EffectRecipientDef,
+    },
+    Choose(ChooseDef),
+    /// Choose owned cards from one or more places without performing the
+    /// keyword action "search." Ring of Ma'rûf uses this for outside-game
+    /// cards, and Old School expands the same choice to exile.
+    ChooseCards {
+        player: EffectRecipientDef,
+        sources: &'static [CardChoiceSourceDef],
+        object: ObjectPredicateDef,
+        minimum: usize,
+        maximum: usize,
+        reveal: bool,
+        destination: ZoneKind,
+        placement: ZonePlacement,
+    },
+    /// Counter a spell and put its card into `zone`. Ordinary counters use
+    /// the graveyard; replacement-style counters such as Dissipate use exile.
+    Counter {
+        object: EffectRecipientDef,
+        zone: ZoneKind,
+    },
+    /// Gives its controller an emblem, an object that sits outside every
+    /// zone and does nothing but carry its abilities.
+    CreateEmblem {
+        emblem: CardDefinitionId,
+    },
+    /// Puts token copies of `token` onto the battlefield under the resolving
+    /// object's controller.
+    CreateToken {
+        token: CardDefinitionId,
+        count: ValueDef,
+        /// Whether the created token arrives tapped.
+        tapped: bool,
+    },
+    /// Creates a token copying the recipient's copiable values. Populate uses
+    /// this after its generic choice has selected a creature token.
+    CreateTokenCopyOf {
+        object: EffectRecipientDef,
+    },
+    DealDamage {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
-    /// Randomizes each recipient player's library. Effects that shuffle
-    /// cards from other zones into a library first express those zone moves
-    /// with [`Self::MoveToZone`], then use this shared operation.
-    ShuffleLibrary {
-        player: EffectRecipientDef,
+    Destroy {
+        object: EffectRecipientDef,
+        can_regenerate: bool,
     },
-    /// The affected player loses all unspent mana without invoking the
-    /// turn-based mana-pool emptying procedure (and therefore without mana
-    /// burn in formats that use it).
-    EmptyManaPool {
-        player: EffectRecipientDef,
+    /// The object is destroyed when this combat phase ends.
+    DestroyAtEndOfCombat {
+        object: EffectRecipientDef,
+    },
+    /// Until the resolving controller's next turn, the permanent cannot
+    /// attack, block, or activate its activated abilities.
+    Detain {
+        object: EffectRecipientDef,
     },
     /// Each recipient discards that many cards selected in the specified way.
     /// A player holding fewer cards discards their whole hand.
@@ -485,6 +668,82 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
         selection: DiscardSelectionDef,
+    },
+    /// Discard the named card objects from their owners' hands. Selection is
+    /// expressed separately (usually with [`Self::Choose`]); this leaf is the
+    /// rules action that moves the chosen cards and emits discard events.
+    DiscardCards {
+        object: EffectRecipientDef,
+    },
+    /// Deals damage and gains its controller that much life, but no more
+    /// than the recipient had to give: a player's life total, a
+    /// planeswalker's loyalty, or a creature's toughness, each read before
+    /// the damage. Draining an almost-dead target gains only what was there.
+    DrainLife {
+        recipient: EffectRecipientDef,
+        amount: ValueDef,
+    },
+    DrawCards {
+        recipient: EffectRecipientDef,
+        amount: ValueDef,
+    },
+    /// The affected player loses all unspent mana without invoking the
+    /// turn-based mana-pool emptying procedure (and therefore without mana
+    /// burn in formats that use it).
+    EmptyManaPool {
+        player: EffectRecipientDef,
+    },
+    /// Exiles, remembering which object sent it there so a later clause can
+    /// bring it back. This is the Oblivion Ring shape.
+    ExileLinkedToSource {
+        object: EffectRecipientDef,
+    },
+    /// Gain control of the recipient for the stated duration. Source-bound
+    /// durations also remember whether the source must remain tapped.
+    GainControl {
+        object: EffectRecipientDef,
+        duration: ControlDurationDef,
+    },
+    GainLife {
+        recipient: EffectRecipientDef,
+        amount: ValueDef,
+    },
+    /// Lets the next sorcery its controller casts this turn be cast as
+    /// though it had flash.
+    GrantFlashToNextSorcery,
+    /// Runs `then` only if the condition holds where this effect resolves.
+    /// A condition on a triggered ability is an intervening-if and is checked
+    /// twice; this one is part of the effect and is checked once.
+    IfCondition {
+        condition: &'static TriggerConditionDef,
+        then: &'static EffectDef,
+    },
+    /// Resolve one branch under a particular per-game format profile. Card
+    /// definitions remain format-neutral; only the rules procedure varies.
+    IfFormat {
+        format: Format,
+        then: &'static EffectDef,
+        otherwise: &'static EffectDef,
+    },
+    /// Installs a triggered ability that listens from outside every zone.
+    InstallTrigger(InstalledTriggerDef),
+    /// A static effect that turns off one landwalk for blocking purposes:
+    /// creatures with it can be blocked as though they did not have it. The
+    /// keyword is untouched -- anything else reading it still sees it -- so
+    /// this is a blocking rule rather than an ability-removing one.
+    LandwalkCanBeBlocked(BasicLandType),
+    /// One player looks at another's hand. Nothing changes zones and no
+    /// decision follows; the looking player simply knows.
+    LookAtHand {
+        player: EffectRecipientDef,
+    },
+    /// Look privately at the top cards of a library, choose a bounded subset,
+    /// place both groups, optionally reveal the selected cards, then continue
+    /// resolving. A predicate restricts what may be selected without hiding
+    /// the rest of the inspected group.
+    LookAtTopAndSelect {
+        player: EffectRecipientDef,
+        selection: &'static TopCardSelectionDef,
     },
     LoseLife {
         recipient: EffectRecipientDef,
@@ -495,15 +754,29 @@ pub enum EffectDef {
     LoseTheGame {
         player: EffectRecipientDef,
     },
-    Tap {
-        object: EffectRecipientDef,
+    /// An effect the named player may decline. Held by reference so that
+    /// `EffectDef` does not grow a recursive inline copy of itself.
+    May {
+        player: EffectRecipientDef,
+        effect: &'static EffectDef,
     },
-    /// The recipient does not untap during its controller's untap step for as
-    /// long as the effect's own source stays tapped. Unlike
-    /// [`Self::SkipNextUntapSteps`] nothing is spent: the source decides when
-    /// it ends by untapping.
-    DoesNotUntapWhileSourceTapped {
+    /// Put that many cards from the top of a library into its owner's
+    /// graveyard.
+    Mill {
+        player: EffectRecipientDef,
+        amount: ValueDef,
+    },
+    MoveToZone {
         object: EffectRecipientDef,
+        zone: ZoneKind,
+        /// Which end of a library the card lands on. Meaningless for every
+        /// other destination.
+        placement: ZonePlacement,
+        /// Who controls the permanent when the destination is the
+        /// battlefield. `None` is the ordinary case, where a card arrives
+        /// under its owner's control; reanimation that steals names a
+        /// relation instead.
+        controller: Option<PlayerRelation>,
     },
     /// CR 506.4: the permanent stops attacking or blocking, and anything
     /// blocking it stops. An attacker removed this way was still blocked, so
@@ -511,96 +784,22 @@ pub enum EffectDef {
     RemoveFromCombat {
         object: EffectRecipientDef,
     },
-    Untap {
-        object: EffectRecipientDef,
+    None,
+    PayOr(PayOrDef),
+    /// Install a resolved damage-prevention rule for the named duration.
+    PreventDamage {
+        prevention: DamagePreventionDef,
+        duration: ResolvedEffectDurationDef,
     },
-    /// Prevent the next `amount` damage that would be dealt to the recipient
-    /// this turn. The shield waits for damage rather than acting now, and is
-    /// spent as the damage it covers arrives.
-    PreventNextDamage {
-        object: EffectRecipientDef,
-        amount: ValueDef,
+    /// Select one branch using the game's replay-stable seeded RNG.
+    Randomized {
+        likelihood: LikelihoodDef,
+        on_success: &'static EffectDef,
+        on_failure: &'static EffectDef,
     },
-    /// Prevent all damage that would be dealt to the recipient this turn.
-    /// Unlike [`Self::PreventNextDamage`] nothing spends it; it simply lasts.
-    PreventAllDamageThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// No combat damage is dealt at all for the rest of the turn, by anything,
-    /// to anything. Unlike [`Self::PreventCombatDamageThisTurn`] this is not a
-    /// property of any permanent, so it survives the creatures involved
-    /// leaving the battlefield -- which is what a Fog has to do.
-    PreventAllCombatDamageThisTurn,
-    /// No combat damage is dealt to or by the affected permanent for the rest
-    /// of the turn. This is prevention rather than removal from combat: the
-    /// creature is still attacking, and everything that reads that still
-    /// sees it.
-    PreventCombatDamageThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// No combat damage is dealt by the affected permanent for the rest of
-    /// the turn. Unlike [`Self::PreventCombatDamageThisTurn`], damage that
-    /// blockers deal to it is unaffected.
-    PreventCombatDamageDealtByThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// Prevent every kind of damage the recipient would deal for the rest of
-    /// the turn. Unlike [`Self::PreventCombatDamageDealtByThisTurn`] this
-    /// also stops the damage its abilities would deal.
-    PreventDamageDealtByThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// Prevent all damage to one player and to creatures they control for the
-    /// rest of the turn. This modifies the rules rather than a fixed object
-    /// set, so it also covers creatures that enter later (CR 611.2c).
-    PreventDamageToPlayerAndControlledCreaturesThisTurn {
-        player: EffectRecipientDef,
-    },
-    /// Prevent damage a named group of sources would deal to one player for
-    /// the rest of the turn. The group is a closed vocabulary rather than a
-    /// predicate: the rule outlives the resolution that made it, so it has to
-    /// survive a checkpoint.
-    PreventDamageToPlayerFromThisTurn {
-        player: EffectRecipientDef,
-        source: DamageSourceGroupDef,
-    },
-    /// For the rest of the turn, damage the target would deal to the
-    /// recipient player is dealt to this effect's own source instead.
-    RedirectTargetDamageToSourceThisTurn {
-        player: EffectRecipientDef,
-        from: TargetIndex,
-    },
-    /// Prevent all combat damage from every source other than the resolved
-    /// object for the rest of the turn.
-    PreventAllCombatDamageExceptSourceThisTurn {
-        source: EffectRecipientDef,
-    },
-    /// Puts token copies of `token` onto the battlefield under the resolving
-    /// object's controller.
-    CreateToken {
-        token: CardDefinitionId,
-        count: ValueDef,
-        /// Whether the created token arrives tapped, as "create a tapped 2/2
-        /// black Zombie creature token" asks.
-        tapped: bool,
-    },
-    /// Creates a token copying the recipient's copiable values, which for a
-    /// token is the definition it was created from. This is populate, whose
-    /// copy is always of a token and so never has to reproduce a printed
-    /// card's characteristics.
-    CreateTokenCopyOf {
-        object: EffectRecipientDef,
-    },
-    /// An Aura spell attaching itself to what it enchants. The permanent the
-    /// spell becomes is what attaches, so this is only meaningful on the spell
-    /// clause of an Aura.
-    Attach {
-        object: EffectRecipientDef,
-    },
-    Destroy {
-        object: EffectRecipientDef,
-        can_regenerate: bool,
-    },
+    /// This card costs that much less generic mana to cast. A static ability
+    /// that works from the hand, where casting reads it.
+    ReduceGenericCostBy(ValueDef),
     /// Creates a regeneration shield (CR 701.15). The shield is not the
     /// regeneration: it waits, and the next destruction this turn is replaced
     /// by tapping the permanent, removing it from combat, and removing all
@@ -609,23 +808,35 @@ pub enum EffectDef {
     Regenerate {
         object: EffectRecipientDef,
     },
+    /// Removes every counter of one kind from the recipient.
+    RemoveAllCounters {
+        object: EffectRecipientDef,
+        kind: CounterKind,
+    },
+    /// Replace the named player's next draw this turn with another effect.
+    /// The replacement is frozen with the resolving object and consumed even
+    /// when its instructions cannot move a card.
+    ReplaceNextDrawThisTurn {
+        player: EffectRecipientDef,
+        effect: &'static EffectDef,
+    },
+    /// Returns everything this ability's source exiled, to the named zone.
+    /// A returned permanent keeps `grant` until end of turn, which is how
+    /// Obzedat comes back ready to attack.
+    ReturnLinkedExiles {
+        zone: ZoneKind,
+        grant: Option<KeywordAbility>,
+    },
     Sacrifice {
         object: EffectRecipientDef,
     },
     /// Each recipient player chooses one permanent they control that matches,
-    /// and it is destroyed. The choice belongs to the player who owns the
-    /// permanents, not to the ability's controller, which is what "of their
-    /// choice" means; unlike [`Self::SacrificeOfChoice`] nothing is
-    /// sacrificed, so a prohibition on being forced to sacrifice does not
-    /// apply.
-    DestroyOfChoice {
-        player: EffectRecipientDef,
-        object: ObjectPredicateDef,
-        can_regenerate: bool,
-    },
-    /// Each recipient player chooses one permanent they control that matches,
-    /// and sacrifices it. Unlike [`Self::Sacrifice`] the choice is the
-    /// player's, so nothing happens when they control nothing matching.
+    /// and sacrifices it. This remains a dedicated simultaneous procedure:
+    /// every affected player's APNAP-ordered choice is frozen before any
+    /// permanent moves, forced-sacrifice prohibitions are applied, and an
+    /// optional follow-up can read the sacrificed permanent's last-known
+    /// power. A generic [`Self::Choose`] followed by [`Self::Sacrifice`] cannot
+    /// preserve those multiplayer and LKI semantics.
     SacrificeOfChoice {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
@@ -640,46 +851,10 @@ pub enum EffectDef {
         /// amount read off nothing is zero rather than skipped.
         optional: bool,
     },
-    /// Separate everything a player controls into two piles, then let that
-    /// player sacrifice the pile of their choice. The ability's controller
-    /// makes the split, which is what makes the choice hard for both.
-    SplitPermanentsAndSacrificeAPile {
-        player: EffectRecipientDef,
-    },
-    /// Put that many cards from the top of a library into its owner's
-    /// graveyard.
-    Mill {
-        player: EffectRecipientDef,
-        amount: ValueDef,
-    },
-    /// Reveal the top `count` cards of the controller's library, have an
-    /// opponent separate them into two piles, and let the controller take one
-    /// pile into hand. Whatever is left goes to `rest`, using `placement`
-    /// when that is the library. Fact or Fiction and Jace's second ability
-    /// are the same procedure with different losing zones.
-    RevealAndSplitIntoPiles {
-        count: ValueDef,
-        rest: ZoneKind,
-        placement: ZonePlacement,
-    },
-    /// One player looks at another's hand. Nothing changes zones and no
-    /// decision follows; the looking player simply knows.
-    LookAtHand {
-        player: EffectRecipientDef,
-    },
-    /// Look at the top card of a library and, if it matches, offer to take
-    /// it. Looking is private and changes nothing, so declining leaves the
-    /// card exactly where it was.
-    LookAtTopAndMayTake {
-        player: EffectRecipientDef,
-        object: ObjectPredicateDef,
-    },
-    /// Look privately at the top cards of a library, choose a bounded subset,
-    /// place both groups, then optionally continue resolving.
-    LookAtTopAndSelect {
-        player: EffectRecipientDef,
-        selection: &'static TopCardSelectionDef,
-    },
+    /// Schedules these additional phases after the current phase. Later
+    /// schedules at the same boundary happen before earlier ones, while the
+    /// order inside one schedule is preserved.
+    ScheduleTurnPhases(&'static [TurnPhaseDef]),
     /// Search one player's card zone for matching cards and move the chosen
     /// cards. `minimum` and `maximum` model the stated quantity independently
     /// from whether the predicate describes a quality: a search for simply
@@ -696,261 +871,49 @@ pub enum EffectDef {
         placement: ZonePlacement,
         shuffle: bool,
         /// Whether a permanent this search puts onto the battlefield arrives
-        /// tapped, as a fetch land's does.
+        /// tapped.
         enters_tapped: bool,
     },
-    /// Choose owned cards from one or more places without performing the
-    /// keyword action "search." Ring of Ma'rûf uses this for outside-game
-    /// cards, and Old School expands the same choice to exile.
-    ChooseCards {
+    Sequence(&'static [EffectDef]),
+    /// Randomizes each recipient player's library. Effects that shuffle
+    /// cards from other zones into a library first express those zone moves
+    /// with [`Self::MoveToZone`], then use this shared operation.
+    ShuffleLibrary {
         player: EffectRecipientDef,
-        sources: &'static [CardChoiceSourceDef],
-        object: ObjectPredicateDef,
-        minimum: usize,
-        maximum: usize,
-        reveal: bool,
-        destination: ZoneKind,
-        placement: ZonePlacement,
     },
-    /// Replace the named player's next draw this turn with another effect.
-    /// The replacement is frozen with the resolving object and consumed even
-    /// when its instructions cannot move a card.
-    ReplaceNextDrawThisTurn {
-        player: EffectRecipientDef,
-        effect: &'static EffectDef,
-    },
-    /// Resolve one branch under a particular per-game format profile. Card
-    /// definitions remain format-neutral; only the rules procedure varies.
-    IfFormat {
-        format: Format,
-        then: &'static EffectDef,
-        otherwise: &'static EffectDef,
-    },
-    /// Counter a spell and put its card into `zone`. Ordinary counters use
-    /// the graveyard; replacement-style counters such as Dissipate use exile.
-    Counter {
+    /// The object sits out this many of its controller's untap steps.
+    SkipNextUntapSteps {
         object: EffectRecipientDef,
-        zone: ZoneKind,
+        count: u8,
     },
-    /// Deals damage and gains its controller that much life, but no more
-    /// than the recipient had to give: a player's life total, a
-    /// planeswalker's loyalty, or a creature's toughness, each read before
-    /// the damage. Draining an almost-dead target gains only what was there.
-    DrainLife {
+    /// A descriptive marker for an effect portion the shared vocabulary does
+    /// not yet represent. The surrounding costs, targets, and timing can still
+    /// remain declarative; clause coverage records whether and how it executes.
+    Special(&'static str),
+    SplitIntoPiles(SplitIntoPilesDef),
+    /// A continuous or rules-modifying effect derived live from a static
+    /// ability. Its lifetime is the ability's own applicability rather than a
+    /// stored duration.
+    StaticApply {
         recipient: EffectRecipientDef,
-        amount: ValueDef,
+        effect: AppliedEffectDef,
     },
-    /// Adds mana of one colour, however much a value says. Mana abilities use
-    /// [`Self::AddMana`] with a fixed amount so the mana planner can read
-    /// them without resolving anything; this is for the effects that cannot
-    /// know their amount until they resolve.
-    AddManaEqualTo {
-        color: ManaColor,
-        amount: ValueDef,
-    },
-    /// Counters unless the spell's own controller pays this much generic
-    /// mana. `zone` is where a spell countered this way goes, which is the
-    /// graveyard unless the card says otherwise.
-    CounterUnlessPaid {
-        object: EffectRecipientDef,
-        amount: ValueDef,
-        zone: ZoneKind,
-    },
-    AddCounters {
-        object: EffectRecipientDef,
-        kind: CounterKind,
-        amount: ValueDef,
-    },
-    /// On resolution, choose two different basic land-type words and apply
-    /// the resulting indefinite, noncopiable text change to the object.
-    ChangeTextBasicLandType {
-        object: EffectRecipientDef,
-    },
-    /// Replaces the source permanent's copiable values with the target's.
-    /// Some copy effects, such as Thespian's Stage, retain the resolving
-    /// ability as an exception to the copied values.
-    BecomeCopyOf {
-        object: EffectRecipientDef,
-        retain_source_ability: bool,
-    },
-    OptionalPayment {
-        payment: PaymentDef,
-        if_paid: &'static EffectDef,
-    },
-    /// The inverse of [`Self::OptionalPayment`]: `otherwise` happens
-    /// unless the resolving object's controller pays. A controller who cannot
-    /// pay is not asked, because there is nothing to decide.
-    UnlessPaid {
-        cost: ManaCost,
-        otherwise: &'static EffectDef,
-    },
-    /// Stops the affected players casting noncreature spells for the rest of
-    /// the turn.
-    CannotCastNoncreatureSpellsThisTurn {
-        player: EffectRecipientDef,
-    },
-    /// Lets the next sorcery its controller casts this turn be cast as
-    /// though it had flash.
-    GrantFlashToNextSorcery,
-    /// An effect the named player may decline. Held by reference so that
-    /// `EffectDef` does not grow a recursive inline copy of itself.
-    May {
-        player: EffectRecipientDef,
-        effect: &'static EffectDef,
-    },
-    /// Exiles, remembering which object sent it there so a later clause can
-    /// bring it back. This is the Oblivion Ring shape.
-    ExileLinkedToSource {
-        object: EffectRecipientDef,
-    },
-    /// Returns everything this ability's source exiled, to the named zone.
-    /// A returned permanent keeps `grant` until end of turn, which is how
-    /// Obzedat comes back ready to attack.
-    ReturnLinkedExiles {
-        zone: ZoneKind,
-        grant: Option<KeywordAbility>,
-    },
-    /// Makes an object unblockable for the rest of the turn.
-    MakeUnblockableThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// The recipient cannot be regenerated for the rest of the turn. CR
-    /// 701.19c: regeneration shields are not removed and resolving effects may
-    /// still create them, but they cannot apply while the prohibition holds.
-    CannotRegenerateThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// Gain control of the recipient for as long as the ability's source
-    /// stays on the battlefield under the same controller. Unlike
-    /// [`Self::GainControlThisTurn`] this outlives the turn and ends when the
-    /// source does, which is the "for as long as you control this creature"
-    /// that several printed cards use.
-    /// Detain: until the resolving controller's next turn, the recipient
-    /// cannot attack or block and its activated abilities cannot be
-    /// activated. One effect rather than three, because the keyword is one
-    /// thing and the three restrictions always travel together.
-    Detain {
-        object: EffectRecipientDef,
-    },
-    GainControlWhileSourceRemains {
-        object: EffectRecipientDef,
-        /// Whether the source also has to stay tapped, for the cards that
-        /// pair this with an optional untap so the choice is a real cost.
-        while_tapped: bool,
-    },
-    /// Gain control of a permanent for the rest of the turn. Control reverts
-    /// in cleanup, so nothing needs to remember which effect took it.
-    GainControlThisTurn {
-        object: EffectRecipientDef,
-    },
-    /// Queues an effect for the next time that step begins.
-    /// Runs `then` only if the condition holds where this effect resolves.
-    /// A condition on a triggered ability is an intervening-if and is checked
-    /// twice; this one is part of the effect and is checked once.
-    IfCondition {
-        condition: &'static TriggerConditionDef,
-        then: &'static EffectDef,
-    },
-    AtNextStep {
-        step: TurnStepDef,
-        player: PlayerRelation,
-        effect: &'static EffectDef,
-    },
-    /// Installs a triggered ability that listens from nowhere until its
-    /// controller's next turn begins. The ability outlives the resolution
-    /// that created it and does not belong to any permanent, which is what
-    /// separates it from an ability a source grants.
-    TriggerUntilYourNextTurn {
-        ability: &'static AbilityDef,
-    },
-    /// A static prohibition: no spell or ability an opponent controls can
-    /// make this ability's controller sacrifice a permanent.
-    CannotBeForcedToSacrifice,
-    /// This card costs that much less generic mana to cast. A static ability
-    /// that works from the hand, where casting reads it.
-    ReduceGenericCostBy(ValueDef),
-    /// "Players can't cast spells or play lands with ..." A static
-    /// prohibition read while play options are being offered, so a card it
-    /// matches is never a legal action rather than a spell that fizzles.
-    PlayersCantPlay(&'static ObjectPredicateDef),
-    /// A static attack restriction: this creature cannot be declared as an
-    /// attacker unless the query matches. The query carries its own controller
-    /// relation, so "unless defending player controls an Island" is an
-    /// opponent-relative battlefield query rather than a special case.
-    CannotAttackUnless(&'static ObjectQueryDef),
-    /// A static effect that turns off one landwalk for blocking purposes:
-    /// creatures with it can be blocked as though they did not have it. The
-    /// keyword is untouched -- anything else reading it still sees it -- so
-    /// this is a blocking rule rather than an ability-removing one.
-    LandwalkCanBeBlocked(BasicLandType),
-    /// Adds a combat phase after the one now ending.
-    AdditionalCombatPhase,
     /// Gives each affected player an extra turn after the current one. Extra
     /// turns are queued by the turn engine, so a later-created turn happens
     /// before an earlier-created one.
     TakeExtraTurn {
         player: EffectRecipientDef,
     },
-    /// Gives its controller an emblem, an object that sits outside every
-    /// zone and does nothing but carry its abilities.
-    CreateEmblem {
-        emblem: CardDefinitionId,
+    Tap {
+        object: EffectRecipientDef,
     },
     /// Turns a double-faced permanent over to its other face.
     Transform {
         object: EffectRecipientDef,
     },
-    /// Multiplies the amount of the event a replacement ability is replacing.
-    /// This means nothing outside a replacement whose event carries an amount.
-    MultiplyEventAmount(u8),
-    /// An effect interpreted while replacing a prospective event, rather than
-    /// when a spell or ability resolves from the stack.
-    Replacement(ReplacementEffectDef),
-    MoveToZone {
-        object: EffectRecipientDef,
-        zone: ZoneKind,
-        /// Which end of a library the card lands on. Meaningless for every
-        /// other destination.
-        placement: ZonePlacement,
-        /// Who controls the permanent when the destination is the
-        /// battlefield. `None` is the ordinary case, where a card arrives
-        /// under its owner's control; reanimation that steals names a
-        /// relation instead.
-        controller: Option<PlayerRelation>,
-    },
-    /// Choose and store a card name for an object as it enters, the same
-    /// replacement procedure as choosing a creature type.
-    ChooseCardName {
+    Untap {
         object: EffectRecipientDef,
     },
-    /// "As this permanent enters, choose a player." The choice is recorded on
-    /// the permanent, where [`PlayerRelation::ChosenPlayer`] reads it.
-    ChoosePlayer {
-        object: EffectRecipientDef,
-        relation: PlayerRelation,
-    },
-    /// "You may have this permanent enter as a copy of ...". The copy is
-    /// chosen as the permanent enters rather than targeted by the spell, so
-    /// nothing about it can be responded to and declining is always allowed.
-    /// `added_types` are kept on top of what is copied.
-    CopyPermanentAsItEnters {
-        object: ObjectPredicateDef,
-        added_types: CardTypeSet,
-    },
-    /// Choose and store a creature type for an object as it enters. This is a
-    /// replacement procedure rather than a resolving stack effect.
-    ChooseCreatureType {
-        object: EffectRecipientDef,
-    },
-    Apply {
-        recipient: EffectRecipientDef,
-        effect: AppliedEffectDef,
-        duration: EffectDurationDef,
-    },
-    /// A descriptive marker for an effect portion the shared vocabulary does
-    /// not yet represent. The surrounding costs, targets, and timing can still
-    /// remain declarative; clause coverage records whether and how it executes.
-    Special(&'static str),
 }
 
 impl EffectDef {
@@ -982,10 +945,22 @@ pub enum DamageSourceGroupDef {
     UnblockedCreatures,
 }
 
-/// Turn structure used by beginning/end-of-step trigger declarations.
+/// A major turn phase that a resolving effect can insert.
+///
+/// This is intentionally narrower than [`TurnStepDef`]. Steps remain trigger
+/// labels inside a phase, and the untap procedure remains part of ordinary
+/// turn startup rather than an independently scheduled step.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum TurnPhaseDef {
+    Combat,
+    PostcombatMain,
+}
+
+/// Observable turn steps used by beginning/end-of-step trigger declarations.
+/// Untap is an engine procedure before upkeep, and cleanup has no ordinary
+/// priority window, so neither is an authored trigger label.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TurnStepDef {
-    Untap,
     Upkeep,
     Draw,
     PrecombatMain,
@@ -996,5 +971,4 @@ pub enum TurnStepDef {
     EndOfCombat,
     PostcombatMain,
     End,
-    Cleanup,
 }

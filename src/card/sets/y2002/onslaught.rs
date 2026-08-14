@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef, EffectDurationDef,
-    EffectRecipientDef, ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    cards,
+    AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, ResolvedEffectDurationDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, cards,
 };
 use crate::{PlayerRelation, TargetIndex, TurnStepDef, mana_cost};
 
@@ -21,25 +21,25 @@ pub(in crate::card::sets) static GOBLIN_PYROMANCER: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Goblin", "Wizard"], 2, 2).with_abilities(&[
         AbilityDef::triggered(
             "When this creature enters, Goblin creatures get +3/+0 until end of turn.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
             EffectDef::Apply {
-                recipient: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::All(&[
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Subtype("Goblin"),
                     ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(3),
-                    toughness: ValueDef::Constant(0),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(3),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::triggered(
@@ -49,11 +49,11 @@ pub(in crate::card::sets) static GOBLIN_PYROMANCER: CardRecord = CardRecord::new
                 player: PlayerRelation::Any,
             },
             EffectDef::Destroy {
-                object: EffectRecipientDef::MatchingObjects {
-                    object: ObjectPredicateDef::Subtype("Goblin"),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: PlayerRelation::Any,
-                },
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Subtype("Goblin"),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
                 can_regenerate: true,
             },
         ),
@@ -69,19 +69,18 @@ pub(in crate::card::sets) static GOBLIN_SHARPSHOOTER: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin"], 1, 1).with_abilities(&[
         AbilityDef::static_ability(
             "This creature doesn't untap during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::triggered(
             "Whenever a creature dies, untap this creature.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
             EffectDef::Untap {
                 object: EffectRecipientDef::Source,
             },

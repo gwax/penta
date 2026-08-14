@@ -227,7 +227,7 @@ fn cavern_mana_spent_on_a_matching_creature_makes_it_uncounterable() {
             .applied_effects
             .iter()
             .any(|effect| {
-                effect.effect == AppliedEffectDef::CannotBeCountered
+                effect.effect == AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered)
                     && effect.source.is_some_and(|source| source.object == cavern)
             })
     );
@@ -267,7 +267,7 @@ fn generic_payment_prefers_eligible_cavern_mana_with_a_spell_rider() {
         .last()
         .expect("Restoration Angel is on the stack");
     assert!(spell.applied_effects.iter().any(|effect| {
-        effect.effect == AppliedEffectDef::CannotBeCountered
+        effect.effect == AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered)
             && effect.source.is_some_and(|source| source.object == cavern)
     }));
     assert_eq!(game.players[0].mana_pool.blue, 0);
@@ -302,7 +302,7 @@ fn cavern_mana_keeps_its_chosen_type_and_rider_after_cavern_leaves() {
             .applied_effects
             .iter()
             .any(|effect| {
-                effect.effect == AppliedEffectDef::CannotBeCountered
+                effect.effect == AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered)
                     && effect.source.is_some_and(|source| source.object == cavern)
             })
     );
@@ -346,7 +346,7 @@ fn automatic_payment_uses_cavern_when_its_rider_benefits_the_spell() {
             .applied_effects
             .iter()
             .any(|effect| {
-                effect.effect == AppliedEffectDef::CannotBeCountered
+                effect.effect == AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered)
                     && effect.source.is_some_and(|source| source.object == cavern)
             })
     );

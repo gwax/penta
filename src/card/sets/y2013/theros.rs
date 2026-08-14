@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, BasicLandType, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectDurationDef, EffectRecipientDef,
-    ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, cards,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    TriggerEventDef, ValueDef, ZoneKind, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -34,11 +34,11 @@ pub(in crate::card::sets) static NYLEAS_PRESENCE: CardRecord = CardRecord::new(
             ),
             AbilityDef::triggered(
                 "When Nylea's Presence enters, draw a card.",
-                TriggerEventDef::ZoneChanged {
-                    object: ObjectPredicateDef::Source,
-                    from: None,
-                    to: Some(ZoneKind::Battlefield),
-                },
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
                 EffectDef::DrawCards {
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(1),
@@ -46,10 +46,9 @@ pub(in crate::card::sets) static NYLEAS_PRESENCE: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "Enchanted land is every basic land type in addition to its other types.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::AddLandTypes(&BasicLandType::ALL),
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::add_basic_land_types(&BasicLandType::ALL),
                 },
             ),
         ]),

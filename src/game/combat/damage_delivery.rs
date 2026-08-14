@@ -31,39 +31,9 @@ impl Game {
         }
     }
 
-    /// Raises the event for damage a player took, whatever dealt it. Only a
-    /// battlefield source can be recognised, which is what every trigger that
-    /// reads this needs.
-    pub(in crate::game) fn publish_damage_to_player(
-        &mut self,
-        source: Option<GameObjectId>,
-        player: PlayerId,
-        amount: u16,
-    ) {
-        if amount == 0 {
-            return;
-        }
-        let Some(source) = source.and_then(|source| {
-            self.battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == source)
-        }) else {
-            return;
-        };
-        let event = CommittedTriggerEvent::DamageDealtToPlayer {
-            object: self.trigger_event_object(source),
-            player,
-            amount,
-        };
-        self.capture_battlefield_triggers(&event);
-    }
-
-    /// Combat damage from an attacker to a player, which is the one kind of
-    /// damage the "whenever this deals combat damage to a player" triggers
-    /// listen for. Ordinary damage to a player carries no such event.
     /// Combat damage from an attacker to whatever it is attacking. A player
-    /// also gets the "deals combat damage to a player" event; a planeswalker
-    /// takes the damage as a permanent, which its loyalty counters absorb.
+    /// and a planeswalker both use the canonical damage event; its `combat`
+    /// flag is what a trigger matcher narrows.
     pub(in crate::game) fn deal_combat_damage_to(
         &mut self,
         attacker: GameObjectId,
@@ -87,28 +57,7 @@ impl Game {
         player: PlayerId,
         amount: u16,
     ) {
-        let dealt = self.damage_target_from_kind(
-            Some(attacker),
-            Some(Target::Player(player)),
-            amount,
-            true,
-        );
-        if dealt == 0 {
-            return;
-        }
-        let Some(source) = self
-            .battlefield
-            .iter()
-            .find(|permanent| permanent.card.id == attacker)
-        else {
-            return;
-        };
-        let event = CommittedTriggerEvent::CombatDamageDealtToPlayer {
-            object: self.trigger_event_object(source),
-            player,
-            amount: dealt,
-        };
-        self.capture_battlefield_triggers(&event);
+        self.damage_target_from_kind(Some(attacker), Some(Target::Player(player)), amount, true);
     }
 
     /// Combat damage between one blocked attacker and everything blocking it,
@@ -133,9 +82,6 @@ impl Game {
                     .collect()
             };
             for (recipient, amount) in split {
-                if self.combat_damage_is_prevented_for(recipient) {
-                    continue;
-                }
                 // Trample past a blocker is still combat damage to a player,
                 // so it goes through the same path as an unblocked hit.
                 if let Target::Player(player) = recipient {
@@ -145,19 +91,13 @@ impl Game {
                 }
             }
         }
-        if self.combat_damage_is_prevented_for(Target::Permanent(attacker_id)) {
-            return;
-        }
         let return_damage = blockers
             .iter()
             .filter_map(|id| {
                 self.battlefield
                     .iter()
                     .find(|permanent| permanent.card.id == *id)
-                    .filter(|permanent| {
-                        self.deals_damage_in_current_combat_step(permanent)
-                            && !self.combat_damage_is_prevented_from(permanent.card.id)
-                    })
+                    .filter(|permanent| self.deals_damage_in_current_combat_step(permanent))
                     .and_then(|permanent| self.power(permanent))
                     .map(|power| (*id, power.max(0).cast_unsigned()))
             })

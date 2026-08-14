@@ -1,13 +1,14 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
+    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    CardTypeSet, CounterKind, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
-    EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation,
-    ReplacementEffectDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    CardTypeSet, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef,
+    DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ManaRestrictionDef,
+    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -18,12 +19,12 @@ static ENERGY_FLUX_GRANTED_ABILITY: AbilityDef = AbilityDef::triggered(
         step: TurnStepDef::Upkeep,
         player: PlayerRelation::You,
     },
-    EffectDef::UnlessPaid {
-        cost: mana_cost!("{2}"),
-        otherwise: &EffectDef::Sacrifice {
+    EffectDef::PayOr(PayOrDef::unless_mana(
+        mana_cost!("{2}"),
+        &EffectDef::Sacrifice {
             object: EffectRecipientDef::Source,
         },
-    },
+    )),
 );
 
 // ATQ 1 — Argivian Archaeologist
@@ -63,22 +64,24 @@ pub(in crate::card::sets) static ARGIVIAN_BLACKSMITH: CardRecord = CardRecord::n
     "Argivian Blacksmith",
     CardArt::new("5f604338-5ee4-4c47-ad5a-5c805c96c8de", "Kerstin Kaman"),
     CardSet::Antiquities,
-    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human", "Artificer"], 2, 2).with_ability(
-        AbilityDef::activated_with_targets(
-            "{T}: Prevent the next 2 damage that would be dealt to target artifact creature this turn.",
-            &[AbilityCostDef::TapSource],
-            &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Artifact),
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                ]),
-            )],
-            EffectDef::PreventNextDamage {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(2),
-            },
-        ),
-    ),
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human", "Artificer"], 2, 2)
+        .with_ability(AbilityDef::activated_with_targets(
+        "{T}: Prevent the next 2 damage that would be dealt to target artifact creature this turn.",
+        &[AbilityCostDef::TapSource],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                ObjectPredicateDef::HasType(CardType::Creature),
+            ]),
+        )],
+        EffectDef::PreventDamage {
+            prevention: DamagePreventionDef::amount(
+                DamageEventMatcherDef::to(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
+                ValueDef::Constant(2),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ATQ 3 — Artifact Ward
@@ -105,14 +108,14 @@ pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_ARTIFACTS: CardRecord = Ca
 /// "As long as this creature is untapped": the condition rides on the
 /// recipient, so tapping it turns the redirection off and untapping turns it
 /// back on without the creature being touched.
-static MARTYRS_UNTAPPED: EffectRecipientDef = EffectRecipientDef::MatchingObjects {
-    object: ObjectPredicateDef::All(&[
+static MARTYRS_UNTAPPED: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::All(&[
         ObjectPredicateDef::Source,
         ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
     ]),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::Any,
-};
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
 
 // ATQ 6 — Martyrs of Korlis
 pub(in crate::card::sets) static MARTYRS_OF_KORLIS: CardRecord = CardRecord::new(
@@ -127,12 +130,11 @@ pub(in crate::card::sets) static MARTYRS_OF_KORLIS: CardRecord = CardRecord::new
         AbilityDef::static_ability(
             "As long as this creature is untapped, all damage that would be dealt to you by \
              artifacts is dealt to this creature instead.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: MARTYRS_UNTAPPED,
-                effect: AppliedEffectDef::RedirectPlayerDamageToThis(
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::RedirectPlayerDamageToThis(
                     DamageSourceGroupDef::Artifacts,
-                ),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                )),
             },
         ),
     ),
@@ -153,14 +155,9 @@ pub(in crate::card::sets) static ENERGY_FLUX: CardRecord = CardRecord::new(
     CardRules::new_enchantment(mana_cost!("{2}{U}"))
     .with_abilities(&[AbilityDef::static_ability(
         "All artifacts have \"At the beginning of your upkeep, sacrifice this artifact unless you pay {2}.\"",
-        EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Artifact),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
-            effect: AppliedEffectDef::GrantAbility(&ENERGY_FLUX_GRANTED_ABILITY),
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Artifact), &[ZoneKind::Battlefield], PlayerRelation::Any),
+            effect: AppliedEffectDef::add_ability(&ENERGY_FLUX_GRANTED_ABILITY),
         },
     )]),
 );
@@ -177,10 +174,10 @@ pub(in crate::card::sets) static HURKYLS_RECALL: CardRecord = CardRecord::new(
             AbilityTargetPredicate::Player(PlayerRelation::Any),
         )],
         EffectDef::MoveToZone {
-            object: EffectRecipientDef::ObjectsOwnedByTarget {
-                object: ObjectPredicateDef::HasType(CardType::Artifact),
-                slot: TargetIndex::PRIMARY,
-            },
+            object: EffectRecipientDef::objects_owned_by_target(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                TargetIndex::PRIMARY,
+            ),
             zone: ZoneKind::Hand,
             controller: None,
             placement: ZonePlacement::Top,
@@ -290,10 +287,9 @@ pub(in crate::card::sets) static PHYREXIAN_GREMLINS: CardRecord = CardRecord::ne
         &[
             AbilityDef::static_ability(
                 "You may choose not to untap this creature during your untap step.",
-                EffectDef::Apply {
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::MayChooseNotToUntap,
-                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
                 },
             ),
             AbilityDef::activated_with_targets(
@@ -305,8 +301,10 @@ pub(in crate::card::sets) static PHYREXIAN_GREMLINS: CardRecord = CardRecord::ne
                     EffectDef::Tap {
                         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     },
-                    EffectDef::DoesNotUntapWhileSourceTapped {
-                        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+                        duration: ResolvedEffectDurationDef::WhileSourceTapped,
                     },
                 ]),
             ),
@@ -350,11 +348,11 @@ pub(in crate::card::sets) static ATOG: CardRecord = CardRecord::new(
             }],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(2),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -469,11 +467,11 @@ pub(in crate::card::sets) static SHATTERSTORM: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{2}{R}{R}")).with_abilities(&[AbilityDef::spell(
         "Destroy all artifacts. They can't be regenerated.",
         EffectDef::Destroy {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::HasType(CardType::Artifact),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
             can_regenerate: false,
         },
     )]),
@@ -495,18 +493,18 @@ pub(in crate::card::sets) static ARGOTHIAN_PIXIES: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Faerie"], 2, 1).with_abilities(&[
         AbilityDef::static_ability(
             "This creature can't be blocked by artifact creatures.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::CannotBeBlockedBy(ARTIFACT_CREATURE),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ARTIFACT_CREATURE,
+                )),
             },
         ),
         AbilityDef::static_ability(
             "Prevent all damage that would be dealt to this creature by artifact creatures.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::PreventDamageFrom(ARTIFACT_CREATURE),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::prevent_damage_from(ARTIFACT_CREATURE),
             },
         ),
     ]),
@@ -521,12 +519,11 @@ pub(in crate::card::sets) static ARGOTHIAN_TREEFOLK: CardRecord = CardRecord::ne
     CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Treefolk"], 3, 5).with_abilities(&[
         AbilityDef::static_ability(
             "Prevent all damage that would be dealt to this creature by artifact sources.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::PreventDamageFrom(ObjectPredicateDef::HasType(
+                effect: AppliedEffectDef::prevent_damage_from(ObjectPredicateDef::HasType(
                     CardType::Artifact,
                 )),
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
             },
         ),
     ]),
@@ -593,13 +590,12 @@ pub(in crate::card::sets) static GAEAS_AVENGER: CardRecord = CardRecord::new(
         AbilityDef::static_ability(
             "Gaea's Avenger's power and toughness are each equal to 1 plus the number of \
              artifacts your opponents control.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
-                    toughness: ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
-                },
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
+                    ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
+                ),
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -610,11 +606,11 @@ pub(in crate::card::sets) static GAEAS_AVENGER: CardRecord = CardRecord::new(
     ),
 );
 
-static ARTIFACTS_YOUR_OPPONENTS_CONTROL: ObjectQueryDef = ObjectQueryDef {
-    object: ObjectPredicateDef::HasType(CardType::Artifact),
-    zones: &[ZoneKind::Battlefield],
-    controller: PlayerRelation::Opponent,
-};
+static ARTIFACTS_YOUR_OPPONENTS_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Opponent,
+);
 
 // ATQ 34 — Powerleech
 // Audit: blocked — Needs opponent-artifact tap and non-tap activated-ability events, including inspection of activation costs.
@@ -641,9 +637,12 @@ pub(in crate::card::sets) static AMULET_OF_KROOG: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::AnyTarget,
             )],
-            EffectDef::PreventNextDamage {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(1),
+            EffectDef::PreventDamage {
+                prevention: DamagePreventionDef::amount(
+                    DamageEventMatcherDef::to(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -664,10 +663,9 @@ pub(in crate::card::sets) static ASHNODS_BATTLE_GEAR: CardRecord = CardRecord::n
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::static_ability(
             "You may choose not to untap this artifact during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::MayChooseNotToUntap,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
             },
         ),
         AbilityDef::activated_with_targets(
@@ -682,11 +680,11 @@ pub(in crate::card::sets) static ASHNODS_BATTLE_GEAR: CardRecord = CardRecord::n
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(2),
-                    toughness: ValueDef::Constant(-2),
-                },
-                duration: EffectDurationDef::WhileSourceTapped,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(-2),
+                ),
+                duration: ResolvedEffectDurationDef::WhileSourceTapped,
             },
         ),
     ]),
@@ -731,10 +729,9 @@ pub(in crate::card::sets) static COLOSSUS_OF_SARDIA: CardRecord = CardRecord::ne
         abilities::trample(),
         AbilityDef::static_ability(
             "This creature doesn't untap during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::DoesNotUntapDuringUntapStep,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
             },
         ),
         AbilityDef::activated(
@@ -766,11 +763,11 @@ pub(in crate::card::sets) static DRAGON_ENGINE: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{2}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -793,11 +790,11 @@ pub(in crate::card::sets) static FELDONS_CANE: CardRecord = CardRecord::new(
 /// arrived in.
 static FELDONS_CANE_SHUFFLE: [EffectDef; 2] = [
     EffectDef::MoveToZone {
-        object: EffectRecipientDef::MatchingObjects {
-            object: ObjectPredicateDef::Any,
-            zones: &[ZoneKind::Graveyard],
-            controller: PlayerRelation::You,
-        },
+        object: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::Any,
+            &[ZoneKind::Graveyard],
+            PlayerRelation::You,
+        ),
         zone: ZoneKind::Library,
         controller: None,
         placement: ZonePlacement::Top,
@@ -821,11 +818,7 @@ pub(in crate::card::sets) static GOLGOTHIAN_SYLEX: CardRecord = CardRecord::new(
             AbilityCostDef::TapSource,
         ],
         EffectDef::Sacrifice {
-            object: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::DebutSet(CardSet::Antiquities),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
+            object: EffectRecipientDef::matching_objects(ObjectPredicateDef::DebutSet(CardSet::Antiquities), &[ZoneKind::Battlefield], PlayerRelation::Any),
         },
     )
     .with_coverage(AbilityCoverageDef::partial(
@@ -920,20 +913,19 @@ pub(in crate::card::sets) static MIGHTSTONE: CardRecord = CardRecord::new(
     CardSet::Antiquities,
     CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[AbilityDef::static_ability(
         "Attacking creatures get +1/+0.",
-        EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::All(&[
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Attacking,
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(1),
-                toughness: ValueDef::Constant(0),
-            },
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(0),
+            ),
         },
     )]),
 );
@@ -1005,11 +997,11 @@ pub(in crate::card::sets) static ONULET: CardRecord = CardRecord::new(
     CardRules::new_artifact_creature(mana_cost!("{3}"), &["Construct"], 2, 2).with_abilities(&[
         AbilityDef::triggered(
             "When this creature dies, you gain 2 life.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(2),
@@ -1032,20 +1024,26 @@ pub(in crate::card::sets) static ORNITHOPTER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “As this creature enters, it becomes your choice of a 3/3 artifact creature, a 2/2 artifact creature with flying, or a 1/6 Wall artifact creature with defender in addition to its other types”.
 
 static RAKALITE_SHIELD: [EffectDef; 2] = [
-    EffectDef::PreventNextDamage {
-        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        amount: ValueDef::Constant(1),
+    EffectDef::PreventDamage {
+        prevention: DamagePreventionDef::amount(
+            DamageEventMatcherDef::to(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
+            ValueDef::Constant(1),
+        ),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     },
-    EffectDef::AtNextStep {
-        step: TurnStepDef::End,
-        player: PlayerRelation::Any,
-        effect: &EffectDef::MoveToZone {
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "At the beginning of the next end step, return this artifact to its owner's hand.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::MoveToZone {
             object: EffectRecipientDef::Source,
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             controller: None,
         },
-    },
+    ))),
 ];
 
 // ATQ 62 — Rakalite
@@ -1089,11 +1087,11 @@ pub(in crate::card::sets) static STAFF_OF_ZEGON: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(-2),
-                    toughness: ValueDef::Constant(0),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-2),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1108,11 +1106,11 @@ pub(in crate::card::sets) static SU_CHI: CardRecord = CardRecord::new(
     CardRules::new_artifact_creature(mana_cost!("{4}"), &["Construct"], 4, 4).with_abilities(&[
         AbilityDef::triggered(
             "When this creature dies, add {C}{C}{C}{C}.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
             EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_amount(4)),
         ),
     ]),
@@ -1126,24 +1124,20 @@ pub(in crate::card::sets) static TABLET_OF_EPITYR: CardRecord = CardRecord::new(
     CardSet::Antiquities,
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[AbilityDef::triggered(
         "Whenever an artifact you control is put into a graveyard from the battlefield, you may pay {1}. If you do, you gain 1 life.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::All(&[
+        TriggerEventDef::zone_changed(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::HasType(CardType::Artifact),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-            ]),
-            from: Some(ZoneKind::Battlefield),
-            to: Some(ZoneKind::Graveyard),
-        },
-        EffectDef::OptionalPayment {
-            payment: PaymentDef::new(
-                PlayerRelation::You,
-                &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            ]), Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
+        EffectDef::PayOr(PayOrDef::optional(
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
             ),
-            if_paid: &EffectDef::GainLife {
+            &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
             },
-        },
+        )),
     )]),
 );
 
@@ -1170,8 +1164,12 @@ pub(in crate::card::sets) static TAWNOSS_WAND: CardRecord = CardRecord::new(
                     ObjectPredicateDef::Not(&ObjectPredicateDef::PowerAtLeast(3)),
                 ]),
             )],
-            EffectDef::MakeUnblockableThisTurn {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(
+                    ObjectPredicateDef::Any,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -1196,10 +1194,9 @@ pub(in crate::card::sets) static TAWNOSS_WEAPONRY: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::static_ability(
             "You may choose not to untap this artifact during your untap step.",
-            EffectDef::Apply {
+            EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::MayChooseNotToUntap,
-                duration: EffectDurationDef::WhileSourceRemainsInZone,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
             },
         ),
         AbilityDef::activated_with_targets(
@@ -1214,11 +1211,11 @@ pub(in crate::card::sets) static TAWNOSS_WEAPONRY: CardRecord = CardRecord::new(
             )],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
-                duration: EffectDurationDef::WhileSourceTapped,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::WhileSourceTapped,
             },
         ),
     ]),
@@ -1311,16 +1308,16 @@ pub(in crate::card::sets) static URZAS_CHALICE: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[AbilityDef::triggered(
         "Whenever a player casts an artifact spell, you may pay {1}. If you do, you gain 1 life.",
         TriggerEventDef::SpellCast(ObjectPredicateDef::HasType(CardType::Artifact)),
-        EffectDef::OptionalPayment {
-            payment: PaymentDef::new(
-                PlayerRelation::You,
-                &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+        EffectDef::PayOr(PayOrDef::optional(
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                mana_cost!("{1}"),
             ),
-            if_paid: &EffectDef::GainLife {
+            &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
             },
-        },
+        )),
     )]),
 );
 
@@ -1345,20 +1342,19 @@ pub(in crate::card::sets) static WEAKSTONE: CardRecord = CardRecord::new(
     CardSet::Antiquities,
     CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[AbilityDef::static_ability(
         "Attacking creatures get -1/-0.",
-        EffectDef::Apply {
-            recipient: EffectRecipientDef::MatchingObjects {
-                object: ObjectPredicateDef::All(&[
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Attacking,
                 ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: PlayerRelation::Any,
-            },
-            effect: AppliedEffectDef::ModifyPowerToughness {
-                power: ValueDef::Constant(-1),
-                toughness: ValueDef::Constant(0),
-            },
-            duration: EffectDurationDef::WhileSourceRemainsInZone,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-1),
+                ValueDef::Constant(0),
+            ),
         },
     )]),
 );
@@ -1375,9 +1371,13 @@ pub(in crate::card::sets) static YOTIAN_SOLDIER: CardRecord = CardRecord::new(
 
 /// Animating keeps the land: the creature and artifact types are added on
 /// top of what is printed.
-static MISHRAS_FACTORY_ANIMATION: AnimationDef = AnimationDef::new(2, 2)
-    .with_types(CardTypeSet::single(CardType::Creature).with(CardType::Artifact))
-    .with_subtypes(&["Assembly-Worker"]);
+static MISHRAS_FACTORY_ANIMATION: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::add_card_types(
+        CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
+    ),
+    AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Assembly-Worker"])),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+];
 
 /// The pump reaches any Assembly-Worker, including a Factory that has already
 /// animated itself and a second Factory across the table.
@@ -1406,8 +1406,8 @@ pub(in crate::card::sets) static MISHRA_S_FACTORY: CardRecord = CardRecord::new(
             &[AbilityCostDef::Mana(mana_cost!("{1}"))],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::Animate(&MISHRAS_FACTORY_ANIMATION),
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::Composite(&MISHRAS_FACTORY_ANIMATION),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
         AbilityDef::activated_with_targets(
@@ -1416,11 +1416,8 @@ pub(in crate::card::sets) static MISHRA_S_FACTORY: CardRecord = CardRecord::new(
             &MISHRAS_FACTORY_PUMP_TARGET,
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         ),
     ]),
@@ -1543,7 +1540,8 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
 mod tests {
     use super::{ENERGY_FLUX, ENERGY_FLUX_GRANTED_ABILITY};
     use crate::card::{
-        AppliedEffectDef, CardEffectStatus, DeclarativeAbilityDef, EffectDef, ImplementationStatus,
+        AbilityOperationDef, AppliedEffectDef, CardEffectStatus, CharacteristicOperationDef,
+        DeclarativeAbilityDef, EffectDef, ImplementationStatus,
     };
 
     #[test]
@@ -1561,11 +1559,13 @@ mod tests {
         ));
         assert_eq!(clauses[0].coverage.status, ImplementationStatus::Complete);
         assert!(matches!(
-            clauses[0].effect.definition,
-            EffectDef::Apply {
-                effect: AppliedEffectDef::GrantAbility(granted),
+            clauses[0].declarative_effect(),
+            Some(EffectDef::StaticApply {
+                effect: AppliedEffectDef::Characteristic(
+                    CharacteristicOperationDef::Abilities(AbilityOperationDef::Add(granted))
+                ),
                 ..
-            } if granted == &ENERGY_FLUX_GRANTED_ABILITY
+            }) if granted == &ENERGY_FLUX_GRANTED_ABILITY
         ));
         assert!(matches!(
             ENERGY_FLUX_GRANTED_ABILITY.definition,

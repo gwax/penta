@@ -346,11 +346,16 @@ fn selected_modal_effects_resolve_distinct_and_deferred_flattened_targets() {
         recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         amount: ValueDef::Constant(2),
     };
-    const SECOND: EffectDef = EffectDef::AtNextStep {
-        step: TurnStepDef::End,
-        player: PlayerRelation::Any,
-        effect: &LOSE_TWO,
-    };
+    static SECOND_TRIGGER: AbilityDef = AbilityDef::triggered(
+        "At the beginning of the next end step, that player loses 2 life.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        LOSE_TWO,
+    );
+    const SECOND: EffectDef =
+        EffectDef::InstallTrigger(crate::InstalledTriggerDef::once(&SECOND_TRIGGER));
     static MODES: [AbilityDef; 2] = [
         AbilityDef::spell_with_targets("First mode", &FIRST_TARGETS, FIRST),
         AbilityDef::spell_with_targets("Second mode", &SECOND_TARGETS, SECOND),
@@ -413,7 +418,7 @@ fn selected_modal_effects_resolve_distinct_and_deferred_flattened_targets() {
                 text: Some(MODAL.text),
                 target_defs: plan.target_defs,
                 targets,
-                context: TriggerContext::empty(),
+                context: TriggerContext::empty().into(),
                 resolver: StackAbilityResolver::Declarative(ScopedEffect::primary(EffectDef::None)),
                 condition: None,
                 mode_effects: plan.mode_effects,
@@ -449,7 +454,12 @@ fn selected_modal_effects_resolve_distinct_and_deferred_flattened_targets() {
         game.players[1].life, 19,
         "the first mode used runtime slot 0"
     );
-    game.fire_delayed_triggers(TurnStepDef::End);
+    game.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerId::One,
+    });
+    game.finish_rules_procedure();
+    drain_pending(&mut game);
     assert_eq!(
         game.players[0].life, 18,
         "the second mode kept runtime slot 1"
@@ -466,8 +476,13 @@ fn selected_modal_effects_resolve_distinct_and_deferred_flattened_targets() {
         ],
     );
     assert!(game.resolve_stack_ability(&repeated));
-    assert_eq!(game.delayed_triggers.len(), 2);
-    game.fire_delayed_triggers(TurnStepDef::End);
+    assert_eq!(game.installed_triggers.len(), 2);
+    game.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerId::One,
+    });
+    game.finish_rules_procedure();
+    drain_pending(&mut game);
     assert_eq!(
         game.players[0].life, 16,
         "the first repeated occurrence used slot 0"

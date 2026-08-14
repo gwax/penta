@@ -111,26 +111,25 @@ impl TargetIndex {
     }
 }
 
-/// Positional identity of one non-targeting choice bound while an effect
+/// Positional identity of one object binding retained while an effect
 /// resolves.
 ///
-/// Unlike a [`TargetIndex`], a choice is not part of the spell or ability's
-/// stack payload: it is made only when the corresponding effect instruction
-/// resolves and is not subject to targeting restrictions or legality checks.
+/// Unlike a [`TargetIndex`], a binding is not part of the spell or ability's
+/// stack payload: it is populated only while the effect program resolves and
+/// is not subject to targeting restrictions or legality checks.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct ChoiceIndex(u8);
+pub struct ObjectBindingIndex(u8);
 
-impl ChoiceIndex {
-    /// The first choice binding in an ordinary single-choice effect.
+impl ObjectBindingIndex {
+    /// The first object binding in an ordinary single-binding effect.
     pub const PRIMARY: Self = Self(0);
 
-    /// The number of independent choice bindings one resolving effect can
-    /// retain. Keeping this compact lets [`crate::game::TriggerContext`] stay
-    /// copyable while still supporting nested effects that refer to more than
-    /// one earlier choice.
+    /// The number of independent object bindings one resolving effect can
+    /// retain.
     pub(crate) const COUNT: usize = 8;
 
-    /// Creates an authored choice index within the supported binding space.
+    /// Creates an authored object binding index within the supported binding
+    /// space.
     ///
     /// # Panics
     ///
@@ -139,7 +138,53 @@ impl ChoiceIndex {
     pub const fn new(index: u8) -> Self {
         assert!(
             (index as usize) < Self::COUNT,
-            "choice index must be less than eight"
+            "object binding index must be less than eight"
+        );
+        Self(index)
+    }
+
+    #[must_use]
+    pub const fn index(self) -> usize {
+        self.0 as usize
+    }
+
+    #[must_use]
+    pub fn from_index(index: usize) -> Option<Self> {
+        if index < Self::COUNT {
+            u8::try_from(index).ok().map(Self)
+        } else {
+            None
+        }
+    }
+}
+
+/// Positional identity of one object-set binding retained while an effect
+/// resolves.
+///
+/// Object-set bindings preserve a collection as one typed value rather than
+/// assigning each member an [`ObjectBindingIndex`].
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct ObjectSetBindingIndex(u8);
+
+impl ObjectSetBindingIndex {
+    /// The first object-set binding in an ordinary single-binding effect.
+    pub const PRIMARY: Self = Self(0);
+
+    /// The number of independent object-set bindings one resolving effect can
+    /// retain.
+    pub(crate) const COUNT: usize = 8;
+
+    /// Creates an authored object-set binding index within the supported
+    /// binding space.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `index` is not less than eight.
+    #[must_use]
+    pub const fn new(index: u8) -> Self {
+        assert!(
+            (index as usize) < Self::COUNT,
+            "object-set binding index must be less than eight"
         );
         Self(index)
     }
@@ -250,5 +295,53 @@ impl fmt::Display for PlayerId {
             Self::One => formatter.write_str("player one"),
             Self::Two => formatter.write_str("player two"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ObjectBindingIndex, ObjectSetBindingIndex};
+
+    #[test]
+    fn object_binding_indices_use_eight_bounded_slots() {
+        assert_eq!(ObjectBindingIndex::COUNT, 8);
+        assert_eq!(ObjectBindingIndex::PRIMARY.index(), 0);
+
+        for index in 0..ObjectBindingIndex::COUNT {
+            let binding = ObjectBindingIndex::from_index(index).expect("supported binding index");
+            assert_eq!(binding.index(), index);
+            assert_eq!(
+                ObjectBindingIndex::new(u8::try_from(index).expect("binding index fits in u8")),
+                binding
+            );
+        }
+
+        assert_eq!(
+            ObjectBindingIndex::from_index(ObjectBindingIndex::COUNT),
+            None
+        );
+        assert_eq!(ObjectBindingIndex::from_index(usize::MAX), None);
+    }
+
+    #[test]
+    fn object_set_binding_indices_use_eight_bounded_slots() {
+        assert_eq!(ObjectSetBindingIndex::COUNT, 8);
+        assert_eq!(ObjectSetBindingIndex::PRIMARY.index(), 0);
+
+        for index in 0..ObjectSetBindingIndex::COUNT {
+            let binding =
+                ObjectSetBindingIndex::from_index(index).expect("supported binding index");
+            assert_eq!(binding.index(), index);
+            assert_eq!(
+                ObjectSetBindingIndex::new(u8::try_from(index).expect("binding index fits in u8"),),
+                binding
+            );
+        }
+
+        assert_eq!(
+            ObjectSetBindingIndex::from_index(ObjectSetBindingIndex::COUNT),
+            None
+        );
+        assert_eq!(ObjectSetBindingIndex::from_index(usize::MAX), None);
     }
 }

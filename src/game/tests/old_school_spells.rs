@@ -483,10 +483,15 @@ fn fork_can_keep_an_original_target_that_has_become_illegal() {
 fn structured_target_predicates_are_rechecked_when_the_spell_resolves() {
     let mut game = ready_game();
     game.catalog = crate::card::catalog().unwrap();
-    let mut factory = creature(10_000, cards::MISHRA_S_FACTORY, PlayerId::Two);
-    factory.animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
+    let factory = creature(10_000, cards::MISHRA_S_FACTORY, PlayerId::Two);
     let factory_id = factory.card.id;
     game.battlefield.push(factory);
+    let animation_timestamp = attach_constant_resolved_characteristics(
+        &mut game,
+        factory_id,
+        &TEST_MISHRAS_FACTORY_CHARACTERISTICS,
+        ContinuousEffectExpiration::EndOfTurn,
+    );
     let mut turn = spell(77, crate::card::cards::TURN_BURN, PlayerId::One, 0);
     turn.signature = Some(CastSignature::from_validated_choices(
         SpellForm::Part(CardPartId::PRIMARY),
@@ -497,7 +502,9 @@ fn structured_target_predicates_are_rechecked_when_the_spell_resolves() {
     ));
 
     assert!(!game.spell_fizzles(&turn));
-    game.battlefield[0].animation = None;
+    game.battlefield[0]
+        .resolved_continuous_effects
+        .retain(|effect| effect.timestamp != animation_timestamp);
     assert!(game.spell_fizzles(&turn));
 }
 
@@ -587,10 +594,11 @@ fn combined_spell_trigger_and_target_characteristics_union_parts() {
         ObjectPredicateDef::Subtype("Arcane"),
         ObjectPredicateDef::Subtype("Lesson"),
     ] {
-        assert!(game.trigger_event_matches(
+        assert!(game.trigger_event_matches_for_controller(
             TriggerEventDef::SpellCast(predicate),
             &event,
             GameObjectId(99_999),
+            None,
         ));
     }
 
@@ -651,10 +659,15 @@ fn split_card_target_characteristics_union_parts_outside_the_stack() {
 fn animated_factory_keeps_types_and_last_known_stats_under_blood_moon() {
     let mut game = ready_game();
     game.catalog = crate::card::catalog().unwrap();
-    let mut factory = creature(10_000, cards::MISHRA_S_FACTORY, PlayerId::One);
-    factory.animation = Some(&abilities::MISHRAS_FACTORY_ANIMATION);
+    let factory = creature(10_000, cards::MISHRA_S_FACTORY, PlayerId::One);
     let blood_moon = creature(10_001, cards::BLOOD_MOON, PlayerId::Two);
     game.battlefield = vec![factory, blood_moon];
+    attach_constant_resolved_characteristics(
+        &mut game,
+        GameObjectId(10_000),
+        &TEST_MISHRAS_FACTORY_CHARACTERISTICS,
+        ContinuousEffectExpiration::EndOfTurn,
+    );
 
     let snapshot = game.battlefield_exit_snapshot(&game.battlefield[0]);
     assert_eq!(snapshot.last_known.power, Some(2));
@@ -674,16 +687,18 @@ fn animated_factory_keeps_types_and_last_known_stats_under_blood_moon() {
         object: snapshot.object,
         from: ZoneKind::Battlefield,
         to: ZoneKind::Graveyard,
+        damage_sources: Vec::new(),
     };
     for card_type in [CardType::Land, CardType::Creature, CardType::Artifact] {
-        assert!(game.trigger_event_matches(
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::HasType(card_type),
-                from: Some(ZoneKind::Battlefield),
-                to: Some(ZoneKind::Graveyard),
-            },
+        assert!(game.trigger_event_matches_for_controller(
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::HasType(card_type),
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard)
+            ),
             &event,
             GameObjectId(99_999),
+            None,
         ));
     }
 }

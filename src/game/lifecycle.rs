@@ -170,8 +170,9 @@ impl Game {
             creature_died_this_turn: false,
             linked_exiles: Vec::new(),
             sorcery_flash_grants: [0; 2],
-            additional_combat_phases: 0,
-            noncreature_casts_locked: [false; 2],
+            turn_phase_queue: VecDeque::new(),
+            turn_phase_resume: None,
+            resolved_play_restrictions: Vec::new(),
             emblems: Vec::new(),
             spells_cast_this_turn: [0; 2],
             spells_cast_last_turn: [0; 2],
@@ -179,10 +180,11 @@ impl Game {
             drawn_this_turn: [Vec::new(), Vec::new()],
             defer_empty_library_loss: false,
             draw_replacements: std::array::from_fn(|_| VecDeque::new()),
-            relational_damage_preventions: Vec::new(),
+            damage_preventions: Vec::new(),
+            damage_redirects: Vec::new(),
             miracle_window: None,
-            delayed_triggers: Vec::new(),
-            floating_triggers: Vec::new(),
+            installed_triggers: Vec::new(),
+            next_installed_trigger_id: 0,
             blockers_declared: false,
             untap_pending: false,
             pregame: Some(Pregame::Mulligan(PlayerId::One)),
@@ -201,8 +203,6 @@ impl Game {
             next_regular_player: PlayerId::Two,
             extra_turns: Vec::new(),
             channel_active: [false, false],
-            all_combat_damage_prevented: false,
-            prevention_shields: Vec::new(),
             result: None,
             events: vec![GameEvent::GameStarted { seed }],
         })
@@ -257,18 +257,17 @@ impl Game {
             .iter()
             .chain(self.emblems.iter())
             .map(|permanent| permanent.timestamp.0)
-            .chain(self.battlefield.iter().flat_map(|permanent| {
-                permanent
-                    .temporary_granted_abilities
+            .chain(
+                self.battlefield
                     .iter()
-                    .map(|effect| effect.timestamp.0)
-                    .chain(
+                    .chain(self.emblems.iter())
+                    .flat_map(|permanent| {
                         permanent
-                            .temporary_removed_abilities
+                            .resolved_continuous_effects
                             .iter()
-                            .map(|effect| effect.timestamp.0),
-                    )
-            }))
+                            .map(|effect| effect.timestamp.0)
+                    }),
+            )
             .max()
             .map_or(0, |timestamp| timestamp.saturating_add(1));
         self.next_continuous_effect_timestamp =
@@ -415,17 +414,10 @@ impl Game {
                     Some(RetiredObject::Stack(object)) => Some(i32::from(object.x())),
                     Some(RetiredObject::Card(_) | RetiredObject::Permanent { .. }) | None => None,
                 }),
-            // Read live, so pumping the source widens what its ability can
-            // reach. This is safe here because a target predicate is not
-            // consulted while static effects are being applied; a static
-            // ability whose own recipient predicate read this would not
-            // terminate.
-            ValueDef::SourcePower => self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == source)
-                .and_then(|permanent| self.power(permanent))
-                .map(i32::from),
+            // Pumping the source widens the predicate while it is live. If
+            // source and triggering object leave simultaneously, use the
+            // same last-known power frozen for the rest of the trigger.
+            ValueDef::SourcePower => self.current_or_last_known_power(source).map(i32::from),
             _ => None,
         }
     }
@@ -459,6 +451,29 @@ impl Game {
                 Some(RetiredObject::Permanent { permanent, .. }) => Some(permanent.controller),
                 Some(RetiredObject::Stack(stack)) => Some(stack.controller),
                 Some(RetiredObject::Card(_)) | None => None,
+            })
+    }
+
+    pub(super) fn current_or_last_known_owner(&self, object: GameObjectId) -> Option<PlayerId> {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+            .map(|permanent| permanent.card.owner)
+            .or_else(|| {
+                self.stack
+                    .iter()
+                    .find(|candidate| candidate.id == object)
+                    .map(|candidate| candidate.card.owner)
+            })
+            .or_else(|| {
+                self.card_in_nonbattlefield_zone(object)
+                    .map(|(_, card)| card.owner)
+            })
+            .or_else(|| match self.retired_objects.get(&object) {
+                Some(RetiredObject::Card(card)) => Some(card.owner),
+                Some(RetiredObject::Permanent { permanent, .. }) => Some(permanent.card.owner),
+                Some(RetiredObject::Stack(stack)) => Some(stack.card.owner),
+                None => None,
             })
     }
 

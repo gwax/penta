@@ -323,10 +323,8 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::FellwarStone => &y1994::the_dark::FELLWAR_STONE.rules,
         CardBehavior::Balance => &y1993::alpha::BALANCE.rules,
         CardBehavior::Channel => &y1993::alpha::CHANNEL.rules,
-        CardBehavior::Duress => &y2012::magic_2013::DURESS.rules,
         CardBehavior::EssenceScatter => &y2012::magic_2013::ESSENCE_SCATTER.rules,
         CardBehavior::LibraryOfAlexandria => &y1993::arabian_nights::LIBRARY_OF_ALEXANDRIA.rules,
-        CardBehavior::LifebaneZombie => &y2013::magic_2014::LIFEBANE_ZOMBIE.rules,
         CardBehavior::Recall => &y1994::legends::RECALL.rules,
         CardBehavior::SylvanLibrary => &y1994::legends::SYLVAN_LIBRARY.rules,
         CardBehavior::DustToDust => &y1994::the_dark::DUST_TO_DUST.rules,
@@ -337,7 +335,6 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::Negate => &y2012::magic_2013::NEGATE.rules,
         CardBehavior::PillarOfFlame => &y2012::avacyn_restored::PILLAR_OF_FLAME.rules,
         CardBehavior::SedgeTroll => &y1993::alpha::SEDGE_TROLL.rules,
-        CardBehavior::SinCollector => &y2013::dragons_maze::SIN_COLLECTOR.rules,
         CardBehavior::SphinxsRevelation => &y2012::return_to_ravnica::SPHINXS_REVELATION.rules,
         CardBehavior::TetravusDetach | CardBehavior::TetravusAssemble => {
             &y1994::antiquities::TETRAVUS.rules

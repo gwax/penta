@@ -13,7 +13,7 @@ pub(super) fn begin_turn_replacement_snapshot(
         matches!(definition.event, ReplacementEventDef::WouldBeginTurn { .. })
             && definition.optional == replacement.optional
             && ability.text == replacement.text
-            && ability.effect.definition == EffectDef::Replacement(replacement.effect)
+            && ability.declarative_replacement() == Some(replacement.effect)
     })?;
     let ability = catalog_ability(&game.catalog, &ability_locator)?;
     let DeclarativeAbilityDef::Replacement(definition) = ability.definition else {
@@ -22,7 +22,7 @@ pub(super) fn begin_turn_replacement_snapshot(
     if !matches!(definition.event, ReplacementEventDef::WouldBeginTurn { .. })
         || definition.optional != replacement.optional
         || ability.text != replacement.text
-        || ability.effect.definition != EffectDef::Replacement(replacement.effect)
+        || ability.declarative_replacement() != Some(replacement.effect)
     {
         return None;
     }
@@ -42,7 +42,7 @@ pub(super) fn begin_turn_replacement_snapshot(
 
 pub(super) fn deferred_begin_turn_effect_snapshot(
     game: &Game,
-    deferred: DeferredBeginTurnEffect,
+    deferred: &DeferredBeginTurnEffect,
 ) -> Option<DeferredBeginTurnEffectSnapshot> {
     let replacement = begin_turn_replacement_snapshot(game, deferred.replacement)?;
     let ability = catalog_ability(&game.catalog, &replacement.effect.ability)?;
@@ -104,7 +104,7 @@ pub(super) fn parse_begin_turn_replacement(
     }
     let effect = catalog_replacement_effect(&game.catalog, &snapshot.effect)
         .ok_or("begin-turn replacement effect locator is absent from this catalog")?;
-    if ability.effect.definition != EffectDef::Replacement(effect) {
+    if ability.declarative_replacement() != Some(effect) {
         return Err("begin-turn replacement locator does not identify its root program".into());
     }
     Ok(ApplicableBeginTurnReplacement {

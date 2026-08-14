@@ -7,14 +7,14 @@
 //! addressing is total, which is the property `hasDeferredState` is allowed to
 //! depend on.
 
+use super::super::ScopedEffect;
 use super::super::semantics::{
-    ability_locator, animation_snapshot, applied_effect_locator, applied_effects, catalog_ability,
-    catalog_animation, catalog_applied_effect, catalog_mana_payload, catalog_replacement_effect,
+    ability_locator, applied_effect_locator, applied_effects, catalog_ability,
+    catalog_applied_effect, catalog_mana_payload, catalog_replacement_effect,
     catalog_scoped_effect, child_abilities, mana_effects, mana_payload_locator,
     replacement_effect_locator, replacement_effects, scoped_effect_snapshot,
 };
-use super::super::{ScopedEffect, entry_replacement_effect, entry_replacement_locator};
-use crate::card::{AbilityDef, AddManaEffectDef, AnimationDef, AppliedEffectDef, ManaSelectionDef};
+use crate::card::{AbilityDef, AbilityProgramDef, AddManaEffectDef, ManaSelectionDef};
 use crate::game::Mana;
 use crate::{CardCatalog, CardDefinitionId, CardPartId};
 
@@ -116,18 +116,6 @@ fn every_catalog_replacement_effect_has_a_locator_that_rebuilds_it() {
                 ));
             }
         }
-        if let Some(entry) = entry_replacement_effect(&ability) {
-            let rebuilt = entry_replacement_locator(&catalog, entry)
-                .and_then(|locator| catalog_ability(&catalog, &locator.ability))
-                .and_then(|ability| entry_replacement_effect(&ability));
-            if rebuilt != Some(entry) {
-                unaddressable.push(format!(
-                    "{} (battlefield entry): {}",
-                    card_name(&catalog, definition),
-                    ability.text
-                ));
-            }
-        }
     }
     assert!(
         unaddressable.is_empty(),
@@ -187,42 +175,6 @@ fn produced_mana(effect: AddManaEffectDef) -> Vec<Mana> {
         .collect()
 }
 
-/// Animations are addressed by their shape rather than by a card name, so a
-/// permanent animated by one card rebuilds even when another card prints the
-/// same animation. The shape must still identify exactly one definition.
-#[test]
-fn every_catalog_animation_rebuilds_from_its_shape() {
-    let catalog = crate::poc::catalog().expect("catalog builds");
-    let mut unaddressable = Vec::new();
-    for (definition, _, ability) in catalog_abilities(&catalog) {
-        for animation in animations(&ability) {
-            let key = animation_snapshot(animation);
-            match catalog_animation(&catalog, &key) {
-                Some(rebuilt) if *rebuilt == *animation => {}
-                _ => unaddressable.push(format!(
-                    "{}: {}",
-                    card_name(&catalog, definition),
-                    ability.text
-                )),
-            }
-        }
-    }
-    assert!(
-        unaddressable.is_empty(),
-        "animations without a stable checkpoint shape: {unaddressable:#?}"
-    );
-}
-
-fn animations(ability: &AbilityDef) -> Vec<&'static AnimationDef> {
-    let mut found = Vec::new();
-    for effect in applied_effects(ability) {
-        if let AppliedEffectDef::Animate(animation) = effect {
-            found.push(animation);
-        }
-    }
-    found
-}
-
 /// Suspended resolutions carry the remaining effect as a path from the
 /// ability's root, so every effect an ability can suspend inside must be
 /// reachable by that path.
@@ -234,7 +186,13 @@ fn every_catalog_effect_is_addressable_from_its_ability_root() {
         let Some(locator) = ability_locator(&catalog, |candidate| *candidate == ability) else {
             continue;
         };
-        for effect in reachable_effects(ability.effect.definition) {
+        let roots = match ability.effect.definition {
+            AbilityProgramDef::Effects(effect) => vec![effect],
+            AbilityProgramDef::Replacement(effect) => {
+                super::super::semantics::replacement_child_effects(effect)
+            }
+        };
+        for effect in roots.into_iter().flat_map(reachable_effects) {
             let scoped = ScopedEffect {
                 effect,
                 target_base: 0,

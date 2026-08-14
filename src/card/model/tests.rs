@@ -154,12 +154,11 @@ fn modal_spell_semantics_derive_their_presentation_modes() {
             _ => None,
         }
         .expect("first positional mode")
-        .effect
-        .definition,
-        EffectDef::Counter {
+        .declarative_effect(),
+        Some(EffectDef::Counter {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Graveyard,
-        }
+        })
     );
     assert_eq!(
         match rules.ability_clauses()[0].definition {
@@ -167,12 +166,11 @@ fn modal_spell_semantics_derive_their_presentation_modes() {
             _ => None,
         }
         .expect("second positional mode")
-        .effect
-        .definition,
-        EffectDef::Destroy {
+        .declarative_effect(),
+        Some(EffectDef::Destroy {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             can_regenerate: true,
-        }
+        })
     );
     assert_eq!(rules.rules_text(), "Choose one.");
 }
@@ -640,11 +638,11 @@ fn ability_category_is_explicit_and_not_inferred_from_effect() {
     const MANA_ABILITY: AbilityDef = AbilityDef::activated_mana("Add green.", COSTS, ADD_MANA);
     const ORDINARY_TRIGGER: AbilityDef = AbilityDef::triggered(
         "Add green when this dies.",
-        TriggerEventDef::ZoneChanged {
-            object: ObjectPredicateDef::Source,
-            from: Some(super::ZoneKind::Battlefield),
-            to: Some(super::ZoneKind::Graveyard),
-        },
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            Some(super::ZoneKind::Battlefield),
+            Some(super::ZoneKind::Graveyard),
+        ),
         ADD_MANA,
     );
     const TURN_FACE_UP: AbilityDef = AbilityDef::special_action(

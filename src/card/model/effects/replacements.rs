@@ -6,7 +6,7 @@
 //! ability reads them.
 
 use super::{
-    ConditionDef, CounterKind, EffectDef, ObjectPredicateDef, PaymentDef, PlayerRelation,
+    ConditionDef, CounterKind, EffectDef, EffectPaymentDef, ObjectPredicateDef, PlayerRelation,
     TurnKindDef, ZoneKind,
 };
 
@@ -40,9 +40,6 @@ pub enum ReplacementEventDef {
     /// [`Self::WouldMove`] this does not describe the moving object's own
     /// ability: the replacement source watches from the battlefield.
     AnyObjectWouldMove { to: ZoneKind },
-    /// Compatibility event for existing entry replacements whose exact
-    /// subject is identified by their effect primitive.
-    EntersBattlefield,
     /// A narrow, named event that is not yet part of the shared vocabulary.
     Special(&'static str),
 }
@@ -76,6 +73,56 @@ pub enum BattlefieldEntryModificationDef {
     AddCounters { kind: CounterKind, amount: u16 },
 }
 
+/// The catalog-derived vocabulary presented by a scalar entry choice.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ScalarChoiceListDef {
+    /// Every independently nameable card part in the catalog, including split
+    /// halves and back faces rather than only top-level card identities.
+    CardNames,
+    /// Every creature subtype available to the current game.
+    CreatureTypes,
+}
+
+/// The field on an entering permanent that receives a scalar choice.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum BattlefieldEntryChoiceDestinationDef {
+    CardName,
+    CreatureType,
+}
+
+/// A catalog-derived scalar choice made while applying an entry replacement.
+///
+/// Keeping the choice list and destination as separate typed axes lets one
+/// decision procedure serve every string-valued entry choice without
+/// hard-coding a continuation for each card characteristic.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct BattlefieldEntryScalarChoiceDef {
+    pub list: ScalarChoiceListDef,
+    pub destination: BattlefieldEntryChoiceDestinationDef,
+}
+
+impl BattlefieldEntryScalarChoiceDef {
+    pub const CARD_NAME: Self = Self {
+        list: ScalarChoiceListDef::CardNames,
+        destination: BattlefieldEntryChoiceDestinationDef::CardName,
+    };
+
+    pub const CREATURE_TYPE: Self = Self {
+        list: ScalarChoiceListDef::CreatureTypes,
+        destination: BattlefieldEntryChoiceDestinationDef::CreatureType,
+    };
+}
+
+/// A choice made while applying a source-entry replacement.
+///
+/// The entering object is implicit: replacement programs operate on the
+/// prospective event rather than naming an already-existing game object.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ReplacementChoiceDef {
+    Scalar(BattlefieldEntryScalarChoiceDef),
+    Player(PlayerRelation),
+}
+
 /// Declarative operations performed by a replacement ability.
 ///
 /// Branches are slices so complex replacements remain const-friendly and can
@@ -83,7 +130,6 @@ pub enum BattlefieldEntryModificationDef {
 /// engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ReplacementEffectDef {
-    None,
     Sequence(&'static [ReplacementEffectDef]),
     /// Consume the prospective event without committing it.
     ReplaceEventWithNothing,
@@ -94,13 +140,23 @@ pub enum ReplacementEffectDef {
     /// The replacement source and controller provide the effect context.
     Perform(&'static EffectDef),
     ModifyBattlefieldEntry(BattlefieldEntryModificationDef),
+    /// Multiply the amount carried by the prospective event.
+    MultiplyEventAmount(u8),
+    /// Record a choice on the object that is entering.
+    Choose(ReplacementChoiceDef),
+    /// Optionally use another permanent's copiable values for the entering
+    /// object, retaining the named card types in addition to the copy.
+    CopyEntering {
+        object: ObjectPredicateDef,
+        added_types: super::CardTypeSet,
+    },
     Conditional {
         condition: ConditionDef,
         if_true: &'static [ReplacementEffectDef],
         if_false: &'static [ReplacementEffectDef],
     },
-    OptionalPayment {
-        payment: PaymentDef,
+    PayOr {
+        payment: EffectPaymentDef,
         if_paid: &'static [ReplacementEffectDef],
         if_declined: &'static [ReplacementEffectDef],
     },

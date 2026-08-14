@@ -1,8 +1,16 @@
 use super::{
-    AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardType, ContinuousEffectTimestamp,
-    ControlFlow, Cow, DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectRecipientDef,
-    Game, LandTypeOperation, ObjectPredicateDef, Permanent, TriggerContext, ZoneKind,
+    AppliedEffectDef, BasicLandType, CREATURE_TYPES, CardType, CharacteristicOperationDef,
+    ContinuousEffectTimestamp, ControlFlow, Cow, CreatureTypeSetDef, DeclarativeAbilityDef,
+    EffectDef, EffectRecipientDef, EffectRecipientSetDef, Game, LandTypeOperation,
+    ObjectPredicateDef, ObjectRefDef, ObjectSetDef, Permanent, ResolvedContinuousEffectKind,
+    SetOperationDef, TriggerContext, ZoneKind,
 };
+
+#[derive(Clone, Copy)]
+enum SubtypeLayerOperation {
+    BasicLand(LandTypeOperation),
+    Creature(SetOperationDef<CreatureTypeSetDef>),
+}
 
 /// Land subtype vocabulary from CR 205.3i. Type-setting effects must remove
 /// every land subtype while preserving subtypes belonging to the object's
@@ -32,7 +40,7 @@ impl Game {
     fn land_type_operations(
         &self,
         permanent: &Permanent,
-    ) -> Vec<(ContinuousEffectTimestamp, LandTypeOperation)> {
+    ) -> Vec<(ContinuousEffectTimestamp, u16, LandTypeOperation)> {
         self.land_type_operations_from_sources(permanent, None)
     }
 
@@ -40,7 +48,7 @@ impl Game {
         &self,
         permanent: &Permanent,
         prospective: &Permanent,
-    ) -> Vec<(ContinuousEffectTimestamp, LandTypeOperation)> {
+    ) -> Vec<(ContinuousEffectTimestamp, u16, LandTypeOperation)> {
         if prospective.card.id != permanent.card.id {
             return self.land_type_operations(permanent);
         }
@@ -73,12 +81,29 @@ impl Game {
         &self,
         affected: &Permanent,
         prospective: Option<&Permanent>,
-    ) -> Vec<(ContinuousEffectTimestamp, LandTypeOperation)> {
+    ) -> Vec<(ContinuousEffectTimestamp, u16, LandTypeOperation)> {
         let sources = self.land_type_effect_sources(prospective);
 
-        let mut operations = Vec::new();
+        let resolved = prospective
+            .filter(|prospective| prospective.card.id == affected.card.id)
+            .unwrap_or(affected);
+        let mut operations = resolved
+            .resolved_continuous_effects
+            .iter()
+            .filter(|effect| self.resolved_continuous_effect_is_active(effect))
+            .filter_map(|effect| match effect.kind {
+                ResolvedContinuousEffectKind::BasicLandTypes(operation) => Some((
+                    effect.timestamp,
+                    effect.component_order,
+                    Self::resolved_land_type_operation(operation),
+                )),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
         for (source, timestamp) in &sources {
-            if self.raw_land_type_set_applies(source, &sources) {
+            if self.resolved_land_type_set_applies(source)
+                || self.raw_land_type_set_applies(source, &sources)
+            {
                 continue;
             }
             self.collect_land_type_operations_from_source(
@@ -88,8 +113,28 @@ impl Game {
                 &mut operations,
             );
         }
-        operations.sort_by_key(|(timestamp, _)| *timestamp);
+        operations.sort_by_key(|(timestamp, order, _)| (*timestamp, *order));
         operations
+    }
+
+    const fn resolved_land_type_operation(
+        operation: SetOperationDef<&'static [BasicLandType]>,
+    ) -> LandTypeOperation {
+        match operation {
+            SetOperationDef::Add(types) => LandTypeOperation::Add(types),
+            SetOperationDef::Remove(types) => LandTypeOperation::Remove(types),
+            SetOperationDef::Set(types) => LandTypeOperation::SetTo(types),
+        }
+    }
+
+    fn resolved_land_type_set_applies(&self, permanent: &Permanent) -> bool {
+        permanent.resolved_continuous_effects.iter().any(|effect| {
+            self.resolved_continuous_effect_is_active(effect)
+                && matches!(
+                    effect.kind,
+                    ResolvedContinuousEffectKind::BasicLandTypes(SetOperationDef::Set(_))
+                )
+        })
     }
 
     pub(super) fn land_type_effect_sources<'a>(
@@ -142,13 +187,10 @@ impl Game {
                 .iter()
                 .copied()
                 .any(Self::effect_contains_land_type_operation),
-            EffectDef::Apply {
-                effect,
-                duration:
-                    EffectDurationDef::WhileSourceRemainsInZone
-                    | EffectDurationDef::UntilSourceLeavesZone,
-                ..
-            } => Self::applied_effect_contains_land_type_operation(effect),
+            EffectDef::IfCondition { then, .. } => Self::effect_contains_land_type_operation(*then),
+            EffectDef::StaticApply { effect, .. } => {
+                Self::applied_effect_contains_land_type_operation(effect)
+            }
             _ => false,
         }
     }
@@ -159,29 +201,8 @@ impl Game {
                 .iter()
                 .copied()
                 .any(Self::applied_effect_contains_land_type_operation),
-            AppliedEffectDef::AddLandTypes(_) | AppliedEffectDef::SetLandTypes(_) => true,
-            AppliedEffectDef::CannotBeCountered
-            | AppliedEffectDef::DoesNotUntapDuringUntapStep
-            | AppliedEffectDef::MayChooseNotToUntap
-            | AppliedEffectDef::CannotBlock
-            | AppliedEffectDef::CannotAttack
-            | AppliedEffectDef::CannotBeBlocked
-            | AppliedEffectDef::CannotBeEnchanted
-            | AppliedEffectDef::CannotBecomeEnchanted
-            | AppliedEffectDef::CannotChangeController
-            | AppliedEffectDef::RemainsAttachedThroughProtection
-            | AppliedEffectDef::CannotBeBlockedBy(_)
-            | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::PreventDamageFrom(_)
-            | AppliedEffectDef::PreventCombatDamageFrom(_)
-            | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventCombatDamage
-            | AppliedEffectDef::PreventCombatDamageDealtBy
-            | AppliedEffectDef::ModifyPowerToughness { .. }
-            | AppliedEffectDef::GrantAbility(_)
-            | AppliedEffectDef::RemoveAbilities(_)
-            | AppliedEffectDef::Animate(_)
-            | AppliedEffectDef::Special(_) => false,
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(_)) => true,
+            AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
         }
     }
 
@@ -202,7 +223,7 @@ impl Game {
             );
             operations
                 .iter()
-                .any(|(_, operation)| matches!(operation, LandTypeOperation::SetTo(_)))
+                .any(|(_, _, operation)| matches!(operation, LandTypeOperation::SetTo(_)))
         })
     }
 
@@ -225,8 +246,13 @@ impl Game {
         affected: &Permanent,
         sources: &[(&Permanent, ContinuousEffectTimestamp)],
     ) -> bool {
+        if self.resolved_land_type_set_applies(affected) {
+            return true;
+        }
         sources.iter().any(|(source, timestamp)| {
-            if self.raw_land_type_set_applies(source, sources) {
+            if self.resolved_land_type_set_applies(source)
+                || self.raw_land_type_set_applies(source, sources)
+            {
                 return false;
             }
             let mut operations = Vec::new();
@@ -238,7 +264,7 @@ impl Game {
             );
             operations
                 .iter()
-                .any(|(_, operation)| matches!(operation, LandTypeOperation::SetTo(_)))
+                .any(|(_, _, operation)| matches!(operation, LandTypeOperation::SetTo(_)))
         })
     }
 
@@ -247,7 +273,7 @@ impl Game {
         source: &Permanent,
         affected: &Permanent,
         source_timestamp: ContinuousEffectTimestamp,
-        operations: &mut Vec<(ContinuousEffectTimestamp, LandTypeOperation)>,
+        operations: &mut Vec<(ContinuousEffectTimestamp, u16, LandTypeOperation)>,
     ) {
         let Some(rules) = self.effective_rules(source) else {
             return;
@@ -269,6 +295,7 @@ impl Game {
                     && ability.declarative_effect().is_some()
             })
         {
+            let mut component_order = 0;
             self.collect_land_type_operations_from_effect(
                 ability
                     .declarative_effect()
@@ -276,6 +303,7 @@ impl Game {
                 source,
                 affected,
                 source_timestamp,
+                &mut component_order,
                 operations,
             );
         }
@@ -287,7 +315,8 @@ impl Game {
         source: &Permanent,
         affected: &Permanent,
         source_timestamp: ContinuousEffectTimestamp,
-        operations: &mut Vec<(ContinuousEffectTimestamp, LandTypeOperation)>,
+        component_order: &mut u16,
+        operations: &mut Vec<(ContinuousEffectTimestamp, u16, LandTypeOperation)>,
     ) {
         match effect {
             EffectDef::Sequence(effects) => {
@@ -297,18 +326,39 @@ impl Game {
                         source,
                         affected,
                         source_timestamp,
+                        component_order,
                         operations,
                     );
                 }
             }
-            EffectDef::Apply {
-                recipient,
-                effect,
-                duration:
-                    EffectDurationDef::WhileSourceRemainsInZone
-                    | EffectDurationDef::UntilSourceLeavesZone,
-            } if self.land_type_recipient_matches(recipient, source, affected) => {
-                Self::collect_applied_land_type_operations(effect, source_timestamp, operations);
+            EffectDef::IfCondition { condition, then }
+                if self.trigger_condition_holds(
+                    condition,
+                    source.card.id,
+                    source.controller,
+                    TriggerContext::empty(),
+                    None,
+                    None,
+                ) =>
+            {
+                self.collect_land_type_operations_from_effect(
+                    *then,
+                    source,
+                    affected,
+                    source_timestamp,
+                    component_order,
+                    operations,
+                );
+            }
+            EffectDef::StaticApply { recipient, effect }
+                if self.land_type_recipient_matches(recipient, source, affected) =>
+            {
+                Self::collect_applied_land_type_operations(
+                    effect,
+                    source_timestamp,
+                    component_order,
+                    operations,
+                );
             }
             _ => {}
         }
@@ -317,42 +367,30 @@ impl Game {
     fn collect_applied_land_type_operations(
         effect: AppliedEffectDef,
         source: ContinuousEffectTimestamp,
-        operations: &mut Vec<(ContinuousEffectTimestamp, LandTypeOperation)>,
+        component_order: &mut u16,
+        operations: &mut Vec<(ContinuousEffectTimestamp, u16, LandTypeOperation)>,
     ) {
         match effect {
             AppliedEffectDef::Composite(effects) => {
                 for effect in effects {
-                    Self::collect_applied_land_type_operations(*effect, source, operations);
+                    Self::collect_applied_land_type_operations(
+                        *effect,
+                        source,
+                        component_order,
+                        operations,
+                    );
                 }
             }
-            AppliedEffectDef::AddLandTypes(types) => {
-                operations.push((source, LandTypeOperation::Add(types)));
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(
+                operation,
+            )) => {
+                let order = *component_order;
+                *component_order = component_order
+                    .checked_add(1)
+                    .expect("one static ability contains at most 65,536 components");
+                operations.push((source, order, Self::resolved_land_type_operation(operation)));
             }
-            AppliedEffectDef::SetLandTypes(types) => {
-                operations.push((source, LandTypeOperation::SetTo(types)));
-            }
-            AppliedEffectDef::CannotBeCountered
-            | AppliedEffectDef::DoesNotUntapDuringUntapStep
-            | AppliedEffectDef::MayChooseNotToUntap
-            | AppliedEffectDef::CannotBlock
-            | AppliedEffectDef::CannotAttack
-            | AppliedEffectDef::CannotBeBlocked
-            | AppliedEffectDef::CannotBeEnchanted
-            | AppliedEffectDef::CannotBecomeEnchanted
-            | AppliedEffectDef::CannotChangeController
-            | AppliedEffectDef::RemainsAttachedThroughProtection
-            | AppliedEffectDef::CannotBeBlockedBy(_)
-            | AppliedEffectDef::CanBlockOnly(_)
-            | AppliedEffectDef::PreventDamageFrom(_)
-            | AppliedEffectDef::PreventCombatDamageFrom(_)
-            | AppliedEffectDef::RedirectPlayerDamageToThis(_)
-            | AppliedEffectDef::PreventCombatDamage
-            | AppliedEffectDef::PreventCombatDamageDealtBy
-            | AppliedEffectDef::Animate(_)
-            | AppliedEffectDef::ModifyPowerToughness { .. }
-            | AppliedEffectDef::GrantAbility(_)
-            | AppliedEffectDef::RemoveAbilities(_)
-            | AppliedEffectDef::Special(_) => {}
+            AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => {}
         }
     }
 
@@ -362,37 +400,38 @@ impl Game {
         source: &Permanent,
         affected: &Permanent,
     ) -> bool {
-        match recipient {
-            EffectRecipientDef::Source => source.card.id == affected.card.id,
-            EffectRecipientDef::AttachedPermanent => source.attached_to == Some(affected.card.id),
-            EffectRecipientDef::MatchingObjects {
-                object,
-                zones,
-                controller,
-            } => {
-                zones.contains(&ZoneKind::Battlefield)
-                    && self.player_relation_matches(
-                        affected.controller,
-                        controller,
+        match recipient.0 {
+            EffectRecipientSetDef::Objects(ObjectSetDef::One(ObjectRefDef::Source)) => {
+                source.card.id == affected.card.id
+            }
+            EffectRecipientSetDef::Objects(ObjectSetDef::One(ObjectRefDef::AttachedToSource)) => {
+                source.attached_to == Some(affected.card.id)
+            }
+            EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
+                query.zones.contains(&ZoneKind::Battlefield)
+                    && self.query_player_constraints_match(
+                        Some(affected.controller),
+                        affected.card.owner,
+                        query,
                         source.controller,
                         TriggerContext::empty(),
+                        None,
                     )
-                    && self.land_type_object_predicate_matches(object, source, affected)
+                    && self.land_type_object_predicate_matches(query.object, source, affected)
             }
-            EffectRecipientDef::ChosenPermanent(_)
-            | EffectRecipientDef::ControllerOfTarget(_)
-            | EffectRecipientDef::ObjectsControlledByTarget { .. }
-            | EffectRecipientDef::ObjectsOwnedByTarget { .. }
-            | EffectRecipientDef::CardsOwnedByTarget { .. }
-            | EffectRecipientDef::Controller
-            | EffectRecipientDef::Opponent
-            | EffectRecipientDef::EachPlayer
-            | EffectRecipientDef::Target(_)
-            | EffectRecipientDef::ObjectsSharingNameWithTarget(_)
-            | EffectRecipientDef::TriggeringObject
-            | EffectRecipientDef::ControllerOfTriggeringObject
-            | EffectRecipientDef::ControllerOfAttachedPermanent
-            | EffectRecipientDef::EventPlayer => false,
+            EffectRecipientSetDef::LegalTargets(_)
+            | EffectRecipientSetDef::Objects(
+                ObjectSetDef::One(
+                    ObjectRefDef::Binding(_)
+                    | ObjectRefDef::ResolvingObject
+                    | ObjectRefDef::Target(_)
+                    | ObjectRefDef::TriggeringObject,
+                )
+                | ObjectSetDef::Binding(_)
+                | ObjectSetDef::LegalTargets(_)
+                | ObjectSetDef::SharingNameWith(_),
+            )
+            | EffectRecipientSetDef::Players(_) => false,
         }
     }
 
@@ -406,6 +445,9 @@ impl Game {
             ObjectPredicateDef::Any => true,
             ObjectPredicateDef::Source => source.card.id == affected.card.id,
             ObjectPredicateDef::Token => self.is_token(affected.card.definition),
+            ObjectPredicateDef::HasType(CardType::Land) => self
+                .permanent_types_below_static_effects(affected)
+                .is_some_and(|types| types.contains(CardType::Land)),
             ObjectPredicateDef::HasType(card_type) => self
                 .permanent_types(affected)
                 .is_some_and(|types| types.contains(card_type)),
@@ -461,7 +503,7 @@ impl Game {
     /// timestamp-ordered layer-4 Set/Add operations then model Blood Moon and
     /// Aura-granted basic land types. Nonland subtypes such as Dryad survive.
     pub(super) fn effective_subtypes(&self, permanent: &Permanent) -> Cow<'static, [&'static str]> {
-        let operations = self.land_type_operations(permanent);
+        let operations = self.subtype_layer_operations(permanent, None);
         self.effective_subtypes_with_operations(permanent, operations)
     }
 
@@ -470,14 +512,54 @@ impl Game {
         permanent: &Permanent,
         prospective: &Permanent,
     ) -> Cow<'static, [&'static str]> {
-        let operations = self.land_type_operations_with_prospective(permanent, prospective);
+        let operations = self.subtype_layer_operations(permanent, Some(prospective));
         self.effective_subtypes_with_operations(permanent, operations)
+    }
+
+    fn subtype_layer_operations(
+        &self,
+        permanent: &Permanent,
+        prospective: Option<&Permanent>,
+    ) -> Vec<(ContinuousEffectTimestamp, u16, SubtypeLayerOperation)> {
+        let characteristic = prospective
+            .filter(|prospective| prospective.card.id == permanent.card.id)
+            .unwrap_or(permanent);
+        let land_operations = prospective.map_or_else(
+            || self.land_type_operations(permanent),
+            |prospective| self.land_type_operations_with_prospective(permanent, prospective),
+        );
+        let mut operations = land_operations
+            .into_iter()
+            .map(|(timestamp, order, operation)| {
+                (
+                    timestamp,
+                    order,
+                    SubtypeLayerOperation::BasicLand(operation),
+                )
+            })
+            .collect::<Vec<_>>();
+        operations.extend(
+            characteristic
+                .resolved_continuous_effects
+                .iter()
+                .filter(|effect| self.resolved_continuous_effect_is_active(effect))
+                .filter_map(|effect| match effect.kind {
+                    ResolvedContinuousEffectKind::CreatureTypes(operation) => Some((
+                        effect.timestamp,
+                        effect.component_order,
+                        SubtypeLayerOperation::Creature(operation),
+                    )),
+                    _ => None,
+                }),
+        );
+        operations.sort_by_key(|(timestamp, order, _)| (*timestamp, *order));
+        operations
     }
 
     fn effective_subtypes_with_operations(
         &self,
         permanent: &Permanent,
-        operations: Vec<(ContinuousEffectTimestamp, LandTypeOperation)>,
+        operations: Vec<(ContinuousEffectTimestamp, u16, SubtypeLayerOperation)>,
     ) -> Cow<'static, [&'static str]> {
         fn is_land_subtype(subtype: &str) -> bool {
             LAND_SUBTYPES.contains(&subtype)
@@ -486,10 +568,7 @@ impl Game {
         let Some(rules) = self.effective_rules(permanent) else {
             return Cow::Borrowed(&[]);
         };
-        let animation = permanent
-            .animation
-            .filter(|animation| animation.all_creature_types || !animation.subtypes.is_empty());
-        if permanent.text_changes.is_empty() && operations.is_empty() && animation.is_none() {
+        if permanent.text_changes.is_empty() && operations.is_empty() {
             return Cow::Borrowed(rules.subtypes());
         }
 
@@ -512,9 +591,9 @@ impl Game {
             keep
         });
 
-        for (_, operation) in operations {
+        for (_, _, operation) in operations {
             match operation {
-                LandTypeOperation::SetTo(types) => {
+                SubtypeLayerOperation::BasicLand(LandTypeOperation::SetTo(types)) => {
                     let mut insertion = subtypes
                         .iter()
                         .position(|subtype| is_land_subtype(subtype))
@@ -532,7 +611,7 @@ impl Game {
                         insertion += 1;
                     }
                 }
-                LandTypeOperation::Add(types) => {
+                SubtypeLayerOperation::BasicLand(LandTypeOperation::Add(types)) => {
                     let mut insertion = subtypes
                         .iter()
                         .position(|subtype| !is_land_subtype(subtype))
@@ -548,18 +627,40 @@ impl Game {
                         insertion += 1;
                     }
                 }
-            }
-        }
-        if let Some(animation) = animation {
-            if animation.replaces_subtypes {
-                subtypes.clear();
-            }
-            if animation.all_creature_types {
-                subtypes.extend(CREATURE_TYPES.iter().copied());
-            }
-            for subtype in animation.subtypes {
-                if !subtypes.contains(subtype) {
-                    subtypes.push(subtype);
+                SubtypeLayerOperation::BasicLand(LandTypeOperation::Remove(types)) => {
+                    subtypes.retain(|subtype| {
+                        !types
+                            .iter()
+                            .any(|land_type| land_type.subtype() == *subtype)
+                    });
+                }
+                SubtypeLayerOperation::Creature(operation) => {
+                    let (types, removes_existing, removes_named) = match operation {
+                        SetOperationDef::Add(types) => (types, false, false),
+                        SetOperationDef::Remove(types) => (types, false, true),
+                        SetOperationDef::Set(types) => (types, true, false),
+                    };
+                    if removes_existing {
+                        subtypes.retain(|subtype| !CREATURE_TYPES.contains(subtype));
+                    } else if removes_named {
+                        subtypes.retain(|subtype| {
+                            !(types.named.contains(subtype)
+                                || types.all && CREATURE_TYPES.contains(subtype))
+                        });
+                        continue;
+                    }
+                    if types.all {
+                        for creature_type in CREATURE_TYPES {
+                            if !subtypes.contains(creature_type) {
+                                subtypes.push(creature_type);
+                            }
+                        }
+                    }
+                    for subtype in types.named {
+                        if !subtypes.contains(subtype) {
+                            subtypes.push(subtype);
+                        }
+                    }
                 }
             }
         }
