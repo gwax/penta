@@ -4,7 +4,7 @@ use crate::card::{
     AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
     ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef, EffectDurationDef,
-    EffectRecipientDef, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    EffectRecipientDef, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
     PlayerRelation, ReplacementEffectDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
     ValueDef, ZoneKind, abilities, cards,
 };
@@ -552,11 +552,7 @@ pub(in crate::card::sets) static VODALIAN_MAGE: CardRecord = CardRecord::new(
                 AbilityCostDef::TapSource,
             ],
             &[AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)],
-            EffectDef::CounterUnlessPaid {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(1),
-                zone: ZoneKind::Graveyard,
-            },
+            abilities::counter_target_unless_paid(ValueDef::Constant(1)),
         ),
     ]),
 );
@@ -623,12 +619,12 @@ pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::UnlessPaid {
-                cost: mana_cost!("{B}{B}"),
-                otherwise: &EffectDef::Sacrifice {
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{B}{B}"),
+                &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
         AbilityDef::triggered(
             "At the beginning of your end step, create a 0/1 black Thrull creature token.",

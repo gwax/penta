@@ -1,5 +1,7 @@
 use super::*;
-use crate::card::abilities;
+use crate::card::{
+    ChoiceVisibilityDef, ChooseDef, EffectPaymentDef, ObjectChoiceBindingDef, PayOrDef, abilities,
+};
 use crate::mana_cost;
 use crate::poc::{self, cards};
 use crate::{
@@ -7,10 +9,10 @@ use crate::{
     AdditionalCostId, AlternativeCastManaCostDef, AlternativeCostDef, AlternativeCostId,
     BattlefieldEntryModificationDef, CardComposition, CardDefinition, CardEffectStatus,
     CardInstanceId, CardPart, CardPartId, CardPrinting, CardRules, CardStructure, CastChoices,
-    DoubleFacedKind, EffectExecutionDef, ManaSpendEffectDef, ModeDef, ModeSetDef, PlayOptionDef,
-    PlayOptionId, PlayerRelation, ReplacementEffectDef, ReplacementEventDef, SpellForm,
-    StackObjectId, TargetIndex, TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId,
-    ZonePlacement,
+    DoubleFacedKind, EffectExecutionDef, ManaSpendEffectDef, ModeDef, ModeSetDef,
+    ObjectBindingIndex, ObjectSetDef, PlayOptionDef, PlayOptionId, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, SpellForm, StackObjectId, TargetIndex,
+    TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId, ZonePlacement,
 };
 
 static TEST_FLYING_ABILITY: [AbilityDef; 1] = [abilities::flying()];

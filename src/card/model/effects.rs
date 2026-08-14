@@ -9,7 +9,7 @@ pub use triggers::*;
 pub use values::*;
 
 use crate::Format;
-use crate::ids::{CardDefinitionId, ChoiceIndex, TargetIndex};
+use crate::ids::{CardDefinitionId, ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
 use super::{
     AbilityDef, AddManaEffectDef, BasicLandType, CardType, CardTypeSet, ColorSet, CostDef,
@@ -20,8 +20,13 @@ use super::{
 /// An object reference evaluated in the resolving effect's context.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ObjectRefDef {
+    /// The game object from which the resolving spell or ability originated.
     Source,
-    Choice(ChoiceIndex),
+    /// The spell or ability object currently resolving. This is distinct from
+    /// [`Self::Source`], which names its originating game object.
+    ResolvingObject,
+    /// One object saved by an earlier choice in this resolution.
+    Binding(ObjectBindingIndex),
     AttachedToSource,
     Target(TargetIndex),
     TriggeringObject,
@@ -57,6 +62,9 @@ pub enum PlayerSetDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ObjectSetDef {
     One(ObjectRefDef),
+    /// A set of objects saved by an earlier choice or partition in this
+    /// resolution.
+    Binding(ObjectSetBindingIndex),
     Query(ObjectQueryDef),
     /// Every battlefield permanent sharing the referenced object's effective
     /// name, including the referenced object itself.
@@ -125,7 +133,9 @@ impl EffectRecipientDef {
             EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)) => Some(reference),
             EffectRecipientSetDef::LegalTargets(_)
             | EffectRecipientSetDef::Objects(
-                ObjectSetDef::Query(_) | ObjectSetDef::SharingNameWith(_),
+                ObjectSetDef::Binding(_)
+                | ObjectSetDef::Query(_)
+                | ObjectSetDef::SharingNameWith(_),
             )
             | EffectRecipientSetDef::Players(_) => None,
         }
@@ -137,18 +147,19 @@ impl EffectRecipientDef {
             EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => Some(query),
             EffectRecipientSetDef::LegalTargets(_)
             | EffectRecipientSetDef::Objects(
-                ObjectSetDef::One(_) | ObjectSetDef::SharingNameWith(_),
+                ObjectSetDef::One(_) | ObjectSetDef::Binding(_) | ObjectSetDef::SharingNameWith(_),
             )
             | EffectRecipientSetDef::Players(_) => None,
         }
     }
 
     #[must_use]
-    pub const fn chosen_object(self) -> Option<ChoiceIndex> {
+    pub const fn object_binding(self) -> Option<ObjectBindingIndex> {
         match self.object_reference() {
-            Some(ObjectRefDef::Choice(choice)) => Some(choice),
+            Some(ObjectRefDef::Binding(binding)) => Some(binding),
             Some(
                 ObjectRefDef::Source
+                | ObjectRefDef::ResolvingObject
                 | ObjectRefDef::AttachedToSource
                 | ObjectRefDef::Target(_)
                 | ObjectRefDef::TriggeringObject,
@@ -160,12 +171,6 @@ impl EffectRecipientDef {
     #[must_use]
     pub const fn Target(target: TargetIndex) -> Self {
         Self(EffectRecipientSetDef::LegalTargets(target))
-    }
-
-    /// A non-targeting object choice made while an effect resolves.
-    #[must_use]
-    pub const fn ChosenPermanent(choice: ChoiceIndex) -> Self {
-        Self::object(ObjectRefDef::Choice(choice))
     }
 
     #[must_use]
@@ -522,6 +527,109 @@ pub enum ShieldCoverageDef {
     HalfRoundedDown,
 }
 
+/// Who may observe a pending choice and its available options.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ChoiceVisibilityDef {
+    Public,
+    Private,
+}
+
+/// The context slot populated by an object choice.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ObjectChoiceBindingDef {
+    Object(ObjectBindingIndex),
+    Objects(ObjectSetBindingIndex),
+}
+
+/// Choose a bounded number of non-targeted objects, save them in the resolving
+/// context, then continue the effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ChooseDef {
+    pub binding: ObjectChoiceBindingDef,
+    pub chooser: PlayerRefDef,
+    pub candidates: ObjectSetDef,
+    pub exclude: Option<ObjectRefDef>,
+    pub minimum: usize,
+    pub maximum: usize,
+    pub visibility: ChoiceVisibilityDef,
+    pub then: &'static EffectDef,
+}
+
+/// A payment offered while an effect resolves.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum EffectPaymentDef {
+    Costs(PaymentDef),
+    /// A const-friendly fixed mana payment.
+    Mana {
+        payer: PlayerRefDef,
+        cost: ManaCost,
+    },
+    /// A generic mana payment whose amount is evaluated at resolution.
+    GenericMana {
+        payer: PlayerRefDef,
+        amount: ValueDef,
+    },
+}
+
+/// Offer a payment and continue through the branch selected by its result.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct PayOrDef {
+    pub payment: EffectPaymentDef,
+    pub if_paid: Option<&'static EffectDef>,
+    pub otherwise: Option<&'static EffectDef>,
+    pub visibility: ChoiceVisibilityDef,
+}
+
+impl PayOrDef {
+    /// Offer a structured optional payment and continue only when it is paid.
+    #[must_use]
+    pub const fn optional(payment: PaymentDef, if_paid: &'static EffectDef) -> Self {
+        Self {
+            payment: EffectPaymentDef::Costs(payment),
+            if_paid: Some(if_paid),
+            otherwise: None,
+            visibility: ChoiceVisibilityDef::Private,
+        }
+    }
+
+    /// Continue unless the resolving effect's controller pays a fixed mana
+    /// cost.
+    #[must_use]
+    pub const fn unless_mana(cost: ManaCost, otherwise: &'static EffectDef) -> Self {
+        Self {
+            payment: EffectPaymentDef::Mana {
+                payer: PlayerRefDef::EffectController,
+                cost,
+            },
+            if_paid: None,
+            otherwise: Some(otherwise),
+            visibility: ChoiceVisibilityDef::Private,
+        }
+    }
+}
+
+/// The objects divided by a pile-splitting procedure.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PartitionItemsDef {
+    Objects(ObjectSetDef),
+    TopOfLibrary {
+        player: PlayerRefDef,
+        count: ValueDef,
+    },
+}
+
+/// Divide objects into two piles, choose one pile, bind both results, and then
+/// continue the effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SplitIntoPilesDef {
+    pub items: PartitionItemsDef,
+    pub divider: PlayerSetDef,
+    pub chooser: PlayerSetDef,
+    pub chosen: ObjectSetBindingIndex,
+    pub unchosen: ObjectSetBindingIndex,
+    pub then: &'static EffectDef,
+}
+
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
@@ -533,28 +641,9 @@ pub enum EffectDef {
         on_success: &'static EffectDef,
         on_failure: &'static EffectDef,
     },
-    /// A mandatory non-targeting permanent choice made while this effect
-    /// resolves. The selected object is available to `then` through
-    /// [`EffectRecipientDef::ChosenPermanent`].
-    ChoosePermanent {
-        choice: ChoiceIndex,
-        chooser: EffectRecipientDef,
-        object: ObjectPredicateDef,
-        controller: PlayerRelation,
-        then: &'static EffectDef,
-    },
-    /// A mandatory non-targeting choice of one damage source made while this
-    /// effect resolves, for "a source of your choice". Unlike
-    /// [`Self::ChoosePermanent`] the candidates include spells on the stack,
-    /// because a Circle of Protection has to be able to name a burn spell.
-    /// The selection reaches `then` through
-    /// [`EffectRecipientDef::ChosenPermanent`].
-    ChooseDamageSource {
-        choice: ChoiceIndex,
-        chooser: EffectRecipientDef,
-        object: ObjectPredicateDef,
-        then: &'static EffectDef,
-    },
+    Choose(ChooseDef),
+    PayOr(PayOrDef),
+    SplitIntoPiles(SplitIntoPilesDef),
     /// Prevent the next damage one named source would deal to the recipient
     /// this turn. The shield answers that source only, and the first damage it
     /// covers spends it however much that damage was.
@@ -757,17 +846,6 @@ pub enum EffectDef {
         object: EffectRecipientDef,
     },
     /// Each recipient player chooses one permanent they control that matches,
-    /// and it is destroyed. The choice belongs to the player who owns the
-    /// permanents, not to the ability's controller, which is what "of their
-    /// choice" means; unlike [`Self::SacrificeOfChoice`] nothing is
-    /// sacrificed, so a prohibition on being forced to sacrifice does not
-    /// apply.
-    DestroyOfChoice {
-        player: EffectRecipientDef,
-        object: ObjectPredicateDef,
-        can_regenerate: bool,
-    },
-    /// Each recipient player chooses one permanent they control that matches,
     /// and sacrifices it. Unlike [`Self::Sacrifice`] the choice is the
     /// player's, so nothing happens when they control nothing matching.
     SacrificeOfChoice {
@@ -784,27 +862,11 @@ pub enum EffectDef {
         /// amount read off nothing is zero rather than skipped.
         optional: bool,
     },
-    /// Separate everything a player controls into two piles, then let that
-    /// player sacrifice the pile of their choice. The ability's controller
-    /// makes the split, which is what makes the choice hard for both.
-    SplitPermanentsAndSacrificeAPile {
-        player: EffectRecipientDef,
-    },
     /// Put that many cards from the top of a library into its owner's
     /// graveyard.
     Mill {
         player: EffectRecipientDef,
         amount: ValueDef,
-    },
-    /// Reveal the top `count` cards of the controller's library, have an
-    /// opponent separate them into two piles, and let the controller take one
-    /// pile into hand. Whatever is left goes to `rest`, using `placement`
-    /// when that is the library. Fact or Fiction and Jace's second ability
-    /// are the same procedure with different losing zones.
-    RevealAndSplitIntoPiles {
-        count: ValueDef,
-        rest: ZoneKind,
-        placement: ZonePlacement,
     },
     /// One player looks at another's hand. Nothing changes zones and no
     /// decision follows; the looking player simply knows.
@@ -892,14 +954,6 @@ pub enum EffectDef {
         color: ManaColor,
         amount: ValueDef,
     },
-    /// Counters unless the spell's own controller pays this much generic
-    /// mana. `zone` is where a spell countered this way goes, which is the
-    /// graveyard unless the card says otherwise.
-    CounterUnlessPaid {
-        object: EffectRecipientDef,
-        amount: ValueDef,
-        zone: ZoneKind,
-    },
     AddCounters {
         object: EffectRecipientDef,
         kind: CounterKind,
@@ -916,17 +970,6 @@ pub enum EffectDef {
     BecomeCopyOf {
         object: EffectRecipientDef,
         retain_source_ability: bool,
-    },
-    OptionalPayment {
-        payment: PaymentDef,
-        if_paid: &'static EffectDef,
-    },
-    /// The inverse of [`Self::OptionalPayment`]: `otherwise` happens
-    /// unless the resolving object's controller pays. A controller who cannot
-    /// pay is not asked, because there is nothing to decide.
-    UnlessPaid {
-        cost: ManaCost,
-        otherwise: &'static EffectDef,
     },
     /// Stops the affected players casting noncreature spells for the rest of
     /// the turn.

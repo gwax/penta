@@ -54,7 +54,8 @@ pub use game::{
 };
 pub use ids::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardInstanceId, CardPartId,
-    ChoiceIndex, GameObjectId, GrantId, MeldRecipeId, ModeId, PhysicalCardId, PlayOptionId,
-    PlayerId, StackObjectId, TargetIndex, TargetSlotId,
+    ChoiceIndex, GameObjectId, GrantId, MeldRecipeId, ModeId, ObjectBindingIndex,
+    ObjectSetBindingIndex, PhysicalCardId, PlayOptionId, PlayerId, StackObjectId, TargetIndex,
+    TargetSlotId,
 };
 pub use policy::{HandcraftedPolicy, PlayError, Policy, RandomPolicy, play_game};

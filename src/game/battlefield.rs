@@ -909,7 +909,7 @@ impl Game {
                     active,
                     delayed.player,
                     delayed.object.controller,
-                    delayed.context,
+                    delayed.context.trigger,
                 )
         }) {
             due.push(delayed);

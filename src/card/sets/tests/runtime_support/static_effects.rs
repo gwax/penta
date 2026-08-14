@@ -107,6 +107,9 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         // None of these is a static ability; all execute from the stack.
         EffectDef::GrantFlashToNextSorcery
         | EffectDef::Randomized { .. }
+        | EffectDef::Choose(_)
+        | EffectDef::PayOr(_)
+        | EffectDef::SplitIntoPiles(_)
         | EffectDef::ChoosePermanent { .. }
         | EffectDef::ChooseDamageSource { .. }
         | EffectDef::PreventNextDamageFromSource { .. }

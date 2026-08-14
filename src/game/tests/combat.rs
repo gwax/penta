@@ -188,7 +188,7 @@ fn delayed_combat_damage_effect_queued_between_strike_waves_fires_once() {
     let life_before = game.players[0].life;
     game.delayed_triggers.push(DelayedTrigger {
         object: Box::new(spell(10_001, cards::LIGHTNING_BOLT, PlayerId::One, 0)),
-        context: TriggerContext::empty(),
+        context: TriggerContext::empty().into(),
         step: TurnStepDef::CombatDamage,
         player: PlayerRelation::Any,
         effect: ScopedEffect::primary(LOSE_ONE),

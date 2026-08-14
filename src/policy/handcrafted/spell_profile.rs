@@ -268,9 +268,16 @@ impl HandcraftedPolicy {
                 Self::collect_spell_effect_profile(*on_success, x, targets, profile);
                 Self::collect_spell_effect_profile(*on_failure, x, targets, profile);
             }
-            EffectDef::ChooseDamageSource { then, .. }
-            | EffectDef::ChoosePermanent { then, .. } => {
-                Self::collect_spell_effect_profile(*then, x, targets, profile);
+            EffectDef::Choose(choice) => {
+                Self::collect_spell_effect_profile(*choice.then, x, targets, profile);
+            }
+            EffectDef::PayOr(payment) => {
+                for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
+                    Self::collect_spell_effect_profile(**effect, x, targets, profile);
+                }
+            }
+            EffectDef::SplitIntoPiles(partition) => {
+                Self::collect_spell_effect_profile(*partition.then, x, targets, profile);
             }
             // An optional effect is worth what it would do if taken.
             EffectDef::May { effect, .. } => {
@@ -305,9 +312,6 @@ impl HandcraftedPolicy {
                             ))
                         )
                 });
-            }
-            EffectDef::CounterUnlessPaid { .. } => {
-                profile.mark(DeclarativeSpellProfile::COUNTERS);
             }
             EffectDef::Destroy { object, .. } => Self::collect_destroy_profile(object, profile),
             EffectDef::MoveToZone {
@@ -358,9 +362,6 @@ impl HandcraftedPolicy {
             | EffectDef::Regenerate { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
-            | EffectDef::DestroyOfChoice { .. }
-            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-            | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::LookAtTopAndSelect { .. }
@@ -372,8 +373,6 @@ impl HandcraftedPolicy {
             | EffectDef::AddCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
-            | EffectDef::OptionalPayment { .. }
-            | EffectDef::UnlessPaid { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }

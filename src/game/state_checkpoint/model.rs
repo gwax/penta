@@ -522,14 +522,45 @@ pub(super) struct TriggerContextSnapshot {
     pub(super) object_controller: Option<usize>,
     pub(super) event_player: Option<usize>,
     pub(super) amount: Option<i32>,
-    pub(super) chosen_objects: [Option<u32>; crate::ChoiceIndex::COUNT],
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct EffectResolutionContextSnapshot {
+    pub(super) trigger: TriggerContextSnapshot,
+    pub(super) single_objects: [Option<TargetSnapshot>; crate::ObjectBindingIndex::COUNT],
+    pub(super) object_groups: [Vec<TargetSnapshot>; crate::ObjectSetBindingIndex::COUNT],
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub(super) enum ObjectChoiceBindingSnapshot {
+    Object { index: u8 },
+    Objects { index: u8 },
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct DecisionStateSnapshot {
     pub(super) preference: DecisionPreferenceSnapshot,
+    /// Hidden-zone locations for cards whose identities are visible in the
+    /// current decision. Reconstruction mints fresh hidden objects before it
+    /// parses the continuation, so these origins let it preserve the public
+    /// object ids without guessing that the deciding seat owns the zone.
+    pub(super) card_origins: Vec<DecisionCardOriginSnapshot>,
     pub(super) continuation: DecisionContinuationSnapshot,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct DecisionCardOriginSnapshot {
+    pub(super) object_id: u32,
+    pub(super) seat: usize,
+    pub(super) zone: DecisionZoneSnapshot,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -637,7 +668,7 @@ pub(super) enum DecisionContinuationSnapshot {
         cost: ManaCostSnapshot,
         object: DetachedStackSnapshot,
         ability: AbilityLocator,
-        context: TriggerContextSnapshot,
+        context: EffectResolutionContextSnapshot,
         effect: ScopedEffectSnapshot,
     },
     ManaPaymentOrElse {
@@ -645,7 +676,7 @@ pub(super) enum DecisionContinuationSnapshot {
         cost: ManaCostSnapshot,
         object: DetachedStackSnapshot,
         ability: AbilityLocator,
-        context: TriggerContextSnapshot,
+        context: EffectResolutionContextSnapshot,
         effect: ScopedEffectSnapshot,
     },
     ChainLightning {
@@ -661,11 +692,40 @@ pub(super) enum DecisionContinuationSnapshot {
     OptionalEffect {
         object: DetachedStackSnapshot,
         ability: AbilityLocator,
-        context: TriggerContextSnapshot,
+        context: EffectResolutionContextSnapshot,
         effect: ScopedEffectSnapshot,
     },
     ChoosePermanentForEffect {
         choice: u8,
+        continuation: EffectContinuationSnapshot,
+        candidates: Vec<TargetSnapshot>,
+    },
+    ChooseForEffect {
+        binding: ObjectChoiceBindingSnapshot,
+        continuation: EffectContinuationSnapshot,
+        candidates: Vec<TargetSnapshot>,
+    },
+    PayOr {
+        player: usize,
+        cost: ManaCostSnapshot,
+        object: DetachedStackSnapshot,
+        ability: AbilityLocator,
+        context: EffectResolutionContextSnapshot,
+        if_paid: Option<ScopedEffectSnapshot>,
+        otherwise: Option<ScopedEffectSnapshot>,
+    },
+    SplitForEffect {
+        chooser: usize,
+        items: Vec<TargetSnapshot>,
+        chosen: u8,
+        unchosen: u8,
+        continuation: EffectContinuationSnapshot,
+    },
+    ChoosePileForEffect {
+        first: Vec<TargetSnapshot>,
+        second: Vec<TargetSnapshot>,
+        chosen: u8,
+        unchosen: u8,
         continuation: EffectContinuationSnapshot,
     },
     BattlefieldEntryPayment {
@@ -870,7 +930,7 @@ pub(super) enum CounteredSpellZoneSnapshot {
 pub(super) struct EffectContinuationSnapshot {
     pub(super) object: DetachedStackSnapshot,
     pub(super) ability: AbilityLocator,
-    pub(super) context: TriggerContextSnapshot,
+    pub(super) context: EffectResolutionContextSnapshot,
     pub(super) effect: ScopedEffectSnapshot,
 }
 

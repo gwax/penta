@@ -60,7 +60,7 @@ distinguishes snapshots of the covered source and build inputs.
   fixes, and different legal-action membership through existing action shapes
   change the automatic `simulationFingerprint` instead. Observations and
   catalogs advertise `protocolCapabilities`; the first optional facility is
-  now `reconstruction.checkpoint.v2`. Stable wire tags are explicit mappings
+  now `reconstruction.checkpoint.v3`. Stable wire tags are explicit mappings
   rather than Rust `Debug` output. Protocol 22 is the one-time transition from
   the former all-purpose counter to this breaking-only epoch.
 - **Banding, in part.** CR 702.22 gives banding two separate jobs, and the
@@ -369,6 +369,12 @@ distinguishes snapshots of the covered source and build inputs.
   permanent until cleanup. Sightless Ghoul, Markov Warlord, Vampire Interloper,
   Crossway Vampire, Nightbird's Clutches, and Firefist Striker are now
   executable, the last completing battalion.
+- **Checkpoint reconstruction v3.** Suspended declarative effects now store
+  event context separately from typed single-object and object-set bindings.
+  Bound stack spells retain their spell identity, and nested choices,
+  payments, and pile procedures can resume without losing earlier results.
+  This changes only the dedicated checkpoint format and capability; the bot
+  protocol epoch remains 22.
 - **Battalion**, sharing exalted's event. The attack-declaration event now
   carries how many creatures attacked, and each keyword states the range it
   wants: exactly one for exalted, three or more for battalion. Eight Gatecrash

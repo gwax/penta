@@ -441,54 +441,72 @@ fn target_references_are_validated_through_nested_values() {
 
 #[test]
 fn non_targeting_choice_references_are_lexically_scoped() {
-    let choice = ChoiceIndex::PRIMARY;
-    let chosen = EffectRecipientDef::ChosenPermanent(choice);
-    let destroy_chosen = Box::leak(Box::new(EffectDef::Destroy {
+    let binding = ObjectBindingIndex::PRIMARY;
+    let chosen = EffectRecipientDef::object(ObjectRefDef::Binding(binding));
+    let destroy_chosen: &'static EffectDef = Box::leak(Box::new(EffectDef::Destroy {
         object: chosen,
         can_regenerate: true,
     }));
 
     assert_eq!(
         super::validate_ability_targets(&[], *destroy_chosen,),
-        Err(GrantedAbilityValidationError::ChoiceReferenceOutOfScope { choice }),
+        Err(GrantedAbilityValidationError::ObjectBindingReferenceOutOfScope { binding }),
     );
 
-    let rebound = Box::leak(Box::new(EffectDef::ChoosePermanent {
-        choice,
-        chooser: EffectRecipientDef::Controller,
-        object: ObjectPredicateDef::Any,
-        controller: PlayerRelation::Any,
+    let rebound: &'static EffectDef = Box::leak(Box::new(EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(binding),
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::new(
+            ObjectPredicateDef::Any,
+            &[ZoneKind::Battlefield],
+        )),
+        exclude: None,
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
         then: destroy_chosen,
-    }));
-    let nested_rebinding = EffectDef::ChoosePermanent {
-        choice,
-        chooser: EffectRecipientDef::Controller,
-        object: ObjectPredicateDef::Any,
-        controller: PlayerRelation::Any,
+    })));
+    let nested_rebinding = EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(binding),
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::new(
+            ObjectPredicateDef::Any,
+            &[ZoneKind::Battlefield],
+        )),
+        exclude: None,
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
         then: rebound,
-    };
+    });
     assert_eq!(
         super::validate_ability_targets(&[], nested_rebinding),
-        Err(GrantedAbilityValidationError::ChoiceBindingAlreadyInScope { choice }),
+        Err(GrantedAbilityValidationError::ObjectBindingAlreadyInScope { binding }),
     );
 
     super::validate_ability_targets(
         &[],
-        EffectDef::ChoosePermanent {
-            choice,
-            chooser: EffectRecipientDef::Controller,
-            object: ObjectPredicateDef::Any,
-            controller: PlayerRelation::Any,
+        EffectDef::Choose(ChooseDef {
+            binding: ObjectChoiceBindingDef::Object(binding),
+            chooser: PlayerRefDef::EffectController,
+            candidates: ObjectSetDef::Query(ObjectQueryDef::new(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Battlefield],
+            )),
+            exclude: None,
+            minimum: 1,
+            maximum: 1,
+            visibility: ChoiceVisibilityDef::Public,
             then: destroy_chosen,
-        },
+        }),
     )
     .expect("the binding is visible only inside its continuation");
 
     static CHOSEN_CONTROLLER_QUERY: ObjectQueryDef = ObjectQueryDef::controlled_by(
         ObjectPredicateDef::HasType(CardType::Creature),
         &[ZoneKind::Battlefield],
-        PlayerSetDef::One(PlayerRefDef::ControllerOf(ObjectRefDef::Choice(
-            ChoiceIndex::PRIMARY,
+        PlayerSetDef::One(PlayerRefDef::ControllerOf(ObjectRefDef::Binding(
+            ObjectBindingIndex::PRIMARY,
         ))),
     );
     static COUNT_CHOSEN_CONTROLLERS_CREATURES: EffectDef = EffectDef::GainLife {
@@ -498,20 +516,106 @@ fn non_targeting_choice_references_are_lexically_scoped() {
 
     assert_eq!(
         super::validate_ability_targets(&[], COUNT_CHOSEN_CONTROLLERS_CREATURES),
-        Err(GrantedAbilityValidationError::ChoiceReferenceOutOfScope { choice }),
+        Err(GrantedAbilityValidationError::ObjectBindingReferenceOutOfScope { binding }),
         "queries embedded in values participate in lexical binding validation",
     );
     super::validate_ability_targets(
         &[],
-        EffectDef::ChoosePermanent {
-            choice,
-            chooser: EffectRecipientDef::Controller,
-            object: ObjectPredicateDef::Any,
-            controller: PlayerRelation::Any,
+        EffectDef::Choose(ChooseDef {
+            binding: ObjectChoiceBindingDef::Object(binding),
+            chooser: PlayerRefDef::EffectController,
+            candidates: ObjectSetDef::Query(ObjectQueryDef::new(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Battlefield],
+            )),
+            exclude: None,
+            minimum: 1,
+            maximum: 1,
+            visibility: ChoiceVisibilityDef::Public,
             then: &COUNT_CHOSEN_CONTROLLERS_CREATURES,
-        },
+        }),
     )
     .expect("a value query can consume a choice inside its continuation");
+
+    let set_binding = ObjectSetBindingIndex::PRIMARY;
+    let sacrifice_chosen: &'static EffectDef = Box::leak(Box::new(EffectDef::Sacrifice {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(set_binding)),
+    }));
+    assert_eq!(
+        super::validate_ability_targets(&[], *sacrifice_chosen),
+        Err(
+            GrantedAbilityValidationError::ObjectSetBindingReferenceOutOfScope {
+                binding: set_binding,
+            }
+        ),
+    );
+
+    let choose_set = |then: &'static EffectDef| {
+        EffectDef::Choose(ChooseDef {
+            binding: ObjectChoiceBindingDef::Objects(set_binding),
+            chooser: PlayerRefDef::EffectController,
+            candidates: ObjectSetDef::Query(ObjectQueryDef::new(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Battlefield],
+            )),
+            exclude: None,
+            minimum: 0,
+            maximum: 2,
+            visibility: ChoiceVisibilityDef::Public,
+            then,
+        })
+    };
+    let rebound_set: &'static EffectDef = Box::leak(Box::new(choose_set(sacrifice_chosen)));
+    assert_eq!(
+        super::validate_ability_targets(&[], choose_set(rebound_set)),
+        Err(
+            GrantedAbilityValidationError::ObjectSetBindingAlreadyInScope {
+                binding: set_binding,
+            }
+        ),
+    );
+    super::validate_ability_targets(&[], choose_set(sacrifice_chosen))
+        .expect("the object-set binding is visible only inside its continuation");
+}
+
+#[test]
+fn generic_object_choices_validate_their_cardinality() {
+    let cases = [
+        (
+            ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+            2,
+            1,
+        ),
+        (
+            ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+            0,
+            2,
+        ),
+    ];
+
+    for (binding, minimum, maximum) in cases {
+        let effect = EffectDef::Choose(ChooseDef {
+            binding,
+            chooser: PlayerRefDef::EffectController,
+            candidates: ObjectSetDef::Query(ObjectQueryDef::new(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Battlefield],
+            )),
+            exclude: None,
+            minimum,
+            maximum,
+            visibility: ChoiceVisibilityDef::Public,
+            then: &EffectDef::None,
+        });
+        assert_eq!(
+            super::validate_ability_targets(&[], effect),
+            Err(GrantedAbilityValidationError::InvalidObjectChoiceBounds {
+                binding,
+                minimum,
+                maximum,
+            }),
+        );
+    }
 }
 
 #[test]
@@ -550,7 +654,19 @@ fn merged_effect_vocabulary_preserves_local_target_bounds() {
                 out_of_range,
             ),
         },
-        EffectDef::SplitPermanentsAndSacrificeAPile { player: recipient },
+        EffectDef::SplitIntoPiles(SplitIntoPilesDef {
+            items: PartitionItemsDef::Objects(ObjectSetDef::Query(ObjectQueryDef::new(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Battlefield],
+            ))),
+            divider: PlayerSetDef::One(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+                out_of_range,
+            ))),
+            chooser: PlayerSetDef::One(PlayerRefDef::EffectController),
+            chosen: ObjectSetBindingIndex::PRIMARY,
+            unchosen: ObjectSetBindingIndex::new(1),
+            then: &EffectDef::None,
+        }),
         EffectDef::Mill {
             player: recipient,
             amount: ValueDef::DividedAmongTargets,
@@ -578,6 +694,58 @@ fn merged_effect_vocabulary_preserves_local_target_bounds() {
     ];
     super::validate_ability_targets(&TARGETS, EffectDef::Sequence(&VALID_SEQUENCE))
         .expect("implicit divided values and target-free combat effects add no slot reference");
+}
+
+#[test]
+fn pile_roles_reject_player_sets_that_can_resolve_to_multiple_players() {
+    let partition = |divider, chooser| {
+        EffectDef::SplitIntoPiles(SplitIntoPilesDef {
+            items: PartitionItemsDef::Objects(ObjectSetDef::Query(ObjectQueryDef::new(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Battlefield],
+            ))),
+            divider,
+            chooser,
+            chosen: ObjectSetBindingIndex::PRIMARY,
+            unchosen: ObjectSetBindingIndex::new(1),
+            then: &EffectDef::None,
+        })
+    };
+
+    assert_eq!(
+        super::validate_ability_targets(
+            &[],
+            partition(
+                PlayerSetDef::All,
+                PlayerSetDef::One(PlayerRefDef::EffectController),
+            ),
+        ),
+        Err(GrantedAbilityValidationError::InvalidPileRole {
+            role: "divider",
+            players: PlayerSetDef::All,
+        })
+    );
+    assert_eq!(
+        super::validate_ability_targets(
+            &[],
+            partition(
+                PlayerSetDef::One(PlayerRefDef::EffectController),
+                PlayerSetDef::Related(PlayerRelation::Any),
+            ),
+        ),
+        Err(GrantedAbilityValidationError::InvalidPileRole {
+            role: "chooser",
+            players: PlayerSetDef::Related(PlayerRelation::Any),
+        })
+    );
+    super::validate_ability_targets(
+        &[],
+        partition(
+            PlayerSetDef::Related(PlayerRelation::Opponent),
+            PlayerSetDef::One(PlayerRefDef::EffectController),
+        ),
+    )
+    .expect("an opponent relation and a single player reference are singleton roles");
 }
 
 #[test]

@@ -663,7 +663,7 @@ fn syncopate_exiles_the_spell_when_its_controller_will_not_pay() {
     let decline = decision
         .options
         .iter()
-        .find(|option| option.label == "Let it be countered")
+        .find(|option| option.label == "Decline")
         .expect("declining is always available");
     game.apply(
         PlayerId::Two,

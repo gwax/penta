@@ -3,13 +3,15 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
     BasicLandType, BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, ComparisonDef, CounterKind, DamageSourceGroupDef, DiscardSelectionDef,
-    DividedTotal, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
-    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, ScaledValueDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
+    DamageSourceGroupDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectDurationDef,
+    EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ScaledValueDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 static INDESTRUCTIBLE_AURA_TARGET: [AbilityTargetDef; 1] =
@@ -730,11 +732,7 @@ pub(in crate::card::sets) static FORCE_SPIKE: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target spell unless its controller pays {1}.",
         &[AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)],
-        EffectDef::CounterUnlessPaid {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            amount: ValueDef::Constant(1),
-            zone: ZoneKind::Graveyard,
-        },
+        abilities::counter_target_unless_paid(ValueDef::Constant(1)),
     )),
 );
 
@@ -1413,11 +1411,7 @@ pub(in crate::card::sets) static NETHER_VOID: CardRecord = CardRecord::new(
         .with_ability(AbilityDef::triggered(
             "Whenever a player casts a spell, counter it unless that player pays {3}.",
             TriggerEventDef::SpellCast(ObjectPredicateDef::Any),
-            EffectDef::CounterUnlessPaid {
-                object: EffectRecipientDef::TriggeringObject,
-                amount: ValueDef::Constant(3),
-                zone: ZoneKind::Graveyard,
-            },
+            abilities::counter_triggering_spell_unless_paid(ValueDef::Constant(3)),
         )
         .with_coverage(AbilityCoverageDef::partial(
             "The counter trigger is executable, but the world-rule state-based action is not implemented.",
@@ -1510,6 +1504,11 @@ pub(in crate::card::sets) static SPIRIT_SHACKLE: CardRecord = CardRecord::new(
 // LEG 119 — Takklemaggot
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “When enchanted creature dies, that creature's controller chooses a creature that this card could enchant. If the player does, return this card to the battlefield under your control…”.
 
+static THE_ABYSS_DESTROY_CHOICE: EffectDef = EffectDef::Destroy {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    can_regenerate: false,
+};
+
 // LEG 120 — The Abyss
 // Audit: partial — Its upkeep destruction is executable, but the world-rule state-based action is not implemented.
 pub(in crate::card::sets) static THE_ABYSS: CardRecord = CardRecord::new(
@@ -1525,14 +1524,23 @@ pub(in crate::card::sets) static THE_ABYSS: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::Any,
             },
-            EffectDef::DestroyOfChoice {
-                player: EffectRecipientDef::EventPlayer,
-                object: ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Artifact)),
-                ]),
-                can_regenerate: false,
-            },
+            EffectDef::Choose(ChooseDef {
+                binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                chooser: PlayerRefDef::EventPlayer,
+                candidates: ObjectSetDef::Query(ObjectQueryDef::controlled_by(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Artifact)),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerSetDef::One(PlayerRefDef::EventPlayer),
+                )),
+                exclude: None,
+                minimum: 1,
+                maximum: 1,
+                visibility: ChoiceVisibilityDef::Public,
+                then: &THE_ABYSS_DESTROY_CHOICE,
+            }),
         )
         .with_coverage(AbilityCoverageDef::partial(
             "The upkeep destruction is executable, but the world-rule state-based action is not implemented.",
@@ -2909,12 +2917,12 @@ pub(in crate::card::sets) static CHROMIUM: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::UnlessPaid {
-                cost: mana_cost!("{W}{U}{B}"),
-                otherwise: &EffectDef::Sacrifice {
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{W}{U}{B}"),
+                &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
     ]),
 );
@@ -3250,12 +3258,12 @@ pub(in crate::card::sets) static NICOL_BOLAS: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::UnlessPaid {
-                cost: mana_cost!("{U}{B}{R}"),
-                otherwise: &EffectDef::Sacrifice {
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{U}{B}{R}"),
+                &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
         AbilityDef::triggered(
             "Whenever Nicol Bolas deals damage to an opponent, that player discards their hand.",
@@ -3297,12 +3305,12 @@ pub(in crate::card::sets) static PALLADIA_MORS: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::UnlessPaid {
-                cost: mana_cost!("{R}{G}{W}"),
-                otherwise: &EffectDef::Sacrifice {
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{R}{G}{W}"),
+                &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
     ]),
 );
@@ -3668,12 +3676,12 @@ pub(in crate::card::sets) static VAEVICTIS_ASMADI: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::UnlessPaid {
-                cost: mana_cost!("{B}{R}{G}"),
-                otherwise: &EffectDef::Sacrifice {
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{B}{R}{G}"),
+                &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
         AbilityDef::activated(
             "{B}: Vaevictis Asmadi gets +1/+0 until end of turn.",
@@ -4058,13 +4066,13 @@ static TABERNACLE_UPKEEP_ABILITY: AbilityDef = AbilityDef::triggered(
         step: TurnStepDef::Upkeep,
         player: PlayerRelation::You,
     },
-    EffectDef::UnlessPaid {
-        cost: mana_cost!("{1}"),
-        otherwise: &EffectDef::Destroy {
+    EffectDef::PayOr(PayOrDef::unless_mana(
+        mana_cost!("{1}"),
+        &EffectDef::Destroy {
             object: EffectRecipientDef::Source,
             can_regenerate: true,
         },
-    },
+    )),
 );
 
 // LEG 306 — Seafarer's Quay

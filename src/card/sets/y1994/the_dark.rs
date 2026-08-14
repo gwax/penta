@@ -4,10 +4,11 @@ use crate::card::{
     AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt,
     CardBehavior, CardRules, CardSet, CardType, ComparisonDef, DamageSourceGroupDef, EffectDef,
     EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ShieldCoverageDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, ShieldCoverageDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
-use crate::ids::{ChoiceIndex, TargetIndex};
+use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // DRK 1 — Angry Mob
@@ -435,12 +436,12 @@ pub(in crate::card::sets) static SUNKEN_CITY: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::UnlessPaid {
-                cost: mana_cost!("{U}{U}"),
-                otherwise: &EffectDef::Sacrifice {
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{U}{U}"),
+                &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
         AbilityDef::static_ability(
             "Blue creatures get +1/+1.",
@@ -945,36 +946,39 @@ pub(in crate::card::sets) static ORC_GENERAL: CardRecord = CardRecord::new(
     "Orc General",
     CardArt::new("65a10fd5-506e-46bf-87e6-fde134c0dc04", "Jesper Myrfors"),
     CardSet::TheDark,
-    CardRules::new_creature(mana_cost!("{2}{R}"), &["Orc", "Warrior"], 2, 2).with_abilities(&[
-        AbilityDef::activated(
-            "{T}, Sacrifice another Orc or Goblin: Other Orc creatures get +1/+1 until end of turn.",
-            &[
-                AbilityCostDef::TapSource,
-                AbilityCostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::AnyOf(&[
-                            ObjectPredicateDef::Subtype("Orc"),
-                            ObjectPredicateDef::Subtype("Goblin"),
-                        ]),
-                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                    ]),
-                    controller: PlayerRelation::You,
-                },
-            ],
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Orc", "Warrior"], 2, 2)
+        .with_abilities(&[AbilityDef::activated(
+        "{T}, Sacrifice another Orc or Goblin: Other Orc creatures get +1/+1 until end of turn.",
+        &[
+            AbilityCostDef::TapSource,
+            AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::AnyOf(&[
                         ObjectPredicateDef::Subtype("Orc"),
-                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                    ]), &[ZoneKind::Battlefield], PlayerRelation::Any),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(1),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+                        ObjectPredicateDef::Subtype("Goblin"),
+                    ]),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                controller: PlayerRelation::You,
             },
-        ),
-    ]),
+        ],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Subtype("Orc"),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(1),
+                toughness: ValueDef::Constant(1),
+            },
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+    )]),
 );
 
 // DRK 74 — Sisters of the Flame
@@ -1452,7 +1456,7 @@ pub(in crate::card::sets) static DARK_SPHERE: CardRecord = CardRecord::new(
 
 static DARK_SPHERE_SHIELD: EffectDef = EffectDef::PreventNextDamageFromSource {
     object: EffectRecipientDef::Controller,
-    source: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+    source: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
     coverage: ShieldCoverageDef::HalfRoundedDown,
     gain_life: false,
 };

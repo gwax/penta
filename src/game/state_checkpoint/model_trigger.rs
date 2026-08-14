@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use super::model::{
-    AbilityLocator, AbilitySourceSnapshot, DetachedStackSnapshot, ScopedEffectSnapshot,
-    TriggerContextSnapshot,
+    AbilityLocator, AbilitySourceSnapshot, DetachedStackSnapshot, EffectResolutionContextSnapshot,
+    ScopedEffectSnapshot, TriggerContextSnapshot,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -10,7 +10,7 @@ use super::model::{
 pub(super) struct DelayedTriggerSnapshot {
     pub(super) object: DetachedStackSnapshot,
     pub(super) ability: AbilityLocator,
-    pub(super) context: TriggerContextSnapshot,
+    pub(super) context: EffectResolutionContextSnapshot,
     pub(super) step: TurnStepSnapshot,
     pub(super) player: PlayerRelationSnapshot,
     pub(super) effect: ScopedEffectSnapshot,

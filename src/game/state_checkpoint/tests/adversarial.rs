@@ -9,6 +9,13 @@
 
 use super::super::*;
 use super::true_hidden_hypothesis;
+use crate::card::{EffectDef, ObjectChoiceBindingDef, SpellForm};
+use crate::game::tests::card;
+use crate::game::{DecisionContinuation, DecisionKind, PendingDecision};
+use crate::{
+    CardPartId, CastChoices, DecisionObservation, DecisionOption, DecisionPreference,
+    DecisionVisibility, DecisionZone, ObjectBindingIndex,
+};
 use serde_json::json;
 
 struct Fixture {
@@ -165,6 +172,78 @@ fn checkpoint_mut(wire: &mut Value) -> &mut serde_json::Map<String, Value> {
     wire["checkpoint"]
         .as_object_mut()
         .expect("the checkpoint is an object")
+}
+
+#[test]
+fn a_private_effect_choice_is_not_serialized_for_the_other_seat() {
+    let mut game = crate::game::tests::ready_game();
+    let chooser = PlayerId::One;
+    let viewer = PlayerId::Two;
+    let secret = GameObjectId(424_242);
+    game.retired_objects.insert(
+        secret,
+        RetiredObject::Card(card(secret.0, crate::card::cards::LIGHTNING_BOLT, chooser)),
+    );
+
+    let resolving = StackObject {
+        id: GameObjectId(424_243),
+        kind: StackObjectKind::Spell,
+        card: card(424_243, crate::card::cards::DEMONIC_TUTOR, chooser),
+        source: None,
+        ability: None,
+        controller: chooser,
+        signature: Some(CastSignature::from_validated_choices(
+            SpellForm::Part(CardPartId::PRIMARY),
+            CastChoices::default(),
+        )),
+        chosen_permanents: Vec::new(),
+        applied_effects: Vec::new(),
+        text_changes: Vec::new(),
+        colors: None,
+        cast_via_flashback: false,
+        is_copy: false,
+    };
+    let mut context = EffectResolutionContext::empty();
+    context.bind_single_object(ObjectBindingIndex::PRIMARY, Some(Target::Card(secret)));
+    game.pending_decisions.clear();
+    game.pending_decisions.push(PendingDecision {
+        observation: DecisionObservation {
+            id: 9_001,
+            player: chooser,
+            kind: DecisionKind::Choice,
+            order_semantics: None,
+            prompt: "Choose a private card".into(),
+            visibility: DecisionVisibility::Private,
+            preference: DecisionPreference::Neutral,
+            minimum: 1,
+            maximum: 1,
+            cancellable: false,
+            options: vec![DecisionOption {
+                id: 0,
+                label: "Lightning Bolt".into(),
+                card: None,
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::Hand,
+            }],
+        },
+        continuation: DecisionContinuation::ChooseForEffect {
+            binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+            object: Box::new(resolving),
+            context,
+            candidates: vec![Target::Card(secret)],
+            effect: ScopedEffect::primary(EffectDef::None),
+        },
+    });
+
+    assert!(game.observe(viewer).decision.is_none());
+    let checkpoint = game.checkpoint_json(viewer);
+    assert!(checkpoint["decisionState"].is_null());
+    assert_eq!(checkpoint["hasDeferredState"], Value::Bool(true));
+    assert!(
+        walk_object_ids(&checkpoint).all(|object| object != secret.0),
+        "the hidden candidate or bound object leaked through the checkpoint",
+    );
 }
 
 #[test]

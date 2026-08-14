@@ -77,6 +77,10 @@ fn rebuild_from_truth(game: &Game, seed: u64) -> Game {
     let viewer = game
         .decision_player()
         .expect("the position must await an action");
+    rebuild_from_truth_for_viewer(game, viewer, seed)
+}
+
+fn rebuild_from_truth_for_viewer(game: &Game, viewer: PlayerId, seed: u64) -> Game {
     let observation = game.observe(viewer);
     let actions = crate::protocol::protocol_actions(&observation);
     let wire = crate::protocol::observation_json_for_format(
@@ -499,12 +503,14 @@ fn a_floating_trigger_installed_by_a_resolved_ability_reconstructs() {
     assert_reconstructs(&game, "a floating trigger watching the game");
 }
 
-/// The opposing seat splits cards it has just been shown, and those cards are
-/// in no zone at all while it decides. Both halves of the program have to
-/// survive a round trip, including the placement instructions for whichever
-/// pile is not kept.
+/// The opposing seat splits public cards that remain in the effect controller's
+/// library. Both seats can reconstruct either decision, so checkpoint import
+/// must use the cards' actual origin rather than assuming that the deciding or
+/// observing seat owns the library. Each reconstructed decision is answered to
+/// prove that its typed ids still address live cards, not merely that its
+/// observation can be rendered.
 #[test]
-fn a_revealed_pile_split_reconstructs_at_both_of_its_boundaries() {
+fn a_generic_pile_split_reconstructs_and_resumes_for_both_seats() {
     let mut game = staged_modern_game();
     let walker_id = GameObjectId(10_000);
     let mut walker = creature(
@@ -532,14 +538,35 @@ fn a_revealed_pile_split_reconstructs_at_both_of_its_boundaries() {
             game.pending_decisions
                 .first()
                 .map(|pending| &pending.continuation),
-            Some(DecisionContinuation::RevealedPileSplit { .. })
+            Some(DecisionContinuation::SplitForEffect { .. })
         ),
-        "the ability must be waiting on a revealed pile split, not {:?}",
+        "the ability must be waiting on a generic pile split, not {:?}",
         game.pending_decisions
             .first()
             .map(|pending| &pending.continuation)
     );
-    assert_reconstructs(&game, "a revealed pile split");
+    assert_reconstructs(&game, "a generic pile split");
+
+    for (viewer, seed) in [(PlayerId::One, 4_250), (PlayerId::Two, 4_251)] {
+        let mut rebuilt = rebuild_from_truth_for_viewer(&game, viewer, seed);
+        let items = match &rebuilt.pending_decisions[0].continuation {
+            DecisionContinuation::SplitForEffect { items, .. } => items,
+            other => panic!("split reconstruction changed continuation: {other:?}"),
+        };
+        assert!(
+            items.iter().all(|target| matches!(target, Target::Card(id)
+                if rebuilt.players[PlayerId::One.index()]
+                    .library
+                    .iter()
+                    .any(|card| card.id == *id))),
+            "{viewer:?} reconstruction must bind every item to player one's library",
+        );
+        answer_with_first_option(&mut rebuilt);
+        assert!(matches!(
+            rebuilt.pending_decisions[0].continuation,
+            DecisionContinuation::ChoosePileForEffect { .. }
+        ));
+    }
 
     answer_with_first_option(&mut game);
     assert!(
@@ -547,11 +574,41 @@ fn a_revealed_pile_split_reconstructs_at_both_of_its_boundaries() {
             game.pending_decisions
                 .first()
                 .map(|pending| &pending.continuation),
-            Some(DecisionContinuation::RevealedPileChoice { .. })
+            Some(DecisionContinuation::ChoosePileForEffect { .. })
         ),
         "splitting must lead to the pile choice"
     );
-    assert_reconstructs(&game, "a revealed pile choice");
+    assert_reconstructs(&game, "a generic pile choice");
+
+    for (viewer, seed) in [(PlayerId::One, 4_252), (PlayerId::Two, 4_253)] {
+        let mut rebuilt = rebuild_from_truth_for_viewer(&game, viewer, seed);
+        let (first, second) = match &rebuilt.pending_decisions[0].continuation {
+            DecisionContinuation::ChoosePileForEffect { first, second, .. } => (first, second),
+            other => panic!("pile-choice reconstruction changed continuation: {other:?}"),
+        };
+        assert!(
+            first
+                .iter()
+                .chain(second)
+                .all(|target| matches!(target, Target::Card(id)
+                if rebuilt.players[PlayerId::One.index()]
+                    .library
+                    .iter()
+                    .any(|card| card.id == *id))),
+            "{viewer:?} reconstruction must bind every pile member to player one's library",
+        );
+        answer_with_first_option(&mut rebuilt);
+        assert!(
+            !matches!(
+                rebuilt
+                    .pending_decisions
+                    .first()
+                    .map(|pending| &pending.continuation),
+                Some(DecisionContinuation::ChoosePileForEffect { .. })
+            ),
+            "the reconstructed pile choice must resume its nested effect",
+        );
+    }
 }
 
 /// Copy Artifact chooses what to be as it enters, so the seat sees a

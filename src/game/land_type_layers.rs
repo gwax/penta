@@ -385,10 +385,12 @@ impl Game {
             EffectRecipientSetDef::LegalTargets(_)
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::One(
-                    ObjectRefDef::Choice(_)
+                    ObjectRefDef::Binding(_)
+                    | ObjectRefDef::ResolvingObject
                     | ObjectRefDef::Target(_)
                     | ObjectRefDef::TriggeringObject,
                 )
+                | ObjectSetDef::Binding(_)
                 | ObjectSetDef::SharingNameWith(_),
             )
             | EffectRecipientSetDef::Players(_) => false,

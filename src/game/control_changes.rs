@@ -6,7 +6,8 @@
 //! turn-scoped form, state-based actions for the held one.
 
 use super::{
-    EffectRecipientDef, Game, GameObjectId, ScopedEffect, StackObject, Target, TriggerContext,
+    EffectRecipientDef, EffectResolutionContext, Game, GameObjectId, ScopedEffect, StackObject,
+    Target,
 };
 
 impl Game {
@@ -17,7 +18,7 @@ impl Game {
         &mut self,
         recipient: EffectRecipientDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
         holder: Option<(GameObjectId, bool)>,
     ) {

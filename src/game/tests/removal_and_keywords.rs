@@ -263,14 +263,17 @@ fn zone_relative_queries_span_battlefield_and_graveyard() {
 }
 
 #[test]
-fn derived_choice_players_use_last_known_controller_and_owner() {
+fn derived_object_players_use_last_known_controller_and_owner() {
     let mut game = ready_game();
     let mut chosen = creature(10_030, cards::SAVANNAH_LIONS, PlayerId::Two);
     chosen.controller = PlayerId::One;
     let chosen_id = chosen.card.id;
     game.battlefield.push(chosen);
-    let mut context = TriggerContext::empty();
-    context.bind_choice(ChoiceIndex::PRIMARY, Some(chosen_id));
+    let mut context = EffectResolutionContext::empty();
+    context.bind_single_object(
+        ObjectBindingIndex::PRIMARY,
+        Some(Target::Permanent(chosen_id)),
+    );
     game.move_target_to_zone(
         Target::Permanent(chosen_id),
         ZoneKind::Graveyard,
@@ -280,29 +283,51 @@ fn derived_choice_players_use_last_known_controller_and_owner() {
         None,
         ZonePlacement::Top,
     );
-    let resolving = spell(10_031, cards::WRATH_OF_GOD, PlayerId::One, 0);
+    let resolving = spell_with_targets(
+        10_031,
+        cards::SWORDS_TO_PLOWSHARES,
+        PlayerId::One,
+        vec![Target::Permanent(chosen_id)],
+        0,
+    );
 
     let recipients = |game: &Game, reference| {
         game.effect_recipients(
             EffectRecipientDef::player(reference),
             &resolving,
-            context,
+            &context,
             ScopedEffect::primary(EffectDef::None),
         )
     };
     assert_eq!(
         recipients(
             &game,
-            PlayerRefDef::ControllerOf(ObjectRefDef::Choice(ChoiceIndex::PRIMARY)),
+            PlayerRefDef::ControllerOf(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
         ),
         [Target::Player(PlayerId::One)],
     );
     assert_eq!(
         recipients(
             &game,
-            PlayerRefDef::OwnerOf(ObjectRefDef::Choice(ChoiceIndex::PRIMARY)),
+            PlayerRefDef::OwnerOf(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
         ),
         [Target::Player(PlayerId::Two)],
+    );
+    assert_eq!(
+        recipients(
+            &game,
+            PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+        ),
+        [Target::Player(PlayerId::One)],
+        "a later instruction uses the target's last-known controller",
+    );
+    assert_eq!(
+        recipients(
+            &game,
+            PlayerRefDef::OwnerOf(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+        ),
+        [Target::Player(PlayerId::Two)],
+        "a later instruction uses the target's last-known owner",
     );
 }
 

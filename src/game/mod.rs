@@ -28,9 +28,8 @@ use crate::card::{
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;
 use crate::ids::{
-    AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, ChoiceIndex,
-    GameObjectId, GrantId, ModeId, PhysicalCardId, PlayOptionId, PlayerId, TargetIndex,
-    TargetSlotId,
+    AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, GameObjectId,
+    GrantId, ModeId, PhysicalCardId, PlayOptionId, PlayerId, TargetIndex, TargetSlotId,
 };
 use crate::rng::ReplayRng;
 #[cfg(test)]
@@ -145,8 +144,8 @@ use replacement_state::{
 };
 use trigger_state::{
     AbilitySourceRef, BattlefieldTriggerListener, CommittedTriggerEvent, DelayedTrigger,
-    FloatingTrigger, PendingTrigger, TriggerCapture, TriggerContext, TriggerEventObject,
-    TriggerPlacementBatch,
+    EffectResolutionContext, FloatingTrigger, PendingTrigger, TriggerCapture, TriggerContext,
+    TriggerEventObject, TriggerPlacementBatch,
 };
 
 #[cfg(test)]

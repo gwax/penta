@@ -208,23 +208,62 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "ability {ability:?} on part {part:?} of card definition {definition:?} references target {target:?}, but defines only {target_count} target slots"
             ),
-            Self::AbilityChoiceReferenceOutOfScope {
+            Self::InvalidAbilityObjectChoiceBounds {
                 definition,
                 part,
                 ability,
-                choice,
+                binding,
+                minimum,
+                maximum,
             } => write!(
                 formatter,
-                "ability {ability:?} on part {part:?} of card definition {definition:?} references choice {choice:?} outside its binding scope"
+                "ability {ability:?} on part {part:?} of card definition {definition:?} binds {binding:?} from a choice requiring at least {minimum} objects and allowing at most {maximum}"
             ),
-            Self::AbilityChoiceBindingAlreadyInScope {
+            Self::InvalidAbilityPileRole {
                 definition,
                 part,
                 ability,
-                choice,
+                role,
+                players,
             } => write!(
                 formatter,
-                "ability {ability:?} on part {part:?} of card definition {definition:?} binds choice {choice:?} more than once in the same scope"
+                "ability {ability:?} on part {part:?} of card definition {definition:?} uses {players:?} for pile {role}, but that role must select at most one player"
+            ),
+            Self::AbilityObjectBindingReferenceOutOfScope {
+                definition,
+                part,
+                ability,
+                binding,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} references object binding {binding:?} outside its scope"
+            ),
+            Self::AbilityObjectBindingAlreadyInScope {
+                definition,
+                part,
+                ability,
+                binding,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} binds object slot {binding:?} more than once in the same scope"
+            ),
+            Self::AbilityObjectSetBindingReferenceOutOfScope {
+                definition,
+                part,
+                ability,
+                binding,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} references object-set binding {binding:?} outside its scope"
+            ),
+            Self::AbilityObjectSetBindingAlreadyInScope {
+                definition,
+                part,
+                ability,
+                binding,
+            } => write!(
+                formatter,
+                "ability {ability:?} on part {part:?} of card definition {definition:?} binds object-set slot {binding:?} more than once in the same scope"
             ),
             Self::DuplicateStructurePart { definition, part } => write!(
                 formatter,

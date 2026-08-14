@@ -3,11 +3,12 @@ mod display;
 use std::fmt;
 
 use crate::card::{
-    CardEffectStatus, CardPrintingId, ManaCost, PlayActionKind, SpellForm, TargetSlotDef,
+    CardEffectStatus, CardPrintingId, ManaCost, ObjectChoiceBindingDef, PlayActionKind,
+    PlayerSetDef, SpellForm, TargetSlotDef,
 };
 use crate::{
-    AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, ChoiceIndex,
-    GrantId, ModeId, PlayOptionId, TargetIndex, TargetSlotId,
+    AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, GrantId, ModeId,
+    ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId, TargetIndex, TargetSlotId,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -32,11 +33,26 @@ pub enum GrantedAbilityValidationError {
         target: TargetIndex,
         target_count: usize,
     },
-    ChoiceReferenceOutOfScope {
-        choice: ChoiceIndex,
+    InvalidObjectChoiceBounds {
+        binding: ObjectChoiceBindingDef,
+        minimum: usize,
+        maximum: usize,
     },
-    ChoiceBindingAlreadyInScope {
-        choice: ChoiceIndex,
+    InvalidPileRole {
+        role: &'static str,
+        players: PlayerSetDef,
+    },
+    ObjectBindingReferenceOutOfScope {
+        binding: ObjectBindingIndex,
+    },
+    ObjectBindingAlreadyInScope {
+        binding: ObjectBindingIndex,
+    },
+    ObjectSetBindingReferenceOutOfScope {
+        binding: ObjectSetBindingIndex,
+    },
+    ObjectSetBindingAlreadyInScope {
+        binding: ObjectSetBindingIndex,
     },
     /// Runtime static-effect discovery currently starts from attached printed
     /// or copied clauses. Reject an executable static ability granted by
@@ -80,12 +96,32 @@ impl fmt::Display for GrantedAbilityValidationError {
                 formatter,
                 "references target {target:?}, but the clause defines only {target_count} target slots"
             ),
-            Self::ChoiceReferenceOutOfScope { choice } => {
-                write!(formatter, "references choice {choice:?} outside its binding scope")
-            }
-            Self::ChoiceBindingAlreadyInScope { choice } => write!(
+            Self::InvalidObjectChoiceBounds {
+                binding,
+                minimum,
+                maximum,
+            } => write!(
                 formatter,
-                "binds choice {choice:?}, but that choice is already bound in this scope"
+                "binds {binding:?} from a choice requiring at least {minimum} objects and allowing at most {maximum}"
+            ),
+            Self::InvalidPileRole { role, players } => write!(
+                formatter,
+                "uses {players:?} for pile {role}, but that role must select at most one player"
+            ),
+            Self::ObjectBindingReferenceOutOfScope { binding } => {
+                write!(formatter, "references object binding {binding:?} outside its scope")
+            }
+            Self::ObjectBindingAlreadyInScope { binding } => write!(
+                formatter,
+                "binds object slot {binding:?}, but that slot is already bound in this scope"
+            ),
+            Self::ObjectSetBindingReferenceOutOfScope { binding } => write!(
+                formatter,
+                "references object-set binding {binding:?} outside its scope"
+            ),
+            Self::ObjectSetBindingAlreadyInScope { binding } => write!(
+                formatter,
+                "binds object-set slot {binding:?}, but that slot is already bound in this scope"
             ),
             Self::ExecutableStaticAbility => formatter.write_str(
                 "is an executable static ability, but granted static abilities are not evaluated yet",
@@ -231,17 +267,44 @@ pub enum CatalogError {
         target: TargetIndex,
         target_count: usize,
     },
-    AbilityChoiceReferenceOutOfScope {
+    InvalidAbilityObjectChoiceBounds {
         definition: CardDefinitionId,
         part: CardPartId,
         ability: AbilityId,
-        choice: ChoiceIndex,
+        binding: ObjectChoiceBindingDef,
+        minimum: usize,
+        maximum: usize,
     },
-    AbilityChoiceBindingAlreadyInScope {
+    InvalidAbilityPileRole {
         definition: CardDefinitionId,
         part: CardPartId,
         ability: AbilityId,
-        choice: ChoiceIndex,
+        role: &'static str,
+        players: PlayerSetDef,
+    },
+    AbilityObjectBindingReferenceOutOfScope {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        binding: ObjectBindingIndex,
+    },
+    AbilityObjectBindingAlreadyInScope {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        binding: ObjectBindingIndex,
+    },
+    AbilityObjectSetBindingReferenceOutOfScope {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        binding: ObjectSetBindingIndex,
+    },
+    AbilityObjectSetBindingAlreadyInScope {
+        definition: CardDefinitionId,
+        part: CardPartId,
+        ability: AbilityId,
+        binding: ObjectSetBindingIndex,
     },
     DuplicateStructurePart {
         definition: CardDefinitionId,

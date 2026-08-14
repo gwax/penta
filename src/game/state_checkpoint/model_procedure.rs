@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use super::model::{
-    AbilityLocator, DetachedStackSnapshot, EffectContinuationSnapshot, ScopedEffectSnapshot,
-    TriggerContextSnapshot,
+    AbilityLocator, DetachedStackSnapshot, EffectContinuationSnapshot,
+    EffectResolutionContextSnapshot, ScopedEffectSnapshot,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -26,7 +26,7 @@ pub(super) enum PendingProcedureSnapshot {
         effects: Vec<ScopedEffectSnapshot>,
         object: Box<DetachedStackSnapshot>,
         ability: AbilityLocator,
-        context: TriggerContextSnapshot,
+        context: EffectResolutionContextSnapshot,
         custom_followup: Option<AbilityLocator>,
     },
     SylvanAfterDraw {

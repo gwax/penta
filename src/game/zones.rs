@@ -38,7 +38,34 @@ impl Game {
         else {
             return;
         };
-        let _ = self.move_card_from_nonbattlefield_zone(id, from, zone, cause, arriving_controller);
+        if from == ZoneKind::Library && zone == ZoneKind::Library {
+            let Some(owner) = self
+                .card_in_nonbattlefield_zone(id)
+                .map(|(_, card)| card.owner)
+            else {
+                return;
+            };
+            let Some(card) = remove_card(&mut self.players[owner.index()].library, id) else {
+                return;
+            };
+            match placement {
+                ZonePlacement::Top => self.players[owner.index()].library.push(card),
+                ZonePlacement::Bottom => self.players[owner.index()].library.insert(0, card),
+            }
+            return;
+        }
+        let Some((moved, actual_destination)) =
+            self.move_card_from_nonbattlefield_zone(id, from, zone, cause, arriving_controller)
+        else {
+            return;
+        };
+        if actual_destination == ZoneKind::Library
+            && placement == ZonePlacement::Bottom
+            && let Some(card) =
+                remove_card(&mut self.players[moved.owner.index()].library, moved.id)
+        {
+            self.players[moved.owner.index()].library.insert(0, card);
+        }
     }
 
     /// One card in a hand or library, as a simulation sees it.

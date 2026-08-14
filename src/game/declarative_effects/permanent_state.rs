@@ -12,7 +12,7 @@ impl Game {
         &mut self,
         scoped: ScopedEffect,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
     ) {
         match scoped.effect {
             EffectDef::DestroyAtEndOfCombat { object: recipient } => {

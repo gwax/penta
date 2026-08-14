@@ -159,6 +159,98 @@ impl ChoiceIndex {
     }
 }
 
+/// Positional identity of one object binding retained while an effect
+/// resolves.
+///
+/// This is distinct from [`ChoiceIndex`]: it names a typed object value in an
+/// effect's binding context regardless of how that value was produced.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct ObjectBindingIndex(u8);
+
+impl ObjectBindingIndex {
+    /// The first object binding in an ordinary single-binding effect.
+    pub const PRIMARY: Self = Self(0);
+
+    /// The number of independent object bindings one resolving effect can
+    /// retain.
+    pub(crate) const COUNT: usize = 8;
+
+    /// Creates an authored object binding index within the supported binding
+    /// space.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `index` is not less than eight.
+    #[must_use]
+    pub const fn new(index: u8) -> Self {
+        assert!(
+            (index as usize) < Self::COUNT,
+            "object binding index must be less than eight"
+        );
+        Self(index)
+    }
+
+    #[must_use]
+    pub const fn index(self) -> usize {
+        self.0 as usize
+    }
+
+    #[must_use]
+    pub fn from_index(index: usize) -> Option<Self> {
+        if index < Self::COUNT {
+            u8::try_from(index).ok().map(Self)
+        } else {
+            None
+        }
+    }
+}
+
+/// Positional identity of one object-set binding retained while an effect
+/// resolves.
+///
+/// Object-set bindings preserve a collection as one typed value rather than
+/// assigning each member an [`ObjectBindingIndex`].
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct ObjectSetBindingIndex(u8);
+
+impl ObjectSetBindingIndex {
+    /// The first object-set binding in an ordinary single-binding effect.
+    pub const PRIMARY: Self = Self(0);
+
+    /// The number of independent object-set bindings one resolving effect can
+    /// retain.
+    pub(crate) const COUNT: usize = 8;
+
+    /// Creates an authored object-set binding index within the supported
+    /// binding space.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `index` is not less than eight.
+    #[must_use]
+    pub const fn new(index: u8) -> Self {
+        assert!(
+            (index as usize) < Self::COUNT,
+            "object-set binding index must be less than eight"
+        );
+        Self(index)
+    }
+
+    #[must_use]
+    pub const fn index(self) -> usize {
+        self.0 as usize
+    }
+
+    #[must_use]
+    pub fn from_index(index: usize) -> Option<Self> {
+        if index < Self::COUNT {
+            u8::try_from(index).ok().map(Self)
+        } else {
+            None
+        }
+    }
+}
+
 /// Identity of one independently chosen target slot on an instantiated spell
 /// or ability. Slots are assigned in flattened target-clause order.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -250,5 +342,47 @@ impl fmt::Display for PlayerId {
             Self::One => formatter.write_str("player one"),
             Self::Two => formatter.write_str("player two"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ObjectBindingIndex, ObjectSetBindingIndex};
+
+    #[test]
+    fn object_binding_indices_use_eight_bounded_slots() {
+        assert_eq!(ObjectBindingIndex::COUNT, 8);
+        assert_eq!(ObjectBindingIndex::PRIMARY.index(), 0);
+
+        for index in 0..ObjectBindingIndex::COUNT {
+            let binding = ObjectBindingIndex::from_index(index).expect("supported binding index");
+            assert_eq!(binding.index(), index);
+            assert_eq!(ObjectBindingIndex::new(index as u8), binding);
+        }
+
+        assert_eq!(
+            ObjectBindingIndex::from_index(ObjectBindingIndex::COUNT),
+            None
+        );
+        assert_eq!(ObjectBindingIndex::from_index(usize::MAX), None);
+    }
+
+    #[test]
+    fn object_set_binding_indices_use_eight_bounded_slots() {
+        assert_eq!(ObjectSetBindingIndex::COUNT, 8);
+        assert_eq!(ObjectSetBindingIndex::PRIMARY.index(), 0);
+
+        for index in 0..ObjectSetBindingIndex::COUNT {
+            let binding =
+                ObjectSetBindingIndex::from_index(index).expect("supported binding index");
+            assert_eq!(binding.index(), index);
+            assert_eq!(ObjectSetBindingIndex::new(index as u8), binding);
+        }
+
+        assert_eq!(
+            ObjectSetBindingIndex::from_index(ObjectSetBindingIndex::COUNT),
+            None
+        );
+        assert_eq!(ObjectSetBindingIndex::from_index(usize::MAX), None);
     }
 }

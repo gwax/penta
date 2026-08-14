@@ -1,10 +1,20 @@
 use super::{
     CharacteristicSource, ColorSet, CounteredSpellZone, DecisionContinuation, DecisionKind,
     DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    DeclarativeAbilityDef, FORK_COPY_COLOR, Game, GameObjectId, ManaCost, PendingDecision,
-    PlayerId, ScopedEffect, StackObject, Target, TargetSelection, TargetSlotId, TriggerContext,
-    flatten_target_selections, target_combinations,
+    DeclarativeAbilityDef, EffectResolutionContext, FORK_COPY_COLOR, Game, GameObjectId, ManaCost,
+    PendingDecision, PlayerId, ScopedEffect, StackObject, Target, TargetSelection, TargetSlotId,
+    TriggerContext, flatten_target_selections, target_combinations,
 };
+use crate::card::ChoiceVisibilityDef;
+
+pub(super) const fn effect_choice_visibility(
+    visibility: ChoiceVisibilityDef,
+) -> DecisionVisibility {
+    match visibility {
+        ChoiceVisibilityDef::Public => DecisionVisibility::Public,
+        ChoiceVisibilityDef::Private => DecisionVisibility::Private,
+    }
+}
 
 impl Game {
     #[allow(clippy::too_many_arguments)]
@@ -49,6 +59,64 @@ impl Game {
         });
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn queue_pay_or(
+        &mut self,
+        player: PlayerId,
+        cost: ManaCost,
+        visibility: ChoiceVisibilityDef,
+        object: &StackObject,
+        context: EffectResolutionContext,
+        if_paid: Option<ScopedEffect>,
+        otherwise: Option<ScopedEffect>,
+    ) {
+        if if_paid.is_none() && otherwise.is_none() {
+            return;
+        }
+        let can_pay = self.can_pay_cost(player, cost, 0);
+        if !can_pay {
+            if let Some(effect) = otherwise {
+                self.resolve_effect_def(effect, object, context);
+                return;
+            }
+        }
+        let mut options = vec![DecisionOption {
+            id: 0,
+            label: "Decline".into(),
+            card: None,
+            members: Vec::new(),
+            ability_text: None,
+            zone: DecisionZone::None,
+        }];
+        if can_pay {
+            options.push(DecisionOption {
+                id: 1,
+                label: "Pay the cost".into(),
+                card: None,
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::None,
+            });
+        }
+        self.queue_decision(
+            player,
+            object.ability_text().unwrap_or("Pay the cost?"),
+            effect_choice_visibility(visibility),
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::PayOr {
+                player,
+                cost,
+                object: Box::new(object.clone()),
+                context,
+                if_paid,
+                otherwise,
+            },
+        );
+    }
+
     /// Offers the payment that would call the effect off. A controller who
     /// cannot pay has no decision to make, so the effect just happens.
     pub(super) fn queue_mana_payment_or_else(
@@ -56,7 +124,7 @@ impl Game {
         player: PlayerId,
         cost: ManaCost,
         object: &StackObject,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         effect: ScopedEffect,
     ) {
         if !self.can_pay_cost(player, cost, 0) {
@@ -97,7 +165,7 @@ impl Game {
         player: PlayerId,
         cost: ManaCost,
         object: &StackObject,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         effect: ScopedEffect,
     ) {
         let mut options = vec![DecisionOption {
@@ -199,7 +267,7 @@ impl Game {
         &mut self,
         player: PlayerId,
         object: &StackObject,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         effect: ScopedEffect,
     ) {
         self.queue_decision(

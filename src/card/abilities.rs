@@ -7,13 +7,15 @@ use super::model::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef,
     AnimationDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardType,
-    CardTypeSet, ConditionDef, CostDef, CounterKind, DeclarativeAbilityDef, EffectDef,
-    EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef,
-    ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementAbilityDef, ReplacementEffectDef,
-    ReplacementEventDef, ScaledValueDef, ShieldCoverageDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind,
+    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ConditionDef, CostDef, CounterKind,
+    DeclarativeAbilityDef, EffectDef, EffectDurationDef, EffectPaymentDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef, PaymentDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef,
+    ReplacementEventDef, ScaledValueDef, ShieldCoverageDef, SplitIntoPilesDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind,
 };
-use crate::ids::{ChoiceIndex, TargetIndex};
+use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
 /// The target an "Enchant creature" Aura spell chooses.
 pub static ENCHANT_CREATURE_TARGET: [AbilityTargetDef; 1] =
@@ -407,7 +409,7 @@ pub const fn bloodrush(
 
 /// Populate's copy step, made once its choice has landed.
 static POPULATE_COPY: EffectDef = EffectDef::CreateTokenCopyOf {
-    object: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
 };
 
 /// Populate: choose a creature token you control, then create a copy of it.
@@ -415,13 +417,20 @@ static POPULATE_COPY: EffectDef = EffectDef::CreateTokenCopyOf {
 /// player with no creature tokens simply does nothing.
 #[must_use]
 pub const fn populate() -> EffectDef {
-    EffectDef::ChoosePermanent {
-        choice: ChoiceIndex::PRIMARY,
-        chooser: EffectRecipientDef::Controller,
-        object: ObjectPredicateDef::All(&POPULATE_CANDIDATE),
-        controller: PlayerRelation::You,
+    EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::controlled_by(
+            ObjectPredicateDef::All(&POPULATE_CANDIDATE),
+            &[ZoneKind::Battlefield],
+            PlayerSetDef::One(PlayerRefDef::EffectController),
+        )),
+        exclude: None,
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
         then: &POPULATE_COPY,
-    }
+    })
 }
 
 static POPULATE_CANDIDATE: [ObjectPredicateDef; 2] = [
@@ -574,18 +583,25 @@ pub const fn circle_of_protection(
     AbilityDef::activated(
         text,
         costs,
-        EffectDef::ChooseDamageSource {
-            choice: ChoiceIndex::PRIMARY,
-            chooser: EffectRecipientDef::Controller,
-            object: source,
+        EffectDef::Choose(ChooseDef {
+            binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+            chooser: PlayerRefDef::EffectController,
+            candidates: ObjectSetDef::Query(ObjectQueryDef::new(
+                source,
+                &[ZoneKind::Battlefield, ZoneKind::Stack],
+            )),
+            exclude: Some(ObjectRefDef::ResolvingObject),
+            minimum: 1,
+            maximum: 1,
+            visibility: ChoiceVisibilityDef::Public,
             then: &SHIELD_AGAINST_THE_CHOSEN_SOURCE,
-        },
+        }),
     )
 }
 
 static SHIELD_AGAINST_THE_CHOSEN_SOURCE: EffectDef = EffectDef::PreventNextDamageFromSource {
     object: EffectRecipientDef::Controller,
-    source: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+    source: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
     coverage: ShieldCoverageDef::All,
     gain_life: false,
 };
@@ -598,12 +614,106 @@ pub const fn shield_against_a_chosen_source(
     source: ObjectPredicateDef,
     then: &'static EffectDef,
 ) -> EffectDef {
-    EffectDef::ChooseDamageSource {
-        choice: ChoiceIndex::PRIMARY,
-        chooser: EffectRecipientDef::Controller,
-        object: source,
+    EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::new(
+            source,
+            &[ZoneKind::Battlefield, ZoneKind::Stack],
+        )),
+        exclude: Some(ObjectRefDef::ResolvingObject),
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
         then,
-    }
+    })
+}
+
+static COUNTER_PRIMARY_TARGET: EffectDef = EffectDef::Counter {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    zone: ZoneKind::Graveyard,
+};
+static COUNTER_PRIMARY_TARGET_TO_EXILE: EffectDef = EffectDef::Counter {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    zone: ZoneKind::Exile,
+};
+static COUNTER_TRIGGERING_SPELL: EffectDef = EffectDef::Counter {
+    object: EffectRecipientDef::TriggeringObject,
+    zone: ZoneKind::Graveyard,
+};
+
+const fn pay_or_counter(
+    payer: PlayerRefDef,
+    amount: ValueDef,
+    otherwise: &'static EffectDef,
+) -> EffectDef {
+    EffectDef::PayOr(PayOrDef {
+        payment: EffectPaymentDef::GenericMana { payer, amount },
+        if_paid: None,
+        otherwise: Some(otherwise),
+        visibility: ChoiceVisibilityDef::Public,
+    })
+}
+
+/// Counter the primary targeted spell unless its controller pays generic mana.
+#[must_use]
+pub const fn counter_target_unless_paid(amount: ValueDef) -> EffectDef {
+    pay_or_counter(
+        PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+        amount,
+        &COUNTER_PRIMARY_TARGET,
+    )
+}
+
+/// Counter the primary targeted spell into exile unless its controller pays.
+#[must_use]
+pub const fn counter_target_to_exile_unless_paid(amount: ValueDef) -> EffectDef {
+    pay_or_counter(
+        PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+        amount,
+        &COUNTER_PRIMARY_TARGET_TO_EXILE,
+    )
+}
+
+/// Counter the spell that caused a trigger unless its controller pays.
+#[must_use]
+pub const fn counter_triggering_spell_unless_paid(amount: ValueDef) -> EffectDef {
+    pay_or_counter(
+        PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject),
+        amount,
+        &COUNTER_TRIGGERING_SPELL,
+    )
+}
+
+const CHOSEN_PILE_BINDING: ObjectSetBindingIndex = ObjectSetBindingIndex::PRIMARY;
+const UNCHOSEN_PILE_BINDING: ObjectSetBindingIndex = ObjectSetBindingIndex::new(1);
+
+/// The pile selected by the chooser in [`split_top_of_library_into_piles`].
+pub const CHOSEN_PILE: EffectRecipientDef =
+    EffectRecipientDef::objects(ObjectSetDef::Binding(CHOSEN_PILE_BINDING));
+
+/// The pile declined by the chooser in [`split_top_of_library_into_piles`].
+pub const UNCHOSEN_PILE: EffectRecipientDef =
+    EffectRecipientDef::objects(ObjectSetDef::Binding(UNCHOSEN_PILE_BINDING));
+
+/// Reveal cards from the effect controller's library, let an opponent divide
+/// them, and let the controller choose a pile before continuing.
+#[must_use]
+pub const fn split_top_of_library_into_piles(
+    count: ValueDef,
+    then: &'static EffectDef,
+) -> EffectDef {
+    EffectDef::SplitIntoPiles(SplitIntoPilesDef {
+        items: PartitionItemsDef::TopOfLibrary {
+            player: PlayerRefDef::EffectController,
+            count,
+        },
+        divider: PlayerSetDef::Related(PlayerRelation::Opponent),
+        chooser: PlayerSetDef::One(PlayerRefDef::EffectController),
+        chosen: CHOSEN_PILE_BINDING,
+        unchosen: UNCHOSEN_PILE_BINDING,
+        then,
+    })
 }
 
 /// Exalted. It is written as a keyword but defined as a triggered ability, so

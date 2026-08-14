@@ -1,10 +1,10 @@
 use super::{
     BalancePhase, BalanceTask, BattlefieldExitCompletion, CardInstance, CardRuntime,
     CommittedTriggerEvent, CounterKind, DecisionContinuation, DecisionOption, DecisionPreference,
-    DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EffectDef, Game, GameObjectId,
-    ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit, PilesSeparated, PlayerId,
-    SacrificeFollowup, ScopedEffect, StackObject, Step, TopCardSelectionDef, TriggerContext,
-    ZoneKind, ZoneMoveCause, ZonePlacement,
+    DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
+    Game, GameObjectId, ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit,
+    PilesSeparated, PlayerId, SacrificeFollowup, ScopedEffect, StackObject, Step,
+    TopCardSelectionDef, ZoneKind, ZoneMoveCause, ZonePlacement,
 };
 
 impl Game {
@@ -13,11 +13,11 @@ impl Game {
         player: PlayerId,
         selection: &'static TopCardSelectionDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         scoped: ScopedEffect,
     ) {
         let count = self
-            .effect_value(selection.count, object, context, scoped)
+            .effect_value(selection.count, object, &context, scoped)
             .max(0);
         let Ok(count) = usize::try_from(count) else {
             return;
@@ -739,10 +739,8 @@ impl Game {
                 .unwrap_or(0),
         )
         .max(0);
-        let context = TriggerContext {
-            amount: Some(amount),
-            ..followup.context
-        };
+        let mut context = followup.context.clone();
+        context.trigger.amount = Some(amount);
         self.resolve_effect_def(followup.effect, &followup.object, context);
     }
 

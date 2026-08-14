@@ -6,7 +6,7 @@ use crate::card::{
     AddManaEffectDef, AppliedEffectDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
     CardRules, CardSet, CardSupertype, CardType, ComparisonDef, CostDef, CounterKind,
     DiscardSelectionDef, DividedTotal, EffectDef, EffectDurationDef, EffectRecipientDef,
-    HybridPair, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, ObjectQueryDef,
+    HybridPair, KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
     PaymentDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef, TriggerConditionDef,
     TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
@@ -34,10 +34,10 @@ const fn extort() -> AbilityDef {
     AbilityDef::triggered(
         "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)",
         TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
-        EffectDef::OptionalPayment {
-            payment: PaymentDef::new(PlayerRelation::You, &EXTORT_COSTS),
-            if_paid: &EXTORT_DRAIN,
-        },
+        EffectDef::PayOr(PayOrDef::optional(
+            PaymentDef::new(PlayerRelation::You, &EXTORT_COSTS),
+            &EXTORT_DRAIN,
+        )),
     )
 }
 

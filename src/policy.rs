@@ -20,7 +20,7 @@ mod tests {
     use super::HandcraftedPolicy;
     use crate::TargetIndex;
     use crate::card::{
-        CostDef, EffectDef, EffectRecipientDef, ManaCost, ObjectPredicateDef, PaymentDef,
+        CostDef, EffectDef, EffectRecipientDef, ManaCost, ObjectPredicateDef, PayOrDef, PaymentDef,
         PlayerRelation, TargetConditionDef, TurnStepDef, ValueDef,
     };
 
@@ -42,10 +42,10 @@ mod tests {
             player: EffectRecipientDef::Controller,
             effect: &CONDITIONAL_EFFECT,
         };
-        let optional_payment = EffectDef::OptionalPayment {
-            payment: PaymentDef::new(PlayerRelation::You, &OPTIONAL_PAYMENT_COST),
-            if_paid: &CONDITIONAL_EFFECT,
-        };
+        let optional_payment = EffectDef::PayOr(PayOrDef::optional(
+            PaymentDef::new(PlayerRelation::You, &OPTIONAL_PAYMENT_COST),
+            &CONDITIONAL_EFFECT,
+        ));
         let delayed = EffectDef::AtNextStep {
             step: TurnStepDef::End,
             player: PlayerRelation::You,

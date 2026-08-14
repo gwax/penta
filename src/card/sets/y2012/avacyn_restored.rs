@@ -7,8 +7,9 @@ use crate::card::{
     AddManaEffectDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
     CardType, ComparisonDef, CounterKind, DiscardSelectionDef, DividedTotal, EffectDef,
     EffectDurationDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
-    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRelation,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -864,16 +865,16 @@ pub(in crate::card::sets) static LUNAR_MYSTIC: CardRecord = CardRecord::new(
                 ObjectPredicateDef::HasType(CardType::Instant),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
-            EffectDef::OptionalPayment {
-                payment: crate::card::PaymentDef::new(
+            EffectDef::PayOr(PayOrDef::optional(
+                crate::card::PaymentDef::new(
                     PlayerRelation::You,
                     &[AbilityCostDef::Mana(mana_cost!("{1}"))],
                 ),
-                if_paid: &EffectDef::DrawCards {
+                &EffectDef::DrawCards {
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(1),
                 },
-            },
+            )),
         ),
     ),
 );
@@ -2066,23 +2067,26 @@ pub(in crate::card::sets) static RIOT_RINGLEADER: CardRecord = CardRecord::new(
     "Riot Ringleader",
     CardArt::new("c043f30b-548f-4c31-a415-0e59c2841dcf", "Gabor Szikszai"),
     CardSet::AvacynRestored,
-    CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Warrior"], 2, 2).with_ability(
-        AbilityDef::triggered(
-            "Whenever this creature attacks, Human creatures you control get +1/+0 until end of turn.",
-            TriggerEventDef::Attacks(ObjectPredicateDef::Source),
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype("Human"),
-                    ]), &[ZoneKind::Battlefield], PlayerRelation::You),
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(1),
-                    toughness: ValueDef::Constant(0),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Warrior"], 2, 2)
+        .with_ability(AbilityDef::triggered(
+        "Whenever this creature attacks, Human creatures you control get +1/+0 until end of turn.",
+        TriggerEventDef::Attacks(ObjectPredicateDef::Source),
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Subtype("Human"),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(1),
+                toughness: ValueDef::Constant(0),
             },
-        ),
-    ),
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // AVR 153 — Rite of Ruin

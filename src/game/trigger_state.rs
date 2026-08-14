@@ -6,7 +6,10 @@ use crate::card::{
     TriggerEventDef, TurnStepDef, ZoneKind,
 };
 use crate::casting::TargetSelection;
-use crate::ids::{CardDefinitionId, ChoiceIndex, GameObjectId, PlayerId};
+use crate::ids::{
+    CardDefinitionId, ChoiceIndex, GameObjectId, ObjectBindingIndex, ObjectSetBindingIndex,
+    PlayerId,
+};
 
 use super::{ScopedEffect, StackAbilityResolver, StackObject};
 
@@ -17,8 +20,9 @@ pub(super) struct DelayedTrigger {
     /// The object that queued this, kept whole so the effect resolves with
     /// the same source and controller it would have had at the time.
     pub(super) object: Box<StackObject>,
-    /// Trigger-event information captured when the effect was scheduled.
-    pub(super) context: TriggerContext,
+    /// Trigger-event information and effect-local bindings captured when the
+    /// effect was scheduled.
+    pub(super) context: EffectResolutionContext,
     pub(super) step: TurnStepDef,
     pub(super) player: PlayerRelation,
     pub(super) effect: ScopedEffect,
@@ -30,9 +34,6 @@ pub(super) struct TriggerContext {
     pub(super) object_controller: Option<PlayerId>,
     pub(super) event_player: Option<PlayerId>,
     pub(super) amount: Option<i32>,
-    /// Non-targeting object choices made during this resolution, indexed in
-    /// the authored effect tree rather than stored on the stack as targets.
-    pub(super) chosen_objects: [Option<GameObjectId>; ChoiceIndex::COUNT],
 }
 
 impl TriggerContext {
@@ -42,16 +43,101 @@ impl TriggerContext {
             object_controller: None,
             event_player: None,
             amount: None,
-            chosen_objects: [None; ChoiceIndex::COUNT],
+        }
+    }
+}
+
+/// State local to one declarative effect resolution. Trigger information is
+/// kept separate and copyable because it is also captured by abilities before
+/// they ever resolve; bindings belong only to a particular continuation of an
+/// effect program.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct EffectResolutionContext {
+    pub(super) trigger: TriggerContext,
+    single_objects: [Option<Target>; ObjectBindingIndex::COUNT],
+    object_groups: [Vec<Target>; ObjectSetBindingIndex::COUNT],
+}
+
+impl EffectResolutionContext {
+    pub(super) fn new(trigger: TriggerContext) -> Self {
+        Self {
+            trigger,
+            single_objects: [None; ObjectBindingIndex::COUNT],
+            object_groups: std::array::from_fn(|_| Vec::new()),
         }
     }
 
-    pub(super) const fn chosen_object(self, choice: ChoiceIndex) -> Option<GameObjectId> {
-        self.chosen_objects[choice.index()]
+    pub(super) fn empty() -> Self {
+        Self::new(TriggerContext::empty())
     }
 
-    pub(super) fn bind_choice(&mut self, choice: ChoiceIndex, object: Option<GameObjectId>) {
-        self.chosen_objects[choice.index()] = object;
+    pub(super) const fn single_object(&self, binding: ObjectBindingIndex) -> Option<Target> {
+        self.single_objects[binding.index()]
+    }
+
+    pub(super) fn bind_single_object(
+        &mut self,
+        binding: ObjectBindingIndex,
+        object: Option<Target>,
+    ) {
+        self.single_objects[binding.index()] = object;
+    }
+
+    pub(super) fn object_group(&self, binding: ObjectSetBindingIndex) -> &[Target] {
+        &self.object_groups[binding.index()]
+    }
+
+    pub(super) fn bind_object_group(
+        &mut self,
+        binding: ObjectSetBindingIndex,
+        objects: Vec<Target>,
+    ) {
+        self.object_groups[binding.index()] = objects;
+    }
+
+    pub(super) fn single_objects(&self) -> &[Option<Target>; ObjectBindingIndex::COUNT] {
+        &self.single_objects
+    }
+
+    pub(super) fn object_groups(&self) -> &[Vec<Target>; ObjectSetBindingIndex::COUNT] {
+        &self.object_groups
+    }
+
+    /// Compatibility bridge for the current choice-bearing effect variants.
+    /// Their authored [`ChoiceIndex`] is replaced by `ObjectBindingIndex` in
+    /// the next model migration; keeping that translation here avoids mixing
+    /// the two concepts in stored resolution state.
+    pub(super) fn single_object_for_choice(&self, choice: ChoiceIndex) -> Option<Target> {
+        ObjectBindingIndex::from_index(choice.index())
+            .and_then(|binding| self.single_object(binding))
+    }
+
+    pub(super) fn bind_single_object_for_choice(
+        &mut self,
+        choice: ChoiceIndex,
+        object: Option<Target>,
+    ) {
+        if let Some(binding) = ObjectBindingIndex::from_index(choice.index()) {
+            self.bind_single_object(binding, object);
+        }
+    }
+
+    pub(super) fn from_bindings(
+        trigger: TriggerContext,
+        single_objects: [Option<Target>; ObjectBindingIndex::COUNT],
+        object_groups: [Vec<Target>; ObjectSetBindingIndex::COUNT],
+    ) -> Self {
+        Self {
+            trigger,
+            single_objects,
+            object_groups,
+        }
+    }
+}
+
+impl From<TriggerContext> for EffectResolutionContext {
+    fn from(trigger: TriggerContext) -> Self {
+        Self::new(trigger)
     }
 }
 
@@ -182,7 +268,6 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: None,
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::DamageDealt {
                 source,
@@ -197,7 +282,6 @@ impl CommittedTriggerEvent {
                     Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
                 },
                 amount: Some(i32::from(*amount)),
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::CombatDamageDealtToPlayer {
                 object,
@@ -213,14 +297,12 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::BlocksOrBecomesBlocked { other, .. } => TriggerContext {
                 object: Some(other.id),
                 object_controller: Some(other.controller),
                 event_player: None,
                 amount: None,
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::BecomesBlocked {
                 object,
@@ -230,14 +312,12 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: Some(i32::from(*blockers_beyond_first)),
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::LifeGained { player, amount } => TriggerContext {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             // The player who tapped a permanent for mana is its controller,
             // which is the same shape a cast spell has.
@@ -246,14 +326,12 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: Some(object.controller),
                 amount: None,
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
             Self::StepBegins { player, .. } => TriggerContext {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),
                 amount: None,
-                chosen_objects: [None; ChoiceIndex::COUNT],
             },
         }
     }

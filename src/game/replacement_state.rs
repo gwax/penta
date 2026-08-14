@@ -5,9 +5,9 @@ use crate::card::{
 use crate::ids::{CardDefinitionId, GameObjectId, PlayerId};
 
 use super::{
-    AbilitySourceRef, BalancePhase, BalanceTask, CardInstance, FrozenActivatedAbility, Game, Mana,
-    ManaAbilityActivation, Permanent, SacrificeFollowup, ScopedEffect, StackObject, Target,
-    TargetSelection, TriggerContext,
+    AbilitySourceRef, BalancePhase, BalanceTask, CardInstance, EffectResolutionContext,
+    FrozenActivatedAbility, Game, Mana, ManaAbilityActivation, Permanent, SacrificeFollowup,
+    ScopedEffect, StackObject, Target, TargetSelection,
 };
 
 /// One replacement effect that currently applies to a prospective event.
@@ -110,7 +110,7 @@ pub(super) enum BattlefieldExitCompletion {
     Completions(Vec<BattlefieldExitCompletion>),
     ResolveEffects {
         object: Box<StackObject>,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         effects: Vec<ScopedEffect>,
     },
     FinishStackResolution {
@@ -154,19 +154,19 @@ impl Game {
         &mut self,
         effects: Vec<ScopedEffect>,
         object: &StackObject,
-        context: TriggerContext,
+        context: EffectResolutionContext,
     ) {
         let mut effects = effects.into_iter();
         while let Some(effect) = effects.next() {
             let pending_before = self.pending_decisions.len();
-            self.resolve_effect_def(effect, object, context);
+            self.resolve_effect_def(effect, object, context.clone());
             let remaining = effects.as_slice();
             if !remaining.is_empty()
                 && self.defer_after_battlefield_exit(
                     pending_before,
                     BattlefieldExitCompletion::ResolveEffects {
                         object: Box::new(object.clone()),
-                        context,
+                        context: context.clone(),
                         effects: remaining.to_vec(),
                     },
                 )

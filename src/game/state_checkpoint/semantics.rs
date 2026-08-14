@@ -268,9 +268,16 @@ pub(super) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
             on_failure,
             ..
         } => vec![*on_success, *on_failure],
-        EffectDef::OptionalPayment { if_paid, .. } => vec![*if_paid],
-        EffectDef::UnlessPaid { otherwise, .. }
-        | EffectDef::May {
+        EffectDef::Choose(choice) => vec![*choice.then],
+        EffectDef::PayOr(payment) => payment
+            .if_paid
+            .iter()
+            .chain(payment.otherwise.iter())
+            .copied()
+            .copied()
+            .collect(),
+        EffectDef::SplitIntoPiles(partition) => vec![*partition.then],
+        EffectDef::May {
             effect: otherwise, ..
         }
         | EffectDef::ReplaceNextDrawThisTurn {
@@ -281,12 +288,6 @@ pub(super) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         }
         | EffectDef::AtNextStep {
             effect: otherwise, ..
-        }
-        | EffectDef::ChoosePermanent {
-            then: otherwise, ..
-        }
-        | EffectDef::ChooseDamageSource {
-            then: otherwise, ..
         } => vec![*otherwise],
         EffectDef::IfFormat {
             then, otherwise, ..
@@ -348,48 +349,11 @@ pub(super) fn mana_effects(ability: &AbilityDef) -> Vec<AddManaEffectDef> {
 }
 
 fn collect_mana_effects(effect: EffectDef, found: &mut Vec<AddManaEffectDef>) {
-    match effect {
-        EffectDef::AddMana(mana) => found.push(mana),
-        EffectDef::Sequence(effects) => {
-            for effect in effects {
-                collect_mana_effects(*effect, found);
-            }
-        }
-        EffectDef::Randomized {
-            on_success,
-            on_failure,
-            ..
-        } => {
-            collect_mana_effects(*on_success, found);
-            collect_mana_effects(*on_failure, found);
-        }
-        EffectDef::OptionalPayment {
-            if_paid: effect, ..
-        }
-        | EffectDef::UnlessPaid {
-            otherwise: effect, ..
-        }
-        | EffectDef::May { effect, .. }
-        | EffectDef::ReplaceNextDrawThisTurn { effect, .. }
-        | EffectDef::IfCondition { then: effect, .. }
-        | EffectDef::AtNextStep { effect, .. }
-        | EffectDef::ChoosePermanent { then: effect, .. }
-        | EffectDef::ChooseDamageSource { then: effect, .. }
-        | EffectDef::SacrificeOfChoice {
-            then: Some(effect), ..
-        } => collect_mana_effects(*effect, found),
-        EffectDef::IfFormat {
-            then, otherwise, ..
-        } => {
-            collect_mana_effects(*then, found);
-            collect_mana_effects(*otherwise, found);
-        }
-        EffectDef::LookAtTopAndSelect { selection, .. } => {
-            if let Some(effect) = selection.then {
-                collect_mana_effects(*effect, found);
-            }
-        }
-        _ => {}
+    if let EffectDef::AddMana(mana) = effect {
+        found.push(mana);
+    }
+    for child in child_effects(effect) {
+        collect_mana_effects(child, found);
     }
 }
 
@@ -420,166 +384,14 @@ pub(super) fn child_abilities(ability: &AbilityDef) -> Vec<&AbilityDef> {
     children
 }
 
-// Long because the effect vocabulary is wide, not because the function
-// does several things: every arm is one variant walked the same way.
-#[allow(clippy::too_many_lines)]
 fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static AbilityDef>) {
     match effect {
-        EffectDef::Sequence(effects) => {
-            for effect in effects {
-                collect_effect_abilities(*effect, abilities);
-            }
-        }
-        EffectDef::Randomized {
-            on_success,
-            on_failure,
-            ..
-        } => {
-            collect_effect_abilities(*on_success, abilities);
-            collect_effect_abilities(*on_failure, abilities);
-        }
-        EffectDef::OptionalPayment {
-            if_paid: effect, ..
-        }
-        | EffectDef::UnlessPaid {
-            otherwise: effect, ..
-        }
-        | EffectDef::May { effect, .. }
-        | EffectDef::ReplaceNextDrawThisTurn { effect, .. }
-        | EffectDef::IfCondition { then: effect, .. }
-        | EffectDef::AtNextStep { effect, .. }
-        | EffectDef::ChoosePermanent { then: effect, .. }
-        | EffectDef::ChooseDamageSource { then: effect, .. }
-        | EffectDef::SacrificeOfChoice {
-            then: Some(effect), ..
-        } => collect_effect_abilities(*effect, abilities),
-        EffectDef::LookAtTopAndSelect { selection, .. } => {
-            if let Some(effect) = selection.then {
-                collect_effect_abilities(*effect, abilities);
-            }
-        }
-        EffectDef::IfFormat {
-            then, otherwise, ..
-        } => {
-            collect_effect_abilities(*then, abilities);
-            collect_effect_abilities(*otherwise, abilities);
-        }
         EffectDef::Apply { effect, .. } => collect_applied_abilities(effect, abilities),
         EffectDef::TriggerUntilYourNextTurn { ability } => abilities.push(ability),
-        EffectDef::Replacement(effect) => {
-            collect_replacement_effect_abilities(effect, abilities);
-        }
-        EffectDef::None
-        | EffectDef::AddMana(_)
-        | EffectDef::AddManaEqualTo { .. }
-        | EffectDef::DealDamage { .. }
-        | EffectDef::DrainLife { .. }
-        | EffectDef::GainLife { .. }
-        | EffectDef::AddPoisonCounters { .. }
-        | EffectDef::DrawCards { .. }
-        | EffectDef::Discard { .. }
-        | EffectDef::ShuffleLibrary { .. }
-        | EffectDef::EmptyManaPool { .. }
-        | EffectDef::LoseLife { .. }
-        | EffectDef::LoseTheGame { .. }
-        | EffectDef::Regenerate { .. }
-        | EffectDef::Tap { .. }
-        | EffectDef::RemoveFromCombat { .. }
-        | EffectDef::SetColor { .. }
-        | EffectDef::DestroyAtEndOfCombat { .. }
-        | EffectDef::SkipNextUntapSteps { .. }
-        | EffectDef::DoesNotUntapWhileSourceTapped { .. }
-        | EffectDef::RemoveAllCounters { .. }
-        | EffectDef::Untap { .. }
-        | EffectDef::PreventAllCombatDamageThisTurn
-        | EffectDef::PreventNextDamage { .. }
-        | EffectDef::PreventAllDamageThisTurn { .. }
-        | EffectDef::PreventNextDamageFromSource { .. }
-        | EffectDef::PreventCombatDamageThisTurn { .. }
-        | EffectDef::PreventCombatDamageDealtByThisTurn { .. }
-        | EffectDef::PreventDamageDealtByThisTurn { .. }
-        | EffectDef::PreventDamageToPlayerAndControlledCreaturesThisTurn { .. }
-        | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
-        | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
-        | EffectDef::RedirectTargetDamageToSourceThisTurn { .. }
-        | EffectDef::Attach { .. }
-        | EffectDef::CreateToken { .. }
-        | EffectDef::CreateTokenCopyOf { .. }
-        | EffectDef::Destroy { .. }
-        | EffectDef::Sacrifice { .. }
-        | EffectDef::SacrificeOfChoice { then: None, .. }
-        | EffectDef::DestroyOfChoice { .. }
-        | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-        | EffectDef::RevealAndSplitIntoPiles { .. }
-        | EffectDef::Mill { .. }
-        | EffectDef::LookAtTopAndMayTake { .. }
-        | EffectDef::LookAtHand { .. }
-        | EffectDef::SearchZone { .. }
-        | EffectDef::ChooseCards { .. }
-        | EffectDef::Counter { .. }
-        | EffectDef::CounterUnlessPaid { .. }
-        | EffectDef::AddCounters { .. }
-        | EffectDef::ChangeTextBasicLandType { .. }
-        | EffectDef::BecomeCopyOf { .. }
-        | EffectDef::CannotBeForcedToSacrifice
-        | EffectDef::CreateEmblem { .. }
-        | EffectDef::Transform { .. }
-        | EffectDef::AdditionalCombatPhase
-        | EffectDef::TakeExtraTurn { .. }
-        | EffectDef::CannotCastNoncreatureSpellsThisTurn { .. }
-        | EffectDef::GrantFlashToNextSorcery
-        | EffectDef::ExileLinkedToSource { .. }
-        | EffectDef::ReturnLinkedExiles { .. }
-        | EffectDef::Detain { .. }
-        | EffectDef::CannotRegenerateThisTurn { .. }
-        | EffectDef::MakeUnblockableThisTurn { .. }
-        | EffectDef::GainControlWhileSourceRemains { .. }
-        | EffectDef::GainControlThisTurn { .. }
-        | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::PlayersCantPlay(_)
-        | EffectDef::LandwalkCanBeBlocked(_)
-        | EffectDef::CannotAttackUnless(_)
-        | EffectDef::MultiplyEventAmount(_)
-        | EffectDef::MoveToZone { .. }
-        | EffectDef::ChooseCardName { .. }
-        | EffectDef::ChoosePlayer { .. }
-        | EffectDef::CopyPermanentAsItEnters { .. }
-        | EffectDef::ChooseCreatureType { .. }
-        | EffectDef::Special(_) => {}
+        _ => {}
     }
-}
-
-fn collect_replacement_effect_abilities(
-    effect: ReplacementEffectDef,
-    abilities: &mut Vec<&'static AbilityDef>,
-) {
-    match effect {
-        ReplacementEffectDef::Sequence(effects) => {
-            for effect in effects {
-                collect_replacement_effect_abilities(*effect, abilities);
-            }
-        }
-        ReplacementEffectDef::Perform(effect) => collect_effect_abilities(*effect, abilities),
-        ReplacementEffectDef::Conditional {
-            if_true, if_false, ..
-        } => {
-            for effect in if_true.iter().chain(if_false.iter()) {
-                collect_replacement_effect_abilities(*effect, abilities);
-            }
-        }
-        ReplacementEffectDef::OptionalPayment {
-            if_paid,
-            if_declined,
-            ..
-        } => {
-            for effect in if_paid.iter().chain(if_declined.iter()) {
-                collect_replacement_effect_abilities(*effect, abilities);
-            }
-        }
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
-        | ReplacementEffectDef::MoveToZone(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => {}
+    for child in child_effects(effect) {
+        collect_effect_abilities(child, abilities);
     }
 }
 fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'static AbilityDef>) {
@@ -740,68 +552,16 @@ fn animation_in_effect(
     effect: EffectDef,
     key: &AnimationSnapshot,
 ) -> Option<&'static AnimationDef> {
-    match effect {
-        EffectDef::Sequence(effects) => effects
-            .iter()
-            .find_map(|effect| animation_in_effect(*effect, key)),
-        EffectDef::SacrificeOfChoice { then, .. } => {
-            then.and_then(|effect| animation_in_effect(*effect, key))
-        }
-        EffectDef::LookAtTopAndSelect { selection, .. } => selection
-            .then
-            .and_then(|effect| animation_in_effect(*effect, key)),
-        EffectDef::OptionalPayment { if_paid, .. } => animation_in_effect(*if_paid, key),
-        EffectDef::UnlessPaid { otherwise, .. }
-        | EffectDef::May {
-            effect: otherwise, ..
-        }
-        | EffectDef::ReplaceNextDrawThisTurn {
-            effect: otherwise, ..
-        }
-        | EffectDef::IfCondition {
-            then: otherwise, ..
-        }
-        | EffectDef::AtNextStep {
-            effect: otherwise, ..
-        } => animation_in_effect(*otherwise, key),
-        EffectDef::IfFormat {
-            then, otherwise, ..
-        } => animation_in_effect(*then, key).or_else(|| animation_in_effect(*otherwise, key)),
+    let direct = match effect {
         EffectDef::TriggerUntilYourNextTurn { ability } => animation_in_ability(ability, key),
         EffectDef::Apply { effect, .. } => animation_in_applied(effect, key),
-        EffectDef::Replacement(effect) => animation_in_replacement_effect(effect, key),
         _ => None,
-    }
-}
-
-fn animation_in_replacement_effect(
-    effect: ReplacementEffectDef,
-    key: &AnimationSnapshot,
-) -> Option<&'static AnimationDef> {
-    match effect {
-        ReplacementEffectDef::Sequence(effects) => effects
-            .iter()
-            .find_map(|effect| animation_in_replacement_effect(*effect, key)),
-        ReplacementEffectDef::Perform(effect) => animation_in_effect(*effect, key),
-        ReplacementEffectDef::Conditional {
-            if_true, if_false, ..
-        } => if_true
-            .iter()
-            .chain(if_false.iter())
-            .find_map(|effect| animation_in_replacement_effect(*effect, key)),
-        ReplacementEffectDef::OptionalPayment {
-            if_paid,
-            if_declined,
-            ..
-        } => if_paid
-            .iter()
-            .chain(if_declined.iter())
-            .find_map(|effect| animation_in_replacement_effect(*effect, key)),
-        ReplacementEffectDef::None
-        | ReplacementEffectDef::ReplaceEventWithNothing
-        | ReplacementEffectDef::MoveToZone(_)
-        | ReplacementEffectDef::ModifyBattlefieldEntry(_) => None,
-    }
+    };
+    direct.or_else(|| {
+        child_effects(effect)
+            .into_iter()
+            .find_map(|effect| animation_in_effect(effect, key))
+    })
 }
 
 fn animation_in_applied(

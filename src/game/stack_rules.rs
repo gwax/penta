@@ -64,10 +64,19 @@ impl Game {
                 Self::effect_applies_to_source(*then, expected, duration)
                     || Self::effect_applies_to_source(*otherwise, expected, duration)
             }
+            EffectDef::Choose(choice) => {
+                Self::effect_applies_to_source(*choice.then, expected, duration)
+            }
+            EffectDef::PayOr(payment) => payment
+                .if_paid
+                .iter()
+                .chain(payment.otherwise.iter())
+                .any(|effect| Self::effect_applies_to_source(**effect, expected, duration)),
+            EffectDef::SplitIntoPiles(partition) => {
+                Self::effect_applies_to_source(*partition.then, expected, duration)
+            }
             EffectDef::None
             | EffectDef::Randomized { .. }
-            | EffectDef::ChoosePermanent { .. }
-            | EffectDef::ChooseDamageSource { .. }
             | EffectDef::PreventNextDamageFromSource { .. }
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
@@ -104,9 +113,6 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
-            | EffectDef::DestroyOfChoice { .. }
-            | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-            | EffectDef::RevealAndSplitIntoPiles { .. }
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndMayTake { .. }
             | EffectDef::LookAtTopAndSelect { .. }
@@ -115,12 +121,9 @@ impl Game {
             | EffectDef::ChooseCards { .. }
             | EffectDef::ReplaceNextDrawThisTurn { .. }
             | EffectDef::Counter { .. }
-            | EffectDef::CounterUnlessPaid { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
-            | EffectDef::OptionalPayment { .. }
-            | EffectDef::UnlessPaid { .. }
             | EffectDef::May { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CreateEmblem { .. }

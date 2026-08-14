@@ -1035,6 +1035,21 @@ pub(in crate::card::sets) static SCROLL_THIEF: CardRecord = CardRecord::new(
 // M13 68 — Spelltwine
 // Audit: blocked — Needs linked graveyard choices, spell copies, and permission to cast both copies without paying their costs.
 
+static SPHINX_OF_UTHUUN_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        object: abilities::CHOSEN_PILE,
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+    EffectDef::MoveToZone {
+        object: abilities::UNCHOSEN_PILE,
+        zone: ZoneKind::Graveyard,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+]);
+
 // M13 69 — Sphinx of Uthuun
 pub(in crate::card::sets) static SPHINX_OF_UTHUUN: CardRecord = CardRecord::new(
     cards::SPHINX_OF_UTHUUN,
@@ -1050,11 +1065,10 @@ pub(in crate::card::sets) static SPHINX_OF_UTHUUN: CardRecord = CardRecord::new(
                 from: None,
                 to: Some(ZoneKind::Battlefield),
             },
-            EffectDef::RevealAndSplitIntoPiles {
-                count: ValueDef::Constant(5),
-                rest: ZoneKind::Graveyard,
-                placement: ZonePlacement::Top,
-            },
+            abilities::split_top_of_library_into_piles(
+                ValueDef::Constant(5),
+                &SPHINX_OF_UTHUUN_PILE_MOVES,
+            ),
         ),
     ]),
 );

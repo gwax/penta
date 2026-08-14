@@ -5,9 +5,9 @@ use crate::card::{
     AddManaEffectDef, AnimationDef, AppliedEffectDef, BasicLandType, CardArt, CardBehavior,
     CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef, CounterKind,
     DiscardSelectionDef, EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef,
-    LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef,
+    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -250,15 +250,15 @@ pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord:
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::OptionalPayment {
-                payment: PaymentDef::new(
+            EffectDef::PayOr(PayOrDef::optional(
+                PaymentDef::new(
                     PlayerRelation::You,
                     &[AbilityCostDef::Mana(mana_cost!("{U}{U}{U}"))],
                 ),
-                if_paid: &EffectDef::Untap {
+                &EffectDef::Untap {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
         AbilityDef::static_ability(
             "This creature can't attack unless defending player controls an Island.",
@@ -443,13 +443,13 @@ pub(in crate::card::sets) static HASRAN_OGRESS: CardRecord = CardRecord::new(
         AbilityDef::triggered(
             "Whenever this creature attacks, it deals 3 damage to you unless you pay {2}.",
             TriggerEventDef::Attacks(ObjectPredicateDef::Source),
-            EffectDef::UnlessPaid {
-                cost: mana_cost!("{2}"),
-                otherwise: &EffectDef::DealDamage {
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{2}"),
+                &EffectDef::DealDamage {
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(3),
                 },
-            },
+            )),
         ),
     ]),
 );
@@ -468,12 +468,12 @@ pub(in crate::card::sets) static JUNUN_EFREET: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::UnlessPaid {
-                cost: mana_cost!("{B}{B}"),
-                otherwise: &EffectDef::Sacrifice {
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{B}{B}"),
+                &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
     ]),
 );
@@ -931,15 +931,15 @@ pub(in crate::card::sets) static BRASS_MAN: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::OptionalPayment {
-                payment: PaymentDef::new(
+            EffectDef::PayOr(PayOrDef::optional(
+                PaymentDef::new(
                     PlayerRelation::You,
                     &[AbilityCostDef::Mana(mana_cost!("{1}"))],
                 ),
-                if_paid: &EffectDef::Untap {
+                &EffectDef::Untap {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
     ]),
 );

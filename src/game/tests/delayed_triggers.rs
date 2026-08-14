@@ -122,7 +122,7 @@ fn delayed_trigger_partition_preserves_order_and_waiting_capacity() {
     };
     let delayed = |id: u32, step: TurnStepDef, effect: EffectDef| DelayedTrigger {
         object: Box::new(spell(id, cards::LIGHTNING_BOLT, PlayerId::One, 0)),
-        context: TriggerContext::empty(),
+        context: TriggerContext::empty().into(),
         step,
         player: PlayerRelation::Any,
         effect: ScopedEffect::primary(effect),
@@ -192,7 +192,6 @@ fn delayed_effect_preserves_its_trigger_context() {
     let source = spell(10_001, cards::LIGHTNING_BOLT, PlayerId::One, 0);
     let context = TriggerContext {
         object: Some(triggering_id),
-        chosen_objects: [None; 8],
         object_controller: Some(PlayerId::Two),
         event_player: Some(PlayerId::Two),
         amount: Some(3),
@@ -227,7 +226,7 @@ fn delayed_effect_enqueued_during_firing_waits_for_the_next_matching_step() {
     game.delayed_triggers = Vec::with_capacity(4);
     game.delayed_triggers.push(DelayedTrigger {
         object: Box::new(spell(10_000, cards::LIGHTNING_BOLT, PlayerId::One, 0)),
-        context: TriggerContext::empty(),
+        context: TriggerContext::empty().into(),
         step: TurnStepDef::End,
         player: PlayerRelation::Any,
         effect: ScopedEffect::primary(ENQUEUE_LOSS),

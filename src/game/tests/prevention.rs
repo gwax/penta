@@ -757,7 +757,7 @@ mod circle_of_protection {
     fn a_stack_spell_can_be_the_chosen_damage_source() {
         static SHIELD: EffectDef = EffectDef::PreventNextDamageFromSource {
             object: EffectRecipientDef::Controller,
-            source: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+            source: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
             coverage: ShieldCoverageDef::All,
             gain_life: false,
         };
@@ -769,12 +769,19 @@ mod circle_of_protection {
         let resolving = resolving_prevention_object(PlayerId::One);
 
         game.resolve_effect_def(
-            ScopedEffect::primary(EffectDef::ChooseDamageSource {
-                choice: ChoiceIndex::PRIMARY,
-                chooser: EffectRecipientDef::Controller,
-                object: ObjectPredicateDef::Color(ManaColor::Red),
+            ScopedEffect::primary(EffectDef::Choose(ChooseDef {
+                binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                chooser: PlayerRefDef::EffectController,
+                candidates: ObjectSetDef::Query(ObjectQueryDef::new(
+                    ObjectPredicateDef::Color(ManaColor::Red),
+                    &[ZoneKind::Battlefield, ZoneKind::Stack],
+                )),
+                exclude: Some(ObjectRefDef::ResolvingObject),
+                minimum: 1,
+                maximum: 1,
+                visibility: ChoiceVisibilityDef::Public,
                 then: &SHIELD,
-            }),
+            })),
             &resolving,
             TriggerContext::empty(),
         );

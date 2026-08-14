@@ -288,6 +288,26 @@ impl Game {
                     self.resolve_effect_def(effect, &object, context);
                 }
             }
+            DecisionContinuation::PayOr {
+                player,
+                cost,
+                object,
+                context,
+                if_paid,
+                otherwise,
+            } => {
+                let paid = if options.contains(&1) {
+                    self.activate_mana_for_cost(player, cost, 0);
+                    let _spent = self.pay_player_cost(player, cost, 0);
+                    true
+                } else {
+                    false
+                };
+                let branch = if paid { if_paid } else { otherwise };
+                if let Some(effect) = branch {
+                    self.resolve_nested_effect_before_later(effect, &object, context);
+                }
+            }
             DecisionContinuation::ChainLightning {
                 player,
                 spell,
@@ -367,6 +387,7 @@ impl Game {
                 choice,
                 object,
                 mut context,
+                candidates,
                 effect,
             } => {
                 let chosen = pending
@@ -374,15 +395,78 @@ impl Game {
                     .options
                     .iter()
                     .find(|option| options.contains(&option.id))
-                    .and_then(|option| option.card)
-                    .map(|(object, _)| object);
-                context.bind_choice(choice, chosen);
+                    .and_then(|option| usize::try_from(option.id).ok())
+                    .and_then(|index| candidates.get(index))
+                    .copied();
+                context.bind_single_object_for_choice(choice, chosen);
                 // The enclosing sequence tail is already queued behind this
                 // choice. Complete any procedure started by the chosen
                 // permanent's nested effect before restoring that later work.
                 let mut later_procedures = std::mem::take(&mut self.pending_procedures);
                 self.resolve_effect_def(effect, &object, context);
                 self.pending_procedures.append(&mut later_procedures);
+            }
+            DecisionContinuation::ChooseForEffect {
+                binding,
+                object,
+                mut context,
+                candidates,
+                effect,
+            } => {
+                let selected = pending
+                    .observation
+                    .options
+                    .iter()
+                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|option| usize::try_from(option.id).ok())
+                    .filter_map(|index| candidates.get(index))
+                    .copied()
+                    .collect();
+                Self::bind_effect_choice(&mut context, binding, selected);
+                self.resolve_nested_effect_before_later(effect, &object, context);
+            }
+            DecisionContinuation::SplitForEffect {
+                chooser,
+                items,
+                chosen,
+                unchosen,
+                object,
+                context,
+                effect,
+            } => {
+                let (first, second) = items.into_iter().enumerate().fold(
+                    (Vec::new(), Vec::new()),
+                    |(mut first, mut second), (index, item)| {
+                        if u32::try_from(index).is_ok_and(|id| options.contains(&id)) {
+                            first.push(item);
+                        } else {
+                            second.push(item);
+                        }
+                        (first, second)
+                    },
+                );
+                self.queue_effect_pile_choice(
+                    chooser, first, second, chosen, unchosen, object, context, effect,
+                );
+            }
+            DecisionContinuation::ChoosePileForEffect {
+                first,
+                second,
+                chosen,
+                unchosen,
+                object,
+                mut context,
+                effect,
+            } => {
+                let choose_first = options.first().copied() == Some(0);
+                let (chosen_objects, unchosen_objects) = if choose_first {
+                    (first, second)
+                } else {
+                    (second, first)
+                };
+                context.bind_object_group(chosen, chosen_objects);
+                context.bind_object_group(unchosen, unchosen_objects);
+                self.resolve_nested_effect_before_later(effect, &object, context);
             }
             DecisionContinuation::MiracleReveal { card } => {
                 if options.contains(&1) {
@@ -992,5 +1076,16 @@ impl Game {
     pub(super) fn cancel_decision(&mut self, decision: u32) {
         debug_assert_eq!(self.pending_decisions[0].observation.id, decision);
         self.pending_decisions.remove(0);
+    }
+
+    fn resolve_nested_effect_before_later(
+        &mut self,
+        effect: super::ScopedEffect,
+        object: &super::StackObject,
+        context: super::EffectResolutionContext,
+    ) {
+        let mut later_procedures = std::mem::take(&mut self.pending_procedures);
+        self.resolve_effect_def(effect, object, context);
+        self.pending_procedures.append(&mut later_procedures);
     }
 }

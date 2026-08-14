@@ -10,7 +10,8 @@ use super::semantics::{
     ability_locator, catalog_ability, catalog_scoped_effect, scoped_effect_snapshot,
 };
 use super::stack::{
-    detached_stack_snapshot, parse_detached_stack, parse_trigger_context, stack_ability_snapshot,
+    detached_stack_snapshot, effect_resolution_context_snapshot, parse_detached_stack,
+    parse_effect_resolution_context, parse_trigger_context, stack_ability_snapshot,
     trigger_context_snapshot,
 };
 use super::{AbilitySourceRef, Game, ability_origin_from_snapshot, ability_origin_snapshot};
@@ -25,7 +26,7 @@ pub(super) fn delayed_trigger_snapshot(
     Some(DelayedTriggerSnapshot {
         object,
         ability,
-        context: trigger_context_snapshot(trigger.context),
+        context: effect_resolution_context_snapshot(&trigger.context),
         step: turn_step_snapshot(trigger.step),
         player: player_relation_snapshot(trigger.player),
         effect: scoped_effect_snapshot(&definition, trigger.effect)?,
@@ -38,7 +39,7 @@ pub(super) fn parse_delayed_trigger(
 ) -> Result<DelayedTrigger, String> {
     Ok(DelayedTrigger {
         object: Box::new(parse_detached_stack(&snapshot.object, game)?),
-        context: parse_trigger_context(snapshot.context)?,
+        context: parse_effect_resolution_context(snapshot.context.clone())?,
         step: parse_turn_step(snapshot.step),
         player: parse_player_relation(snapshot.player),
         effect: catalog_scoped_effect(&game.catalog, &snapshot.ability, &snapshot.effect)

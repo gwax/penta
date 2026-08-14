@@ -1,13 +1,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
+    abilities, cards, AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
+    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AnimationDef, AppliedEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
     CardTypeSet, CounterKind, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
     EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation,
+    ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef, PlayerRelation,
     ReplacementEffectDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -18,12 +17,12 @@ static ENERGY_FLUX_GRANTED_ABILITY: AbilityDef = AbilityDef::triggered(
         step: TurnStepDef::Upkeep,
         player: PlayerRelation::You,
     },
-    EffectDef::UnlessPaid {
-        cost: mana_cost!("{2}"),
-        otherwise: &EffectDef::Sacrifice {
+    EffectDef::PayOr(PayOrDef::unless_mana(
+        mana_cost!("{2}"),
+        &EffectDef::Sacrifice {
             object: EffectRecipientDef::Source,
         },
-    },
+    )),
 );
 
 // ATQ 1 — Argivian Archaeologist
@@ -63,22 +62,21 @@ pub(in crate::card::sets) static ARGIVIAN_BLACKSMITH: CardRecord = CardRecord::n
     "Argivian Blacksmith",
     CardArt::new("5f604338-5ee4-4c47-ad5a-5c805c96c8de", "Kerstin Kaman"),
     CardSet::Antiquities,
-    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human", "Artificer"], 2, 2).with_ability(
-        AbilityDef::activated_with_targets(
-            "{T}: Prevent the next 2 damage that would be dealt to target artifact creature this turn.",
-            &[AbilityCostDef::TapSource],
-            &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Artifact),
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                ]),
-            )],
-            EffectDef::PreventNextDamage {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(2),
-            },
-        ),
-    ),
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human", "Artificer"], 2, 2)
+        .with_ability(AbilityDef::activated_with_targets(
+        "{T}: Prevent the next 2 damage that would be dealt to target artifact creature this turn.",
+        &[AbilityCostDef::TapSource],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                ObjectPredicateDef::HasType(CardType::Creature),
+            ]),
+        )],
+        EffectDef::PreventNextDamage {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(2),
+        },
+    )),
 );
 
 // ATQ 3 — Artifact Ward
@@ -1126,16 +1124,16 @@ pub(in crate::card::sets) static TABLET_OF_EPITYR: CardRecord = CardRecord::new(
             from: Some(ZoneKind::Battlefield),
             to: Some(ZoneKind::Graveyard),
         },
-        EffectDef::OptionalPayment {
-            payment: PaymentDef::new(
+        EffectDef::PayOr(PayOrDef::optional(
+            PaymentDef::new(
                 PlayerRelation::You,
                 &[AbilityCostDef::Mana(mana_cost!("{1}"))],
             ),
-            if_paid: &EffectDef::GainLife {
+            &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
             },
-        },
+        )),
     )]),
 );
 
@@ -1303,16 +1301,16 @@ pub(in crate::card::sets) static URZAS_CHALICE: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[AbilityDef::triggered(
         "Whenever a player casts an artifact spell, you may pay {1}. If you do, you gain 1 life.",
         TriggerEventDef::SpellCast(ObjectPredicateDef::HasType(CardType::Artifact)),
-        EffectDef::OptionalPayment {
-            payment: PaymentDef::new(
+        EffectDef::PayOr(PayOrDef::optional(
+            PaymentDef::new(
                 PlayerRelation::You,
                 &[AbilityCostDef::Mana(mana_cost!("{1}"))],
             ),
-            if_paid: &EffectDef::GainLife {
+            &EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
             },
-        },
+        )),
     )]),
 );
 

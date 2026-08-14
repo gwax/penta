@@ -2,9 +2,9 @@ use super::{
     AbilityEffectExpiration, Action, AlternativeCastKindDef, CardBehavior, CardDefinitionId,
     CardType, CombatDamageStage, CommittedTriggerEvent, DecisionContinuation, DecisionOption,
     DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
-    DeferredBeginTurnEffect, EffectDef, Game, GameEvent, GameObjectId, GameResult, ManaPool,
-    PendingProcedure, PlayerId, ReplacementEventDef, Step, TriggerContext, TurnStepDef,
-    one_or_none,
+    DeferredBeginTurnEffect, EffectDef, EffectResolutionContext, Game, GameEvent, GameObjectId,
+    GameResult, ManaPool, PendingProcedure, PlayerId, ReplacementEventDef, Step, TriggerContext,
+    TurnStepDef, one_or_none,
 };
 
 mod begin_turn;
@@ -797,13 +797,14 @@ impl Game {
         &mut self,
         mut effects: Vec<super::ScopedEffect>,
         object: &super::StackObject,
-        context: TriggerContext,
+        context: impl Into<EffectResolutionContext>,
         custom_followup: Option<CardBehavior>,
     ) {
+        let context = context.into();
         let mut later_procedures = std::mem::take(&mut self.pending_procedures);
         while !effects.is_empty() {
             let effect = effects.remove(0);
-            self.resolve_effect_def(effect, object, context);
+            self.resolve_effect_def(effect, object, context.clone());
             if !self.pending_decisions.is_empty()
                 || !self.pending_events.is_empty()
                 || !self.pending_procedures.is_empty()

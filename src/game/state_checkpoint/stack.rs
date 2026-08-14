@@ -1,7 +1,8 @@
 use super::model::{
-    AppliedStackEffectSnapshot, CastSignatureSnapshot, DetachedStackSnapshot, ManaSourceSnapshot,
-    SeatSnapshot, SpellFormSnapshot, StackAbilitySnapshot, StackObjectKindSnapshot, StackSnapshot,
-    TargetSelectionSnapshot, TargetSnapshot, TriggerContextSnapshot,
+    AppliedStackEffectSnapshot, CastSignatureSnapshot, DetachedStackSnapshot,
+    EffectResolutionContextSnapshot, ManaSourceSnapshot, SeatSnapshot, SpellFormSnapshot,
+    StackAbilitySnapshot, StackObjectKindSnapshot, StackSnapshot, TargetSelectionSnapshot,
+    TargetSnapshot, TriggerContextSnapshot,
 };
 use super::semantics::{
     applied_effect_locator, catalog_applied_effect, catalog_scoped_effect, scoped_effect_snapshot,
@@ -9,12 +10,12 @@ use super::semantics::{
 use super::{
     AbilityId, AbilityOrigin, AdditionalCostId, AlternativeCostId, AppliedStackEffect,
     BasicLandType, BasicLandTypeChange, CardDefinitionId, CardPartId, CastChoices, CastSignature,
-    CharacteristicSource, CostConfiguration, DeclarativeAbilityDef, Game, GameObjectId, GameStack,
-    GrantId, ManaSource, ModeId, PlayOptionId, PlayerId, SpellForm, StackAbilityPayload,
-    StackObject, StackObjectKind, Target, TargetSelection, TriggerContext, Value, ability_locator,
-    ability_origin_from_snapshot, ability_origin_snapshot, array, card, catalog_ability, field,
-    optional_id, parse_basic_land_type, parse_cast_signature, parse_ids, seat_value, str_field,
-    u8_field, u32_field, usize_field,
+    CharacteristicSource, CostConfiguration, DeclarativeAbilityDef, EffectResolutionContext, Game,
+    GameObjectId, GameStack, GrantId, ManaSource, ModeId, PlayOptionId, PlayerId, SpellForm,
+    StackAbilityPayload, StackObject, StackObjectKind, Target, TargetSelection, TriggerContext,
+    Value, ability_locator, ability_origin_from_snapshot, ability_origin_snapshot, array, card,
+    catalog_ability, field, optional_id, parse_basic_land_type, parse_cast_signature, parse_ids,
+    seat_value, str_field, u8_field, u32_field, usize_field,
 };
 use crate::card::{ColorSet, ManaColor};
 
@@ -178,7 +179,6 @@ pub(super) fn referenced_object_ids(object: &StackObject) -> impl Iterator<Item 
     );
     if let Some(payload) = &object.ability {
         ids.extend(payload.context.object);
-        ids.extend(payload.context.chosen_objects.iter().flatten().copied());
         ids.extend(payload.targets.iter().flat_map(|selection| {
             selection
                 .targets()
@@ -201,6 +201,25 @@ pub(super) fn referenced_object_ids(object: &StackObject) -> impl Iterator<Item 
         }));
     }
     ids.into_iter()
+}
+
+pub(super) fn resolution_context_referenced_object_ids(
+    context: &EffectResolutionContext,
+) -> Vec<GameObjectId> {
+    let mut ids = context.trigger.object.into_iter().collect::<Vec<_>>();
+    ids.extend(
+        context
+            .single_objects()
+            .iter()
+            .flatten()
+            .chain(context.object_groups().iter().flatten())
+            .copied()
+            .filter_map(|target| match target {
+                Target::Player(_) => None,
+                Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(id),
+            }),
+    );
+    ids
 }
 
 fn stack_payload_matches(
@@ -253,7 +272,24 @@ pub(super) fn trigger_context_snapshot(context: TriggerContext) -> TriggerContex
         object_controller: context.object_controller.map(PlayerId::index),
         event_player: context.event_player.map(PlayerId::index),
         amount: context.amount,
-        chosen_objects: context.chosen_objects.map(|object| object.map(|id| id.0)),
+    }
+}
+
+pub(super) fn effect_resolution_context_snapshot(
+    context: &EffectResolutionContext,
+) -> EffectResolutionContextSnapshot {
+    EffectResolutionContextSnapshot {
+        trigger: trigger_context_snapshot(context.trigger),
+        single_objects: std::array::from_fn(|index| {
+            context.single_objects()[index].map(target_snapshot)
+        }),
+        object_groups: std::array::from_fn(|index| {
+            context.object_groups()[index]
+                .iter()
+                .copied()
+                .map(target_snapshot)
+                .collect()
+        }),
     }
 }
 
@@ -574,8 +610,19 @@ pub(super) fn parse_trigger_context(
         object_controller: value.object_controller.map(seat_index_value).transpose()?,
         event_player: value.event_player.map(seat_index_value).transpose()?,
         amount: value.amount,
-        chosen_objects: value.chosen_objects.map(|object| object.map(GameObjectId)),
     })
+}
+
+pub(super) fn parse_effect_resolution_context(
+    value: EffectResolutionContextSnapshot,
+) -> Result<EffectResolutionContext, String> {
+    Ok(EffectResolutionContext::from_bindings(
+        parse_trigger_context(value.trigger)?,
+        value.single_objects.map(|object| object.map(parse_target)),
+        value
+            .object_groups
+            .map(|objects| objects.into_iter().map(parse_target).collect()),
+    ))
 }
 
 pub(super) fn parse_target_selection(
@@ -649,5 +696,60 @@ pub(super) fn parse_ability_origin(value: &Value) -> Result<AbilityOrigin, Strin
             grant: GrantId(u8_field(value, "grantId")?),
         }),
         other => Err(format!("unknown ability origin kind {other}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{ObjectBindingIndex, ObjectSetBindingIndex};
+
+    #[test]
+    fn effect_resolution_context_round_trips_typed_objects_and_groups() {
+        let trigger = TriggerContext {
+            object: Some(GameObjectId(10)),
+            object_controller: Some(PlayerId::One),
+            event_player: Some(PlayerId::Two),
+            amount: Some(3),
+        };
+        let mut context = EffectResolutionContext::new(trigger);
+        context.bind_single_object(
+            ObjectBindingIndex::PRIMARY,
+            Some(Target::Spell(GameObjectId(11))),
+        );
+        context.bind_object_group(
+            ObjectSetBindingIndex::PRIMARY,
+            vec![
+                Target::Permanent(GameObjectId(12)),
+                Target::Card(GameObjectId(13)),
+                Target::Player(PlayerId::Two),
+            ],
+        );
+
+        let snapshot = effect_resolution_context_snapshot(&context);
+        let rebuilt = parse_effect_resolution_context(snapshot).expect("context should parse");
+
+        assert_eq!(rebuilt, context);
+        assert_eq!(
+            rebuilt.single_object(ObjectBindingIndex::PRIMARY),
+            Some(Target::Spell(GameObjectId(11)))
+        );
+        assert_eq!(
+            rebuilt.object_group(ObjectSetBindingIndex::PRIMARY),
+            [
+                Target::Permanent(GameObjectId(12)),
+                Target::Card(GameObjectId(13)),
+                Target::Player(PlayerId::Two),
+            ]
+        );
+        assert_eq!(
+            resolution_context_referenced_object_ids(&rebuilt),
+            [
+                GameObjectId(10),
+                GameObjectId(11),
+                GameObjectId(12),
+                GameObjectId(13),
+            ]
+        );
     }
 }

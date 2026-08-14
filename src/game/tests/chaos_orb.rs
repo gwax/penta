@@ -45,7 +45,7 @@ fn chaos_orb_chooses_during_resolution_and_uses_a_seeded_success_trial() {
         .observe(PlayerId::One)
         .decision
         .expect("Chaos Orb chooses only once its ability resolves");
-    assert_eq!(decision.prompt, "Choose a permanent");
+    assert_eq!(decision.prompt, "Choose objects");
     assert_eq!(decision.options.len(), 2);
     assert!(
         decision

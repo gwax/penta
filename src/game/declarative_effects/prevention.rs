@@ -1,7 +1,7 @@
 use super::super::{
-    DamageSourceGroupDef, EffectDef, EffectRecipientDef, Game, PreventionShield,
-    RelationalDamagePrevention, RelationalSourceFilter, ScopedEffect, ShieldCoverageDef,
-    StackObject, Target, TargetIndex, TriggerContext,
+    DamageSourceGroupDef, EffectDef, EffectRecipientDef, EffectResolutionContext, Game,
+    PreventionShield, RelationalDamagePrevention, RelationalSourceFilter, ScopedEffect,
+    ShieldCoverageDef, StackObject, Target, TargetIndex,
 };
 
 impl Game {
@@ -13,7 +13,7 @@ impl Game {
         player: EffectRecipientDef,
         source: DamageSourceGroupDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) {
         let filter = match source {
@@ -44,7 +44,7 @@ impl Game {
         recipient: EffectRecipientDef,
         every_kind: bool,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) {
         for target in self.effect_recipients(recipient, object, context, scoped) {
@@ -71,7 +71,7 @@ impl Game {
         player: EffectRecipientDef,
         from: TargetIndex,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) {
         let destination = object.source.unwrap_or(object.id);
@@ -100,7 +100,7 @@ impl Game {
         &mut self,
         scoped: ScopedEffect,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
     ) {
         match scoped.effect {
             EffectDef::PreventNextDamage {
@@ -121,9 +121,6 @@ impl Game {
                         gain_life: false,
                     });
                 }
-            }
-            EffectDef::ChooseDamageSource { .. } => {
-                self.resolve_damage_source_choice(scoped, object, context);
             }
             EffectDef::PreventNextDamageFromSource { .. } => {
                 self.install_damage_source_shield(scoped, object, context);
@@ -192,40 +189,11 @@ impl Game {
         }
     }
 
-    fn resolve_damage_source_choice(
-        &mut self,
-        scoped: ScopedEffect,
-        object: &StackObject,
-        context: TriggerContext,
-    ) {
-        let EffectDef::ChooseDamageSource {
-            choice,
-            chooser,
-            object: predicate,
-            then,
-        } = scoped.effect
-        else {
-            unreachable!("damage source choice helper called for a different effect");
-        };
-        for chooser in self.effect_recipients(chooser, object, context, scoped) {
-            if let Target::Player(chooser) = chooser {
-                self.queue_damage_source_choice(
-                    choice,
-                    chooser,
-                    predicate,
-                    object,
-                    context,
-                    scoped.with_effect(*then),
-                );
-            }
-        }
-    }
-
     fn install_damage_source_shield(
         &mut self,
         scoped: ScopedEffect,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
     ) {
         let EffectDef::PreventNextDamageFromSource {
             object: recipient,

@@ -2,10 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, ValueDef, ZoneKind, cards,
+    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, ObjectPredicateDef, ValueDef,
+    abilities, cards,
 };
-use crate::{TargetIndex, mana_cost};
+use crate::mana_cost;
 
 // STH 36 — Mana Leak
 pub(in crate::card::sets) static MANA_LEAK: CardRecord = CardRecord::new(
@@ -16,11 +16,7 @@ pub(in crate::card::sets) static MANA_LEAK: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target spell unless its controller pays {3}.",
         &[AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)],
-        EffectDef::CounterUnlessPaid {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            amount: ValueDef::Constant(3),
-            zone: ZoneKind::Graveyard,
-        },
+        abilities::counter_target_unless_paid(ValueDef::Constant(3)),
     )),
 );
 

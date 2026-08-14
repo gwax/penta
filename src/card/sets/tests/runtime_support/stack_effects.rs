@@ -1,16 +1,61 @@
 use super::*;
-use crate::{CostDef, PaymentDef};
+use crate::CostDef;
+use crate::card::{
+    ChooseDef, EffectPaymentDef, ObjectChoiceBindingDef, PartitionItemsDef, SplitIntoPilesDef,
+};
 
 pub(in super::super) fn shared_stack_effect(effect: EffectDef) -> bool {
     shared_stack_effect_at_position(effect, true)
 }
 
-fn shared_optional_payment(payment: PaymentDef, if_paid: &'static EffectDef) -> bool {
-    !matches!(
-        payment.payer,
-        PlayerRelation::Any | PlayerRelation::ChosenPlayer | PlayerRelation::EventPlayer
-    ) && matches!(payment.costs, [CostDef::Mana(_)])
-        && shared_stack_effect_at_position(*if_paid, true)
+fn shared_effect_payment(payment: EffectPaymentDef) -> bool {
+    match payment {
+        EffectPaymentDef::Costs(payment) => {
+            !matches!(
+                payment.payer,
+                PlayerRelation::Any | PlayerRelation::ChosenPlayer | PlayerRelation::EventPlayer
+            ) && matches!(payment.costs, [CostDef::Mana(_)])
+        }
+        EffectPaymentDef::Mana { payer, .. } | EffectPaymentDef::GenericMana { payer, .. } => {
+            shared_effect_recipient(EffectRecipientDef::player(payer))
+        }
+    }
+}
+
+fn shared_choose(choice: ChooseDef) -> bool {
+    choice.maximum > 0
+        && choice.minimum <= choice.maximum
+        && match choice.binding {
+            ObjectChoiceBindingDef::Object(_) => choice.maximum == 1,
+            ObjectChoiceBindingDef::Objects(_) => true,
+        }
+        && shared_effect_recipient(EffectRecipientDef::player(choice.chooser))
+        && shared_effect_recipient(EffectRecipientDef::objects(choice.candidates))
+        && choice
+            .exclude
+            .is_none_or(|object| shared_effect_recipient(EffectRecipientDef::object(object)))
+}
+
+fn shared_partition(partition: SplitIntoPilesDef) -> bool {
+    let items_are_shared = match partition.items {
+        PartitionItemsDef::Objects(objects) => {
+            shared_effect_recipient(EffectRecipientDef::objects(objects))
+        }
+        PartitionItemsDef::TopOfLibrary { player, .. } => {
+            shared_effect_recipient(EffectRecipientDef::player(player))
+        }
+    };
+    items_are_shared
+        && !matches!(
+            partition.divider,
+            PlayerSetDef::All | PlayerSetDef::Related(PlayerRelation::Any)
+        )
+        && !matches!(
+            partition.chooser,
+            PlayerSetDef::All | PlayerSetDef::Related(PlayerRelation::Any)
+        )
+        && shared_effect_recipient(EffectRecipientDef::players(partition.divider))
+        && shared_effect_recipient(EffectRecipientDef::players(partition.chooser))
 }
 
 /// Resolving sequences preserve their unprocessed tail, so a queued decision
@@ -21,16 +66,9 @@ fn shared_optional_payment(payment: PaymentDef, if_paid: &'static EffectDef) -> 
 /// decision is allowed where they sit; this checks only their arguments.
 fn shared_decision_effect(effect: EffectDef) -> bool {
     match effect {
-        // Both halves of the split are asked for, so only the player
-        // needs checking.
-        EffectDef::SplitPermanentsAndSacrificeAPile { player } => shared_effect_recipient(player),
-        // The reveal, the split, and the choice are all asked for, and
-        // the library is the resolving object's controller's own.
-        EffectDef::RevealAndSplitIntoPiles { .. } => true,
         // Looking is private and the offer is the only visible part, and
-        // a chosen destruction reaches only the chooser's own battlefield.
-        EffectDef::LookAtTopAndMayTake { player, object }
-        | EffectDef::DestroyOfChoice { player, object, .. } => {
+        // the chosen card comes from the named player's own library.
+        EffectDef::LookAtTopAndMayTake { player, object } => {
             shared_effect_recipient(player) && shared_object_predicate(object)
         }
         EffectDef::LookAtTopAndSelect { player, selection } => {
@@ -48,12 +86,6 @@ fn shared_decision_effect(effect: EffectDef) -> bool {
                     .then
                     .is_none_or(|effect| shared_stack_effect_at_position(*effect, true))
         }
-        EffectDef::ChooseDamageSource {
-            chooser, object, ..
-        }
-        | EffectDef::ChoosePermanent {
-            chooser, object, ..
-        } => shared_effect_recipient(chooser) && shared_object_predicate(object),
         _ => false,
     }
 }
@@ -107,10 +139,25 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         EffectDef::PreventAllCombatDamageExceptSourceThisTurn { source } => {
             shared_effect_recipient(source)
         }
-        EffectDef::ChooseDamageSource { then, .. } | EffectDef::ChoosePermanent { then, .. } => {
+        EffectDef::Choose(choice) => {
             deferred_decision_allowed
-                && shared_decision_effect(effect)
-                && shared_stack_effect_at_position(*then, true)
+                && shared_choose(choice)
+                && shared_stack_effect_at_position(*choice.then, true)
+        }
+        EffectDef::PayOr(payment) => {
+            deferred_decision_allowed
+                && shared_effect_payment(payment.payment)
+                && (payment.if_paid.is_some() || payment.otherwise.is_some())
+                && payment
+                    .if_paid
+                    .iter()
+                    .chain(payment.otherwise.iter())
+                    .all(|effect| shared_stack_effect_at_position(**effect, true))
+        }
+        EffectDef::SplitIntoPiles(partition) => {
+            deferred_decision_allowed
+                && shared_partition(partition)
+                && shared_stack_effect_at_position(*partition.then, true)
         }
         EffectDef::AddMana(_) => shared_mana_effect(effect, false),
         EffectDef::DealDamage { recipient, .. }
@@ -130,14 +177,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::LoseTheGame { player: recipient }
         | EffectDef::LookAtHand { player: recipient } => shared_effect_recipient(recipient),
         EffectDef::SacrificeOfChoice { .. } => shared_sacrifice_of_choice(effect),
-        // The choice is asked of whoever controls the candidates, and the
-        // candidates are their own battlefield, so only the player and
-        // the predicate need checking.
-        EffectDef::DestroyOfChoice { .. }
-        | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-        | EffectDef::RevealAndSplitIntoPiles { .. }
-        | EffectDef::LookAtTopAndMayTake { .. }
-        | EffectDef::LookAtTopAndSelect { .. } => {
+        EffectDef::LookAtTopAndMayTake { .. } | EffectDef::LookAtTopAndSelect { .. } => {
             deferred_decision_allowed && shared_decision_effect(effect)
         }
         EffectDef::SearchZone {
@@ -235,7 +275,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Attach { object }
         | EffectDef::ChangeTextBasicLandType { object }
         | EffectDef::BecomeCopyOf { object, .. } => shared_effect_recipient(object),
-        EffectDef::Counter { object, zone } | EffectDef::CounterUnlessPaid { object, zone, .. } => {
+        EffectDef::Counter { object, zone } => {
             matches!(zone, ZoneKind::Graveyard | ZoneKind::Exile) && shared_effect_recipient(object)
         }
         // Neither needs a recipient: both concern the resolving controller.
@@ -255,12 +295,6 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             deferred_decision_allowed
                 && shared_effect_recipient(player)
                 && shared_stack_effect_at_position(*effect, true)
-        }
-        EffectDef::UnlessPaid {
-            otherwise: effect, ..
-        } => deferred_decision_allowed && shared_stack_effect_at_position(*effect, true),
-        EffectDef::OptionalPayment { payment, if_paid } => {
-            deferred_decision_allowed && shared_optional_payment(payment, if_paid)
         }
         // Scheduling creates a fresh resolution boundary. A decision may
         // therefore be the delayed effect's root even when scheduling it

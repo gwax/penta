@@ -228,10 +228,10 @@ fn optional_payment_uses_its_declared_payer() {
     let mountain_id = mountain.card.id;
     game.battlefield.push(mountain);
     let source = spell(10_001, cards::LIGHTNING_BOLT, PlayerId::One, 0);
-    let effect = EffectDef::OptionalPayment {
-        payment: PaymentDef::new(PlayerRelation::Opponent, &COSTS),
-        if_paid: &IF_PAID,
-    };
+    let effect = EffectDef::PayOr(PayOrDef::optional(
+        PaymentDef::new(PlayerRelation::Opponent, &COSTS),
+        &IF_PAID,
+    ));
 
     game.resolve_effect_def(
         ScopedEffect::primary(effect),
@@ -257,6 +257,91 @@ fn optional_payment_uses_its_declared_payer() {
             .iter()
             .find(|permanent| permanent.card.id == mountain_id)
             .is_some_and(|permanent| permanent.tapped)
+    );
+}
+
+#[test]
+fn nested_choice_payment_preserves_its_binding_and_outer_sequence_tail() {
+    static COSTS: [CostDef; 1] = [CostDef::Mana(ManaCost::new(1, 0))];
+    static DESTROY_CHOSEN: EffectDef = EffectDef::Destroy {
+        object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+        can_regenerate: false,
+    };
+    static PAY_TO_DESTROY: EffectDef = EffectDef::PayOr(PayOrDef::optional(
+        PaymentDef::new(PlayerRelation::You, &COSTS),
+        &DESTROY_CHOSEN,
+    ));
+    static CHOOSE_CREATURE: EffectDef = EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::controlled_by(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            &[ZoneKind::Battlefield],
+            PlayerSetDef::One(PlayerRefDef::EffectController),
+        )),
+        exclude: None,
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
+        then: &PAY_TO_DESTROY,
+    });
+    static CONTROLLED_CREATURES_IN_GRAVEYARD: ObjectQueryDef = ObjectQueryDef::owned_by(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        &[ZoneKind::Graveyard],
+        PlayerSetDef::One(PlayerRefDef::EffectController),
+    );
+    static OUTER_EFFECTS: [EffectDef; 2] = [
+        CHOOSE_CREATURE,
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::CountMatchingObjects(&CONTROLLED_CREATURES_IN_GRAVEYARD),
+        },
+    ];
+
+    let mut game = ready_game();
+    let chosen = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::One);
+    let chosen_id = chosen.card.id;
+    let mountain = creature(10_001, cards::MOUNTAIN, PlayerId::One);
+    game.battlefield.extend([chosen, mountain]);
+    let source = spell(10_002, cards::LIGHTNING_BOLT, PlayerId::One, 0);
+
+    game.resolve_effect_def(
+        ScopedEffect::primary(EffectDef::Sequence(&OUTER_EFFECTS)),
+        &source,
+        TriggerContext::empty(),
+    );
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the nested payment suspends the outer sequence");
+    assert_eq!(game.players[0].life, 20, "the outer tail has not run");
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == chosen_id),
+        "the paid branch has not run"
+    );
+
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![1],
+        },
+    )
+    .unwrap();
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SAVANNAH_LIONS),
+        "the paid branch consumed the object binding"
+    );
+    assert_eq!(
+        game.players[0].life, 21,
+        "the outer tail ran after the chosen creature reached the graveyard"
     );
 }
 

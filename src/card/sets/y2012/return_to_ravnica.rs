@@ -7,7 +7,7 @@ use crate::card::{
     AddManaEffectDef, AnimationDef, AppliedEffectDef, CardArt, CardBehavior, CardRules, CardSet,
     CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef, CounterKind,
     DiscardSelectionDef, EffectDef, EffectDurationDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayerRelation, ReplacementEventDef,
+    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef, PlayerRelation, ReplacementEventDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
     ZonePlacement, abilities, cards,
 };
@@ -932,17 +932,31 @@ static JACE_ARCHITECT_ABILITIES: [AbilityDef; 3] = [
     AbilityDef::activated(
         "−2: Reveal the top three cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other on the bottom of your library in any order.",
         &[AbilityCostDef::Loyalty(-2)],
-        EffectDef::RevealAndSplitIntoPiles {
-            count: ValueDef::Constant(3),
-            rest: ZoneKind::Library,
-            placement: ZonePlacement::Bottom,
-        },
+        abilities::split_top_of_library_into_piles(
+            ValueDef::Constant(3),
+            &JACE_ARCHITECT_PILE_MOVES,
+        ),
     ),
     AbilityDef::not_implemented(
         "−8: For each player, search that player's library for a nonland card and exile it, then that player shuffles. You may cast those cards without paying their mana costs.",
         "Casting an exiled card without paying its mana cost is not an available alternative cost.",
     ),
 ];
+
+static JACE_ARCHITECT_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        object: abilities::CHOSEN_PILE,
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+    EffectDef::MoveToZone {
+        object: abilities::UNCHOSEN_PILE,
+        zone: ZoneKind::Library,
+        placement: ZonePlacement::Bottom,
+        controller: None,
+    },
+]);
 
 // RTR 44 — Jace, Architect of Thought
 // Audit: partial — The -8 cannot search every player's library and grant permission to cast the exiled cards without paying their mana costs.
@@ -1138,11 +1152,7 @@ pub(in crate::card::sets) static SYNCOPATE: CardRecord = CardRecord::new(
                 controller: None,
                 owner: None,
             },
-        )], EffectDef::CounterUnlessPaid {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::ChosenX,
-                zone: ZoneKind::Exile,
-            }),
+        )], abilities::counter_target_to_exile_unless_paid(ValueDef::ChosenX)),
     ),
 );
 
@@ -1412,13 +1422,13 @@ pub(in crate::card::sets) static DRAINPIPE_VERMIN: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Player(PlayerRelation::Any),
             )],
-            EffectDef::OptionalPayment {
-                payment: PaymentDef::new(
+            EffectDef::PayOr(PayOrDef::optional(
+                PaymentDef::new(
                     PlayerRelation::You,
                     &[AbilityCostDef::Mana(mana_cost!("{B}"))],
                 ),
-                if_paid: &DRAINPIPE_VERMIN_DISCARD,
-            },
+                &DRAINPIPE_VERMIN_DISCARD,
+            )),
         ),
     ),
 );
@@ -2077,20 +2087,21 @@ pub(in crate::card::sets) static PYROCONVERGENCE: CardRecord = CardRecord::new(
     "Pyroconvergence",
     CardArt::new("6cff95b7-79eb-4796-9a01-31ff355681ab", "Jack Wang"),
     CardSet::ReturnToRavnica,
-    CardRules::new_enchantment(mana_cost!("{4}{R}")).with_ability(
-        AbilityDef::triggered_with_targets(
-            "Whenever you cast a multicolored spell, this enchantment deals 2 damage to any target.",
-            TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
-                MULTICOLORED_SPELL,
-                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-            ])),
-            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)],
-            EffectDef::DealDamage {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(2),
-            },
-        ),
-    ),
+    CardRules::new_enchantment(mana_cost!("{4}{R}"))
+        .with_ability(AbilityDef::triggered_with_targets(
+        "Whenever you cast a multicolored spell, this enchantment deals 2 damage to any target.",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
+            MULTICOLORED_SPELL,
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ])),
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(2),
+        },
+    )),
 );
 
 static RACECOURSE_FURY_HASTE: AbilityDef = AbilityDef::activated_with_targets(
@@ -3358,11 +3369,7 @@ pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
             &[
                 AbilityDef::spell_with_targets("Counter a noncreature spell unless its controller pays {2}", &[AbilityTargetDef::exactly_one_spell(
                     ObjectPredicateDef::NoncreatureSpell,
-                )], EffectDef::CounterUnlessPaid {
-                        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                        amount: ValueDef::Constant(2),
-                        zone: ZoneKind::Graveyard,
-                    }),
+                )], abilities::counter_target_unless_paid(ValueDef::Constant(2))),
                 AbilityDef::spell_with_targets("Deal 2 damage to a creature", &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )], EffectDef::DealDamage {
@@ -4198,11 +4205,7 @@ pub(in crate::card::sets) static JUDGES_FAMILIAR: CardRecord = CardRecord::new(
                 ObjectPredicateDef::HasType(CardType::Instant),
                 ObjectPredicateDef::HasType(CardType::Sorcery),
             ]))],
-            EffectDef::CounterUnlessPaid {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(1),
-                zone: ZoneKind::Graveyard,
-            },
+            abilities::counter_target_unless_paid(ValueDef::Constant(1)),
         ),
     ]),
 );
@@ -4780,12 +4783,12 @@ pub(in crate::card::sets) static TRANSGUILD_PROMENADE: CardRecord = CardRecord::
                 from: None,
                 to: Some(ZoneKind::Battlefield),
             },
-            EffectDef::UnlessPaid {
-                cost: mana_cost!("{1}"),
-                otherwise: &EffectDef::Sacrifice {
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{1}"),
+                &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
-            },
+            )),
         ),
         AbilityDef::activated_mana(
             "{T}: Add one mana of any color.",

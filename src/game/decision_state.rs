@@ -1,16 +1,16 @@
 use crate::action::{ManaColor, Target};
 use crate::card::{
-    CardTypeSet, ColorSet, EffectDef, ManaCost, PaymentDef, ReplacementEffectDef, TurnKindDef,
-    ZoneKind, ZonePlacement,
+    CardTypeSet, ColorSet, EffectDef, ManaCost, ObjectChoiceBindingDef, PaymentDef,
+    ReplacementEffectDef, TurnKindDef, ZoneKind, ZonePlacement,
 };
 use crate::casting::TargetSelection;
-use crate::ids::{CardDefinitionId, ChoiceIndex, GameObjectId, PlayerId};
+use crate::ids::{CardDefinitionId, ChoiceIndex, GameObjectId, ObjectSetBindingIndex, PlayerId};
 
 use super::{
     AbilitySourceRef, ApplicableReplacement, ApplicableZoneMoveReplacement, CardInstance,
-    DecisionObservation, DecisionOption, DecisionZone, DrawReplacement,
+    DecisionObservation, DecisionOption, DecisionZone, DrawReplacement, EffectResolutionContext,
     PendingBattlefieldExitBatch, PendingTrigger, PileChosen, PileSplit, PilesSeparated,
-    ReplacementEffectContext, ScopedEffect, StackObject, TriggerContext, TriggerPlacementBatch,
+    ReplacementEffectContext, ScopedEffect, StackObject, TriggerPlacementBatch,
 };
 
 /// Fork repaints its copy, so the copy is red and nothing else.
@@ -22,7 +22,7 @@ pub(super) const FORK_COPY_COLOR: ColorSet = ColorSet::from_colors(&[ManaColor::
 #[derive(Clone, Debug)]
 pub(super) struct SacrificeFollowup {
     pub(super) object: Box<StackObject>,
-    pub(super) context: TriggerContext,
+    pub(super) context: EffectResolutionContext,
     pub(super) effect: ScopedEffect,
 }
 
@@ -160,7 +160,7 @@ pub(super) enum DecisionContinuation {
         player: PlayerId,
         cost: ManaCost,
         object: Box<StackObject>,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         effect: ScopedEffect,
     },
     /// The same offer read the other way round: declining is what makes the
@@ -169,7 +169,7 @@ pub(super) enum DecisionContinuation {
         player: PlayerId,
         cost: ManaCost,
         object: Box<StackObject>,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         effect: ScopedEffect,
     },
     ChainLightning {
@@ -195,7 +195,7 @@ pub(super) enum DecisionContinuation {
     /// An effect the controller was offered and may decline.
     OptionalEffect {
         object: Box<StackObject>,
-        context: TriggerContext,
+        context: EffectResolutionContext,
         effect: ScopedEffect,
     },
     /// Resume a declarative effect after its controller chooses a permanent
@@ -203,7 +203,49 @@ pub(super) enum DecisionContinuation {
     ChoosePermanentForEffect {
         choice: ChoiceIndex,
         object: Box<StackObject>,
-        context: TriggerContext,
+        context: EffectResolutionContext,
+        candidates: Vec<Target>,
+        effect: ScopedEffect,
+    },
+    /// A generic bounded non-targeting object choice. `candidates` is kept
+    /// typed because a spell and a permanent are different objects even
+    /// though both are addressed by `GameObjectId`.
+    ChooseForEffect {
+        binding: ObjectChoiceBindingDef,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        candidates: Vec<Target>,
+        effect: ScopedEffect,
+    },
+    /// A mana payment offered during effect resolution, with either branch
+    /// able to continue the same effect program.
+    PayOr {
+        player: PlayerId,
+        cost: ManaCost,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        if_paid: Option<ScopedEffect>,
+        otherwise: Option<ScopedEffect>,
+    },
+    /// The divider has selected the first pile. The chooser still has to
+    /// choose between the two typed groups before the nested effect runs.
+    SplitForEffect {
+        chooser: PlayerId,
+        items: Vec<Target>,
+        chosen: ObjectSetBindingIndex,
+        unchosen: ObjectSetBindingIndex,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        effect: ScopedEffect,
+    },
+    /// The divider's two piles, waiting for the chooser to name one.
+    ChoosePileForEffect {
+        first: Vec<Target>,
+        second: Vec<Target>,
+        chosen: ObjectSetBindingIndex,
+        unchosen: ObjectSetBindingIndex,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
         effect: ScopedEffect,
     },
     /// The card just drawn, offered to its controller to reveal.
@@ -320,7 +362,7 @@ pub(super) enum DecisionContinuation {
         selected_placement: ZonePlacement,
         rest_zone: ZoneKind,
         rest_placement: ZonePlacement,
-        followup: Option<(Box<StackObject>, TriggerContext, ScopedEffect)>,
+        followup: Option<(Box<StackObject>, EffectResolutionContext, ScopedEffect)>,
     },
     /// The affected object's controller chooses which currently applicable
     /// replacement effect to apply next.

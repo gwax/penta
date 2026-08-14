@@ -318,7 +318,7 @@ fn replacement_effect_tail_finishes_before_later_draws_and_outer_effects() {
     let source = spell(12_076, cards::SIGN_IN_BLOOD, PlayerId::One, 0);
     game.draw_replacements[0].push_back(DrawReplacement {
         object: Box::new(source.clone()),
-        context: TriggerContext::empty(),
+        context: TriggerContext::empty().into(),
         effect: ScopedEffect::primary(EffectDef::Sequence(&REPLACEMENT_EFFECTS)),
     });
     let event_start = game.events().len();
@@ -364,7 +364,7 @@ fn the_affected_player_chooses_between_multiple_draw_replacements() {
     game.draw_replacements[0].extend([
         DrawReplacement {
             object: Box::new(source.clone()),
-            context: TriggerContext::empty(),
+            context: TriggerContext::empty().into(),
             effect: ScopedEffect::primary(EffectDef::LoseLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -372,7 +372,7 @@ fn the_affected_player_chooses_between_multiple_draw_replacements() {
         },
         DrawReplacement {
             object: Box::new(source),
-            context: TriggerContext::empty(),
+            context: TriggerContext::empty().into(),
             effect: ScopedEffect::primary(EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(2),
@@ -422,7 +422,7 @@ fn a_chosen_replacement_finishes_its_draw_before_the_original_instruction_resume
     game.draw_replacements[0].extend([
         DrawReplacement {
             object: Box::new(source.clone()),
-            context: TriggerContext::empty(),
+            context: TriggerContext::empty().into(),
             effect: ScopedEffect::primary(EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
@@ -430,7 +430,7 @@ fn a_chosen_replacement_finishes_its_draw_before_the_original_instruction_resume
         },
         DrawReplacement {
             object: Box::new(source.clone()),
-            context: TriggerContext::empty(),
+            context: TriggerContext::empty().into(),
             effect: ScopedEffect::primary(EffectDef::LoseLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(3),
@@ -523,7 +523,7 @@ fn the_draw_step_finishes_only_after_ring_is_answered_and_replacements_expire() 
     // A second Ring effect that is never used lapses in cleanup.
     game.draw_replacements[0].push_back(DrawReplacement {
         object: Box::new(spell(12_200, cards::RING_OF_MARUF, PlayerId::One, 0)),
-        context: TriggerContext::empty(),
+        context: TriggerContext::empty().into(),
         effect: ScopedEffect::primary(EffectDef::None),
     });
     game.finish_cleanup();

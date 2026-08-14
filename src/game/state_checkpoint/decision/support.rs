@@ -24,13 +24,50 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         | DecisionContinuation::OptionalEffect {
             object, context, ..
         }
-        | DecisionContinuation::ChoosePermanentForEffect {
+        | DecisionContinuation::PayOr {
             object, context, ..
         }
         | DecisionContinuation::TopCardSelection {
             followup: Some((object, context, _)),
             ..
-        } => extend_stack_continuation_ids(&mut ids, object, *context),
+        } => extend_stack_continuation_ids(&mut ids, object, context),
+        DecisionContinuation::ChoosePermanentForEffect {
+            object,
+            context,
+            candidates,
+            ..
+        } => {
+            extend_stack_continuation_ids(&mut ids, object, context);
+            ids.extend(candidates.iter().filter_map(target_object_id));
+        }
+        DecisionContinuation::ChooseForEffect {
+            object,
+            context,
+            candidates,
+            ..
+        } => {
+            extend_stack_continuation_ids(&mut ids, object, context);
+            ids.extend(candidates.iter().filter_map(target_object_id));
+        }
+        DecisionContinuation::SplitForEffect {
+            object,
+            context,
+            items,
+            ..
+        } => {
+            extend_stack_continuation_ids(&mut ids, object, context);
+            ids.extend(items.iter().filter_map(target_object_id));
+        }
+        DecisionContinuation::ChoosePileForEffect {
+            object,
+            context,
+            first,
+            second,
+            ..
+        } => {
+            extend_stack_continuation_ids(&mut ids, object, context);
+            ids.extend(first.iter().chain(second).filter_map(target_object_id));
+        }
         DecisionContinuation::ChainLightning { spell, .. }
         | DecisionContinuation::Fork { spell, .. } => {
             ids.extend(referenced_object_ids(spell));
@@ -38,7 +75,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         DecisionContinuation::SacrificeOfChoice {
             followup: Some(followup),
             ..
-        } => extend_stack_continuation_ids(&mut ids, &followup.object, followup.context),
+        } => extend_stack_continuation_ids(&mut ids, &followup.object, &followup.context),
         DecisionContinuation::BattlefieldEntryOptional { context }
         | DecisionContinuation::BattlefieldEntryPayment { context, .. } => {
             ids.push(context.source.object);
@@ -162,17 +199,22 @@ fn extend_battlefield_exit_ids(
 fn extend_stack_continuation_ids(
     ids: &mut Vec<GameObjectId>,
     object: &super::super::StackObject,
-    context: super::super::TriggerContext,
+    context: &super::super::EffectResolutionContext,
 ) {
     ids.extend(referenced_object_ids(object));
-    ids.extend(context.object);
-    ids.extend(context.chosen_objects.iter().flatten().copied());
+    ids.extend(resolution_context_referenced_object_ids(context));
 }
 
 fn extend_pending_trigger_ids(ids: &mut Vec<GameObjectId>, trigger: &PendingTrigger) {
     ids.push(trigger.source.object);
     ids.extend(trigger.context.object);
-    ids.extend(trigger.context.chosen_objects.iter().flatten().copied());
+}
+
+fn target_object_id(target: &Target) -> Option<GameObjectId> {
+    match target {
+        Target::Player(_) => None,
+        Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
+    }
 }
 
 fn extend_trigger_batch_ids(ids: &mut Vec<GameObjectId>, batch: &TriggerPlacementBatch) {
@@ -184,7 +226,7 @@ fn extend_trigger_batch_ids(ids: &mut Vec<GameObjectId>, batch: &TriggerPlacemen
 pub(super) fn effect_continuation_snapshot(
     game: &Game,
     object: &super::super::StackObject,
-    context: super::super::TriggerContext,
+    context: &super::super::EffectResolutionContext,
     effect: super::super::ScopedEffect,
 ) -> Option<EffectContinuationSnapshot> {
     let ability = stack_ability_snapshot(game, object)?.ability_locator?;
@@ -193,7 +235,7 @@ pub(super) fn effect_continuation_snapshot(
     Some(EffectContinuationSnapshot {
         object,
         ability,
-        context: trigger_context_snapshot(context),
+        context: effect_resolution_context_snapshot(context),
         effect: scoped_effect_snapshot(&definition, effect)?,
     })
 }
@@ -204,7 +246,7 @@ pub(super) fn parse_effect_continuation(
 ) -> Result<SacrificeFollowup, String> {
     Ok(SacrificeFollowup {
         object: Box::new(parse_detached_stack(&snapshot.object, game)?),
-        context: parse_trigger_context(snapshot.context)?,
+        context: parse_effect_resolution_context(snapshot.context.clone())?,
         effect: catalog_scoped_effect(&game.catalog, &snapshot.ability, &snapshot.effect)
             .ok_or("effect continuation locator is absent from this catalog")?,
     })

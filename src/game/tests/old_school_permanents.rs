@@ -393,8 +393,8 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
         break;
     }
 
-    // The opponent separates the three revealed cards: the Angel alone
-    // against the other two.
+    // The opponent separates the three revealed cards: the Angel and Lions
+    // against the Bolt.
     let split = game.observe(PlayerId::Two).decision.expect("they split");
     assert_eq!(split.options.len(), 3, "only the top three were revealed");
     let angel = split
@@ -407,28 +407,38 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
         })
         .expect("the angel was revealed")
         .id;
+    let lions = split
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(id, _)| id == GameObjectId(10_002))
+        })
+        .expect("the lions were revealed")
+        .id;
     game.apply(
         PlayerId::Two,
         Action::ChooseDecision {
             decision: split.id,
-            options: vec![angel],
+            options: vec![angel, lions],
         },
     )
     .unwrap();
 
-    // Jace's controller takes the two-card pile.
+    // Jace's controller takes the one-card pile.
     let choice = game.observe(PlayerId::One).decision.expect("he chooses");
-    let bigger = choice
+    let bolt = choice
         .options
         .iter()
-        .find(|option| option.label.contains("Savannah Lions"))
-        .expect("one pile holds the other two")
+        .find(|option| option.label.contains("Lightning Bolt"))
+        .expect("one pile holds the Bolt")
         .id;
     game.apply(
         PlayerId::One,
         Action::ChooseDecision {
             decision: choice.id,
-            options: vec![bigger],
+            options: vec![bolt],
         },
     )
     .unwrap();
@@ -441,17 +451,21 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
             .iter()
             .map(|card| card.definition)
             .collect::<Vec<_>>(),
-        vec![cards::SAVANNAH_LIONS, cards::LIGHTNING_BOLT],
+        vec![cards::LIGHTNING_BOLT],
         "the chosen pile went to hand"
     );
+    let mut bottom = game.players[0].library[..2]
+        .iter()
+        .map(|card| card.definition)
+        .collect::<Vec<_>>();
+    bottom.sort_unstable();
+    let mut expected = vec![cards::SERRA_ANGEL, cards::SAVANNAH_LIONS];
+    expected.sort_unstable();
+    assert_eq!(bottom, expected, "both losing cards went to the bottom");
     assert_eq!(
-        game.players[0]
-            .library
-            .iter()
-            .map(|card| card.definition)
-            .collect::<Vec<_>>(),
-        vec![cards::SERRA_ANGEL, cards::PLAINS],
-        "the angel went under the one card that was left"
+        game.players[0].library[2].definition,
+        cards::PLAINS,
+        "the card outside the split remains above both losing cards"
     );
     let jace = game
         .battlefield

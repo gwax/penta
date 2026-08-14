@@ -1,4 +1,6 @@
 use super::*;
+use crate::ObjectSetBindingIndex;
+use crate::card::{PartitionItemsDef, SplitIntoPilesDef};
 
 fn resolve_demonic_tutor(game: &mut Game, tutor: &StackObject) {
     let effect = game
@@ -13,6 +15,66 @@ fn resolve_demonic_tutor(game: &mut Game, tutor: &StackObject) {
         ScopedEffect::primary(effect),
         tutor,
         TriggerContext::empty(),
+    );
+}
+
+#[test]
+fn pile_split_resolution_requires_exactly_one_player_for_each_role() {
+    static GAIN_LIFE: EffectDef = EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    };
+    let partition = |divider, chooser| {
+        EffectDef::SplitIntoPiles(SplitIntoPilesDef {
+            items: PartitionItemsDef::Objects(ObjectSetDef::Query(ObjectQueryDef::new(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Battlefield],
+            ))),
+            divider,
+            chooser,
+            chosen: ObjectSetBindingIndex::PRIMARY,
+            unchosen: ObjectSetBindingIndex::new(1),
+            then: &GAIN_LIFE,
+        })
+    };
+    let source = spell(10_000, cards::LIGHTNING_BOLT, PlayerId::One, 0);
+
+    for effect in [
+        partition(
+            PlayerSetDef::All,
+            PlayerSetDef::One(PlayerRefDef::EffectController),
+        ),
+        partition(
+            PlayerSetDef::One(PlayerRefDef::EffectController),
+            PlayerSetDef::Related(PlayerRelation::Any),
+        ),
+    ] {
+        let mut game = ready_game();
+        game.resolve_effect_def(
+            ScopedEffect::primary(effect),
+            &source,
+            TriggerContext::empty(),
+        );
+
+        assert_eq!(
+            game.players[0].life, 20,
+            "an ambiguous role aborts the split"
+        );
+        assert!(game.pending_decisions.is_empty());
+    }
+
+    let mut game = ready_game();
+    game.resolve_effect_def(
+        ScopedEffect::primary(partition(
+            PlayerSetDef::Related(PlayerRelation::Opponent),
+            PlayerSetDef::One(PlayerRefDef::EffectController),
+        )),
+        &source,
+        TriggerContext::empty(),
+    );
+    assert_eq!(
+        game.players[0].life, 21,
+        "the production opponent/single-player shape remains valid"
     );
 }
 

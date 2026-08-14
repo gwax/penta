@@ -17,7 +17,9 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
             predicates.iter().copied().all(shared_object_predicate)
         }
-        ObjectPredicateDef::Not(predicate) => shared_object_predicate(*predicate),
+        ObjectPredicateDef::Not(predicate) | ObjectPredicateDef::AttachedTo(predicate) => {
+            shared_object_predicate(*predicate)
+        }
         ObjectPredicateDef::Special(_) => false,
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
@@ -53,7 +55,6 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::Enchanted
-        | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttackedThisTurn => true,
     }
 }
@@ -78,7 +79,9 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
                 && shared_object_predicate(object)
         }
         EffectRecipientSetDef::LegalTargets(_)
-        | EffectRecipientSetDef::Objects(ObjectSetDef::One(_) | ObjectSetDef::SharingNameWith(_))
+        | EffectRecipientSetDef::Objects(
+            ObjectSetDef::One(_) | ObjectSetDef::Binding(_) | ObjectSetDef::SharingNameWith(_),
+        )
         | EffectRecipientSetDef::Players(_) => true,
     }
 }
@@ -497,8 +500,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     // resolving it, which this one is not.
                     EffectDef::AddManaEqualTo { .. }
                     | EffectDef::Randomized { .. }
-                    | EffectDef::ChoosePermanent { .. }
-                    | EffectDef::ChooseDamageSource { .. }
+                    | EffectDef::Choose(_)
+                    | EffectDef::PayOr(_)
+                    | EffectDef::SplitIntoPiles(_)
                     | EffectDef::PreventNextDamageFromSource { .. }
                     | EffectDef::May { .. }
                     | EffectDef::None
@@ -537,9 +541,6 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Destroy { .. }
                     | EffectDef::Sacrifice { .. }
                     | EffectDef::SacrificeOfChoice { .. }
-                    | EffectDef::DestroyOfChoice { .. }
-                    | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-                    | EffectDef::RevealAndSplitIntoPiles { .. }
                     | EffectDef::Mill { .. }
                     | EffectDef::LookAtTopAndMayTake { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
@@ -549,12 +550,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ReplaceNextDrawThisTurn { .. }
                     | EffectDef::IfFormat { .. }
                     | EffectDef::Counter { .. }
-                    | EffectDef::CounterUnlessPaid { .. }
                     | EffectDef::AddCounters { .. }
                     | EffectDef::ChangeTextBasicLandType { .. }
                     | EffectDef::BecomeCopyOf { .. }
-                    | EffectDef::OptionalPayment { .. }
-                    | EffectDef::UnlessPaid { .. }
                     | EffectDef::CannotBeForcedToSacrifice
                     | EffectDef::CreateEmblem { .. }
                     | EffectDef::Transform { .. }

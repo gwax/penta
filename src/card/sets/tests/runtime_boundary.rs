@@ -1,6 +1,7 @@
 use super::runtime_support::*;
 use super::*;
-use crate::{CostDef, PaymentDef};
+use crate::card::{PartitionItemsDef, SplitIntoPilesDef};
+use crate::{CostDef, ObjectSetBindingIndex, PaymentDef};
 
 #[test]
 fn activated_cost_boundary_is_specific_to_the_source_zone() {
@@ -94,26 +95,26 @@ fn assert_unsupported_optional_payments(tap: &'static EffectDef) {
         CostDef::Mana(ManaCost::new(1, 0)),
     ];
 
-    let any_payer = EffectDef::OptionalPayment {
-        payment: PaymentDef::new(PlayerRelation::Any, &ONE_MANA),
-        if_paid: tap,
-    };
-    let chosen_payer = EffectDef::OptionalPayment {
-        payment: PaymentDef::new(PlayerRelation::ChosenPlayer, &ONE_MANA),
-        if_paid: tap,
-    };
-    let event_payer = EffectDef::OptionalPayment {
-        payment: PaymentDef::new(PlayerRelation::EventPlayer, &ONE_MANA),
-        if_paid: tap,
-    };
-    let life_payment = EffectDef::OptionalPayment {
-        payment: PaymentDef::new(PlayerRelation::You, &ONE_LIFE),
-        if_paid: tap,
-    };
-    let multiple_mana_payments = EffectDef::OptionalPayment {
-        payment: PaymentDef::new(PlayerRelation::You, &TWO_MANA_PAYMENTS),
-        if_paid: tap,
-    };
+    let any_payer = EffectDef::PayOr(PayOrDef::optional(
+        PaymentDef::new(PlayerRelation::Any, &ONE_MANA),
+        tap,
+    ));
+    let chosen_payer = EffectDef::PayOr(PayOrDef::optional(
+        PaymentDef::new(PlayerRelation::ChosenPlayer, &ONE_MANA),
+        tap,
+    ));
+    let event_payer = EffectDef::PayOr(PayOrDef::optional(
+        PaymentDef::new(PlayerRelation::EventPlayer, &ONE_MANA),
+        tap,
+    ));
+    let life_payment = EffectDef::PayOr(PayOrDef::optional(
+        PaymentDef::new(PlayerRelation::You, &ONE_LIFE),
+        tap,
+    ));
+    let multiple_mana_payments = EffectDef::PayOr(PayOrDef::optional(
+        PaymentDef::new(PlayerRelation::You, &TWO_MANA_PAYMENTS),
+        tap,
+    ));
 
     assert_stack_effect_support(
         &[
@@ -141,10 +142,10 @@ fn decision_effects_suspend_inside_shared_stack_sequences() {
         player: EffectRecipientDef::Controller,
         effect: &TAP,
     };
-    static OPTIONAL_TAP: EffectDef = EffectDef::OptionalPayment {
-        payment: PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(ManaCost::new(1, 0))]),
-        if_paid: &TAP,
-    };
+    static OPTIONAL_TAP: EffectDef = EffectDef::PayOr(PayOrDef::optional(
+        PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(ManaCost::new(1, 0))]),
+        &TAP,
+    ));
     static SOURCE_PRESENT: TriggerConditionDef = TriggerConditionDef::SourceOnBattlefield;
     static CONDITIONAL_MAY: EffectDef = EffectDef::IfCondition {
         condition: &SOURCE_PRESENT,
@@ -193,6 +194,40 @@ fn decision_effects_suspend_inside_shared_stack_sequences() {
         true,
     );
     assert_unsupported_optional_payments(&TAP);
+}
+
+#[test]
+fn pile_split_runtime_support_requires_singleton_player_roles() {
+    static THEN: EffectDef = EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    };
+    let partition = |divider, chooser| {
+        EffectDef::SplitIntoPiles(SplitIntoPilesDef {
+            items: PartitionItemsDef::Objects(ObjectSetDef::Query(ObjectQueryDef::new(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Battlefield],
+            ))),
+            divider,
+            chooser,
+            chosen: ObjectSetBindingIndex::PRIMARY,
+            unchosen: ObjectSetBindingIndex::new(1),
+            then: &THEN,
+        })
+    };
+
+    assert!(shared_stack_effect(partition(
+        PlayerSetDef::Related(PlayerRelation::Opponent),
+        PlayerSetDef::One(PlayerRefDef::EffectController),
+    )));
+    assert!(!shared_stack_effect(partition(
+        PlayerSetDef::All,
+        PlayerSetDef::One(PlayerRefDef::EffectController),
+    )));
+    assert!(!shared_stack_effect(partition(
+        PlayerSetDef::One(PlayerRefDef::EffectController),
+        PlayerSetDef::Related(PlayerRelation::Any),
+    )));
 }
 
 #[test]

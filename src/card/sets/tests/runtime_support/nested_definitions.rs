@@ -199,15 +199,18 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
             assert_nested_definition_abilities(card_name, *on_success);
             assert_nested_definition_abilities(card_name, *on_failure);
         }
-        EffectDef::OptionalPayment {
-            if_paid: effect, ..
+        EffectDef::Choose(choice) => {
+            assert_nested_definition_abilities(card_name, *choice.then);
         }
-        | EffectDef::UnlessPaid {
-            otherwise: effect, ..
+        EffectDef::PayOr(payment) => {
+            for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
+                assert_nested_definition_abilities(card_name, **effect);
+            }
         }
-        | EffectDef::May { effect, .. }
-        | EffectDef::ChoosePermanent { then: effect, .. }
-        | EffectDef::ChooseDamageSource { then: effect, .. }
+        EffectDef::SplitIntoPiles(partition) => {
+            assert_nested_definition_abilities(card_name, *partition.then);
+        }
+        EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. } => {
@@ -270,16 +273,12 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { .. }
-        | EffectDef::DestroyOfChoice { .. }
-        | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-        | EffectDef::RevealAndSplitIntoPiles { .. }
         | EffectDef::Mill { .. }
         | EffectDef::LookAtTopAndMayTake { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
-        | EffectDef::CounterUnlessPaid { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
         | EffectDef::BecomeCopyOf { .. }

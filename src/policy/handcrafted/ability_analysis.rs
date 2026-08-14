@@ -272,7 +272,13 @@ impl HandcraftedPolicy {
                 on_failure,
                 ..
             } => Self::effect_is_a_wash(*on_success) || Self::effect_is_a_wash(*on_failure),
-            EffectDef::ChoosePermanent { then, .. } => Self::effect_is_a_wash(*then),
+            EffectDef::Choose(choice) => Self::effect_is_a_wash(*choice.then),
+            EffectDef::PayOr(payment) => payment
+                .if_paid
+                .iter()
+                .chain(payment.otherwise.iter())
+                .any(|effect| Self::effect_is_a_wash(**effect)),
+            EffectDef::SplitIntoPiles(partition) => Self::effect_is_a_wash(*partition.then),
             EffectDef::ExileLinkedToSource {
                 object: EffectRecipientDef::Source,
             } => true,
@@ -374,18 +380,98 @@ impl HandcraftedPolicy {
                 ..
             } => Self::target_condition_in(*on_success)
                 .or_else(|| Self::target_condition_in(*on_failure)),
-            EffectDef::OptionalPayment {
-                if_paid: effect, ..
+            EffectDef::Choose(choice) => Self::target_condition_in_object_set(choice.candidates)
+                .or_else(|| Self::target_condition_in(*choice.then)),
+            EffectDef::PayOr(payment) => {
+                let payment_condition = match payment.payment {
+                    crate::card::EffectPaymentDef::GenericMana { amount, .. } => {
+                        Self::target_condition_in_value(amount)
+                    }
+                    crate::card::EffectPaymentDef::Costs(_)
+                    | crate::card::EffectPaymentDef::Mana { .. } => None,
+                };
+                payment_condition.or_else(|| {
+                    payment
+                        .if_paid
+                        .iter()
+                        .chain(payment.otherwise.iter())
+                        .find_map(|effect| Self::target_condition_in(**effect))
+                })
             }
-            | EffectDef::May { effect, .. }
-            | EffectDef::ChoosePermanent { then: effect, .. }
+            EffectDef::SplitIntoPiles(partition) => {
+                let item_condition = match partition.items {
+                    crate::card::PartitionItemsDef::Objects(objects) => {
+                        Self::target_condition_in_object_set(objects)
+                    }
+                    crate::card::PartitionItemsDef::TopOfLibrary { count, .. } => {
+                        Self::target_condition_in_value(count)
+                    }
+                };
+                item_condition.or_else(|| Self::target_condition_in(*partition.then))
+            }
+            EffectDef::May { effect, .. }
             | EffectDef::IfCondition { then: effect, .. }
             | EffectDef::AtNextStep { effect, .. } => Self::target_condition_in(*effect),
             EffectDef::AddCounters { amount, .. } | EffectDef::GainLife { amount, .. } => {
-                match amount {
-                    ValueDef::IfTargetMatches(condition) => Some(condition),
-                    _ => None,
-                }
+                Self::target_condition_in_value(amount)
+            }
+            _ => None,
+        }
+    }
+
+    fn target_condition_in_object_set(
+        objects: crate::card::ObjectSetDef,
+    ) -> Option<&'static crate::card::TargetConditionDef> {
+        match objects {
+            crate::card::ObjectSetDef::Query(query) => {
+                Self::target_condition_in_object_predicate(query.object)
+            }
+            crate::card::ObjectSetDef::One(_)
+            | crate::card::ObjectSetDef::Binding(_)
+            | crate::card::ObjectSetDef::SharingNameWith(_) => None,
+        }
+    }
+
+    fn target_condition_in_object_predicate(
+        object: ObjectPredicateDef,
+    ) -> Option<&'static crate::card::TargetConditionDef> {
+        match object {
+            ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
+                predicates
+                    .iter()
+                    .copied()
+                    .find_map(Self::target_condition_in_object_predicate)
+            }
+            ObjectPredicateDef::Not(predicate) => {
+                Self::target_condition_in_object_predicate(*predicate)
+            }
+            ObjectPredicateDef::ManaValueEqualTo(value)
+            | ObjectPredicateDef::ManaValueAtMostValue(value)
+            | ObjectPredicateDef::ToughnessLessThan(value) => {
+                Self::target_condition_in_value(value)
+            }
+            _ => None,
+        }
+    }
+
+    fn target_condition_in_value(
+        value: ValueDef,
+    ) -> Option<&'static crate::card::TargetConditionDef> {
+        match value {
+            ValueDef::IfTargetMatches(condition) => Some(condition),
+            ValueDef::Negate(value) => Self::target_condition_in_value(*value),
+            ValueDef::Scaled(value) => Self::target_condition_in_value(value.value),
+            ValueDef::IfCreatureDiedThisTurn(condition) => {
+                Self::target_condition_in_value(condition.then)
+                    .or_else(|| Self::target_condition_in_value(condition.otherwise))
+            }
+            ValueDef::IfMatchingObjectCount(condition) => {
+                Self::target_condition_in_object_predicate(condition.query.object)
+                    .or_else(|| Self::target_condition_in_value(condition.then))
+                    .or_else(|| Self::target_condition_in_value(condition.otherwise))
+            }
+            ValueDef::CountMatchingObjects(query) | ValueDef::AnyMatchingObject(query) => {
+                Self::target_condition_in_object_predicate(query.object)
             }
             _ => None,
         }

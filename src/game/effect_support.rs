@@ -1,12 +1,12 @@
 use super::{
     AbilityDef, AbilityEffectExpiration, AbilityId, AbilityOrigin, AbilityTargetPredicate,
     AppliedEffectDef, CardPartId, CastSignature, ComparisonDef, ContinuousEffectTimestamp,
-    ControlFlow, CounterKind, EffectDurationDef, EffectRecipientDef, EffectRecipientSetDef, Game,
-    GameObjectId, GrantId, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    Permanent, PlayerId, PlayerRefDef, PlayerSetDef, QuantifierDef, ScopedEffect, StackObject,
-    StackObjectKind, TappedSourceStatBonus, Target, TargetIndex, TargetSelection, TargetSlotId,
-    TemporaryAbilityGrant, TemporaryGrantedAbility, TemporaryRemovedAbilities, TriggerConditionDef,
-    TriggerContext, ZoneKind,
+    ControlFlow, CounterKind, EffectDurationDef, EffectRecipientDef, EffectRecipientSetDef,
+    EffectResolutionContext, Game, GameObjectId, GrantId, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRefDef, PlayerSetDef, QuantifierDef,
+    ScopedEffect, StackObject, StackObjectKind, TappedSourceStatBonus, Target, TargetIndex,
+    TargetSelection, TargetSlotId, TemporaryAbilityGrant, TemporaryGrantedAbility,
+    TemporaryRemovedAbilities, TriggerConditionDef, TriggerContext, ZoneKind,
 };
 
 #[derive(Clone, Copy)]
@@ -14,7 +14,7 @@ struct ResolvedAppliedEffect<'a> {
     duration: EffectDurationDef,
     timestamp: ContinuousEffectTimestamp,
     object: &'a StackObject,
-    context: TriggerContext,
+    context: &'a EffectResolutionContext,
     scoped: ScopedEffect,
 }
 
@@ -27,7 +27,7 @@ impl Game {
         effect: AppliedEffectDef,
         duration: EffectDurationDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) {
         let timestamp = self.allocate_continuous_effect_timestamp();
@@ -335,14 +335,13 @@ impl Game {
         &self,
         reference: ObjectRefDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) -> Option<Target> {
         match reference {
             ObjectRefDef::Source => object.source.map(Target::Permanent),
-            ObjectRefDef::Choice(choice) => context
-                .chosen_object(choice)
-                .and_then(|chosen| self.live_object_target(chosen)),
+            ObjectRefDef::ResolvingObject => self.live_object_target(object.id),
+            ObjectRefDef::Binding(binding) => context.single_object(binding),
             ObjectRefDef::AttachedToSource => object
                 .source
                 .and_then(|source| self.current_or_last_known_attached_host(source))
@@ -354,6 +353,7 @@ impl Game {
                     .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
             }
             ObjectRefDef::TriggeringObject => context
+                .trigger
                 .object
                 .and_then(|triggering| self.live_object_target(triggering)),
         }
@@ -363,22 +363,33 @@ impl Game {
         &self,
         reference: ObjectRefDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) -> Option<GameObjectId> {
         match reference {
             ObjectRefDef::Source => object.source,
-            ObjectRefDef::Choice(choice) => context.chosen_object(choice),
+            ObjectRefDef::ResolvingObject => Some(object.id),
+            ObjectRefDef::Binding(binding) => {
+                context
+                    .single_object(binding)
+                    .and_then(|target| match target {
+                        Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(id),
+                        Target::Player(_) => None,
+                    })
+            }
             ObjectRefDef::AttachedToSource => object
                 .source
                 .and_then(|source| self.current_or_last_known_attached_host(source)),
-            ObjectRefDef::Target(target) => self
-                .raw_target_reference(target, object, scoped)
-                .and_then(|target| match target {
-                    Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(id),
-                    Target::Player(_) => None,
-                }),
-            ObjectRefDef::TriggeringObject => context.object,
+            ObjectRefDef::Target(target) => {
+                let slot = scoped.target_slot(target);
+                self.raw_target_reference(target, object, scoped)
+                    .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
+                    .and_then(|target| match target {
+                        Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(id),
+                        Target::Player(_) => None,
+                    })
+            }
+            ObjectRefDef::TriggeringObject => context.trigger.object,
         }
     }
 
@@ -386,12 +397,12 @@ impl Game {
         &self,
         reference: PlayerRefDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) -> Option<PlayerId> {
         match reference {
             PlayerRefDef::EffectController => Some(object.controller),
-            PlayerRefDef::EventPlayer => context.event_player,
+            PlayerRefDef::EventPlayer => context.trigger.event_player,
             PlayerRefDef::Target(target) => {
                 let slot = scoped.target_slot(target);
                 Self::chosen_targets(object, slot)
@@ -401,6 +412,11 @@ impl Game {
                         Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
                     })
             }
+            // A direct object recipient still checks whether its target is
+            // legal. Derived identity is different: a later instruction in
+            // the same resolving effect may ask who controlled or owned an
+            // object that an earlier instruction already moved. Preserve the
+            // announced target here and answer from last-known information.
             PlayerRefDef::ControllerOf(ObjectRefDef::Target(target)) => self
                 .raw_target_reference(target, object, scoped)
                 .and_then(|target| match target {
@@ -409,10 +425,19 @@ impl Game {
                         self.current_or_last_known_controller(id)
                     }
                 }),
+            PlayerRefDef::OwnerOf(ObjectRefDef::Target(target)) => self
+                .raw_target_reference(target, object, scoped)
+                .and_then(|target| match target {
+                    Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => {
+                        self.current_or_last_known_owner(id)
+                    }
+                    Target::Player(_) => None,
+                }),
             PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject) => context
+                .trigger
                 .object
                 .and_then(|triggering| self.current_or_last_known_controller(triggering))
-                .or(context.object_controller),
+                .or(context.trigger.object_controller),
             PlayerRefDef::ControllerOf(reference) => self
                 .object_reference_id(reference, object, context, scoped)
                 .and_then(|referenced| self.current_or_last_known_controller(referenced)),
@@ -426,7 +451,7 @@ impl Game {
         &self,
         players: PlayerSetDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) -> Vec<PlayerId> {
         match players {
@@ -438,17 +463,52 @@ impl Game {
             PlayerSetDef::Related(relation) => [object.controller, object.controller.opponent()]
                 .into_iter()
                 .filter(|candidate| {
-                    self.player_relation_matches(*candidate, relation, object.controller, context)
+                    self.player_relation_matches(
+                        *candidate,
+                        relation,
+                        object.controller,
+                        context.trigger,
+                    )
                 })
                 .collect(),
         }
+    }
+
+    pub(super) fn effect_object_reference_id(
+        &self,
+        reference: ObjectRefDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> Option<GameObjectId> {
+        self.object_reference_id(reference, object, context, scoped)
+    }
+
+    pub(super) fn effect_player_reference(
+        &self,
+        reference: PlayerRefDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> Option<PlayerId> {
+        self.player_reference(reference, object, context, scoped)
+    }
+
+    pub(super) fn effect_players(
+        &self,
+        players: PlayerSetDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> Vec<PlayerId> {
+        self.players_in_set(players, object, context, scoped)
     }
 
     fn objects_sharing_name_with_reference(
         &self,
         reference: ObjectRefDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) -> Vec<Target> {
         if let ObjectRefDef::Target(target) = reference {
@@ -471,7 +531,7 @@ impl Game {
         &self,
         recipient: EffectRecipientDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) -> Vec<Target> {
         match recipient.0 {
@@ -481,21 +541,36 @@ impl Game {
                     .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
                     .collect()
             }
-            EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)) => self
-                .object_reference_target(reference, object, context, scoped)
-                .into_iter()
-                .collect(),
-            EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
-                self.objects_matching_effect_query(query, object, context, scoped)
-            }
-            EffectRecipientSetDef::Objects(ObjectSetDef::SharingNameWith(reference)) => {
-                self.objects_sharing_name_with_reference(reference, object, context, scoped)
+            EffectRecipientSetDef::Objects(objects) => {
+                self.effect_objects(objects, object, context, scoped)
             }
             EffectRecipientSetDef::Players(players) => self
                 .players_in_set(players, object, context, scoped)
                 .into_iter()
                 .map(Target::Player)
                 .collect(),
+        }
+    }
+
+    pub(super) fn effect_objects(
+        &self,
+        objects: ObjectSetDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> Vec<Target> {
+        match objects {
+            ObjectSetDef::One(reference) => self
+                .object_reference_target(reference, object, context, scoped)
+                .into_iter()
+                .collect(),
+            ObjectSetDef::Binding(binding) => context.object_group(binding).to_vec(),
+            ObjectSetDef::Query(query) => {
+                self.objects_matching_effect_query(query, object, context, scoped)
+            }
+            ObjectSetDef::SharingNameWith(reference) => {
+                self.objects_sharing_name_with_reference(reference, object, context, scoped)
+            }
         }
     }
 
@@ -529,7 +604,7 @@ impl Game {
         controller: PlayerId,
         context: TriggerContext,
         ability: Option<AbilityOrigin>,
-        object: Option<(&StackObject, ScopedEffect)>,
+        object: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
     ) -> bool {
         let TriggerConditionDef::ObjectCount {
             query,
@@ -647,7 +722,7 @@ impl Game {
                 TriggerConditionDef::TargetMatches {
                     slot,
                     object: predicate,
-                } => object.is_some_and(|(stack, scoped)| {
+                } => object.is_some_and(|(stack, scoped, _)| {
                     Self::chosen_targets(stack, scoped.target_slot(*slot)).any(|target| {
                         matches!(target, Target::Permanent(id)
                         if self
@@ -682,6 +757,7 @@ impl Game {
             source,
             context,
             None,
+            object,
             |_| {
                 count += 1;
                 ControlFlow::Continue(())

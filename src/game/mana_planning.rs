@@ -190,8 +190,14 @@ impl Game {
                 Self::effect_animates_source(Some(*on_success))
                     || Self::effect_animates_source(Some(*on_failure))
             }
-            Some(EffectDef::ChoosePermanent { then, .. }) => {
-                Self::effect_animates_source(Some(*then))
+            Some(EffectDef::Choose(choice)) => Self::effect_animates_source(Some(*choice.then)),
+            Some(EffectDef::PayOr(payment)) => payment
+                .if_paid
+                .iter()
+                .chain(payment.otherwise.iter())
+                .any(|effect| Self::effect_animates_source(Some(**effect))),
+            Some(EffectDef::SplitIntoPiles(partition)) => {
+                Self::effect_animates_source(Some(*partition.then))
             }
             _ => false,
         }

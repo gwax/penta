@@ -3,7 +3,10 @@
 use super::model::{EffectContinuationSnapshot, ScopedEffectSnapshot};
 use super::model_procedure::{DrawReplacementSnapshot, PendingProcedureSnapshot};
 use super::semantics::{catalog_scoped_effect, scoped_effect_snapshot};
-use super::stack::{parse_trigger_context, trigger_context_snapshot};
+use super::stack::{
+    effect_resolution_context_snapshot, parse_effect_resolution_context,
+    resolution_context_referenced_object_ids,
+};
 use super::*;
 
 pub(super) fn draw_replacement_snapshot(
@@ -14,7 +17,7 @@ pub(super) fn draw_replacement_snapshot(
         continuation: effect_continuation_snapshot(
             game,
             &replacement.object,
-            replacement.context,
+            &replacement.context,
             replacement.effect,
         )?,
     })
@@ -66,7 +69,7 @@ pub(super) fn pending_procedure_snapshot(
                 effects,
                 object: Box::new(detached_stack_snapshot(game, object)?),
                 ability,
-                context: trigger_context_snapshot(*context),
+                context: effect_resolution_context_snapshot(context),
                 custom_followup,
             }
         }
@@ -135,7 +138,7 @@ pub(super) fn parse_pending_procedure(
             super::super::PendingProcedure::ResolveEffects {
                 effects,
                 object: Box::new(parse_detached_stack(object, game)?),
-                context: parse_trigger_context(*context)?,
+                context: parse_effect_resolution_context(context.clone())?,
                 custom_followup,
             }
         }
@@ -167,7 +170,7 @@ pub(super) fn parse_pending_procedure(
 pub(super) fn draw_replacement_referenced_object_ids(
     replacement: &super::super::DrawReplacement,
 ) -> Vec<GameObjectId> {
-    continuation_referenced_object_ids(&replacement.object, replacement.context)
+    continuation_referenced_object_ids(&replacement.object, &replacement.context)
 }
 
 pub(super) fn pending_procedure_referenced_object_ids(
@@ -176,7 +179,7 @@ pub(super) fn pending_procedure_referenced_object_ids(
     match procedure {
         super::super::PendingProcedure::ResolveEffects {
             object, context, ..
-        } => continuation_referenced_object_ids(object, *context),
+        } => continuation_referenced_object_ids(object, context),
         super::super::PendingProcedure::DrawCards { .. }
         | super::super::PendingProcedure::SylvanAfterDraw { .. }
         | super::super::PendingProcedure::SimultaneousDraws { .. }
@@ -188,7 +191,7 @@ pub(super) fn pending_procedure_referenced_object_ids(
 fn effect_continuation_snapshot(
     game: &Game,
     object: &StackObject,
-    context: TriggerContext,
+    context: &EffectResolutionContext,
     effect: ScopedEffect,
 ) -> Option<EffectContinuationSnapshot> {
     let ability = stack_ability_snapshot(game, object)?.ability_locator?;
@@ -196,7 +199,7 @@ fn effect_continuation_snapshot(
     Some(EffectContinuationSnapshot {
         object: detached_stack_snapshot(game, object)?,
         ability,
-        context: trigger_context_snapshot(context),
+        context: effect_resolution_context_snapshot(context),
         effect: scoped_effect_snapshot(&definition, effect)?,
     })
 }
@@ -207,7 +210,7 @@ fn parse_effect_continuation(
 ) -> Result<super::super::SacrificeFollowup, String> {
     Ok(super::super::SacrificeFollowup {
         object: Box::new(parse_detached_stack(&snapshot.object, game)?),
-        context: parse_trigger_context(snapshot.context)?,
+        context: parse_effect_resolution_context(snapshot.context.clone())?,
         effect: catalog_scoped_effect(&game.catalog, &snapshot.ability, &snapshot.effect)
             .ok_or("draw replacement effect locator is absent from this catalog")?,
     })
@@ -215,10 +218,9 @@ fn parse_effect_continuation(
 
 fn continuation_referenced_object_ids(
     object: &StackObject,
-    context: TriggerContext,
+    context: &EffectResolutionContext,
 ) -> Vec<GameObjectId> {
-    referenced_object_ids(object)
-        .chain(context.object)
-        .chain(context.chosen_objects.iter().flatten().copied())
-        .collect()
+    let mut ids = referenced_object_ids(object).collect::<Vec<_>>();
+    ids.extend(resolution_context_referenced_object_ids(context));
+    ids
 }

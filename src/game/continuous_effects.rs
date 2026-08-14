@@ -325,8 +325,9 @@ impl Game {
             effect,
             EffectDef::None
                 | EffectDef::Randomized { .. }
-                | EffectDef::ChoosePermanent { .. }
-                | EffectDef::ChooseDamageSource { .. }
+                | EffectDef::Choose(_)
+                | EffectDef::PayOr(_)
+                | EffectDef::SplitIntoPiles(_)
                 | EffectDef::PreventNextDamageFromSource { .. }
                 | EffectDef::AddMana(_)
                 | EffectDef::AddManaEqualTo { .. }
@@ -362,9 +363,6 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
-                | EffectDef::DestroyOfChoice { .. }
-                | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-                | EffectDef::RevealAndSplitIntoPiles { .. }
                 | EffectDef::Mill { .. }
                 | EffectDef::LookAtTopAndMayTake { .. }
                 | EffectDef::LookAtTopAndSelect { .. }
@@ -375,12 +373,9 @@ impl Game {
                 | EffectDef::CreateEmblem { .. }
                 | EffectDef::Transform { .. }
                 | EffectDef::Counter { .. }
-                | EffectDef::CounterUnlessPaid { .. }
                 | EffectDef::AddCounters { .. }
                 | EffectDef::ChangeTextBasicLandType { .. }
                 | EffectDef::BecomeCopyOf { .. }
-                | EffectDef::OptionalPayment { .. }
-                | EffectDef::UnlessPaid { .. }
                 | EffectDef::May { .. }
                 | EffectDef::AdditionalCombatPhase
                 | EffectDef::TakeExtraTurn { .. }
@@ -726,10 +721,12 @@ impl Game {
             EffectRecipientSetDef::LegalTargets(_)
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::One(
-                    ObjectRefDef::Choice(_)
+                    ObjectRefDef::Binding(_)
+                    | ObjectRefDef::ResolvingObject
                     | ObjectRefDef::Target(_)
                     | ObjectRefDef::TriggeringObject,
                 )
+                | ObjectSetDef::Binding(_)
                 | ObjectSetDef::SharingNameWith(_),
             )
             | EffectRecipientSetDef::Players(_) => false,

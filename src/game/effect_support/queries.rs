@@ -30,16 +30,16 @@ impl Game {
         &self,
         query: ObjectQueryDef,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) -> Vec<Target> {
         self.objects_matching_query_with_context(
             query,
             object.controller,
             object.source.unwrap_or(object.id),
-            context,
+            context.trigger,
             None,
-            Some((object, scoped)),
+            Some((object, scoped, context)),
         )
     }
 
@@ -68,7 +68,7 @@ impl Game {
         source: GameObjectId,
         context: TriggerContext,
         prospective: Option<&Permanent>,
-        effect_context: Option<(&StackObject, ScopedEffect)>,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
     ) -> Vec<Target> {
         let mut recipients = Vec::new();
         let result = self.visit_objects_matching_query_with_context(
@@ -114,6 +114,7 @@ impl Game {
         source: GameObjectId,
         context: TriggerContext,
         prospective: Option<&Permanent>,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
         visitor: impl FnMut(Target) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         self.visit_objects_matching_query_with_context(
@@ -122,7 +123,7 @@ impl Game {
             source,
             context,
             prospective,
-            None,
+            effect_context,
             visitor,
         )
     }
@@ -133,7 +134,7 @@ impl Game {
         players: PlayerSetDef,
         evaluation_controller: PlayerId,
         context: TriggerContext,
-        effect_context: Option<(&StackObject, ScopedEffect)>,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
     ) -> bool {
         match players {
             PlayerSetDef::All => true,
@@ -142,9 +143,11 @@ impl Game {
             }
             PlayerSetDef::One(PlayerRefDef::EffectController) => candidate == evaluation_controller,
             PlayerSetDef::One(PlayerRefDef::EventPlayer) => context.event_player == Some(candidate),
-            PlayerSetDef::One(reference) => effect_context.is_some_and(|(object, scoped)| {
-                self.player_reference(reference, object, context, scoped) == Some(candidate)
-            }),
+            PlayerSetDef::One(reference) => {
+                effect_context.is_some_and(|(object, scoped, resolution)| {
+                    self.player_reference(reference, object, resolution, scoped) == Some(candidate)
+                })
+            }
         }
     }
 
@@ -155,7 +158,7 @@ impl Game {
         query: ObjectQueryDef,
         evaluation_controller: PlayerId,
         context: TriggerContext,
-        effect_context: Option<(&StackObject, ScopedEffect)>,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
     ) -> bool {
         query.related_player.is_none_or(|players| {
             self.player_matches_set(
@@ -193,7 +196,7 @@ impl Game {
         source: GameObjectId,
         context: TriggerContext,
         prospective: Option<&Permanent>,
-        effect_context: Option<(&StackObject, ScopedEffect)>,
+        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
         mut visitor: impl FnMut(Target) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         if query.zones.contains(&ZoneKind::Battlefield) {

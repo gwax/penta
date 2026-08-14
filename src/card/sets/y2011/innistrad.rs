@@ -9,10 +9,10 @@ use crate::card::{
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     ComparisonDef, ConditionalValueDef, CostDef, CounterKind, DiscardSelectionDef, DoubleFacedKind,
     EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayOptionDef, PlayerRelation, QuantifierDef,
-    ReplacementConditionDef, ReplacementEffectDef, SpellAdditionalCostDef, SpellForm,
-    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef, PlayOptionDef, PlayerRelation,
+    QuantifierDef, ReplacementConditionDef, ReplacementEffectDef, SpellAdditionalCostDef,
+    SpellForm, TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -2043,10 +2043,10 @@ static SCREECHING_BAT_UPKEEP_ABILITY: AbilityDef = AbilityDef::triggered(
         step: crate::card::TurnStepDef::Upkeep,
         player: PlayerRelation::You,
     },
-    EffectDef::OptionalPayment {
-        payment: PaymentDef::new(PlayerRelation::You, &SCREECHING_BAT_TRANSFORM_COST),
-        if_paid: &SCREECHING_BAT_TRANSFORM,
-    },
+    EffectDef::PayOr(PayOrDef::optional(
+        PaymentDef::new(PlayerRelation::You, &SCREECHING_BAT_TRANSFORM_COST),
+        &SCREECHING_BAT_TRANSFORM,
+    )),
 );
 static SCREECHING_BAT_FRONT_ABILITIES: [AbilityDef; 2] =
     [abilities::flying(), SCREECHING_BAT_UPKEEP_ABILITY];
@@ -2497,20 +2497,20 @@ pub(in crate::card::sets) static FALKENRATH_MARAUDERS: CardRecord = CardRecord::
     CardSet::Innistrad,
     CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Vampire", "Warrior"], 2, 2)
         .with_abilities(&[
-            abilities::flying(),
-            abilities::haste(),
-            AbilityDef::triggered(
-                "Whenever this creature deals combat damage to a player, put two +1/+1 counters on it.",
-                TriggerEventDef::CombatDamageDealtToPlayer {
-                    source: ObjectPredicateDef::Source,
-                },
-                EffectDef::AddCounters {
-                    object: EffectRecipientDef::Source,
-                    kind: CounterKind::PlusOnePlusOne,
-                    amount: ValueDef::Constant(2),
-                },
-            ),
-        ]),
+        abilities::flying(),
+        abilities::haste(),
+        AbilityDef::triggered(
+            "Whenever this creature deals combat damage to a player, put two +1/+1 counters on it.",
+            TriggerEventDef::CombatDamageDealtToPlayer {
+                source: ObjectPredicateDef::Source,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ]),
 );
 
 // ISD 142 — Feral Ridgewolf
@@ -4469,32 +4469,31 @@ pub(in crate::card::sets) static GEISTCATCHERS_RIG: CardRecord = CardRecord::new
     "Geistcatcher's Rig",
     CardArt::new("cfb8ecf0-8c12-4a14-9a75-4cc5bf9e47f1", "Vincent Proce"),
     CardSet::Innistrad,
-    CardRules::new_artifact_creature(mana_cost!("{6}"), &["Construct"], 4, 5).with_ability(
-        AbilityDef::triggered_with_targets(
-            "When this creature enters, you may have it deal 4 damage to target creature with flying.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::Source,
-                from: None,
-                to: Some(ZoneKind::Battlefield),
+    CardRules::new_artifact_creature(mana_cost!("{6}"), &["Construct"], 4, 5)
+        .with_ability(AbilityDef::triggered_with_targets(
+        "When this creature enters, you may have it deal 4 damage to target creature with flying.",
+        TriggerEventDef::ZoneChanged {
+            object: ObjectPredicateDef::Source,
+            from: None,
+            to: Some(ZoneKind::Battlefield),
+        },
+        &[AbilityTargetDef::up_to(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
             },
-            &[AbilityTargetDef::up_to(
-                AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
-                    ]),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: None,
-                    owner: None,
-                },
-                1,
-            )],
-            EffectDef::DealDamage {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(4),
-            },
-        ),
-    ),
+            1,
+        )],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(4),
+        },
+    )),
 );
 
 // ISD 224 — Ghoulcaller's Bell

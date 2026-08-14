@@ -228,12 +228,14 @@ fn uses_declarative_ability_constructs() {
     ));
     assert!(matches!(
         abilities[1].declarative_effect(),
-        Some(EffectDef::OptionalPayment {
-            payment,
-            if_paid: &EffectDef::Untap {
+        Some(EffectDef::PayOr(PayOrDef {
+            payment: EffectPaymentDef::Costs(payment),
+            if_paid: Some(&EffectDef::Untap {
                 object: EffectRecipientDef::Source,
-            },
-        }) if payment.payer == PlayerRelation::You
+            }),
+            otherwise: None,
+            visibility: ChoiceVisibilityDef::Private,
+        })) if payment.payer == PlayerRelation::You
             && payment.costs == [CostDef::Mana(ManaCost::new(4, 0))]
     ));
     let DeclarativeAbilityDef::Triggered(draw) = abilities[2].definition else {

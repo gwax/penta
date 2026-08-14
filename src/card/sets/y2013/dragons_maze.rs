@@ -8,9 +8,9 @@ use crate::card::{
     AnimationDef, AppliedEffectDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
     CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ColorSet, ComparisonDef,
     CostDef, CounterKind, DiscardSelectionDef, EffectDef, EffectDurationDef, EffectExecutionDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PaymentDef, PlayOptionDef,
-    PlayerRelation, SpellForm, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PaymentDef,
+    PlayOptionDef, PlayerRelation, SpellForm, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -87,12 +87,12 @@ pub(in crate::card::sets) static HAAZDA_SNARE_SQUAD: CardRecord = CardRecord::ne
                     owner: None,
                 },
             )],
-            EffectDef::OptionalPayment {
-                payment: PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{W}"))]),
-                if_paid: &EffectDef::Tap {
+            EffectDef::PayOr(PayOrDef::optional(
+                PaymentDef::new(PlayerRelation::You, &[CostDef::Mana(mana_cost!("{W}"))]),
+                &EffectDef::Tap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },
-            },
+            )),
         ),
     ),
 );
@@ -329,11 +329,7 @@ pub(in crate::card::sets) static MINDSTATIC: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{3}{U}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target spell unless its controller pays {6}.",
         &[AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)],
-        EffectDef::CounterUnlessPaid {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            amount: ValueDef::Constant(6),
-            zone: ZoneKind::Graveyard,
-        },
+        abilities::counter_target_unless_paid(ValueDef::Constant(6)),
     )),
 );
 
@@ -1025,28 +1021,27 @@ pub(in crate::card::sets) static BRONZEBEAK_MOA: CardRecord = CardRecord::new(
     "Bronzebeak Moa",
     CardArt::new("291c0ebc-d489-42c7-8d8a-9216c333412f", "James Ryman"),
     CardSet::DragonsMaze,
-    CardRules::new_creature(mana_cost!("{2}{G}{W}"), &["Bird"], 2, 2).with_ability(
-        AbilityDef::triggered(
-            "Whenever another creature you control enters, this creature gets +3/+3 until end of turn.",
-            TriggerEventDef::ZoneChanged {
-                object: ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                ]),
-                from: None,
-                to: Some(ZoneKind::Battlefield),
+    CardRules::new_creature(mana_cost!("{2}{G}{W}"), &["Bird"], 2, 2)
+        .with_ability(AbilityDef::triggered(
+        "Whenever another creature you control enters, this creature gets +3/+3 until end of turn.",
+        TriggerEventDef::ZoneChanged {
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+            ]),
+            from: None,
+            to: Some(ZoneKind::Battlefield),
+        },
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::ModifyPowerToughness {
+                power: ValueDef::Constant(3),
+                toughness: ValueDef::Constant(3),
             },
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::ModifyPowerToughness {
-                    power: ValueDef::Constant(3),
-                    toughness: ValueDef::Constant(3),
-                },
-                duration: EffectDurationDef::UntilEndOfTurn,
-            },
-        ),
-    ),
+            duration: EffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // DGM 61 — Carnage Gladiator

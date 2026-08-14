@@ -1,11 +1,12 @@
 use super::{
     AbilitySourceRef, AddManaEffectDef, BattlefieldArrival, CardPartId, CharacteristicSource,
     ColorSet, CopiableAbility, CostDef, CounteredSpellZone, DeclarativeAbilityDef, DelayedTrigger,
-    DiscardSelectionDef, DrawReplacement, EffectDef, FloatingTrigger, Game, GameResult, Mana,
-    ManaPool, ManaSelectionDef, ManaSource, Permanent, SacrificeFollowup, ScopedEffect,
-    StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason, ZoneKind,
-    ZoneMoveCause, public_cards,
+    DiscardSelectionDef, DrawReplacement, EffectDef, EffectResolutionContext, FloatingTrigger,
+    Game, GameResult, Mana, ManaPool, ManaSelectionDef, ManaSource, Permanent, SacrificeFollowup,
+    ScopedEffect, StackObject, Target, TriggerCapture, TriggerContext, ValueDef, WinReason,
+    ZoneKind, ZoneMoveCause, public_cards,
 };
+use crate::card::EffectPaymentDef;
 
 mod permanent_state;
 mod prevention;
@@ -17,8 +18,9 @@ impl Game {
         &mut self,
         scoped: ScopedEffect,
         object: &StackObject,
-        context: TriggerContext,
+        context: impl Into<EffectResolutionContext>,
     ) {
+        let context = context.into();
         match scoped.effect {
             EffectDef::Sequence(effects) => {
                 self.resolve_effects_in_order(
@@ -43,27 +45,58 @@ impl Game {
                 };
                 self.resolve_effect_def(scoped.with_effect(*branch), object, context);
             }
-            EffectDef::ChoosePermanent {
-                choice,
-                chooser,
-                object: predicate,
-                controller,
-                then,
-            } => {
-                let choosers = self.effect_recipients(chooser, object, context, scoped);
-                for chooser in choosers {
-                    if let Target::Player(chooser) = chooser {
-                        self.queue_permanent_effect_choice(
-                            choice,
-                            chooser,
-                            predicate,
-                            controller,
-                            object,
-                            context,
-                            scoped.with_effect(*then),
-                        );
+            EffectDef::Choose(definition) => {
+                self.queue_effect_choice(definition, object, context, scoped);
+            }
+            EffectDef::PayOr(definition) => {
+                let (player, cost) = match definition.payment {
+                    EffectPaymentDef::Costs(payment) => {
+                        let [CostDef::Mana(cost)] = payment.costs else {
+                            return;
+                        };
+                        let Some(player) =
+                            self.payment_player(object.controller, context.trigger, payment)
+                        else {
+                            return;
+                        };
+                        (player, *cost)
                     }
-                }
+                    EffectPaymentDef::Mana { payer, cost } => {
+                        let Some(player) =
+                            self.effect_player_reference(payer, object, &context, scoped)
+                        else {
+                            return;
+                        };
+                        (player, cost)
+                    }
+                    EffectPaymentDef::GenericMana { payer, amount } => {
+                        let Some(player) =
+                            self.effect_player_reference(payer, object, &context, scoped)
+                        else {
+                            return;
+                        };
+                        let amount = self
+                            .effect_value(amount, object, &context, scoped)
+                            .max(0)
+                            .try_into()
+                            .unwrap_or(u16::MAX);
+                        (player, crate::ManaCost::new(amount, 0))
+                    }
+                };
+                self.queue_pay_or(
+                    player,
+                    cost,
+                    definition.visibility,
+                    object,
+                    context,
+                    definition.if_paid.map(|effect| scoped.with_effect(*effect)),
+                    definition
+                        .otherwise
+                        .map(|effect| scoped.with_effect(*effect)),
+                );
+            }
+            EffectDef::SplitIntoPiles(definition) => {
+                self.queue_effect_pile_split(definition, object, context, scoped);
             }
             EffectDef::AddMana(AddManaEffectDef {
                 mana: ManaSelectionDef::One(kind),
@@ -97,11 +130,11 @@ impl Game {
             }
             EffectDef::DrainLife { recipient, amount } => {
                 let amount = self
-                    .effect_value(amount, object, context, scoped)
+                    .effect_value(amount, object, &context, scoped)
                     .max(0)
                     .try_into()
                     .unwrap_or(u16::MAX);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     let available = self.drainable_from(target);
                     let dealt = self.damage_target_from(Some(object.id), Some(target), amount);
                     self.gain_life(object.controller, dealt.min(available));
@@ -115,7 +148,7 @@ impl Game {
                 let shared = if divided {
                     0
                 } else {
-                    self.effect_value(amount, object, context, scoped)
+                    self.effect_value(amount, object, &context, scoped)
                         .max(0)
                         .try_into()
                         .unwrap_or(u16::MAX)
@@ -123,7 +156,7 @@ impl Game {
                 let slot = recipient
                     .legal_target()
                     .map(|target| scoped.target_slot(target));
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     let amount = if divided {
                         slot.and_then(|slot| Self::divided_share(object, slot, target))
                             .unwrap_or(0)
@@ -142,11 +175,11 @@ impl Game {
             }
             EffectDef::GainLife { recipient, amount } => {
                 let amount = self
-                    .effect_value(amount, object, context, scoped)
+                    .effect_value(amount, object, &context, scoped)
                     .max(0)
                     .try_into()
                     .unwrap_or(u16::MAX);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.gain_life(player, amount);
                     }
@@ -156,15 +189,15 @@ impl Game {
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::SkipNextUntapSteps { .. }
             | EffectDef::SetColor { .. } => {
-                self.resolve_permanent_state_effect(scoped, object, context);
+                self.resolve_permanent_state_effect(scoped, object, &context);
             }
             EffectDef::AddPoisonCounters { recipient, amount } => {
                 let amount = self
-                    .effect_value(amount, object, context, scoped)
+                    .effect_value(amount, object, &context, scoped)
                     .max(0)
                     .try_into()
                     .unwrap_or(u16::MAX);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.add_poison_counters(player, amount);
                     }
@@ -172,12 +205,12 @@ impl Game {
             }
             EffectDef::DrawCards { recipient, amount } => {
                 let amount = self
-                    .effect_value(amount, object, context, scoped)
+                    .effect_value(amount, object, &context, scoped)
                     .max(0)
                     .try_into()
                     .unwrap_or(u16::MAX);
                 let mut players = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .filter_map(|target| match target {
                         Target::Player(player) => Some(player),
@@ -195,7 +228,7 @@ impl Game {
             }
             EffectDef::ShuffleLibrary { player: recipient } => {
                 let mut players = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .filter_map(|target| match target {
                         Target::Player(player) => Some(player),
@@ -208,7 +241,7 @@ impl Game {
                 }
             }
             EffectDef::EmptyManaPool { player: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.players[player.index()].mana_pool = ManaPool::default();
                         self.players[player.index()].mana.clear();
@@ -220,12 +253,12 @@ impl Game {
                 amount,
                 selection: DiscardSelectionDef::RecipientChooses,
             } => {
-                let amount = self.effect_value(amount, object, context, scoped).max(0);
+                let amount = self.effect_value(amount, object, &context, scoped).max(0);
                 let cause = ZoneMoveCause::Effect {
                     controller: object.controller,
                 };
                 let players = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .filter_map(|target| match target {
                         Target::Player(player) => Some(player),
@@ -240,14 +273,14 @@ impl Game {
                 selection: DiscardSelectionDef::Random,
             } => {
                 let amount = self
-                    .effect_value(amount, object, context, scoped)
+                    .effect_value(amount, object, &context, scoped)
                     .max(0)
                     .try_into()
                     .unwrap_or(u16::MAX);
                 let cause = ZoneMoveCause::Effect {
                     controller: object.controller,
                 };
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.discard_random(player, amount, cause);
                     }
@@ -255,11 +288,11 @@ impl Game {
             }
             EffectDef::LoseLife { recipient, amount } => {
                 let amount = self
-                    .effect_value(amount, object, context, scoped)
+                    .effect_value(amount, object, &context, scoped)
                     .max(0)
                     .try_into()
                     .unwrap_or(u16::MAX);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.lose_life(player, amount);
                     }
@@ -268,7 +301,7 @@ impl Game {
             EffectDef::Tap { .. }
             | EffectDef::Untap { .. }
             | EffectDef::DoesNotUntapWhileSourceTapped { .. } => {
-                self.resolve_tap_effect(scoped, object, context);
+                self.resolve_tap_effect(scoped, object, &context);
             }
             EffectDef::RemoveFromCombat { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
@@ -278,7 +311,7 @@ impl Game {
                 }
             }
             EffectDef::Regenerate { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Permanent(permanent) = target {
                         self.add_regeneration_shield(permanent);
                     }
@@ -289,13 +322,13 @@ impl Game {
                 count,
                 tapped,
             } => {
-                for _ in 0..self.effect_value(count, object, context, scoped).max(0) {
+                for _ in 0..self.effect_value(count, object, &context, scoped).max(0) {
                     self.create_token_arriving(object.controller, token, None, tapped);
                 }
             }
             EffectDef::CreateTokenCopyOf { object: recipient } => {
                 let copies = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .filter_map(|target| match target {
                         Target::Permanent(id) => self
@@ -317,7 +350,6 @@ impl Game {
                 }
             }
             EffectDef::PreventNextDamage { .. }
-            | EffectDef::ChooseDamageSource { .. }
             | EffectDef::PreventNextDamageFromSource { .. }
             | EffectDef::PreventAllDamageThisTurn { .. }
             | EffectDef::PreventAllCombatDamageThisTurn
@@ -328,14 +360,14 @@ impl Game {
             | EffectDef::PreventDamageToPlayerFromThisTurn { .. }
             | EffectDef::PreventAllCombatDamageExceptSourceThisTurn { .. }
             | EffectDef::RedirectTargetDamageToSourceThisTurn { .. } => {
-                self.resolve_prevention_effect(scoped, object, context);
+                self.resolve_prevention_effect(scoped, object, &context);
             }
             EffectDef::Destroy {
                 object: recipient,
                 can_regenerate,
             } => {
                 let permanents = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .filter_map(|target| match target {
                         Target::Permanent(permanent) => Some(permanent),
@@ -346,7 +378,7 @@ impl Game {
             }
             EffectDef::Sacrifice { object: recipient } => {
                 let permanents = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .filter_map(|target| match target {
                         Target::Permanent(permanent) => Some(permanent),
@@ -361,18 +393,6 @@ impl Game {
                     .collect::<Vec<_>>();
                 self.move_permanents_to_graveyard(&permanents);
             }
-            EffectDef::DestroyOfChoice {
-                player: recipient,
-                object: predicate,
-                can_regenerate,
-            } => {
-                let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.queue_chosen_destruction(player, predicate, source, can_regenerate);
-                    }
-                }
-            }
             EffectDef::SacrificeOfChoice {
                 player: recipient,
                 object: predicate,
@@ -380,7 +400,7 @@ impl Game {
                 optional,
             } => {
                 let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     let Target::Player(player) = target else {
                         continue;
                     };
@@ -391,48 +411,29 @@ impl Game {
                     }
                     let followup = then.map(|effect| SacrificeFollowup {
                         object: Box::new(object.clone()),
-                        context,
+                        context: context.clone(),
                         effect: scoped.with_effect(*effect),
                     });
                     self.queue_chosen_sacrifice(player, predicate, source, followup, optional);
-                }
-            }
-            EffectDef::SplitPermanentsAndSacrificeAPile { player: recipient } => {
-                let splitter = object.controller;
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.queue_pile_split(splitter, player);
-                    }
                 }
             }
             EffectDef::Mill {
                 player: recipient,
                 amount,
             } => {
-                let count = self.effect_value(amount, object, context, scoped).max(0);
+                let count = self.effect_value(amount, object, &context, scoped).max(0);
                 let Ok(count) = usize::try_from(count) else {
                     return;
                 };
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         let milled = self.take_top_of_library(player, count);
                         self.bury_cards(player, milled);
                     }
                 }
             }
-            EffectDef::RevealAndSplitIntoPiles {
-                count,
-                rest,
-                placement,
-            } => {
-                let count = self.effect_value(count, object, context, scoped).max(0);
-                let Ok(count) = usize::try_from(count) else {
-                    return;
-                };
-                self.queue_revealed_pile_split(object.controller, count, rest, placement);
-            }
             EffectDef::LookAtHand { player: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(seen) = target {
                         self.last_seen_hands[object.controller.index()] =
                             Some((seen, public_cards(&self.players[seen.index()].hand)));
@@ -444,7 +445,7 @@ impl Game {
                 object: predicate,
             } => {
                 let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.queue_top_card_offer(player, predicate, source);
                     }
@@ -454,9 +455,15 @@ impl Game {
                 player: recipient,
                 selection,
             } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
-                        self.queue_top_card_selection(player, selection, object, context, scoped);
+                        self.queue_top_card_selection(
+                            player,
+                            selection,
+                            object,
+                            context.clone(),
+                            scoped,
+                        );
                     }
                 }
             }
@@ -473,7 +480,7 @@ impl Game {
                 enters_tapped,
             } => {
                 let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.queue_zone_search(
                             player,
@@ -503,7 +510,7 @@ impl Game {
                 placement,
             } => {
                 let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.queue_owned_card_choice(
                             player,
@@ -524,11 +531,11 @@ impl Game {
                 player: recipient,
                 effect,
             } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.draw_replacements[player.index()].push_back(DrawReplacement {
                             object: Box::new(object.clone()),
-                            context,
+                            context: context.clone(),
                             effect: scoped.with_effect(*effect),
                         });
                     }
@@ -562,7 +569,7 @@ impl Game {
             }
             EffectDef::LoseTheGame { player: recipient } => {
                 let mut losers = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .filter_map(|target| match target {
                         Target::Player(player) => Some(player),
@@ -582,7 +589,7 @@ impl Game {
                 }
             }
             EffectDef::Transform { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Permanent(id) = target {
                         self.transform_permanent(id);
                     }
@@ -593,7 +600,7 @@ impl Game {
             }
             EffectDef::TakeExtraTurn { player: recipient } => {
                 let players = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .filter_map(|target| match target {
                         Target::Player(player) => Some(player),
@@ -602,7 +609,7 @@ impl Game {
                 self.schedule_extra_turns(players);
             }
             EffectDef::CannotCastNoncreatureSpellsThisTurn { player: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.noncreature_casts_locked[player.index()] = true;
                     }
@@ -616,12 +623,12 @@ impl Game {
                 player: recipient,
                 effect,
             } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.queue_optional_effect(
                             player,
                             object,
-                            context,
+                            context.clone(),
                             scoped.with_effect(*effect),
                         );
                     }
@@ -629,7 +636,7 @@ impl Game {
             }
             EffectDef::ExileLinkedToSource { object: recipient } => {
                 let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     let exiled = match target {
                         Target::Permanent(id) => self.exile_permanent_returning_card(id),
                         Target::Card(id) => self.exile_card_returning_card(id),
@@ -662,18 +669,18 @@ impl Game {
                 self.take_control_of(
                     recipient,
                     object,
-                    context,
+                    &context,
                     scoped,
                     Some((source, while_tapped)),
                 );
             }
             EffectDef::GainControlThisTurn { object: recipient } => {
-                self.take_control_of(recipient, object, context, scoped, None);
+                self.take_control_of(recipient, object, &context, scoped, None);
             }
             EffectDef::Detain { object: recipient } => {
                 let controller = object.controller;
                 let created = self.turns_started[controller.index()];
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Permanent(id) = target
                         && let Some(permanent) = self
                             .battlefield
@@ -685,7 +692,7 @@ impl Game {
                 }
             }
             EffectDef::CannotRegenerateThisTurn { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Permanent(id) = target
                         && let Some(permanent) = self
                             .battlefield
@@ -697,7 +704,7 @@ impl Game {
                 }
             }
             EffectDef::MakeUnblockableThisTurn { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Permanent(id) = target
                         && let Some(permanent) = self
                             .battlefield
@@ -741,9 +748,9 @@ impl Game {
                     condition,
                     object.source.unwrap_or(object.id),
                     object.controller,
-                    context,
+                    context.trigger,
                     object.ability.as_ref().map(|ability| ability.origin),
-                    Some((object, scoped)),
+                    Some((object, scoped, &context)),
                 ) {
                     self.resolve_effect_def(scoped.with_effect(*then), object, context);
                 }
@@ -763,7 +770,7 @@ impl Game {
             }
             EffectDef::AddManaEqualTo { color, amount } => {
                 let amount = self
-                    .effect_value(amount, object, context, scoped)
+                    .effect_value(amount, object, &context, scoped)
                     .max(0)
                     .try_into()
                     .unwrap_or(u16::MAX);
@@ -778,30 +785,9 @@ impl Game {
                 } else {
                     CounteredSpellZone::Graveyard
                 };
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Spell(spell) = target {
                         self.counter_spell_into(spell, zone);
-                    }
-                }
-            }
-            EffectDef::CounterUnlessPaid {
-                object: recipient,
-                amount,
-                zone,
-            } => {
-                let amount = self
-                    .effect_value(amount, object, context, scoped)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
-                let zone = if zone == ZoneKind::Exile {
-                    CounteredSpellZone::Exile
-                } else {
-                    CounteredSpellZone::Graveyard
-                };
-                for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Spell(spell) = target {
-                        self.queue_counter_unless_paid(spell, amount, zone);
                     }
                 }
             }
@@ -811,11 +797,11 @@ impl Game {
                 amount,
             } => {
                 let amount = self
-                    .effect_value(amount, object, context, scoped)
+                    .effect_value(amount, object, &context, scoped)
                     .max(0)
                     .try_into()
                     .unwrap_or(u16::MAX);
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Permanent(permanent) = target
                         && let Some(permanent) = self
                             .battlefield
@@ -828,7 +814,7 @@ impl Game {
             }
             EffectDef::ChangeTextBasicLandType { object: recipient } => {
                 if let Some(target) = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .next()
                 {
@@ -840,7 +826,7 @@ impl Game {
                 retain_source_ability,
             } => {
                 let Some(Target::Permanent(target)) = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .next()
                 else {
@@ -872,35 +858,11 @@ impl Game {
                     permanent.copy_effect = Some(copy);
                 }
             }
-            EffectDef::OptionalPayment { payment, if_paid } => {
-                let Some(player) = self.payment_player(object.controller, context, payment) else {
-                    return;
-                };
-                let [CostDef::Mana(cost)] = payment.costs else {
-                    return;
-                };
-                self.queue_optional_mana_payment(
-                    player,
-                    *cost,
-                    object,
-                    context,
-                    scoped.with_effect(*if_paid),
-                );
-            }
-            EffectDef::UnlessPaid { cost, otherwise } => {
-                self.queue_mana_payment_or_else(
-                    object.controller,
-                    cost,
-                    object,
-                    context,
-                    scoped.with_effect(*otherwise),
-                );
-            }
             EffectDef::Apply {
                 recipient,
                 effect,
                 duration,
-            } => self.resolve_applied_effect(recipient, effect, duration, object, context, scoped),
+            } => self.resolve_applied_effect(recipient, effect, duration, object, &context, scoped),
             EffectDef::MoveToZone {
                 object: recipient,
                 zone,
@@ -912,14 +874,14 @@ impl Game {
                         object.controller,
                         relation,
                         object.controller,
-                        context,
+                        context.trigger,
                     ) {
                         object.controller
                     } else {
                         object.controller.opponent()
                     }
                 });
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
                     self.move_target_to_zone(
                         target,
                         zone,
@@ -940,7 +902,7 @@ impl Game {
                     return;
                 };
                 let host = self
-                    .effect_recipients(recipient, object, context, scoped)
+                    .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .find_map(|target| match target {
                         Target::Permanent(id) => Some(id),

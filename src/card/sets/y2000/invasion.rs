@@ -9,6 +9,21 @@ use crate::card::{
 };
 use crate::mana_cost;
 
+static FACT_OR_FICTION_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        object: abilities::CHOSEN_PILE,
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+    EffectDef::MoveToZone {
+        object: abilities::UNCHOSEN_PILE,
+        zone: ZoneKind::Graveyard,
+        placement: ZonePlacement::Top,
+        controller: None,
+    },
+]);
+
 // INV 57 — Fact or Fiction
 pub(in crate::card::sets) static FACT_OR_FICTION: CardRecord = CardRecord::new(
     cards::FACT_OR_FICTION,
@@ -20,11 +35,10 @@ pub(in crate::card::sets) static FACT_OR_FICTION: CardRecord = CardRecord::new(
     CardSet::Invasion,
     CardRules::new_instant(mana_cost!("{3}{U}")).with_ability(AbilityDef::spell(
         "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard.",
-        EffectDef::RevealAndSplitIntoPiles {
-            count: ValueDef::Constant(5),
-            rest: ZoneKind::Graveyard,
-            placement: ZonePlacement::Top,
-        },
+        abilities::split_top_of_library_into_piles(
+            ValueDef::Constant(5),
+            &FACT_OR_FICTION_PILE_MOVES,
+        ),
     )),
 );
 

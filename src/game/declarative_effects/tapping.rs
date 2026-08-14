@@ -4,14 +4,14 @@
 //! and the third is the one that lasts, so keeping them in one place makes
 //! the difference between them easy to see.
 
-use super::super::{EffectDef, Game, ScopedEffect, StackObject, Target, TriggerContext};
+use super::super::{EffectDef, EffectResolutionContext, Game, ScopedEffect, StackObject, Target};
 
 impl Game {
     pub(super) fn resolve_tap_effect(
         &mut self,
         scoped: ScopedEffect,
         object: &StackObject,
-        context: TriggerContext,
+        context: &EffectResolutionContext,
     ) {
         match scoped.effect {
             EffectDef::Tap { object: recipient } => {

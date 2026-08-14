@@ -406,20 +406,57 @@ fn top_level_ability_error(
             target: *target,
             target_count: *target_count,
         },
-        GrantedAbilityValidationError::ChoiceReferenceOutOfScope { choice } => {
-            CatalogError::AbilityChoiceReferenceOutOfScope {
+        GrantedAbilityValidationError::InvalidObjectChoiceBounds {
+            binding,
+            minimum,
+            maximum,
+        } => CatalogError::InvalidAbilityObjectChoiceBounds {
+            definition: definition.id,
+            part,
+            ability,
+            binding: *binding,
+            minimum: *minimum,
+            maximum: *maximum,
+        },
+        GrantedAbilityValidationError::InvalidPileRole { role, players } => {
+            CatalogError::InvalidAbilityPileRole {
                 definition: definition.id,
                 part,
                 ability,
-                choice: *choice,
+                role: *role,
+                players: *players,
             }
         }
-        GrantedAbilityValidationError::ChoiceBindingAlreadyInScope { choice } => {
-            CatalogError::AbilityChoiceBindingAlreadyInScope {
+        GrantedAbilityValidationError::ObjectBindingReferenceOutOfScope { binding } => {
+            CatalogError::AbilityObjectBindingReferenceOutOfScope {
                 definition: definition.id,
                 part,
                 ability,
-                choice: *choice,
+                binding: *binding,
+            }
+        }
+        GrantedAbilityValidationError::ObjectBindingAlreadyInScope { binding } => {
+            CatalogError::AbilityObjectBindingAlreadyInScope {
+                definition: definition.id,
+                part,
+                ability,
+                binding: *binding,
+            }
+        }
+        GrantedAbilityValidationError::ObjectSetBindingReferenceOutOfScope { binding } => {
+            CatalogError::AbilityObjectSetBindingReferenceOutOfScope {
+                definition: definition.id,
+                part,
+                ability,
+                binding: *binding,
+            }
+        }
+        GrantedAbilityValidationError::ObjectSetBindingAlreadyInScope { binding } => {
+            CatalogError::AbilityObjectSetBindingAlreadyInScope {
+                definition: definition.id,
+                part,
+                ability,
+                binding: *binding,
             }
         }
         GrantedAbilityValidationError::ExecutableStaticAbility => {
@@ -446,15 +483,16 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
             collect_ability_grants(*on_success, grants);
             collect_ability_grants(*on_failure, grants);
         }
-        EffectDef::OptionalPayment {
-            if_paid: effect, ..
+        EffectDef::Choose(choice) => collect_ability_grants(*choice.then, grants),
+        EffectDef::PayOr(payment) => {
+            for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
+                collect_ability_grants(**effect, grants);
+            }
         }
-        | EffectDef::UnlessPaid {
-            otherwise: effect, ..
+        EffectDef::SplitIntoPiles(partition) => {
+            collect_ability_grants(*partition.then, grants);
         }
-        | EffectDef::May { effect, .. }
-        | EffectDef::ChoosePermanent { then: effect, .. }
-        | EffectDef::ChooseDamageSource { then: effect, .. }
+        EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. } => {
@@ -516,16 +554,12 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
-        | EffectDef::DestroyOfChoice { .. }
-        | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-        | EffectDef::RevealAndSplitIntoPiles { .. }
         | EffectDef::Mill { .. }
         | EffectDef::LookAtTopAndMayTake { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
-        | EffectDef::CounterUnlessPaid { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
         | EffectDef::BecomeCopyOf { .. }
@@ -636,15 +670,15 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
             on_failure,
             ..
         } => ability_grant_sites(*on_success).saturating_add(ability_grant_sites(*on_failure)),
-        EffectDef::OptionalPayment {
-            if_paid: effect, ..
-        }
-        | EffectDef::UnlessPaid {
-            otherwise: effect, ..
-        }
-        | EffectDef::May { effect, .. }
-        | EffectDef::ChoosePermanent { then: effect, .. }
-        | EffectDef::ChooseDamageSource { then: effect, .. }
+        EffectDef::Choose(choice) => ability_grant_sites(*choice.then),
+        EffectDef::PayOr(payment) => payment
+            .if_paid
+            .iter()
+            .chain(payment.otherwise.iter())
+            .map(|effect| ability_grant_sites(**effect))
+            .fold(0, usize::saturating_add),
+        EffectDef::SplitIntoPiles(partition) => ability_grant_sites(*partition.then),
+        EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::AtNextStep { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. }
@@ -699,16 +733,12 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
-        | EffectDef::DestroyOfChoice { .. }
-        | EffectDef::SplitPermanentsAndSacrificeAPile { .. }
-        | EffectDef::RevealAndSplitIntoPiles { .. }
         | EffectDef::Mill { .. }
         | EffectDef::LookAtTopAndMayTake { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
-        | EffectDef::CounterUnlessPaid { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
         | EffectDef::BecomeCopyOf { .. }

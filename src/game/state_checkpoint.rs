@@ -6,12 +6,12 @@ use super::{
     AbilityEffectExpiration, AbilitySourceRef, ApplicableReplacement, AppliedStackEffect,
     BasicLandTypeChange, BattlefieldEntryReplacementEffect, CardInstance, CharacteristicSource,
     CombatDamageStage, ContinuousEffectTimestamp, CopiableAbility, CopiableCharacteristics,
-    CounterKind, EntryCompletion, Game, GameEvent, GameObjectId, GameStack, Mana, ManaSource,
-    ObjectBacking, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent,
-    PlayerId, PlayerState, Pregame, PreventionShield, RelationalDamagePrevention,
-    RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext, ReplayRng, RetiredObject,
-    ScopedEffect, ShieldCoverageDef, StackAbilityPayload, StackObject, StackObjectKind, Step,
-    TappedSourceStatBonus, TemporaryAbilityGrant, TemporaryGrantedAbility,
+    CounterKind, EffectResolutionContext, EntryCompletion, Game, GameEvent, GameObjectId,
+    GameStack, Mana, ManaSource, ObjectBacking, PendingBattlefieldEntry, PendingEvent,
+    PendingReplacementEffect, Permanent, PlayerId, PlayerState, Pregame, PreventionShield,
+    RelationalDamagePrevention, RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext,
+    ReplayRng, RetiredObject, ScopedEffect, ShieldCoverageDef, StackAbilityPayload, StackObject,
+    StackObjectKind, Step, TappedSourceStatBonus, TemporaryAbilityGrant, TemporaryGrantedAbility,
     TemporaryRemovedAbilities, TriggerContext, ZoneMoveCause,
 };
 use crate::card::{
@@ -81,7 +81,8 @@ use semantics::{
 };
 use stack::{
     applied_stack_effect_snapshots, detached_stack_snapshot, parse_detached_stack, parse_stack,
-    parse_target as parse_snapshot_target, referenced_object_ids, stack_ability_snapshot,
+    parse_target as parse_snapshot_target, referenced_object_ids,
+    resolution_context_referenced_object_ids, stack_ability_snapshot,
     stack_object_requires_retired, target_snapshot,
 };
 use trigger::{
@@ -138,30 +139,19 @@ impl Game {
                     .flat_map(|permanent| permanent.damage_sources.iter().copied()),
             )
             .chain(self.delayed_triggers.iter().flat_map(|trigger| {
-                referenced_object_ids(&trigger.object)
-                    .chain(trigger.context.object)
-                    .chain(trigger.context.chosen_objects.iter().flatten().copied())
-                    .collect::<Vec<_>>()
+                let mut ids = referenced_object_ids(&trigger.object).collect::<Vec<_>>();
+                ids.extend(resolution_context_referenced_object_ids(&trigger.context));
+                ids
             }))
             .chain(self.floating_triggers.iter().flat_map(|trigger| {
                 [trigger.capture.source.object]
                     .into_iter()
                     .chain(trigger.capture.context.object)
-                    .chain(
-                        trigger
-                            .capture
-                            .context
-                            .chosen_objects
-                            .iter()
-                            .flatten()
-                            .copied(),
-                    )
             }))
             .chain(self.pending_triggers.iter().flat_map(|trigger| {
                 [trigger.source.object]
                     .into_iter()
                     .chain(trigger.context.object)
-                    .chain(trigger.context.chosen_objects.iter().flatten().copied())
             }))
             .chain(
                 self.pending_events
@@ -171,6 +161,10 @@ impl Game {
             .chain(
                 self.pending_decisions
                     .iter()
+                    .filter(|pending| {
+                        pending.observation.visibility == crate::DecisionVisibility::Public
+                            || pending.observation.player == viewer
+                    })
                     .flat_map(|pending| decision_referenced_object_ids(&pending.continuation)),
             )
             .chain(
