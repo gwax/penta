@@ -109,10 +109,95 @@ fn only_matching_cards_can_be_spent() {
     );
 }
 
+/// The zone decides what spending means. A creature on the battlefield is
+/// sacrificed rather than exiled.
+#[test]
+fn a_battlefield_cost_sacrifices_rather_than_exiles() {
+    let mut game = ready_game();
+    let reap = card(10_000, cards::ALTARS_REAP, PlayerId::One);
+    let reap_id = reap.id;
+    game.players[PlayerId::One.index()].hand.push(reap);
+    game.players[PlayerId::One.index()].mana_pool.black = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let fodder = creature(10_001, cards::SEDGE_TROLL, PlayerId::One);
+    let fodder_id = fodder.card.id;
+    game.battlefield.push(fodder);
+    let hand_before = game.players[PlayerId::One.index()].hand.len();
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == reap_id))
+        .expect("it can be cast");
+    game.apply(PlayerId::One, action)
+        .expect("the spell is cast");
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == fodder_id),
+        "the creature was spent"
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SEDGE_TROLL),
+        "and it went to the graveyard rather than exile"
+    );
+    // Two drawn, the Reap itself left hand, and it drew after resolving.
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        hand_before + 1
+    );
+}
+
+/// A cost paid from hand discards, and never offers the spell itself as its
+/// own payment.
+#[test]
+fn a_hand_cost_discards_something_other_than_the_spell() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].hand.clear();
+    let guess = card(10_000, cards::WILD_GUESS, PlayerId::One);
+    let guess_id = guess.id;
+    game.players[PlayerId::One.index()].hand.push(guess);
+    let fodder = card(10_001, cards::SEDGE_TROLL, PlayerId::One);
+    let fodder_id = fodder.id;
+    game.players[PlayerId::One.index()].hand.push(fodder);
+    game.players[PlayerId::One.index()].mana_pool.red = 2;
+
+    assert_eq!(
+        cast_actions(&game, guess_id),
+        vec![vec![fodder_id]],
+        "the spell cannot pay for itself, so only the other card is payment"
+    );
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == guess_id))
+        .expect("it can be cast");
+    game.apply(PlayerId::One, action)
+        .expect("the spell is cast");
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SEDGE_TROLL),
+        "the chosen card was discarded rather than exiled"
+    );
+}
+
 #[test]
 fn every_additional_cost_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
+        cards::ALTARS_REAP,
+        cards::WILD_GUESS,
         cards::MAKESHIFT_MAULER,
         cards::STITCHED_DRAKE,
         cards::HEADLESS_SKAAB,

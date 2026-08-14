@@ -1533,8 +1533,30 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
 // ISD 85 — Abattoir Ghoul
 // Audit: blocked — Needs the last known toughness of the creature that died after being damaged by this creature.
 
+static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    zone: ZoneKind::Battlefield,
+    count: 1,
+};
+
 // ISD 86 — Altar's Reap
-// Audit: blocked — Needs choosing and sacrificing a creature as an additional casting cost.
+pub(in crate::card::sets) static ALTARS_REAP: CardRecord = CardRecord::new(
+    cards::ALTARS_REAP,
+    "Altar's Reap",
+    CardArt::new("4dc2eec4-7e68-45d5-8736-6b32a47c671b", "Donato Giancola"),
+    CardSet::Innistrad,
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.",
+            &[],
+            SACRIFICE_A_CREATURE,
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ),
+);
 
 // ISD 87 — Army of the Damned
 // Audit: blocked — Needs token creation that puts thirteen Zombie tokens onto the battlefield tapped.
@@ -4953,6 +4975,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STITCHED_DRAKE,
     &STITCHERS_APPRENTICE,
     &THINK_TWICE,
+    &ALTARS_REAP,
     &BLOODGIFT_DEMON,
     &BUMP_IN_THE_NIGHT,
     &DEAD_WEIGHT,

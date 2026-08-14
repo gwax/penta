@@ -10,8 +10,8 @@ use crate::card::{
     CardSupertype, CardType, ComparisonDef, CounterKind, DiscardSelectionDef, DividedTotal,
     EffectDef, EffectDurationDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility,
     ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementEventDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -2407,8 +2407,30 @@ pub(in crate::card::sets) static VOLCANIC_STRENGTH: CardRecord = CardRecord::new
     ]),
 );
 
+static DISCARD_A_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    object: ObjectPredicateDef::Any,
+    zone: ZoneKind::Hand,
+    count: 1,
+};
+
 // M13 157 — Wild Guess
-// Audit: blocked — Spell definitions cannot require discarding a card as an additional casting cost.
+pub(in crate::card::sets) static WILD_GUESS: CardRecord = CardRecord::new(
+    cards::WILD_GUESS,
+    "Wild Guess",
+    CardArt::new("a4e513b8-25c2-4645-abcc-a6e9d5f51e09", "Lucas Graciano"),
+    CardSet::Magic2013,
+    CardRules::new_sorcery(mana_cost!("{R}{R}")).with_ability(
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, discard a card.\nDraw two cards.",
+            &[],
+            DISCARD_A_CARD,
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ),
+);
 
 // M13 158 — Worldfire
 // Audit: blocked — Needs simultaneous mass exile across zones plus a life-total setter.
@@ -3283,6 +3305,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TRUMPET_BLAST,
     &VOLCANIC_GEYSER,
     &VOLCANIC_STRENGTH,
+    &WILD_GUESS,
     &ACIDIC_SLIME,
     &ARBOR_ELF,
     &BOND_BEETLE,

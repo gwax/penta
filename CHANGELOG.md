@@ -76,7 +76,9 @@ distinguishes snapshots of the covered source and build inputs.
   behavior. It is a declaration now: what may be spent, from which zone, and
   how many. A spell with nothing to spend is not offered at all, and each
   payable object is its own action rather than one blanket choice. Makeshift
-  Mauler, Stitched Drake, Headless Skaab, and Relentless Skaabs.
+  Mauler, Stitched Drake, Headless Skaab, and Relentless Skaabs; Altar's Reap
+  sacrifices from the battlefield and Wild Guess discards from hand, which are
+  the same declaration pointed at different zones.
 - **Searching a permanent onto the battlefield tapped.** A search could put a
   permanent into play but always untapped, so a fetch land had no way to be
   written. The flag is set on the prospective permanent before entry

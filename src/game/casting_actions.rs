@@ -1,14 +1,14 @@
 use super::{
     AbilityDef, AbilityId, AbilityOrigin, AbilityTargetDef, AbilityTargetPredicate, Action,
     AdditionalCostId, AlternativeCastAbilityDef, AlternativeCastKindDef, AlternativeCostId,
-    CardBehavior, CardDefinition, CardDefinitionId, CardEffectStatus, CardPartId, CardType,
-    CardTypeSet, CastChoices, CastSignature, CastSourceZone, ControlFlow, CostConfiguration,
-    DeclarativeAbilityDef, DividedTotal, Game, GameObjectId, KeywordAbility, ManaCost,
-    ManaPaymentPurpose, ModeId, PlayActionKind, PlayOptionDef, PlayOptionId, PlayRestriction,
-    PlayerId, ScopedEffect, SelectedSpellPlan, StackAbilityPayload, StackAbilityResolver, Target,
-    TargetSelection, TargetSlotDef, TargetSlotId, TriggerContext, ZoneKind, add_generic,
-    add_mana_cost, configured_mana_cost, extra_target_cost, mode_id_selections,
-    positive_compositions, reduce_generic, target_combinations,
+    CardBehavior, CardDefinition, CardDefinitionId, CardEffectStatus, CardInstance, CardPartId,
+    CardType, CardTypeSet, CastChoices, CastSignature, CastSourceZone, ControlFlow,
+    CostConfiguration, DeclarativeAbilityDef, DividedTotal, Game, GameObjectId, KeywordAbility,
+    ManaCost, ManaPaymentPurpose, ModeId, PlayActionKind, PlayOptionDef, PlayOptionId,
+    PlayRestriction, PlayerId, ScopedEffect, SelectedSpellPlan, StackAbilityPayload,
+    StackAbilityResolver, Target, TargetSelection, TargetSlotDef, TargetSlotId, TriggerContext,
+    ZoneKind, add_generic, add_mana_cost, configured_mana_cost, extra_target_cost,
+    mode_id_selections, positive_compositions, reduce_generic, target_combinations,
 };
 
 impl Game {
@@ -18,6 +18,7 @@ impl Game {
     fn additional_cost_choices(
         &self,
         definition: &CardDefinition,
+        card: &CardInstance,
         player: PlayerId,
     ) -> Vec<Vec<GameObjectId>> {
         let Some(cost) =
@@ -56,6 +57,17 @@ impl Game {
                     self.card_object_matches(cost.object, card, ZoneKind::Graveyard, card.id)
                 })
                 .map(|card| card.id)
+                .collect(),
+            // The card paying the cost cannot be the spell itself: it has
+            // already left hand by the time the cost is paid.
+            ZoneKind::Hand => self.players[player.index()]
+                .hand
+                .iter()
+                .filter(|held| {
+                    held.id != card.id
+                        && self.card_object_matches(cost.object, held, ZoneKind::Hand, held.id)
+                })
+                .map(|held| held.id)
                 .collect(),
             _ => Vec::new(),
         };
@@ -273,7 +285,7 @@ impl Game {
                                             .map(|permanent| vec![permanent.card.id])
                                             .collect()
                                     } else {
-                                        self.additional_cost_choices(definition, player)
+                                        self.additional_cost_choices(definition, card, player)
                                     };
                                     for sacrifices in sacrifice_choices {
                                         actions.push(Action::CastSpell {

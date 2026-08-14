@@ -631,7 +631,10 @@ fn shared_spell_additional_cost(cost: Option<SpellAdditionalCostDef>) -> bool {
         return true;
     };
     cost.count == 1
-        && matches!(cost.zone, ZoneKind::Battlefield | ZoneKind::Graveyard)
+        && matches!(
+            cost.zone,
+            ZoneKind::Battlefield | ZoneKind::Graveyard | ZoneKind::Hand
+        )
         && shared_object_predicate(cost.object)
 }
 

@@ -636,6 +636,15 @@ impl Game {
             if let Some(card) = remove_card(&mut self.players[owner.index()].graveyard, spent) {
                 let (card, _zone_change) = self.zone_change_card(card);
                 self.players[owner.index()].exile.push(card);
+            } else if let Some(card) = remove_card(&mut self.players[owner.index()].hand, spent) {
+                let definition = card.definition;
+                let (card, _zone_change) = self.zone_change_card(card);
+                let discarded = card.id;
+                self.put_card_into_graveyard(owner, card);
+                self.events.push(GameEvent::CardsDiscarded {
+                    player: owner,
+                    cards: vec![(discarded, definition)],
+                });
             }
         }
         if !remaining_sacrifices.is_empty() {

@@ -20,8 +20,8 @@ pub enum SpellAbilityDef {
 }
 
 /// An additional cost that selects objects to spend. The zone decides what
-/// spending means: a permanent on the battlefield is sacrificed, and a card
-/// in a graveyard is exiled.
+/// spending means: a permanent on the battlefield is sacrificed, a card in a
+/// graveyard is exiled, and a card in hand is discarded.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SpellAdditionalCostDef {
     pub object: ObjectPredicateDef,
