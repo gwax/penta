@@ -445,6 +445,9 @@ impl Game {
             ObjectPredicateDef::Any => true,
             ObjectPredicateDef::Source => source.card.id == affected.card.id,
             ObjectPredicateDef::Token => self.is_token(affected.card.definition),
+            ObjectPredicateDef::HasType(CardType::Land) => self
+                .permanent_types_below_static_effects(affected)
+                .is_some_and(|types| types.contains(CardType::Land)),
             ObjectPredicateDef::HasType(card_type) => self
                 .permanent_types(affected)
                 .is_some_and(|types| types.contains(card_type)),

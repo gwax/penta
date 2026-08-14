@@ -49,8 +49,12 @@ impl Game {
         permanent: &Permanent,
         origin: AbilityOrigin,
     ) -> bool {
+        let operations = self.resolved_ability_layer_operations(permanent);
+        if operations.is_empty() {
+            return true;
+        }
         let mut abilities = self.collect_base_effective_abilities(permanent, None);
-        for operation in self.resolved_ability_layer_operations(permanent) {
+        for operation in operations {
             Self::apply_ability_layer_operation(&mut abilities, &operation);
         }
         abilities

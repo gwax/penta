@@ -68,6 +68,19 @@ impl Game {
         Some(types)
     }
 
+    /// Card types below live static type-changing effects. The land-type
+    /// dependency walk uses this for its `HasType(Land)` recipient gate:
+    /// supported static card-type effects only add Creature, so they cannot
+    /// change that answer, and re-entering their full traversal here would
+    /// recursively rebuild the Blood Moon source set.
+    pub(super) fn permanent_types_below_static_effects(
+        &self,
+        permanent: &Permanent,
+    ) -> Option<CardTypeSet> {
+        let _pass = StaticSetCharacteristicLayerGuard::enter();
+        self.permanent_types(permanent)
+    }
+
     fn apply_card_type_operation(
         current: CardTypeSet,
         operation: SetOperationDef<CardTypeSet>,
