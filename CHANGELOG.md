@@ -71,6 +71,12 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Five identities unblocked by earlier work in this release**, with no new
+  machinery. Three pair unleash with something that already existed --
+  regeneration, a counter-conditional trample grant, and a sacrifice ability
+  reading its own last-known power. Two are Equipment whose lines still said
+  equip was not declarative. Grim Roustabout, Chaos Imps, Hellhole Flailer,
+  Accorder's Shield, and Fireshrieker.
 - **Populate.** Choosing a permanent already existed; copying one did not, and
   populate only ever copies a token, whose copiable values are the definition
   it was made from -- so this is a narrow copy rather than the general one. A

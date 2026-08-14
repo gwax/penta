@@ -1423,7 +1423,25 @@ pub(in crate::card::sets) static DRAINPIPE_VERMIN: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a delayed next-end-step return linked to each dead creature plus persistent color and Zombie type changes.
 
 // RTR 68 — Grim Roustabout
-// Audit: blocked — Unleash and regeneration shields are not available declaratively.
+pub(in crate::card::sets) static GRIM_ROUSTABOUT: CardRecord = CardRecord::new(
+    cards::GRIM_ROUSTABOUT,
+    "Grim Roustabout",
+    CardArt::new("1a5ae3f5-5466-4058-a2cd-1a036cb38a8e", "Steven Belledin"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Skeleton", "Warrior"], 1, 1).with_abilities(
+        &[
+            abilities::unleash(),
+            abilities::unleash_counter(),
+            AbilityDef::activated(
+                "{1}{B}: Regenerate this creature.",
+                &[AbilityCostDef::Mana(mana_cost!("{1}{B}"))],
+                EffectDef::Regenerate {
+                    object: EffectRecipientDef::Source,
+                },
+            ),
+        ],
+    ),
+);
 
 // RTR 69 — Launch Party
 // Audit: blocked — Needs choosing and sacrificing a creature as an additional spell-casting cost.
@@ -1722,8 +1740,39 @@ pub(in crate::card::sets) static BLOODFRAY_GIANT: CardRecord = CardRecord::new(
     ]),
 );
 
+static CHAOS_IMPS_HAS_A_COUNTER: TriggerConditionDef = TriggerConditionDef::SourceCounters {
+    kind: CounterKind::PlusOnePlusOne,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+static CHAOS_IMPS_TRAMPLE_GRANT: AbilityDef = abilities::trample();
+
+static CHAOS_IMPS_TRAMPLE: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::GrantAbility(&CHAOS_IMPS_TRAMPLE_GRANT),
+    duration: EffectDurationDef::WhileSourceRemainsInZone,
+};
+
 // RTR 90 — Chaos Imps
-// Audit: blocked — Unleash and a counter-dependent trample grant are unavailable.
+pub(in crate::card::sets) static CHAOS_IMPS: CardRecord = CardRecord::new(
+    cards::CHAOS_IMPS,
+    "Chaos Imps",
+    CardArt::new("c70a702a-c9be-4bee-9087-22b5905f783a", "Tyler Jacobson"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{4}{R}{R}"), &["Imp"], 6, 5).with_abilities(&[
+        abilities::flying(),
+        abilities::unleash(),
+        abilities::unleash_counter(),
+        AbilityDef::static_ability(
+            "This creature has trample as long as it has a +1/+1 counter on it.",
+            EffectDef::IfCondition {
+                condition: &CHAOS_IMPS_HAS_A_COUNTER,
+                then: &CHAOS_IMPS_TRAMPLE,
+            },
+        ),
+    ]),
+);
 
 // RTR 91 — Cobblebrute
 pub(in crate::card::sets) static COBBLEBRUTE: CardRecord = vanilla_creature(
@@ -3218,7 +3267,31 @@ pub(in crate::card::sets) static GRISLY_SALVAGE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a player-wide life-gain prohibition and an upkeep loss amount of half that player's life rounded up.
 
 // RTR 167 — Hellhole Flailer
-// Audit: blocked — Unleash is unavailable, and the sacrifice ability needs the sacrificed source's last-known power as its damage amount.
+pub(in crate::card::sets) static HELLHOLE_FLAILER: CardRecord = CardRecord::new(
+    cards::HELLHOLE_FLAILER,
+    "Hellhole Flailer",
+    CardArt::new("4984a089-84af-4387-9a0d-819b119b5565", "Steve Prescott"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{1}{B}{R}"), &["Ogre", "Warrior"], 3, 2).with_abilities(&[
+        abilities::unleash(),
+        abilities::unleash_counter(),
+        AbilityDef::activated_with_targets(
+            "{2}{B}{R}, Sacrifice this creature: It deals damage equal to its power to target \
+             player or planeswalker.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}{B}{R}")),
+                AbilityCostDef::SacrificeSource,
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::SourcePower,
+            },
+        ),
+    ]),
+);
 
 // RTR 168 — Heroes' Reunion
 pub(in crate::card::sets) static HEROES_REUNION: CardRecord = CardRecord::new(
@@ -4788,6 +4861,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DESECRATION_DEMON,
     &DEVIANT_GLEE,
     &DRAINPIPE_VERMIN,
+    &GRIM_ROUSTABOUT,
     &NECROPOLIS_REGENT,
     &PERILOUS_SHADOW,
     &SHRIEKING_AFFLICTION,
@@ -4800,6 +4874,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BATTERHORN,
     &BELLOWS_LIZARD,
     &BLOODFRAY_GIANT,
+    &CHAOS_IMPS,
     &COBBLEBRUTE,
     &DYNACHARGE,
     &ELECTRICKERY,
@@ -4858,6 +4933,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FALL_OF_THE_GAVEL,
     &GOLGARI_CHARM,
     &GRISLY_SALVAGE,
+    &HELLHOLE_FLAILER,
     &HEROES_REUNION,
     &HUSSAR_PATROL,
     &ISPERIA_SUPREME_JUDGE,

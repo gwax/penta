@@ -2463,8 +2463,40 @@ pub(in crate::card::sets) static WINDSTORM: CardRecord = CardRecord::new(
 // M14 203 — Woodborn Behemoth
 // Audit: blocked — Continuous effects cannot conditionally grant a composite bonus when an object count reaches a threshold.
 
+static ACCORDERS_SHIELD_VIGILANCE: AbilityDef = abilities::vigilance();
+
+static ACCORDERS_SHIELD_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::ModifyPowerToughness {
+        power: ValueDef::Constant(0),
+        toughness: ValueDef::Constant(3),
+    },
+    AppliedEffectDef::GrantAbility(&ACCORDERS_SHIELD_VIGILANCE),
+];
+
 // M14 204 — Accorder's Shield
-// Audit: blocked — Equipment attachment and sorcery-speed equip activation are not declarative.
+pub(in crate::card::sets) static ACCORDERS_SHIELD: CardRecord = CardRecord::new(
+    cards::ACCORDERS_SHIELD,
+    "Accorder's Shield",
+    CardArt::new("c5a4c2ab-c5bc-4e07-8671-a688ebd5471c", "Alan Pollack"),
+    CardSet::Magic2014,
+    CardRules::new_artifact(mana_cost!("{0}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +0/+3 and has vigilance.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&ACCORDERS_SHIELD_BONUS),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{3}"),
+                "Equip {3} ({3}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // M14 205 — Bubbling Cauldron
 // Audit: blocked — Costs cannot select an exact named sacrifice, and effects cannot total life actually lost by all opponents for the linked gain.
@@ -2492,8 +2524,35 @@ pub(in crate::card::sets) static DARKSTEEL_FORGE: CardRecord = CardRecord::new(
 // M14 208 — Door of Destinies
 // Audit: blocked — Predicates cannot consume a stored creature-type choice for both spell triggers and a counter-scaled continuous bonus.
 
+static FIRESHRIEKER_DOUBLE_STRIKE: AbilityDef = abilities::double_strike();
+
 // M14 210 — Fireshrieker
-// Audit: blocked — Equipment attachment and sorcery-speed equip activation are not declarative.
+pub(in crate::card::sets) static FIRESHRIEKER: CardRecord = CardRecord::new(
+    cards::FIRESHRIEKER,
+    "Fireshrieker",
+    CardArt::new(
+        "9f653742-b92a-4cfa-b3b5-8d20aabdb5dd",
+        "Christopher Moeller",
+    ),
+    CardSet::Magic2014,
+    CardRules::new_artifact(mana_cost!("{3}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has double strike.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::GrantAbility(&FIRESHRIEKER_DOUBLE_STRIKE),
+                    duration: EffectDurationDef::WhileSourceRemainsInZone,
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{2}"),
+                "Equip {2} ({2}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // M14 211 — Guardian of the Ages
 // Audit: blocked — Attack events cannot match attacks at you or your planeswalker, and abilities cannot permanently remove defender from the source after that trigger.
@@ -2915,7 +2974,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPOREMOUND,
     &TROLLHIDE,
     &WINDSTORM,
+    &ACCORDERS_SHIELD,
     &DARKSTEEL_FORGE,
+    &FIRESHRIEKER,
     &RATCHET_BOMB,
     &SLIVER_CONSTRUCT,
     &STAFF_OF_THE_DEATH_MAGUS,

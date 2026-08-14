@@ -436,6 +436,7 @@ mod ring_of_maruf;
 mod scavenge;
 mod search_and_reveal;
 mod spore;
+mod stale_followups;
 mod stat_counters;
 mod state_triggers_and_life;
 mod targeted_answers;
