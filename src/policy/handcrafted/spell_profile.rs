@@ -385,6 +385,7 @@ impl HandcraftedPolicy {
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::CreateToken { .. }
+            | EffectDef::CreateTokenCopyOf { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
             | EffectDef::CopyPermanentAsItEnters { .. }

@@ -223,8 +223,25 @@ pub(in crate::card::sets) static CONCORDIA_PEGASUS: CardRecord = keyword_creatur
 // RTR 9 — Ethereal Armor
 // Audit: blocked — Needs an Aura bonus whose size continuously tracks the number of enchantments you control.
 
+static EYES_IN_THE_SKIES_EFFECTS: [EffectDef; 2] = [
+    EffectDef::CreateToken {
+        token: cards::BIRD_TOKEN_1_1_WHITE,
+        count: ValueDef::Constant(1),
+    },
+    abilities::populate(),
+];
+
 // RTR 10 — Eyes in the Skies
-// Audit: blocked — Populate needs choosing a creature token and creating a copy of it.
+pub(in crate::card::sets) static EYES_IN_THE_SKIES: CardRecord = CardRecord::new(
+    cards::EYES_IN_THE_SKIES,
+    "Eyes in the Skies",
+    CardArt::new("befef095-3429-4dd7-aa01-2f7f619675d4", "James Ryman"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_instant(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell(
+        "Create a 1/1 white Bird creature token with flying, then populate.",
+        EffectDef::Sequence(&EYES_IN_THE_SKIES_EFFECTS),
+    )),
+);
 
 // RTR 11 — Fencing Ace
 pub(in crate::card::sets) static FENCING_ACE: CardRecord = keyword_creature(
@@ -403,8 +420,32 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
     ]),
 );
 
+static ROOTBORN_DEFENSES_EFFECTS: [EffectDef; 2] = [
+    abilities::populate(),
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::MatchingObjects {
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            zones: &[ZoneKind::Battlefield],
+            controller: PlayerRelation::You,
+        },
+        effect: AppliedEffectDef::GrantAbility(&ROOTBORN_INDESTRUCTIBLE),
+        duration: EffectDurationDef::UntilEndOfTurn,
+    },
+];
+
+static ROOTBORN_INDESTRUCTIBLE: AbilityDef = abilities::indestructible();
+
 // RTR 19 — Rootborn Defenses
-// Audit: blocked — Populate needs choosing a creature token and creating a copy of it.
+pub(in crate::card::sets) static ROOTBORN_DEFENSES: CardRecord = CardRecord::new(
+    cards::ROOTBORN_DEFENSES,
+    "Rootborn Defenses",
+    CardArt::new("deccfa48-b8df-4dcc-ba1b-920f8352def7", "Mark Zug"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
+        "Populate. Creatures you control gain indestructible until end of turn.",
+        EffectDef::Sequence(&ROOTBORN_DEFENSES_EFFECTS),
+    )),
+);
 
 // RTR 20 — Security Blockade
 // Audit: blocked — Needs a turn-long “prevent the next 1 damage” shield granted as a land activation.
@@ -4005,7 +4046,20 @@ pub(in crate::card::sets) static GOLGARI_LONGLEGS: CardRecord = vanilla_creature
 );
 
 // RTR 217 — Growing Ranks
-// Audit: blocked — Populate needs choosing a creature token and creating a copy of it at upkeep.
+pub(in crate::card::sets) static GROWING_RANKS: CardRecord = CardRecord::new(
+    cards::GROWING_RANKS,
+    "Growing Ranks",
+    CardArt::new("12f31616-1249-4964-b81a-4435405a2449", "Seb McKinnon"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_enchantment(mana_cost!("{2}{G/W}{G/W}")).with_ability(AbilityDef::triggered(
+        "At the beginning of your upkeep, populate.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::You,
+        },
+        abilities::populate(),
+    )),
+);
 
 // RTR 218 — Judge's Familiar
 pub(in crate::card::sets) static JUDGES_FAMILIAR: CardRecord = CardRecord::new(
@@ -4631,12 +4685,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AZORIUS_JUSTICIAR,
     &BAZAAR_KROVOD,
     &CONCORDIA_PEGASUS,
+    &EYES_IN_THE_SKIES,
     &FENCING_ACE,
     &KEENING_APPARITION,
     &KNIGHTLY_VALOR,
     &MARTIAL_LAW,
     &PRECINCT_CAPTAIN,
     &REST_IN_PEACE,
+    &ROOTBORN_DEFENSES,
     &SELESNYA_SENTRY,
     &SELLER_OF_SONGBIRDS,
     &SUNSPIRE_GRIFFIN,
@@ -4768,6 +4824,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEATHRITE_SHAMAN,
     &FROSTBURN_WEIRD,
     &GOLGARI_LONGLEGS,
+    &GROWING_RANKS,
     &JUDGES_FAMILIAR,
     &RAKDOS_CACKLER,
     &RAKDOS_SHRED_FREAK,

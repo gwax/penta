@@ -242,7 +242,8 @@ fn validate_effect_references(
         | EffectDef::MoveToZone { object, .. }
         | EffectDef::Counter { object, .. }
         | EffectDef::ChooseCardName { object }
-        | EffectDef::ChooseCreatureType { object } => {
+        | EffectDef::ChooseCreatureType { object }
+        | EffectDef::CreateTokenCopyOf { object } => {
             validate_recipient_target_references(object, target_count, choices_in_scope)
         }
         // A reveal always comes off the resolving object's controller's own

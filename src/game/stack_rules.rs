@@ -43,6 +43,7 @@ impl Game {
         })
     }
 
+    #[allow(clippy::too_many_lines)]
     pub(super) fn effect_applies_to_source(
         effect: EffectDef,
         expected: AppliedEffectDef,
@@ -141,6 +142,7 @@ impl Game {
             | EffectDef::Replacement(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }
+            | EffectDef::CreateTokenCopyOf { .. }
             | EffectDef::ChooseCardName { .. }
             | EffectDef::ChoosePlayer { .. }
             | EffectDef::CopyPermanentAsItEnters { .. }

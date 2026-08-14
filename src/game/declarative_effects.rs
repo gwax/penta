@@ -284,6 +284,29 @@ impl Game {
                     self.create_token(object.controller, token);
                 }
             }
+            EffectDef::CreateTokenCopyOf { object: recipient } => {
+                let copies = self
+                    .effect_recipients(recipient, object, context, scoped)
+                    .into_iter()
+                    .filter_map(|target| match target {
+                        Target::Permanent(id) => self
+                            .battlefield
+                            .iter()
+                            .find(|permanent| permanent.card.id == id)
+                            // A token that is itself a copy of something else
+                            // copies what it became, not what it was made as.
+                            .map(|permanent| {
+                                permanent
+                                    .copied_from
+                                    .map_or(permanent.card.definition, |(definition, _)| definition)
+                            }),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>();
+                for definition in copies {
+                    self.create_token(object.controller, definition);
+                }
+            }
             EffectDef::Untap { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Permanent(id) = target

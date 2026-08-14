@@ -71,6 +71,11 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **Populate.** Choosing a permanent already existed; copying one did not, and
+  populate only ever copies a token, whose copiable values are the definition
+  it was made from -- so this is a narrow copy rather than the general one. A
+  token that is itself a copy of something else copies what it became. Eyes in
+  the Skies, Rootborn Defenses, and Growing Ranks.
 - **"If you control the creature with the greatest power."** A tie counts, so
   the question is whether anything on the battlefield is strictly bigger
   rather than whether one creature stands alone, and an empty battlefield

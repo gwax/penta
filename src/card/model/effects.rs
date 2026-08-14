@@ -522,6 +522,13 @@ pub enum EffectDef {
         token: CardDefinitionId,
         count: ValueDef,
     },
+    /// Creates a token copying the recipient's copiable values, which for a
+    /// token is the definition it was created from. This is populate, whose
+    /// copy is always of a token and so never has to reproduce a printed
+    /// card's characteristics.
+    CreateTokenCopyOf {
+        object: EffectRecipientDef,
+    },
     /// An Aura spell attaching itself to what it enchants. The permanent the
     /// spell becomes is what attaches, so this is only meaningful on the spell
     /// clause of an Aura.

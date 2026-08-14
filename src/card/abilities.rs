@@ -405,6 +405,30 @@ pub const fn bloodrush(
     .with_source_zones(&[ZoneKind::Hand])
 }
 
+/// Populate's copy step, made once its choice has landed.
+static POPULATE_COPY: EffectDef = EffectDef::CreateTokenCopyOf {
+    object: EffectRecipientDef::ChosenPermanent(ChoiceIndex::PRIMARY),
+};
+
+/// Populate: choose a creature token you control, then create a copy of it.
+/// The choice is not a target -- nothing about it is checked again -- and a
+/// player with no creature tokens simply does nothing.
+#[must_use]
+pub const fn populate() -> EffectDef {
+    EffectDef::ChoosePermanent {
+        choice: ChoiceIndex::PRIMARY,
+        chooser: EffectRecipientDef::Controller,
+        object: ObjectPredicateDef::All(&POPULATE_CANDIDATE),
+        controller: PlayerRelation::You,
+        then: &POPULATE_COPY,
+    }
+}
+
+static POPULATE_CANDIDATE: [ObjectPredicateDef; 2] = [
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Token,
+];
+
 /// The target an equip ability chooses: a creature its controller controls.
 static EQUIP_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Object {

@@ -204,7 +204,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         EffectDef::ReturnLinkedExiles { zone, .. } => {
             matches!(zone, ZoneKind::Battlefield | ZoneKind::Hand)
         }
-        EffectDef::Regenerate { object }
+        // Populate copies whatever the choice landed on, so like the rest of
+        // these only its recipient has to be one the runtime understands.
+        EffectDef::CreateTokenCopyOf { object }
+        | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
         | EffectDef::SetColor { object, .. }
         | EffectDef::DestroyAtEndOfCombat { object, .. }
