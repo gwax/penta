@@ -540,6 +540,19 @@ static EVOLVE_BIGGER: [ObjectPredicateDef; 2] = [
     ObjectPredicateDef::ToughnessGreaterThan(ValueDef::SourceToughness),
 ];
 
+/// The printed static "this creature can't be blocked".
+#[must_use]
+pub const fn cannot_be_blocked(text: &'static str) -> AbilityDef {
+    AbilityDef::static_ability(
+        text,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::CannotBeBlocked,
+            duration: EffectDurationDef::WhileSourceRemainsInZone,
+        },
+    )
+}
+
 /// A shared checkland-style entry clause backed by the general object-query
 /// condition vocabulary.
 #[must_use]

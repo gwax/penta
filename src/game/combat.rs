@@ -189,6 +189,19 @@ impl Game {
     /// Whether a continuous effect currently forbids this permanent from
     /// blocking. Asked afresh, so a turn-scoped prohibition stops applying
     /// when it expires and a static one when its source leaves.
+    /// Whether a continuous effect currently stops anything blocking this
+    /// permanent. The turn-scoped form is a flag beside it.
+    fn cannot_be_blocked(&self, permanent: &Permanent) -> bool {
+        self.visit_static_applied_effects(permanent, |applied| {
+            if matches!(applied.effect, AppliedEffectDef::CannotBeBlocked) {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+
     pub(super) fn cannot_block(&self, permanent: &Permanent) -> bool {
         if permanent.cannot_block_this_turn || permanent.detained_until_turn_of.is_some() {
             return true;
@@ -274,6 +287,7 @@ impl Game {
                             });
                         let can_block = !(*unblockable
                             || attacker_permanent.unblockable_this_turn
+                            || self.cannot_be_blocked(attacker_permanent)
                             || self.blocking_is_prevented(attacker_permanent, blocker_permanent)
                             || *flying && !blocker_can_block_flying
                             || intimidate

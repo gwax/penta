@@ -589,6 +589,7 @@ fn collect_applied_ability_grants(effect: AppliedEffectDef, grants: &mut Vec<&Ab
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
@@ -752,6 +753,7 @@ fn applied_ability_grant_sites(effect: AppliedEffectDef) -> usize {
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController

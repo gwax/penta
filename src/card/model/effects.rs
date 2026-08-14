@@ -123,6 +123,10 @@ pub enum AppliedEffectDef {
     /// prohibition, the other side of [`Self::CannotBeBlockedBy`], and it is
     /// what "can't block" and "can't block this turn" both say.
     CannotBlock,
+    /// Nothing can block the affected creature. The turn-scoped form of this
+    /// is a resolving effect; this is the printed static one, so it holds for
+    /// as long as its source does.
+    CannotBeBlocked,
     /// No combat damage is dealt to or by the affected permanent. Unlike the
     /// turn-scoped [`EffectDef::PreventCombatDamageThisTurn`] this holds for
     /// as long as the effect applies, which is what an Aura needs.

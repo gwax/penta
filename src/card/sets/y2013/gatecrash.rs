@@ -2186,7 +2186,16 @@ pub(in crate::card::sets) static DRAKEWING_KRASIS: CardRecord = CardRecord::new(
 // Audit: blocked — Needs simultaneous per-player top-card reveal, mana-value life loss, and movement to hand with APNAP handling.
 
 // GTC 160 — Elusive Krasis
-// Audit: blocked — Evolve needs a trigger comparison against the entering creature's current power and toughness.
+pub(in crate::card::sets) static ELUSIVE_KRASIS: CardRecord = CardRecord::new(
+    cards::ELUSIVE_KRASIS,
+    "Elusive Krasis",
+    CardArt::new("dd62e422-e5e2-4736-9ed3-d2dc693f6f8f", "Wesley Burt"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{1}{G}{U}"), &["Fish", "Mutant"], 0, 4).with_abilities(&[
+        abilities::cannot_be_blocked("This creature can't be blocked."),
+        abilities::evolve(),
+    ]),
+);
 
 // GTC 161 — Executioner's Swing
 // Audit: blocked — No target predicate recognizes a creature that dealt damage earlier this turn.
@@ -3459,6 +3468,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DINROVA_HORROR,
     &DOMRI_RADE,
     &DRAKEWING_KRASIS,
+    &ELUSIVE_KRASIS,
     &FIREMANE_AVENGER,
     &FOUNDRY_CHAMPION,
     &GHOR_CLAN_RAMPAGER,

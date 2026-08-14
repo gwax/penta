@@ -153,6 +153,7 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
         | AppliedEffectDef::CannotBeBlockedBy(_)
@@ -228,6 +229,7 @@ fn resolving_effect_is_only_ability_changes(effect: AppliedEffectDef) -> bool {
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController
@@ -254,6 +256,7 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         AppliedEffectDef::Animate(_)
         | AppliedEffectDef::ModifyPowerToughness { .. }
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::RemoveAbilities(_) => true,
         AppliedEffectDef::GrantAbility(ability) => match ability.definition {
             DeclarativeAbilityDef::ActivatedMana(definition)
@@ -546,6 +549,7 @@ pub(super) fn shared_static_applied_effect(
         AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::RemoveAbilities(_)
         | AppliedEffectDef::CannotBeCountered
         | AppliedEffectDef::CannotBeEnchanted

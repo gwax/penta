@@ -1002,7 +1002,34 @@ pub(in crate::card::sets) static SKYLINE_PREDATOR: CardRecord = CardRecord::new(
 );
 
 // RTR 51 — Soulsworn Spirit
-// Audit: blocked — Detain requires attack, block, and activated-ability restrictions lasting until your next turn.
+pub(in crate::card::sets) static SOULSWORN_SPIRIT: CardRecord = CardRecord::new(
+    cards::SOULSWORN_SPIRIT,
+    "Soulsworn Spirit",
+    CardArt::new("32602ed9-c0a7-4498-a333-235eaae628df", "James Ryman"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Spirit"], 2, 1).with_abilities(&[
+        abilities::cannot_be_blocked("This creature can't be blocked."),
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, detain target creature an opponent controls.",
+            TriggerEventDef::ZoneChanged {
+                object: ObjectPredicateDef::Source,
+                from: None,
+                to: Some(ZoneKind::Battlefield),
+            },
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            EffectDef::Detain {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
 
 // RTR 52 — Sphinx of the Chimes
 // Audit: blocked — Needs choosing two same-named nonland cards from hand as a single activation cost.
@@ -4502,6 +4529,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PARALYZING_GRASP,
     &RUNEWING,
     &SKYLINE_PREDATOR,
+    &SOULSWORN_SPIRIT,
     &STEALER_OF_SECRETS,
     &SYNCOPATE,
     &TOWER_DRAKE,

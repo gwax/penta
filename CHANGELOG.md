@@ -71,6 +71,10 @@ distinguishes snapshots of the covered source and build inputs.
   complete, and the twenty-one identities that print it keep an audit line
   naming only what is left. No card is claimed as executable on the strength
   of half a keyword.
+- **A printed static "can't be blocked"**, the attacker's side of the
+  prohibition added with the blocker's. The turn-scoped form was a resolving
+  rider; this one holds while its source does. Elusive Krasis and Soulsworn
+  Spirit complete evolve and detain respectively.
 - **Evolve**, and the two stat comparisons it is written against. A predicate
   could ask whether a toughness was below a computed value; the mirrors for
   greater power and greater toughness are what the keyword needs, read against

@@ -358,6 +358,7 @@ pub(in super::super) fn assert_nested_definition_applied_effect(
         | AppliedEffectDef::DoesNotUntapDuringUntapStep
         | AppliedEffectDef::MayChooseNotToUntap
         | AppliedEffectDef::CannotBlock
+        | AppliedEffectDef::CannotBeBlocked
         | AppliedEffectDef::CannotBeEnchanted
         | AppliedEffectDef::CannotBecomeEnchanted
         | AppliedEffectDef::CannotChangeController

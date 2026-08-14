@@ -257,7 +257,10 @@ impl Game {
                     permanent.toughness_bonus = permanent.toughness_bonus.saturating_add(toughness);
                 }
             }
-            AppliedEffectDef::CannotBeCountered
+            // Only the printed static form of "can't be blocked" exists; a
+            // resolving one already has its own effect.
+            AppliedEffectDef::CannotBeBlocked
+            | AppliedEffectDef::CannotBeCountered
             | AppliedEffectDef::DoesNotUntapDuringUntapStep
             | AppliedEffectDef::MayChooseNotToUntap
             | AppliedEffectDef::CannotBeEnchanted

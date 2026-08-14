@@ -106,3 +106,63 @@ fn every_cannot_block_identity_reports_complete_coverage() {
         );
     }
 }
+
+/// The attacker's side, printed as a static rather than handed out for a
+/// turn. Both forms had to exist for the same reason the blocker's side did:
+/// the turn-scoped one is a resolving rider and this one holds while its
+/// source does.
+mod cannot_be_blocked {
+    use super::*;
+
+    fn attacking(definition: CardDefinitionId) -> (Game, GameObjectId, GameObjectId) {
+        let mut game = ready_game();
+        game.step = Step::DeclareBlockers;
+        game.attackers_declared = true;
+        let mut attacker = creature(10_000, definition, PlayerId::One);
+        attacker.attacking = true;
+        attacker.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+        let attacker_id = attacker.card.id;
+        game.battlefield.push(attacker);
+        let blocker = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
+        let blocker_id = blocker.card.id;
+        game.battlefield.push(blocker);
+        (game, attacker_id, blocker_id)
+    }
+
+    fn offers_block(game: &Game, attacker: GameObjectId) -> bool {
+        game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::DeclareBlocker { attacker: a, .. } if *a == attacker),
+        )
+    }
+
+    #[test]
+    fn nothing_is_offered_as_a_blocker_for_it() {
+        let (game, attacker_id, _blocker_id) = attacking(cards::ELUSIVE_KRASIS);
+        assert!(
+            !offers_block(&game, attacker_id),
+            "a printed unblockable attacker takes no blockers"
+        );
+    }
+
+    /// The same board with an ordinary attacker, so the test above measures
+    /// the restriction rather than the setup.
+    #[test]
+    fn an_ordinary_attacker_can_be_blocked() {
+        let (game, attacker_id, _blocker_id) = attacking(cards::SAVANNAH_LIONS);
+        assert!(offers_block(&game, attacker_id));
+    }
+
+    #[test]
+    fn both_identities_report_complete_coverage() {
+        let catalog = poc::catalog().expect("catalog builds");
+        for definition in [cards::ELUSIVE_KRASIS, cards::SOULSWORN_SPIRIT] {
+            let card = catalog.get(definition).expect("the card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                ImplementationStatus::Complete,
+                "{} should be fully executable",
+                card.name,
+            );
+        }
+    }
+}
