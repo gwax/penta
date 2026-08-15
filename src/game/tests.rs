@@ -569,6 +569,7 @@ mod deep_spawn;
 mod delayed_triggers;
 mod derelor;
 mod detain;
+mod dgm_stale_audits;
 mod disharmony;
 mod dka_stale_audits;
 mod energy_tap;

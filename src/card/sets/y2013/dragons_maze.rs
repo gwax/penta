@@ -8,12 +8,12 @@ use crate::card::{
     AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
     CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet,
     ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
-    CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef,
-    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayOptionDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    SpellForm, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef,
+    DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
+    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, SacrificedAmountDef, SpellForm, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -495,8 +495,38 @@ pub(in crate::card::sets) static MAZE_ABOMINATION: CardRecord = CardRecord::new(
     ]),
 );
 
+static PONTIFF_OF_BLIGHT_EXTORT: AbilityDef = abilities::extort();
+
+/// Each granted copy is its own instance, so one spell offers one payment per
+/// creature rather than a single drain for the board.
+static PONTIFF_OF_BLIGHT_GRANT: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    effect: AppliedEffectDef::add_ability(&PONTIFF_OF_BLIGHT_EXTORT),
+};
+
 // DGM 27 — Pontiff of Blight
-// Audit: blocked — Needs extort's per-spell optional hybrid-mana payment, opponent life loss, matched life gain, and external ability grant.
+pub(in crate::card::sets) static PONTIFF_OF_BLIGHT: CardRecord = CardRecord::new(
+    cards::PONTIFF_OF_BLIGHT,
+    "Pontiff of Blight",
+    CardArt::new("72e5291f-9281-4cb7-9158-54b7cb336b93", "Seb McKinnon"),
+    CardSet::DragonsMaze,
+    CardRules::new_creature(mana_cost!("{4}{B}{B}"), &["Zombie", "Cleric"], 2, 7).with_abilities(
+        &[
+            abilities::extort(),
+            AbilityDef::static_ability(
+                "Other creatures you control have extort.",
+                PONTIFF_OF_BLIGHT_GRANT,
+            ),
+        ],
+    ),
+);
 
 // DGM 28 — Rakdos Drake
 pub(in crate::card::sets) static RAKDOS_DRAKE: CardRecord = CardRecord::new(
@@ -767,7 +797,14 @@ pub(in crate::card::sets) static WEAPON_SURGE: CardRecord = CardRecord::new(
 );
 
 // DGM 41 — Battering Krasis
-// Audit: blocked — Needs evolve's intervening power-or-toughness comparison against the entering creature and an evolve-event marker.
+pub(in crate::card::sets) static BATTERING_KRASIS: CardRecord = CardRecord::new(
+    cards::BATTERING_KRASIS,
+    "Battering Krasis",
+    CardArt::new("5d9aa740-9adf-412a-b6ec-0b9bb1b4618b", "Jack Wang"),
+    CardSet::DragonsMaze,
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Shark", "Beast"], 2, 1)
+        .with_abilities(&[abilities::trample(), abilities::evolve()]),
+);
 
 // DGM 42 — Kraul Warrior
 pub(in crate::card::sets) static KRAUL_WARRIOR: CardRecord = CardRecord::new(
@@ -1125,8 +1162,39 @@ pub(in crate::card::sets) static DROWN_IN_FILTH: CardRecord = CardRecord::new(
     ),
 );
 
+/// A shield installed on each token rather than one rule watching the board,
+/// so a token that arrives later is covered and one that leaves is not.
+static EMMARA_TANDRIS_SHIELD: AppliedEffectDef =
+    AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(DamageEventMatcherDef {
+        recipient: DamageRecipientMatcherDef::AffectedObject,
+        ..DamageEventMatcherDef::ANY
+    }));
+
 // DGM 68 — Emmara Tandris
-// Audit: blocked — Needs a damage-prevention replacement for every creature token you control.
+pub(in crate::card::sets) static EMMARA_TANDRIS: CardRecord = CardRecord::new(
+    cards::EMMARA_TANDRIS,
+    "Emmara Tandris",
+    CardArt::new("c7c91a0a-2f14-4131-8ca7-1d0046a8edd2", "Mark Winters"),
+    CardSet::DragonsMaze,
+    // All damage, not just combat damage, and only to tokens -- Emmara
+    // herself is a card, so she takes hers.
+    CardRules::new_creature(mana_cost!("{5}{G}{W}"), &["Elf", "Shaman"], 5, 7)
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::static_ability(
+            "Prevent all damage that would be dealt to creature tokens you control.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Token,
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: EMMARA_TANDRIS_SHIELD,
+            },
+        )),
+);
 
 static EXAVA_OTHER_COUNTERED_CREATURES: [ObjectPredicateDef; 3] = [
     ObjectPredicateDef::HasType(CardType::Creature),
@@ -1768,7 +1836,14 @@ pub(in crate::card::sets) static TAJIC_BLADE_OF_THE_LEGION: CardRecord = CardRec
 // Audit: blocked — Needs protection from creatures and a combat-damage trigger that destroys the specific dealing creature before creating a token.
 
 // DGM 109 — Tithe Drinker
-// Audit: blocked — Needs extort's optional hybrid-mana payment and life-loss-to-life-gain linkage.
+pub(in crate::card::sets) static TITHE_DRINKER: CardRecord = CardRecord::new(
+    cards::TITHE_DRINKER,
+    "Tithe Drinker",
+    CardArt::new("e069aa06-35b0-4af8-89cb-af653708ed32", "Slawomir Maniak"),
+    CardSet::DragonsMaze,
+    CardRules::new_creature(mana_cost!("{W}{B}"), &["Vampire"], 2, 1)
+        .with_abilities(&[abilities::lifelink(), abilities::extort()]),
+);
 
 // DGM 110 — Trostani's Summoner
 pub(in crate::card::sets) static TROSTANIS_SUMMONER: CardRecord = CardRecord::new(
@@ -2635,6 +2710,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BANE_ALLEY_BLACKGUARD,
     &FATAL_FUMES,
     &MAZE_ABOMINATION,
+    &PONTIFF_OF_BLIGHT,
     &RAKDOS_DRAKE,
     &UBUL_SAR_GATEKEEPERS,
     &CLEAR_A_PATH,
@@ -2645,6 +2721,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUBBLEBELT_MAAKA,
     &SMELT_WARD_GATEKEEPERS,
     &WEAPON_SURGE,
+    &BATTERING_KRASIS,
     &KRAUL_WARRIOR,
     &MAZE_BEHEMOTH,
     &MENDING_TOUCH,
@@ -2660,6 +2737,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BRONZEBEAK_MOA,
     &DEPUTY_OF_ACQUITTALS,
     &DROWN_IN_FILTH,
+    &EMMARA_TANDRIS,
     &EXAVA_RAKDOS_BLOOD_WITCH,
     &FERAL_ANIMIST,
     &GAZE_OF_GRANITE,
@@ -2681,6 +2759,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPECIES_GORGER,
     &SPIKE_JESTER,
     &TAJIC_BLADE_OF_THE_LEGION,
+    &TITHE_DRINKER,
     &TROSTANIS_SUMMONER,
     &UNFLINCHING_COURAGE,
     &VIASHINO_FIRSTBLADE,

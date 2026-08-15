@@ -297,10 +297,13 @@ pub(in super::super) fn shared_static_applied_effect(
             ) || recipient.object_query().is_some()
         }
         AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(matcher)) => {
+            // The shield is looked up on the permanent it was applied to, so a
+            // query recipient installs one on each match and nothing has to
+            // rewrite the matcher.
             let recipient_is_supported = matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
-            );
+            ) || recipient.object_query().is_some();
             let matcher_is_supported = match (matcher.source, matcher.recipient) {
                 (
                     DamageSourceMatcherDef::Matching(source),

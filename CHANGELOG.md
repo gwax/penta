@@ -40,6 +40,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Evolve never compared toughness.** A predicate reading the source's
+  toughness resolved to nothing at all, so only the power half of "greater
+  power or toughness" could fire. A 2/2 arriving beside a 2/1 evolve creature
+  now grows it, as it always should have.
+
 - **The bundled handcrafted policy cast X spells for X=0.** With exactly the
   base cost available and nothing to pay into X, the only enumerated cast is
   the X=0 one, and the policy scored it far above passing — so it spent
@@ -113,6 +118,12 @@ distinguishes snapshots of the covered source and build inputs.
   Mesa Pegasus, Timber Wolves, Helm of Chatzuk, War Elephant, Icatian Infantry,
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
+
+- **Pontiff of Blight**, **Battering Krasis**, **Emmara Tandris** and **Tithe
+  Drinker**. Extort moved into the shared ability helpers so the Pontiff can
+  grant it, each granted instance offering its own payment, and Emmara's
+  prevention is the first shield installed on a whole group of permanents
+  rather than on one.
 
 - **Ogre Slumlord** and **Sublime Archangel**, two cards that hand an ability
   to a group. The Slumlord's is a keyword given to Rats, which brings a 1/1

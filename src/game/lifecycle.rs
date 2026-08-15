@@ -445,6 +445,9 @@ impl Game {
             // source and triggering object leave simultaneously, use the
             // same last-known power frozen for the rest of the trigger.
             ValueDef::SourcePower => self.current_or_last_known_power(source).map(i32::from),
+            ValueDef::SourceToughness => {
+                self.current_or_last_known_toughness(source).map(i32::from)
+            }
             _ => None,
         }
     }

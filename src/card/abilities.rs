@@ -818,6 +818,38 @@ pub const fn exalted() -> AbilityDef {
     )
 }
 
+/// One opponent means one life, so "that much" is the same constant on both
+/// halves.
+static EXTORT_DRAIN: EffectDef = EffectDef::Sequence(&[
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Opponent,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+]);
+
+/// Extort. Like exalted it is a keyword defined as a triggered ability, so
+/// several instances on one permanent each offer their own payment -- which
+/// is what makes a card that grants it worth more than one drain.
+#[must_use]
+pub const fn extort() -> AbilityDef {
+    AbilityDef::triggered(
+        "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 \
+         life and you gain that much life.)",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
+        EffectDef::PayOr(PayOrDef::optional(
+            EffectPaymentDef::mana(
+                PlayerSetDef::Related(PlayerRelation::You),
+                crate::mana_cost!("{W/B}"),
+            ),
+            &EXTORT_DRAIN,
+        )),
+    )
+}
+
 /// Battalion. Like exalted it is a keyword defined as a triggered ability, so
 /// it takes the effect its card prints rather than being one fixed clause.
 #[must_use]

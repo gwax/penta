@@ -7,40 +7,14 @@ use crate::card::{
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
     DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
-    DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
-    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    DividedTotal, EffectDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
-
-/// One opponent means one life, so "that much" is the same constant on both
-/// halves.
-static EXTORT_DRAIN: EffectDef = EffectDef::Sequence(&[
-    EffectDef::LoseLife {
-        recipient: EffectRecipientDef::Opponent,
-        amount: ValueDef::Constant(1),
-    },
-    EffectDef::GainLife {
-        recipient: EffectRecipientDef::Controller,
-        amount: ValueDef::Constant(1),
-    },
-]);
-const fn extort() -> AbilityDef {
-    AbilityDef::triggered(
-        "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)",
-        TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
-        EffectDef::PayOr(PayOrDef::optional(
-            EffectPaymentDef::mana(
-                PlayerSetDef::Related(PlayerRelation::You),
-                mana_cost!("{W/B}"),
-            ),
-            &EXTORT_DRAIN,
-        )),
-    )
-}
 
 // GTC 1 — Aerial Maneuver
 pub(in crate::card::sets) static AERIAL_MANEUVER: CardRecord = CardRecord::new(
@@ -111,7 +85,7 @@ pub(in crate::card::sets) static BASILICA_GUARDS: CardRecord = CardRecord::new(
     CardArt::new("2be39fed-4b39-4027-9c80-f2186f7dd941", "Dan Murayama Scott"),
     CardSet::Gatecrash,
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 1, 4)
-        .with_abilities(&[abilities::defender(), extort()]),
+        .with_abilities(&[abilities::defender(), abilities::extort()]),
 );
 
 // GTC 6 — Blind Obedience
@@ -121,7 +95,7 @@ pub(in crate::card::sets) static BLIND_OBEDIENCE: CardRecord = CardRecord::new(
     CardArt::new("07c3e78d-d917-4552-842f-feff99c059e0", "Seb McKinnon"),
     CardSet::Gatecrash,
     CardRules::new_enchantment(mana_cost!("{1}{W}")).with_abilities(&[
-        extort(),
+        abilities::extort(),
         AbilityDef::replacement_for(
             "Artifacts and creatures your opponents control enter tapped.",
             ReplacementEventDef::ObjectEntersBattlefield {
@@ -306,7 +280,7 @@ pub(in crate::card::sets) static KNIGHT_OF_OBLIGATION: CardRecord = CardRecord::
     CardArt::new("0c2a1100-a2e6-4ef5-a8e3-2aca552d6b66", "Ryan Barger"),
     CardSet::Gatecrash,
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Human", "Knight"], 2, 4)
-        .with_abilities(&[abilities::vigilance(), extort()]),
+        .with_abilities(&[abilities::vigilance(), abilities::extort()]),
 );
 
 // GTC 19 — Knight Watch
@@ -487,7 +461,7 @@ pub(in crate::card::sets) static SYNDIC_OF_TITHES: CardRecord = CardRecord::new(
     CardArt::new("2bafaa3b-eeaa-427f-9a73-6a1c98d257ca", "Steve Prescott"),
     CardSet::Gatecrash,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Cleric"], 2, 2)
-        .with_ability(extort()),
+        .with_ability(abilities::extort()),
 );
 
 // GTC 27 — Urbis Protector
@@ -860,7 +834,7 @@ pub(in crate::card::sets) static BASILICA_SCREECHER: CardRecord = CardRecord::ne
     CardArt::new("d233c6bc-c4dd-482d-b0f4-87359acab7cb", "Christine Choi"),
     CardSet::Gatecrash,
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Bat"], 1, 2)
-        .with_abilities(&[abilities::flying(), extort()]),
+        .with_abilities(&[abilities::flying(), abilities::extort()]),
 );
 
 static CONTAMINATED_GROUND_TRIGGER: AbilityDef = AbilityDef::triggered(
@@ -940,7 +914,7 @@ pub(in crate::card::sets) static CRYPT_GHAST: CardRecord = CardRecord::new(
     CardArt::new("3795a4e7-646f-4bb7-b154-2610eb740e8d", "Chris Rahn"),
     CardSet::Gatecrash,
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Spirit"], 2, 2).with_abilities(&[
-        extort(),
+        abilities::extort(),
         AbilityDef::triggered_mana(
             "Whenever you tap a Swamp for mana, add an additional {B}.",
             TriggerEventDef::tapped_for_mana(ObjectPredicateDef::All(&[
@@ -1274,7 +1248,8 @@ pub(in crate::card::sets) static SYNDICATE_ENFORCER: CardRecord = CardRecord::ne
     "Syndicate Enforcer",
     CardArt::new("cde6ee2e-a114-4935-8345-d3e264f9fc26", "Steven Belledin"),
     CardSet::Gatecrash,
-    CardRules::new_creature(mana_cost!("{3}{B}"), &["Human", "Rogue"], 3, 2).with_ability(extort()),
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Human", "Rogue"], 3, 2)
+        .with_ability(abilities::extort()),
 );
 
 // GTC 81 — Thrull Parasite
@@ -2815,7 +2790,7 @@ pub(in crate::card::sets) static KINGPINS_PET: CardRecord = CardRecord::new(
     CardArt::new("3465cf63-4f10-4b53-9703-69746364dbc7", "Mark Zug"),
     CardSet::Gatecrash,
     CardRules::new_creature(mana_cost!("{1}{W}{B}"), &["Thrull"], 2, 2)
-        .with_abilities(&[abilities::flying(), extort()]),
+        .with_abilities(&[abilities::flying(), abilities::extort()]),
 );
 
 // GTC 174 — Lazav, Dimir Mastermind
@@ -3196,7 +3171,7 @@ pub(in crate::card::sets) static TREASURY_THRULL: CardRecord = CardRecord::new(
     CardArt::new("f013e6f0-85d0-4c8e-a10b-7beea572c32d", "Mark Zug"),
     CardSet::Gatecrash,
     CardRules::new_creature(mana_cost!("{4}{W}{B}"), &["Thrull"], 4, 4).with_abilities(&[
-        extort(),
+        abilities::extort(),
         AbilityDef::triggered_with_targets(
             "Whenever this creature attacks, you may return target artifact, creature, or enchantment card from your graveyard to your hand.",
             TriggerEventDef::attacks(ObjectPredicateDef::Source),
