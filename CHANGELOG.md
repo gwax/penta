@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Primordial Ooze.** Its audit line blamed a combat constraint; "attacks
+  each combat if able" has been a keyword for a while, and the upkeep toll is
+  an unless-payment whose amount is read from the counters on the source
+  after the new one goes on.
+
 - **Erg Raiders**, and two ways for an intervening-if to read its own source.
   A condition can now ask whether the ability's source matches a predicate,
   the way it could already ask about the permanent an Aura is attached to; and

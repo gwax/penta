@@ -11,3 +11,4 @@ pub const DESERT: CardDefinitionId = CardDefinitionId(1805);
 pub const ISLAND_OF_WAK_WAK: CardDefinitionId = CardDefinitionId(1806);
 pub const BLAZE_OF_GLORY: CardDefinitionId = CardDefinitionId(1812);
 pub const ERG_RAIDERS: CardDefinitionId = CardDefinitionId(1813);
+pub const PRIMORDIAL_OOZE: CardDefinitionId = CardDefinitionId(1814);

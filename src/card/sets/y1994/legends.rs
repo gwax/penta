@@ -7,9 +7,9 @@ use crate::card::{
     ChooseDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
     DamageKindDef, DamageLimitDef, DamagePreventionDef, DamageRecipientMatcherDef,
     DamageSourceGroupDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef,
-    EffectExecutionDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility,
+    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
     ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
     TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
     ZonePlacement, abilities, cards,
@@ -2400,8 +2400,59 @@ pub(in crate::card::sets) static MOUNTAIN_YETI: CardRecord = CardRecord::new(
     ]),
 );
 
+/// X is read after the counter goes on, so the toll is the size the Ooze has
+/// just grown to rather than the size it was.
+static PRIMORDIAL_OOZE_X: ValueDef = ValueDef::CountersOnSource(CounterKind::PlusOnePlusOne);
+
+static PRIMORDIAL_OOZE_TOLL: [EffectDef; 2] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::Source,
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Controller,
+        amount: PRIMORDIAL_OOZE_X,
+    },
+];
+
+static PRIMORDIAL_OOZE_TOLL_SEQUENCE: EffectDef = EffectDef::Sequence(&PRIMORDIAL_OOZE_TOLL);
+
+static PRIMORDIAL_OOZE_UPKEEP: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::PayOr(PayOrDef {
+        payment: EffectPaymentDef::generic_mana(
+            PlayerSetDef::One(PlayerRefDef::EffectController),
+            PRIMORDIAL_OOZE_X,
+        ),
+        if_paid: None,
+        otherwise: Some(&PRIMORDIAL_OOZE_TOLL_SEQUENCE),
+        visibility: ChoiceVisibilityDef::Private,
+    }),
+];
+
 // LEG 160 — Primordial Ooze
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature attacks each combat if able”.
+pub(in crate::card::sets) static PRIMORDIAL_OOZE: CardRecord = CardRecord::new(
+    cards::PRIMORDIAL_OOZE,
+    "Primordial Ooze",
+    CardArt::new("a46e47e1-8639-48f7-94c4-5f9e9666839a", "Sandra Everingham"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{R}"), &["Ooze"], 1, 1).with_abilities(&[
+        abilities::attacks_each_combat_if_able("This creature attacks each combat if able."),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, put a +1/+1 counter on this creature. Then you \
+             may pay {X}, where X is the number of +1/+1 counters on it. If you don't, tap \
+             this creature and it deals X damage to you.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::Sequence(&PRIMORDIAL_OOZE_UPKEEP),
+        ),
+    ]),
+);
 
 // LEG 161 — Pyrotechnics
 pub(in crate::card::sets) static PYROTECHNICS: CardRecord = CardRecord::new(
@@ -4966,6 +5017,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KOBOLD_TASKMASTER,
     &KOBOLDS_OF_KHER_KEEP,
     &MOUNTAIN_YETI,
+    &PRIMORDIAL_OOZE,
     &PYROTECHNICS,
     &RAGING_BULL,
     &SPINAL_VILLAIN,
