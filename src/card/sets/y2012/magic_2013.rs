@@ -1191,7 +1191,24 @@ pub(in crate::card::sets) static WATERCOURSER: CardRecord = CardRecord::new(
 );
 
 // M13 79 — Welkin Tern
-// Audit: blocked — No combat restriction limits this source to blocking creatures with flying.
+pub(in crate::card::sets) static WELKIN_TERN: CardRecord = CardRecord::new(
+    cards::WELKIN_TERN,
+    "Welkin Tern",
+    CardArt::new("ddfd4f37-3630-4770-bfad-83623c11be19", "Austin Hsu"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Bird"], 2, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "This creature can block only creatures with flying.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(
+                    ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                )),
+            },
+        ),
+    ]),
+);
 
 // M13 80 — Wind Drake
 pub(in crate::card::sets) static WIND_DRAKE: CardRecord = CardRecord::new(
@@ -3684,6 +3701,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TRICKS_OF_THE_TRADE,
     &VEDALKEN_ENTRANCER,
     &WATERCOURSER,
+    &WELKIN_TERN,
     &WIND_DRAKE,
     &BLOOD_RECKONING,
     &BLOODHUNTER_BAT,

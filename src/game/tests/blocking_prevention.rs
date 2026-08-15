@@ -227,6 +227,29 @@ fn the_transport_takes_damage_from_what_it_blocks() {
     );
 }
 
+/// Defang stops everything its host would deal, not only combat damage, so
+/// an activated ability is as harmless as an attack.
+#[test]
+fn defang_silences_its_host_entirely() {
+    let mut game = ready_game();
+    let troll = creature(10_000, cards::SEDGE_TROLL, PlayerId::One);
+    let troll_id = troll.card.id;
+    game.battlefield.push(troll);
+    let victim = creature(10_001, cards::SERRA_ANGEL, PlayerId::Two);
+    let victim_id = victim.card.id;
+    game.battlefield.push(victim);
+
+    game.damage_target_from(Some(troll_id), Some(Target::Permanent(victim_id)), 2);
+    assert_eq!(damage_on(&game, victim_id), 2, "unarmed, it hits");
+
+    let mut aura = creature(10_002, cards::DEFANG, PlayerId::Two);
+    aura.attached_to = Some(troll_id);
+    game.battlefield.push(aura);
+
+    game.damage_target_from(Some(troll_id), Some(Target::Permanent(victim_id)), 2);
+    assert_eq!(damage_on(&game, victim_id), 2, "and then it does not");
+}
+
 #[test]
 fn every_wall_identity_reports_its_audited_coverage() {
     let catalog = poc::catalog().expect("catalog builds");

@@ -99,3 +99,6 @@ pub const FERVENT_CATHAR: CardDefinitionId = CardDefinitionId(1743);
 pub const MALICIOUS_INTENT: CardDefinitionId = CardDefinitionId(1744);
 pub const SERAPH_OF_THE_SWORD: CardDefinitionId = CardDefinitionId(1745);
 pub const ARMORED_TRANSPORT: CardDefinitionId = CardDefinitionId(1746);
+pub const GOBLIN_SHORTCUTTER: CardDefinitionId = CardDefinitionId(1747);
+pub const WELKIN_TERN: CardDefinitionId = CardDefinitionId(1748);
+pub const DEFANG: CardDefinitionId = CardDefinitionId(1749);

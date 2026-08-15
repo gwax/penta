@@ -1715,7 +1715,30 @@ pub(in crate::card::sets) static GOBLIN_DIPLOMATS: CardRecord = CardRecord::new(
 );
 
 // M14 142 — Goblin Shortcutter
-// Audit: blocked — No applied effect makes a target creature unable to block for the turn.
+pub(in crate::card::sets) static GOBLIN_SHORTCUTTER: CardRecord = CardRecord::new(
+    cards::GOBLIN_SHORTCUTTER,
+    "Goblin Shortcutter",
+    CardArt::new("71bccbec-6e1e-43d5-b0dc-eddf942fa798", "Jesper Ejsing"),
+    CardSet::Magic2014,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Scout"], 2, 1).with_ability(
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, target creature can't block this turn.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 // M14 143 — Lava Axe
 pub(in crate::card::sets) static LAVA_AXE: CardRecord = CardRecord::new(
@@ -2988,6 +3011,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAGON_EGG,
     &FLESHPULPER_GIANT,
     &GOBLIN_DIPLOMATS,
+    &GOBLIN_SHORTCUTTER,
     &LAVA_AXE,
     &LIGHTNING_TALONS,
     &MINDSPARKER,

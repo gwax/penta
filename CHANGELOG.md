@@ -74,6 +74,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Goblin Shortcutter, Welkin Tern, and Defang.** Three more whose audit
+  lines named capabilities the engine had: a turn-long blocking prohibition, a
+  blocking restriction that reads a keyword rather than a type, and a static
+  shield over every damage event its host is the source of.
+
 - **Seraph of the Sword and Armored Transport**, two static combat shields.
   The Seraph's is blanket; the Transport's names only the creatures blocking
   it, which is a narrower thing than it looks -- a creature the Transport is

@@ -130,10 +130,32 @@ fn the_cathar_sits_one_blocker_down() {
     assert!(!can_block(&game, victim_id), "it was told to stand down");
 }
 
+/// The Tern's restriction reads a keyword rather than a type, and reads it
+/// off the attacker as it is now.
+#[test]
+fn the_tern_blocks_only_fliers() {
+    let (game, _attacker, tern) = combat(cards::WELKIN_TERN);
+    assert!(!can_block(&game, tern), "a Sedge Troll is earthbound");
+
+    let mut game = ready_game();
+    game.step = Step::DeclareBlockers;
+    let mut flier = creature(10_000, cards::SERRA_ANGEL, PlayerId::One);
+    flier.attacking = true;
+    flier.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+    game.battlefield.push(flier);
+    let tern = creature(10_001, cards::WELKIN_TERN, PlayerId::Two);
+    let tern_id = tern.card.id;
+    game.battlefield.push(tern);
+
+    assert!(can_block(&game, tern_id), "and an Angel is not");
+}
+
 #[test]
 fn every_cannot_block_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
+        cards::WELKIN_TERN,
+        cards::GOBLIN_SHORTCUTTER,
         cards::HUNTED_GHOUL,
         cards::FERVENT_CATHAR,
         cards::MALICIOUS_INTENT,

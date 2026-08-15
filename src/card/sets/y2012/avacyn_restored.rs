@@ -6,11 +6,12 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardRules, CardSet,
     CardSupertype, CardType, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
-    DamagePreventionDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef,
-    EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef,
-    ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    DamageKindDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
+    DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -232,8 +233,34 @@ pub(in crate::card::sets) static CURSEBREAK: CardRecord = CardRecord::new(
     )),
 );
 
+/// Every damage event the creature is the source of, not only the combat
+/// ones: a Defanged creature's activated abilities are as harmless as its
+/// attacks.
+static DEFANG_SHIELD: DamageEventMatcherDef = DamageEventMatcherDef {
+    kind: DamageKindDef::Any,
+    source: DamageSourceMatcherDef::AffectedObject,
+    recipient: DamageRecipientMatcherDef::Any,
+};
+
 // AVR 15 — Defang
-// Audit: blocked — Needs a static prevention effect for all damage dealt by the enchanted creature, not merely combat damage for one turn.
+pub(in crate::card::sets) static DEFANG: CardRecord = CardRecord::new(
+    cards::DEFANG,
+    "Defang",
+    CardArt::new("4dfdca4d-d2f6-40b3-8973-2caec0e849e4", "Steven Belledin"),
+    CardSet::AvacynRestored,
+    CardRules::new_enchantment(mana_cost!("{1}{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Prevent all damage that would be dealt by enchanted creature.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(DEFANG_SHIELD)),
+                },
+            ),
+        ]),
+);
 
 // AVR 16 — Defy Death
 // Audit: blocked — Needs a continuation that retains the moved graveyard target's new object identity for the Angel test and +1/+1 counters.
@@ -3279,6 +3306,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CATHEDRAL_SANCTIFIER,
     &COMMANDERS_AUTHORITY,
     &CURSEBREAK,
+    &DEFANG,
     &ENTREAT_THE_ANGELS,
     &GOLDNIGHT_COMMANDER,
     &HOLY_JUSTICIAR,
