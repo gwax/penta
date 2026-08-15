@@ -2401,8 +2401,49 @@ pub(in crate::card::sets) static FIRE_SPRITES: CardRecord = CardRecord::new(
     ]),
 );
 
+static FLORAL_SPUZZEM_STRIKE: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::AssignsNoCombatDamage),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+];
+
+static FLORAL_SPUZZEM_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Artifact),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
 // LEG 187 — Floral Spuzzem
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature attacks and isn't blocked, you may destroy target artifact defending player controls. If you do, this creature assigns no combat damage this turn”.
+pub(in crate::card::sets) static FLORAL_SPUZZEM: CardRecord = CardRecord::new(
+    cards::FLORAL_SPUZZEM,
+    "Floral Spuzzem",
+    CardArt::new("1fb31eab-7fa2-4948-bd56-7145f40b5686", "Rob Alexander"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Elemental"], 2, 2).with_ability(
+        AbilityDef::triggered_with_targets(
+            "Whenever this creature attacks and isn't blocked, you may destroy target artifact \
+             defending player controls. If you do, this creature assigns no combat damage this \
+             turn.",
+            TriggerEventDef::AttacksAndIsNotBlocked {
+                attacker: ObjectPredicateDef::Source,
+            },
+            &FLORAL_SPUZZEM_TARGET,
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Sequence(&FLORAL_SPUZZEM_STRIKE),
+            },
+        ),
+    ),
+);
 
 // LEG 188 — Giant Turtle
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack if it attacked during your last turn”.
@@ -4317,6 +4358,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELVEN_RIDERS,
     &EMERALD_DRAGONFLY,
     &FIRE_SPRITES,
+    &FLORAL_SPUZZEM,
     &HORNET_COBRA,
     &KILLER_BEES,
     &LIVING_PLANE,

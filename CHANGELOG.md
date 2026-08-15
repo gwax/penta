@@ -63,6 +63,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"This creature assigns no combat damage this turn."** A constraint on the
+  assignment rather than a shield over the result: a creature under it is not
+  asked how to divide its damage at all, so trample has nothing to spill and
+  no blocker is dealt a lethal share. Both printed carriers pay for their
+  effect with the swing they were about to land. Farrel's Zealot and Floral
+  Spuzzem.
+
 - **Combat requirements: "all creatures able to block this do so."** The
   vocabulary had only blocking prohibitions, so a requirement had no shape at
   all. A requirement never beats a restriction, so "able" is read from the

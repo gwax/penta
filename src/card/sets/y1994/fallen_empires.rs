@@ -66,8 +66,48 @@ pub(in crate::card::sets) static COMBAT_MEDIC: CardRecord = CardRecord::new(
 // FEM 2 — Farrel's Mantle
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever enchanted creature attacks and isn't blocked, its controller may have it deal damage equal to its power plus 2 to another target creature. If that player does, the attacking…”.
 
+static FARRELS_ZEALOT_STRIKE: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::AssignsNoCombatDamage),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+];
+
+static FARRELS_ZEALOT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
 // FEM 3a — Farrel's Zealot
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature attacks and isn't blocked, you may have it deal 3 damage to target creature. If you do, this creature assigns no combat damage this turn”.
+pub(in crate::card::sets) static FARRELS_ZEALOT: CardRecord = CardRecord::new(
+    cards::FARRELS_ZEALOT,
+    "Farrel's Zealot",
+    CardArt::new("3b3204be-33b9-41be-b952-081c1ba7e133", "Melissa A. Benson"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human"], 2, 2).with_ability(
+        AbilityDef::triggered_with_targets(
+            "Whenever this creature attacks and isn't blocked, you may have it deal 3 damage to \
+             target creature. If you do, this creature assigns no combat damage this turn.",
+            TriggerEventDef::AttacksAndIsNotBlocked {
+                attacker: ObjectPredicateDef::Source,
+            },
+            &FARRELS_ZEALOT_TARGET,
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Sequence(&FARRELS_ZEALOT_STRIKE),
+            },
+        ),
+    ),
+);
 
 // FEM 4 — Farrelite Priest
 // Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{1}: Add {W}. If this ability has been activated four or more times this turn, sacrifice this creature at the beginning of the next end step”.
@@ -1708,6 +1748,7 @@ pub(in crate::card::sets) static SVYELUNITE_TEMPLE: CardRecord = CardRecord::new
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COMBAT_MEDIC,
+    &FARRELS_ZEALOT,
     &ICATIAN_JAVELINEERS,
     &ICATIAN_LIEUTENANT,
     &ICATIAN_MONEYCHANGER,

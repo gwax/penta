@@ -572,6 +572,9 @@ impl Game {
     }
 
     pub(super) fn deals_damage_in_current_combat_step(&self, permanent: &Permanent) -> bool {
+        if self.has_applied_rule(permanent, AppliedRuleDef::AssignsNoCombatDamage) {
+            return false;
+        }
         match &self.combat_damage_stage {
             CombatDamageStage::NotStarted | CombatDamageStage::Single => true,
             CombatDamageStage::FirstStrike {

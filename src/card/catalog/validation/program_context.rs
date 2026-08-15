@@ -233,7 +233,8 @@ fn static_object_applied_effect_supported(
         }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(_))
         | AppliedEffectDef::Rule(
-            AppliedRuleDef::CannotBeEnchanted
+            AppliedRuleDef::AssignsNoCombatDamage
+            | AppliedRuleDef::CannotBeEnchanted
             | AppliedRuleDef::CannotBecomeEnchanted
             | AppliedRuleDef::CannotAttack
             | AppliedRuleDef::CannotBeBlocked

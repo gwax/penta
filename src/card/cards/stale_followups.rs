@@ -72,3 +72,5 @@ pub const ALI_FROM_CAIRO: CardDefinitionId = CardDefinitionId(1716);
 pub const FORETHOUGHT_AMULET: CardDefinitionId = CardDefinitionId(1717);
 pub const LURE: CardDefinitionId = CardDefinitionId(1718);
 pub const MARBLE_PRIEST: CardDefinitionId = CardDefinitionId(1719);
+pub const FARRELS_ZEALOT: CardDefinitionId = CardDefinitionId(1720);
+pub const FLORAL_SPUZZEM: CardDefinitionId = CardDefinitionId(1721);

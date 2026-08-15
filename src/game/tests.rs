@@ -503,6 +503,7 @@ mod activation_costs_and_turns;
 mod activation_timing;
 mod additional_costs;
 mod alternative_costs;
+mod assigns_no_combat_damage;
 mod attachment_targets;
 mod attack_deterrents;
 mod attack_restrictions;
