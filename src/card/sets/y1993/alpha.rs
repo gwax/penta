@@ -3721,8 +3721,67 @@ pub(in crate::card::sets) static LIFELACE: CardRecord = CardRecord::new(
     )),
 );
 
+static LIVING_ARTIFACT_BANKED: TriggerConditionDef = TriggerConditionDef::SourceCounters {
+    kind: CounterKind::Vitality,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+/// Removing the counter and gaining the life are one choice, so they are one
+/// sequence behind a single "may": taking the life without paying the counter
+/// is not on offer.
+static LIVING_ARTIFACT_SPEND: [EffectDef; 2] = [
+    EffectDef::RemoveCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::Vitality,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
+
+static LIVING_ARTIFACT_SPEND_SEQUENCE: EffectDef = EffectDef::Sequence(&LIVING_ARTIFACT_SPEND);
+
+static LIVING_ARTIFACT_OFFER: EffectDef = EffectDef::May {
+    player: EffectRecipientDef::Controller,
+    effect: &LIVING_ARTIFACT_SPEND_SEQUENCE,
+};
+
 // LEA 208 — Living Artifact
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your upkeep, you may remove a vitality counter from this Aura. If you do, you gain 1 life”.
+pub(in crate::card::sets) static LIVING_ARTIFACT: CardRecord = CardRecord::new(
+    cards::LIVING_ARTIFACT,
+    "Living Artifact",
+    CardArt::new("c9e753a2-a7d0-4d37-ae65-b5a1b5039a6e", "Anson Maddocks"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant artifact", &abilities::ENCHANT_ARTIFACT_TARGET),
+            AbilityDef::triggered(
+                "Whenever you're dealt damage, put that many vitality counters on this Aura.",
+                TriggerEventDef::damage_to_player(ObjectPredicateDef::Any, PlayerRelation::You),
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::Vitality,
+                    amount: ValueDef::TriggerEventAmount,
+                },
+            ),
+            // Offered only when there is something to spend: "you may remove a
+            // counter" with none banked is not a choice at all.
+            AbilityDef::triggered_if(
+                "At the beginning of your upkeep, you may remove a vitality counter from this \
+                 Aura. If you do, you gain 1 life.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                &LIVING_ARTIFACT_BANKED,
+                LIVING_ARTIFACT_OFFER,
+            ),
+        ]),
+);
 
 /// The lands keep their printed types and abilities; only the creature type
 /// line and stats are added.
@@ -5263,6 +5322,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LEY_DRUID,
     &LIFEFORCE,
     &LIFELACE,
+    &LIVING_ARTIFACT,
     &LIVING_LANDS,
     &LLANOWAR_ELVES,
     &LURE,

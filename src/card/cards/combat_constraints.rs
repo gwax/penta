@@ -22,3 +22,4 @@ pub const ENERGY_TAP: CardDefinitionId = CardDefinitionId(1821);
 pub const FESTIVAL: CardDefinitionId = CardDefinitionId(1822);
 pub const TELEPORT: CardDefinitionId = CardDefinitionId(1823);
 pub const RESET: CardDefinitionId = CardDefinitionId(1824);
+pub const LIVING_ARTIFACT: CardDefinitionId = CardDefinitionId(1825);

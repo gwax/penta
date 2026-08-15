@@ -576,6 +576,7 @@ mod laces;
 mod land_and_ability_layers;
 mod land_characteristics;
 mod landwalk;
+mod living_artifact;
 mod looking_at_another_library;
 mod mana_ability_costs;
 mod mana_and_costs;

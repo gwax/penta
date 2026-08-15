@@ -35,10 +35,12 @@ pub enum CounterKind {
     /// Venarian Gold's counter. Unlike the rest of the Aura counters this one
     /// sits on the creature rather than on the Aura.
     Sleep,
+    /// Living Artifact's counter, banked from damage and spent for life.
+    Vitality,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 16;
+    pub const COUNT: usize = 17;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -57,6 +59,7 @@ impl CounterKind {
         Self::Carrion,
         Self::Pupa,
         Self::Sleep,
+        Self::Vitality,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -80,7 +83,8 @@ impl CounterKind {
             | Self::Doom
             | Self::Carrion
             | Self::Pupa
-            | Self::Sleep => (0, 0),
+            | Self::Sleep
+            | Self::Vitality => (0, 0),
         }
     }
 
@@ -103,6 +107,7 @@ impl CounterKind {
             Self::Carrion => 13,
             Self::Pupa => 14,
             Self::Sleep => 15,
+            Self::Vitality => 16,
         }
     }
 
@@ -125,6 +130,7 @@ impl CounterKind {
             Self::Carrion => "carrion",
             Self::Pupa => "pupa",
             Self::Sleep => "sleep",
+            Self::Vitality => "vitality",
         }
     }
 }

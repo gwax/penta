@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Living Artifact**, with a vitality counter. It banks by the amount of the
+  damage rather than one per event, and its upkeep offer is gated on having
+  something to spend: "you may remove a counter" with none banked is not a
+  choice worth asking about.
+
 - **Reset**, the third card in the casting-window cluster, and the last of
   those three windows: an opponent's turn past their upkeep. A play option's
   `restriction` may read `opponentsTurnAfterUpkeep`.
