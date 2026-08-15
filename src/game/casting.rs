@@ -407,7 +407,7 @@ impl Game {
         {
             return None;
         }
-        if !self.play_timing_allows(option.restriction) {
+        if !self.play_timing_allows(player, option.restriction) {
             return None;
         }
         let behavior =

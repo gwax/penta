@@ -99,6 +99,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Festival and Teleport**, and the two casting windows they name. "Only
+  during an opponent's upkeep" is the first window that depends on who is
+  casting rather than only on the step, so the timing check now takes the
+  caster. A play option's `restriction` may read `opponentsUpkeep` or
+  `declareAttackersStep`.
+
 - **Energy Tap.** Its audit line asked for mana provenance; the mana it makes
   is an ordinary amount that happens to be read off the creature it tapped
   rather than printed, which the effect model already supported.

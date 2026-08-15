@@ -1187,7 +1187,31 @@ pub(in crate::card::sets) static TELEKINESIS: CardRecord = CardRecord::new(
 );
 
 // LEG 80 — Teleport
-// Audit: blocked — Needs a spell-casting timing condition tied to the active turn and step for “Cast this spell only during the declare attackers step”.
+pub(in crate::card::sets) static TELEPORT: CardRecord = CardRecord::new(
+    cards::TELEPORT,
+    "Teleport",
+    CardArt::new("18f86e13-f942-423e-b175-930d768cb811", "Douglas Shuler"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{U}{U}{U}"))
+        .cast_only_during_declare_attackers()
+        .with_abilities(&[
+            AbilityDef::enforced_when_cast(
+                "Cast this spell only during the declare attackers step.",
+                "The play option refuses the cast in any other step.",
+            ),
+            AbilityDef::spell_with_targets(
+                "Target creature can't be blocked this turn.",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlocked),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
+);
 
 // LEG 81 — Time Elemental
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “{2}{U}{U}, {T}: Return target permanent that isn't enchanted to its owner's hand”.
@@ -5227,6 +5251,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SEGOVIAN_LEVIATHAN,
     &SPECTRAL_CLOAK,
     &TELEKINESIS,
+    &TELEPORT,
     &UNDERTOW,
     &VENARIAN_GOLD,
     &WALL_OF_VAPOR,

@@ -19,3 +19,5 @@ pub const OSAI_VULTURES: CardDefinitionId = CardDefinitionId(1818);
 pub const COCOON: CardDefinitionId = CardDefinitionId(1819);
 pub const VENARIAN_GOLD: CardDefinitionId = CardDefinitionId(1820);
 pub const ENERGY_TAP: CardDefinitionId = CardDefinitionId(1821);
+pub const FESTIVAL: CardDefinitionId = CardDefinitionId(1822);
+pub const TELEPORT: CardDefinitionId = CardDefinitionId(1823);

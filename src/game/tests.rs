@@ -534,6 +534,7 @@ mod cannot_attack;
 mod cannot_block;
 mod casting_and_targets;
 mod casting_modes;
+mod casting_windows;
 mod chaos_orb;
 mod cocoon;
 mod coin_flips;

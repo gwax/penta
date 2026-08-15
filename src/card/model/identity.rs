@@ -283,6 +283,13 @@ pub enum PlayRestriction {
     /// begins and shuts the moment blockers are on the table, which is what
     /// makes pulling an attacker out of combat worth doing.
     BeforeBlockersDeclared,
+    /// "Cast this spell only during an opponent's upkeep." Their turn, their
+    /// first step, before they have drawn or done anything with it.
+    OpponentsUpkeep,
+    /// "Cast this spell only during the declare attackers step." Either
+    /// player's, and open for the whole step -- before the attack is declared
+    /// and after, which is what makes it usable once the attackers are known.
+    DeclareAttackersStep,
 }
 
 /// A catalog-level description of what can occupy one target slot.

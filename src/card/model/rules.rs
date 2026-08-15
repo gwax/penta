@@ -590,6 +590,18 @@ impl CardRules {
     }
 
     #[must_use]
+    pub const fn cast_only_during_opponents_upkeep(mut self) -> Self {
+        self.play_restriction = PlayRestriction::OpponentsUpkeep;
+        self
+    }
+
+    #[must_use]
+    pub const fn cast_only_during_declare_attackers(mut self) -> Self {
+        self.play_restriction = PlayRestriction::DeclareAttackersStep;
+        self
+    }
+
+    #[must_use]
     pub const fn play_restriction(&self) -> PlayRestriction {
         self.play_restriction
     }

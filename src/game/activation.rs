@@ -31,7 +31,7 @@ impl Game {
             // combat damage has started it is gone for the rest of the turn,
             // even in a later step.
             ActivationTimingDef::BeforeCombatDamage => {
-                self.play_timing_allows(PlayRestriction::BeforeCombatDamage)
+                self.play_timing_allows(player, PlayRestriction::BeforeCombatDamage)
             }
         }
     }

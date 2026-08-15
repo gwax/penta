@@ -69,7 +69,35 @@ pub(in crate::card::sets) static EXORCIST: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “If you would begin your draw step, you may skip that step instead. If you do, you gain 2 life”.
 
 // DRK 8 — Festival
-// Audit: blocked — Needs a spell-casting timing condition tied to the active turn and step for “Cast this spell only during an opponent's upkeep”.
+pub(in crate::card::sets) static FESTIVAL: CardRecord = CardRecord::new(
+    cards::FESTIVAL,
+    "Festival",
+    CardArt::new("e9357990-701a-4336-b545-ac5a24d89cad", "Mark Poole"),
+    CardSet::TheDark,
+    CardRules::new_instant(mana_cost!("{W}"))
+        .cast_only_during_opponents_upkeep()
+        .with_abilities(&[
+            AbilityDef::enforced_when_cast(
+                "Cast this spell only during an opponent's upkeep.",
+                "The play option refuses the cast outside an opponent's upkeep step.",
+            ),
+            AbilityDef::spell(
+                "Creatures can't attack this turn.",
+                // The creatures on the battlefield as this resolves, which is
+                // every creature that could attack: the window is an upkeep,
+                // so the attack is still two steps away.
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::Any,
+                    ),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
+);
 
 // DRK 9 — Fire and Brimstone
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Fire and Brimstone deals 4 damage to target player who attacked this turn and 4 damage to you”.
@@ -1982,6 +2010,7 @@ pub(in crate::card::sets) static SAFE_HAVEN: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DUST_TO_DUST,
     &EXORCIST,
+    &FESTIVAL,
     &HOLY_LIGHT,
     &KNIGHTS_OF_THORN,
     &MIRACLE_WORKER,

@@ -136,9 +136,20 @@ impl Game {
     /// restriction. "Before the combat damage step" means combat damage has
     /// not started; once it has, the window is gone for the rest of the turn
     /// even in a later step.
-    pub(super) fn play_timing_allows(&self, restriction: PlayRestriction) -> bool {
+    pub(super) fn play_timing_allows(
+        &self,
+        player: PlayerId,
+        restriction: PlayRestriction,
+    ) -> bool {
         match restriction {
             PlayRestriction::Normal | PlayRestriction::FromHandOnly => true,
+            // Their turn, their first step. Read from whoever is casting
+            // rather than from the spell's controller-to-be, because they are
+            // the same player and only one of them is in hand here.
+            PlayRestriction::OpponentsUpkeep => {
+                self.step == Step::Upkeep && self.active_player != player
+            }
+            PlayRestriction::DeclareAttackersStep => self.step == Step::DeclareAttackers,
             PlayRestriction::BeforeCombatDamage => !matches!(
                 self.step,
                 Step::CombatDamage

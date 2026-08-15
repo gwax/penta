@@ -142,7 +142,7 @@ impl Game {
                 {
                     continue;
                 }
-                if !self.play_timing_allows(option.restriction) {
+                if !self.play_timing_allows(player, option.restriction) {
                     continue;
                 }
                 // A declarative card intentionally has no custom behavior.
