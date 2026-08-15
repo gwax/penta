@@ -566,6 +566,7 @@ mod old_school_interactions;
 mod old_school_permanents;
 mod old_school_spells;
 mod old_school_upkeep;
+mod one_sided_block_triggers;
 mod poison;
 mod populate;
 mod power_blocking;

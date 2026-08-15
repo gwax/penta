@@ -34,6 +34,20 @@ pub enum TriggerEventDef {
     BlocksOrBecomesBlockedBy {
         object: ObjectPredicateDef,
     },
+    /// This creature blocked a matching creature. The blocking half of
+    /// [`Self::BlocksOrBecomesBlockedBy`], for the cards that print only one
+    /// direction; the creature it blocked is the triggering object.
+    Blocks {
+        blocked: ObjectPredicateDef,
+    },
+    /// A matching creature blocked this one. The attacking half, and the
+    /// mirror of [`Self::Blocks`]; the blocker is the triggering object.
+    ///
+    /// Distinct from [`Self::BecomesBlocked`], which fires once however many
+    /// creatures blocked and names no blocker at all.
+    BecomesBlockedBy {
+        blocker: ObjectPredicateDef,
+    },
     SpellCast(ObjectPredicateDef),
     StepBegins {
         step: TurnStepDef,

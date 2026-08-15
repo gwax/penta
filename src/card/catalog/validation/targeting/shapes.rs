@@ -22,6 +22,8 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::AttacksAndIsNotBlocked { .. }
         | TriggerEventDef::BecomesBlocked(_)
         | TriggerEventDef::BlocksOrBecomesBlockedBy { .. }
+        | TriggerEventDef::Blocks { .. }
+        | TriggerEventDef::BecomesBlockedBy { .. }
         | TriggerEventDef::Transforms(_) => Some(ZoneKind::Battlefield),
         TriggerEventDef::SpellCast(_) => Some(ZoneKind::Stack),
         TriggerEventDef::StepBegins { .. }

@@ -634,6 +634,28 @@ impl Game {
                         predicate, other, source, false, controller,
                     )
             }
+            // The one-directional halves read the same ordered pair and tell
+            // the sides apart by which of the two was attacking.
+            (
+                TriggerEventDef::Blocks { blocked: predicate },
+                CommittedTriggerEvent::BlocksOrBecomesBlocked { creature, other },
+            ) => {
+                creature.id == source
+                    && !creature.attacking
+                    && self.trigger_object_matches_for_controller(
+                        predicate, other, source, false, controller,
+                    )
+            }
+            (
+                TriggerEventDef::BecomesBlockedBy { blocker: predicate },
+                CommittedTriggerEvent::BlocksOrBecomesBlocked { creature, other },
+            ) => {
+                creature.id == source
+                    && creature.attacking
+                    && self.trigger_object_matches_for_controller(
+                        predicate, other, source, false, controller,
+                    )
+            }
             (
                 TriggerEventDef::Attacks(matcher),
                 CommittedTriggerEvent::Attacks {

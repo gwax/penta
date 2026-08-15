@@ -68,6 +68,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **The halves of "blocks or becomes blocked by."** The union was already
+  expressible; these are the two directions on their own, for the cards that
+  print only one. Both read the same ordered pair of events and tell the sides
+  apart by which creature was attacking. Infernal Medusa and Venom.
+
 - **"Can attack as though it didn't have defender."** A permission rather than
   an ability removal, so the Wall keeps the keyword and anything reading "a
   creature with defender" still finds one. Every other reason it cannot attack

@@ -1452,7 +1452,35 @@ static BLACK_CREATURE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever enchanted creature attacks or blocks, you may pay {1}. If you do, tap the creature, remove it from combat, and creatures it was blocking that had become blocked by only that…”.
 
 // LEG 108 — Infernal Medusa
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature becomes blocked by a non-Wall creature, destroy that creature at end of combat”.
+pub(in crate::card::sets) static INFERNAL_MEDUSA: CardRecord = CardRecord::new(
+    cards::INFERNAL_MEDUSA,
+    "Infernal Medusa",
+    CardArt::new("2d0a7eb3-bb06-4b02-8841-157eefefaba1", "Anson Maddocks"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Gorgon"], 2, 4).with_abilities(&[
+        // The two halves are printed separately and are not the same clause:
+        // blocking kills anything, while being blocked spares Walls.
+        AbilityDef::triggered(
+            "Whenever this creature blocks a creature, destroy that creature at end of combat.",
+            TriggerEventDef::Blocks {
+                blocked: ObjectPredicateDef::HasType(CardType::Creature),
+            },
+            EffectDef::DestroyAtEndOfCombat {
+                object: EffectRecipientDef::TriggeringObject,
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever this creature becomes blocked by a non-Wall creature, destroy that \
+             creature at end of combat.",
+            TriggerEventDef::BecomesBlockedBy {
+                blocker: ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Wall")),
+            },
+            EffectDef::DestroyAtEndOfCombat {
+                object: EffectRecipientDef::TriggeringObject,
+            },
+        ),
+    ]),
+);
 
 // LEG 109 — Jovial Evil
 // Audit: blocked — Needs a dynamic count of white creatures controlled by the targeted opponent and multiplication for the damage value.
@@ -4406,6 +4434,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HELL_SWARM,
     &HELLS_CARETAKER,
     &HORROR_OF_HORRORS,
+    &INFERNAL_MEDUSA,
     &LOST_SOUL,
     &NETHER_VOID,
     &PIT_SCORPION,

@@ -1412,8 +1412,40 @@ pub(in crate::card::sets) static TRACKER: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Handed to the host rather than kept on the Aura, so "this creature" in the
+/// trigger is the enchanted creature and the pair it is part of is the one
+/// being read.
+static VENOMOUS_TOUCH: AbilityDef = AbilityDef::triggered(
+    "Whenever this creature blocks or becomes blocked by a non-Wall creature, destroy the other \
+     creature at end of combat.",
+    TriggerEventDef::BlocksOrBecomesBlockedBy {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Wall")),
+    },
+    EffectDef::DestroyAtEndOfCombat {
+        object: EffectRecipientDef::TriggeringObject,
+    },
+);
+
 // DRK 90 — Venom
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever enchanted creature blocks or becomes blocked by a non-Wall creature, destroy the other creature at end of combat”.
+pub(in crate::card::sets) static VENOM: CardRecord = CardRecord::new(
+    cards::VENOM,
+    "Venom",
+    CardArt::new("7b89b81b-7b32-42a0-acf0-67784015b59a", "Tom Wänerstrand"),
+    CardSet::TheDark,
+    CardRules::new_enchantment(mana_cost!("{1}{G}{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Whenever enchanted creature blocks or becomes blocked by a non-Wall creature, \
+                 destroy the other creature at end of combat.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&VENOMOUS_TOUCH),
+                },
+            ),
+        ]),
+);
 
 // DRK 91 — Whippoorwill
 // Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “{G}{G}, {T}: Target creature can't be regenerated this turn. Damage that would be dealt to that creature this turn can't be prevented or dealt instead to another permanent or player.…”.
@@ -1946,6 +1978,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCARWOOD_HAG,
     &SCAVENGER_FOLK,
     &TRACKER,
+    &VENOM,
     &WORMWOOD_TREEFOLK,
     &MARSH_GOBLINS,
     &SCARWOOD_GOBLINS,
