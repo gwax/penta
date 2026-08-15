@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Xenic Poltergeist.** Its audit line asked for temporary artifact animation
+  with a dynamic mana-value size. Animation is a card type and a base size
+  applied together, both of which existed, and the size is the mana value of
+  what the ability pointed at -- a value the model already had.
+
 - **Primordial Ooze.** Its audit line blamed a combat constraint; "attacks
   each combat if able" has been a keyword for a while, and the upkeep toll is
   an unless-payment whose amount is read from the counters on the source

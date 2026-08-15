@@ -351,8 +351,44 @@ pub(in crate::card::sets) static PHYREXIAN_GREMLINS: CardRecord = CardRecord::ne
 // ATQ 19 — Priest of Yawgmoth
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “{T}, Sacrifice an artifact: Add an amount of {B} equal to the sacrificed artifact's mana value”.
 
+/// Animation is a type and a base size together. Both numbers are the same
+/// value, read off the artifact the ability pointed at, and frozen as the
+/// ability resolves -- an artifact's mana value does not move afterwards.
+static XENIC_POLTERGEIST_ANIMATION: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+    AppliedEffectDef::set_base_power_toughness(
+        ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+        ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+    ),
+];
+
+static XENIC_POLTERGEIST_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+    ]),
+)];
+
 // ATQ 20 — Xenic Poltergeist
-// Audit: blocked — Needs temporary artifact animation with dynamic mana-value base power/toughness lasting through the next upkeep.
+pub(in crate::card::sets) static XENIC_POLTERGEIST: CardRecord = CardRecord::new(
+    cards::XENIC_POLTERGEIST,
+    "Xenic Poltergeist",
+    CardArt::new("5149ffff-d38f-458e-bcfa-a4b6b332a0b4", "Dan Frazier"),
+    CardSet::Antiquities,
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Spirit"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Until your next upkeep, target noncreature artifact becomes an artifact \
+             creature with power and toughness each equal to its mana value.",
+            &[AbilityCostDef::TapSource],
+            &XENIC_POLTERGEIST_TARGET,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Composite(&XENIC_POLTERGEIST_ANIMATION),
+                duration: ResolvedEffectDurationDef::UntilYourNextUpkeep,
+            },
+        ),
+    ),
+);
 
 // ATQ 21 — Yawgmoth Demon
 // Audit: blocked — Needs an optional artifact-sacrifice choice whose declined or impossible branch taps the source and deals damage.
@@ -1619,6 +1655,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SAGE_OF_LAT_NAM,
     &GATE_TO_PHYREXIA,
     &PHYREXIAN_GREMLINS,
+    &XENIC_POLTERGEIST,
     &ARTIFACT_BLAST,
     &ATOG,
     &DETONATE,

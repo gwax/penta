@@ -640,6 +640,7 @@ mod untap_skips;
 mod until_end_of_combat;
 mod wards;
 mod while_source_tapped;
+mod xenic_poltergeist;
 mod zone_effects;
 mod zone_move_replacements;
 
