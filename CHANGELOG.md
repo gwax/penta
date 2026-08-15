@@ -99,6 +99,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Cocoon**, with a pupa counter. Everything else it wants was already there:
+  a static gated on the source's own counters, an untap prohibition, and a
+  permanent keyword grant. Its "if you can't" branch is two complementary
+  conditions rather than a branch, so the upkeep that sheds the last counter
+  is not also the one that opens it.
+
 - **Osai Vultures**, with a carrion counter and morbid as an intervening-if.
   "A creature died this turn" existed as a value that picks between two
   amounts; as a condition it can now gate whether a trigger does anything at

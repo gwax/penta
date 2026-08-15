@@ -30,10 +30,12 @@ pub enum CounterKind {
     Doom,
     /// Osai Vultures' counter, one for each turn something died.
     Carrion,
+    /// Cocoon's counter, counting down the turns until it opens.
+    Pupa,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 14;
+    pub const COUNT: usize = 15;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -50,6 +52,7 @@ impl CounterKind {
         Self::Time,
         Self::Doom,
         Self::Carrion,
+        Self::Pupa,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -71,7 +74,8 @@ impl CounterKind {
             | Self::Tide
             | Self::Time
             | Self::Doom
-            | Self::Carrion => (0, 0),
+            | Self::Carrion
+            | Self::Pupa => (0, 0),
         }
     }
 
@@ -92,6 +96,7 @@ impl CounterKind {
             Self::Time => 11,
             Self::Doom => 12,
             Self::Carrion => 13,
+            Self::Pupa => 14,
         }
     }
 
@@ -112,6 +117,7 @@ impl CounterKind {
             Self::Time => "time",
             Self::Doom => "doom",
             Self::Carrion => "carrion",
+            Self::Pupa => "pupa",
         }
     }
 }

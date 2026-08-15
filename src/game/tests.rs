@@ -535,6 +535,7 @@ mod cannot_block;
 mod casting_and_targets;
 mod casting_modes;
 mod chaos_orb;
+mod cocoon;
 mod coin_flips;
 mod combat;
 mod combat_and_life;

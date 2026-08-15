@@ -2688,8 +2688,125 @@ pub(in crate::card::sets) static CAT_WARRIORS: CardRecord = CardRecord::new(
         .with_ability(abilities::forestwalk()),
 );
 
+/// "Enchant creature you control."
+static COCOON_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+static COCOON_WRAPPED: [EffectDef; 2] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::AttachedPermanent,
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::Pupa,
+        amount: ValueDef::Constant(3),
+    },
+];
+
+static COCOON_STILL_WRAPPED: TriggerConditionDef = TriggerConditionDef::SourceCounters {
+    kind: CounterKind::Pupa,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+static COCOON_EMPTY: TriggerConditionDef = TriggerConditionDef::SourceCounters {
+    kind: CounterKind::Pupa,
+    comparison: ComparisonDef::Equal,
+    amount: 0,
+};
+
+static COCOON_HOLDS_IT_DOWN: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::AttachedPermanent,
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+};
+
+static COCOON_FLYING: AbilityDef = abilities::flying();
+
+/// The reward is handed out before the Aura goes, though the card prints it
+/// after: once the Aura leaves there is nothing attached to give it to.
+static COCOON_HATCH: [EffectDef; 3] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::AttachedPermanent,
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::AttachedPermanent,
+        effect: AppliedEffectDef::add_ability(&COCOON_FLYING),
+        duration: ResolvedEffectDurationDef::Permanent,
+    },
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::Source,
+    },
+];
+
+static COCOON_HATCH_SEQUENCE: EffectDef = EffectDef::Sequence(&COCOON_HATCH);
+
+static COCOON_SHED: EffectDef = EffectDef::RemoveCounters {
+    object: EffectRecipientDef::Source,
+    kind: CounterKind::Pupa,
+    amount: ValueDef::Constant(1),
+};
+
+/// Two complementary conditions rather than a branch: one takes a counter off
+/// while any remain, the other opens the Cocoon once none do.
+static COCOON_UPKEEP: [EffectDef; 2] = [
+    EffectDef::IfCondition {
+        condition: &COCOON_STILL_WRAPPED,
+        then: &COCOON_SHED,
+    },
+    EffectDef::IfCondition {
+        condition: &COCOON_EMPTY,
+        then: &COCOON_HATCH_SEQUENCE,
+    },
+];
+
 // LEG 178 — Cocoon
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Enchanted creature doesn't untap during your untap step if this Aura has a pupa counter on it”.
+pub(in crate::card::sets) static COCOON: CardRecord = CardRecord::new(
+    cards::COCOON,
+    "Cocoon",
+    CardArt::new("a82c87b1-de37-4423-a1a4-533a1d8108b2", "Mark Tedin"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature you control", &COCOON_TARGET),
+            AbilityDef::triggered(
+                "When this Aura enters, tap enchanted creature and put three pupa counters \
+                 on this Aura.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::Sequence(&COCOON_WRAPPED),
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature doesn't untap during your untap step if this Aura has a \
+                 pupa counter on it.",
+                EffectDef::IfCondition {
+                    condition: &COCOON_STILL_WRAPPED,
+                    then: &COCOON_HOLDS_IT_DOWN,
+                },
+            ),
+            AbilityDef::triggered(
+                "At the beginning of your upkeep, remove a pupa counter from this Aura. If \
+                 you can't, sacrifice it, put a +1/+1 counter on enchanted creature, and \
+                 that creature gains flying.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                EffectDef::Sequence(&COCOON_UPKEEP),
+            ),
+        ]),
+);
 
 // LEG 179 — Concordant Crossroads
 // Audit: partial — Its global haste effect is executable, but the world-rule state-based action is not implemented.
@@ -5071,6 +5188,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AISLING_LEPRECHAUN,
     &BARBARY_APES,
     &CAT_WARRIORS,
+    &COCOON,
     &CONCORDANT_CROSSROADS,
     &CRAW_GIANT,
     &DEADFALL,
