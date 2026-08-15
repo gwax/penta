@@ -74,6 +74,10 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Pacifism, Crippling Blight, and Tormented Soul.** "Can't attack or block"
+  is two prohibitions rather than one combat ban, which is why nothing in the
+  vocabulary bars combat wholesale and nothing needs to.
+
 - **Goblin Shortcutter, Welkin Tern, and Defang.** Three more whose audit
   lines named capabilities the engine had: a turn-long blocking prohibition, a
   blocking restriction that reads a keyword rather than a type, and a static

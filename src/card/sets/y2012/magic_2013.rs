@@ -434,8 +434,33 @@ pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
 // M13 23 — Odric, Master Tactician
 // Audit: blocked — Needs an attacking-group threshold and a combat procedure that lets its controller assign every blocker.
 
+/// Two prohibitions rather than one: nothing in the vocabulary bars combat
+/// wholesale, and nothing needs to -- attacking and blocking are separate
+/// declarations, so barring each is barring both.
+static PACIFIED: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+];
+
 // M13 24 — Pacifism
-// Audit: blocked — Continuous effects cannot prohibit both attacking and blocking.
+pub(in crate::card::sets) static PACIFISM: CardRecord = CardRecord::new(
+    cards::PACIFISM,
+    "Pacifism",
+    CardArt::new("258e9351-2108-4dbe-97a8-3eeb9c7b502a", "Robert Bliss"),
+    CardSet::Magic2013,
+    CardRules::new_enchantment(mana_cost!("{1}{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature can't attack or block.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&PACIFIED),
+                },
+            ),
+        ]),
+);
 
 // M13 25 — Pillarfield Ox
 pub(in crate::card::sets) static PILLARFIELD_OX: CardRecord = CardRecord::new(
@@ -1316,8 +1341,30 @@ pub(in crate::card::sets) static COWER_IN_FEAR: CardRecord = CardRecord::new(
     )),
 );
 
+static CRIPPLING_BLIGHT_EFFECT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(-1), ValueDef::Constant(-1)),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+];
+
 // M13 85 — Crippling Blight
-// Audit: blocked — Continuous combat restrictions cannot make the enchanted creature unable to block.
+pub(in crate::card::sets) static CRIPPLING_BLIGHT: CardRecord = CardRecord::new(
+    cards::CRIPPLING_BLIGHT,
+    "Crippling Blight",
+    CardArt::new("eeed276f-40b5-40a7-9005-94021fa49aa2", "Lucas Graciano"),
+    CardSet::Magic2013,
+    CardRules::new_enchantment(mana_cost!("{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets -1/-1 and can't block.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&CRIPPLING_BLIGHT_EFFECT),
+                },
+            ),
+        ]),
+);
 
 // M13 86 — Dark Favor
 pub(in crate::card::sets) static DARK_FAVOR: CardRecord = CardRecord::new(
@@ -1772,8 +1819,29 @@ pub(in crate::card::sets) static SIGN_IN_BLOOD: CardRecord = CardRecord::new(
     )]),
 );
 
+/// The two halves point opposite ways: one keeps it out of blocks it would
+/// join, the other out of blocks it would be caught by.
+static TORMENTED_SOUL_COMBAT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlocked),
+];
+
 // M13 111 — Tormented Soul
-// Audit: blocked — Continuous combat restrictions cannot make this creature unable to block.
+pub(in crate::card::sets) static TORMENTED_SOUL: CardRecord = CardRecord::new(
+    cards::TORMENTED_SOUL,
+    "Tormented Soul",
+    CardArt::new("e7a27749-350e-4c8a-8ff3-52539a5ec418", "Karl Kopinski"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{B}"), &["Spirit"], 1, 1).with_ability(
+        AbilityDef::static_ability(
+            "This creature can't block and can't be blocked.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&TORMENTED_SOUL_COMBAT),
+            },
+        ),
+    ),
+);
 
 // M13 112 — Vampire Nighthawk
 pub(in crate::card::sets) static VAMPIRE_NIGHTHAWK: CardRecord = CardRecord::new(
@@ -3671,6 +3739,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HEALER_OF_THE_PRIDE,
     &KNIGHT_OF_GLORY,
     &OBLIVION_RING,
+    &PACIFISM,
     &PILLARFIELD_OX,
     &PLANAR_CLEANSING,
     &PRIZED_ELEPHANT,
@@ -3707,6 +3776,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLOODHUNTER_BAT,
     &BLOODTHRONE_VAMPIRE,
     &COWER_IN_FEAR,
+    &CRIPPLING_BLIGHT,
     &DARK_FAVOR,
     &DISCIPLE_OF_BOLAS,
     &DISENTOMB,
@@ -3724,6 +3794,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RAVENOUS_RATS,
     &SERVANT_OF_NEFAROX,
     &SIGN_IN_BLOOD,
+    &TORMENTED_SOUL,
     &VAMPIRE_NIGHTHAWK,
     &VILE_REBIRTH,
     &WITS_END,

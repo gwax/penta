@@ -102,3 +102,6 @@ pub const ARMORED_TRANSPORT: CardDefinitionId = CardDefinitionId(1746);
 pub const GOBLIN_SHORTCUTTER: CardDefinitionId = CardDefinitionId(1747);
 pub const WELKIN_TERN: CardDefinitionId = CardDefinitionId(1748);
 pub const DEFANG: CardDefinitionId = CardDefinitionId(1749);
+pub const PACIFISM: CardDefinitionId = CardDefinitionId(1750);
+pub const CRIPPLING_BLIGHT: CardDefinitionId = CardDefinitionId(1751);
+pub const TORMENTED_SOUL: CardDefinitionId = CardDefinitionId(1752);
