@@ -110,6 +110,10 @@ impl ObjectQueryDef {
 pub enum ValueDef {
     Constant(i32),
     ChosenX,
+    /// The X chosen for the spell that put the ability's source onto the
+    /// battlefield. An enters trigger is a new object, so [`Self::ChosenX`]
+    /// reads nothing there; this reads it off the permanent instead.
+    SourceCastX,
     SourcePower,
     SourceToughness,
     TriggerEventAmount,

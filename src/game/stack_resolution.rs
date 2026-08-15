@@ -75,6 +75,10 @@ impl Game {
             );
             self.initialize_battlefield_entry(&mut permanent);
             permanent.chosen_player = chosen_player;
+            permanent.cast_x = object
+                .signature
+                .as_ref()
+                .map_or(0, crate::casting::CastSignature::x);
             permanent.text_changes = object.text_changes;
             permanent.attached_to = aura_host;
             self.enqueue_battlefield_entry(PendingBattlefieldEntry {

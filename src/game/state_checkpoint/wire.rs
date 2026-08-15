@@ -555,6 +555,7 @@ fn parse_permanent(
         .reconfigured_timestamp
         .map(super::super::ContinuousEffectTimestamp);
     permanent.chosen_player = state.chosen_player.map(player_from_index).transpose()?;
+    permanent.cast_x = state.cast_x;
     permanent.chosen_creature_type = shown.chosen_creature_type;
     permanent.chosen_card_name = shown.chosen_card_name;
     permanent.temporary_keywords = state

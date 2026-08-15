@@ -27,6 +27,11 @@ impl Game {
             // Resolved per target by the divided-damage path; anything else
             // reading it has no target in hand and so no share.
             ValueDef::DividedAmongTargets => 0,
+            ValueDef::SourceCastX => self
+                .battlefield
+                .iter()
+                .find(|permanent| Some(permanent.card.id) == object.source)
+                .map_or(0, |permanent| i32::from(permanent.cast_x)),
             ValueDef::TriggeringObjectPower => context
                 .trigger
                 .object

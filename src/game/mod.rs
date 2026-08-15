@@ -234,6 +234,10 @@ struct Permanent {
     tapped: bool,
     entered_controller_turn: u32,
     damage: u16,
+    /// The X chosen for the spell that put this permanent here, zero when
+    /// nothing chose one. Its own enters trigger is a separate object and so
+    /// cannot read the spell's X any other way.
+    cast_x: u16,
     attacking: bool,
     attack_defender: Option<crate::AttackDefender>,
     /// Which attacking band this creature belongs to, as an index shared by
@@ -378,6 +382,7 @@ impl Permanent {
             tapped: false,
             entered_controller_turn,
             damage: 0,
+            cast_x: 0,
             attacking: false,
             attack_defender: None,
             attacking_band: None,

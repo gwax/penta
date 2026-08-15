@@ -642,6 +642,7 @@ mod unleash;
 mod untap_caps;
 mod untap_skips;
 mod until_end_of_combat;
+mod venarian_gold;
 mod wards;
 mod while_source_tapped;
 mod xenic_poltergeist;

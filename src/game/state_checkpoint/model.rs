@@ -6,6 +6,13 @@ fn is_zero_u8(value: &u8) -> bool {
     *value == 0
 }
 
+/// Taken by reference because that is the signature serde's
+/// `skip_serializing_if` requires.
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_zero_u16(value: &u16) -> bool {
+    *value == 0
+}
+
 mod stack;
 mod triggers;
 pub(in crate::game::state_checkpoint) use stack::*;
@@ -222,6 +229,9 @@ pub(super) struct PermanentSnapshot {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) control_requires_source_tapped: bool,
     pub(super) chosen_player: Option<usize>,
+    /// The X the spell that made this permanent was cast for.
+    #[serde(default, skip_serializing_if = "is_zero_u16")]
+    pub(super) cast_x: u16,
     pub(super) destroy_at_end: bool,
     pub(super) counters: Vec<u16>,
     pub(super) attached_to: Option<u32>,

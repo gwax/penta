@@ -261,6 +261,7 @@ fn validate_trigger_object_predicate(
                 value,
                 ValueDef::Constant(_)
                     | ValueDef::ChosenX
+                    | ValueDef::SourceCastX
                     | ValueDef::SourcePower
                     | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
@@ -685,6 +686,7 @@ fn validate_value_target_references(
         | ValueDef::TargetManaValue(target) => validate_target_index(target, target_count),
         ValueDef::Constant(_)
         | ValueDef::ChosenX
+        | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness

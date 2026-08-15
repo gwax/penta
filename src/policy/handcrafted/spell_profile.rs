@@ -398,7 +398,8 @@ impl HandcraftedPolicy {
             ValueDef::ChosenX => Some(x),
             // Board-dependent values are not knowable from the definition
             // alone, so the caller falls back to its own heuristics.
-            ValueDef::SourcePower
+            ValueDef::SourceCastX
+            | ValueDef::SourcePower
             | ValueDef::TriggeringObjectPower
             | ValueDef::TriggeringObjectToughness
             | ValueDef::SourceToughness

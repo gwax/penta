@@ -1172,8 +1172,74 @@ pub(in crate::card::sets) static UNDERTOW: CardRecord = CardRecord::new(
     )]),
 );
 
+/// The X is read off the permanent rather than the resolving object: this is
+/// an enters trigger, a separate object from the spell that chose it.
+static VENARIAN_GOLD_SLEEP: [EffectDef; 2] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::AttachedPermanent,
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::AttachedPermanent,
+        kind: CounterKind::Sleep,
+        amount: ValueDef::SourceCastX,
+    },
+];
+
+/// The counters are on the creature rather than on the Aura, so the condition
+/// asks what the Aura is attached to rather than what it carries itself.
+static VENARIAN_GOLD_ASLEEP: TriggerConditionDef = TriggerConditionDef::AttachedPermanentMatches {
+    object: ObjectPredicateDef::HasCounter(CounterKind::Sleep),
+};
+
+static VENARIAN_GOLD_HOLDS_IT_DOWN: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::AttachedPermanent,
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+};
+
 // LEG 83 — Venarian Gold
-// Audit: blocked — Needs the X chosen as this Aura was cast to be readable by its enters trigger, for “put X sleep counters on it”; an enters trigger is a new object and reads X as zero. The untap prohibition, the counter check on the attached permanent, and the host controller's upkeep are all available.
+pub(in crate::card::sets) static VENARIAN_GOLD: CardRecord = CardRecord::new(
+    cards::VENARIAN_GOLD,
+    "Venarian Gold",
+    CardArt::new("11fb92c0-bb1e-463a-a6b6-887a5d0cb873", "Daniel Gelon"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{X}{U}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::triggered(
+                "When this Aura enters, tap enchanted creature and put X sleep counters on it.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::Sequence(&VENARIAN_GOLD_SLEEP),
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature doesn't untap during its controller's untap step if it \
+                 has a sleep counter on it.",
+                EffectDef::IfCondition {
+                    condition: &VENARIAN_GOLD_ASLEEP,
+                    then: &VENARIAN_GOLD_HOLDS_IT_DOWN,
+                },
+            ),
+            // The host's controller's upkeep, not the Aura controller's: this
+            // is on an opponent's creature every time it is played.
+            AbilityDef::triggered(
+                "At the beginning of the upkeep of enchanted creature's controller, remove a \
+                 sleep counter from that creature.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::ControllerOfAttachedPermanent,
+                },
+                EffectDef::RemoveCounters {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    kind: CounterKind::Sleep,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // LEG 84 — Wall of Vapor
 pub(in crate::card::sets) static WALL_OF_VAPOR: CardRecord = CardRecord::new(
@@ -5126,6 +5192,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPECTRAL_CLOAK,
     &TELEKINESIS,
     &UNDERTOW,
+    &VENARIAN_GOLD,
     &WALL_OF_VAPOR,
     &WALL_OF_WONDER,
     &ZEPHYR_FALCON,

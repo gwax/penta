@@ -612,6 +612,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         }
         ValueDef::Scaled(scaled) => static_power_toughness_value_supported(scaled.value),
         ValueDef::ChosenX
+        | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::SourceToughness
         | ValueDef::TriggeringObjectPower
@@ -635,6 +636,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         ValueDef::Constant(_) => true,
         ValueDef::CountMatchingObjects(query) => static_query_supported(*query),
         ValueDef::ChosenX
+        | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::SourceToughness
         | ValueDef::TriggeringObjectPower

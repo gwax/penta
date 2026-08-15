@@ -32,10 +32,13 @@ pub enum CounterKind {
     Carrion,
     /// Cocoon's counter, counting down the turns until it opens.
     Pupa,
+    /// Venarian Gold's counter. Unlike the rest of the Aura counters this one
+    /// sits on the creature rather than on the Aura.
+    Sleep,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 15;
+    pub const COUNT: usize = 16;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -53,6 +56,7 @@ impl CounterKind {
         Self::Doom,
         Self::Carrion,
         Self::Pupa,
+        Self::Sleep,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -75,7 +79,8 @@ impl CounterKind {
             | Self::Time
             | Self::Doom
             | Self::Carrion
-            | Self::Pupa => (0, 0),
+            | Self::Pupa
+            | Self::Sleep => (0, 0),
         }
     }
 
@@ -97,6 +102,7 @@ impl CounterKind {
             Self::Doom => 12,
             Self::Carrion => 13,
             Self::Pupa => 14,
+            Self::Sleep => 15,
         }
     }
 
@@ -118,6 +124,7 @@ impl CounterKind {
             Self::Doom => "doom",
             Self::Carrion => "carrion",
             Self::Pupa => "pupa",
+            Self::Sleep => "sleep",
         }
     }
 }

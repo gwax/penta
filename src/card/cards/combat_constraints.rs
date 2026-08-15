@@ -17,3 +17,4 @@ pub const IFH_BIFF_EFREET: CardDefinitionId = CardDefinitionId(1816);
 pub const ARMAGEDDON_CLOCK: CardDefinitionId = CardDefinitionId(1817);
 pub const OSAI_VULTURES: CardDefinitionId = CardDefinitionId(1818);
 pub const COCOON: CardDefinitionId = CardDefinitionId(1819);
+pub const VENARIAN_GOLD: CardDefinitionId = CardDefinitionId(1820);

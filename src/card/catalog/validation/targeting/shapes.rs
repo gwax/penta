@@ -260,6 +260,7 @@ fn validate_value_shape(
         }
         ValueDef::Constant(_)
         | ValueDef::ChosenX
+        | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::SourceToughness
         | ValueDef::TriggeringObjectPower

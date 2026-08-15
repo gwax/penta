@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **A permanent remembers the X it was cast for.** An enters trigger is a new
+  object, so it could not ask the spell that made the permanent what X was and
+  read it as zero. Permanents now carry it, and a value reads it back. Venarian
+  Gold, whose sleep counters are X of them.
+
 - **Cocoon**, with a pupa counter. Everything else it wants was already there:
   a static gated on the source's own counters, an untap prohibition, and a
   permanent keyword grant. Its "if you can't" branch is two complementary
