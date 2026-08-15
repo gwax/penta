@@ -4,14 +4,15 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::sets::y1993::alpha;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
-    DamageKindDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
-    DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
+    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ComparisonDef,
+    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
+    EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
+    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
+    PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, ScaledValueDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -294,7 +295,16 @@ pub(in crate::card::sets) static ENTREAT_THE_ANGELS: CardRecord = CardRecord::ne
 );
 
 // AVR 21 — Farbog Explorer
-// Audit: blocked — Needs swampwalk and its defending-player land/blocking semantics.
+pub(in crate::card::sets) static FARBOG_EXPLORER: CardRecord = CardRecord::new(
+    cards::FARBOG_EXPLORER,
+    "Farbog Explorer",
+    CardArt::new("489c6a2f-38b4-4ff9-95f7-431384480ed9", "Scott Chou"),
+    CardSet::AvacynRestored,
+    // A white creature with swampwalk, which is the joke: it is unblockable
+    // only against the colour least likely to want to block it.
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Scout"], 2, 3)
+        .with_ability(abilities::landwalk(BasicLandType::Swamp)),
+);
 
 // AVR 22 — Goldnight Commander
 pub(in crate::card::sets) static GOLDNIGHT_COMMANDER: CardRecord = CardRecord::new(
@@ -323,8 +333,44 @@ pub(in crate::card::sets) static GOLDNIGHT_COMMANDER: CardRecord = CardRecord::n
     )),
 );
 
+/// "Other creatures you control", so the Redeemer's own arrival is not among
+/// them even though it is on the battlefield as the trigger resolves.
+static GOLDNIGHT_REDEEMER_OTHERS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static GOLDNIGHT_REDEEMER_AMOUNT: ScaledValueDef = ScaledValueDef::new(
+    ValueDef::CountMatchingObjects(&GOLDNIGHT_REDEEMER_OTHERS),
+    2,
+);
+
 // AVR 23 — Goldnight Redeemer
-// Audit: blocked — Needs multiplication of a matching-creature count by two for the life-gain amount.
+pub(in crate::card::sets) static GOLDNIGHT_REDEEMER: CardRecord = CardRecord::new(
+    cards::GOLDNIGHT_REDEEMER,
+    "Goldnight Redeemer",
+    CardArt::new("df5656e3-5f53-41f8-9f24-04caad5e4ca3", "Karl Kopinski"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{4}{W}{W}"), &["Angel"], 4, 4).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "When this creature enters, you gain 2 life for each other creature you control.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Scaled(&GOLDNIGHT_REDEEMER_AMOUNT),
+            },
+        ),
+    ]),
+);
 
 // AVR 24 — Herald of War
 // Audit: blocked — Needs a battlefield static cost reduction for other Angel and Human spells whose amount is the source's +1/+1-counter count.
@@ -765,8 +811,48 @@ pub(in crate::card::sets) static FAVORABLE_WINDS: CardRecord = CardRecord::new(
     )),
 );
 
+static FETTERGEIST_OTHERS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static FETTERGEIST_SACRIFICE: EffectDef = EffectDef::Sacrifice {
+    object: EffectRecipientDef::Source,
+};
+
 // AVR 52 — Fettergeist
-// Audit: blocked — Needs an unless-payment whose mana amount is the dynamic count of other creatures you control.
+pub(in crate::card::sets) static FETTERGEIST: CardRecord = CardRecord::new(
+    cards::FETTERGEIST,
+    "Fettergeist",
+    CardArt::new("8e89ef0e-1bfe-4e12-90ee-38f993cd8110", "Izzy"),
+    CardSet::AvacynRestored,
+    // The tax counts other creatures, so a lone Fettergeist is free and each
+    // body added beside it costs another mana every upkeep.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Spirit"], 3, 4).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, sacrifice this creature unless you pay {1} for \
+             each other creature you control.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::PayOr(PayOrDef {
+                payment: EffectPaymentDef::generic_mana(
+                    PlayerSetDef::Related(PlayerRelation::You),
+                    ValueDef::CountMatchingObjects(&FETTERGEIST_OTHERS),
+                ),
+                if_paid: None,
+                otherwise: Some(&FETTERGEIST_SACRIFICE),
+                visibility: ChoiceVisibilityDef::Public,
+            }),
+        ),
+    ]),
+);
 
 // AVR 53 — Fleeting Distraction
 pub(in crate::card::sets) static FLEETING_DISTRACTION: CardRecord = CardRecord::new(
@@ -3376,7 +3462,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CURSEBREAK,
     &DEFANG,
     &ENTREAT_THE_ANGELS,
+    &FARBOG_EXPLORER,
     &GOLDNIGHT_COMMANDER,
+    &GOLDNIGHT_REDEEMER,
     &HOLY_JUSTICIAR,
     &LEAP_OF_FAITH,
     &MOONLIGHT_GEIST,
@@ -3393,6 +3481,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRIPPLING_CHILL,
     &DREADWATERS,
     &FAVORABLE_WINDS,
+    &FETTERGEIST,
     &FLEETING_DISTRACTION,
     &GEIST_SNATCH,
     &GHOSTFORM,

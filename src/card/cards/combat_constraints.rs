@@ -72,3 +72,6 @@ pub const HAMLETBACK_GOLIATH: CardDefinitionId = CardDefinitionId(1871);
 pub const ELVISH_ARCHDRUID: CardDefinitionId = CardDefinitionId(1872);
 pub const GOBLIN_BATTLE_JESTER: CardDefinitionId = CardDefinitionId(1873);
 pub const PREDATORY_RAMPAGE: CardDefinitionId = CardDefinitionId(1874);
+pub const FARBOG_EXPLORER: CardDefinitionId = CardDefinitionId(1875);
+pub const GOLDNIGHT_REDEEMER: CardDefinitionId = CardDefinitionId(1876);
+pub const FETTERGEIST: CardDefinitionId = CardDefinitionId(1877);

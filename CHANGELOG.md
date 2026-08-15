@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Farbog Explorer**, **Goldnight Redeemer** and **Fettergeist**, three more
+  cards resting on swampwalk, a doubled count and a dynamic generic payment.
+  Two of the three say "other creatures you control", and the Fettergeist's
+  tax is zero when it stands alone -- still a choice, just a free one.
+
 - **Goblin Battle Jester** and **Predatory Rampage**, two turn-long block
   clauses pointing opposite ways. Both audit lines said no turn-long effect
   could express them; both rules existed.

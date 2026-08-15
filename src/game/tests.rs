@@ -526,6 +526,7 @@ mod aura_control;
 mod aura_death;
 mod aura_tap_triggers;
 mod aura_upkeep;
+mod avr_stale_audits;
 mod banding;
 mod banding_assignment;
 mod banding_blocked;
