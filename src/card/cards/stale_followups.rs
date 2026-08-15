@@ -94,3 +94,6 @@ pub const GLYPH_OF_DESTRUCTION: CardDefinitionId = CardDefinitionId(1738);
 pub const DEADLY_ALLURE: CardDefinitionId = CardDefinitionId(1739);
 pub const ENLARGE: CardDefinitionId = CardDefinitionId(1740);
 pub const NIVIX_CYCLOPS: CardDefinitionId = CardDefinitionId(1741);
+pub const HUNTED_GHOUL: CardDefinitionId = CardDefinitionId(1742);
+pub const FERVENT_CATHAR: CardDefinitionId = CardDefinitionId(1743);
+pub const MALICIOUS_INTENT: CardDefinitionId = CardDefinitionId(1744);

@@ -86,10 +86,57 @@ fn a_spell_can_hand_out_the_prohibition_for_the_turn() {
     );
 }
 
+/// The Ghoul's restriction names a creature type rather than the whole
+/// blocker list, so it blocks anything that is not a Human.
+#[test]
+fn the_ghoul_blocks_everything_except_humans() {
+    let (game, _attacker, ghoul) = combat(cards::HUNTED_GHOUL);
+    assert!(can_block(&game, ghoul), "a Sedge Troll is no Human");
+}
+
+/// A creature the Cathar pointed at sits the combat out. Its trigger picks
+/// the target as it goes on the stack, not as the Cathar is cast.
+#[test]
+fn the_cathar_sits_one_blocker_down() {
+    let mut game = ready_game();
+    game.turns_started[PlayerId::One.index()] = 5;
+    let victim = creature(10_000, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let victim_id = victim.card.id;
+    game.battlefield.push(victim);
+
+    let cathar = card(10_001, cards::FERVENT_CATHAR, PlayerId::One);
+    let cathar_id = cathar.id;
+    game.players[PlayerId::One.index()].hand.push(cathar);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.red = 1;
+    pool.colorless = 2;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == cathar_id))
+        .expect("the Cathar is castable");
+    game.apply(PlayerId::One, action)
+        .expect("the Cathar is cast");
+    drain_pending(&mut game);
+
+    // The Lions are the only creature the trigger could have named.
+    game.step = Step::DeclareBlockers;
+    let mut attacker = creature(10_002, cards::SEDGE_TROLL, PlayerId::One);
+    attacker.attacking = true;
+    attacker.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+    game.battlefield.push(attacker);
+
+    assert!(!can_block(&game, victim_id), "it was told to stand down");
+}
+
 #[test]
 fn every_cannot_block_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
+        cards::HUNTED_GHOUL,
+        cards::FERVENT_CATHAR,
+        cards::MALICIOUS_INTENT,
         cards::SIGHTLESS_GHOUL,
         cards::MARKOV_WARLORD,
         cards::VAMPIRE_INTERLOPER,

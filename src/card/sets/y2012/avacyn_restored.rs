@@ -1409,8 +1409,28 @@ pub(in crate::card::sets) static HUMAN_FRAILTY: CardRecord = CardRecord::new(
     )),
 );
 
+static ANY_CREATURE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
 // AVR 110 — Hunted Ghoul
-// Audit: blocked — Needs a combat declaration restriction that prevents this creature from blocking Humans.
+pub(in crate::card::sets) static HUNTED_GHOUL: CardRecord = CardRecord::new(
+    cards::HUNTED_GHOUL,
+    "Hunted Ghoul",
+    CardArt::new("644509fa-559b-4b84-a67b-ba59797df2ed", "Ryan Pancoast"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{B}"), &["Zombie"], 1, 2).with_ability(
+        AbilityDef::static_ability(
+            "This creature can't block Humans.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Human")),
+                )),
+            },
+        ),
+    ),
+);
 
 // AVR 111 — Killing Wave
 // Audit: blocked — Needs a separate pay-X-life-or-sacrifice choice for the controller of every creature.
@@ -1787,7 +1807,29 @@ pub(in crate::card::sets) static FALKENRATH_EXTERMINATOR: CardRecord = CardRecor
 );
 
 // AVR 135 — Fervent Cathar
-// Audit: blocked — Needs a duration-scoped restriction preventing the targeted creature from blocking this turn.
+pub(in crate::card::sets) static FERVENT_CATHAR: CardRecord = CardRecord::new(
+    cards::FERVENT_CATHAR,
+    "Fervent Cathar",
+    CardArt::new("39715fa1-595f-4e3d-84a3-35f2636bccc7", "Steven Belledin"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Knight"], 2, 1).with_abilities(&[
+        abilities::haste(),
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, target creature can't block this turn.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &ANY_CREATURE_TARGET,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // AVR 136 — Gang of Devils
 pub(in crate::card::sets) static GANG_OF_DEVILS: CardRecord = CardRecord::new(
@@ -2019,8 +2061,38 @@ pub(in crate::card::sets) static LIGHTNING_PROWESS: CardRecord = CardRecord::new
 // AVR 146 — Mad Prophet
 // Audit: blocked — Needs discarding a chosen card as an activated-ability cost.
 
+/// Granted to the host rather than kept on the Aura, so the tap cost is the
+/// creature's own and "this turn" is measured from wherever it resolves.
+static MALICIOUS_INTENT_ABILITY: AbilityDef = AbilityDef::activated_with_targets(
+    "{T}: Target creature can't block this turn.",
+    &[AbilityCostDef::TapSource],
+    &ANY_CREATURE_TARGET,
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+);
+
 // AVR 147 — Malicious Intent
-// Audit: blocked — Needs a duration-scoped restriction that prevents the targeted creature from blocking this turn.
+pub(in crate::card::sets) static MALICIOUS_INTENT: CardRecord = CardRecord::new(
+    cards::MALICIOUS_INTENT,
+    "Malicious Intent",
+    CardArt::new("79f4d244-2aaf-4780-ba65-798b090338b4", "Kev Walker"),
+    CardSet::AvacynRestored,
+    CardRules::new_enchantment(mana_cost!("{1}{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature has \"{T}: Target creature can't block this turn.\"",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&MALICIOUS_INTENT_ABILITY),
+                },
+            ),
+        ]),
+);
 
 // AVR 148 — Malignus
 // Audit: blocked — Needs a characteristic-defining half-highest-opponent-life value and a damage-prevention prohibition for the source.
@@ -3248,6 +3320,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &EVERNIGHT_SHADE,
     &GRISELBRAND,
     &HUMAN_FRAILTY,
+    &HUNTED_GHOUL,
     &MAALFELD_TWINS,
     &MARROW_BATS,
     &NECROBITE,
@@ -3263,6 +3336,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BONFIRE_OF_THE_DAMNED,
     &DEMOLISH,
     &FALKENRATH_EXTERMINATOR,
+    &FERVENT_CATHAR,
     &GANG_OF_DEVILS,
     &GUISE_OF_FIRE,
     &HAVENGUL_VAMPIRE,
@@ -3271,6 +3345,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KESSIG_MALCONTENTS,
     &KRUIN_STRIKER,
     &LIGHTNING_PROWESS,
+    &MALICIOUS_INTENT,
     &PILLAR_OF_FLAME,
     &RAGING_POLTERGEIST,
     &RIOT_RINGLEADER,

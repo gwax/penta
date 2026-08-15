@@ -74,6 +74,10 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Hunted Ghoul, Fervent Cathar, and Malicious Intent.** All three were
+  marked as needing blocking restrictions the engine already had: one names a
+  creature type, and two hand the prohibition out for a turn.
+
 - **Nivix Cyclops**, whose trigger hands out the attack-despite-defender
   permission for a turn. Ogre Jailbreaker prints the same permission and stays
   blocked: its condition counts Gates across the battlefield, and the static
