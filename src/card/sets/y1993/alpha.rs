@@ -141,8 +141,41 @@ pub(in crate::card::sets) static BLACK_WARD: CardRecord = CardRecord::new(
         ]),
 );
 
+/// Both halves at once: the ceiling comes off, and what is left is a
+/// requirement to use it. Either alone would be a different card.
+static BLAZE_OF_GLORY_EFFECT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::Rule(AppliedRuleDef::MayBlockAdditionalCreatures(u8::MAX)),
+    AppliedEffectDef::Rule(AppliedRuleDef::MustBlockEachAttackerIfAble),
+];
+
+/// "Defending player" is the nonactive player, which is who it is however the
+/// spell got cast -- naming an opponent would read it off the caster instead.
+static BLAZE_OF_GLORY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::NonactivePlayer),
+        owner: None,
+    },
+)];
+
 // LEA 6 — Blaze of Glory
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Target creature defending player controls can block any number of creatures this turn. It blocks each attacking creature this turn if able”.
+pub(in crate::card::sets) static BLAZE_OF_GLORY: CardRecord = CardRecord::new(
+    cards::BLAZE_OF_GLORY,
+    "Blaze of Glory",
+    CardArt::new("98fba951-c5bb-497c-9292-ce1b2a1e1247", "Richard Thomas"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature defending player controls can block any number of creatures this \
+         turn. It blocks each attacking creature this turn if able.",
+        &BLAZE_OF_GLORY_TARGET,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Composite(&BLAZE_OF_GLORY_EFFECT),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // LEA 7 — Blessing
 pub(in crate::card::sets) static BLESSING: CardRecord = CardRecord::new(
@@ -5069,6 +5102,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BALANCE,
     &BENALISH_HERO,
     &BLACK_WARD,
+    &BLAZE_OF_GLORY,
     &BLESSING,
     &BLUE_WARD,
     &CASTLE,

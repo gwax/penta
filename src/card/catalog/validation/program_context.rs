@@ -259,6 +259,7 @@ fn static_object_applied_effect_supported(
             | AppliedRuleDef::MayAttackDespiteDefender
             | AppliedRuleDef::CannotBeBlocked
             | AppliedRuleDef::CannotBlock
+            | AppliedRuleDef::MustBlockEachAttackerIfAble
             | AppliedRuleDef::CannotChangeController
             | AppliedRuleDef::CannotRegenerate
             | AppliedRuleDef::DoesNotUntapDuringUntapStep

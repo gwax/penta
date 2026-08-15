@@ -149,6 +149,11 @@ pub enum AppliedRuleDef {
     /// does is take away the alternatives -- a creature that could block the
     /// affected one may not be declared against anything else.
     MustBeBlockedBy(ObjectPredicateDef),
+    /// The mirror of [`Self::MustBeBlockedBy`], read from the blocker: this
+    /// creature blocks every attacker it legally can. "Able" is read the same
+    /// way -- from the blocks it is actually offered -- so an attacker it
+    /// cannot block does not hold the declaration open.
+    MustBlockEachAttackerIfAble,
     /// Damage a matching source would deal to the affected permanent's
     /// controller is dealt to that permanent instead. The redirection is read
     /// live, so a condition on the recipient -- "as long as this creature is

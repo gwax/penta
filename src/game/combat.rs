@@ -354,8 +354,12 @@ impl Game {
                 .find(|permanent| permanent.card.id == id)
         };
         let (blocker_permanent, attacker_permanent) = (find(*blocker)?, find(*attacker)?);
-        self.must_be_blocked_by(attacker_permanent, blocker_permanent)
-            .then_some((*blocker, *attacker))
+        let required = self.must_be_blocked_by(attacker_permanent, blocker_permanent)
+            || self.has_applied_rule(
+                blocker_permanent,
+                AppliedRuleDef::MustBlockEachAttackerIfAble,
+            );
+        required.then_some((*blocker, *attacker))
     }
 
     /// Whether a requirement is still unmet, which is what stops the

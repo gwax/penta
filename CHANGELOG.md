@@ -99,6 +99,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Blaze of Glory**, and the blocking requirement it needs. A creature can be
+  made to block every attacker it legally can, which is the mirror of the
+  requirement an attacker could already carry. The card is that plus the
+  already-implemented permission to block any number: either half alone would
+  be a different card.
+
 - **Creature Bond.** A death trigger can read the dead creature's toughness
   now, the way it could already read its power. Both come from last-known
   information, because the creature is in the graveyard by the time the
