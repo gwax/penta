@@ -62,6 +62,11 @@ impl Game {
                 .iter()
                 .find(|permanent| permanent.card.id == object.id)
                 .is_some_and(|permanent| permanent.was_dealt_damage_this_turn),
+            ObjectPredicateDef::DealtDamageThisTurn => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == object.id)
+                .is_some_and(|permanent| permanent.dealt_damage_this_turn),
             ObjectPredicateDef::AttachedToSource => self
                 .battlefield
                 .iter()
@@ -129,6 +134,29 @@ impl Game {
             is_spell,
             self.controller_of_object(source),
         )
+    }
+
+    /// The three predicates built from other predicates, split out so the
+    /// flat dispatch below stays one screen of enum arms.
+    fn composite_matches(
+        &self,
+        predicate: ObjectPredicateDef,
+        object: &TriggerEventObject,
+        source: GameObjectId,
+        is_spell: bool,
+        controller: Option<PlayerId>,
+    ) -> bool {
+        let mut matches = |predicate: &ObjectPredicateDef| {
+            self.trigger_object_matches_for_controller(
+                *predicate, object, source, is_spell, controller,
+            )
+        };
+        match predicate {
+            ObjectPredicateDef::All(predicates) => predicates.iter().all(&mut matches),
+            ObjectPredicateDef::AnyOf(predicates) => predicates.iter().any(&mut matches),
+            ObjectPredicateDef::Not(predicate) => !matches(predicate),
+            _ => unreachable!("only the composite predicates arrive here"),
+        }
     }
 
     fn trigger_object_matches_for_controller(
@@ -226,22 +254,15 @@ impl Game {
             | ObjectPredicateDef::BandedWithSource
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::WasDealtDamageThisTurn
+            | ObjectPredicateDef::DealtDamageThisTurn
             | ObjectPredicateDef::AttachedTo(_) => self
                 .battlefield_relationship_matches(predicate, object, source, controller),
             ObjectPredicateDef::Tapped => object.tapped,
-            ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {
-                self.trigger_object_matches_for_controller(
-                    *predicate, object, source, is_spell, controller,
-                )
-            }),
-            ObjectPredicateDef::AnyOf(predicates) => predicates.iter().any(|predicate| {
-                self.trigger_object_matches_for_controller(
-                    *predicate, object, source, is_spell, controller,
-                )
-            }),
-            ObjectPredicateDef::Not(predicate) => !self.trigger_object_matches_for_controller(
-                *predicate, object, source, is_spell, controller,
-            ),
+            ObjectPredicateDef::All(_)
+            | ObjectPredicateDef::AnyOf(_)
+            | ObjectPredicateDef::Not(_) => {
+                self.composite_matches(predicate, object, source, is_spell, controller)
+            }
             ObjectPredicateDef::Special(_) => false,
         }
     }

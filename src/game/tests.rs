@@ -561,6 +561,7 @@ mod counter_conditions;
 mod countering_and_mana;
 mod creature_bond;
 mod cyclone;
+mod damage_dealers;
 mod damage_dealt_by;
 mod damage_history;
 mod damage_limits;

@@ -50,6 +50,7 @@ impl Game {
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::WasDealtDamageThisTurn
+        | ObjectPredicateDef::DealtDamageThisTurn
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::BlockedBySource

@@ -49,6 +49,7 @@ impl Game {
             ObjectPredicateDef::WasDealtDamageThisTurn => {
                 Some(affected.was_dealt_damage_this_turn)
             }
+            ObjectPredicateDef::DealtDamageThisTurn => Some(affected.dealt_damage_this_turn),
             ObjectPredicateDef::HasType(card_type) => self
                 .permanent_types(affected)
                 .map(|types| types.contains(card_type)),

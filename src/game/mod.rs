@@ -342,6 +342,10 @@ struct Permanent {
     /// `damage`, which regeneration and cleanup both wipe, and from
     /// `damage_sources`, which records nothing for a sourceless event.
     was_dealt_damage_this_turn: bool,
+    /// The mirror: whether this permanent dealt damage to anything this turn.
+    /// Broader than `dealt_damage_to_opponent_this_turn`, which ignores
+    /// damage to creatures and to its own controller.
+    dealt_damage_this_turn: bool,
     /// Whether this permanent has dealt damage to an opponent of its
     /// controller this turn, by any means. Cleared when the next turn begins,
     /// after any inserted phases.
@@ -422,6 +426,7 @@ impl Permanent {
             keywords_until_upkeep_of: Vec::new(),
             damage_sources: Vec::new(),
             was_dealt_damage_this_turn: false,
+            dealt_damage_this_turn: false,
             dealt_damage_to_opponent_this_turn: false,
             deathtouch_damage: false,
             created_by: None,

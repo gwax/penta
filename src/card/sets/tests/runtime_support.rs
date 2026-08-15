@@ -45,6 +45,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::PowerLessThan(_)
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::WasDealtDamageThisTurn
+        | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)

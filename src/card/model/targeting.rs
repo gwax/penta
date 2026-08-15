@@ -21,6 +21,10 @@ pub enum ObjectPredicateDef {
     /// marks, and the printed clause asks what happened rather than what is
     /// still showing.
     WasDealtDamageThisTurn,
+    /// The mirror: this permanent dealt damage to something this turn. The
+    /// recipient does not matter, so a creature that burned its own
+    /// controller matches as readily as one that connected in combat.
+    DealtDamageThisTurn,
     HasType(CardType),
     /// A land with at least one of the listed effective basic land subtypes.
     ///

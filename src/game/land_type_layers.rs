@@ -488,6 +488,7 @@ impl Game {
             | ObjectPredicateDef::HasCounter(_)
             | ObjectPredicateDef::Tapped
             | ObjectPredicateDef::WasDealtDamageThisTurn
+            | ObjectPredicateDef::DealtDamageThisTurn
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::BlockedBySource

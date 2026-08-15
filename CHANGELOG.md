@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Avenging Arrow** and **Executioner's Swing**, both of which can only aim
+  at a creature that has already dealt damage this turn. That is the mirror of
+  the record Giant Shark reads, and it counts damage to anything -- a creature
+  that traded in combat is as legal a target as one that connected.
+
 - **Giant Shark**, and with it a turn-long record of damage dealt to a
   permanent. "Has been dealt damage this turn" is not "has damage marked on
   it": regeneration and cleanup both wipe the marks, so the new

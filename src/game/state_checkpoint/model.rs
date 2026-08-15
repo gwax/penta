@@ -253,6 +253,8 @@ pub(super) struct PermanentSnapshot {
     pub(super) damage_sources: Vec<u32>,
     #[serde(default)]
     pub(super) was_dealt_damage_this_turn: bool,
+    #[serde(default)]
+    pub(super) dealt_damage_this_turn: bool,
     pub(super) dealt_damage_to_opponent_this_turn: bool,
     pub(super) deathtouch_damage: bool,
     pub(super) created_by: Option<u32>,

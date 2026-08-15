@@ -77,6 +77,7 @@ pub(super) fn permanent_snapshot(
         attacks_this_turn: permanent.attacks_this_turn,
         damage_sources: permanent.damage_sources.iter().map(|id| id.0).collect(),
         was_dealt_damage_this_turn: permanent.was_dealt_damage_this_turn,
+        dealt_damage_this_turn: permanent.dealt_damage_this_turn,
         dealt_damage_to_opponent_this_turn: permanent.dealt_damage_to_opponent_this_turn,
         deathtouch_damage: permanent.deathtouch_damage,
         created_by: permanent.created_by.map(|id| id.0),

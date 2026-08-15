@@ -106,8 +106,30 @@ pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new
 // RTR 3 — Arrest
 // Audit: blocked — Needs Aura-granted attack, block, and activated-ability prohibitions.
 
+static DAMAGE_DEALER_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::DealtDamageThisTurn,
+    ]),
+)];
+
 // RTR 4 — Avenging Arrow
-// Audit: blocked — Needs a target predicate for a creature that dealt damage earlier this turn.
+pub(in crate::card::sets) static AVENGING_ARROW: CardRecord = CardRecord::new(
+    cards::AVENGING_ARROW,
+    "Avenging Arrow",
+    CardArt::new("696678ff-44dc-4fe4-bf17-024e86cd0220", "James Ryman"),
+    CardSet::ReturnToRavnica,
+    // The revenge is for damage to anything, so a creature that traded in
+    // combat is as legal a target as one that connected.
+    CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target creature that dealt damage this turn.",
+        &DAMAGE_DEALER_TARGET,
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+        },
+    )),
+);
 
 // RTR 5 — Azorius Arrester
 pub(in crate::card::sets) static AZORIUS_ARRESTER: CardRecord = CardRecord::new(
@@ -5038,6 +5060,7 @@ pub(in crate::card::sets) static TRANSGUILD_PROMENADE: CardRecord = CardRecord::
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANGEL_OF_SERENITY,
+    &AVENGING_ARROW,
     &AZORIUS_ARRESTER,
     &AZORIUS_JUSTICIAR,
     &BAZAAR_KROVOD,

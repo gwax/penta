@@ -102,3 +102,5 @@ pub const ARCADES_SABBOTH: CardDefinitionId = CardDefinitionId(1901);
 pub const ROOTWALLA: CardDefinitionId = CardDefinitionId(1902);
 pub const STAB_WOUND: CardDefinitionId = CardDefinitionId(1903);
 pub const GIANT_SHARK: CardDefinitionId = CardDefinitionId(1904);
+pub const AVENGING_ARROW: CardDefinitionId = CardDefinitionId(1905);
+pub const EXECUTIONERS_SWING: CardDefinitionId = CardDefinitionId(1906);

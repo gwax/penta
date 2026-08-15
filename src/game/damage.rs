@@ -463,6 +463,7 @@ impl Game {
     ) {
         self.record_damage_taken(player, amount, source);
         self.deal_damage(player, amount);
+        self.note_damage_dealt_by(source, amount);
         if amount > 0
             && let Some(damager) = source.and_then(|source| {
                 self.battlefield
@@ -472,6 +473,22 @@ impl Game {
             && damager.controller != player
         {
             damager.dealt_damage_to_opponent_this_turn = true;
+        }
+    }
+
+    /// Records that `source` dealt damage, whatever it landed on. A
+    /// planeswalker taking loyalty loss counts, which is why this is called
+    /// before that branch rather than beside the damage marks.
+    fn note_damage_dealt_by(&mut self, source: Option<GameObjectId>, amount: u16) {
+        if amount == 0 {
+            return;
+        }
+        if let Some(damager) = source.and_then(|source| {
+            self.battlefield
+                .iter_mut()
+                .find(|permanent| permanent.card.id == source)
+        }) {
+            damager.dealt_damage_this_turn = true;
         }
     }
 
@@ -492,6 +509,7 @@ impl Game {
         else {
             return false;
         };
+        self.note_damage_dealt_by(source, amount);
         if self
             .permanent_types(&self.battlefield[index])
             .is_some_and(|types| types.contains(CardType::Planeswalker))

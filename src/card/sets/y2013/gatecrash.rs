@@ -2562,8 +2562,35 @@ pub(in crate::card::sets) static ELUSIVE_KRASIS: CardRecord = CardRecord::new(
     ]),
 );
 
+static EXECUTIONERS_SWING_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::DealtDamageThisTurn,
+        ]),
+    )];
+
 // GTC 161 — Executioner's Swing
-// Audit: blocked — No target predicate recognizes a creature that dealt damage earlier this turn.
+pub(in crate::card::sets) static EXECUTIONERS_SWING: CardRecord = CardRecord::new(
+    cards::EXECUTIONERS_SWING,
+    "Executioner's Swing",
+    CardArt::new("2122586d-9b23-47c2-8b00-e673aa0310f0", "Karl Kopinski"),
+    CardSet::Gatecrash,
+    // -5/-5 rather than destruction, so a big enough creature walks away and
+    // indestructible does not save a small one.
+    CardRules::new_instant(mana_cost!("{W}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature that dealt damage this turn gets -5/-5 until end of turn.",
+        &EXECUTIONERS_SWING_TARGET,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-5),
+                ValueDef::Constant(-5),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // GTC 162 — Fathom Mage
 // Audit: blocked — Evolve and a trigger for a +1/+1 counter being placed on the source are unavailable.
@@ -3902,6 +3929,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DOMRI_RADE,
     &DRAKEWING_KRASIS,
     &ELUSIVE_KRASIS,
+    &EXECUTIONERS_SWING,
     &FIREMANE_AVENGER,
     &FORTRESS_CYCLOPS,
     &FOUNDRY_CHAMPION,
