@@ -10,6 +10,24 @@ pub struct ConditionalValueDef {
     pub otherwise: ValueDef,
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct LifeConditionDef {
+    pub threshold: u16,
+    pub then: ValueDef,
+    pub otherwise: ValueDef,
+}
+
+impl LifeConditionDef {
+    #[must_use]
+    pub const fn new(threshold: u16, then: ValueDef, otherwise: ValueDef) -> Self {
+        Self {
+            threshold,
+            then,
+            otherwise,
+        }
+    }
+}
+
 /// A conditional value that asks how many objects match.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct CountConditionDef {
@@ -160,6 +178,10 @@ pub enum ValueDef {
     /// The morbid condition. Held by reference so that `ValueDef` stays one
     /// word wide; a second inline value would grow everything embedding it.
     IfCreatureDiedThisTurn(&'static ConditionalValueDef),
+    /// One value while the ability's controller is at or below this life
+    /// total, another otherwise. The fateful-hour "instead" clauses, which
+    /// replace an amount rather than adding a second effect beside it.
+    IfControllerLifeAtMost(&'static LifeConditionDef),
     /// One value when the chosen target matches, another when it does not.
     /// Held by reference for the same reason.
     IfTargetMatches(&'static TargetConditionDef),

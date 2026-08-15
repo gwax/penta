@@ -6,10 +6,11 @@ use crate::card::{
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     ComparisonDef, ConditionalValueDef, CounterKind, DiscardSelectionDef, DoubleFacedKind,
-    EffectDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayOptionDef, PlayerRelation, QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    ScaledValueDef, SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    EffectDef, EffectRecipientDef, KeywordAbility, LifeConditionDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayOptionDef, PlayerRelation, QuantifierDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, ScaledValueDef, SpellAdditionalCostDef, SpellForm,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -191,8 +192,27 @@ pub(in crate::card::sets) static ELGAUD_INQUISITOR: CardRecord = CardRecord::new
 // DKA 7 — Faith's Shield
 // Audit: blocked — Needs a recorded color choice, temporary protection from that choice, and the fateful-hour controller-life branch.
 
+/// "Instead", so this is one token-creation of a chosen size rather than two
+/// creations one of which is skipped.
+static GATHER_THE_TOWNSFOLK_COUNT: LifeConditionDef =
+    LifeConditionDef::new(5, ValueDef::Constant(5), ValueDef::Constant(2));
+
 // DKA 8 — Gather the Townsfolk
-// Audit: blocked — Needs a controller-life threshold to choose two versus five Human tokens.
+pub(in crate::card::sets) static GATHER_THE_TOWNSFOLK: CardRecord = CardRecord::new(
+    cards::GATHER_THE_TOWNSFOLK,
+    "Gather the Townsfolk",
+    CardArt::new("9cfa554b-ee6d-4d4e-aabc-fe7bc6b25236", "Dan Murayama Scott"),
+    CardSet::DarkAscension,
+    CardRules::new_sorcery(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell(
+        "Create two 1/1 white Human creature tokens. Fateful hour — If you have 5 or less \
+         life, create five of those tokens instead.",
+        EffectDef::CreateToken {
+            token: cards::HUMAN_TOKEN_1_1_WHITE,
+            count: ValueDef::IfControllerLifeAtMost(&GATHER_THE_TOWNSFOLK_COUNT),
+            tapped: false,
+        },
+    )),
+);
 
 static GAVONY_IRONWRIGHT_ANTHEM: EffectDef = EffectDef::StaticApply {
     recipient: EffectRecipientDef::matching_objects(
@@ -463,8 +483,46 @@ pub(in crate::card::sets) static THALIA_GUARDIAN_OF_THRABEN: CardRecord = CardRe
         ]),
 );
 
+static THRABEN_DOOMSAYER_ANTHEM: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+};
+
 // DKA 25 — Thraben Doomsayer
-// Audit: blocked — Needs a controller-life threshold continuous anthem for its otherwise declarative Human-token ability.
+pub(in crate::card::sets) static THRABEN_DOOMSAYER: CardRecord = CardRecord::new(
+    cards::THRABEN_DOOMSAYER,
+    "Thraben Doomsayer",
+    CardArt::new("066a9312-a5b2-4fc5-b46d-e0c9020583a5", "John Stanko"),
+    CardSet::DarkAscension,
+    // The tokens it makes are among the "other creatures" the anthem pumps,
+    // so a low life total turns each of them into a 3/3.
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human", "Cleric"], 2, 2).with_abilities(&[
+        AbilityDef::activated(
+            "{T}: Create a 1/1 white Human creature token.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::CreateToken {
+                token: cards::HUMAN_TOKEN_1_1_WHITE,
+                count: ValueDef::Constant(1),
+                tapped: false,
+            },
+        ),
+        AbilityDef::static_ability(
+            "Fateful hour — As long as you have 5 or less life, other creatures you control get \
+             +2/+2.",
+            EffectDef::IfCondition {
+                condition: &FATEFUL_HOUR,
+                then: &THRABEN_DOOMSAYER_ANTHEM,
+            },
+        ),
+    ]),
+);
 
 // DKA 26 — Thraben Heretic
 pub(in crate::card::sets) static THRABEN_HERETIC: CardRecord = CardRecord::new(
@@ -2712,6 +2770,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BREAK_OF_DAY,
     &BURDEN_OF_GUILT,
     &ELGAUD_INQUISITOR,
+    &GATHER_THE_TOWNSFOLK,
     &GAVONY_IRONWRIGHT,
     &LINGERING_SOULS,
     &MIDNIGHT_GUARD,
@@ -2723,6 +2782,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SILVERCLAW_GRIFFIN,
     &SKILLFUL_LUNGE,
     &THALIA_GUARDIAN_OF_THRABEN,
+    &THRABEN_DOOMSAYER,
     &THRABEN_HERETIC,
     &ARTFUL_DODGE,
     &BONE_TO_ASH,

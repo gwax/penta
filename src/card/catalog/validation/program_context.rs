@@ -651,6 +651,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::Negate(_)
         | ValueDef::IfCreatureDiedThisTurn(_)
+        | ValueDef::IfControllerLifeAtMost(_)
         | ValueDef::IfTargetMatches(_)
         | ValueDef::IfMatchingObjectCount(_)
         | ValueDef::CountersOnSource(_)
@@ -683,6 +684,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::Scaled(_)
         | ValueDef::Halved(_)
         | ValueDef::IfCreatureDiedThisTurn(_)
+        | ValueDef::IfControllerLifeAtMost(_)
         | ValueDef::IfTargetMatches(_)
         | ValueDef::IfMatchingObjectCount(_)
         | ValueDef::CountersOnSource(_)

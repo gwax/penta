@@ -678,6 +678,10 @@ fn validate_value_target_references(
             validate_value_target_references(sum.left, target_count, scope)?;
             validate_value_target_references(sum.right, target_count, scope)
         }
+        ValueDef::IfControllerLifeAtMost(condition) => {
+            validate_value_target_references(condition.then, target_count, scope)?;
+            validate_value_target_references(condition.otherwise, target_count, scope)
+        }
         ValueDef::IfCreatureDiedThisTurn(condition) => {
             validate_value_target_references(condition.then, target_count, scope)?;
             validate_value_target_references(condition.otherwise, target_count, scope)

@@ -117,10 +117,83 @@ fn the_ironwright_does_not_pump_itself() {
     assert_eq!(stats(&game, iron_id), (Some(1), Some(4)), "printed size");
 }
 
+/// "Instead", so the count is chosen rather than the second creation being
+/// skipped: two above the threshold, five at or below it.
+#[test]
+fn gather_the_townsfolk_makes_two_or_five() {
+    let make = |life: i16| {
+        let mut game = ready(life);
+        let spell = card(20_000, cards::GATHER_THE_TOWNSFOLK, PlayerId::One);
+        let spell_id = spell.id;
+        game.players[PlayerId::One.index()].hand.push(spell);
+        game.players[PlayerId::One.index()].mana_pool.white = 1;
+        game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell_id))
+            .expect("two mana covers it");
+        game.apply(PlayerId::One, action)
+            .expect("the cast is legal");
+        drain_pending(&mut game);
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::HUMAN_TOKEN_1_1_WHITE)
+            .count()
+    };
+
+    assert_eq!(make(6), 2, "above the threshold");
+    assert_eq!(make(5), 5, "at it");
+}
+
+/// The Doomsayer's own tokens are among the creatures its anthem pumps.
+#[test]
+fn the_doomsayer_pumps_the_tokens_it_makes() {
+    let mut game = ready(5);
+    let sayer = creature(10_000, cards::THRABEN_DOOMSAYER, PlayerId::One);
+    let sayer_id = sayer.card.id;
+    game.battlefield.push(sayer);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == sayer_id))
+        .expect("tapping is the whole cost");
+    game.apply(PlayerId::One, action).expect("legal");
+    drain_pending(&mut game);
+
+    let token = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::HUMAN_TOKEN_1_1_WHITE)
+        .expect("a token arrived")
+        .card
+        .id;
+    assert_eq!(stats(&game, token), (Some(3), Some(3)), "a 1/1 with +2/+2");
+    assert_eq!(
+        stats(&game, sayer_id),
+        (Some(2), Some(2)),
+        "\"other\", so not itself",
+    );
+
+    game.players[PlayerId::One.index()].life = 20;
+    assert_eq!(
+        stats(&game, token),
+        (Some(1), Some(1)),
+        "and the anthem lapses with the life total",
+    );
+}
+
 #[test]
 fn both_cards_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::BREAK_OF_DAY, cards::GAVONY_IRONWRIGHT] {
+    for definition in [
+        cards::BREAK_OF_DAY,
+        cards::GAVONY_IRONWRIGHT,
+        cards::GATHER_THE_TOWNSFOLK,
+        cards::THRABEN_DOOMSAYER,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

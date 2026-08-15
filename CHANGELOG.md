@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Gather the Townsfolk** and **Thraben Doomsayer**, finishing the fateful-hour
+  cards that need only the life threshold. The Townsfolk's "instead" is one
+  token creation of a chosen size rather than two creations one of which is
+  skipped, which needed a life-conditioned value alongside the condition.
+
 - **Break of Day** and **Gavony Ironwright**, with a controller-life threshold
   condition for fateful hour. The two read it differently: Break of Day checks
   once as it resolves, while the Ironwright's "as long as" is continuous, so

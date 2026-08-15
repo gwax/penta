@@ -243,6 +243,10 @@ fn validate_value_shape(
             validate_value_shape(value.left, targets)?;
             validate_value_shape(value.right, targets)
         }
+        ValueDef::IfControllerLifeAtMost(value) => {
+            validate_value_shape(value.then, targets)?;
+            validate_value_shape(value.otherwise, targets)
+        }
         ValueDef::IfCreatureDiedThisTurn(value) => {
             validate_value_shape(value.then, targets)?;
             validate_value_shape(value.otherwise, targets)

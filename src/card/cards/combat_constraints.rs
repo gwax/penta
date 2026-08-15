@@ -79,3 +79,5 @@ pub const ARCHANGELS_LIGHT: CardDefinitionId = CardDefinitionId(1878);
 pub const THALIA_GUARDIAN_OF_THRABEN: CardDefinitionId = CardDefinitionId(1879);
 pub const BREAK_OF_DAY: CardDefinitionId = CardDefinitionId(1880);
 pub const GAVONY_IRONWRIGHT: CardDefinitionId = CardDefinitionId(1881);
+pub const GATHER_THE_TOWNSFOLK: CardDefinitionId = CardDefinitionId(1882);
+pub const THRABEN_DOOMSAYER: CardDefinitionId = CardDefinitionId(1883);

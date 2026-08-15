@@ -110,7 +110,8 @@ impl Game {
             )),
             ValueDef::IfTargetMatches(_)
             | ValueDef::IfMatchingObjectCount(_)
-            | ValueDef::IfCreatureDiedThisTurn(_) => {
+            | ValueDef::IfCreatureDiedThisTurn(_)
+            | ValueDef::IfControllerLifeAtMost(_) => {
                 self.conditional_effect_value(value, object, context, scoped)
             }
             ValueDef::Negate(inner) => self
@@ -187,6 +188,16 @@ impl Game {
                     condition.then
                 } else {
                     condition.otherwise
+                };
+                self.effect_value(chosen, object, context, scoped)
+            }
+            ValueDef::IfControllerLifeAtMost(branches) => {
+                let chosen = if i32::from(self.players[object.controller.index()].life)
+                    <= i32::from(branches.threshold)
+                {
+                    branches.then
+                } else {
+                    branches.otherwise
                 };
                 self.effect_value(chosen, object, context, scoped)
             }
