@@ -224,6 +224,7 @@ impl Game {
             return;
         };
         permanent.attacking = false;
+        permanent.attacking_band = None;
         permanent.blocked = false;
         permanent.blocking.clear();
         permanent.combat_damage_assignment.clear();

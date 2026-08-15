@@ -235,6 +235,7 @@ pub(super) fn detached_permanent_snapshot(
         tapped: permanent.tapped,
         damage: permanent.damage,
         attacking: permanent.attacking,
+        attacking_band: permanent.attacking_band,
         attack_defender: permanent.attack_defender.map(|defender| match defender {
             AttackDefender::Player(player) => AttackDefenderSnapshot::Player {
                 seat: player.index(),

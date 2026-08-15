@@ -47,6 +47,7 @@ mod activation;
 mod activation_state;
 mod api;
 mod attachments;
+mod banding;
 mod battlefield;
 mod card_runtime;
 mod casting;
@@ -235,6 +236,10 @@ struct Permanent {
     damage: u16,
     attacking: bool,
     attack_defender: Option<crate::AttackDefender>,
+    /// Which attacking band this creature belongs to, as an index shared by
+    /// every member. A lone attacker has none: a band of one is just an
+    /// attacker, and giving it an index would make the two indistinguishable.
+    attacking_band: Option<u8>,
     emblem_source: Option<AbilityOrigin>,
     /// Whether a loyalty ability has already been activated this turn. CR
     /// 606.3 allows one per planeswalker per turn.
@@ -375,6 +380,7 @@ impl Permanent {
             damage: 0,
             attacking: false,
             attack_defender: None,
+            attacking_band: None,
             emblem_source: None,
             activated_loyalty_this_turn: false,
             detained_until_turn_of: None,

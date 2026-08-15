@@ -221,6 +221,7 @@ impl Game {
                     actions.push(Action::FinishDeclaringAttackers);
                 }
                 actions.extend(self.attacker_actions(player, moat_active));
+                actions.extend(self.band_actions(player));
             }
             return actions;
         }
@@ -347,6 +348,7 @@ impl Game {
             Action::DeclareAttacker { attacker, defender } => {
                 self.declare_attacker(attacker, defender);
             }
+            Action::BandAttackers { first, second } => self.form_band(first, second),
             Action::FinishDeclaringAttackers => self.finish_declaring_attackers(),
             Action::DeclareBlocker { blocker, attacker } => {
                 self.declare_blocker(blocker, attacker);
@@ -507,6 +509,7 @@ impl Game {
                         attacking: permanent.attacking,
                         blocked_this_combat: permanent.blocked,
                         blocking: permanent.blocking.clone(),
+                        attacking_band: permanent.attacking_band,
                         flying,
                         can_attack: stats.is_some()
                             && self.can_attack_creature(permanent, moat_active, flying),

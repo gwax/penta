@@ -114,7 +114,15 @@ pub(in crate::card::sets) static BALANCE: CardRecord = CardRecord::new(
 );
 
 // LEA 4 — Benalish Hero
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+// Audit: partial — Blocking with banding and band formation work; a band is not yet blocked as a group.
+pub(in crate::card::sets) static BENALISH_HERO: CardRecord = CardRecord::new(
+    cards::BENALISH_HERO,
+    "Benalish Hero",
+    CardArt::new("11600105-56c6-4073-a4a6-8469030b39c9", "Douglas Shuler"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 1)
+        .with_abilities(&[abilities::banding()]),
+);
 
 // LEA 5 — Black Ward
 pub(in crate::card::sets) static BLACK_WARD: CardRecord = CardRecord::new(
@@ -578,7 +586,15 @@ pub(in crate::card::sets) static LANCE: CardRecord = CardRecord::new(
 );
 
 // LEA 28 — Mesa Pegasus
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+// Audit: partial — Blocking with banding and band formation work; a band is not yet blocked as a group.
+pub(in crate::card::sets) static MESA_PEGASUS: CardRecord = CardRecord::new(
+    cards::MESA_PEGASUS,
+    "Mesa Pegasus",
+    CardArt::new("eaac88da-d19e-4771-944c-3709963d04e7", "Melissa A. Benson"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Pegasus"], 1, 1)
+        .with_abilities(&[abilities::flying(), abilities::banding()]),
+);
 
 // LEA 29 — Northern Paladin
 pub(in crate::card::sets) static NORTHERN_PALADIN: CardRecord = CardRecord::new(
@@ -4892,6 +4908,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANIMATE_WALL,
     &ARMAGEDDON,
     &BALANCE,
+    &BENALISH_HERO,
     &BLACK_WARD,
     &BLESSING,
     &BLUE_WARD,
@@ -4911,6 +4928,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HOLY_STRENGTH,
     &KARMA,
     &LANCE,
+    &MESA_PEGASUS,
     &NORTHERN_PALADIN,
     &PEARLED_UNICORN,
     &PURELACE,

@@ -384,6 +384,9 @@ pub(super) struct DetachedPermanentSnapshot {
     /// blocked as a group and one creature may be allowed several blocks.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) blocking: Vec<u32>,
+    /// The attacking band this creature is in, shared by every member.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) attacking_band: Option<u8>,
     pub(super) activated_loyalty_this_turn: bool,
     pub(super) chosen_creature_type: Option<String>,
     pub(super) chosen_card_name: Option<String>,

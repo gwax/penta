@@ -462,6 +462,10 @@ pub(super) fn parse_battlefield(
                         .transpose()?,
                     blocked: bool_field(shown, "blockedThisCombat")?,
                     blocking: object_id_list(shown.get("blocking")),
+                    attacking_band: shown
+                        .get("attackingBand")
+                        .and_then(Value::as_u64)
+                        .and_then(|band| u8::try_from(band).ok()),
                     activated_loyalty_this_turn: bool_field(shown, "loyaltyAbilityUsedThisTurn")?,
                     chosen_creature_type: shown
                         .get("chosenCreatureType")
@@ -489,6 +493,7 @@ struct PermanentPresentation {
     attack_defender: Option<AttackDefender>,
     blocked: bool,
     blocking: Vec<GameObjectId>,
+    attacking_band: Option<u8>,
     activated_loyalty_this_turn: bool,
     chosen_creature_type: Option<String>,
     chosen_card_name: Option<String>,
@@ -532,6 +537,7 @@ fn parse_permanent(
     permanent.attack_defender = shown.attack_defender;
     permanent.blocked = shown.blocked;
     permanent.blocking.clone_from(&shown.blocking);
+    permanent.attacking_band = shown.attacking_band;
     permanent.activated_loyalty_this_turn = shown.activated_loyalty_this_turn;
     permanent.detained_until_turn_of = state
         .detained_until_turn_of
@@ -936,6 +942,7 @@ pub(super) fn parse_detached_permanent(
                 .copied()
                 .map(GameObjectId)
                 .collect(),
+            attacking_band: snapshot.attacking_band,
             activated_loyalty_this_turn: snapshot.activated_loyalty_this_turn,
             chosen_creature_type: snapshot.chosen_creature_type.clone(),
             chosen_card_name: snapshot.chosen_card_name.clone(),

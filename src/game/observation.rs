@@ -83,6 +83,9 @@ pub struct PermanentObservation {
     /// Every attacker this creature is blocking. Several, when it blocks a
     /// band or is allowed more than one block.
     pub blocking: Vec<GameObjectId>,
+    /// Which attacking band this creature is in, as an index shared by every
+    /// member of that band. None for an attacker in no band at all.
+    pub attacking_band: Option<u8>,
     pub flying: bool,
     pub can_attack: bool,
     pub entered_this_turn: bool,

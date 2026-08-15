@@ -408,7 +408,8 @@ Every entry in `legalActions` has an `index` (what you pass to `act`) and a
 `playOptionId`), `CastSpell` (with the play option, ordered modes, cost
 configuration, target slots, sacrifices, and X already filled in — one entry
 per legal casting choice), `ActivateAbility`, `ActivateManaAbility`, `PayLifeForMana`,
-`DeclareAttacker`, `FinishDeclaringAttackers`, `DeclareBlocker`,
+`DeclareAttacker`, `BandAttackers` (with `first` and `second`),
+`FinishDeclaringAttackers`, `DeclareBlocker`,
 `FinishDeclaringBlockers`, `AssignCombatDamage`, `DiscardCards`,
 `ChooseUntap`, `ChooseDecision`, `CancelDecision`, `PassPriority`.
 
@@ -494,7 +495,11 @@ planeswalker takes it as loyalty counters.
 
 Attacker and blocker declaration is incremental: choose one
 `DeclareAttacker` or `DeclareBlocker`, re-observe, and eventually choose the
-matching `FinishDeclaring...` action. `AssignCombatDamage` names one `attacker`
+matching `FinishDeclaring...` action. Banding is declared the same way, a pair
+at a time: `BandAttackers` puts `first`, `second`, and everything already
+banded with either of them into one band, and the engine offers only the pairs
+the printed limit allows. A permanent's `attackingBand` is the index every
+member of its band shares, absent for an attacker in no band. `AssignCombatDamage` names one `attacker`
 and an ordered `assignments` list of `{recipient, amount}`.
 
 ### Decisions

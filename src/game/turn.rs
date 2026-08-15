@@ -612,6 +612,7 @@ impl Game {
     pub(super) fn clear_combat(&mut self) {
         for permanent in &mut self.battlefield {
             permanent.attacking = false;
+            permanent.attacking_band = None;
             permanent.blocked = false;
             permanent.blocking.clear();
             permanent.combat_damage_assignment.clear();

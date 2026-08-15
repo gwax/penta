@@ -147,6 +147,7 @@ impl WebGame {
             | Action::PayLifeForMana
             | Action::CastSpell { .. }
             | Action::DeclareAttacker { .. }
+            | Action::BandAttackers { .. }
             | Action::FinishDeclaringAttackers
             | Action::DeclareBlocker { .. }
             | Action::FinishDeclaringBlockers
@@ -517,6 +518,11 @@ impl WebGame {
             Action::DeclareAttacker { attacker, .. } => {
                 format!("Attack with {}", self.instance_name(observation, *attacker))
             }
+            Action::BandAttackers { first, second } => format!(
+                "Band {} with {}",
+                self.instance_name(observation, *first),
+                self.instance_name(observation, *second),
+            ),
             // Naming the commitment reads better than naming the step: the
             // button is the last chance to see how big the attack is.
             Action::FinishDeclaringAttackers => {

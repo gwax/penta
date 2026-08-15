@@ -86,6 +86,7 @@ fn permanent(
         attacking: false,
         blocked_this_combat: false,
         blocking: Vec::new(),
+        attacking_band: None,
         flying: false,
         can_attack: false,
         entered_this_turn: false,

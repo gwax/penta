@@ -118,6 +118,14 @@ pub enum Action {
         attacker: GameObjectId,
         defender: AttackDefender,
     },
+    /// Puts two declared attackers, and everything already banded with
+    /// either of them, into one attacking band. Bands are built a pair at a
+    /// time rather than named all at once so that the legal ones can be
+    /// enumerated the way every other declaration is.
+    BandAttackers {
+        first: GameObjectId,
+        second: GameObjectId,
+    },
     FinishDeclaringAttackers,
     DeclareBlocker {
         blocker: GameObjectId,

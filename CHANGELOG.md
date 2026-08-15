@@ -18,12 +18,18 @@ Observations and catalogs also advertise named additive capabilities. Replay
 and reconstruction payloads carry their own format versions instead of moving
 the bot-wire epoch.
 
-## 0.7.0 — protocol 23
+## 0.7.0 — protocol 24
 
-This release reports engine 0.7.0 and protocol 23. The simulation fingerprint
+This release reports engine 0.7.0 and protocol 24. The simulation fingerprint
 distinguishes snapshots of the covered source and build inputs.
 
 ### Changed
+
+- **Protocol 24 makes a permanent's `blocking` a list.** It was one attacker
+  id or `null`. A creature can be blocking several attackers at once: a band is
+  blocked as a group, so one declaration records every member, and a card can
+  grant a creature an additional block outright. Read the array; a creature
+  blocking nothing has an empty one.
 
 - **Protocol 23 canonicalizes the final pre-Theros format as ISD–DGM.**
   Catalogs and observations now emit `isd-dgm-standard` rather than
@@ -73,6 +79,15 @@ distinguishes snapshots of the covered source and build inputs.
   step, which no game does, and so passed either way.
 
 ### Added
+
+- **Attacking bands.** `BandAttackers` names two declared attackers and puts
+  them, with everything already banded with either, into one band; the engine
+  offers only the pairs CR 702.21b allows, which is one or more creatures with
+  banding plus at most one without. Each band member's `attackingBand` carries
+  the index they share. Benalish Hero and Mesa Pegasus.
+
+- **Blocking an additional creature.** A creature blocks one attacker unless a
+  card says otherwise. Two-Headed Giant of Foriys.
 
 - **Targets with no printed limit.** "One or more target creatures" is
   bounded by the board rather than by a number, which the declaration model

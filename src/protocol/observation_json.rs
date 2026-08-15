@@ -165,6 +165,7 @@ fn permanent_observation_json(
         "attackDefender": permanent.attack_defender.map(defender_json),
         "blockedThisCombat": permanent.blocked_this_combat,
         "blocking": permanent.blocking.iter().map(|id| id.0).collect::<Vec<_>>(),
+        "attackingBand": permanent.attacking_band,
         "flying": permanent.flying,
         "canAttack": permanent.can_attack,
         "enteredThisTurn": permanent.entered_this_turn,

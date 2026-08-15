@@ -179,6 +179,12 @@ impl HandcraftedPolicy {
             Action::DeclareBlocker { blocker, attacker } => {
                 Self::score_block(observation, *blocker, *attacker)
             }
+            // Deliberately below finishing the declaration, so the
+            // handcrafted policy declares its attackers and moves on. Banding
+            // trades the blockers' damage assignment for letting one blocker
+            // hold the whole band, and this policy has no way to tell which
+            // side of that trade a board is on.
+            Action::BandAttackers { .. } => 900,
             Action::FinishDeclaringAttackers | Action::FinishDeclaringBlockers => 1_000,
             Action::AssignCombatDamage { assignments, .. } => {
                 6_000 + Self::score_assignment(observation, assignments)
