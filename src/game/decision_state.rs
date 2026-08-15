@@ -11,7 +11,8 @@ use super::{
     AbilitySourceRef, ApplicableReplacement, ApplicableZoneMoveReplacement, CardInstance,
     DecisionObservation, DecisionOption, DecisionZone, DrawReplacement, EffectResolutionContext,
     PendingBattlefieldExitBatch, PendingTrigger, PileChosen, PileSplit, PilesSeparated,
-    ReplacementEffectContext, ScopedEffect, StackObject, TriggerPlacementBatch,
+    ReplacementEffectContext, SacrificedAmountDef, ScopedEffect, StackObject,
+    TriggerPlacementBatch,
 };
 
 /// Fork repaints its copy, so the copy is red and nothing else.
@@ -25,6 +26,9 @@ pub(super) struct SacrificeFollowup {
     pub(super) object: Box<StackObject>,
     pub(super) context: EffectResolutionContext,
     pub(super) effect: ScopedEffect,
+    /// Which characteristic of the sacrificed permanent this reads. Carried
+    /// here because the permanent is gone by the time the follow-up runs.
+    pub(super) amount: SacrificedAmountDef,
 }
 
 /// A payment whose dynamic values and payer have been frozen before a

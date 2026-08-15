@@ -516,14 +516,22 @@ fn continuation_snapshot(
         DecisionContinuation::SacrificeOfChoice { followup, optional } => {
             DecisionContinuationSnapshot::SacrificeOfChoice {
                 followup: match followup {
-                    Some(followup) => Some(effect_continuation_snapshot(
-                        game,
-                        viewer,
-                        &followup.object,
-                        &followup.context,
-                        followup.effect,
-                        visible_rebindings,
-                    )?),
+                    Some(followup) => {
+                        let mut snapshot = effect_continuation_snapshot(
+                            game,
+                            viewer,
+                            &followup.object,
+                            &followup.context,
+                            followup.effect,
+                            visible_rebindings,
+                        )?;
+                        // The only continuation that reads a characteristic
+                        // off what was sacrificed, so the only one that has
+                        // to say which.
+                        snapshot.reads_toughness =
+                            followup.amount == crate::card::SacrificedAmountDef::Toughness;
+                        Some(snapshot)
+                    }
                     None => None,
                 },
                 optional: *optional,

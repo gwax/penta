@@ -74,6 +74,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Reading the toughness of what was sacrificed.** A sacrifice follow-up
+  could only ever read the sacrificed permanent's power. Both are last-known
+  by the time it runs, so neither was harder to reach -- the card simply had
+  no way to say which it meant. Diamond Valley and Life Chisel.
+
 - **"Spells you cast cost less to cast."** Read off a permanent rather than
   the card in hand, so unlike a card discounting itself it has to name which
   spells and whose. Several stack, and none can reach a cost's coloured pips.

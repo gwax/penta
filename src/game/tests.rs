@@ -591,6 +591,7 @@ mod resolution_destinations;
 mod revealed_hands;
 mod ring_of_maruf;
 mod rings;
+mod sacrificed_toughness;
 mod scavenge;
 mod search_and_reveal;
 mod shroud_grants;

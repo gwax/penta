@@ -11,9 +11,9 @@ use crate::card::{
     CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef,
     EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayOptionDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SpellForm,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    SpellForm, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -162,6 +162,7 @@ pub(in crate::card::sets) static RENOUNCE_THE_GUILDS: CardRecord = CardRecord::n
             player: EffectRecipientDef::EachPlayer,
             object: MULTICOLORED,
             then: None,
+            amount: SacrificedAmountDef::Power,
             optional: false,
         },
     )),
@@ -2051,6 +2052,7 @@ fn far_away_composition() -> CardComposition {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: None,
+                amount: SacrificedAmountDef::Power,
                 optional: false,
             },
         ));

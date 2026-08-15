@@ -230,6 +230,8 @@ fn effect_continuation_snapshot(
         ability,
         context: effect_resolution_context_snapshot(context),
         effect: scoped_effect_snapshot(&definition, effect)?,
+        // A draw replacement never sacrificed anything to read.
+        reads_toughness: false,
     })
 }
 
@@ -242,6 +244,7 @@ fn parse_effect_continuation(
         context: parse_effect_resolution_context(snapshot.context.clone())?,
         effect: catalog_scoped_effect(&game.catalog, &snapshot.ability, &snapshot.effect)
             .ok_or("draw replacement effect locator is absent from this catalog")?,
+        amount: crate::card::SacrificedAmountDef::Power,
     })
 }
 

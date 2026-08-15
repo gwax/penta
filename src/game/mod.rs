@@ -24,10 +24,10 @@ use crate::card::{
     ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayActionKind, PlayOptionDef, PlayRestriction,
     PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef,
     ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SetOperationDef, TapPurposeDef, TargetPredicate, TargetSlotDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnPhaseDef,
-    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
-    applicable_part_ids,
+    ResolvedEffectDurationDef, SacrificedAmountDef, SetOperationDef, TapPurposeDef,
+    TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
+    abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;

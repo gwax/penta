@@ -9,8 +9,8 @@ use crate::card::{
     EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, LikelihoodDef,
     ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayActionMatcherDef,
     PlayRestrictionDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1240,8 +1240,31 @@ pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new(
 // ARN 72 — Desert
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{T}: This land deals 1 damage to target attacking creature. Activate only during the end of combat step”.
 
+/// The life is whatever the creature's toughness was, which is last-known by
+/// the time this runs -- the creature is already gone, which is the point.
+static DIAMOND_VALLEY_PAYOFF: EffectDef = EffectDef::GainLife {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::TriggerEventAmount,
+};
+
 // ARN 73 — Diamond Valley
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “{T}, Sacrifice a creature: You gain life equal to the sacrificed creature's toughness”.
+pub(in crate::card::sets) static DIAMOND_VALLEY: CardRecord = CardRecord::new(
+    cards::DIAMOND_VALLEY,
+    "Diamond Valley",
+    CardArt::new("16674f11-6cd8-41f6-ae6a-f8578187287c", "Brian Snõddy"),
+    CardSet::ArabianNights,
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated(
+        "{T}, Sacrifice a creature: You gain life equal to the sacrificed creature's toughness.",
+        &[AbilityCostDef::TapSource],
+        EffectDef::SacrificeOfChoice {
+            player: EffectRecipientDef::Controller,
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            then: Some(&DIAMOND_VALLEY_PAYOFF),
+            amount: SacrificedAmountDef::Toughness,
+            optional: false,
+        },
+    )),
+);
 
 // ARN 74 — Elephant Graveyard
 pub(in crate::card::sets) static ELEPHANT_GRAVEYARD: CardRecord = CardRecord::new(
@@ -1356,6 +1379,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RING_OF_MARUF,
     &BAZAAR_OF_BAGHDAD,
     &CITY_OF_BRASS,
+    &DIAMOND_VALLEY,
     &ELEPHANT_GRAVEYARD,
     &LIBRARY_OF_ALEXANDRIA,
     &OASIS,

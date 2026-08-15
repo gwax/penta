@@ -873,6 +873,11 @@ pub(super) struct EffectContinuationSnapshot {
     pub(super) ability: AbilityLocator,
     pub(super) context: EffectResolutionContextSnapshot,
     pub(super) effect: ScopedEffectSnapshot,
+    /// Whether the follow-up reads the sacrificed permanent's toughness
+    /// rather than its power. Absent means power, which is what every
+    /// continuation written before toughness was readable meant.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) reads_toughness: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

@@ -9,8 +9,8 @@ use crate::card::{
     CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
     InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, cards,
+    ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardDefinitionId, TargetIndex};
 use crate::mana_cost;
@@ -1320,6 +1320,7 @@ pub(in crate::card::sets) static DESECRATION_DEMON: CardRecord = CardRecord::new
                 player: EffectRecipientDef::Opponent,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: Some(&DESECRATION_DEMON_TRIBUTE),
+                amount: SacrificedAmountDef::Power,
                 optional: true,
             },
         ),
@@ -1534,6 +1535,7 @@ pub(in crate::card::sets) static SLUM_REAPER: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::EachPlayer,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: None,
+                amount: SacrificedAmountDef::Power,
                 optional: false,
             },
         ),

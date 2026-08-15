@@ -3,8 +3,8 @@ use super::{
     CommittedTriggerEvent, CounterKind, DecisionContinuation, DecisionOption, DecisionPreference,
     DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
     Game, GameObjectId, ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit,
-    PilesSeparated, PlayerId, SacrificeFollowup, ScopedEffect, StackObject, Step,
-    TopCardSelectionDef, ZoneKind, ZoneMoveCause,
+    PilesSeparated, PlayerId, SacrificeFollowup, SacrificedAmountDef, ScopedEffect, StackObject,
+    Step, TopCardSelectionDef, ZoneKind, ZoneMoveCause,
 };
 
 impl Game {
@@ -506,18 +506,22 @@ impl Game {
         );
     }
 
-    /// Runs what a sacrifice owes once the permanent is chosen. The power is
-    /// read before the sacrifice, because by the time this runs the permanent
-    /// is already gone.
+    /// Runs what a sacrifice owes once the permanent is chosen. The
+    /// characteristic is last-known, because by the time this runs the
+    /// permanent is already gone.
     pub(super) fn resolve_sacrifice_followup(
         &mut self,
         followup: &SacrificeFollowup,
         sacrificed: Option<GameObjectId>,
     ) {
-        // A negative power gives nothing rather than draining the controller.
+        // A negative value gives nothing rather than draining the
+        // controller.
         let amount = i32::from(
             sacrificed
-                .and_then(|id| self.current_or_last_known_power(id))
+                .and_then(|id| match followup.amount {
+                    SacrificedAmountDef::Power => self.current_or_last_known_power(id),
+                    SacrificedAmountDef::Toughness => self.current_or_last_known_toughness(id),
+                })
                 .unwrap_or(0),
         )
         .max(0);

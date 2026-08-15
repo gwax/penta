@@ -10,8 +10,8 @@ use crate::card::{
     DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef,
     KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef,
     ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1330,6 +1330,7 @@ pub(in crate::card::sets) static DEMONIC_TASKMASTER: CardRecord = CardRecord::ne
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                 ]),
                 then: None,
+                amount: SacrificedAmountDef::Power,
                 optional: false,
             },
         ),

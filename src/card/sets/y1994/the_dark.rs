@@ -6,8 +6,9 @@ use crate::card::{
     DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
     EffectDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -1917,6 +1918,7 @@ pub(in crate::card::sets) static SAFE_HAVEN: CardRecord = CardRecord::new(
                     zone: ZoneKind::Battlefield,
                     grant: None,
                 }),
+                amount: SacrificedAmountDef::Power,
                 optional: true,
             },
         ),

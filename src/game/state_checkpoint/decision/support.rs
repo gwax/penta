@@ -3,6 +3,7 @@
 use super::super::model::{ManaCostSnapshot, ResolvedEffectPaymentSnapshot};
 use super::super::procedure::draw_replacement_referenced_object_ids;
 use super::*;
+use crate::card::SacrificedAmountDef;
 use crate::game::ResolvedEffectPayment;
 use crate::game::{ApplicableZoneMoveReplacement, PendingBattlefieldExitBatch};
 
@@ -233,6 +234,9 @@ pub(super) fn effect_continuation_snapshot(
         ability,
         context: effect_resolution_context_snapshot(context),
         effect: scoped_effect_snapshot(&definition, effect)?,
+        // Set by the sacrifice sites, which are the only continuations that
+        // read a characteristic off what was sacrificed.
+        reads_toughness: false,
     })
 }
 
@@ -245,6 +249,11 @@ pub(super) fn parse_effect_continuation(
         context: parse_effect_resolution_context(snapshot.context.clone())?,
         effect: catalog_scoped_effect(&game.catalog, &snapshot.ability, &snapshot.effect)
             .ok_or("effect continuation locator is absent from this catalog")?,
+        amount: if snapshot.reads_toughness {
+            SacrificedAmountDef::Toughness
+        } else {
+            SacrificedAmountDef::Power
+        },
     })
 }
 

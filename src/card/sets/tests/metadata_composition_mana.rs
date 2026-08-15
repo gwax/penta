@@ -215,6 +215,8 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
         lands_without_mana,
         [
             "Bazaar of Baghdad",
+            // Sacrifices creatures for life and taps for nothing.
+            "Diamond Valley",
             "Oasis",
             "The Tabernacle at Pendrell Vale",
             "Maze of Ith",

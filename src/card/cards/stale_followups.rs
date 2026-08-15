@@ -116,3 +116,5 @@ pub const GOBLIN_ELECTROMANCER: CardDefinitionId = CardDefinitionId(1760);
 pub const ARCANE_MELEE: CardDefinitionId = CardDefinitionId(1761);
 pub const PLANAR_GATE: CardDefinitionId = CardDefinitionId(1762);
 pub const MANA_MATRIX: CardDefinitionId = CardDefinitionId(1763);
+pub const DIAMOND_VALLEY: CardDefinitionId = CardDefinitionId(1764);
+pub const LIFE_CHISEL: CardDefinitionId = CardDefinitionId(1765);

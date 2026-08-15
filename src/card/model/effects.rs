@@ -21,6 +21,13 @@ use super::{
 // consumed by both resolving and continuously applied effects below.
 include!("effects/recipients_and_matchers.rs");
 include!("effects/applied.rs");
+/// Which characteristic of a sacrificed permanent a follow-up reads.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum SacrificedAmountDef {
+    Power,
+    Toughness,
+}
+
 /// A reusable selector for ability-removing continuous effects.
 ///
 /// `Any` supports ordinary "loses all abilities" effects. The keyword form is
@@ -606,11 +613,16 @@ pub enum EffectDef {
     SacrificeOfChoice {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
-        /// Run after the sacrifice, with the sacrificed permanent's power as
-        /// [`ValueDef::TriggerEventAmount`]. A sacrifice of choice waits on a
-        /// decision, so anything reading what was sacrificed has to be part
-        /// of the same continuation rather than the next effect in sequence.
+        /// Run after the sacrifice, with the characteristic named by
+        /// `amount` as [`ValueDef::TriggerEventAmount`]. A sacrifice of
+        /// choice waits on a decision, so anything reading what was
+        /// sacrificed has to be part of the same continuation rather than the
+        /// next effect in sequence.
         then: Option<&'static EffectDef>,
+        /// Which of the sacrificed permanent's characteristics the follow-up
+        /// reads. Both are last-known by the time it runs, so neither is
+        /// harder to reach than the other -- the card simply has to say.
+        amount: SacrificedAmountDef,
         /// Whether the player may decline. An optional sacrifice runs `then`
         /// only when something was actually sacrificed, which is what "if a
         /// player does" means; a compulsory one runs it either way, so an

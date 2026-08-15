@@ -50,12 +50,13 @@ pub use model::{
     PlayActionMatcherDef, PlayOptionDef, PlayRestriction, PlayRestrictionDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, PrintedManaCost, QuantifierDef,
     ReplacementAbilityDef, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, ScalarChoiceListDef, ScaledValueDef,
-    SetOperationDef, SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, SpellForm,
-    SpellResolutionDestinationDef, SplitIntoPilesDef, StaticAbilityDef, TapEventMatcherDef,
-    TapPurposeDef, TargetConditionDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnKindDef, TurnPhaseDef,
-    TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScalarChoiceListDef,
+    ScaledValueDef, SetOperationDef, SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef,
+    SpellForm, SpellResolutionDestinationDef, SplitIntoPilesDef, StaticAbilityDef,
+    TapEventMatcherDef, TapPurposeDef, TargetConditionDef, TargetPredicate, TargetSlotDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnKindDef,
+    TurnPhaseDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef,
+    ZonePlacement,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

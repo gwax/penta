@@ -10,8 +10,9 @@ use crate::card::{
     EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, ScaledValueDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -4180,8 +4181,33 @@ pub(in crate::card::sets) static KRY_SHIELD: CardRecord = CardRecord::new(
     )),
 );
 
+static LIFE_CHISEL_PAYOFF: EffectDef = EffectDef::GainLife {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::TriggerEventAmount,
+};
+
 // LEG 283 — Life Chisel
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Sacrifice a creature: You gain life equal to the sacrificed creature's toughness. Activate only during your upkeep”.
+pub(in crate::card::sets) static LIFE_CHISEL: CardRecord = CardRecord::new(
+    cards::LIFE_CHISEL,
+    "Life Chisel",
+    CardArt::new("7d355c8a-a3c7-4878-862b-e0d433414943", "Anthony S. Waters"),
+    CardSet::Legends,
+    CardRules::new_artifact(mana_cost!("{4}")).with_ability(
+        AbilityDef::activated(
+            "Sacrifice a creature: You gain life equal to the sacrificed creature's toughness. \
+             Activate only during your upkeep.",
+            &[],
+            EffectDef::SacrificeOfChoice {
+                player: EffectRecipientDef::Controller,
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                then: Some(&LIFE_CHISEL_PAYOFF),
+                amount: SacrificedAmountDef::Toughness,
+                optional: false,
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::YourUpkeep),
+    ),
+);
 
 // LEG 284 — Life Matrix
 // Audit: blocked — Needs granting a counter-consuming activated ability to a targeted creature and an activation window restricted to your upkeep for “{4}, {T}: Put a matrix counter on target creature and that creature gains "Remove a matrix counter from this creature: Regenerate this creature." Activate only during your upkeep”.
@@ -4632,6 +4658,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FORETHOUGHT_AMULET,
     &HORN_OF_DEAFENING,
     &KRY_SHIELD,
+    &LIFE_CHISEL,
     &MANA_MATRIX,
     &MARBLE_PRIEST,
     &PLANAR_GATE,

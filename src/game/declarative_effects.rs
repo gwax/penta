@@ -396,6 +396,7 @@ impl Game {
                 self.move_permanents_to_graveyard(&permanents);
             }
             EffectDef::SacrificeOfChoice {
+                amount: sacrificed_amount,
                 player: recipient,
                 object: predicate,
                 then,
@@ -412,6 +413,7 @@ impl Game {
                         continue;
                     }
                     let followup = then.map(|effect| SacrificeFollowup {
+                        amount: sacrificed_amount,
                         object: Box::new(object.clone()),
                         context: context.clone(),
                         effect: scoped.with_effect(*effect),
