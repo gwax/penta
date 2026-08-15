@@ -173,6 +173,12 @@ pub(super) fn shared_cannot_be_countered_effect(effect: AppliedEffectDef) -> boo
 }
 
 pub(super) fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool) -> bool {
+    // "Add one for each counter on this creature" is read off the permanent
+    // as the ability is offered, so the amount is known before activation
+    // just as a printed one is.
+    if let EffectDef::AddManaEqualTo { amount, .. } = effect {
+        return matches!(amount, ValueDef::CountersOnSource(_));
+    }
     let EffectDef::AddMana(mana) = effect else {
         return false;
     };
@@ -528,8 +534,8 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                         !effects.is_empty() && effects.iter().copied().all(immediate_mana_effect)
                     }
                     EffectDef::AddMana(_) => shared_mana_effect(effect, false),
-                    // A mana ability's amount has to be knowable without
-                    // resolving it, which this one is not.
+                    // A triggered mana ability resolves without an offer to
+                    // read an amount off, so this one stays outside.
                     EffectDef::AddManaEqualTo { .. }
                     | EffectDef::Randomized { .. }
                     | EffectDef::Choose(_)

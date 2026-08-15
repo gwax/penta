@@ -4,14 +4,15 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::sets::{y1993::alpha, y2012::magic_2013};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardRules, CardSet,
-    CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
-    CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef,
-    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementChoiceDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, ZonePlacement, abilities, cards,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
+    CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef,
+    ControlDurationDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef,
+    DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
+    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
+    cards,
 };
 use crate::ids::{CardDefinitionId, TargetIndex};
 use crate::mana_cost;
@@ -1485,7 +1486,21 @@ pub(in crate::card::sets) static PERILOUS_SHADOW: CardRecord = CardRecord::new(
 );
 
 // RTR 75 — Sewer Shambler
-// Audit: blocked — Swampwalk and scavenge's graveyard activation procedure are unavailable.
+pub(in crate::card::sets) static SEWER_SHAMBLER: CardRecord = CardRecord::new(
+    cards::SEWER_SHAMBLER,
+    "Sewer Shambler",
+    CardArt::new("0ae7ba14-c901-4266-ae31-812e001916d3", "Nils Hamm"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Zombie"], 2, 1).with_abilities(&[
+        abilities::landwalk(BasicLandType::Swamp),
+        abilities::scavenge(
+            mana_cost!("{2}{B}"),
+            "Scavenge {2}{B} ({2}{B}, Exile this card from your graveyard: Put a number of \
+             +1/+1 counters equal to this card's power on target creature. Scavenge only as a \
+             sorcery.)",
+        ),
+    ]),
+);
 
 static SHRIEKING_AFFLICTION_HAND: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::Any,
@@ -4988,6 +5003,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GRIM_ROUSTABOUT,
     &NECROPOLIS_REGENT,
     &PERILOUS_SHADOW,
+    &SEWER_SHAMBLER,
     &SHRIEKING_AFFLICTION,
     &SLUM_REAPER,
     &TERRUS_WURM,

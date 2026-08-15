@@ -103,6 +103,9 @@ impl Game {
                 spend_effects,
                 damage_to_controller,
                 amount_override,
+                // Read only by the mana runtime, which offers the ability;
+                // a triggered mana effect resolving here has a plain amount.
+                variable_amount: _,
                 // Resolving from the stack, the ability's own controller is
                 // the only recipient any current card names.
                 recipient: _,

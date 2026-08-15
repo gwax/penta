@@ -1858,7 +1858,25 @@ pub(in crate::card::sets) static GREENSIDE_WATCHER: CardRecord = CardRecord::new
 );
 
 // GTC 123 — Gyre Sage
-// Audit: blocked — Evolve is unavailable even though mana production from a fixed counter kind is expressible.
+pub(in crate::card::sets) static GYRE_SAGE: CardRecord = CardRecord::new(
+    cards::GYRE_SAGE,
+    "Gyre Sage",
+    CardArt::new("6345376a-3d2d-4fff-9430-5e90a96e2f0f", "Tyler Jacobson"),
+    CardSet::Gatecrash,
+    // Evolve feeds the mana ability: the counters it banks are exactly what
+    // the tap reads, so a Sage that has never evolved taps for nothing.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Druid"], 1, 2).with_abilities(&[
+        abilities::evolve(),
+        AbilityDef::activated_mana(
+            "{T}: Add {G} for each +1/+1 counter on this creature.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddManaEqualTo {
+                color: ManaColor::Green,
+                amount: ValueDef::CountersOnSource(CounterKind::PlusOnePlusOne),
+            },
+        ),
+    ]),
+);
 
 // GTC 124 — Hindervines
 // Audit: blocked — Prevention effects cannot select combat-damage sources based on having no +1/+1 counters.
@@ -3799,6 +3817,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DISCIPLE_OF_THE_OLD_WAYS,
     &FORCED_ADAPTATION,
     &GREENSIDE_WATCHER,
+    &GYRE_SAGE,
     &IVY_LANE_DENIZEN,
     &SCAB_CLAN_CHARGER,
     &SKARRG_GOLIATH,

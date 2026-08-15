@@ -582,6 +582,7 @@ mod gatecrash_stale_audits;
 mod ghouls;
 mod gloom;
 mod guardian_beast;
+mod gyre_sage;
 mod held_tapped;
 mod howling_mine;
 mod identity_and_mana;

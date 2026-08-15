@@ -389,6 +389,7 @@ impl Game {
             damage_to_controller,
             recipient,
             amount_override,
+            variable_amount: _,
         } = effect
         else {
             return;

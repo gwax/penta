@@ -148,10 +148,16 @@ impl Game {
         {
             return None;
         }
-        let Some(EffectDef::AddMana(effect)) = ability.declarative_effect() else {
-            return None;
-        };
-        Some(effect)
+        match ability.declarative_effect() {
+            Some(EffectDef::AddMana(effect)) => Some(effect),
+            // "Add {G} for each +1/+1 counter on this creature" is a fixed
+            // amount at the moment it is offered; the caller resolves the
+            // value against the permanent before the activation is built.
+            Some(EffectDef::AddManaEqualTo { color, amount }) => {
+                Some(AddManaEffectDef::one(color).with_variable_amount(amount))
+            }
+            _ => None,
+        }
     }
 
     /// Whether a condition standing outside any resolving effect holds, read
@@ -220,6 +226,9 @@ impl Game {
         if let Some(mut effect) = Self::shared_add_mana_effect(definition, ability) {
             // Resolved here rather than at payment time so that the amount
             // the planner counts on is the amount the pool receives.
+            if let Some(value) = effect.variable_amount {
+                effect.amount = self.mana_ability_value(value, permanent);
+            }
             effect.amount = self.mana_amount_for(effect, permanent.controller, permanent.card.id);
             let mut add_activation = |color| {
                 activations.push(ManaAbilityActivation {

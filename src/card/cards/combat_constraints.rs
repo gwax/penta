@@ -62,3 +62,5 @@ pub const CONGREGATE: CardDefinitionId = CardDefinitionId(1861);
 pub const WALL_OF_FROST: CardDefinitionId = CardDefinitionId(1862);
 pub const WAKE_THE_REFLECTIONS: CardDefinitionId = CardDefinitionId(1863);
 pub const DRUIDS_DELIVERANCE: CardDefinitionId = CardDefinitionId(1864);
+pub const GYRE_SAGE: CardDefinitionId = CardDefinitionId(1865);
+pub const SEWER_SHAMBLER: CardDefinitionId = CardDefinitionId(1866);

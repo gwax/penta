@@ -151,6 +151,16 @@ impl Game {
     /// The values a cost reduction can read. There is no resolving object
     /// while a cost is being worked out, but static zone queries can still
     /// use the card being cast as their source.
+    /// A mana ability's amount, read off the permanent offering it. Only
+    /// board-readable values belong here: the number has to be known before
+    /// the ability is activated, not while it resolves.
+    pub(super) fn mana_ability_value(&self, value: ValueDef, permanent: &Permanent) -> u16 {
+        match value {
+            ValueDef::CountersOnSource(kind) => permanent.counters(kind),
+            other => self.cost_reduction_value(other, permanent.controller, permanent.card.id),
+        }
+    }
+
     pub(super) fn cost_reduction_value(
         &self,
         value: ValueDef,
