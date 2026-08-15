@@ -587,6 +587,7 @@ mod fetch_tapped;
 mod filtered_player_prevention;
 mod gatecrash_stale_audits;
 mod ghouls;
+mod giant_shark;
 mod gloom;
 mod granted_ability_cards;
 mod guardian_beast;

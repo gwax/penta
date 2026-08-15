@@ -251,6 +251,8 @@ pub(super) struct PermanentSnapshot {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) last_attacked_turn: Option<(usize, u32)>,
     pub(super) damage_sources: Vec<u32>,
+    #[serde(default)]
+    pub(super) was_dealt_damage_this_turn: bool,
     pub(super) dealt_damage_to_opponent_this_turn: bool,
     pub(super) deathtouch_damage: bool,
     pub(super) created_by: Option<u32>,

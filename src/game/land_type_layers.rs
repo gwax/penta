@@ -487,6 +487,7 @@ impl Game {
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::HasCounter(_)
             | ObjectPredicateDef::Tapped
+            | ObjectPredicateDef::WasDealtDamageThisTurn
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::BlockedBySource

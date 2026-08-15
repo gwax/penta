@@ -505,6 +505,7 @@ impl Game {
         let permanent = &mut self.battlefield[index];
         permanent.damage = permanent.damage.saturating_add(amount);
         if amount > 0 {
+            permanent.was_dealt_damage_this_turn = true;
             permanent.deathtouch_damage |= has_deathtouch;
             if let Some(source) = source
                 && !permanent.damage_sources.contains(&source)

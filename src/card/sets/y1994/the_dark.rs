@@ -437,8 +437,64 @@ pub(in crate::card::sets) static GHOST_SHIP: CardRecord = CardRecord::new(
     ]),
 );
 
+static GIANT_SHARK_DEFENDER_HAS_AN_ISLAND: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Opponent,
+);
+
+static GIANT_SHARK_NO_ISLANDS: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::Equal,
+    amount: 0,
+};
+
+static GIANT_SHARK_TRAMPLE: AbilityDef = abilities::trample();
+
+static GIANT_SHARK_FRENZY: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(0)),
+    AppliedEffectDef::add_ability(&GIANT_SHARK_TRAMPLE),
+];
+
 // DRK 29 — Giant Shark
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked by a creature that has been dealt damage this turn, this creature gets +2/+0 and gains trample until end of turn”.
+pub(in crate::card::sets) static GIANT_SHARK: CardRecord = CardRecord::new(
+    cards::GIANT_SHARK,
+    "Giant Shark",
+    CardArt::new("53ec4a19-0f2f-4713-a869-58832484648d", "Tom Wänerstrand"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{5}{U}"), &["Shark"], 4, 4).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't attack unless defending player controls an Island.",
+            EffectDef::CannotAttackUnless(&GIANT_SHARK_DEFENDER_HAS_AN_ISLAND),
+        ),
+        AbilityDef::triggered(
+            "Whenever this creature blocks or becomes blocked by a creature that has been dealt \
+             damage this turn, this creature gets +2/+0 and gains trample until end of turn.",
+            // Blood in the water: the other creature's damage this turn, not
+            // the marks still showing on it, so a regenerated one still counts.
+            TriggerEventDef::BlocksOrBecomesBlockedBy {
+                object: ObjectPredicateDef::WasDealtDamageThisTurn,
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&GIANT_SHARK_FRENZY),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::triggered_if(
+            "When you control no Islands, sacrifice this creature.",
+            TriggerEventDef::StateCondition,
+            &GIANT_SHARK_NO_ISLANDS,
+            EffectDef::Sacrifice {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // DRK 30 — Leviathan
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “This creature enters tapped and doesn't untap during your untap step”.
@@ -2097,6 +2153,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELECTRIC_EEL,
     &FLOOD,
     &GHOST_SHIP,
+    &GIANT_SHARK,
     &MERFOLK_ASSASSIN,
     &RIPTIDE,
     &SUNKEN_CITY,

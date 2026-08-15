@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Giant Shark**, and with it a turn-long record of damage dealt to a
+  permanent. "Has been dealt damage this turn" is not "has damage marked on
+  it": regeneration and cleanup both wipe the marks, so the new
+  `WasDealtDamageThisTurn` predicate reads a flag that only the turn boundary
+  clears. Checkpoints carry it as an additive field.
+
 - **Rootwalla** and **Stab Wound**, two more cards blocked on machinery that
   already existed. The Rootwalla's once-a-turn quota belongs to the permanent,
   so a second one still has its own, and Stab Wound's upkeep drain follows the

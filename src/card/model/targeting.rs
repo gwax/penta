@@ -16,6 +16,11 @@ pub enum ObjectPredicateDef {
     /// The permanent is currently tapped. Only a battlefield object can be,
     /// so this never matches a card in another zone.
     Tapped,
+    /// Damage landed on this permanent at some point this turn. Deliberately
+    /// not "has damage marked on it": regeneration and cleanup both wipe the
+    /// marks, and the printed clause asks what happened rather than what is
+    /// still showing.
+    WasDealtDamageThisTurn,
     HasType(CardType),
     /// A land with at least one of the listed effective basic land subtypes.
     ///

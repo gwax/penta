@@ -442,6 +442,7 @@ impl Game {
             permanent.attacked_this_turn = false;
             permanent.attacks_this_turn = 0;
             permanent.damage_sources.clear();
+            permanent.was_dealt_damage_this_turn = false;
         }
         // "Damage dealt to you this turn" resets with the turn, not with
         // cleanup: a spell cast in the postcombat main phase still reads what

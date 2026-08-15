@@ -46,6 +46,9 @@ impl Game {
             ObjectPredicateDef::Source => Some(source.card.id == affected.card.id),
             ObjectPredicateDef::Token => Some(self.is_token(affected.card.definition)),
             ObjectPredicateDef::Tapped => Some(affected.tapped),
+            ObjectPredicateDef::WasDealtDamageThisTurn => {
+                Some(affected.was_dealt_damage_this_turn)
+            }
             ObjectPredicateDef::HasType(card_type) => self
                 .permanent_types(affected)
                 .map(|types| types.contains(card_type)),

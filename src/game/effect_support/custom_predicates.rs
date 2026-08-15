@@ -49,6 +49,7 @@ impl Game {
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::Tapped
+        | ObjectPredicateDef::WasDealtDamageThisTurn
             | ObjectPredicateDef::Attacking
             | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::BlockedBySource

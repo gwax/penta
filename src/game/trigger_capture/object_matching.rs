@@ -55,6 +55,13 @@ impl Game {
                 .iter()
                 .find(|permanent| permanent.card.id == object.id)
                 .is_some_and(|permanent| self.has_nonmana_activated_ability(permanent)),
+            // A fact about the permanent's turn rather than a characteristic
+            // frozen with the event, so it is read live off the battlefield.
+            ObjectPredicateDef::WasDealtDamageThisTurn => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == object.id)
+                .is_some_and(|permanent| permanent.was_dealt_damage_this_turn),
             ObjectPredicateDef::AttachedToSource => self
                 .battlefield
                 .iter()
@@ -218,9 +225,9 @@ impl Game {
             | ObjectPredicateDef::BlockingSource
             | ObjectPredicateDef::BandedWithSource
             | ObjectPredicateDef::Enchanted
-            | ObjectPredicateDef::AttachedTo(_) => {
-                self.battlefield_relationship_matches(predicate, object, source, controller)
-            }
+            | ObjectPredicateDef::WasDealtDamageThisTurn
+            | ObjectPredicateDef::AttachedTo(_) => self
+                .battlefield_relationship_matches(predicate, object, source, controller),
             ObjectPredicateDef::Tapped => object.tapped,
             ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {
                 self.trigger_object_matches_for_controller(

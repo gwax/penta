@@ -588,6 +588,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
         | ObjectPredicateDef::Tapped
+        | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::Spell
