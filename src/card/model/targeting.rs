@@ -106,6 +106,10 @@ pub enum ObjectPredicateDef {
     /// [`Self::BlockedBySource`]: together in an `AnyOf` they are the printed
     /// "blocking or blocked by this creature".
     BlockingSource,
+    /// A creature in the same attacking band as the ability's source, the
+    /// source itself excluded. "All creatures banded with it" names this and
+    /// nothing else: a lone attacker is in no band, so it matches nothing.
+    BandedWithSource,
     /// A permanent with an Aura attached to it. Nothing is said about whose
     /// Aura it is: "enchanted creatures" covers both players' Auras.
     Enchanted,

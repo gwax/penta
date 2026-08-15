@@ -302,6 +302,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
+        | ObjectPredicateDef::BandedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => Ok(()),
@@ -351,6 +352,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
+        | ObjectPredicateDef::BandedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn

@@ -171,6 +171,38 @@ fn attackers_on_different_defenders_cannot_band() {
     );
 }
 
+/// The Skirmishers hand first strike to the rest of their band and to nobody
+/// else, which is the whole point of a predicate that reads band membership.
+#[test]
+fn the_skirmishers_arm_their_band_and_not_the_rest_of_the_attack() {
+    let (mut game, ids) = ready_to_attack(&[
+        cards::ICATIAN_SKIRMISHERS,
+        cards::BENALISH_HERO,
+        cards::SAVANNAH_LIONS,
+    ]);
+    for id in &ids {
+        attack(&mut game, *id);
+    }
+    band(&mut game, ids[0], ids[1]);
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("attackers are declared");
+    drain_pending(&mut game);
+
+    let has_first_strike = |id: GameObjectId| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("still there");
+        game.permanent_has_executable_keyword(permanent, KeywordAbility::FirstStrike)
+    };
+    assert!(has_first_strike(ids[1]), "the Hero is banded with them");
+    assert!(
+        !has_first_strike(ids[2]),
+        "the Lions attacked alongside, not in the band"
+    );
+}
+
 /// Every identity that prints banding, or hands it out, and whose other
 /// clauses the engine already covers.
 #[test]
@@ -187,6 +219,7 @@ fn the_banding_identities_report_complete_coverage() {
         cards::KNIGHTS_OF_THORN,
         cards::PIKEMEN,
         cards::NALATHNI_DRAGON,
+        cards::ICATIAN_SKIRMISHERS,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

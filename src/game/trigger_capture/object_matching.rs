@@ -62,6 +62,12 @@ impl Game {
                 .iter()
                 .find(|candidate| candidate.card.id == object.id)
                 .is_some_and(|candidate| candidate.is_blocking(source)),
+            // Band membership is symmetric, so it reads the same from either
+            // side; excluding the source is what makes "banded with it" mean
+            // the others rather than the whole band.
+            ObjectPredicateDef::BandedWithSource => {
+                object.id != source && self.share_a_band(source, object.id)
+            }
             ObjectPredicateDef::Enchanted => self.battlefield.iter().any(|candidate| {
                 candidate.attached_to == Some(object.id) && self.is_aura_permanent(candidate)
             }),
@@ -191,6 +197,7 @@ impl Game {
             ObjectPredicateDef::HasNonManaActivatedAbility
             | ObjectPredicateDef::BlockedBySource
             | ObjectPredicateDef::BlockingSource
+            | ObjectPredicateDef::BandedWithSource
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::AttachedTo(_) => {
                 self.battlefield_relationship_matches(predicate, object, source, controller)

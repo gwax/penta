@@ -583,6 +583,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
+        | ObjectPredicateDef::BandedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => true,

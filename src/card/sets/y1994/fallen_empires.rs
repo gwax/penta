@@ -329,7 +329,30 @@ pub(in crate::card::sets) static ICATIAN_SCOUT: CardRecord = CardRecord::new(
 );
 
 // FEM 14 — Icatian Skirmishers
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+pub(in crate::card::sets) static ICATIAN_SKIRMISHERS: CardRecord = CardRecord::new(
+    cards::ICATIAN_SKIRMISHERS,
+    "Icatian Skirmishers",
+    CardArt::new("15f6d115-c02d-45a3-aa6d-402964df47dd", "Heather Hudson"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Human", "Soldier"], 1, 1).with_abilities(&[
+        abilities::first_strike(),
+        abilities::banding(),
+        AbilityDef::triggered(
+            "Whenever this creature attacks, all creatures banded with it gain first strike \
+             until end of turn.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::BandedWithSource,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // FEM 15 — Icatian Town
 pub(in crate::card::sets) static ICATIAN_TOWN: CardRecord = CardRecord::new(
@@ -1926,6 +1949,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ICATIAN_PHALANX,
     &ICATIAN_PRIEST,
     &ICATIAN_SCOUT,
+    &ICATIAN_SKIRMISHERS,
     &ICATIAN_TOWN,
     &ORDER_OF_LEITBUR,
     &HOMARID,

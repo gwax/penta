@@ -96,7 +96,8 @@ distinguishes snapshots of the covered source and build inputs.
   one per creature -- and a creature with banding on either side of a block
   hands its controller the other creature's damage division. Benalish Hero,
   Mesa Pegasus, Timber Wolves, Helm of Chatzuk, War Elephant, Icatian Infantry,
-  Icatian Phalanx, Knights of Thorn, Pikemen, and Nalathni Dragon.
+  Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, and Nalathni
+  Dragon.
 
 - **Blocking an additional creature.** A creature blocks one attacker unless a
   card says otherwise. Two-Headed Giant of Foriys.
