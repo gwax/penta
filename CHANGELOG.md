@@ -114,6 +114,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Crippling Chill** and **Frost Breath**, whose audit lines both asked for a
+  duration tied to the affected creature's controller's untap step. A duration
+  is the wrong shape for a spell that can reach both sides at once; the
+  per-permanent skip that already existed is what makes each creature miss its
+  own controller's step.
+
 - **Frilled Oculus** and **Gridlock**, two more cards whose audit lines had
   gone stale. The once-per-turn activation ration and the X-counted target
   slot they asked for were both built for other cards, so neither needed

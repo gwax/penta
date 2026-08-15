@@ -46,3 +46,5 @@ pub const GLOOM: CardDefinitionId = CardDefinitionId(1845);
 pub const STREET_SPASM: CardDefinitionId = CardDefinitionId(1846);
 pub const FRILLED_OCULUS: CardDefinitionId = CardDefinitionId(1847);
 pub const GRIDLOCK: CardDefinitionId = CardDefinitionId(1848);
+pub const CRIPPLING_CHILL: CardDefinitionId = CardDefinitionId(1849);
+pub const FROST_BREATH: CardDefinitionId = CardDefinitionId(1850);

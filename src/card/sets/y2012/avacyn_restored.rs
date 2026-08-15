@@ -675,8 +675,37 @@ pub(in crate::card::sets) static ARCANE_MELEE: CardRecord = CardRecord::new(
 // AVR 45 — Captain of the Mists
 // Audit: blocked — Needs a tap-or-untap choice on a single activated ability; the shared modal vocabulary currently covers spells only.
 
+/// The tap and the skip are separate: a creature already tapped still owes
+/// the untap step it misses, which is what the second clause is for.
+static CRIPPLING_CHILL_EFFECT: [EffectDef; 3] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::SkipNextUntapSteps {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        count: 1,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
+
 // AVR 46 — Crippling Chill
-// Audit: blocked — Needs a duration tied to the targeted creature's controller's next untap step.
+pub(in crate::card::sets) static CRIPPLING_CHILL: CardRecord = CardRecord::new(
+    cards::CRIPPLING_CHILL,
+    "Crippling Chill",
+    CardArt::new("79791bd9-aded-48d9-866d-9f7bd6848905", "Svetlin Velinov"),
+    CardSet::AvacynRestored,
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap target creature. It doesn't untap during its controller's next untap step. Draw a \
+         card.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&CRIPPLING_CHILL_EFFECT),
+    )),
+);
 
 // AVR 47 — Deadeye Navigator
 // Audit: blocked — Needs soulbond pairing state, paired-object identity, and an activated blink ability granted to both paired creatures.
@@ -3361,6 +3390,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ZEALOUS_STRIKE,
     &ALCHEMISTS_APPRENTICE,
     &ARCANE_MELEE,
+    &CRIPPLING_CHILL,
     &DREADWATERS,
     &FAVORABLE_WINDS,
     &FLEETING_DISTRACTION,

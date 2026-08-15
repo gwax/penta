@@ -552,8 +552,42 @@ pub(in crate::card::sets) static DISPERSE: CardRecord = CardRecord::new(
 // M14 54 — Elite Arcanist
 // Audit: blocked — Imprint cannot retain a chosen hand card for a later X cost, spell copy, and free-cast permission.
 
+/// "Up to two", so nothing at all is a legal declaration, and the skip is
+/// counted on each creature separately -- the two may belong to different
+/// players, who do not reach their untap steps together.
+static FROST_BREATH_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    2,
+)];
+
+static FROST_BREATH_EFFECT: [EffectDef; 2] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::SkipNextUntapSteps {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        count: 1,
+    },
+];
+
 // M14 56 — Frost Breath
-// Audit: blocked — No duration applies an untap restriction through each affected creature's controller's next untap step.
+pub(in crate::card::sets) static FROST_BREATH: CardRecord = CardRecord::new(
+    cards::FROST_BREATH,
+    "Frost Breath",
+    CardArt::new("85d3f777-7660-48ae-8c32-6777ec8427d4", "Mike Bierek"),
+    CardSet::Magic2014,
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap up to two target creatures. Those creatures don't untap during their controller's \
+         next untap step.",
+        &FROST_BREATH_TARGETS,
+        EffectDef::Sequence(&FROST_BREATH_EFFECT),
+    )),
+);
 
 // M14 57 — Galerider Sliver
 pub(in crate::card::sets) static GALERIDER_SLIVER: CardRecord = CardRecord::new(
@@ -2968,6 +3002,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARMORED_CANCRIX,
     &CORAL_MERFOLK,
     &DISPERSE,
+    &FROST_BREATH,
     &GALERIDER_SLIVER,
     &GLIMPSE_THE_FUTURE,
     &MESSENGER_DRAKE,
